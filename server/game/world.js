@@ -5,6 +5,9 @@ const { MONSTERS, BOSSES } = require('../data/monsters');
 const { MAPS, TILE, isSolidAt, SOLID } = require('../data/maps');
 const { NPCS, TELEPORTS } = require('../data/npcs');
 const { TUTORIAL } = require('../data/quests');
+const { MOUNTS, MOUNT_MAX, mountExpNext, isBreakLevel } = require('../data/mounts');
+const RARITY_IDX = { common: 0, rare: 1, epic: 2, legendary: 3 };
+const { ENHANCE_MAX, ENHANCE_SAFE, ENHANCE_RATE, enhanceCost } = require('../data/enhance');
 const U = require('./util');
 
 const TICK = 50;            // 20 tick/giây
@@ -120,7 +123,7 @@ class World {
     const now = Date.now();
     p.buffs = p.buffs.filter(b => b.until > now);
     const g = p.c.guildId && this.db.data.guilds[p.c.guildId];
-    p.stats = U.calcStats(p.c, p.buffs, g ? g.level : 0);
+    p.stats = U.calcStats(p.c, p.buffs, g ? g.level : 0, p.c.riding);
     p.c.power = p.stats.power;
     p.c.hp = Math.min(p.c.hp, p.stats.maxHp);
     p.c.mp = Math.min(p.c.mp, p.stats.maxMp);
@@ -136,7 +139,8 @@ class World {
       inv: c.inv, equip: c.equip, kills: c.kills, pvpKills: c.pvpKills, bossKills: c.bossKills,
       tutorial: this.tutorialView(c), guild: g ? { id: g.id, name: g.name, role: g.members[p.userId] } : null,
       expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until })),
-      quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, dead: p.dead
+      quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, dead: p.dead,
+      mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c)
     };
   }
 
@@ -332,7 +336,7 @@ class World {
       if (map.def.safe) return this.toast(p, 'Không thể giao chiến trong thành', 'error');
       const range = sk.range || cl.range;
       const t = this.findTarget(p, Math.max(range, sk.type === 'aoe' ? sk.radius : 0), targetId);
-      if (!t && (sk.type === 'single' || sk.type === 'dot')) {
+      if (!t && (sk.type === 'single' || sk.type === 'dot' || sk.type === 'dash')) {
         if (idx === 0) return; // đánh thường không có mục tiêu: bỏ qua im lặng
         return this.toast(p, 'Không có mục tiêu trong tầm', 'error');
       }
@@ -340,7 +344,13 @@ class World {
       const enemies = this.enemiesOf(p);
       let hits = [];
       let fxd = { t: sk.fx, from: p.id, x: p.x, y: p.y, color: sk.color, dir: p.dir };
-      if (sk.type === 'single' || sk.type === 'dot') {
+      if (sk.type === 'dash') {
+        const ang = Math.atan2(t.y - p.y, t.x - p.x);
+        const nx = t.x - Math.cos(ang) * 40, ny = t.y - Math.sin(ang) * 40;
+        if (!isSolidAt(MAPS[p.mapId], nx, ny)) { p.x = nx; p.y = ny; p.lastMove = now; p.socket.emit('pos', { x: nx, y: ny, dash: 1 }); }
+        hits = enemies.filter(e => U.dist(e, t) <= 70);
+        fxd.tx = t.x; fxd.ty = t.y; fxd.to = t.id;
+      } else if (sk.type === 'single' || sk.type === 'dot') {
         hits = [t];
         fxd.tx = t.x; fxd.ty = t.y; fxd.to = t.id;
       } else if (sk.type === 'line') {
@@ -409,6 +419,7 @@ class World {
 
   killPlayer(t, src) {
     t.dead = true; t.c.hp = 0; t.c.deaths = (t.c.deaths || 0) + 1;
+    if (t.c.riding) { t.c.riding = false; this.recalc(t); }
     const map = this.maps[t.mapId];
     let lost = 0;
     if (!map.def.pvp) {
@@ -459,10 +470,10 @@ class World {
       if (diff > 8) exp *= Math.max(0.1, 1 - (diff - 8) * 0.12);
       const gained = this.gainExp(p, exp);
       const gold = Math.round(tpl.gold * U.rand(0.7, 1.3) * (cfg.goldRate || 1) * (mon.boss ? share : 1));
-      p.c.gold += gold;
+      if (mon.boss) { p.c.gold += gold; this.features.questProgress(p, 'gold', gold); }
+      else this.createGoldDrop(mon.mapId, mon.x + U.rand(-14, 14), mon.y + U.rand(-8, 8), gold, p.userId);
       p.c.kills = (p.c.kills || 0) + (mon.boss ? 0 : 1);
-      p.socket.emit('gain', { exp: gained, gold, x: mon.x, y: mon.y });
-      this.features.questProgress(p, 'gold', gold);
+      p.socket.emit('gain', { exp: gained, gold: mon.boss ? gold : 0, x: mon.x, y: mon.y });
       if (mon.boss) {
         p.c.bossKills = (p.c.bossKills || 0) + 1;
         this.features.questProgress(p, 'boss', 1);
@@ -494,7 +505,11 @@ class World {
         const rar = r < 0.06 * dr ? 'legendary' : r < 0.3 * dr ? 'epic' : 'rare';
         drops.push(equipId(rslot(), tier, rar));
       }
-      drops.push('stone', 'stone', 'lucky_chest');
+      drops.push('stone', 'stone', 'stone', 'lucky_chest', 'mount_food', 'mount_food');
+      if (Math.random() < 0.5 * dr) drops.push('stone2');
+      if (Math.random() < 0.25 * dr) drops.push('insure');
+      if (Math.random() < 0.3 * dr) drops.push('mount_stone');
+      if (Math.random() < 0.04 * dr) drops.push(tier >= 4 ? 'mount_hoa_ky_lan' : 'mount_bach_ho');
       const top = ranking[0] && this.players.get(ranking[0][0]);
       this.features.announce(`👑 Boss ${tpl.name} đã bị tiêu diệt! ${top ? top.c.name + ' gây sát thương cao nhất.' : ''}`);
       this.features.onBossKilled(mon);
@@ -508,6 +523,10 @@ class World {
       if (r() < (cfg.vipDropBase || 0.004) * dr) drops.push(equipId(rslot(), tier, 'epic'));
       if (r() < 0.0004 * dr) drops.push(equipId(rslot(), tier, 'legendary'));
       if (r() < 0.003 * dr) drops.push('lucky_chest');
+      if (r() < 0.02 * dr) drops.push('mount_food');
+      if (tpl.lv >= 25 && r() < 0.002 * dr * (1 + tier)) drops.push('stone2');
+      if (tpl.lv >= 30 && r() < 0.0015 * dr) drops.push('insure');
+      if (tpl.lv >= 20 && r() < 0.001 * dr) drops.push('mount_stone');
       if (this.features.isActive('lantern') && r() < 0.3) drops.push('event_token');
     }
     drops.forEach((id, i) => {
@@ -525,7 +544,16 @@ class World {
     this.io.to('map:' + mapId).emit('dropAdd', this.dropView(dr));
     return dr;
   }
-  dropView(dr) { const it = ITEMS[dr.itemId]; return { id: dr.id, item: dr.itemId, icon: it.icon, rarity: it.rarity, name: it.name, qty: dr.qty, x: dr.x, y: dr.y }; }
+  createGoldDrop(mapId, x, y, gold, owner) {
+    const m = this.maps[mapId];
+    const dr = { id: 'd' + (entSeq++), gold, x, y, owner, ownerUntil: Date.now() + 20000, expire: Date.now() + 90000 };
+    m.drops.set(dr.id, dr);
+    this.io.to('map:' + mapId).emit('dropAdd', this.dropView(dr));
+  }
+  dropView(dr) {
+    if (dr.gold) return { id: dr.id, gold: dr.gold, icon: 'gold', rarity: 'common', name: dr.gold + ' lượng', qty: 1, x: dr.x, y: dr.y };
+    const it = ITEMS[dr.itemId]; return { id: dr.id, item: dr.itemId, icon: it.icon, rarity: it.rarity, name: it.name, qty: dr.qty, x: dr.x, y: dr.y };
+  }
 
   tryPickup(p, m) {
     if (p.dead) return;
@@ -533,6 +561,15 @@ class World {
     for (const dr of m.drops.values()) {
       if (Math.abs(dr.x - p.x) > PICKUP_R || Math.abs(dr.y - p.y) > PICKUP_R) continue;
       if (dr.owner && dr.owner !== p.userId && dr.ownerUntil > now) continue;
+      if (dr.gold) {
+        m.drops.delete(dr.id);
+        this.io.to('map:' + p.mapId).emit('dropDel', dr.id);
+        p.c.gold += dr.gold;
+        p.socket.emit('gain', { gold: dr.gold, x: dr.x, y: dr.y });
+        this.features.questProgress(p, 'gold', dr.gold);
+        p.dirtyMe = true;
+        continue;
+      }
       if (!U.addItem(p.c, dr.itemId, dr.qty, dr.plus)) { if (!p._fullWarn || p._fullWarn < now) { this.toast(p, 'Túi đồ đã đầy!', 'error'); p._fullWarn = now + 5000; } continue; }
       m.drops.delete(dr.id);
       this.io.to('map:' + p.mapId).emit('dropDel', dr.id);
@@ -568,6 +605,20 @@ class World {
     if (e.town) { U.removeByUid(c, uid, 1); this.teleport(p, 'tuong_duong'); p.dirtyMe = true; return; }
     if (e.expBuff) { c.expBuffUntil = Math.max(Date.now(), c.expBuffUntil || 0) + e.expBuff; this.toast(p, 'Nhân đôi kinh nghiệm 30 phút!', 'reward'); }
     if (e.wheel) { c.wheel.extra = (c.wheel.extra || 0) + 1; this.toast(p, 'Nhận thêm 1 lượt Vòng Quay', 'reward'); }
+    if (e.mount) {
+      const mt = MOUNTS[e.mount];
+      c.mounts = c.mounts || {};
+      U.removeByUid(c, uid, 1);
+      if (c.mounts[mt.id]) { U.addItem(c, 'mount_food', 30); this.toast(p, `Đã sở hữu ${mt.name}, đổi thành 30 Mã Linh Đan`, 'reward'); }
+      else {
+        c.mounts[mt.id] = { lv: 1, exp: 0 };
+        if (!c.mount) c.mount = mt.id;
+        this.toast(p, `Thuần phục thành công ${mt.name}! Nhấn T hoặc nút 🐎 để cưỡi.`, 'reward');
+        if (mt.rarity === 'epic' || mt.rarity === 'legendary') this.features.announce(`🐉 ${c.name} đã thuần phục thú cưỡi [${mt.name}]!`);
+      }
+      this.recalc(p); this.db.markDirty();
+      return;
+    }
     if (e.chest) {
       if (U.freeSlots(c) < 2) return this.toast(p, 'Cần ít nhất 2 ô trống trong túi', 'error');
       U.removeByUid(c, uid, 1);
@@ -686,7 +737,7 @@ class World {
     p.dirtyMe = true; this.db.markDirty();
   }
 
-  enhance(p, { uid, npc: npcId }) {
+  enhance(p, { uid, npc: npcId, insure }) {
     const npc = this.nearNpc(p, npcId || 'tho_ren');
     if (!npc || !npc.enhance) return this.toast(p, 'Hãy đến gặp Thợ Rèn để cường hóa', 'error');
     const c = p.c;
@@ -694,25 +745,86 @@ class World {
     if (!target) target = Object.values(c.equip).find(e => e && e.uid === uid);
     if (!target || ITEMS[target.id].type !== 'equip') return;
     const plus = target.plus || 0;
-    if (plus >= 10) return this.toast(p, 'Trang bị đã đạt cường hóa tối đa +10', 'error');
-    const stones = Math.ceil((plus + 1) / 2);
-    const gold = Math.round((plus + 1) * (plus + 1) * 200 * (1 + ITEMS[target.id].tier));
-    if (U.countItem(c, 'stone') < stones) return this.toast(p, `Cần ${stones} Huyền Tinh Thạch`, 'error');
-    if (c.gold < gold) return this.toast(p, `Cần ${gold} lượng`, 'error');
-    U.removeItemById(c, 'stone', stones);
-    c.gold -= gold;
-    const chance = [1, 1, 0.95, 0.85, 0.75, 0.6, 0.5, 0.4, 0.3, 0.2][plus];
+    if (plus >= ENHANCE_MAX) return this.toast(p, `Trang bị đã đạt cường hóa tối đa +${ENHANCE_MAX}`, 'error');
+    const it = ITEMS[target.id];
+    const cost = enhanceCost(plus, it.tier);
+    if (U.countItem(c, 'stone') < cost.stone) return this.toast(p, `Cần ${cost.stone} Huyền Tinh Thạch`, 'error');
+    if (cost.stone2 && U.countItem(c, 'stone2') < cost.stone2) return this.toast(p, `Cần ${cost.stone2} Thiên Tinh Thạch`, 'error');
+    if (c.gold < cost.gold) return this.toast(p, `Cần ${cost.gold.toLocaleString('vi-VN')} lượng`, 'error');
+    const risky = plus >= ENHANCE_SAFE;
+    const useInsure = risky && insure && U.countItem(c, 'insure') > 0;
+    if (risky && insure && !useInsure) return this.toast(p, 'Không có Bảo Hiểm Phù', 'error');
+    U.removeItemById(c, 'stone', cost.stone);
+    if (cost.stone2) U.removeItemById(c, 'stone2', cost.stone2);
+    c.gold -= cost.gold;
     this.features.questProgress(p, 'enhance', 1);
-    if (Math.random() < chance) {
+    let result;
+    if (Math.random() < ENHANCE_RATE[plus]) {
       target.plus = plus + 1;
-      this.toast(p, `Cường hóa thành công! ${ITEMS[target.id].name} +${target.plus}`, 'reward');
-      if (target.plus >= 7) this.features.announce(`🔨 ${c.name} cường hóa thành công ${ITEMS[target.id].name} lên +${target.plus}!`);
+      result = 'ok';
+      this.toast(p, `Cường hóa thành công! ${it.name} +${target.plus}`, 'reward');
+      if (target.plus >= 9) this.features.announce(`🔨 ${c.name} cường hóa thành công [${it.name}] lên +${target.plus}!`);
+    } else if (risky && !useInsure) {
+      target.plus = 1;
+      result = 'drop';
+      this.toast(p, `Cường hóa thất bại! Không có bảo hiểm, ${it.name} rớt về +1`, 'error');
+      if (plus >= 12) this.features.announce(`💥 ${c.name} cường hóa [${it.name}] +${plus + 1} thất bại, rớt về +1!`);
     } else {
-      if (plus >= 5) target.plus = plus - 1;
-      this.toast(p, `Cường hóa thất bại${plus >= 5 ? ', trang bị bị giảm 1 cấp' : ''}!`, 'error');
+      if (useInsure) U.removeItemById(c, 'insure', 1);
+      result = useInsure ? 'insured' : 'fail';
+      this.toast(p, useInsure ? 'Cường hóa thất bại! Bảo Hiểm Phù đã giữ nguyên cấp trang bị.' : 'Cường hóa thất bại! Trang bị giữ nguyên cấp.', 'error');
     }
     this.recalc(p);
-    p.socket.emit('enhanceResult', { uid, plus: target.plus || 0 });
+    p.socket.emit('enhanceResult', { uid, plus: target.plus || 0, result });
+    this.fx(p.mapId, { t: result === 'ok' ? 'levelup' : 'death', id: p.id, x: p.x, y: p.y, small: true });
+    this.db.log('enhance', `${c.name} cường hóa ${it.name} +${plus}→+${target.plus} (${result})`, { user: p.userId });
+    this.db.markDirty();
+  }
+
+  // ---------- Thú cưỡi ----------
+  mountAction(p, a) {
+    const c = p.c;
+    c.mounts = c.mounts || {};
+    const err = t => this.toast(p, t, 'error');
+    if (a.op === 'ride') {
+      if (!c.mount || !c.mounts[c.mount]) return err('Bạn chưa có thú cưỡi. Mua tại Mã Phu ở Tương Dương.');
+      if (p.dead) return;
+      c.riding = !c.riding;
+      this.fx(p.mapId, { t: 'death', id: p.id, x: p.x, y: p.y, small: true });
+    } else if (a.op === 'select') {
+      if (!c.mounts[a.id]) return;
+      c.mount = a.id;
+    } else if (a.op === 'feed') {
+      const m = c.mounts[a.id];
+      if (!m) return;
+      if (m.lv >= MOUNT_MAX) return err('Thú cưỡi đã đạt cấp tối đa');
+      if (isBreakLevel(m.lv) && m.exp >= mountExpNext(m.lv)) return err('Cần đột phá trước khi tiếp tục nâng cấp');
+      let n = U.clamp(a.n | 0 || 1, 1, 99);
+      n = Math.min(n, U.countItem(c, 'mount_food'));
+      if (n <= 0) return err('Không có Mã Linh Đan');
+      const goldEach = 50 * m.lv;
+      n = Math.min(n, Math.floor(c.gold / goldEach));
+      if (n <= 0) return err(`Mỗi lần cho ăn tốn ${goldEach} lượng`);
+      let used = 0;
+      while (used < n) {
+        if (m.lv >= MOUNT_MAX || (isBreakLevel(m.lv) && m.exp >= mountExpNext(m.lv))) break;
+        U.removeItemById(c, 'mount_food', 1); c.gold -= 50 * m.lv; used++;
+        m.exp += 100;
+        while (m.exp >= mountExpNext(m.lv) && m.lv < MOUNT_MAX && !isBreakLevel(m.lv)) { m.exp -= mountExpNext(m.lv); m.lv++; }
+      }
+      this.toast(p, `Đã cho ăn ${used} Mã Linh Đan. ${MOUNTS[a.id].name} cấp ${m.lv}`, 'reward');
+    } else if (a.op === 'break') {
+      const m = c.mounts[a.id];
+      if (!m || !isBreakLevel(m.lv) || m.exp < mountExpNext(m.lv)) return err('Chưa đủ điều kiện đột phá');
+      const need = m.lv / 10, gold = m.lv * 2000;
+      if (U.countItem(c, 'mount_stone') < need) return err(`Cần ${need} Long Huyết Thạch`);
+      if (c.gold < gold) return err(`Cần ${gold} lượng`);
+      U.removeItemById(c, 'mount_stone', need); c.gold -= gold;
+      m.exp -= mountExpNext(m.lv); m.lv++;
+      this.toast(p, `Đột phá thành công! ${MOUNTS[a.id].name} đạt cấp ${m.lv}, tốc độ tăng thêm!`, 'reward');
+      this.features.announce(`🐎 ${c.name} đột phá thú cưỡi [${MOUNTS[a.id].name}] lên cấp ${m.lv}!`);
+    }
+    this.recalc(p);
     this.db.markDirty();
   }
 
@@ -847,8 +959,8 @@ class World {
     for (const p of m.players) {
       const g = p.c.guildId && guilds[p.c.guildId];
       ps.push({ i: p.id, n: p.c.name, c: p.c.cls, x: Math.round(p.x), y: Math.round(p.y), d: p.dir, m: p.moving ? 1 : 0,
-        h: Math.max(0, Math.round(p.c.hp)), H: p.stats.maxHp, l: p.c.level, g: g ? g.name : '', a: p.dead ? 1 : 0, w: p.c.equip.weapon ? p.c.equip.weapon.id.split('_')[1] | 0 : -1,
-        v: p.user.isAdmin ? 1 : 0 });
+        h: Math.max(0, Math.round(p.c.hp)), H: p.stats.maxHp, l: p.c.level, g: g ? g.name : '', a: p.dead ? 1 : 0,
+        q: this.appearance(p.c), v: p.user.isAdmin ? 1 : 0 });
     }
     const ms = [];
     for (const mon of m.monsters.values()) {
@@ -856,6 +968,14 @@ class World {
       ms.push({ i: mon.id, t: mon.tpl.id, x: Math.round(mon.x), y: Math.round(mon.y), d: mon.dir, m: mon.moving ? 1 : 0, h: Math.max(0, Math.round(mon.hp)), H: mon.maxHp, b: mon.boss ? 1 : 0, e: mon.event ? 1 : 0 });
     }
     this.io.to('map:' + m.def.id).emit('snap', { p: ps, m: ms });
+  }
+
+  // Ngoại hình: [bậc vũ khí, độ hiếm vũ khí, +vũ khí, bậc áo, độ hiếm áo, +áo, bậc nón, thú cưỡi đang cưỡi]
+  appearance(c) {
+    const e = c.equip, w = e.weapon && ITEMS[e.weapon.id], a = e.armor && ITEMS[e.armor.id], h = e.helmet && ITEMS[e.helmet.id];
+    return [w ? w.tier : -1, w ? RARITY_IDX[w.rarity] : 0, w ? e.weapon.plus || 0 : 0,
+      a ? a.tier : -1, a ? RARITY_IDX[a.rarity] : 0, a ? e.armor.plus || 0 : 0,
+      h ? h.tier : -1, c.riding && c.mount ? c.mount : ''];
   }
 
   fx(mapId, data) { this.io.to('map:' + mapId).emit('fx', data); }

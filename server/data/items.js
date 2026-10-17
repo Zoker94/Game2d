@@ -68,14 +68,26 @@ const CONSUMABLES = [
   { id: 'mp3', name: 'Đại Hoàn Đan', desc: 'Hồi 1000 nội lực', effect: { mp: 1000 }, price: 220, lv: 35, icon: 'potion_b3' },
   { id: 'scroll_town', name: 'Hồi Thành Phù', desc: 'Dịch chuyển về Tương Dương', effect: { town: 1 }, price: 50, icon: 'scroll' },
   { id: 'exp_x2', name: 'Song Bội Kinh Nghiệm', desc: 'Nhân đôi kinh nghiệm trong 30 phút', effect: { expBuff: 30 * 60000 }, price: 2000, icon: 'book' },
-  { id: 'stone', name: 'Huyền Tinh Thạch', desc: 'Dùng để cường hóa trang bị tại Thợ Rèn', price: 300, icon: 'stone', material: true },
+  { id: 'stone', name: 'Huyền Tinh Thạch', desc: 'Nguyên liệu cường hóa trang bị +1 đến +10', price: 300, icon: 'stone', material: true },
+  { id: 'stone2', name: 'Thiên Tinh Thạch', desc: 'Nguyên liệu quý để cường hóa +11 đến +15. Rơi từ Boss, quái cấp cao, sự kiện.', price: 8000, icon: 'stone2', material: true },
+  { id: 'insure', name: 'Bảo Hiểm Phù', desc: 'Khi cường hóa từ +10 trở lên mà thất bại, giữ nguyên cấp thay vì rớt về +1.', price: 15000, icon: 'insure', material: true },
+  { id: 'mount_food', name: 'Mã Linh Đan', desc: 'Thức ăn cho thú cưỡi, +100 kinh nghiệm thú cưỡi.', price: 400, icon: 'food', material: true },
+  { id: 'mount_stone', name: 'Long Huyết Thạch', desc: 'Dùng để đột phá thú cưỡi ở cấp 10, 20, 30, 40.', price: 6000, icon: 'blood', material: true },
   { id: 'lucky_chest', name: 'Rương Bí Ẩn', desc: 'Mở ra nhận vật phẩm ngẫu nhiên, có thể ra đồ VIP!', effect: { chest: 1 }, price: 5000, icon: 'chest' },
   { id: 'boss_chest', name: 'Rương Thủ Lĩnh', desc: 'Rương từ Boss, chắc chắn có đồ Hiếm trở lên', effect: { chest: 2 }, price: 20000, icon: 'chest_gold' },
   { id: 'wheel_ticket', name: 'Vé Vòng Quay', desc: 'Thêm 1 lượt quay Vòng Quay May Mắn', effect: { wheel: 1 }, price: 3000, icon: 'ticket' },
   { id: 'event_token', name: 'Hoa Đăng', desc: 'Vật phẩm sự kiện. Đổi quà tại Lễ Quan.', price: 0, icon: 'lantern', material: true }
 ];
 CONSUMABLES.forEach(c => { ITEMS[c.id] = Object.assign({ type: 'use', lv: c.lv || 1, rarity: 'common', stack: true }, c); });
-ITEMS.stone.type = 'material';
+for (const id of ['stone', 'stone2', 'insure', 'mount_food', 'mount_stone']) ITEMS[id].type = 'material';
+ITEMS.stone2.rarity = 'epic'; ITEMS.insure.rarity = 'rare'; ITEMS.mount_stone.rarity = 'rare';
+
+// Thú cưỡi (vật phẩm dùng để thuần phục)
+const { MOUNTS } = require('./mounts');
+for (const m of Object.values(MOUNTS)) {
+  ITEMS['mount_' + m.id] = { id: 'mount_' + m.id, type: 'use', name: 'Thú cưỡi: ' + m.name, desc: `Sử dụng để thuần phục ${m.name} (+${Math.round(m.speed * 100)}% tốc độ khi cưỡi).`,
+    effect: { mount: m.id }, price: m.price, lv: m.lv, rarity: m.rarity, icon: 'saddle', stack: true };
+}
 ITEMS.event_token.type = 'material';
 
 function equipId(slot, t, rarity) { return `${slot}_${t}_${rarity}`; }

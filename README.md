@@ -6,12 +6,14 @@ Webgame 2D pixel art 64px thể loại **giang hồ võ lâm – cày cấp đá
 
 | Hạng mục | Chi tiết |
 |---|---|
-| Đồ họa | Pixel art 64×64 vẽ bằng code (nhân vật, quái, NPC, địa hình, hiệu ứng võ công) – không cần file ảnh |
+| Đồ họa | Pixel art vẽ bằng code: nhân vật chi tiết 1px trên khung 64×64 (viền, đổ bóng, khuôn mặt, tóc, nếp áo), áo/nón/vũ khí đang mặc hiện trên người, hào quang theo cấp cường hóa, hiệu ứng võ công phát sáng (hạt sáng, cộng sáng, thiên thạch, cột sáng, lốc xoáy...) |
 | Đăng nhập | **Bắt buộc liên kết Google** (Google Identity Services, xác minh ID token phía server) |
-| 9 môn phái | Thiếu Lâm, Thiên Vương Bang, Đường Môn, Ngũ Độc Giáo, Nga My, Thúy Yên, Cái Bang, Võ Đang, Côn Lôn – mỗi phái 4 võ công riêng |
+| 9 môn phái | Thiếu Lâm, Thiên Vương Bang, Đường Môn, Ngũ Độc Giáo, Nga My, Thúy Yên, Cái Bang, Võ Đang, Côn Lôn – mỗi phái 6 võ công riêng (mở ở cấp 1, 3, 10, 20, 35, 50), gồm chiêu lướt và tuyệt kỹ |
 | Bản đồ | Thành Tương Dương (an toàn), Ngoại Ô, Rừng Trúc, Hoa Sơn, Sa Mạc Tây Vực, Băng Cung, Ma Giáo Cấm Địa, Lôi Đài PK |
 | Boss theo giờ | 6 Boss thế giới xuất hiện theo lịch (báo trước 5 phút), top 3 sát thương nhận thưởng |
-| Trang bị | 6 ô trang bị × 7 bậc × 4 độ hiếm (Thường, Hiếm, **VIP**, **Truyền Kỳ**), cường hóa +1 → +10 |
+| Trang bị | 6 ô trang bị × 7 bậc × 4 độ hiếm (Thường, Hiếm, **VIP**, **Truyền Kỳ**) |
+| Đập đồ | Cường hóa tối đa **+15**, tỉ lệ giảm dần (100% → 3%). Cần Huyền Tinh Thạch + vàng; từ +11 cần thêm Thiên Tinh Thạch. Từ +10 trở lên thất bại mà không có **Bảo Hiểm Phù** sẽ rớt về +1. Vàng rơi ra đất khi đánh quái |
+| Thú cưỡi | 6 loại (Ngựa Nâu, Bạch Mã, Ô Truy Hắc Mã, Bạch Hổ Vương, Hỏa Kỳ Lân, Thanh Long), tăng tốc độ khi cưỡi + chỉ số; cho ăn Mã Linh Đan để lên cấp (tối đa 50), đột phá mỗi 10 cấp bằng Long Huyết Thạch |
 | NPC | Thợ Rèn, Hiệu May, Kim Hoàn, Dược Điếm, Tạp Hóa, Kỳ Trân Các (Nguyên Bảo), Xa Phu, Thương Nhân lưu động ở mỗi bãi quái... |
 | Rơi đồ | Đồ VIP/Truyền Kỳ rơi theo tỉ lệ từ quái & Boss, thông báo toàn server |
 | Tân thủ | Chuỗi 10 bước hướng dẫn có mũi tên chỉ đường và phần thưởng |
@@ -62,8 +64,8 @@ Khi triển khai thật hãy chạy sau HTTPS (Nginx/Caddy reverse proxy, nhớ 
 
 ## Điều khiển
 
-- **PC:** WASD/mũi tên di chuyển, nhấp chuột để đi/chọn mục tiêu, `1`/`Space` đánh, `2` `3` `4` kỹ năng, `Z`/`X` thuốc, `Tab` đổi mục tiêu, `F` nói chuyện NPC, `R` tự động, `Enter` chat, `I` `C` `J` `G` `O` `L` mở bảng, `Esc` đóng.
-- **Mobile:** joystick bên trái, nút ⚔️ (giữ để đánh liên tục), 3 nút kỹ năng, ❤️💧 thuốc, 🎯 đổi mục tiêu. Khi vào game, trình duyệt chuyển toàn màn hình và khóa xoay ngang; trên iOS (không hỗ trợ khóa xoay) giao diện tự xoay 90°.
+- **PC:** WASD/mũi tên di chuyển, nhấp chuột để đi/chọn mục tiêu, `1`/`Space` đánh, `2`–`6` kỹ năng, `Z`/`X` thuốc, `T` cưỡi thú, `M` bảng thú cưỡi, `Tab` đổi mục tiêu, `F` nói chuyện NPC, `R` tự động, `Enter` chat, `I` `C` `J` `G` `O` `L` mở bảng, `Esc` đóng.
+- **Mobile:** joystick bên trái, nút ⚔️ (giữ để đánh liên tục), 5 nút kỹ năng, ❤️💧 thuốc, 🎯 đổi mục tiêu, 🐎 cưỡi thú. Khi vào game, trình duyệt chuyển toàn màn hình và khóa xoay ngang; trên iOS (không hỗ trợ khóa xoay) giao diện tự xoay 90°.
 - **Tay cầm:** cần trái/D-pad di chuyển, A đánh, X/Y/B kỹ năng, LB/RB thuốc, LT đổi mục tiêu, RT NPC, Start tự động.
 
 ## Cấu trúc

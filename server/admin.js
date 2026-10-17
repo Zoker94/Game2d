@@ -152,8 +152,8 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     const { itemId, qty = 1, plus = 0 } = req.body || {};
     if (!ITEMS[itemId] || !u.character) return { error: 'Vật phẩm không hợp lệ' };
     const q = U.clamp(qty | 0, 1, 9999);
-    if (p) world.giveItem(p, itemId, q, U.clamp(plus | 0, 0, 10));
-    else if (!U.addItem(u.character, itemId, q, U.clamp(plus | 0, 0, 10))) return { error: 'Túi đồ người chơi đã đầy' };
+    if (p) world.giveItem(p, itemId, q, U.clamp(plus | 0, 0, 15));
+    else if (!U.addItem(u.character, itemId, q, U.clamp(plus | 0, 0, 15))) return { error: 'Túi đồ người chơi đã đầy' };
     if (p) world.toast(p, `Quản trị viên tặng bạn ${ITEMS[itemId].name} x${q}`, 'reward');
     act(req, `Tặng ${ITEMS[itemId].name} x${q} cho ${u.character.name}`);
   }));

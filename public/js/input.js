@@ -36,10 +36,10 @@
   };
 
   // ---------- Bàn phím ----------
-  const KEYMAP = { Digit1: ['skill', 0], Space: ['skill', 0], Digit2: ['skill', 1], Digit3: ['skill', 2], Digit4: ['skill', 3],
+  const KEYMAP = { Digit1: ['skill', 0], Space: ['skill', 0], Digit2: ['skill', 1], Digit3: ['skill', 2], Digit4: ['skill', 3], Digit5: ['skill', 4], Digit6: ['skill', 5], KeyT: ['mount'],
     KeyZ: ['potion', 'hp'], KeyX: ['potion', 'mp'], Tab: ['target'], KeyF: ['interact'], KeyR: ['auto'],
     KeyI: ['panel', 'inventory'], KeyC: ['panel', 'character'], KeyJ: ['panel', 'quests'], KeyG: ['panel', 'guild'],
-    KeyO: ['panel', 'events'], KeyL: ['panel', 'leaderboard'], Escape: ['escape'], Enter: ['chat'] };
+    KeyO: ['panel', 'events'], KeyL: ['panel', 'leaderboard'], KeyM: ['panel', 'mount'], Escape: ['escape'], Enter: ['chat'] };
   window.addEventListener('keydown', e => {
     if (!Input.inGame) return;
     if (Input.typing()) {
@@ -114,10 +114,11 @@
   hold(document.getElementById('btn-hp'), () => emit('potion', 'hp'));
   hold(document.getElementById('btn-mp'), () => emit('potion', 'mp'));
   hold(document.getElementById('btn-target'), () => emit('target'));
+  hold(document.getElementById('btn-mount'), () => emit('mount'));
 
   // ---------- Tay cầm (Gamepad) ----------
   const prevBtn = {};
-  const PADMAP = { 0: ['skill', 0], 2: ['skill', 1], 3: ['skill', 2], 1: ['skill', 3], 4: ['potion', 'hp'], 5: ['potion', 'mp'], 6: ['target'], 7: ['interact'], 8: ['panel', 'inventory'], 9: ['auto'] };
+  const PADMAP = { 0: ['skill', 0], 2: ['skill', 1], 3: ['skill', 2], 1: ['skill', 3], 4: ['potion', 'hp'], 5: ['potion', 'mp'], 6: ['skill', 4], 7: ['skill', 5], 8: ['panel', 'inventory'], 9: ['auto'], 10: ['mount'], 11: ['target'] };
   Input.pollGamepad = function () {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     let gp = null;

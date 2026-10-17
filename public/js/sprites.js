@@ -263,12 +263,13 @@
 
   function monsterSprite(type, info, frame, dir) {
     const k = 'mon:' + type + '|' + (frame % 2);
+    if (info.sprite === 'bandit' && window.Sprites.banditSprite) return window.Sprites.banditSprite(type, info, dir, frame);
     if (info.sprite === 'bandit') {
       const look = { robe: info.color, trim: shade(info.color, -0.4), hair: '#111', hatType: 'bamboo', hat: shade(info.color, 0.2), wType: 'sword', weapon: '#ddd' };
       if (info.boss) look.hatType = 'crown';
       return humanSprite('bandit:' + type, look, dir, frame, false);
     }
-    if (!cache[k]) cache[k] = drawMonster(info.sprite, info.color, frame % 2);
+    if (!cache[k]) { cache[k] = drawMonster(info.sprite, info.color, frame % 2); if (cache[k] && window.Sprites.outline) window.Sprites.outline(cache[k], 54); }
     return cache[k];
   }
 
@@ -438,6 +439,12 @@
         break;
       }
       case 'ticket': p(2, 4, 12, 8, '#ff7043'); p(3, 5, 10, 6, '#ffab91'); p(6, 6, 4, 4, '#ff7043'); p(7, 7, 2, 2, '#fff'); break;
+      case 'stone2': p(4, 3, 8, 10, '#ff5a8a'); p(3, 5, 10, 6, '#ff8ab0'); p(6, 1, 4, 2, '#ffd0e0'); p(5, 5, 2, 3, '#fff'); p(9, 9, 2, 3, '#b0204a'); break;
+      case 'insure': p(4, 1, 8, 14, '#fff1a0'); p(4, 1, 8, 2, '#c33'); p(4, 13, 8, 2, '#c33'); p(6, 4, 4, 1, '#c33'); p(7, 5, 2, 5, '#c33'); p(5, 7, 6, 1, '#c33'); p(6, 11, 4, 1, '#e8c25a'); break;
+      case 'food': p(3, 5, 10, 8, '#b8860b'); p(4, 4, 8, 1, '#d4a83a'); p(5, 6, 2, 2, '#ffe28a'); p(9, 8, 2, 2, '#8a5a0a'); p(7, 2, 2, 3, '#4a8a2a'); break;
+      case 'blood': p(5, 2, 6, 3, '#ff3030'); p(4, 4, 8, 7, '#d01818'); p(5, 11, 6, 2, '#a00'); p(6, 5, 2, 3, '#ff9090'); break;
+      case 'saddle': p(2, 6, 12, 5, '#8b1a1a'); p(2, 6, 12, 1, '#c03030'); p(1, 10, 14, 2, '#e8c25a'); p(7, 11, 2, 4, '#5a3a1a'); p(6, 14, 4, 1, '#aaa'); p(3, 3, 3, 3, '#8b1a1a'); break;
+      case 'gold': p(3, 7, 10, 6, '#e8b830'); p(4, 6, 8, 1, '#ffe080'); p(5, 4, 6, 3, '#ffd040'); p(6, 3, 4, 1, '#fff0a0'); p(4, 12, 8, 1, '#a07810'); p(7, 8, 2, 3, '#a07810'); break;
       case 'lantern': p(5, 1, 6, 1, '#ffd700'); p(4, 2, 8, 10, '#e53935'); p(5, 3, 6, 8, '#ff7043'); p(7, 5, 2, 4, '#ffeb3b'); p(7, 12, 2, 3, '#ffd700'); break;
       default: p(3, 3, 10, 10, '#888');
     }

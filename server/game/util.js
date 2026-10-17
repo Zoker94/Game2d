@@ -1,5 +1,9 @@
 const { CLASSES } = require('../data/classes');
 const { ITEMS } = require('../data/items');
+const { mountStats } = require('../data/mounts');
+
+// Hệ số chỉ số theo cấp cường hóa: +1..+10 mỗi cấp 12%, +11..+15 mỗi cấp 25%
+const plusMult = plus => 1 + Math.min(plus, 10) * 0.12 + Math.max(0, plus - 10) * 0.25;
 
 const MAX_LEVEL = 99;
 const INV_SIZE = 48;
@@ -28,7 +32,7 @@ function newCharacter(name, cls) {
     daily: { date: null, list: [], bonusClaimed: false },
     checkin: { date: null, streak: 0 },
     wheel: { date: null, used: 0, extra: 0 },
-    expBuffUntil: 0, created: Date.now(), playTime: 0, power: 0,
+    expBuffUntil: 0, created: Date.now(), playTime: 0, power: 0, mounts: {}, mount: null, riding: false,
     quickHp: 'hp1', quickMp: 'mp1'
   };
   addItem(c, 'weapon_0_common', 1);
@@ -77,7 +81,7 @@ function removeByUid(c, uid, qty = 1) {
 }
 
 // Tính chỉ số nhân vật từ cấp, trang bị, bang hội và buff
-function calcStats(c, buffs = [], guildLevel = 0) {
+function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
   const cl = CLASSES[c.cls];
   const L = c.level - 1;
   const s = {
@@ -93,10 +97,17 @@ function calcStats(c, buffs = [], guildLevel = 0) {
     const e = c.equip[slot];
     const it = e && ITEMS[e.id];
     if (!it) continue;
-    const m = 1 + (e.plus || 0) * 0.12;
+    const m = plusMult(e.plus || 0);
     for (const k in it.stats) {
       const v = it.stats[k] * (k === 'crit' || k === 'spd' ? 1 : m);
       if (k === 'hp') s.maxHp += v; else if (k === 'mp') s.maxMp += v; else s[k] += v;
+    }
+  }
+  if (c.mount && c.mounts && c.mounts[c.mount]) {
+    const ms = mountStats(c.mount, c.mounts[c.mount].lv);
+    for (const k in ms) {
+      if (k === 'speed') { if (riding) s.spd *= 1 + ms.speed; }
+      else if (k === 'hp') s.maxHp += ms.hp; else if (k === 'mp') s.maxMp += ms.mp; else s[k] += ms[k];
     }
   }
   if (guildLevel > 0) { s.atk *= 1 + guildLevel * 0.02; s.def *= 1 + guildLevel * 0.02; s.maxHp *= 1 + guildLevel * 0.02; }
@@ -107,7 +118,7 @@ function calcStats(c, buffs = [], guildLevel = 0) {
     if (b.crit) s.crit += b.crit;
     if (b.regen) s.regen += b.regen;
   }
-  s.spd = Math.min(s.spd, 260);
+  s.spd = Math.min(s.spd, 320);
   s.crit = Math.min(s.crit, 75);
   for (const k of ['maxHp', 'maxMp', 'atk', 'def']) s[k] = Math.round(s[k]);
   s.crit = Math.round(s.crit * 10) / 10;
@@ -117,5 +128,5 @@ function calcStats(c, buffs = [], guildLevel = 0) {
 
 module.exports = {
   MAX_LEVEL, INV_SIZE, expNext, vnDate, vnDay, vnMinuteOfDay, rand, randInt, dist, clamp, newUid,
-  newCharacter, addItem, freeSlots, countItem, removeItemById, removeByUid, calcStats, isStack
+  plusMult, newCharacter, addItem, freeSlots, countItem, removeItemById, removeByUid, calcStats, isStack
 };

@@ -27,10 +27,11 @@
   function statsHtml(it, plus) {
     if (!it.stats) return '';
     return Object.entries(it.stats).map(([k, v]) => {
-      const val = (k === 'crit' || k === 'spd') ? v : Math.round(v * (1 + (plus || 0) * 0.12));
+      const val = (k === 'crit' || k === 'spd') ? v : Math.round(v * plusMult(plus || 0));
       return `<div class="st">${STAT_NAME[k]}: +${val}${k === 'crit' ? '%' : ''}</div>`;
     }).join('');
   }
+  const plusMult = p => 1 + Math.min(p, 10) * 0.12 + Math.max(0, p - 10) * 0.25;
   function itemDesc(id, plus) {
     const it = G.data.items[id];
     const rar = G.data.rarity[it.rarity];
@@ -101,6 +102,7 @@
     }
     document.querySelectorAll('.act.sk').forEach(b => {
       const s = skills[+b.dataset.sk];
+      if (!s) { b.style.display = 'none'; return; }
       b.innerHTML = `${esc(s.name)}<div class="cdo"></div><div class="cdt"></div>`;
     });
   }
@@ -145,7 +147,7 @@
     $('btn-hp').innerHTML = `❤️<span class="cnt">${hpc}</span>`;
     $('btn-mp').innerHTML = `💧<span class="cnt">${mpc}</span>`;
     updateTutorial();
-    if (panel === 'inventory' || panel === 'character' || (panel === 'npc' && npcData)) UI.refreshPanel(true);
+    if (panel === 'inventory' || panel === 'character' || panel === 'mount' || (panel === 'npc' && npcData)) UI.refreshPanel(true);
   };
   function setBar(el, v, max) {
     if (!el) return;
@@ -268,7 +270,7 @@
   function hideTip() { $('tooltip').classList.add('hidden'); }
 
   // ================= Bảng chức năng =================
-  const TITLES = { inventory: '🎒 Túi Đồ & Trang Bị', character: '🧍 Thông Tin Nhân Vật', quests: '📜 Nhiệm Vụ', guild: '🏯 Bang Hội', events: '🎉 Sự Kiện & Hoạt Động', leaderboard: '🏆 Bảng Xếp Hạng', settings: '⚙️ Cài Đặt', npc: '' , online: '👥 Người Chơi Trực Tuyến' };
+  const TITLES = { inventory: '🎒 Túi Đồ & Trang Bị', character: '🧍 Thông Tin Nhân Vật', quests: '📜 Nhiệm Vụ', guild: '🏯 Bang Hội', events: '🎉 Sự Kiện & Hoạt Động', leaderboard: '🏆 Bảng Xếp Hạng', settings: '⚙️ Cài Đặt', mount: '🐎 Thú Cưỡi', npc: '' , online: '👥 Người Chơi Trực Tuyến' };
   UI.togglePanel = function (name) { if (panel === name) UI.closePanel(); else UI.openPanel(name); };
   UI.openPanel = function (name, state) {
     panel = name;
@@ -290,7 +292,7 @@
     const scroll = body.scrollTop;
     // không vẽ lại khi người dùng đang gõ
     if (soft && body.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
-    const fn = { inventory: renderInventory, character: renderCharacter, quests: renderQuests, guild: renderGuild, events: renderEvents, leaderboard: renderLeaderboard, settings: renderSettings, npc: renderNpc, online: renderOnline }[panel];
+    const fn = { inventory: renderInventory, character: renderCharacter, quests: renderQuests, guild: renderGuild, events: renderEvents, leaderboard: renderLeaderboard, settings: renderSettings, npc: renderNpc, online: renderOnline, mount: renderMount }[panel];
     if (fn) fn(body);
     body.scrollTop = scroll;
   };
@@ -351,17 +353,36 @@
     else if (it.type === 'use') btns += `<button class="btn small green" data-act="use">Sử dụng</button>`;
     if (!s.equipped && (s.id.startsWith('hp') || s.id.startsWith('mp'))) btns += `<button class="btn small" data-act="quick">Đặt thuốc nhanh</button>`;
     if (ctx.shop && !s.equipped) btns += `<button class="btn small" data-act="sell">Bán (${fmt(Math.floor(it.price * 0.3 * (1 + (s.plus || 0) * 0.2)) * s.qty)})</button>`;
-    if (ctx.enhance && it.type === 'equip') {
-      const plus = s.plus || 0;
-      const stones = Math.ceil((plus + 1) / 2), gold = Math.round((plus + 1) * (plus + 1) * 200 * (1 + it.tier));
-      const chance = [100, 100, 95, 85, 75, 60, 50, 40, 30, 20][plus];
-      btns += plus >= 10 ? '<span class="small">Đã tối đa +10</span>' : `<button class="btn small primary" data-act="enhance">Cường hóa +${plus + 1} (${stones} đá, ${fmt(gold)} lượng, ${chance}%)</button>`;
-    }
+    let extra = '';
+    if (ctx.enhance && it.type === 'equip') extra = enhanceBox(s, it);
     if (!s.equipped) btns += `<button class="btn small" data-act="discard">Vứt bỏ</button>`;
-    return `<div class="item-detail">${itemDesc(s.id, s.plus)}${s.qty > 1 ? `<div class="small">Số lượng: ${s.qty}</div>` : ''}<div class="row" style="justify-content:flex-start;margin-top:6px">${btns}</div></div>`;
+    return `<div class="item-detail">${itemDesc(s.id, s.plus)}${s.qty > 1 ? `<div class="small">Số lượng: ${s.qty}</div>` : ''}<div class="row" style="justify-content:flex-start;margin-top:6px">${btns}</div>${extra}</div>`;
   }
   let lastTap = { id: null, t: 0 };
+  function enhanceBox(s, it) {
+    const E = G.data.enhance, plus = s.plus || 0, me = G.me;
+    if (plus >= E.max) return `<div class="enh-box"><b style="color:#ff5050">✦ Đã đạt cường hóa tối đa +${E.max} ✦</b></div>`;
+    const cost = E.cost[plus][it.tier], rate = Math.round(E.rate[plus] * 100);
+    const have = id => me.inv.filter(x => x.id === id).reduce((a, x) => a + x.qty, 0);
+    const risky = plus >= E.safe, ins = have('insure');
+    const ok = have('stone') >= cost.stone && have('stone2') >= cost.stone2 && me.gold >= cost.gold && (!risky || !panelState.insure || ins > 0);
+    const bar = Array.from({ length: E.max }, (_, i) => `<i class="${i < plus ? 'on' : ''} ${i >= E.safe ? 'risk' : ''}"></i>`).join('');
+    const nextStats = it.stats ? Object.entries(it.stats).filter(([k]) => k !== 'crit' && k !== 'spd').map(([k, v]) => `${STAT_NAME[k]} ${Math.round(v * plusMult(plus))} → <b style="color:#4ade80">${Math.round(v * plusMult(plus + 1))}</b>`).join(' · ') : '';
+    return `<div class="enh-box">
+      <div class="enh-bar">${bar}</div>
+      <div class="small">+${plus} → <b style="color:#ffd76a">+${plus + 1}</b> · Tỉ lệ thành công: <b style="color:${rate >= 60 ? '#4ade80' : rate >= 20 ? '#ffd76a' : '#ff5050'}">${rate}%</b></div>
+      <div class="small">${nextStats}</div>
+      <div class="small">Cần: <span class="${have('stone') >= cost.stone ? '' : 'warn'}">Huyền Tinh Thạch ${have('stone')}/${cost.stone}</span>${cost.stone2 ? ` · <span class="${have('stone2') >= cost.stone2 ? '' : 'warn'}">Thiên Tinh Thạch ${have('stone2')}/${cost.stone2}</span>` : ''} · <span class="${me.gold >= cost.gold ? '' : 'warn'}">${fmt(cost.gold)} lượng</span></div>
+      ${risky ? `<label class="small enh-ins"><input type="checkbox" id="enh-insure" ${panelState.insure ? 'checked' : ''}> Dùng Bảo Hiểm Phù (còn ${ins}) — ${panelState.insure ? '<span style="color:#4ade80">thất bại sẽ giữ nguyên cấp</span>' : '<span class="warn">⚠ KHÔNG bảo hiểm: thất bại sẽ rớt về +1!</span>'}</label>` : `<div class="small muted">Dưới +${E.safe}: thất bại không mất cấp.</div>`}
+      <button class="btn primary" data-act="enhance" ${ok ? '' : 'disabled'}>🔨 Cường hóa +${plus + 1}</button>
+      ${panelState.enhRes ? `<div class="enh-res ${panelState.enhRes}">${{ ok: '✨ THÀNH CÔNG!', fail: '💢 Thất bại', insured: '🛡️ Thất bại – Bảo hiểm đã giữ cấp', drop: '💥 Thất bại – rớt về +1' }[panelState.enhRes]}</div>` : ''}
+    </div>`;
+  }
+  UI.onEnhance = function (d) { panelState.enhRes = d.result; UI.refreshPanel(); setTimeout(() => { panelState.enhRes = null; }, 2500); };
+
   function bindInv(body, ctx = {}) {
+    const ins = body.querySelector('#enh-insure');
+    if (ins) ins.onchange = () => { panelState.insure = ins.checked; UI.refreshPanel(); };
     body.querySelectorAll('[data-uid],[data-eq]').forEach(el => el.onclick = () => {
       const id = el.dataset.uid || ('eq:' + el.dataset.eq);
       const now = Date.now();
@@ -381,7 +402,7 @@
       if (a === 'unequip') emit('unequip', { slot: s.slot });
       if (a === 'quick') emit('setQuick', { kind: s.id.startsWith('mp') ? 'mp' : 'hp', id: s.id });
       if (a === 'sell') emit('sell', { uid: s.uid, qty: s.qty });
-      if (a === 'enhance') emit('enhance', { uid: s.uid, npc: npcData && npcData.id });
+      if (a === 'enhance') { emit('enhance', { uid: s.uid, npc: npcData && npcData.id, insure: !!panelState.insure }); return; }
       if (a === 'discard') { G.modal(`Vứt bỏ ${G.data.items[s.id].name}?`, [{ t: 'Vứt', cls: 'primary', fn: () => emit('discard', { uid: s.uid }) }, { t: 'Hủy' }]); return; }
       if (a !== 'enhance') panelState.sel = null;
     });
@@ -605,7 +626,7 @@
         <label><input type="checkbox" data-set="shake" ${s.shake ? 'checked' : ''}> Rung màn hình khi bị đánh</label>
         <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn small" id="set-fs">⛶ Toàn màn hình</button><button class="btn small" id="set-online">👥 Người chơi online</button></div></div>
       <div class="card small"><h4>Điều khiển</h4>
-        <div><b>PC:</b> WASD/mũi tên di chuyển · Nhấp chuột để đi/chọn mục tiêu · 1/Space đánh · 2,3,4 kỹ năng · Z/X thuốc · Tab đổi mục tiêu · F nói chuyện NPC · R tự động · Enter chat · I/C/J/G/O/L mở bảng · Esc đóng</div>
+        <div><b>PC:</b> WASD/mũi tên di chuyển · Nhấp chuột để đi/chọn mục tiêu · 1/Space đánh · 2–6 kỹ năng · Z/X thuốc · T cưỡi thú · Tab đổi mục tiêu · F nói chuyện NPC · R tự động · Enter chat · I/C/M/J/G/O/L mở bảng · Esc đóng</div>
         <div><b>Mobile:</b> Joystick trái để di chuyển · Nút ⚔️ (giữ để đánh liên tục) · 3 nút kỹ năng · ❤️💧 thuốc · 🎯 đổi mục tiêu · Chạm NPC/quái để tương tác</div>
         <div><b>Tay cầm:</b> Cần trái/D-pad di chuyển · A đánh · X/Y/B kỹ năng · LB/RB thuốc · LT đổi mục tiêu · RT nói chuyện NPC · Back mở túi · Start tự động ${pad ? `<br><span style="color:#4ade80">🎮 Đã kết nối: ${esc(pad.id.slice(0, 40))}</span>` : '<br><span class="muted">Chưa phát hiện tay cầm (nhấn một nút bất kỳ để kết nối)</span>'}</div></div>
       <div class="card"><h4>Tài khoản</h4><div class="small muted">Đăng nhập bằng Google: ${esc(G.user && G.user.email)}</div><button class="btn small primary" id="set-logout" style="margin-top:6px">Đăng xuất</button></div>`;
@@ -617,6 +638,44 @@
 
   let onlineData = null;
   UI.onOnline = function (d) { onlineData = d; if (panel === 'online') UI.refreshPanel(); };
+  function mountStats(id, lv) {
+    const m = G.data.mounts[id], out = {};
+    for (const k of new Set([...Object.keys(m.stats), ...Object.keys(m.growth)])) out[k] = Math.round(((m.stats[k] || 0) + (m.growth[k] || 0) * (lv - 1)) * 10) / 10;
+    out.speed = m.speed + Math.floor(lv / 10) * 0.02;
+    return out;
+  }
+  function renderMount(body) {
+    const me = G.me, owned = me.mounts || {}, all = G.data.mounts;
+    const sel = panelState.sel && owned[panelState.sel] ? panelState.sel : (me.mount || Object.keys(owned)[0]);
+    const food = me.inv.filter(x => x.id === 'mount_food').reduce((a, x) => a + x.qty, 0);
+    const blood = me.inv.filter(x => x.id === 'mount_stone').reduce((a, x) => a + x.qty, 0);
+    let html = '<div class="mount-list">';
+    for (const [id, m] of Object.entries(all)) {
+      const o = owned[id];
+      html += `<div class="mount-card ${o ? '' : 'locked'} ${id === sel ? 'sel' : ''}" data-mount="${id}"><canvas width="96" height="72" data-mcv="${id}"></canvas><b class="r-${m.rarity}-t">${esc(m.name)}</b><small>${o ? 'Cấp ' + o.lv : 'Chưa sở hữu'}</small>${id === me.mount ? '<span class="tagm">Đang dùng</span>' : ''}</div>`;
+    }
+    html += '</div>';
+    if (sel && owned[sel]) {
+      const m = all[sel], o = owned[sel], st = mountStats(sel, o.lv), need = G.data.mountExp[o.lv];
+      const isBreak = o.lv % 10 === 0 && o.lv < G.data.mountMax && o.exp >= need;
+      html += `<div class="card"><h4>${esc(m.name)} · Cấp ${o.lv}/${G.data.mountMax} ${'★'.repeat(Math.floor(o.lv / 10))}</h4>
+        <div class="stat-grid"><div>Tốc độ khi cưỡi <b>+${Math.round(st.speed * 100)}%</b></div>${Object.entries(st).filter(([k]) => k !== 'speed').map(([k, v]) => `<div>${STAT_NAME[k]} <b>+${v}</b></div>`).join('')}</div>
+        <div class="small" style="margin-top:6px">Kinh nghiệm: ${o.exp}/${need}</div><div class="progress"><i style="width:${Math.min(100, o.exp / need * 100)}%"></i></div>
+        <div class="row" style="justify-content:flex-start;margin-top:8px">
+          ${sel !== me.mount ? `<button class="btn small" data-mop="select">Chọn làm thú cưỡi</button>` : `<button class="btn small ${me.riding ? '' : 'green'}" data-mop="ride">${me.riding ? 'Xuống thú (T)' : 'Cưỡi ngay (T)'}</button>`}
+          ${o.lv >= G.data.mountMax ? '<span class="small">Đã đạt cấp tối đa</span>' : isBreak
+            ? `<button class="btn small primary" data-mop="break">⚡ Đột phá (${o.lv / 10} Long Huyết Thạch, ${fmt(o.lv * 2000)} lượng) — còn ${blood}</button>`
+            : `<button class="btn small green" data-mop="feed" data-n="1">Cho ăn x1</button><button class="btn small green" data-mop="feed" data-n="10">x10</button><span class="small">Mã Linh Đan: ${food} · ${fmt(50 * o.lv)} lượng/lần</span>`}
+        </div><p class="small muted">Chỉ số thú cưỡi luôn được cộng khi chọn; tốc độ chỉ tăng khi đang cưỡi. Mỗi 10 cấp cần đột phá bằng Long Huyết Thạch (rơi từ Boss, quái cấp 20+).</p></div>`;
+    } else {
+      html += '<div class="card"><p>Bạn chưa có thú cưỡi. Hãy đến <b>Mã Phu Lão Trương</b> ở Tương Dương để mua Ngựa Nâu, hoặc săn Boss / mở Kỳ Trân Các để có thú cưỡi hiếm như Bạch Hổ, Hỏa Kỳ Lân, Thanh Long!</p></div>';
+    }
+    body.innerHTML = html;
+    body.querySelectorAll('[data-mcv]').forEach(cv => { const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(Sprites.mountSprite(cv.dataset.mcv, all[cv.dataset.mcv], 0), 0, 0); });
+    body.querySelectorAll('[data-mount]').forEach(el => el.onclick = () => { if (owned[el.dataset.mount]) { panelState.sel = el.dataset.mount; UI.refreshPanel(); } });
+    body.querySelectorAll('[data-mop]').forEach(b => b.onclick = () => emit('mount', { op: b.dataset.mop, id: sel, n: +b.dataset.n || 1 }));
+  }
+
   function renderOnline(body) {
     if (!onlineData) { body.innerHTML = '<p class="muted">Đang tải...</p>'; return; }
     body.innerHTML = `<p>${onlineData.length} người chơi trực tuyến</p><table class="tbl"><tr><th>Tên</th><th>Môn phái</th><th>Cấp</th><th>Vị trí</th><th></th></tr>${onlineData.map(p => `<tr><td>${esc(p.name)}</td><td>${G.data.classes[p.cls].name}</td><td>${p.level}</td><td>${esc(p.map)}</td><td><button class="btn small" data-pm="${esc(p.name)}">💌</button></td></tr>`).join('')}</table>`;
@@ -659,7 +718,7 @@
     } else if (tab === 'sell') {
       html += '<div class="small muted">Chọn vật phẩm để bán (30% giá gốc)</div>' + invGrid(body, { noEquip: true }) + itemActions({ shop: true });
     } else if (tab === 'enhance') {
-      html += '<div class="small muted">Chọn trang bị (kể cả đang mặc) để cường hóa. Từ +5 trở lên thất bại sẽ bị giảm 1 cấp. Huyền Tinh Thạch: ' + G.me.inv.filter(x => x.id === 'stone').reduce((s, x) => s + x.qty, 0) + '</div>' +
+      html += '<div class="small muted">Chọn trang bị (kể cả đang mặc) để cường hóa, tối đa +15. Từ +10 trở lên nếu thất bại mà không có Bảo Hiểm Phù sẽ rớt về +1. Huyền Tinh Thạch: ' + G.me.inv.filter(x => x.id === 'stone').reduce((s, x) => s + x.qty, 0) + '</div>' +
         invGrid(body, { filter: s => G.data.items[s.id].type === 'equip' }) + itemActions({ enhance: true });
     } else if (d.teleports) {
       html += '<div class="list">' + d.teleports.map(t => `<div class="li"><div class="grow"><b>${esc(t.name)}</b><div class="sub">Cấp ${t.lv}${t.minLv > 1 ? ' · Yêu cầu cấp ' + t.minLv : ''}</div></div><button class="btn small green" data-tp="${t.map}" ${G.map.id === t.map ? 'disabled' : ''}>${t.price ? fmt(t.price) + ' 💰' : 'Miễn phí'}</button></div>`).join('') + '</div>';

@@ -141,7 +141,12 @@ app.get('/api/gamedata', (req, res) => {
     for (const id in MAPS) maps[id] = { name: MAPS[id].name, lv: MAPS[id].lv, pvp: MAPS[id].pvp, safe: MAPS[id].safe };
     const npcs = {};
     for (const id in NPCS) npcs[id] = { name: NPCS[id].name, sprite: NPCS[id].sprite, color: NPCS[id].color };
-    gamedataCache = { classes: CLASSES, items: ITEMS, rarity: RARITY, slots: Object.fromEntries(Object.entries(SLOTS).map(([k, v]) => [k, v.name])), monsters: mons, maps, npcs };
+    const E = require('./data/enhance');
+    const M = require('./data/mounts');
+    const mountExp = {};
+    for (let l = 1; l <= M.MOUNT_MAX; l++) mountExp[l] = M.mountExpNext(l);
+    gamedataCache = { enhance: { max: E.ENHANCE_MAX, safe: E.ENHANCE_SAFE, rate: E.ENHANCE_RATE, cost: Array.from({ length: 15 }, (_, p) => [0, 1, 2, 3, 4, 5, 6].map(t => E.enhanceCost(p, t))) },
+      mounts: M.MOUNTS, mountMax: M.MOUNT_MAX, mountExp, classes: CLASSES, items: ITEMS, rarity: RARITY, slots: Object.fromEntries(Object.entries(SLOTS).map(([k, v]) => [k, v.name])), monsters: mons, maps, npcs };
   }
   res.json(gamedataCache);
 });
@@ -222,6 +227,7 @@ io.on('connection', socket => {
   on('buy', inGame(d => world.buy(player, d || {})));
   on('sell', inGame(d => world.sell(player, d || {})));
   on('enhance', inGame(d => world.enhance(player, d || {})));
+  on('mount', inGame(d => d && world.mountAction(player, d)));
   on('teleport', inGame(d => {
     if (!world.nearNpc(player, 'xa_phu')) return world.toast(player, 'Hãy gặp Xa Phu để đi xe', 'error');
     const t = require('./data/npcs').TELEPORTS.find(x => x.map === (d && d.map));

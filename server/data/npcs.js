@@ -24,12 +24,17 @@ const NPCS = {
     shop: ['hp1', 'hp2', 'hp3', 'mp1', 'mp2', 'mp3'] },
   tap_hoa: { name: 'Tạp Hóa Tiểu Nhị', sprite: 'merchant', color: '#8b4513', action: 'shop',
     talk: 'Đủ thứ trên đời, cứ chọn thoải mái.',
-    shop: ['scroll_town', 'stone', 'exp_x2', 'wheel_ticket', 'hp1', 'mp1'] },
+    shop: ['scroll_town', 'stone', 'mount_food', 'exp_x2', 'wheel_ticket', 'hp1', 'mp1'] },
+  ma_phu: { name: 'Mã Phu Lão Trương', sprite: 'driver', color: '#6b4423', action: 'shop', mountNpc: true,
+    talk: 'Ngựa tốt ngàn dặm! Thú cưỡi giúp đại hiệp đi nhanh hơn và mạnh hơn. Nhớ cho chúng ăn Mã Linh Đan để lên cấp.',
+    shop: ['mount_ngua_nau', 'mount_bach_ma', 'mount_hac_ma', 'mount_food', 'mount_stone'] },
   ky_tran: { name: 'Kỳ Trân Các', sprite: 'rich', color: '#9932cc', action: 'knbshop',
     talk: 'Bảo vật hiếm có, chỉ nhận Nguyên Bảo.',
     knbShop: [
       ...['weapon', 'armor', 'helmet', 'boots', 'ring', 'amulet'].flatMap(s => [1, 2, 3, 4].map(t => ({ id: `${s}_${t}_rare`, knb: 20 + t * 25 }))),
-      { id: 'lucky_chest', knb: 30 }, { id: 'exp_x2', knb: 10 }, { id: 'wheel_ticket', knb: 15 }, { id: 'stone', knb: 3 }
+      { id: 'lucky_chest', knb: 30 }, { id: 'exp_x2', knb: 10 }, { id: 'wheel_ticket', knb: 15 }, { id: 'stone', knb: 3 },
+      { id: 'stone2', knb: 40 }, { id: 'insure', knb: 60 }, { id: 'mount_food', knb: 2 }, { id: 'mount_stone', knb: 30 },
+      { id: 'mount_bach_ho', knb: 1500 }, { id: 'mount_hoa_ky_lan', knb: 5000 }, { id: 'mount_thanh_long', knb: 8000 }
     ] },
   xa_phu: { name: 'Xa Phu', sprite: 'driver', color: '#696969', action: 'teleport',
     talk: 'Khách quan muốn đi đâu? Xe ngựa đưa đón khắp giang hồ.' },
@@ -41,7 +46,7 @@ const NPCS = {
     talk: 'Mỗi ngày đều có nhiệm vụ mới, hoàn thành để nhận thưởng hậu hĩnh.' },
   thuong_nhan: { name: 'Thương Nhân Lưu Động', sprite: 'merchant', color: '#cd853f', action: 'shop', field: true,
     talk: 'Đường xa vất vả, mua chút thuốc đi đường nào!',
-    shop: ['hp1', 'hp2', 'hp3', 'mp1', 'mp2', 'mp3', 'scroll_town', 'stone'] }
+    shop: ['hp1', 'hp2', 'hp3', 'mp1', 'mp2', 'mp3', 'scroll_town', 'stone', 'mount_food'] }
 };
 
 for (const id in NPCS) {

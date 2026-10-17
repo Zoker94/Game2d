@@ -46,18 +46,23 @@ const WHEEL = [
   { name: 'Song Bội KN', w: 10, r: { items: [['exp_x2', 1]] } },
   { name: 'Thuốc x20', w: 18, r: { items: [['hp1', 20]] } },
   { name: 'Đồ VIP', w: 1.2, r: { vip: 1 } },
-  { name: 'Rương Thủ Lĩnh', w: 0.8, r: { items: [['boss_chest', 1]] } }
+  { name: 'Rương Thủ Lĩnh', w: 0.8, r: { items: [['boss_chest', 1]] } },
+  { name: 'Thiên Tinh Thạch', w: 3, r: { items: [['stone2', 1]] } },
+  { name: 'Bảo Hiểm Phù', w: 2, r: { items: [['insure', 1]] } },
+  { name: 'Mã Linh Đan x10', w: 10, r: { items: [['mount_food', 10]] } }
 ];
 
 const CHECKIN = [
   { gold: 300 }, { items: [['hp1', 10], ['mp1', 10]] }, { gold: 1000 }, { items: [['stone', 2]] },
-  { knb: 5 }, { items: [['exp_x2', 1]] }, { knb: 20, items: [['lucky_chest', 1]] }
+  { knb: 5, items: [['mount_food', 10]] }, { items: [['exp_x2', 1], ['stone2', 1]] }, { knb: 20, items: [['lucky_chest', 1], ['insure', 1]] }
 ];
 
 const LANTERN_EXCHANGE = [
   { cost: 10, name: 'Rương Bí Ẩn', r: { items: [['lucky_chest', 1]] } },
   { cost: 25, name: '15 Nguyên Bảo', r: { knb: 15 } },
   { cost: 40, name: 'Song Bội KN x2', r: { items: [['exp_x2', 2]] } },
+  { cost: 60, name: 'Thiên Tinh Thạch x2', r: { items: [['stone2', 2]] } },
+  { cost: 80, name: 'Bảo Hiểm Phù', r: { items: [['insure', 1]] } },
   { cost: 100, name: 'Rương Thủ Lĩnh', r: { items: [['boss_chest', 1]] } }
 ];
 
