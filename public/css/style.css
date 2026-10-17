@@ -454,3 +454,10 @@ body.short.touch #tracker { top: 70px; }
 .act.sk.has-img .sk-img { background-size: 78%; border-radius: 50%; }
 .sk-ico { position: relative; overflow: hidden; }
 .sk-ico .sk-img { background-size: 88%; }
+
+/* ===== Chân dung môn phái ===== */
+.class-card.has-portrait { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.class-card .portrait { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: 50% 20%; display: block; }
+.class-card.has-portrait b { padding-top: 3px; }
+.class-card.has-portrait small { padding-bottom: 4px; }
+.class-card.sel .portrait { filter: brightness(1.12); }

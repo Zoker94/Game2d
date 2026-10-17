@@ -190,9 +190,14 @@
     for (const [id, cl] of Object.entries(G.data.classes)) {
       const card = document.createElement('div');
       card.className = 'class-card' + (id === selCls ? ' sel' : '');
-      const cv = document.createElement('canvas'); cv.width = 64; cv.height = 64;
-      cv.getContext('2d').drawImage(Sprites.playerSprite(id, cl.colors, 0, 0), 0, 0);
-      card.appendChild(cv);
+      if (Assets.portraits[id]) {
+        const im = new Image(); im.src = Assets.portraits[id].src; im.className = 'portrait'; im.alt = cl.name;
+        card.appendChild(im); card.classList.add('has-portrait');
+      } else {
+        const cv = document.createElement('canvas'); cv.width = 64; cv.height = 64;
+        cv.getContext('2d').drawImage(Sprites.playerSprite(id, cl.colors, 0, 0), 0, 0);
+        card.appendChild(cv);
+      }
       card.insertAdjacentHTML('beforeend', `<b>${cl.name}</b><small>${cl.role}</small>`);
       card.onclick = () => { selCls = id; showCreate(); };
       grid.appendChild(card);
@@ -214,7 +219,13 @@
       if (!cls || !cv.offsetParent) continue;
       const ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, 128, 128);
-      ctx.drawImage(Sprites.playerSprite(cls, G.data.classes[cls].colors, [0, 1, 3, 2][dir], f), 0, 0, 128, 128);
+      if (Assets.has(cls)) {
+        // xem trước: đứng – đi – đánh – kỹ năng
+        const ph = Math.floor(previewT / 70) % 4;
+        const img = ph === 1 ? Sprites.playerSprite(cls, null, 2, 1 + Math.floor(previewT / 6) % 8, false)
+          : Sprites.playerSprite(cls, null, 2, 0, ph === 2 ? 'atk' : ph === 3 ? 'skill' : false);
+        ctx.drawImage(img, 64 - img.width, 0, img.width * 2, 128);
+      } else ctx.drawImage(Sprites.playerSprite(cls, G.data.classes[cls].colors, [0, 1, 3, 2][dir], f), 0, 0, 128, 128);
     }
     if (!G.inGame) requestAnimationFrame(animPreview);
   }
@@ -359,12 +370,13 @@
 
   const FX_DUR = { levelup: 1300, death: 500, aura: 900, heal: 900, ring: 550, net: 550, poison: 800, swords: 700, taiji: 900, storm: 800,
     lightning: 320, nova: 900, meteor: 1100, tornado: 1000, pillar: 1100, blades: 700, lotus: 900, dragon: 520, dash: 380, beam: 420, bite: 260 };
+  const BASIC_FX = new Set(['slash', 'slash2', 'bolt', 'dart', 'lightning', 'bite']);
   FX.init(id => entityById(id));
   const FxSpawn = f => FX.spawn(f);
   function onFx(d) {
     const now = performance.now();
     const src = d.from && entityById(d.from);
-    if (src && d.from !== G.you) src.atkUntil = now + 240;
+    if (src && d.from !== G.you) { src.atkUntil = now + 240; src.atkKind = BASIC_FX.has(d.t) ? 'atk' : 'skill'; }
     const f = Object.assign({ t0: now, dur: FX_DUR[d.t] || 300 }, d);
     G.fx.push(f);
     FxSpawn(f);
@@ -464,7 +476,7 @@
       }
     }
     G.pending[i] = now;
-    G.self.atkUntil = now + 220;
+    G.self.atkUntil = now + (i ? 320 : 220); G.self.atkKind = i ? 'skill' : 'atk';
     G.socket.emit('skill', { idx: i, target: G.target });
   }
   G.useSkill = useSkill;
@@ -790,7 +802,7 @@
         drawMonster(it.e, now);
       } else if (it.k === 'pl') {
         const e = it.e;
-        const top = drawHero(e.x, e.y, e.cls, e.dir, e.lastH, e.moving, e.atkUntil > now, e.ap, e.dead, e.x / 50, now);
+        const top = drawHero(e.x, e.y, e.cls, e.dir, e.lastH, e.moving, e.atkUntil > now, e.ap, e.dead, e.x / 50, now, e);
         if (G.settings.names) {
           label(e.x, top - 8, (e.gm ? '[GM] ' : '') + e.name + ' Lv' + e.level, e.gm ? '#ff6060' : (G.map.pvp ? '#ff9b8a' : '#ffffff'), 12, true);
           if (e.guild) label(e.x, top - 22, '«' + e.guild + '»', '#7fb8ff', 10);
@@ -799,7 +811,7 @@
       } else if (it.k === 'self') {
         const me = G.me;
         if (s.dir === 1 || s.dir === 2) s.lastH = s.dir;
-        const top = drawHero(s.x, s.y, me.cls, s.dir, s.lastH, s.moving, s.atkUntil > now, me.ap, me.dead, 0, now);
+        const top = drawHero(s.x, s.y, me.cls, s.dir, s.lastH, s.moving, s.atkUntil > now, me.ap, me.dead, 0, now, s);
         if (G.settings.names) {
           label(s.x, top - 8, (me.admin ? '[GM] ' : '') + me.name, '#ffd76a', 12, true);
           if (me.guild) label(s.x, top - 22, '«' + me.guild.name + '»', '#7fb8ff', 10);
@@ -880,14 +892,22 @@
   }
 
   // Vẽ nhân vật (có thú cưỡi, hào quang cường hóa). Trả về tọa độ y đỉnh đầu để vẽ tên.
-  function drawHero(x, y, cls, dir, lastH, moving, atk, ap, dead, seed, now) {
+  function drawHero(x, y, cls, dir, lastH, moving, atk, ap, dead, seed, now, ent) {
     ap = ap || [];
+    const art = Assets.has(cls);
+    if (art) {
+      // ảnh asset chỉ có góc nghiêng: đi lên/xuống giữ hướng trái/phải gần nhất
+      if (dir !== 1 && dir !== 2) dir = lastH || 2;
+      if (atk) atk = (ent && ent.atkKind) || 'atk';
+      else if (ent && ent.hitAt && now - ent.hitAt < 180) atk = 'hurt';
+      if (dead) atk = 'dead';
+    }
     const colors = G.data.classes[cls].colors;
     const mountId = ap[7];
     const plus = Math.max(ap[2] || 0, ap[5] || 0);
     const gcol = Sprites.enhanceGlow(plus);
     x = Math.round(x); y = Math.round(y);
-    if (dead) ctx.globalAlpha = 0.4;
+    if (dead) ctx.globalAlpha = art ? 0.85 : 0.4;
     if (gcol && !dead) {
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
       const pulse = 0.5 + Math.sin(now / 300 + seed) * 0.2;
@@ -914,9 +934,10 @@
       top = y - 80;
     } else {
       const fr = moving ? Math.floor(now / 95 + seed) % 8 : 0;
-      const breathe = moving ? 0 : (Math.floor(now / 650 + seed) % 2);
+      const breathe = moving || dead ? 0 : (Math.floor(now / 650 + seed) % 2);
       if (moving && fr % 4 === 1 && !dead && Math.random() < 0.5) WorldArt.dust(x, y);
-      ctx.drawImage(Sprites.playerSprite(cls, colors, dir, fr, atk, ap), x - 32, y - 58 + breathe);
+      const img = Sprites.playerSprite(cls, colors, dir, art && moving && !atk ? fr + 1 : fr, atk, ap);
+      ctx.drawImage(img, x - (img.width >> 1), y - 58 + breathe);
       top = y - 58;
     }
     ctx.globalAlpha = 1;
