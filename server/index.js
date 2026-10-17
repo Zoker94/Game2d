@@ -32,6 +32,7 @@ if (!db.data.admins[ADMIN_USER]) {
 
 const app = express();
 app.disable('x-powered-by');
+app.set('trust proxy', 1); // chạy sau proxy (Render, Nginx...) để lấy đúng IP người chơi
 app.use(express.json({ limit: '200kb' }));
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: false }, pingInterval: 10000, pingTimeout: 20000 });
