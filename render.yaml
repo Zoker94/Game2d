@@ -1,0 +1,15 @@
+# Cấu hình triển khai Render (https://render.com) - gói miễn phí, dùng để test nhanh
+services:
+  - type: web
+    name: vo-lam-pixel
+    runtime: node
+    plan: free
+    branch: ccr-5439a7cc-q4h8lm
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/config
+    envVars:
+      - key: ALLOW_DEV_LOGIN
+        value: "1"          # Bật đăng nhập thử không cần Google. Xóa biến này khi mở cho người chơi thật.
+      - key: GOOGLE_CLIENT_ID
+        sync: false         # Điền sau khi tạo OAuth Client ID trên Google Cloud
