@@ -387,6 +387,141 @@
     }
   };
 
+  // ===== Long Ấn: rồng nguyên tố bay vòng rồi lao xuống =====
+  const DRAGON_PAL = {
+    fire:  { body: '#ff5a1a', light: '#ffd040', dark: '#a01808', glow: '#ff6a20', eye: '#fff36a', spike: '#ffb030' },
+    water: { body: '#2fa8ff', light: '#c0f0ff', dark: '#0a3a90', glow: '#3ab8ff', eye: '#ffffff', spike: '#8ad8ff' },
+    ice:   { body: '#9ee8ff', light: '#ffffff', dark: '#3a7ab0', glow: '#bff0ff', eye: '#5af0ff', spike: '#e8fbff' }
+  };
+  function bez(p0, p1, p2, t) { const u = 1 - t; return [u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0], u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1]]; }
+  function drawDragon(ctx, o, q, pal, fade, now) {
+    const side = o.tx >= o.sx ? 1 : -1;
+    const P0 = [o.sx - 220 * side, o.sy - 170], P1 = [(o.sx + o.tx) / 2 + 40 * side, Math.min(o.sy, o.ty) - 300], P2 = [o.tx, o.ty - 24];
+    const N = 26, pts = [];
+    for (let k = 0; k < N; k++) {
+      const t = Math.max(0, Math.min(1, q - k * 0.028));
+      const [x, y] = bez(P0, P1, P2, t);
+      const w = Math.sin(t * 18 - k * 0.55 + now / 90) * (8 + k * 0.5);
+      pts.push([x, y + w, t]);
+    }
+    // thân & vảy (từ đuôi tới đầu)
+    for (let k = N - 1; k >= 1; k--) {
+      const [x, y] = pts[k], [x2, y2] = pts[k - 1];
+      const r = Math.max(4, 20 - k * 0.6);
+      glowDot(ctx, x, y, r * 2.6, pal.glow, fade * 0.55, true);
+      ctx.save(); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = fade;
+      ctx.fillStyle = k % 2 ? pal.body : pal.dark; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+      ctx.fillStyle = pal.light; ctx.globalAlpha = fade * 0.7; ctx.beginPath(); ctx.arc(x - r * 0.25, y - r * 0.35, r * 0.45, 0, TAU); ctx.fill();
+      if (k % 3 === 0) { // gai lưng
+        const a = Math.atan2(y2 - y, x2 - x) - Math.PI / 2;
+        ctx.globalAlpha = fade; ctx.fillStyle = pal.spike; ctx.beginPath();
+        ctx.moveTo(x + Math.cos(a) * r * 0.6 - Math.cos(a + 1.57) * 4, y + Math.sin(a) * r * 0.6 - Math.sin(a + 1.57) * 4);
+        ctx.lineTo(x + Math.cos(a) * (r + 12), y + Math.sin(a) * (r + 12));
+        ctx.lineTo(x + Math.cos(a) * r * 0.6 + Math.cos(a + 1.57) * 4, y + Math.sin(a) * r * 0.6 + Math.sin(a + 1.57) * 4); ctx.fill();
+      }
+      if (k === N - 1) { ctx.fillStyle = pal.spike; ctx.globalAlpha = fade; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 14 * side, y - 10); ctx.lineTo(x - 10 * side, y + 8); ctx.fill(); }
+      ctx.restore();
+    }
+    // đầu rồng
+    const [hx, hy] = pts[0], [nx, ny] = pts[2];
+    const a = Math.atan2(hy - ny, hx - nx);
+    glowDot(ctx, hx, hy, 70, pal.glow, fade * 0.8, true);
+    ctx.save(); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = fade; ctx.translate(hx, hy); ctx.rotate(a);
+    ctx.strokeStyle = pal.spike; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-6, -10); ctx.quadraticCurveTo(-22, -26, -34, -24); ctx.moveTo(-6, 10); ctx.quadraticCurveTo(-22, 26, -34, 24); ctx.stroke(); // sừng
+    ctx.fillStyle = pal.body; ctx.beginPath(); ctx.ellipse(0, 0, 26, 16, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = pal.dark; ctx.beginPath(); ctx.moveTo(10, 4); ctx.lineTo(34, 10 + Math.sin(now / 80) * 3); ctx.lineTo(8, 14); ctx.fill(); // hàm dưới
+    ctx.fillStyle = pal.body; ctx.beginPath(); ctx.moveTo(8, -12); ctx.lineTo(36, -2); ctx.lineTo(8, 4); ctx.fill(); // mõm
+    ctx.fillStyle = pal.light; ctx.beginPath(); ctx.ellipse(-4, -6, 10, 4, -0.2, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#fff'; for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(14 + i * 5, 3); ctx.lineTo(16 + i * 5, 8); ctx.lineTo(18 + i * 5, 3); ctx.fill(); }
+    ctx.strokeStyle = pal.light; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(30, -4); ctx.bezierCurveTo(40, -18, 50, 4, 62, -10 + Math.sin(now / 100) * 6); ctx.stroke(); // râu
+    ctx.beginPath(); ctx.moveTo(30, 6); ctx.bezierCurveTo(42, 18, 50, 2, 60, 16 + Math.cos(now / 100) * 6); ctx.stroke();
+    ctx.restore();
+    glowDot(ctx, hx + Math.cos(a) * 4 - Math.sin(a) * -6, hy + Math.sin(a) * 4 + Math.cos(a) * -6, 14, pal.eye, fade);
+    return [hx, hy, a];
+  }
+  function dragonSkill(el, dur, impact) {
+    const pal = DRAGON_PAL[el];
+    return {
+      dur,
+      spawn(f, o) {
+        const r = f.r || 190, d = impact * dur;
+        f.trailT = 0;
+        if (el === 'fire') {
+          f.flames = Array.from({ length: 14 }, (_, i) => ({ a: i / 14 * TAU, d: r * (0.55 + R() * 0.45), h: 70 + R() * 70, t: R() * 0.15 }));
+          emit(70, o.tx, o.ty - 10, { speed: r * 1.7, life: 700, size: 6, color: pal.body, flat: 0.5, drag: 2, delay: d });
+          emit(60, o.tx, o.ty - 10, { speed: 30, vy: -140, life: 1100, size: 5, color: R() < 0.5 ? pal.light : pal.body, jitter: r * 0.8, jitterY: r * 0.35, delay: d, delayRand: 500 });
+          setFlash(f, '#ff7020', d, 450);
+        } else if (el === 'water') {
+          for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; emit(8, o.tx + Math.cos(a) * r * 0.5, o.ty + Math.sin(a) * r * 0.22, { angle: -Math.PI / 2, spread: 0.9, speed: 260, grav: 600, life: 900, size: 5, color: R() < 0.4 ? '#ffffff' : pal.body, delay: d + i * 15 }); }
+          emit(60, o.tx, o.ty - 8, { speed: r * 1.8, life: 700, size: 5, color: pal.light, flat: 0.45, drag: 2, delay: d });
+          setFlash(f, '#40b0ff', d, 450);
+        } else {
+          f.spikes = Array.from({ length: 26 }, (_, i) => { const a = i / 26 * TAU + R() * 0.2, dd = r * (0.25 + R() * 0.75); return { x: Math.cos(a) * dd, y: Math.sin(a) * dd * 0.45, h: 40 + R() * 60, t: (dd / r) * 0.12 }; });
+          emit(80, o.tx, o.ty - 20, { speed: r * 1.6, life: 1000, size: 4, color: '#ffffff', flat: 0.5, drag: 1.6, delay: d });
+          emit(40, o.tx, o.ty - 120, { speed: 30, vy: 40, life: 1400, size: 5, color: '#e8fbff', jitter: r, jitterY: 60, delay: d, delayRand: 600 });
+          setFlash(f, '#c8f4ff', d, 500);
+        }
+      },
+      draw(ctx, f, p, o) {
+        const r = f.r || 190, now = performance.now();
+        const q = Math.min(1, p / impact);
+        // vòng phép dưới mục tiêu báo trước
+        runeCircle(ctx, o.tx, o.ty, r, pal.glow, Math.min(1, p * 3) * (1 - Math.max(0, p - 0.8) / 0.2), p * 2, 12);
+        if (p < impact + 0.12) {
+          const fade = p < impact ? 1 : 1 - (p - impact) / 0.12;
+          const [hx, hy, a] = drawDragon(ctx, o, q, pal, fade, now);
+          if (Math.random() < 0.9) emit(2, hx, hy, { angle: a + Math.PI, spread: 0.8, speed: 80, life: 500, size: 5, color: el === 'water' ? '#ffffff' : pal.light });
+        }
+        if (p >= impact) {
+          const e = (p - impact) / (1 - impact), fade = 1 - e;
+          glowDot(ctx, o.tx, o.ty - 30, 60 + e * r * 1.2, pal.glow, fade * 0.9);
+          ground(ctx, o.tx, o.ty, r * 1.2, pal.body, fade * 0.6);
+          if (el === 'fire') {
+            glowPath(ctx, () => ctx.ellipse(o.tx, o.ty, r * ease(e) * 1.1, r * ease(e) * 0.5, 0, 0, TAU), pal.body, 8, fade);
+            for (const fl of f.flames || []) {
+              const lp = Math.max(0, Math.min(1, (e - fl.t) / 0.4));
+              const x = o.tx + Math.cos(fl.a) * fl.d * ease(lp), y = o.ty + Math.sin(fl.a) * fl.d * 0.45 * ease(lp);
+              const h = fl.h * Math.sin(Math.min(1, lp * 1.5) * Math.PI * 0.5) * fade * (0.85 + Math.sin(now / 60 + fl.a * 7) * 0.15);
+              const g = ctx.createLinearGradient(0, y - h, 0, y);
+              g.addColorStop(0, Sprites.hexA(pal.light, 0)); g.addColorStop(0.5, Sprites.hexA(pal.body, 0.7)); g.addColorStop(1, Sprites.hexA('#fff0a0', 0.9));
+              ctx.globalAlpha = 1; ctx.fillStyle = g;
+              ctx.beginPath(); ctx.moveTo(x - 12, y); ctx.quadraticCurveTo(x - 10, y - h * 0.6, x, y - h); ctx.quadraticCurveTo(x + 10, y - h * 0.6, x + 12, y); ctx.fill();
+            }
+          } else if (el === 'water') {
+            for (let k = 0; k < 3; k++) {
+              const lp = Math.max(0, (e - k * 0.12) / 0.7);
+              if (lp > 1) continue;
+              const rr = r * 0.3 + ease(lp) * r * 0.9;
+              glowPath(ctx, () => ctx.ellipse(o.tx, o.ty - 6, rr, rr * 0.45, 0, 0, TAU), k === 0 ? '#ffffff' : pal.body, 10 - k * 3, 1 - lp);
+              for (let i = 0; i < 16; i++) { const an = i / 16 * TAU + k; glowDot(ctx, o.tx + Math.cos(an) * rr, o.ty - 12 + Math.sin(an) * rr * 0.45 - Math.abs(Math.sin(now / 90 + i)) * 10, 12, '#ffffff', (1 - lp) * 0.8); }
+            }
+            const h = 180 * Math.sin(Math.min(1, e * 2) * Math.PI);
+            const g = ctx.createLinearGradient(0, o.ty - h, 0, o.ty);
+            g.addColorStop(0, Sprites.hexA('#ffffff', 0)); g.addColorStop(1, Sprites.hexA(pal.body, 0.8));
+            ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(o.tx - 30, o.ty - h, 60, h);
+          } else {
+            glowPath(ctx, () => ctx.ellipse(o.tx, o.ty, r * ease(Math.min(1, e * 2)), r * ease(Math.min(1, e * 2)) * 0.45, 0, 0, TAU), '#ffffff', 5, fade);
+            for (const sp of f.spikes || []) {
+              const lp = Math.min(1, Math.max(0, (e - sp.t) / 0.12));
+              if (lp <= 0) continue;
+              const x = o.tx + sp.x, y = o.ty + sp.y, h = sp.h * ease(lp), fa = 1 - Math.max(0, e - 0.65) / 0.35;
+              ctx.globalAlpha = 0.8 * fa; ctx.fillStyle = pal.body;
+              ctx.beginPath(); ctx.moveTo(x - 10, y); ctx.lineTo(x - 2, y - h); ctx.lineTo(x + 10, y); ctx.closePath(); ctx.fill();
+              ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.9 * fa;
+              ctx.beginPath(); ctx.moveTo(x - 3, y); ctx.lineTo(x - 2, y - h); ctx.lineTo(x + 2, y); ctx.closePath(); ctx.fill();
+              glowDot(ctx, x - 2, y - h, 16, '#ffffff', fa * lp);
+            }
+          }
+        }
+      }
+    };
+  }
+  SIG.firedragon = dragonSkill('fire', 1700, 0.5);
+  SIG.waterdragon = dragonSkill('water', 1700, 0.5);
+  SIG.icedragon = dragonSkill('ice', 1800, 0.48);
+
   // Bắn hạt khi hiệu ứng bắt đầu
   function spawn(f) {
     const { sx, sy, tx, ty } = pos(f);

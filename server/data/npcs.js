@@ -34,6 +34,7 @@ const NPCS = {
       ...['weapon', 'armor', 'helmet', 'boots', 'ring', 'amulet'].flatMap(s => [1, 2, 3, 4].map(t => ({ id: `${s}_${t}_rare`, knb: 20 + t * 25 }))),
       { id: 'lucky_chest', knb: 30 }, { id: 'exp_x2', knb: 10 }, { id: 'wheel_ticket', knb: 15 }, { id: 'stone', knb: 3 },
       { id: 'stone2', knb: 40 }, { id: 'insure', knb: 60 }, { id: 'mount_food', knb: 2 }, { id: 'mount_stone', knb: 30 },
+      { id: 'book_fire', knb: 800 }, { id: 'book_water', knb: 800 }, { id: 'book_ice', knb: 800 },
       { id: 'mount_bach_ho', knb: 1500 }, { id: 'mount_hoa_ky_lan', knb: 5000 }, { id: 'mount_thanh_long', knb: 8000 }
     ] },
   xa_phu: { name: 'Xa Phu', sprite: 'driver', color: '#696969', action: 'teleport',

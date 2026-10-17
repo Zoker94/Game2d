@@ -9,6 +9,7 @@ Webgame 2D pixel art 64px thể loại **giang hồ võ lâm – cày cấp đá
 | Đồ họa | Pixel art vẽ bằng code: nhân vật chi tiết 1px trên khung 64×64 (viền, đổ bóng, khuôn mặt, tóc, nếp áo), áo/nón/vũ khí đang mặc hiện trên người, hào quang theo cấp cường hóa, hiệu ứng võ công phát sáng (hạt sáng, cộng sáng, thiên thạch, cột sáng, lốc xoáy...) |
 | Đăng nhập | **Bắt buộc liên kết Google** (Google Identity Services, xác minh ID token phía server) |
 | 9 môn phái | Thiếu Lâm, Thiên Vương Bang, Đường Môn, Ngũ Độc Giáo, Nga My, Thúy Yên, Cái Bang, Võ Đang, Côn Lôn – mỗi phái 6 võ công riêng (mở ở cấp 1, 3, 6, 20, 35, 50), gồm chiêu diện rộng với hiệu ứng riêng từng phái (bàn tay Phật, đất nứt dung nham, mưa tên, bầy rắn độc, đài sen, gai băng, rồng vàng, bát quái, mây sấm...), chiêu lướt và tuyệt kỹ |
+| Long Ấn | Chiêu rồng diện rộng mọi phái đều học được (phím 7): **Hỏa Long** (thiêu đốt), **Thủy Long** (sóng thần đẩy lùi + hồi máu), **Băng Long** (đóng băng 2,5 giây). Học bằng bí kíp (cấp 30) từ Boss, Kỳ Trân Các, đổi Hoa Đăng |
 | Bản đồ | Thành Tương Dương (an toàn), Ngoại Ô, Rừng Trúc, Hoa Sơn, Sa Mạc Tây Vực, Băng Cung, Ma Giáo Cấm Địa, Lôi Đài PK |
 | Boss theo giờ | 6 Boss thế giới xuất hiện theo lịch (báo trước 5 phút), top 3 sát thương nhận thưởng |
 | Trang bị | 6 ô trang bị × 7 bậc × 4 độ hiếm (Thường, Hiếm, **VIP**, **Truyền Kỳ**) |

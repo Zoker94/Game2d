@@ -82,6 +82,13 @@ CONSUMABLES.forEach(c => { ITEMS[c.id] = Object.assign({ type: 'use', lv: c.lv |
 for (const id of ['stone', 'stone2', 'insure', 'mount_food', 'mount_stone']) ITEMS[id].type = 'material';
 ITEMS.stone2.rarity = 'epic'; ITEMS.insure.rarity = 'rare'; ITEMS.mount_stone.rarity = 'rare';
 
+// Bí kíp Long Ấn
+const { DRAGONS } = require('./dragons');
+for (const [el, d] of Object.entries(DRAGONS)) {
+  ITEMS[d.book] = { id: d.book, type: 'use', name: `Bí Kíp ${d.name}`, desc: `Lĩnh ngộ Long Ấn: ${d.desc}`, effect: { dragon: el },
+    price: 120000, lv: d.lv, rarity: 'epic', icon: 'book_' + el, stack: true };
+}
+
 // Thú cưỡi (vật phẩm dùng để thuần phục)
 const { MOUNTS } = require('./mounts');
 for (const m of Object.values(MOUNTS)) {

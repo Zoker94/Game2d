@@ -143,7 +143,7 @@ body.touch #skillbar { display: none; }
 #joy-zone { position: absolute; left: 0; bottom: 0; width: 42%; height: 62%; }
 #joy-base { position: absolute; width: 130px; height: 130px; border-radius: 50%; background: radial-gradient(rgba(255,255,255,.12), rgba(255,255,255,.05)); border: 2px solid rgba(255,215,106,.45); left: 40px; bottom: 30px; }
 #joy-knob { position: absolute; width: 58px; height: 58px; border-radius: 50%; left: 36px; top: 36px; background: radial-gradient(circle at 35% 35%, #ffe8a8, #b8862e); box-shadow: 0 2px 8px rgba(0,0,0,.6); }
-#action-pad { position: absolute; right: 10px; bottom: 10px; width: 250px; height: 210px; transform-origin: bottom right; }
+#action-pad { position: absolute; right: 10px; bottom: 10px; width: 262px; height: 210px; transform-origin: bottom right; }
 .act { position: absolute; border-radius: 50%; border: 2px solid var(--gold2); background: radial-gradient(#5a4070, #1a1024); color: #fff; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.05; overflow: hidden; padding: 3px; text-shadow: 1px 1px 0 #000; touch-action: none; }
 .act.big { width: 80px; height: 80px; right: 8px; bottom: 8px; font-size: 32px; background: radial-gradient(#b8322a, #4a0a08); border-color: var(--gold); }
 .act.sk { width: 54px; height: 54px; }
@@ -312,3 +312,8 @@ body.touch #tutorial-box, body.touch #daily-box { font-size: 11px; }
 .mount-card.sel { border-color: var(--gold); box-shadow: 0 0 10px rgba(255,215,106,.4); }
 .mount-card small { color: var(--muted); font-size: 11px; }
 .tagm { position: absolute; top: 3px; right: 3px; background: #1f5a2a; color: #d0ffd8; font-size: 9px; padding: 1px 5px; border-radius: 6px; }
+.skill.dragon { border-color: #ff9b2f; box-shadow: 0 0 10px rgba(255,120,40,.5); }
+.skill.dragon.el-water { border-color: #2fa8ff; box-shadow: 0 0 10px rgba(47,168,255,.6); }
+.skill.dragon.el-ice { border-color: #bff0ff; box-shadow: 0 0 10px rgba(160,232,255,.7); }
+.act.sk.dragon { right: 206px; bottom: 60px; width: 50px; height: 50px; border-color: #ff9b2f; box-shadow: 0 0 10px rgba(255,120,40,.6); }
+.dr-fire { color: #ff7a3a; } .dr-water { color: #4fb8ff; } .dr-ice { color: #bff0ff; }

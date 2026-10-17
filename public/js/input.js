@@ -36,7 +36,7 @@
   };
 
   // ---------- Bàn phím ----------
-  const KEYMAP = { Digit1: ['skill', 0], Space: ['skill', 0], Digit2: ['skill', 1], Digit3: ['skill', 2], Digit4: ['skill', 3], Digit5: ['skill', 4], Digit6: ['skill', 5], KeyT: ['mount'],
+  const KEYMAP = { Digit1: ['skill', 0], Space: ['skill', 0], Digit2: ['skill', 1], Digit3: ['skill', 2], Digit4: ['skill', 3], Digit5: ['skill', 4], Digit6: ['skill', 5], Digit7: ['skill', 6], KeyT: ['mount'],
     KeyZ: ['potion', 'hp'], KeyX: ['potion', 'mp'], Tab: ['target'], KeyF: ['interact'], KeyR: ['auto'],
     KeyI: ['panel', 'inventory'], KeyC: ['panel', 'character'], KeyJ: ['panel', 'quests'], KeyG: ['panel', 'guild'],
     KeyO: ['panel', 'events'], KeyL: ['panel', 'leaderboard'], KeyM: ['panel', 'mount'], Escape: ['escape'], Enter: ['chat'] };

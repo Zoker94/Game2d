@@ -185,7 +185,7 @@
       G.auto && setAuto(false);
       sfx('die');
     });
-    s.on('cd', d => { const sk = mySkills()[d.idx]; if (sk) { G.cds[d.idx] = { until: performance.now() + d.until, total: d.until }; } G.pending[d.idx] = 0; });
+    s.on('cd', d => { const sk = mySkills()[d.idx]; if (sk) { G.cds[sk.id] = G.cds[d.idx] = { until: performance.now() + d.until, total: d.until, id: sk.id }; } G.pending[d.idx] = 0; });
     s.on('toast', d => UI.toast(d.text, d.type));
     s.on('notice', d => G.modal((d.type === 'admin' ? '📢 Thông báo từ quản trị viên:\n' : '') + d.text));
     s.on('chat', d => UI.chatMsg(d));
@@ -244,7 +244,7 @@
       seenM.add(m.i);
       let e = G.monsters.get(m.i);
       if (!e) { e = { x: m.x, y: m.y, born: now }; G.monsters.set(m.i, e); }
-      Object.assign(e, { id: m.i, type: m.t, tx: m.x, ty: m.y, dir: m.d, moving: m.m, hp: m.h, maxHp: m.H, boss: m.b, event: m.e });
+      Object.assign(e, { id: m.i, type: m.t, tx: m.x, ty: m.y, dir: m.d, moving: m.m, hp: m.h, maxHp: m.H, boss: m.b, event: m.e, frozen: m.f });
       if (m.d === 1 || m.d === 2) e.face = m.d;
     }
     for (const id of G.monsters.keys()) if (!seenM.has(id)) { G.monsters.delete(id); if (G.target === id) G.target = null; }
@@ -300,9 +300,17 @@
   G.sfx = sfx;
 
   // ================== Kỹ năng / hành động ==================
-  function mySkills() { return G.me ? G.data.classes[G.me.cls].skills : []; }
+  function mySkills() {
+    if (!G.me) return [];
+    const list = G.data.classes[G.me.cls].skills.slice();
+    if (G.me.dragon && G.me.dragons && G.me.dragons[G.me.dragon]) list[6] = G.data.dragons[G.me.dragon];
+    return list;
+  }
   G.mySkills = mySkills;
-  function skillReady(i) { const c = G.cds[i]; return !c || c.until <= performance.now(); }
+  // hồi chiêu tính theo từng kỹ năng (ô Long Ấn có thể đổi rồng)
+  function skillCd(i) { const sk = mySkills()[i]; return sk ? G.cds[sk.id] : null; }
+  G.skillCd = skillCd;
+  function skillReady(i) { const c = skillCd(i); return !c || c.until <= performance.now(); }
   G.skillReady = skillReady;
 
   function useSkill(i) {
@@ -545,7 +553,7 @@
     }
     const skills = mySkills();
     // ưu tiên buff -> kỹ năng mạnh -> đánh thường
-    const order = [5, 3, 4, 2, 1, 0];
+    const order = [6, 5, 3, 4, 2, 1, 0];
     for (const i of order) {
       const sk = skills[i];
       if (!sk || me.level < sk.lv || !skillReady(i) || me.mp < sk.mp) continue;
@@ -703,6 +711,13 @@
     if (flip) ctx.scale(-1, 1);
     ctx.drawImage(img, -32 * scale, -58 * scale, 64 * scale, 64 * scale);
     if (hit) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5; ctx.drawImage(img, -32 * scale, -58 * scale, 64 * scale, 64 * scale); }
+    if (e.frozen) {
+      ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.45; ctx.drawImage(img, -32 * scale, -58 * scale, 64 * scale, 64 * scale);
+      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 0.35; ctx.fillStyle = '#bff0ff';
+      ctx.fillRect(-22 * scale, -48 * scale, 44 * scale, 48 * scale);
+      ctx.globalAlpha = 0.9; ctx.strokeStyle = '#e8fbff'; ctx.lineWidth = 2; ctx.strokeRect(-22 * scale, -48 * scale, 44 * scale, 48 * scale);
+      ctx.beginPath(); ctx.moveTo(-16 * scale, -40 * scale); ctx.lineTo(-6 * scale, -30 * scale); ctx.moveTo(8 * scale, -44 * scale); ctx.lineTo(16 * scale, -36 * scale); ctx.stroke();
+    }
     ctx.restore();
     const top = e.boss ? -130 : -62;
     if (e.event) { label(e.x, e.y + top - 6, info.name, '#ffd700', 12, true); return; }

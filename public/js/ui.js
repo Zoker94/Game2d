@@ -78,14 +78,15 @@
 
   let builtFor = null;
   function buildSkillButtons() {
-    if (!G.me || builtFor === G.me.cls) return;
-    builtFor = G.me.cls;
+    const bkey = G.me && (G.me.cls + ':' + (G.me.dragon || ''));
+    if (!G.me || builtFor === bkey) return;
+    builtFor = bkey;
     const skills = G.mySkills();
     const bar = $('skillbar');
     bar.innerHTML = '';
     skills.forEach((s, i) => {
       const d = document.createElement('div');
-      d.className = 'skill'; d.dataset.idx = i;
+      d.className = 'skill' + (i === 6 ? ' dragon el-' + s.el : ''); d.dataset.idx = i;
       d.innerHTML = `<span class="key">${i === 0 ? '1/␣' : i + 1}</span>${esc(s.name)}<span class="mpc">${s.mp || ''}</span><div class="cdo"></div><div class="cdt"></div>`;
       d.onclick = () => G.useSkill(i);
       d.onmouseenter = e => tip(e, `<b>${esc(s.name)}</b><br>Cấp ${s.lv} · ${s.mp} MP · Hồi ${s.cd / 1000}s<br>${skillDesc(s)}`);
@@ -103,6 +104,7 @@
     document.querySelectorAll('.act.sk').forEach(b => {
       const s = skills[+b.dataset.sk];
       if (!s) { b.style.display = 'none'; return; }
+      b.style.display = '';
       b.innerHTML = `${esc(s.name)}<div class="cdo"></div><div class="cdt"></div>`;
     });
   }
@@ -192,7 +194,7 @@
   UI.frame = function (now) {
     // hồi chiêu
     G.mySkills().forEach((s, i) => {
-      const cd = G.cds[i];
+      const cd = G.skillCd(i);
       const r = cd ? Math.max(0, (cd.until - now) / cd.total) : 0;
       const txt = cd && cd.until > now && cd.total > 1000 ? Math.ceil((cd.until - now) / 1000) : '';
       for (const el of [document.querySelector(`#skillbar .skill[data-idx="${i}"]`), document.querySelector(`.act.sk[data-sk="${i}"]`)]) {
@@ -421,7 +423,14 @@
         <div>Quái đã diệt <b>${fmt(me.kills)}</b></div><div>Hạ người chơi <b>${fmt(me.pvpKills)}</b></div><div>Boss đã đánh <b>${fmt(me.bossKills)}</b></div>
       </div>
       <h4 style="color:#ffd76a">Võ công</h4>
-      <div class="list">${cl.skills.map((s, i) => `<div class="li ${me.level >= s.lv ? 'done' : ''}"><div class="grow"><b>${i + 1}. ${esc(s.name)}</b> ${me.level < s.lv ? `<span class="warn small">(Mở ở cấp ${s.lv})</span>` : ''}<div class="sub">${skillDesc(s)} · ${s.mp} MP · Hồi ${s.cd / 1000}s</div></div></div>`).join('')}</div>`;
+      <div class="list">${cl.skills.map((s, i) => `<div class="li ${me.level >= s.lv ? 'done' : ''}"><div class="grow"><b>${i + 1}. ${esc(s.name)}</b> ${me.level < s.lv ? `<span class="warn small">(Mở ở cấp ${s.lv})</span>` : ''}<div class="sub">${skillDesc(s)} · ${s.mp} MP · Hồi ${s.cd / 1000}s</div></div></div>`).join('')}</div>
+      <h4 style="color:#ffd76a">🐉 Long Ấn (phím 7)</h4>
+      <div class="list">${Object.entries(G.data.dragons).map(([el, d]) => {
+        const has = me.dragons && me.dragons[el], on = me.dragon === el;
+        return `<div class="li ${has ? 'done' : ''}"><img src="${iconUrl(d.book)}" width="32" height="32" style="image-rendering:pixelated"><div class="grow"><b class="dr-${el}">${esc(d.name)}</b>${on ? ' <span style="color:#4ade80">● Đang dùng</span>' : ''}<div class="sub">${esc(d.desc)} · ${d.mp} MP · Hồi ${d.cd / 1000}s · Cần cấp ${d.lv}</div></div>
+          ${has ? (on ? '' : `<button class="btn small green" data-dragon="${el}">Dùng</button>`) : '<span class="small muted">Chưa học<br>(Bí kíp: Boss, Kỳ Trân Các, Hoa Đăng)</span>'}</div>`;
+      }).join('')}</div>`;
+    body.querySelectorAll('[data-dragon]').forEach(b => b.onclick = () => emit('dragon', { el: b.dataset.dragon }));
     const c = $('char-cv').getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(Sprites.playerSprite(me.cls, cl.colors, 0, 0), 0, 0);
   }
 

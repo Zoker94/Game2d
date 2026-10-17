@@ -63,7 +63,8 @@ const LANTERN_EXCHANGE = [
   { cost: 40, name: 'Song Bội KN x2', r: { items: [['exp_x2', 2]] } },
   { cost: 60, name: 'Thiên Tinh Thạch x2', r: { items: [['stone2', 2]] } },
   { cost: 80, name: 'Bảo Hiểm Phù', r: { items: [['insure', 1]] } },
-  { cost: 100, name: 'Rương Thủ Lĩnh', r: { items: [['boss_chest', 1]] } }
+  { cost: 100, name: 'Rương Thủ Lĩnh', r: { items: [['boss_chest', 1]] } },
+  { cost: 300, name: 'Bí Kíp Long Ấn (ngẫu nhiên)', r: { dragonBook: 1 } }
 ];
 
 const GUILD_LEVELS = [0, 50000, 200000, 600000, 1500000, 4000000];
@@ -369,7 +370,8 @@ class Features {
     const ex = LANTERN_EXCHANGE[idx | 0];
     if (!ex) return;
     if (!U.removeItemById(p.c, 'event_token', ex.cost)) return this.w.toast(p, `Cần ${ex.cost} Hoa Đăng`, 'error');
-    this.w.giveReward(p, ex.r, 'Đổi Hoa Đăng');
+    const r = ex.r.dragonBook ? { items: [[['book_fire', 'book_water', 'book_ice'][U.randInt(0, 2)], 1]] } : ex.r;
+    this.w.giveReward(p, r, 'Đổi Hoa Đăng');
     p.socket.emit('eventPanel', this.eventPanel(p));
   }
   eventPanel(p) {

@@ -445,6 +445,12 @@
       case 'blood': p(5, 2, 6, 3, '#ff3030'); p(4, 4, 8, 7, '#d01818'); p(5, 11, 6, 2, '#a00'); p(6, 5, 2, 3, '#ff9090'); break;
       case 'saddle': p(2, 6, 12, 5, '#8b1a1a'); p(2, 6, 12, 1, '#c03030'); p(1, 10, 14, 2, '#e8c25a'); p(7, 11, 2, 4, '#5a3a1a'); p(6, 14, 4, 1, '#aaa'); p(3, 3, 3, 3, '#8b1a1a'); break;
       case 'gold': p(3, 7, 10, 6, '#e8b830'); p(4, 6, 8, 1, '#ffe080'); p(5, 4, 6, 3, '#ffd040'); p(6, 3, 4, 1, '#fff0a0'); p(4, 12, 8, 1, '#a07810'); p(7, 8, 2, 3, '#a07810'); break;
+      case 'book_fire': case 'book_water': case 'book_ice': {
+        const col = { book_fire: ['#c0301a', '#ff7a2a', '#ffd040'], book_water: ['#1a4aa0', '#2fa8ff', '#c0f0ff'], book_ice: ['#3a8ab0', '#9ee8ff', '#ffffff'] }[icon];
+        p(3, 2, 10, 12, col[0]); p(4, 3, 8, 10, col[1]); p(12, 2, 1, 12, '#f5e6c0');
+        p(6, 5, 4, 1, col[2]); p(5, 6, 2, 2, col[2]); p(9, 6, 2, 3, col[2]); p(6, 8, 3, 1, col[2]); p(7, 9, 2, 2, col[2]); p(8, 11, 1, 1, col[2]);
+        break;
+      }
       case 'lantern': p(5, 1, 6, 1, '#ffd700'); p(4, 2, 8, 10, '#e53935'); p(5, 3, 6, 8, '#ff7043'); p(7, 5, 2, 4, '#ffeb3b'); p(7, 12, 2, 3, '#ffd700'); break;
       default: p(3, 3, 10, 10, '#888');
     }

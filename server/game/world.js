@@ -6,6 +6,7 @@ const { MAPS, TILE, isSolidAt, SOLID } = require('../data/maps');
 const { NPCS, TELEPORTS } = require('../data/npcs');
 const { TUTORIAL } = require('../data/quests');
 const { MOUNTS, MOUNT_MAX, mountExpNext, isBreakLevel } = require('../data/mounts');
+const { DRAGONS, DRAGON_SLOT } = require('../data/dragons');
 const RARITY_IDX = { common: 0, rare: 1, epic: 2, legendary: 3 };
 const { ENHANCE_MAX, ENHANCE_SAFE, ENHANCE_RATE, enhanceCost } = require('../data/enhance');
 const U = require('./util');
@@ -140,6 +141,7 @@ class World {
       tutorial: this.tutorialView(c), guild: g ? { id: g.id, name: g.name, role: g.members[p.userId] } : null,
       expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until })),
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, dead: p.dead,
+      dragons: c.dragons || {}, dragon: c.dragon || null,
       mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c)
     };
   }
@@ -311,8 +313,9 @@ class World {
   useSkill(p, idx, targetId) {
     if (p.dead) return;
     const cl = CLASSES[p.c.cls];
-    const sk = cl.skills[idx | 0];
-    if (!sk) return;
+    idx = idx | 0;
+    const sk = idx === DRAGON_SLOT ? (p.c.dragon && p.c.dragons && p.c.dragons[p.c.dragon] ? DRAGONS[p.c.dragon] : null) : cl.skills[idx];
+    if (!sk) { if (idx === DRAGON_SLOT) this.toast(p, 'Chưa lĩnh ngộ Long Ấn. Dùng Bí Kíp rồng (cấp 30) để học.', 'error'); return; }
     if (p.c.level < sk.lv) return this.toast(p, `Cần cấp ${sk.lv} để dùng ${sk.name}`, 'error');
     const now = Date.now();
     if ((p.cds[sk.id] || 0) > now) return;
@@ -374,10 +377,35 @@ class World {
           o.dirtyMe = true;
         }
       }
-      for (const h of hits) {
-        this.damage(p, h, sk.mult);
-        if (sk.type === 'dot' || sk.dotTicks) this.addDot(p, h, sk);
-      }
+      const cx = fxd.tx != null ? fxd.tx : p.x, cy = fxd.ty != null ? fxd.ty : p.y;
+      const strike = list => {
+        const t = Date.now();
+        for (const h of list) {
+          if (h.dead) continue;
+          this.damage(p, h, sk.mult);
+          if (sk.type === 'dot' || sk.dotTicks) this.addDot(p, h, sk);
+          if (h.dead) continue;
+          if (sk.freeze && !h.c) h.frozenUntil = t + sk.freeze;
+          if (sk.knock && !h.c && !h.boss) {
+            const a = Math.atan2(h.y - cy, h.x - cx), nx = h.x + Math.cos(a) * sk.knock, ny = h.y + Math.sin(a) * sk.knock;
+            if (!isSolidAt(MAPS[p.mapId], nx, ny)) { h.x = nx; h.y = ny; }
+          }
+        }
+        if (sk.healSelf && !p.dead) {
+          const amt = Math.round(p.stats.maxHp * sk.healSelf);
+          p.c.hp = Math.min(p.stats.maxHp, p.c.hp + amt);
+          this.io.to('map:' + p.mapId).emit('dmg', { id: p.id, v: amt, k: 'heal' });
+          p.dirtyMe = true;
+        }
+      };
+      if (sk.hitDelay) {
+        // chờ hiệu ứng (rồng) chạm đất rồi mới gây sát thương, tính lại mục tiêu trong vùng lúc đó
+        const mapId = p.mapId;
+        setTimeout(() => {
+          if (!this.players.has(p.userId) || p.mapId !== mapId || p.dead) return;
+          strike(this.enemiesOf(p).filter(e => Math.hypot(e.x - cx, e.y - cy) <= sk.radius));
+        }, sk.hitDelay);
+      } else strike(hits);
       this.fx(p.mapId, fxd);
       p.lastCombat = now;
     }
@@ -521,6 +549,7 @@ class World {
       if (Math.random() < 0.25 * dr) drops.push('insure');
       if (Math.random() < 0.3 * dr) drops.push('mount_stone');
       if (Math.random() < 0.04 * dr) drops.push(tier >= 4 ? 'mount_hoa_ky_lan' : 'mount_bach_ho');
+      if (tpl.lv >= 20 && Math.random() < 0.1 * dr) drops.push(['book_fire', 'book_water', 'book_ice'][U.randInt(0, 2)]);
       const top = ranking[0] && this.players.get(ranking[0][0]);
       this.features.announce(`👑 Boss ${tpl.name} đã bị tiêu diệt! ${top ? top.c.name + ' gây sát thương cao nhất.' : ''}`);
       this.features.onBossKilled(mon);
@@ -616,6 +645,17 @@ class World {
     if (e.town) { U.removeByUid(c, uid, 1); this.teleport(p, 'tuong_duong'); p.dirtyMe = true; return; }
     if (e.expBuff) { c.expBuffUntil = Math.max(Date.now(), c.expBuffUntil || 0) + e.expBuff; this.toast(p, 'Nhân đôi kinh nghiệm 30 phút!', 'reward'); }
     if (e.wheel) { c.wheel.extra = (c.wheel.extra || 0) + 1; this.toast(p, 'Nhận thêm 1 lượt Vòng Quay', 'reward'); }
+    if (e.dragon) {
+      c.dragons = c.dragons || {};
+      if (c.dragons[e.dragon]) return this.toast(p, 'Bạn đã lĩnh ngộ Long Ấn này rồi', 'error');
+      U.removeByUid(c, uid, 1);
+      c.dragons[e.dragon] = true;
+      c.dragon = e.dragon;
+      this.toast(p, `Lĩnh ngộ Long Ấn: ${DRAGONS[e.dragon].name}! Nhấn phím 7 hoặc nút 🐉 để thi triển.`, 'reward');
+      this.features.announce(`🐉 ${c.name} đã lĩnh ngộ Long Ấn [${DRAGONS[e.dragon].name}]!`);
+      p.dirtyMe = true; this.db.markDirty();
+      return;
+    }
     if (e.mount) {
       const mt = MOUNTS[e.mount];
       c.mounts = c.mounts || {};
@@ -792,6 +832,13 @@ class World {
     this.db.markDirty();
   }
 
+  selectDragon(p, el) {
+    if (!p.c.dragons || !p.c.dragons[el]) return;
+    p.c.dragon = el;
+    p.dirtyMe = true;
+    this.toast(p, `Đã chọn Long Ấn: ${DRAGONS[el].name}`, 'reward');
+  }
+
   // ---------- Thú cưỡi ----------
   mountAction(p, a) {
     const c = p.c;
@@ -889,6 +936,7 @@ class World {
       return;
     }
     if (mon.tpl.static) return;
+    if (mon.frozenUntil && mon.frozenUntil > now) { mon.moving = false; return; }
     // Độc
     if (mon.dots && mon.dots.length) {
       for (const d of mon.dots) {
@@ -976,7 +1024,7 @@ class World {
     const ms = [];
     for (const mon of m.monsters.values()) {
       if (mon.dead) continue;
-      ms.push({ i: mon.id, t: mon.tpl.id, x: Math.round(mon.x), y: Math.round(mon.y), d: mon.dir, m: mon.moving ? 1 : 0, h: Math.max(0, Math.round(mon.hp)), H: mon.maxHp, b: mon.boss ? 1 : 0, e: mon.event ? 1 : 0 });
+      ms.push({ i: mon.id, t: mon.tpl.id, x: Math.round(mon.x), y: Math.round(mon.y), d: mon.dir, m: mon.moving ? 1 : 0, h: Math.max(0, Math.round(mon.hp)), H: mon.maxHp, b: mon.boss ? 1 : 0, e: mon.event ? 1 : 0, f: mon.frozenUntil > Date.now() ? 1 : 0 });
     }
     this.io.to('map:' + m.def.id).emit('snap', { p: ps, m: ms });
   }
