@@ -5,7 +5,7 @@
   const fmt = n => (n || 0).toLocaleString('vi-VN');
   const dt = t => t ? new Date(t).toLocaleString('vi-VN') : '-';
   // phiên mở từ trong game (lệnh /admin) truyền qua #t=...
-  const hashT = (location.hash.match(/[#&]t=([a-f0-9]+)/) || [])[1];
+  const hashT = (location.hash.match(/[#&]t=([a-f0-9]+)/) || location.search.match(/[?&]t=([a-f0-9]+)/) || [])[1];
   if (hashT) { sessionStorage.setItem('vl_admin', hashT); sessionStorage.removeItem('vl_admin_user'); history.replaceState(null, '', location.pathname); }
   let token = sessionStorage.getItem('vl_admin');
   let WHO = { name: '', owner: false, storage: 'file' };

@@ -218,8 +218,11 @@
   }
 
   // ================= THÂN NGƯỜI =================
+  // 8 khung hình bước đi
+  const LIFT_L = [0, 1, 2, 1, 0, 0, 0, 0], LIFT_R = [0, 0, 0, 0, 0, 1, 2, 1], SWING = [0, 1, 2, 1, 0, -1, -2, -1], BOB = [0, 0, 1, 0, 0, 0, 1, 0];
+  const STRIDE = [0, 2, 3, 2, 0, -2, -3, -2];
   function drawFront(P, L, f, atk, back) {
-    const step = [0, 1, 0, -1][f], b = (f % 2) ? 1 : 0;
+    const ph = f % 8, b = BOB[ph];
     const robe = L.robe, rL = shade(robe, 0.28), rD = shade(robe, -0.3), rDD = shade(robe, -0.5);
     const trim = L.trim, tD = shade(trim, -0.35);
     const pants = L.pants || shade(trim, -0.25), pL = shade(pants, 0.2);
@@ -227,7 +230,7 @@
     if (L.female && !back) { P.r(22, 13 + b, 21, 24, shade(L.hair, -0.3)); }
     if (back) weapon(P, L, 22, 40 + b, 'up');
     // chân
-    const lL = step > 0 ? 2 : 0, lR = step < 0 ? 2 : 0;
+    const lL = LIFT_L[ph], lR = LIFT_R[ph];
     P.r(26, 45 + b, 5, 11 - lL - b, pants); P.r(26, 45 + b, 1, 11 - lL - b, pL);
     P.r(34, 45 + b, 5, 11 - lR - b, pants); P.r(34, 45 + b, 1, 11 - lR - b, pL);
     P.r(25, 56 - lL, 6, 3, shoe); P.r(25, 56 - lL, 6, 1, shoeL);
@@ -253,7 +256,7 @@
     if (!back) { P.r(30, 36 + b, 5, 3, '#e8c25a'); P.p(32, 37 + b, '#8a6a1a'); P.r(29, 39 + b, 2, 4, tD); P.r(34, 39 + b, 2, 3, tD); }
     else { P.r(29, 35 + b, 7, 5, tD); P.r(30, 39 + b, 2, 5, tD); P.r(33, 39 + b, 2, 6, tD); }
     // tay
-    const sw = atk ? 0 : step * 2;
+    const sw = atk ? 0 : SWING[ph];
     const arm = (x, s, dark) => {
       P.r(x, 25 + b + s, 5, 10, dark ? rD : robe); P.r(x, 25 + b + s, 1, 10, dark ? rDD : rL);
       P.r(x - 1, 33 + b + s, 7, 4, dark ? rD : robe); P.r(x - 1, 36 + b + s, 7, 1, trim);
@@ -274,16 +277,16 @@
   }
 
   function drawSide(P, L, f, atk) {
-    const step = [0, 1, 0, -1][f], b = (f % 2) ? 1 : 0;
+    const ph = f % 8, b = BOB[ph], st = STRIDE[ph];
     const robe = L.robe, rL = shade(robe, 0.28), rD = shade(robe, -0.3), rDD = shade(robe, -0.5);
     const trim = L.trim, tD = shade(trim, -0.35);
     const pants = L.pants || shade(trim, -0.25), pD = shade(pants, -0.25);
     const shoe = '#3a2616', shoeL = '#5a3c24';
     // tay sau
-    const sw = atk ? 0 : step * 3;
+    const sw = atk ? 0 : st;
     P.r(29 - sw, 25 + b, 4, 10, rDD); P.r(29 - sw, 35 + b, 4, 3, shade(L.skin, -0.25));
     // chân sau, chân trước
-    const backX = 29 - step * 3, frontX = 32 + step * 3;
+    const backX = 29 - st, frontX = 32 + st;
     P.r(backX, 45 + b, 4, 11 - b, pD); P.r(backX, 56, 6, 3, shade(shoe, -0.2));
     P.r(frontX, 45 + b, 4, 11 - b, pants); P.r(frontX, 56, 6, 3, shoe); P.r(frontX, 56, 6, 1, shoeL);
     // vạt áo

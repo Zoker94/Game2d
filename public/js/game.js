@@ -69,7 +69,7 @@
   // Vẽ trước sprite để vào game không bị giật
   async function prewarm(from, to) {
     const jobs = [];
-    for (const [id, cl] of Object.entries(G.data.classes)) for (let d = 0; d < 4; d++) for (let f = 0; f < 4; f++) jobs.push(() => Sprites.playerSprite(id, cl.colors, d, f, false));
+    for (const [id, cl] of Object.entries(G.data.classes)) for (let d = 0; d < 4; d++) for (let f = 0; f < 8; f++) jobs.push(() => Sprites.playerSprite(id, cl.colors, d, f, false));
     for (const [id, m] of Object.entries(G.data.monsters)) for (let f = 0; f < 2; f++) jobs.push(() => Sprites.monsterSprite(id, m, f, 2));
     for (const [id, m] of Object.entries(G.data.mounts)) for (let f = 0; f < 4; f++) jobs.push(() => Sprites.mountSprite(id, m, f, false));
     for (const k of ['elder', 'smith', 'lady', 'merchant', 'doctor', 'rich', 'driver', 'guard', 'official']) jobs.push(() => Sprites.npcSprite(k, null, 0));
@@ -296,7 +296,7 @@
     s.on('wheelResult', d => UI.onWheel(d));
     s.on('enhanceResult', d => { UI.onEnhance(d); GameAudio.sfx(d.result === 'ok' ? 'enhOk' : 'enhFail'); });
     s.on('online', d => UI.onOnline(d));
-    s.on('adminToken', d => G.modal('🛡️ Trang quản trị đã sẵn sàng (phiên 12 giờ).', [
+    s.on('adminToken', d => (G._adminWin && !G._adminWin.closed) ? (G._adminWin.location.href = '/admin/?t=' + d.token, G._adminWin = null) : G.modal('🛡️ Trang quản trị đã sẵn sàng (phiên 12 giờ).', [
       { t: 'Mở Admin Panel', cls: 'primary', fn: () => { const w = window.open('/admin/#t=' + d.token, '_blank'); if (!w) location.href = '/admin/#t=' + d.token; } },
       { t: 'Đóng' }]));
   }
@@ -308,6 +308,7 @@
     G.you = d.you; G.map = d.map; G.solid = new Set(d.solid);
     G.self.x = d.x; G.self.y = d.y; G.moveTo = null; G.npcGoal = null; G.target = null;
     G.players.clear(); G.monsters.clear(); G.drops.clear(); G.fx = [];
+    WorldArt.setMap(d.map); G._camSnap = true;
     d.drops.forEach(x => G.drops.set(x.id, x));
     const m = d.map;
     $('map-name').innerHTML = `${m.name} <span class="${m.pvp ? 'pvp' : m.safe ? 'safe' : 'muted'}">${m.pvp ? '[PK]' : m.safe ? '[An toàn]' : '[Cấp ' + m.lv + ']'}</span>`;
@@ -543,7 +544,7 @@
     DPR = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-    zoom = Math.max(0.55, Math.min(2, Math.min(W / (TILE * 18), H / (TILE * 10))));
+    zoom = Math.max(0.8, Math.min(1.6, Math.min(W / (TILE * 12), H / (TILE * 6.6)))); // gần hơn để thấy rõ nhân vật
   }
   window.addEventListener('load', resize); resize();
 
@@ -706,10 +707,13 @@
     if (!G.map || !G.me) return;
     const m = G.map, s = G.self;
     const vw = W / zoom, vh = H / zoom;
-    cam.x = Math.max(0, Math.min(m.w * TILE - vw, s.x - vw / 2));
-    cam.y = Math.max(0, Math.min(m.h * TILE - vh, s.y - vh / 2 - 20));
-    if (m.w * TILE < vw) cam.x = (m.w * TILE - vw) / 2;
-    if (m.h * TILE < vh) cam.y = (m.h * TILE - vh) / 2;
+    const fdt = Math.min(0.05, (now - (G._lastDraw || now)) / 1000); G._lastDraw = now;
+    // camera đi theo mượt
+    let tx = Math.max(0, Math.min(m.w * TILE - vw, s.x - vw / 2)), ty = Math.max(0, Math.min(m.h * TILE - vh, s.y - vh / 2 - 20));
+    if (m.w * TILE < vw) tx = (m.w * TILE - vw) / 2;
+    if (m.h * TILE < vh) ty = (m.h * TILE - vh) / 2;
+    if (G._camSnap) { cam.x = tx; cam.y = ty; G._camSnap = false; }
+    else { const k = Math.min(1, fdt * 9); cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k; }
     let sx = 0, sy = 0;
     if (shake > 0) { sx = (Math.random() - 0.5) * shake; sy = (Math.random() - 0.5) * shake; shake *= 0.85; if (shake < 0.5) shake = 0; }
     const sc = zoom * DPR;
@@ -718,11 +722,8 @@
 
     const x0 = Math.max(0, Math.floor(cam.x / TILE)), y0 = Math.max(0, Math.floor(cam.y / TILE));
     const x1 = Math.min(m.w - 1, Math.ceil((cam.x + vw) / TILE)), y1 = Math.min(m.h - 1, Math.ceil((cam.y + vh) / TILE));
-    const tf = Math.floor(now / 500);
-    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
-      const t = m.tiles[y * m.w + x];
-      ctx.drawImage(Sprites.groundTile(t, x, y, tf), x * TILE, y * TILE);
-    }
+    WorldArt.drawGround(ctx, cam, vw, vh, now);
+    WorldArt.drawPuffs(ctx, now);
     // Cổng
     for (const p of m.portals) {
       const px = (p.x + 0.5) * TILE, py = (p.y + 0.5) * TILE;
@@ -747,7 +748,7 @@
 
     // Thực thể sắp xếp theo y
     const list = [];
-    for (let y = Math.max(0, y0 - 1); y <= Math.min(m.h - 1, y1 + 2); y++) for (let x = x0; x <= x1; x++) {
+    for (let y = Math.max(0, y0 - 1); y <= Math.min(m.h - 1, y1 + 3); y++) for (let x = Math.max(0, x0 - 1); x <= Math.min(m.w - 1, x1 + 1); x++) {
       const t = m.tiles[y * m.w + x];
       if (Sprites.TALL.has(t)) list.push({ y: (y + 1) * TILE - 2, k: 'tall', t, tx: x, ty: y });
     }
@@ -755,6 +756,8 @@
     for (const e of G.monsters.values()) if (inView(e)) list.push({ y: e.y, k: 'mon', e });
     for (const e of G.players.values()) if (inView(e)) list.push({ y: e.y, k: 'pl', e });
     list.push({ y: s.y, k: 'self' });
+    WorldArt.visibleDecos(cam, vw, vh, list);
+    const nearPl = [s, ...G.players.values()];
     list.sort((a, b) => a.y - b.y);
 
     // vòng chọn mục tiêu
@@ -768,8 +771,9 @@
     const frameOf = (moving, seed) => moving ? Math.floor(now / 140 + (seed || 0)) % 4 : 0;
     for (const it of list) {
       if (it.k === 'tall') {
-        const img = Sprites.tallTile(it.t, it.tx, it.ty);
-        ctx.drawImage(img, it.tx * TILE, (it.ty + 1) * TILE - img.height);
+        WorldArt.drawTall(ctx, it.t, it.tx, it.ty, now);
+      } else if (it.k === 'deco') {
+        WorldArt.drawDeco(ctx, it.d, now, nearPl);
       } else if (it.k === 'npc') {
         const n = it.n, nx = (n.x + 0.5) * TILE, ny = (n.y + 0.5) * TILE;
         const img = Sprites.npcSprite(n.sprite, n.color, Math.floor(now / 600) % 2 ? 0 : 0);
@@ -802,6 +806,8 @@
       }
     }
 
+    WorldArt.ambient(now, cam, vw, vh, fdt);
+    WorldArt.drawAmbient(ctx, now);
     drawFx(now);
     // chữ nổi
     G.floats = G.floats.filter(f => now - f.t0 < 1100);
@@ -814,6 +820,8 @@
 
     // Mũi tên hướng dẫn tân thủ
     drawGuideArrow(now);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    WorldArt.overlay(ctx, canvas.width, canvas.height);
     const fl = FX.flash(now);
     if (fl) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = fl.a; ctx.fillStyle = fl.color; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.globalAlpha = 1; }
     // Khung mục tiêu
@@ -903,8 +911,10 @@
       ctx.drawImage(rider, 0, 0, 64, 52, rx, ry, 64, 52);
       top = y - 80;
     } else {
-      const fr = moving ? Math.floor(now / 140 + seed) % 4 : 0;
-      ctx.drawImage(Sprites.playerSprite(cls, colors, dir, fr, atk, ap), x - 32, y - 58);
+      const fr = moving ? Math.floor(now / 95 + seed) % 8 : 0;
+      const breathe = moving ? 0 : (Math.floor(now / 650 + seed) % 2);
+      if (moving && fr % 4 === 1 && !dead && Math.random() < 0.5) WorldArt.dust(x, y);
+      ctx.drawImage(Sprites.playerSprite(cls, colors, dir, fr, atk, ap), x - 32, y - 58 + breathe);
       top = y - 58;
     }
     ctx.globalAlpha = 1;

@@ -425,3 +425,23 @@ body.touch #chat.collapsed, body.short.touch #chat.collapsed { width: 210px; }
 #chat.collapsed #chat-log { padding: 0; overflow: hidden; }
 body.touch #btn-music, body.short.touch #btn-music { left: 172px; bottom: 160px; }
 body.short.touch #btn-music { bottom: 140px; }
+
+/* ---------- Khung chat thu gọn ở giữa phía dưới (điện thoại) ---------- */
+body.touch #chat, body.short.touch #chat { left: 50%; transform: translateX(-50%); top: auto; bottom: 10px; width: 300px; z-index: 9; }
+body.touch #chat.collapsed, body.short.touch #chat.collapsed { width: 280px; background: rgba(0,0,0,.32); border-color: transparent; cursor: pointer; }
+#chat.collapsed #chat-tabs, #chat.collapsed #chat-form { display: none; }
+#chat.collapsed #chat-log, body.touch #chat.collapsed #chat-log, body.short.touch #chat.collapsed #chat-log { display: block; height: 56px; padding: 2px 6px; overflow: hidden; font-size: 11px; pointer-events: none; }
+#chat.collapsed #chat-log .m { line-height: 1.25; text-shadow: 1px 1px 0 #000; }
+#chat.collapsed::after { content: '💬'; position: absolute; right: 4px; top: 2px; font-size: 11px; opacity: .7; }
+body.touch #chat:not(.collapsed) { width: 380px; }
+body.touch #chat:not(.collapsed) #chat-log { height: 110px; }
+body.short.touch #chat:not(.collapsed) #chat-log { height: 86px; }
+body:not(.touch) #chat { width: 340px; bottom: 16px; }
+body:not(.touch) #chat-log { height: 110px; }
+body.touch #tracker, body.short.touch #tracker { top: 80px; }
+body.short.touch #tracker { top: 70px; }
+#menu-buttons .admin-btn { border-color: #ff9b2f; background: linear-gradient(#5a2a10, #2a1408); }
+/* vùng trống của cụm nút kỹ năng không được chặn chạm vào menu phía trên */
+#action-pad { pointer-events: none; }
+#action-pad .act { pointer-events: auto; }
+#hud-right { z-index: 10; }

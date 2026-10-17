@@ -44,7 +44,14 @@
   // ================= HUD =================
   UI.updateMusicBtn = () => { const b = $('btn-music'); if (b) { b.textContent = GameAudio.state.music ? '🎵' : '🔇'; b.title = GameAudio.state.music ? 'Tắt nhạc nền' : 'Bật nhạc nền'; } };
   UI.initHud = function () {
-    document.querySelectorAll('#menu-buttons button').forEach(b => b.onclick = () => UI.togglePanel(b.dataset.panel));
+    document.querySelectorAll('#menu-buttons button[data-panel]').forEach(b => b.onclick = () => UI.togglePanel(b.dataset.panel));
+    // nút quản trị riêng cho chủ server: mở tab trước (tránh bị chặn popup) rồi gắn phiên quản trị
+    if (G.user && G.user.owner) {
+      $('btn-admin').classList.remove('hidden');
+      $('btn-admin').onclick = () => { G._adminWin = window.open('/admin/?wait=1', '_blank'); emit('adminPanel'); };
+    }
+    // chạm vào khung chat thu gọn để mở rộng
+    $('chat').addEventListener('click', e => { if ($('chat').classList.contains('collapsed') && e.target.id !== 'chat-toggle') { $('chat').classList.remove('collapsed'); $('chat-toggle').textContent = '▾'; const l = $('chat-log'); l.scrollTop = l.scrollHeight; } });
     $('panel-close').onclick = UI.closePanel;
     $('panel').addEventListener('pointerdown', e => { if (e.target.id === 'panel') UI.closePanel(); });
     // chat
@@ -65,10 +72,9 @@
       chatFilter = b.dataset.ch; renderChat();
       if (b.dataset.ch !== 'all' && b.dataset.ch !== 'pm') { $('chat-ch').value = b.dataset.ch; $('chat-to').classList.add('hidden'); }
     });
-    $('chat-tabs').addEventListener('click', e => { if ($('chat').classList.contains('collapsed') && e.target.id !== 'chat-toggle') $('chat-toggle').click(); });
     $('btn-music').onclick = () => { GameAudio.set('music', !GameAudio.state.music); UI.updateMusicBtn(); };
     UI.updateMusicBtn();
-    $('chat-toggle').onclick = () => { $('chat').classList.toggle('collapsed'); $('chat-toggle').textContent = $('chat').classList.contains('collapsed') ? '▴' : '▾'; };
+    $('chat-toggle').onclick = e => { e.stopPropagation(); $('chat').classList.toggle('collapsed'); $('chat-toggle').textContent = $('chat').classList.contains('collapsed') ? '▴' : '▾'; };
     if (Input.isTouch) $('chat').classList.add('collapsed'), $('chat-toggle').textContent = '▴';
     $('chat-log').addEventListener('click', e => {
       const n = e.target.dataset && e.target.dataset.name;
@@ -268,7 +274,7 @@
     d.innerHTML = `<span class="ch">[${CH_NAME[m.ch] || m.ch}]</span>${who}${esc(m.text)}`;
     log.appendChild(d);
     while (log.children.length > 150) log.firstChild.remove();
-    if (atBottom) log.scrollTop = log.scrollHeight;
+    if (atBottom || $('chat').classList.contains('collapsed')) log.scrollTop = log.scrollHeight;
   }
   function renderChat() { $('chat-log').innerHTML = ''; chatLog.filter(m => chatFilter === 'all' || m.ch === chatFilter || m.ch === 'sys').forEach(appendChat); }
   UI.focusChat = function () { $('chat').classList.remove('collapsed'); $('chat-input').focus(); };
