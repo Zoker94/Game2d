@@ -15,20 +15,52 @@
 </head>
 <body>
 <div id="app">
-  <!-- ============ ĐĂNG NHẬP ============ -->
-  <section id="screen-login" class="screen active">
+  <!-- ============ MÀN HÌNH TẢI ============ -->
+  <section id="screen-splash" class="screen active">
+    <div class="login-bg"></div>
+    <div class="splash">
+      <h1 class="logo">VÕ LÂM <span>PIXEL</span></h1>
+      <p class="tagline">Giang hồ hiểm ác · Cày cấp đánh quái · Tranh bá thiên hạ</p>
+      <canvas id="splash-run" width="576" height="80"></canvas>
+      <div class="splash-bar"><i id="splash-fill"></i><span id="splash-pct">0%</span></div>
+      <div id="splash-text" class="small">Đang khởi động...</div>
+      <p id="splash-tip" class="small"></p>
+      <button id="splash-start" class="btn primary big hidden">▶ CHẠM ĐỂ BẮT ĐẦU</button>
+    </div>
+  </section>
+
+  <!-- ============ ĐĂNG NHẬP / ĐĂNG KÝ ============ -->
+  <section id="screen-login" class="screen">
     <div class="login-bg"></div>
     <div class="login-box">
       <h1 class="logo">VÕ LÂM <span>PIXEL</span></h1>
-      <p class="tagline">Giang hồ hiểm ác · Cày cấp đánh quái · Tranh bá thiên hạ</p>
-      <div id="login-google"></div>
+      <div class="auth-left">
+      <div class="auth-tabs"><button data-auth="login" class="on">Đăng nhập</button><button data-auth="register">Đăng ký</button></div>
+      <form id="form-login" class="auth-form" autocomplete="on">
+        <input id="li-user" name="username" placeholder="Tên tài khoản" maxlength="20" autocomplete="username" autocapitalize="none" spellcheck="false">
+        <input id="li-pass" name="password" type="password" placeholder="Mật khẩu" maxlength="64" autocomplete="current-password">
+        <label class="small remember"><input type="checkbox" id="li-show"> Hiện mật khẩu</label>
+        <button class="btn primary">ĐĂNG NHẬP</button>
+      </form>
+      <form id="form-register" class="auth-form hidden" autocomplete="on">
+        <input id="rg-user" name="username" placeholder="Tên tài khoản (4-20 ký tự, không dấu)" maxlength="20" autocomplete="username" autocapitalize="none" spellcheck="false">
+        <input id="rg-pass" type="password" placeholder="Mật khẩu (tối thiểu 6 ký tự)" maxlength="64" autocomplete="new-password">
+        <input id="rg-pass2" type="password" placeholder="Nhập lại mật khẩu" maxlength="64" autocomplete="new-password">
+        <button class="btn primary">TẠO TÀI KHOẢN</button>
+      </form>
+      <p id="login-msg" class="small warn"></p>
+      </div>
+      <div class="auth-right">
+      <div id="google-wrap">
+        <div class="or"><span>hoặc</span></div>
+        <div id="login-google"></div>
+      </div>
       <div id="login-dev" class="hidden">
         <p class="small muted">Chế độ thử nghiệm (ALLOW_DEV_LOGIN)</p>
         <div class="row"><input id="dev-name" placeholder="Tên thử nghiệm" maxlength="30"><button class="btn" id="dev-btn">Vào</button></div>
       </div>
-      <p id="login-msg" class="small warn"></p>
-      <p class="small muted">Tài khoản bắt buộc liên kết với Google. Chơi được trên PC &amp; điện thoại.</p>
       <p class="small"><span id="online-count">0</span> đại hiệp đang trực tuyến</p>
+      </div>
     </div>
   </section>
 

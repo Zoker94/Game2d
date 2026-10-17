@@ -69,7 +69,7 @@ function rateLimited(ip, max = 20) {
   return rec.n > max;
 }
 function publicUser(u) {
-  return { id: u.id, name: u.name, email: u.email, avatar: u.avatar, hasChar: !!u.character, character: u.character ? { name: u.character.name, cls: u.character.cls, level: u.character.level } : null };
+  return { id: u.id, name: u.name, username: u.username || null, email: u.email, avatar: u.avatar, hasChar: !!u.character, character: u.character ? { name: u.character.name, cls: u.character.cls, level: u.character.level } : null };
 }
 
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
@@ -103,6 +103,45 @@ app.post('/api/auth/google', async (req, res) => {
 });
 
 // Đăng nhập thử nghiệm (CHỈ bật khi ALLOW_DEV_LOGIN=1, dùng cho môi trường phát triển)
+// ---------- Đăng ký / đăng nhập bằng tài khoản & mật khẩu ----------
+const USERNAME_RE = /^[a-zA-Z0-9_]{4,20}$/;
+const findByUsername = name => { const l = String(name || '').toLowerCase(); return Object.values(db.data.users).find(u => u.username && u.username.toLowerCase() === l); };
+
+app.post('/api/auth/register', (req, res) => {
+  if (rateLimited('reg:' + req.ip, 5)) return res.status(429).json({ error: 'Bạn đăng ký quá nhiều lần, thử lại sau 1 phút' });
+  const username = String(req.body.username || '').trim();
+  const password = String(req.body.password || '');
+  if (!USERNAME_RE.test(username)) return res.status(400).json({ error: 'Tên tài khoản 4-20 ký tự, chỉ gồm chữ không dấu, số và dấu _' });
+  if (password.length < 6 || password.length > 64) return res.status(400).json({ error: 'Mật khẩu từ 6 đến 64 ký tự' });
+  if (findByUsername(username)) return res.status(409).json({ error: 'Tên tài khoản đã có người dùng' });
+  const id = db.newId();
+  const user = db.data.users[id] = { id, username, pass: db.hashPassword(password), email: '', name: username, avatar: '', createdAt: Date.now(), lastLogin: Date.now(), banned: false, muted: false };
+  db.log('user', `Đăng ký tài khoản mới: ${username}`);
+  db.markDirty();
+  res.json({ token: createSession(user.id), user: publicUser(user) });
+});
+
+app.post('/api/auth/login', (req, res) => {
+  if (rateLimited('login:' + req.ip, 10)) return res.status(429).json({ error: 'Đăng nhập sai quá nhiều lần, thử lại sau 1 phút' });
+  const user = findByUsername(req.body.username);
+  if (!user || !user.pass || !db.verifyPassword(String(req.body.password || ''), user.pass)) return res.status(401).json({ error: 'Sai tên tài khoản hoặc mật khẩu' });
+  if (user.banned) return res.status(403).json({ error: 'Tài khoản đã bị khóa' + (user.banReason ? ': ' + user.banReason : '') });
+  user.lastLogin = Date.now();
+  db.markDirty();
+  res.json({ token: createSession(user.id), user: publicUser(user) });
+});
+
+app.post('/api/auth/password', (req, res) => {
+  const user = userFromToken((req.headers.authorization || '').replace('Bearer ', ''));
+  if (!user || !user.pass) return res.status(401).json({ error: 'Không hỗ trợ' });
+  if (!db.verifyPassword(String(req.body.oldPassword || ''), user.pass)) return res.status(400).json({ error: 'Mật khẩu cũ không đúng' });
+  const np = String(req.body.newPassword || '');
+  if (np.length < 6 || np.length > 64) return res.status(400).json({ error: 'Mật khẩu mới từ 6 đến 64 ký tự' });
+  user.pass = db.hashPassword(np);
+  db.markDirty();
+  res.json({ ok: true });
+});
+
 app.post('/api/auth/dev', (req, res) => {
   if (!ALLOW_DEV_LOGIN) return res.status(404).json({ error: 'Không hỗ trợ' });
   const key = String(req.body.name || '').trim().slice(0, 30);

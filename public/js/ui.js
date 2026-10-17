@@ -638,11 +638,21 @@
         <div><b>PC:</b> WASD/mũi tên di chuyển · Nhấp chuột để đi/chọn mục tiêu · 1/Space đánh · 2–6 kỹ năng · Z/X thuốc · T cưỡi thú · Tab đổi mục tiêu · F nói chuyện NPC · R tự động · Enter chat · I/C/M/J/G/O/L mở bảng · Esc đóng</div>
         <div><b>Mobile:</b> Joystick trái để di chuyển · Nút ⚔️ (giữ để đánh liên tục) · 3 nút kỹ năng · ❤️💧 thuốc · 🎯 đổi mục tiêu · Chạm NPC/quái để tương tác</div>
         <div><b>Tay cầm:</b> Cần trái/D-pad di chuyển · A đánh · X/Y/B kỹ năng · LB/RB thuốc · LT đổi mục tiêu · RT nói chuyện NPC · Back mở túi · Start tự động ${pad ? `<br><span style="color:#4ade80">🎮 Đã kết nối: ${esc(pad.id.slice(0, 40))}</span>` : '<br><span class="muted">Chưa phát hiện tay cầm (nhấn một nút bất kỳ để kết nối)</span>'}</div></div>
-      <div class="card"><h4>Tài khoản</h4><div class="small muted">Đăng nhập bằng Google: ${esc(G.user && G.user.email)}</div><button class="btn small primary" id="set-logout" style="margin-top:6px">Đăng xuất</button></div>`;
+      <div class="card"><h4>Tài khoản</h4>
+        <div class="small muted">${G.user && G.user.username ? 'Tài khoản: <b>' + esc(G.user.username) + '</b>' : 'Đăng nhập bằng Google: ' + esc(G.user && G.user.email)}</div>
+        ${G.user && G.user.username ? `<div class="row" style="justify-content:flex-start;margin-top:6px"><input id="pw-old" type="password" placeholder="Mật khẩu cũ" style="width:130px"><input id="pw-new" type="password" placeholder="Mật khẩu mới" style="width:130px"><button class="btn small" id="pw-change">Đổi mật khẩu</button></div>` : ''}
+        <button class="btn small primary" id="set-logout" style="margin-top:6px">Đăng xuất</button></div>`;
     body.querySelectorAll('[data-set]').forEach(c => c.onchange = () => { G.settings[c.dataset.set] = c.checked; G.saveSettings(); });
     $('set-fs').onclick = () => Input.toggleFullscreen();
     $('set-online').onclick = () => UI.openPanel('online');
     $('set-logout').onclick = () => G.logout();
+    const pc = $('pw-change');
+    if (pc) pc.onclick = async () => {
+      const r = await fetch('/api/auth/password', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + G.token }, body: JSON.stringify({ oldPassword: $('pw-old').value, newPassword: $('pw-new').value }) });
+      const j = await r.json().catch(() => ({}));
+      UI.toast(r.ok ? 'Đã đổi mật khẩu' : (j.error || 'Lỗi'), r.ok ? 'reward' : 'error');
+      if (r.ok) { $('pw-old').value = ''; $('pw-new').value = ''; }
+    };
   }
 
   let onlineData = null;

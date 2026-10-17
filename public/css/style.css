@@ -317,3 +317,64 @@ body.touch #tutorial-box, body.touch #daily-box { font-size: 11px; }
 .skill.dragon.el-ice { border-color: #bff0ff; box-shadow: 0 0 10px rgba(160,232,255,.7); }
 .act.sk.dragon { right: 206px; bottom: 60px; width: 50px; height: 50px; border-color: #ff9b2f; box-shadow: 0 0 10px rgba(255,120,40,.6); }
 .dr-fire { color: #ff7a3a; } .dr-water { color: #4fb8ff; } .dr-ice { color: #bff0ff; }
+
+/* ---------- Màn hình tải & đăng nhập ---------- */
+.splash { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px; text-align: center; }
+.splash .logo { font-size: 46px; animation: logoGlow 2.4s ease-in-out infinite; }
+@keyframes logoGlow { 50% { text-shadow: 3px 3px 0 #7a1a14, 0 0 30px rgba(255,200,80,.9); } }
+#splash-run { width: min(576px, 92vw); height: auto; image-rendering: pixelated; }
+.splash-bar { position: relative; width: min(460px, 86vw); height: 22px; border: 2px solid var(--gold2); border-radius: 4px; background: #120a10; overflow: hidden; box-shadow: 0 0 14px rgba(255,180,60,.3); }
+.splash-bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: repeating-linear-gradient(45deg, #ffd76a 0 10px, #e0a830 10px 20px); transition: width .2s; box-shadow: 0 0 12px #ffb000; }
+.splash-bar span { position: relative; display: block; line-height: 18px; font-weight: 900; font-size: 12px; color: #fff; text-shadow: 1px 1px 0 #000; }
+#splash-text { color: #e8c88a; }
+#splash-tip { max-width: 520px; color: #c8b8a0; min-height: 2.6em; font-style: italic; }
+#splash-start { animation: pulseBtn 1.2s ease-in-out infinite; }
+@keyframes pulseBtn { 50% { transform: scale(1.06); box-shadow: 0 0 24px rgba(255,120,60,.8); } }
+#screen-splash.ready { cursor: pointer; }
+.auth-tabs { display: flex; margin: 10px 0 8px; border-bottom: 2px solid #3a2a45; }
+.auth-tabs button { flex: 1; background: none; border: 0; color: var(--muted); font-weight: 800; font-size: 15px; padding: 8px; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+.auth-tabs button.on { color: var(--gold); border-bottom-color: var(--gold); }
+.auth-form { display: flex; flex-direction: column; gap: 8px; }
+.auth-form input { font-size: 15px; padding: 10px 12px; }
+.auth-form .btn { padding: 10px; font-size: 15px; }
+.remember { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.or { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; margin: 8px 0 2px; }
+.or::before, .or::after { content: ''; flex: 1; height: 1px; background: #3a2a45; }
+@media (max-height: 430px) {
+  .splash { gap: 4px; }
+  .splash .logo { font-size: 30px; }
+  .splash .tagline { display: none; }
+  #splash-run { width: min(420px, 70vw); }
+  .login-box { max-width: 560px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; align-items: start; text-align: left; }
+  .login-box .logo { grid-column: 1 / -1; font-size: 24px; text-align: center; }
+  .login-box .auth-tabs { margin: 4px 0 6px; }
+  .auth-right { padding-top: 40px; text-align: center; }
+  .auth-form input { padding: 7px 10px; font-size: 14px; }
+  .auth-form { gap: 5px; }
+  .auth-form .btn { padding: 7px; }
+}
+
+/* Màn hình thấp khi điện thoại dọc được xoay ngang bằng CSS (media query không nhận ra) */
+body.short #hud-status { transform: scale(.88); transform-origin: top left; }
+body.short.touch #chat { top: 70px; width: 250px; }
+body.short.touch #chat-log { height: 52px; }
+body.short.touch #tracker { top: 100px; }
+body.short.touch #btn-auto { bottom: 140px; }
+body.short #action-pad { transform: scale(.84); }
+body.short #joy-base { width: 112px; height: 112px; left: 28px; bottom: 18px; }
+body.short #joy-knob { left: 28px; top: 28px; width: 52px; height: 52px; }
+body.short .panel-box { max-height: 96%; }
+body.short #panel-body { padding: 6px; }
+body.short .login-box { padding: 10px; }
+body.short .logo { font-size: 28px; }
+body.short .splash { gap: 4px; }
+body.short .splash .logo { font-size: 30px; }
+body.short .splash .tagline { display: none; }
+body.short #splash-run { width: min(420px, 70vw); }
+body.short .login-box { max-width: 560px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; align-items: start; text-align: left; }
+body.short .login-box .logo { grid-column: 1 / -1; font-size: 24px; text-align: center; }
+body.short .login-box .auth-tabs { margin: 4px 0 6px; }
+body.short .auth-right { padding-top: 40px; text-align: center; }
+body.short .auth-form input { padding: 7px 10px; font-size: 14px; }
+body.short .auth-form { gap: 5px; }
+body.short .auth-form .btn { padding: 7px; }

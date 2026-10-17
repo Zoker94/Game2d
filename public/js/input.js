@@ -142,7 +142,7 @@
   // ---------- Xoay ngang ----------
   Input.applyLayout = function () {
     const portrait = window.innerHeight > window.innerWidth;
-    const should = this.inGame && isTouch && portrait;
+    const should = isTouch && portrait; // điện thoại dọc: luôn xoay ngang từ màn hình đầu tiên
     this.rotated = should;
     if (should) {
       app.classList.add('rotated');
@@ -153,6 +153,7 @@
       app.style.width = window.innerWidth + 'px';
       app.style.height = window.innerHeight + 'px';
     }
+    document.body.classList.toggle('short', (should ? window.innerWidth : window.innerHeight) <= 430);
     emit('resize');
   };
   Input.goLandscape = async function () {

@@ -31,28 +31,123 @@
     return j;
   }
 
+  // ================== Màn hình tải ==================
+  const TIPS = [
+    'Mẹo: Nhấn nút 🤖 Tự động để nhân vật tự đánh quái quanh khu vực.',
+    'Mẹo: Từ +10 trở lên, cường hóa thất bại mà không có Bảo Hiểm Phù sẽ rớt về +1!',
+    'Mẹo: Boss thế giới xuất hiện theo giờ, top 3 sát thương nhận Rương Thủ Lĩnh.',
+    'Mẹo: Thú cưỡi tăng tốc độ di chuyển và chỉ số. Cho ăn Mã Linh Đan để lên cấp.',
+    'Mẹo: Long Ấn (phím 7) – rồng lửa, rồng nước, rồng băng – môn phái nào cũng học được.',
+    'Mẹo: Điểm danh mỗi ngày và quay Vòng Quay May Mắn miễn phí tại Lễ Quan.',
+    'Mẹo: Gia nhập bang hội để nhận thêm tấn công, phòng thủ và sinh lực.',
+    'Mẹo: Đồ VIP (tím) và Truyền Kỳ (cam) rơi từ quái và Boss với tỉ lệ thấp.',
+    'Mẹo: Hoàn thành Hướng Dẫn Tân Thủ để nhận vũ khí hiếm và Nguyên Bảo.'
+  ];
+  let splashT = 0, splashRun = true, tipI = Math.floor(Math.random() * TIPS.length);
+  function splashProgress(pct, text) {
+    $('splash-fill').style.width = pct + '%';
+    $('splash-pct').textContent = Math.round(pct) + '%';
+    if (text) $('splash-text').textContent = text;
+  }
+  function splashAnim() {
+    if (!splashRun) return;
+    splashT++;
+    const cv = $('splash-run'), c = cv.getContext('2d');
+    c.imageSmoothingEnabled = false;
+    c.clearRect(0, 0, cv.width, cv.height);
+    if (G.data && Sprites.playerSprite) {
+      const ids = Object.keys(G.data.classes);
+      ids.forEach((id, i) => {
+        const x = ((i * 64 + splashT * 1.6) % (cv.width + 64)) - 64;
+        c.drawImage(Sprites.playerSprite(id, G.data.classes[id].colors, 2, Math.floor(splashT / 8 + i) % 4, false), Math.round(x), 8);
+      });
+    }
+    if (splashT % 200 === 1) { $('splash-tip').textContent = TIPS[tipI++ % TIPS.length]; }
+    requestAnimationFrame(splashAnim);
+  }
+  const yieldFrame = () => new Promise(r => setTimeout(r, 0));
+  // Vẽ trước sprite để vào game không bị giật
+  async function prewarm(from, to) {
+    const jobs = [];
+    for (const [id, cl] of Object.entries(G.data.classes)) for (let d = 0; d < 4; d++) for (let f = 0; f < 4; f++) jobs.push(() => Sprites.playerSprite(id, cl.colors, d, f, false));
+    for (const [id, m] of Object.entries(G.data.monsters)) for (let f = 0; f < 2; f++) jobs.push(() => Sprites.monsterSprite(id, m, f, 2));
+    for (const [id, m] of Object.entries(G.data.mounts)) for (let f = 0; f < 4; f++) jobs.push(() => Sprites.mountSprite(id, m, f, false));
+    for (const k of ['elder', 'smith', 'lady', 'merchant', 'doctor', 'rich', 'driver', 'guard', 'official']) jobs.push(() => Sprites.npcSprite(k, null, 0));
+    for (let t = 0; t <= 17; t++) for (let v = 0; v < 3; v++) jobs.push(() => { Sprites.groundTile(t, v, v * 7, 0); if (Sprites.TALL.has(t)) Sprites.tallTile(t, v, v * 5); });
+    for (let i = 0; i < jobs.length; i++) {
+      jobs[i]();
+      if (i % 12 === 0) { splashProgress(from + (to - from) * i / jobs.length, 'Đang vẽ nhân vật, quái vật, bản đồ...'); await yieldFrame(); }
+    }
+  }
+
   async function boot() {
-    loading(true, 'Đang tải dữ liệu giang hồ...');
+    Input.applyLayout();
+    requestAnimationFrame(splashAnim);
+    splashProgress(5, 'Đang kết nối máy chủ...');
     try {
-      [G.config, G.data] = await Promise.all([api('/api/config'), api('/api/gamedata')]);
-    } catch (e) { loading(false); G.modal('Không thể kết nối máy chủ. Vui lòng thử lại.', [{ t: 'Tải lại', fn: () => location.reload() }]); return; }
+      G.config = await api('/api/config');
+      splashProgress(25, 'Đang tải dữ liệu giang hồ...');
+      G.data = await api('/api/gamedata');
+    } catch (e) { G.modal('Không thể kết nối máy chủ. Vui lòng thử lại.', [{ t: 'Tải lại', fn: () => location.reload() }]); return; }
     $('online-count').textContent = G.config.online;
-    loading(false);
+    splashProgress(45);
+    await prewarm(45, 92);
+    splashProgress(95, 'Đang kiểm tra phiên đăng nhập...');
+    let hasSession = false;
     if (G.token) {
-      try { const r = await api('/api/me'); G.user = r.user; connect(); return; }
+      try { const r = await api('/api/me'); G.user = r.user; hasSession = true; }
       catch (e) { G.token = null; localStorage.removeItem('vl_token'); }
     }
-    showLogin();
+    splashProgress(100, hasSession ? `Chào mừng trở lại, ${G.user.username || G.user.name}!` : 'Sẵn sàng!');
+    const go = async () => {
+      splashRun = false;
+      await Input.goLandscape();
+      if (hasSession) connect(); else showLogin();
+    };
+    if (!Input.isTouch) { setTimeout(go, 350); return; }
+    // Điện thoại: cần một lần chạm để bật toàn màn hình & khóa xoay ngang
+    $('splash-start').classList.remove('hidden');
+    const scr = $('screen-splash');
+    scr.classList.add('ready');
+    const once = () => { scr.removeEventListener('click', once); go(); };
+    scr.addEventListener('click', once);
   }
+
+  // ================== Đăng nhập / đăng ký ==================
+  function setAuthTab(tab) {
+    document.querySelectorAll('[data-auth]').forEach(b => b.classList.toggle('on', b.dataset.auth === tab));
+    $('form-login').classList.toggle('hidden', tab !== 'login');
+    $('form-register').classList.toggle('hidden', tab !== 'register');
+    $('login-msg').textContent = '';
+  }
+  document.querySelectorAll('[data-auth]').forEach(b => b.onclick = () => setAuthTab(b.dataset.auth));
+  $('li-show').onchange = () => { $('li-pass').type = $('li-show').checked ? 'text' : 'password'; };
+  $('form-login').onsubmit = async e => {
+    e.preventDefault();
+    const username = $('li-user').value.trim(), password = $('li-pass').value;
+    if (!username || !password) { $('login-msg').textContent = 'Nhập tên tài khoản và mật khẩu'; return; }
+    loading(true, 'Đang đăng nhập...');
+    try { loginOk(await api('/api/auth/login', { body: { username, password } })); }
+    catch (err) { $('login-msg').textContent = err.message; }
+    loading(false);
+  };
+  $('form-register').onsubmit = async e => {
+    e.preventDefault();
+    const username = $('rg-user').value.trim(), password = $('rg-pass').value;
+    if (!/^[a-zA-Z0-9_]{4,20}$/.test(username)) { $('login-msg').textContent = 'Tên tài khoản 4-20 ký tự, chỉ gồm chữ không dấu, số và dấu _'; return; }
+    if (password.length < 6) { $('login-msg').textContent = 'Mật khẩu tối thiểu 6 ký tự'; return; }
+    if (password !== $('rg-pass2').value) { $('login-msg').textContent = 'Mật khẩu nhập lại không khớp'; return; }
+    loading(true, 'Đang tạo tài khoản...');
+    try { loginOk(await api('/api/auth/register', { body: { username, password } })); }
+    catch (err) { $('login-msg').textContent = err.message; }
+    loading(false);
+  };
 
   function showLogin() {
     show('screen-login');
     if (G.config.maintenance) $('login-msg').textContent = '⚠ Máy chủ đang bảo trì.';
     if (G.config.devLogin) $('login-dev').classList.remove('hidden');
-    if (!G.config.googleClientId) {
-      $('login-google').innerHTML = '<p class="small warn">Máy chủ chưa cấu hình GOOGLE_CLIENT_ID.</p>';
-      return;
-    }
+    if (!G.config.googleClientId) { $('google-wrap').classList.add('hidden'); return; }
     const init = () => {
       if (!window.google || !google.accounts) return setTimeout(init, 200);
       google.accounts.id.initialize({ client_id: G.config.googleClientId, callback: onGoogle, ux_mode: 'popup', auto_select: false });

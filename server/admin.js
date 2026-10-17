@@ -74,7 +74,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
 
   // ----- Người chơi -----
   const userRow = u => ({
-    id: u.id, email: u.email, gname: u.name, createdAt: u.createdAt, lastLogin: u.lastLogin, banned: !!u.banned, banReason: u.banReason || '',
+    id: u.id, email: u.email || (u.username ? '(tài khoản) ' + u.username : ''), username: u.username || '', gname: u.name, createdAt: u.createdAt, lastLogin: u.lastLogin, banned: !!u.banned, banReason: u.banReason || '',
     muted: u.muted === true || (u.muted && u.muted > Date.now()) ? u.muted : false, isGM: !!u.isAdmin, online: world.players.has(u.id),
     character: u.character ? { name: u.character.name, cls: u.character.cls, clsName: CLASSES[u.character.cls].name, level: u.character.level, gold: u.character.gold, knb: u.character.knb, map: u.character.map, power: u.character.power, kills: u.character.kills } : null
   });
@@ -82,7 +82,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     const q = String(req.query.q || '').toLowerCase();
     const filter = String(req.query.filter || '');
     let list = Object.values(db.data.users);
-    if (q) list = list.filter(u => (u.email || '').toLowerCase().includes(q) || (u.name || '').toLowerCase().includes(q) || (u.character && u.character.name.toLowerCase().includes(q)) || u.id === q);
+    if (q) list = list.filter(u => (u.email || '').toLowerCase().includes(q) || (u.username || '').toLowerCase().includes(q) || (u.name || '').toLowerCase().includes(q) || (u.character && u.character.name.toLowerCase().includes(q)) || u.id === q);
     if (filter === 'online') list = list.filter(u => world.players.has(u.id));
     if (filter === 'banned') list = list.filter(u => u.banned);
     list.sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0));
@@ -134,6 +134,15 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
       if (p) { p.socket.emit('kicked', { reason: 'Tài khoản bị khóa: ' + u.banReason }); world.removePlayer(p); p.socket.disconnect(true); }
     }
     act(req, `${u.banned ? 'Khóa' : 'Mở khóa'} ${u.character ? u.character.name : u.email} ${u.banReason}`);
+  }));
+
+  app.post('/api/admin/users/:id/reset-password', auth, (req, res) => withUser(req, res, (u) => {
+    const np = String(req.body.password || '');
+    if (!u.username) return { error: 'Tài khoản này đăng nhập bằng Google, không có mật khẩu' };
+    if (np.length < 6) return { error: 'Mật khẩu tối thiểu 6 ký tự' };
+    u.pass = db.hashPassword(np);
+    for (const [t, s] of Object.entries(db.data.sessions)) if (s.userId === u.id) delete db.data.sessions[t];
+    act(req, `Đặt lại mật khẩu cho tài khoản ${u.username}`);
   }));
 
   app.post('/api/admin/users/:id/mute', auth, (req, res) => withUser(req, res, (u, p) => {

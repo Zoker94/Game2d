@@ -75,12 +75,12 @@
     },
 
     async users(el) {
-      el.innerHTML = `<div class="card"><div class="row"><label style="flex:1">Tìm kiếm (email, tên Google, tên nhân vật, ID)<input id="u-q"></label>
+      el.innerHTML = `<div class="card"><div class="row"><label style="flex:1">Tìm kiếm (tài khoản, email, tên nhân vật, ID)<input id="u-q"></label>
         <label>Lọc<select id="u-f"><option value="">Tất cả</option><option value="online">Đang online</option><option value="banned">Bị khóa</option></select></label><button class="btn primary" id="u-go">Tìm</button></div></div>
         <div class="card" id="u-list"></div>`;
       const load = async () => {
         const r = await api(`/users?q=${encodeURIComponent($('u-q').value)}&filter=${$('u-f').value}`);
-        $('u-list').innerHTML = `<p class="muted small">${r.total} kết quả${r.total > 200 ? ' (hiện 200)' : ''}</p><div style="overflow:auto"><table><tr><th>Nhân vật</th><th>Môn phái</th><th>Cấp</th><th>Ngân lượng</th><th>KNB</th><th>Email Google</th><th>Đăng nhập cuối</th><th>Trạng thái</th><th></th></tr>
+        $('u-list').innerHTML = `<p class="muted small">${r.total} kết quả${r.total > 200 ? ' (hiện 200)' : ''}</p><div style="overflow:auto"><table><tr><th>Nhân vật</th><th>Môn phái</th><th>Cấp</th><th>Ngân lượng</th><th>KNB</th><th>Tài khoản / Email</th><th>Đăng nhập cuối</th><th>Trạng thái</th><th></th></tr>
           ${r.users.map(u => `<tr><td><b>${esc(u.character ? u.character.name : '—')}</b></td><td>${esc(u.character ? u.character.clsName : '')}</td><td>${u.character ? u.character.level : ''}</td><td>${u.character ? fmt(u.character.gold) : ''}</td><td>${u.character ? fmt(u.character.knb) : ''}</td>
           <td class="small">${esc(u.email)}</td><td class="small">${dt(u.lastLogin)}</td>
           <td>${u.online ? '<span class="tag on">Online</span>' : '<span class="tag off">Offline</span>'} ${u.banned ? '<span class="tag ban">Khóa</span>' : ''} ${u.muted ? '<span class="tag mute">Cấm chat</span>' : ''} ${u.isGM ? '<span class="tag gm">GM</span>' : ''}</td>
@@ -225,6 +225,7 @@
         <h3 style="margin-top:10px">Túi đồ (${c.inv.length}/48)</h3><div class="items">${c.inv.map(s => `<span class="item">${itemName(s.id)}${s.plus ? ' +' + s.plus : ''}${s.qty > 1 ? ' x' + s.qty : ''} <a data-rm="${s.uid}" style="cursor:pointer" title="Xóa">✕</a></span>`).join('') || '<span class="muted">Trống</span>'}</div></div>
       <div class="card"><h3>Dịch chuyển</h3><div class="row"><select id="e-map">${maps.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join('')}</select><button class="btn" id="e-tp">Dịch chuyển</button></div></div>` : ''}
       <div class="card"><h3>Quản lý tài khoản</h3><div class="row">
+        ${u.username ? `<label>Mật khẩu mới cho "${esc(u.username)}"<input id="e-newpass" type="text" placeholder="tối thiểu 6 ký tự"></label><button class="btn" id="e-resetpass">Đặt lại mật khẩu</button>` : ''}
         <label>Lý do khóa<input id="e-reason" value="${esc(u.banReason)}"></label>${u.banned ? '<button class="btn ok" id="e-unban">Mở khóa</button>' : '<button class="btn danger" id="e-ban">Khóa tài khoản</button>'}
         <label>Cấm chat (phút, 0 = bỏ)<input id="e-mute" type="number" value="60" style="width:100px"></label><button class="btn" id="e-mutebtn">Áp dụng</button>
         ${u.online ? '<button class="btn" id="e-kick">Kick</button>' : ''}
@@ -238,6 +239,7 @@
     on('e-tp', () => run(() => api(`/users/${id}/teleport`, { map: $('e-map').value }), 'Đã dịch chuyển'));
     on('e-ban', async () => { if (confirm('Khóa tài khoản này?')) { await run(() => api(`/users/${id}/ban`, { banned: true, reason: $('e-reason').value }), 'Đã khóa'); again(); } });
     on('e-unban', async () => { await run(() => api(`/users/${id}/ban`, { banned: false }), 'Đã mở khóa'); again(); });
+    on('e-resetpass', async () => { await run(() => api(`/users/${id}/reset-password`, { password: $('e-newpass').value }), 'Đã đặt lại mật khẩu'); });
     on('e-mutebtn', async () => { await run(() => api(`/users/${id}/mute`, { minutes: +$('e-mute').value }), 'Đã áp dụng'); again(); });
     on('e-kick', async () => { await run(() => api(`/users/${id}/kick`, {}), 'Đã kick'); again(); });
     on('e-gm', async () => { await run(() => api(`/users/${id}/update`, { isGM: !u.isGM }), 'Đã cập nhật'); again(); });
