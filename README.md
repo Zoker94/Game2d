@@ -58,6 +58,7 @@ Tài khoản được tạo khi máy chủ khởi động lần đầu (mật kh
 |---|---|---|
 | `PORT` | `3000` | Cổng HTTP |
 | `GOOGLE_CLIENT_ID` | – | OAuth Client ID của Google (bắt buộc để đăng nhập) |
+| `ADMIN_EMAILS` | `nguyendung.itcv@gmail.com` | Email Google của **chủ server** (toàn quyền, phân cách bằng dấu phẩy). Trong game gõ `/admin` để mở trang quản trị, `/help` để xem lệnh |
 | `ADMIN_USER` / `ADMIN_PASS` | `zoker941` / `huongchi1` | Tài khoản admin khởi tạo |
 | `DATABASE_URL` | – | Chuỗi kết nối Postgres (VD Neon miễn phí). Có biến này thì dữ liệu lưu vào Postgres thay vì file |
 | `DATA_DIR` | `./data` | Thư mục lưu dữ liệu (`db.json`) khi không dùng Postgres |

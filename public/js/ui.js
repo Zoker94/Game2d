@@ -645,7 +645,7 @@
         <label><input type="checkbox" id="au-music" ${GameAudio.state.music ? 'checked' : ''}> 🎵 Nhạc nền võ lâm</label> <input type="range" id="au-mvol" min="0" max="1" step="0.05" value="${GameAudio.state.musicVol}" style="width:110px;vertical-align:middle"><br>
         <label><input type="checkbox" id="au-sfx" ${GameAudio.state.sfx ? 'checked' : ''}> 🔊 Âm thanh hiệu ứng</label> <input type="range" id="au-svol" min="0" max="1" step="0.05" value="${GameAudio.state.sfxVol}" style="width:110px;vertical-align:middle"><br>
         <label><input type="checkbox" data-set="shake" ${s.shake ? 'checked' : ''}> Rung màn hình khi bị đánh</label>
-        <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn small" id="set-fs">⛶ Toàn màn hình</button><button class="btn small" id="set-online">👥 Người chơi online</button></div></div>
+        <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn small" id="set-fs">⛶ Toàn màn hình</button><button class="btn small" id="set-online">👥 Người chơi online</button>${G.user && G.user.owner ? '<button class="btn small primary" id="set-admin">🛡️ Trang quản trị</button>' : ''}</div></div>
       <div class="card small"><h4>Điều khiển</h4>
         <div><b>PC:</b> WASD/mũi tên di chuyển · Nhấp chuột để đi/chọn mục tiêu · 1/Space đánh · 2–7 các ô kỹ năng (tự gán trong bảng Võ Công, phím K) · Z/X thuốc · T cưỡi thú · Tab đổi mục tiêu · F nói chuyện NPC · R tự động · Enter chat · I/C/M/J/G/O/L mở bảng · Esc đóng</div>
         <div><b>Mobile:</b> Joystick trái để di chuyển · Nút ⚔️ (giữ để đánh liên tục) · 3 nút kỹ năng · ❤️💧 thuốc · 🎯 đổi mục tiêu · Chạm NPC/quái để tương tác</div>
@@ -661,6 +661,7 @@
     $('au-mvol').oninput = e => GameAudio.set('musicVol', +e.target.value);
     $('au-svol').oninput = e => { GameAudio.set('sfxVol', +e.target.value); GameAudio.sfx('coin', 150); };
     $('set-online').onclick = () => UI.openPanel('online');
+    const sa = $('set-admin'); if (sa) sa.onclick = () => emit('adminPanel');
     $('set-logout').onclick = () => G.logout();
     const pc = $('pw-change');
     if (pc) pc.onclick = async () => {

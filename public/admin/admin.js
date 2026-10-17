@@ -4,7 +4,11 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fmt = n => (n || 0).toLocaleString('vi-VN');
   const dt = t => t ? new Date(t).toLocaleString('vi-VN') : '-';
+  // phiên mở từ trong game (lệnh /admin) truyền qua #t=...
+  const hashT = (location.hash.match(/[#&]t=([a-f0-9]+)/) || [])[1];
+  if (hashT) { sessionStorage.setItem('vl_admin', hashT); sessionStorage.removeItem('vl_admin_user'); history.replaceState(null, '', location.pathname); }
   let token = sessionStorage.getItem('vl_admin');
+  let WHO = { name: '', owner: false, storage: 'file' };
   let view = 'dashboard';
   let itemsCache = null, mapsCache = null;
 
@@ -37,9 +41,10 @@
   function logoutLocal() { token = null; sessionStorage.removeItem('vl_admin'); $('app').classList.add('hidden'); $('login').classList.remove('hidden'); }
   $('logout').onclick = async () => { await run(() => api('/logout', {})); logoutLocal(); };
 
-  function start() {
+  async function start() {
+    try { WHO = await api('/whoami'); } catch (e) { return; }
     $('login').classList.add('hidden'); $('app').classList.remove('hidden');
-    $('who').textContent = '👤 ' + (sessionStorage.getItem('vl_admin_user') || 'admin');
+    $('who').textContent = (WHO.owner ? '👑 ' : '👤 ') + WHO.name + (WHO.owner ? ' (chủ server)' : '');
     show(view);
   }
   document.querySelectorAll('nav a').forEach(a => a.onclick = () => { show(a.dataset.v); document.querySelector('aside').classList.remove('open'); });
@@ -66,7 +71,7 @@
     async dashboard(el) {
       const s = await api('/stats');
       const up = `${Math.floor(s.uptime / 3600)}g ${Math.floor(s.uptime % 3600 / 60)}p`;
-      el.innerHTML = `<div class="grid">
+      el.innerHTML = (s.storage !== 'postgres' ? `<div class="card" style="border-color:#ef4444;background:#3a1414"><h3 style="color:#ff8a8a">⚠ Dữ liệu đang lưu vào file tạm – SẼ MẤT khi cập nhật / khởi động lại trên Render</h3><div class="small">Vào Render → dịch vụ game → <b>Environment</b> → thêm biến <b>DATABASE_URL</b> = chuỗi kết nối Postgres (Neon, miễn phí) → Save. Sau đó dữ liệu sẽ được lưu vĩnh viễn.</div></div>` : '') + `<div class="grid">
         ${[['Đang online', s.online], ['Cao điểm online', s.peakOnline], ['Tổng tài khoản', s.users], ['Nhân vật', s.characters], ['Mới (24h)', s.newToday], ['Hoạt động (24h)', s.activeToday], ['Bang hội', s.guilds], ['Bị khóa', s.banned], ['Cấp trung bình', s.avgLevel], ['Tổng ngân lượng', fmt(s.totalGold)], ['Tổng nguyên bảo', fmt(s.totalKnb)], ['RAM / Uptime', s.memory + 'MB · ' + up]].map(([l, v]) => `<div class="stat"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('')}
       </div><br>
       <div class="cols"><div class="card"><h3>Môn phái</h3>${bars(s.byClass)}</div><div class="card"><h3>Người chơi theo bản đồ</h3>${Object.keys(s.byMap).length ? bars(s.byMap) : '<p class="muted">Chưa có ai online</p>'}</div></div>
@@ -187,7 +192,14 @@
     },
 
     async account(el) {
-      el.innerHTML = `<div class="card" style="max-width:420px"><h3>Đổi mật khẩu quản trị</h3>
+      const cfg = await api('/config');
+      const ownerCard = `<div class="card" style="max-width:560px"><h3>👑 Quyền chủ server</h3>
+        <div class="small">Đang đăng nhập: <b>${esc(WHO.name)}</b> ${WHO.owner ? '(chủ server – toàn quyền)' : '(admin bằng mật khẩu)'}</div>
+        <p class="small muted">Chủ server là tài khoản Google đặt trong biến ADMIN_EMAILS (mặc định nguyendung.itcv@gmail.com). Trong game gõ <b>/admin</b> để mở trang này, <b>/help</b> để xem lệnh.</p>
+        <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="dpa" ${cfg.disablePasswordAdmin ? 'checked' : ''} ${WHO.owner ? '' : 'disabled'}> Tắt đăng nhập admin bằng mật khẩu (zoker941) – chỉ chủ server mới vào được</label>
+        ${WHO.owner ? '' : '<p class="small err">Chỉ chủ server mới thay đổi được mục này.</p>'}</div>`;
+      if (WHO.owner) { el.innerHTML = ownerCard; $('dpa').onchange = e => run(() => api('/config', { disablePasswordAdmin: e.target.checked }), e.target.checked ? 'Đã tắt đăng nhập bằng mật khẩu' : 'Đã bật lại đăng nhập bằng mật khẩu'); return; }
+      el.innerHTML = ownerCard + `<div class="card" style="max-width:420px"><h3>Đổi mật khẩu quản trị</h3>
         <label>Mật khẩu hiện tại<input id="pw-old" type="password"></label><br><label>Mật khẩu mới<input id="pw-new" type="password"></label><br><label>Nhập lại mật khẩu mới<input id="pw-new2" type="password"></label><br>
         <button class="btn primary" id="pw-save">Đổi mật khẩu</button></div>`;
       $('pw-save').onclick = () => {

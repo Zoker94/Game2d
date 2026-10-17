@@ -14,6 +14,7 @@ const { World } = require('./game/world');
 const { Features } = require('./game/features');
 const U = require('./game/util');
 const adminRoutes = require('./admin');
+const { isOwner, ADMIN_EMAILS } = require('./owner');
 
 const PORT = process.env.PORT || 3000;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
@@ -69,7 +70,7 @@ function rateLimited(ip, max = 20) {
   return rec.n > max;
 }
 function publicUser(u) {
-  return { id: u.id, name: u.name, username: u.username || null, email: u.email, avatar: u.avatar, hasChar: !!u.character, character: u.character ? { name: u.character.name, cls: u.character.cls, level: u.character.level } : null };
+  return { id: u.id, name: u.name, username: u.username || null, owner: isOwner(u), email: u.email, avatar: u.avatar, hasChar: !!u.character, character: u.character ? { name: u.character.name, cls: u.character.cls, level: u.character.level } : null };
 }
 
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
@@ -94,6 +95,8 @@ app.post('/api/auth/google', async (req, res) => {
       db.log('user', `Tài khoản mới liên kết Google: ${user.email}`);
     }
     user.lastLogin = Date.now();
+    if (pl.email) user.email = pl.email;
+    if (isOwner(user)) { user.isAdmin = true; user.banned = false; } // chủ server luôn có quyền, không thể bị khóa
     if (user.banned) return res.status(403).json({ error: 'Tài khoản đã bị khóa' + (user.banReason ? ': ' + user.banReason : '') });
     db.markDirty();
     res.json({ token: createSession(user.id), user: publicUser(user) });
@@ -246,6 +249,10 @@ io.on('connection', socket => {
     socket.emit('events', features.eventsView());
     socket.emit('daily', features.dailyView(player));
     socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', text: db.data.config.motd, t: Date.now() });
+    if (isOwner(user)) {
+      socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', text: '🛡️ Bạn là chủ server. Gõ /admin để mở trang quản trị, /help để xem lệnh.', t: Date.now() });
+      if (!db.usingDatabase) socket.emit('notice', { text: '⚠ CẢNH BÁO: Máy chủ chưa cấu hình DATABASE_URL. Dữ liệu đang lưu vào file tạm và SẼ MẤT mỗi lần cập nhật / khởi động lại trên Render. Hãy thêm DATABASE_URL (Neon) trong Render → Environment.', type: 'admin' });
+    }
     if (!user.character.tutorial.done) socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', text: 'Mẹo: Làm theo khung Hướng Dẫn Tân Thủ ở góc trái để nhận quà!', t: Date.now() });
   });
 
@@ -271,6 +278,7 @@ io.on('connection', socket => {
   on('mount', inGame(d => d && world.mountAction(player, d)));
   on('dragon', inGame(d => d && world.selectDragon(player, d.el)));
   on('skillOp', inGame(d => d && world.skillAction(player, d)));
+  on('adminPanel', () => features.openAdminPanel(user, socket));
   on('teleport', inGame(d => {
     if (!world.nearNpc(player, 'xa_phu')) return world.toast(player, 'Hãy gặp Xa Phu để đi xe', 'error');
     const t = require('./data/npcs').TELEPORTS.find(x => x.map === (d && d.map));
@@ -326,6 +334,7 @@ process.on('SIGTERM', shutdown);
 server.listen(PORT, () => {
   console.log(`Võ Lâm Pixel đang chạy tại http://localhost:${PORT}`);
   console.log(`Trang quản trị: http://localhost:${PORT}/admin/`);
+  console.log('Chủ server (Google):', ADMIN_EMAILS.join(', '));
   console.log(db.usingDatabase ? 'Lưu dữ liệu: Postgres (DATABASE_URL)' : 'Lưu dữ liệu: file ' + (process.env.DATA_DIR || 'data/') + 'db.json');
   if (!GOOGLE_CLIENT_ID) console.warn('⚠ Chưa đặt GOOGLE_CLIENT_ID - đăng nhập Google sẽ không hoạt động.');
   if (ALLOW_DEV_LOGIN) console.warn('⚠ ALLOW_DEV_LOGIN đang bật - chỉ dùng khi phát triển!');

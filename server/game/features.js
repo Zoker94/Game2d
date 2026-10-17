@@ -6,6 +6,7 @@ const { MONSTERS, BOSSES } = require('../data/monsters');
 const { MAPS, TILE, isSolidAt } = require('../data/maps');
 const { makeDaily, DAILY_ALL_BONUS } = require('../data/quests');
 const U = require('./util');
+const { isOwner } = require('../owner');
 
 const EVENT_INFO = {
   doubleExp: { name: 'Nhân Đôi Kinh Nghiệm', desc: 'Toàn server nhận x2 kinh nghiệm khi đánh quái. Tự động 12:00-13:00 và 20:00-21:00.', icon: '📈' },
@@ -379,9 +380,69 @@ class Features {
   }
 
   // ---------------- Trò chuyện ----------------
+  // ---------------- Quản trị trong game (chỉ chủ server) ----------------
+  openAdminPanel(user, socket) {
+    if (!isOwner(user)) return socket.emit('toast', { text: 'Bạn không có quyền quản trị', type: 'error' });
+    const token = this.db.newToken();
+    this.db.data.adminSessions[token] = { username: 'google:' + user.email, userId: user.id, exp: Date.now() + 12 * 3600e3 };
+    this.db.log('admin', `${user.email} mở trang quản trị từ trong game`);
+    this.db.markDirty();
+    socket.emit('adminToken', { token });
+  }
+
+  adminCommand(p, text) {
+    const [cmd, ...args] = text.slice(1).split(' ');
+    const c = cmd.toLowerCase(), w = this.w, ok = t => w.toast(p, t, 'reward'), err = t => w.toast(p, t, 'error');
+    if (c === 'admin' || c === 'cpanel' || c === 'quantri') return this.openAdminPanel(p.user, p.socket);
+    if (!isOwner(p.user)) return err('Lệnh không tồn tại hoặc bạn không có quyền');
+    const findPlayer = name => [...w.players.values()].find(o => o.c.name.toLowerCase() === String(name || '').toLowerCase());
+    switch (c) {
+      case 'help': case 'lenh':
+        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: 'Lệnh admin: /admin (mở trang quản trị) · /tb <nội dung> · /tp <bản đồ> · /level <cấp> · /gold <số> · /knb <số> · /give <mã vật phẩm> [số lượng] [+cường hóa] · /heal · /boss <mã boss> · /event <mã sự kiện> [phút] · /kick <tên> · /goto <tên> · /keo <tên> · /online' });
+        break;
+      case 'tb': case 'thongbao': {
+        const msg = args.join(' ');
+        if (!msg) return err('Cú pháp: /tb <nội dung>');
+        this.announce('📢 [Quản Trị] ' + msg); this.io.emit('notice', { text: msg, type: 'admin' });
+        break;
+      }
+      case 'tp': {
+        const { MAPS: M } = require('../data/maps');
+        const id = args[0] && Object.keys(M).find(k => k === args[0] || M[k].name.toLowerCase().includes(args.join(' ').toLowerCase()));
+        if (!id) return err('Bản đồ: ' + Object.keys(M).join(', '));
+        w.teleport(p, id); break;
+      }
+      case 'level': { const n = U.clamp(+args[0] | 0, 1, U.MAX_LEVEL); p.c.level = n; p.c.exp = 0; w.recalc(p); p.c.hp = p.stats.maxHp; ok('Cấp ' + n); break; }
+      case 'gold': p.c.gold = Math.max(0, +args[0] | 0); ok('Ngân lượng: ' + p.c.gold); break;
+      case 'knb': p.c.knb = Math.max(0, +args[0] | 0); ok('Nguyên bảo: ' + p.c.knb); break;
+      case 'give': {
+        const id = args[0];
+        if (!ITEMS[id]) return err('Không có vật phẩm "' + id + '". Xem mã trong trang quản trị → Gift code');
+        w.giveItem(p, id, U.clamp(+args[1] || 1, 1, 9999), U.clamp(+String(args[2] || '0').replace('+', '') | 0, 0, 15));
+        ok('Đã nhận ' + ITEMS[id].name); break;
+      }
+      case 'heal': p.dead = false; p.c.hp = p.stats.maxHp; p.c.mp = p.stats.maxMp; ok('Hồi đầy'); break;
+      case 'boss': if (!this.spawnBoss(args[0])) err('Mã boss: ' + Object.keys(BOSSES).join(', ')); break;
+      case 'event': if (!this.startEvent(args[0], +args[1] || 30)) err('Mã sự kiện: ' + Object.keys(EVENT_INFO).join(', ')); break;
+      case 'kick': {
+        const o = findPlayer(args.join(' '));
+        if (!o) return err('Người chơi không online');
+        o.socket.emit('kicked', { reason: 'Bị quản trị viên mời ra khỏi game' }); w.removePlayer(o); o.socket.disconnect(true); ok('Đã kick ' + o.c.name); break;
+      }
+      case 'goto': { const o = findPlayer(args.join(' ')); if (!o) return err('Người chơi không online'); w.enterMap(p, o.mapId, o.x + 40, o.y); break; }
+      case 'keo': { const o = findPlayer(args.join(' ')); if (!o) return err('Người chơi không online'); w.enterMap(o, p.mapId, p.x + 40, p.y); ok('Đã kéo ' + o.c.name + ' tới chỗ bạn'); break; }
+      case 'online': ok(`${w.players.size} người online: ` + [...w.players.values()].map(o => o.c.name).slice(0, 30).join(', ')); break;
+      default: return err('Lệnh không tồn tại. Gõ /help để xem danh sách lệnh');
+    }
+    this.db.log('admin', `[${p.user.email}] lệnh trong game: ${text}`);
+    p.dirtyMe = true;
+    this.db.markDirty();
+  }
+
   chat(p, { ch, text, to }) {
     text = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 140);
     if (!text) return;
+    if (text.startsWith('/')) return this.adminCommand(p, text);
     const now = Date.now();
     if (p.user.muted && (p.user.muted === true || p.user.muted > now)) return this.w.toast(p, 'Bạn đang bị cấm chat', 'error');
     if (now - p.lastChat < 1200) return this.w.toast(p, 'Bạn chat quá nhanh', 'error');

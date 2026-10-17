@@ -296,6 +296,9 @@
     s.on('wheelResult', d => UI.onWheel(d));
     s.on('enhanceResult', d => { UI.onEnhance(d); GameAudio.sfx(d.result === 'ok' ? 'enhOk' : 'enhFail'); });
     s.on('online', d => UI.onOnline(d));
+    s.on('adminToken', d => G.modal('🛡️ Trang quản trị đã sẵn sàng (phiên 12 giờ).', [
+      { t: 'Mở Admin Panel', cls: 'primary', fn: () => { const w = window.open('/admin/#t=' + d.token, '_blank'); if (!w) location.href = '/admin/#t=' + d.token; } },
+      { t: 'Đóng' }]));
   }
   $('respawn-btn').onclick = () => { G.socket.emit('respawn'); $('dead-overlay').classList.add('hidden'); };
 

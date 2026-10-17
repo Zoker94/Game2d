@@ -5,6 +5,7 @@ const { MAPS } = require('./data/maps');
 const { BOSSES } = require('./data/monsters');
 const { EVENT_INFO } = require('./game/features');
 const U = require('./game/util');
+const { isOwner } = require('./owner');
 
 module.exports = function adminRoutes(app, { db, world, features, io, rateLimited }) {
   const SESSION_MS = 12 * 3600e3;
@@ -12,14 +13,22 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   function auth(req, res, next) {
     const t = (req.headers.authorization || '').replace('Bearer ', '');
     const s = db.data.adminSessions[t];
-    if (!s || s.exp < Date.now() || !db.data.admins[s.username]) return res.status(401).json({ error: 'Chưa đăng nhập quản trị' });
-    req.admin = s.username;
+    if (!s || s.exp < Date.now()) return res.status(401).json({ error: 'Chưa đăng nhập quản trị' });
+    if (s.userId) { // phiên mở từ trong game bằng tài khoản Google chủ server
+      const u = db.data.users[s.userId];
+      if (!isOwner(u)) return res.status(401).json({ error: 'Không có quyền quản trị' });
+      req.admin = u.email; req.isOwner = true;
+    } else {
+      if (!db.data.admins[s.username] || db.data.config.disablePasswordAdmin) return res.status(401).json({ error: 'Chưa đăng nhập quản trị' });
+      req.admin = s.username; req.isOwner = false;
+    }
     next();
   }
   const act = (req, text) => db.log('admin', `[${req.admin}] ${text}`);
 
   app.post('/api/admin/login', (req, res) => {
     if (rateLimited('admin:' + req.ip, 10)) return res.status(429).json({ error: 'Đăng nhập sai quá nhiều lần, thử lại sau 1 phút' });
+    if (db.data.config.disablePasswordAdmin) return res.status(403).json({ error: 'Đăng nhập quản trị bằng mật khẩu đã bị chủ server tắt. Hãy vào game bằng tài khoản Google chủ server và gõ /admin' });
     const { username, password } = req.body || {};
     const rec = db.data.admins[String(username || '')];
     if (!rec || !db.verifyPassword(String(password || ''), rec)) {
@@ -30,8 +39,10 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     db.data.adminSessions[token] = { username, exp: Date.now() + SESSION_MS };
     db.log('admin', `${username} đăng nhập trang quản trị từ ${req.ip}`);
     db.markDirty();
-    res.json({ token, username });
+    res.json({ token, username, owner: false });
   });
+
+  app.get('/api/admin/whoami', auth, (req, res) => res.json({ name: req.admin, owner: req.isOwner, storage: db.usingDatabase ? 'postgres' : 'file' }));
 
   app.post('/api/admin/logout', auth, (req, res) => {
     delete db.data.adminSessions[(req.headers.authorization || '').replace('Bearer ', '')];
@@ -67,7 +78,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
       avgLevel: chars.length ? +(chars.reduce((s, u) => s + u.character.level, 0) / chars.length).toFixed(1) : 0,
       byClass: Object.fromEntries(Object.entries(byClass).map(([k, v]) => [CLASSES[k].name, v])),
       byMap: Object.fromEntries(Object.entries(byMap).map(([k, v]) => [MAPS[k].name, v])),
-      uptime: Math.round(process.uptime()), memory: Math.round(process.memoryUsage().rss / 1048576),
+      uptime: Math.round(process.uptime()), memory: Math.round(process.memoryUsage().rss / 1048576), storage: db.usingDatabase ? 'postgres' : 'file',
       events: features.eventsView()
     });
   });
@@ -127,6 +138,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   }));
 
   app.post('/api/admin/users/:id/ban', auth, (req, res) => withUser(req, res, (u, p) => {
+    if (isOwner(u) && req.body.banned) return { error: 'Không thể khóa tài khoản chủ server' };
     u.banned = !!req.body.banned;
     u.banReason = String(req.body.reason || '').slice(0, 200);
     if (u.banned) {
@@ -153,6 +165,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   }));
 
   app.post('/api/admin/users/:id/kick', auth, (req, res) => withUser(req, res, (u, p) => {
+    if (isOwner(u) && !req.isOwner) return { error: 'Không thể kick chủ server' };
     if (p) { p.socket.emit('kicked', { reason: String(req.body.reason || 'Bị quản trị viên mời ra khỏi game') }); world.removePlayer(p); p.socket.disconnect(true); }
     act(req, `Kick ${u.character ? u.character.name : u.email}`);
   }));
@@ -184,6 +197,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   }));
 
   app.post('/api/admin/users/:id/reset-char', auth, (req, res) => withUser(req, res, (u, p) => {
+    if (isOwner(u) && !req.isOwner) return { error: 'Không thể xóa nhân vật chủ server' };
     if (p) { p.socket.emit('kicked', { reason: 'Nhân vật đã bị xóa bởi quản trị viên' }); world.removePlayer(p); p.socket.disconnect(true); }
     if (u.character && u.character.guildId) {
       const g = db.data.guilds[u.character.guildId];
@@ -196,6 +210,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   app.delete('/api/admin/users/:id', auth, (req, res) => {
     const u = db.data.users[req.params.id];
     if (!u) return res.status(404).json({ error: 'Không tìm thấy' });
+    if (isOwner(u)) return res.status(403).json({ error: 'Không thể xóa tài khoản chủ server' });
     const p = world.players.get(u.id);
     if (p) { p.socket.emit('kicked', { reason: 'Tài khoản đã bị xóa' }); world.removePlayer(p); p.socket.disconnect(true); }
     if (u.character && u.character.guildId && db.data.guilds[u.character.guildId]) delete db.data.guilds[u.character.guildId].members[u.id];
@@ -228,6 +243,11 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
       if (c.maintenance) for (const p of [...world.players.values()]) if (!p.user.isAdmin) { p.socket.emit('kicked', { reason: 'Máy chủ đang bảo trì' }); world.removePlayer(p); p.socket.disconnect(true); }
     }
     if (b.autoEvents != null) c.autoEvents = !!b.autoEvents;
+    if (b.disablePasswordAdmin != null) {
+      if (!req.isOwner) return res.status(403).json({ error: 'Chỉ chủ server (tài khoản Google) mới được thay đổi mục này' });
+      c.disablePasswordAdmin = !!b.disablePasswordAdmin;
+      if (c.disablePasswordAdmin) for (const [t, s] of Object.entries(db.data.adminSessions)) if (!s.userId) delete db.data.adminSessions[t];
+    }
     act(req, `Cập nhật cấu hình ${JSON.stringify(b)}`);
     db.markDirty();
     res.json(c);
