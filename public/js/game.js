@@ -90,6 +90,8 @@
       G.data = await api('/api/gamedata');
     } catch (e) { G.modal('Không thể kết nối máy chủ. Vui lòng thử lại.', [{ t: 'Tải lại', fn: () => location.reload() }]); return; }
     $('online-count').textContent = G.config.online;
+    splashProgress(40, 'Đang tải hình ảnh nhân vật...');
+    await Assets.ready;
     splashProgress(45);
     await prewarm(45, 92);
     splashProgress(95, 'Đang kiểm tra phiên đăng nhập...');

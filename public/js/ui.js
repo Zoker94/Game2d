@@ -101,7 +101,9 @@
       const d = document.createElement('div');
       if (!s) { d.className = 'skill empty'; d.innerHTML = `<span class="key">${key}</span><span class="small muted">Trống</span>`; d.onclick = () => UI.openPanel('skills'); bar.appendChild(d); return; }
       d.className = 'skill' + (s.idx === 6 ? ' dragon el-' + s.el : '') + (s.learned ? '' : ' unlearned'); d.dataset.idx = s.idx;
-      d.innerHTML = `<span class="key">${key}</span>${esc(s.name)}<span class="mpc">${s.mp || ''}</span>${s.slv > 1 ? `<span class="slv">${s.slv}</span>` : ''}<div class="cdo"></div><div class="cdt"></div>`;
+      const ico = Assets.skillIconHTML(G.me.cls, s);
+      if (ico) d.classList.add('has-img');
+      d.innerHTML = `${ico}<span class="key">${key}</span>${ico ? '' : esc(s.name)}<span class="mpc">${s.mp || ''}</span>${s.slv > 1 ? `<span class="slv">${s.slv}</span>` : ''}<div class="cdo"></div><div class="cdt"></div>`;
       d.onclick = onclick;
       d.onmouseenter = e => tip(e, `<b>${esc(s.name)}</b>${s.learned ? ` · Tầng ${s.slv}` : ' · <span style="color:#ff9b8a">Chưa học</span>'}<br>Cấp ${s.lv} · ${s.mp} MP · Hồi ${s.cd / 1000}s<br>${skillDesc(s)}`);
       d.onmouseleave = hideTip;
@@ -124,7 +126,9 @@
       b.style.display = s ? '' : 'none';
       b.classList.toggle('unlearned', !!s && !s.learned);
       b.classList.toggle('dragon', !!s && s.idx === 6);
-      b.innerHTML = s ? `${esc(s.name)}<div class="cdo"></div><div class="cdt"></div>` : '<span class="muted">+</span>';
+      const ico = s ? Assets.skillIconHTML(G.me.cls, s) : '';
+      b.classList.toggle('has-img', !!ico);
+      b.innerHTML = s ? `${ico || esc(s.name)}<div class="cdo"></div><div class="cdt"></div>` : '<span class="muted">+</span>';
     });
   }
   function skillDesc(s) {
@@ -703,7 +707,7 @@
       if (!s.learned) right = `<div class="sk-need"><span class="warn small">Chưa học</span><br><span class="small muted">Sách ${fmt(BOOK_PRICE[i])} lượng${lvOk ? '' : ' · cần cấp ' + s.lv}</span></div>`;
       else if (s.slv >= max) right = '<span class="small" style="color:#ff9b2f">✦ Đại thành ✦</span>';
       else right = `<button class="btn small green" data-up="${i}" ${me.sp >= cost.sp && me.gold >= cost.gold ? '' : 'disabled'}>Nâng tầng ${s.slv + 1}<br><span class="small">${cost.sp} điểm · ${fmt(cost.gold)} lượng</span></button>`;
-      html += `<div class="li sk-row ${s.learned ? 'done' : ''}"><div class="sk-ico ${i === 6 ? 'dragon' : ''}">${i === 0 ? '⚔️' : i === 6 ? '🐉' : ['', '①', '②', '③', '④', '⑤'][i]}</div><div class="grow"><b>${esc(s.name)}</b> ${s.learned ? `<span class="sk-lv">Tầng ${s.slv}/${max}</span>` : ''} ${lvOk ? '' : `<span class="warn small">(cấp ${s.lv})</span>`}
+      html += `<div class="li sk-row ${s.learned ? 'done' : ''}"><div class="sk-ico ${i === 6 ? 'dragon' : ''}">${Assets.skillIconHTML(me.cls, s) || (i === 0 ? '⚔️' : i === 6 ? '🐉' : ['', '①', '②', '③', '④', '⑤'][i])}</div><div class="grow"><b>${esc(s.name)}</b> ${s.learned ? `<span class="sk-lv">Tầng ${s.slv}/${max}</span>` : ''} ${lvOk ? '' : `<span class="warn small">(cấp ${s.lv})</span>`}
         <div class="sub">${skillDesc(s)} · ${s.mp} MP · Hồi ${s.cd / 1000}s</div><div class="sub">${effect}</div>
         ${s.learned ? `<div class="sk-bar">${Array.from({ length: max }, (_, k) => `<i class="${k < s.slv ? 'on' : ''}"></i>`).join('')}</div>` : ''}</div>${right}</div>`;
     });

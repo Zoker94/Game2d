@@ -445,3 +445,12 @@ body.short.touch #tracker { top: 70px; }
 #action-pad { pointer-events: none; }
 #action-pad .act { pointer-events: auto; }
 #hud-right { z-index: 10; }
+
+/* ===== Biểu tượng kỹ năng bằng ảnh ===== */
+.sk-img { position: absolute; inset: 0; background: center/82% no-repeat; image-rendering: pixelated; pointer-events: none;
+  box-shadow: inset 0 0 12px color-mix(in srgb, var(--skc) 45%, transparent); }
+.skill.has-img, .act.sk.has-img { background: radial-gradient(circle at 50% 45%, #3b2e52, #120b1a); padding: 0; }
+.skill.has-img .key, .skill.has-img .mpc, .skill.has-img .slv { z-index: 1; }
+.act.sk.has-img .sk-img { background-size: 78%; border-radius: 50%; }
+.sk-ico { position: relative; overflow: hidden; }
+.sk-ico .sk-img { background-size: 88%; }
