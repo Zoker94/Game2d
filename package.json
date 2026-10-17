@@ -1,0 +1,19 @@
+{
+  "name": "vo-lam-pixel",
+  "version": "1.0.0",
+  "description": "Webgame 2D pixel 64 thể loại giang hồ võ lâm - cày cấp đánh quái, đa người chơi",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "ALLOW_DEV_LOGIN=1 node server/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.22.3",
+    "google-auth-library": "^9.15.1",
+    "socket.io": "^4.8.4"
+  }
+}

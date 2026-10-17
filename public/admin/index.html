@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Quản Trị Võ Lâm Pixel</title>
+<link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+<div id="login" class="login">
+  <form id="login-form" class="login-card">
+    <h1>🛡️ Quản Trị</h1>
+    <p class="muted">Võ Lâm Pixel · Admin Panel</p>
+    <label>Tài khoản<input id="l-user" autocomplete="username" required></label>
+    <label>Mật khẩu<input id="l-pass" type="password" autocomplete="current-password" required></label>
+    <button class="btn primary">Đăng nhập</button>
+    <p id="l-err" class="err"></p>
+  </form>
+</div>
+
+<div id="app" class="hidden">
+  <aside>
+    <div class="brand">⚔️ Võ Lâm <b>Admin</b></div>
+    <nav>
+      <a data-v="dashboard" class="on">📊 Tổng quan</a>
+      <a data-v="users">👤 Người chơi</a>
+      <a data-v="events">🎉 Sự kiện & Boss</a>
+      <a data-v="broadcast">📢 Thông báo</a>
+      <a data-v="guilds">🏯 Bang hội</a>
+      <a data-v="giftcodes">🎁 Gift code</a>
+      <a data-v="config">⚙️ Cấu hình server</a>
+      <a data-v="chat">💬 Nhật ký chat</a>
+      <a data-v="logs">📜 Nhật ký hệ thống</a>
+      <a data-v="account">🔑 Tài khoản admin</a>
+    </nav>
+    <div class="side-foot"><span id="who"></span><button class="btn small" id="logout">Đăng xuất</button><a href="/" target="_blank" class="small">↗ Mở game</a></div>
+  </aside>
+  <main>
+    <header><button id="menu-toggle" class="btn small">☰</button><h2 id="view-title">Tổng quan</h2><span class="spacer"></span><button class="btn small" id="refresh">⟳ Làm mới</button><button class="btn small" id="save-now">💾 Lưu dữ liệu</button></header>
+    <section id="view"></section>
+  </main>
+</div>
+
+<div id="modal" class="modal hidden"><div class="modal-card"><div class="modal-head"><h3 id="m-title"></h3><button id="m-close" class="btn small">✕</button></div><div id="m-body"></div></div></div>
+<div id="toast"></div>
+<script src="/admin/admin.js"></script>
+</body>
+</html>

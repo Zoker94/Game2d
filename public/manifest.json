@@ -1,0 +1,10 @@
+{
+  "name": "Võ Lâm Pixel",
+  "short_name": "VõLâm",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#14101c",
+  "theme_color": "#14101c",
+  "icons": []
+}
