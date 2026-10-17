@@ -348,7 +348,8 @@ class World {
         const ang = Math.atan2(t.y - p.y, t.x - p.x);
         const nx = t.x - Math.cos(ang) * 40, ny = t.y - Math.sin(ang) * 40;
         if (!isSolidAt(MAPS[p.mapId], nx, ny)) { p.x = nx; p.y = ny; p.lastMove = now; p.socket.emit('pos', { x: nx, y: ny, dash: 1 }); }
-        hits = enemies.filter(e => U.dist(e, t) <= 70);
+        hits = enemies.filter(e => U.dist(e, t) <= 110); // sát thương lan quanh điểm đáp
+        fxd.r = 110;
         fxd.tx = t.x; fxd.ty = t.y; fxd.to = t.id;
       } else if (sk.type === 'single' || sk.type === 'dot') {
         hits = [t];
@@ -362,6 +363,16 @@ class World {
         const c = (sk.range && t) ? t : p;
         hits = enemies.filter(e => U.dist(e, c) <= sk.radius);
         fxd.tx = c.x; fxd.ty = c.y; fxd.r = sk.radius;
+      }
+      if (sk.healAllies) {
+        for (const o of map.players) {
+          if (o.dead || U.dist(o, p) > sk.radius) continue;
+          if (map.def.pvp && o !== p && !(o.c.guildId && o.c.guildId === p.c.guildId)) continue;
+          const amt = Math.round(o.stats.maxHp * sk.healAllies);
+          o.c.hp = Math.min(o.stats.maxHp, o.c.hp + amt);
+          this.io.to('map:' + p.mapId).emit('dmg', { id: o.id, v: amt, k: 'heal' });
+          o.dirtyMe = true;
+        }
       }
       for (const h of hits) {
         this.damage(p, h, sk.mult);

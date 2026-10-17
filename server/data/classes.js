@@ -15,10 +15,10 @@ const CLASSES = {
     skills: [
       { id: 'tl0', name: 'La Hán Côn', lv: 1, mp: 0, cd: 700, type: 'single', mult: 1.0, range: 80, fx: 'slash', color: '#ffd27f' },
       { id: 'tl1', name: 'Kim Cương Chưởng', lv: 3, mp: 12, cd: 3500, type: 'single', mult: 2.4, range: 90, fx: 'palm', color: '#ffcc33' },
-      { id: 'tl2', name: 'Sư Tử Hống', lv: 10, mp: 25, cd: 8000, type: 'aoe', mult: 1.6, radius: 150, range: 0, fx: 'ring', color: '#ffe066' },
+      { id: 'tl2', name: 'Sư Tử Hống', lv: 6, mp: 25, cd: 8000, type: 'aoe', mult: 1.6, radius: 150, range: 0, fx: 'lionroar', color: '#ffe066' },
       { id: 'tl3', name: 'Dịch Cân Kinh', lv: 20, mp: 40, cd: 25000, type: 'buff', buff: { def: 0.5, dur: 12000 }, fx: 'aura', color: '#ffd700' },
       { id: 'tl4', name: 'Vi Đà Xử', lv: 35, mp: 45, cd: 10000, type: 'dash', mult: 2.8, range: 300, fx: 'dash', color: '#ffb347' },
-      { id: 'tl5', name: 'Như Lai Thần Chưởng', lv: 50, mp: 80, cd: 30000, type: 'aoe', mult: 4.2, radius: 190, range: 260, fx: 'pillar', color: '#fff1a8' }
+      { id: 'tl5', name: 'Như Lai Thần Chưởng', lv: 50, mp: 80, cd: 30000, type: 'aoe', mult: 4.2, radius: 190, range: 260, fx: 'buddha', color: '#ffd84a' }
     ]
   },
   thienvuong: {
@@ -31,10 +31,10 @@ const CLASSES = {
     skills: [
       { id: 'tv0', name: 'Phá Thiên Chùy', lv: 1, mp: 0, cd: 750, type: 'single', mult: 1.1, range: 85, fx: 'slash', color: '#ff6b6b' },
       { id: 'tv1', name: 'Kinh Lôi Trảm', lv: 3, mp: 14, cd: 4000, type: 'single', mult: 2.8, range: 90, fx: 'slash2', color: '#ff3b3b' },
-      { id: 'tv2', name: 'Bát Phương Phong Vũ', lv: 10, mp: 28, cd: 9000, type: 'aoe', mult: 1.9, radius: 140, range: 0, fx: 'tornado', color: '#ff7f50' },
+      { id: 'tv2', name: 'Bát Phương Phong Vũ', lv: 6, mp: 28, cd: 9000, type: 'aoe', mult: 1.9, radius: 140, range: 0, fx: 'whirl', color: '#ff6a3a' },
       { id: 'tv3', name: 'Thiên Vương Chiến Ý', lv: 20, mp: 40, cd: 25000, type: 'buff', buff: { atk: 0.4, dur: 12000 }, fx: 'aura', color: '#ff4500' },
       { id: 'tv4', name: 'Hỏa Long Xung Thiên', lv: 35, mp: 45, cd: 10000, type: 'dash', mult: 3.0, range: 320, fx: 'dash', color: '#ff5a1f' },
-      { id: 'tv5', name: 'Thiên Băng Địa Liệt', lv: 50, mp: 85, cd: 30000, type: 'aoe', mult: 4.5, radius: 180, range: 0, fx: 'nova', color: '#ff3020' }
+      { id: 'tv5', name: 'Thiên Băng Địa Liệt', lv: 50, mp: 85, cd: 30000, type: 'aoe', mult: 4.5, radius: 180, range: 0, fx: 'quake', color: '#ff5a1a' }
     ]
   },
   duongmon: {
@@ -47,10 +47,10 @@ const CLASSES = {
     skills: [
       { id: 'dm0', name: 'Phi Đao', lv: 1, mp: 0, cd: 650, type: 'single', mult: 1.0, range: 300, fx: 'dart', color: '#e0e0e0' },
       { id: 'dm1', name: 'Bạo Vũ Lê Hoa', lv: 3, mp: 15, cd: 4000, type: 'line', mult: 2.2, range: 340, width: 60, fx: 'dartfan', color: '#c0ffc0' },
-      { id: 'dm2', name: 'Thiên La Địa Võng', lv: 10, mp: 30, cd: 9000, type: 'aoe', mult: 1.7, radius: 130, range: 300, fx: 'net', color: '#90ee90' },
+      { id: 'dm2', name: 'Thiên La Địa Võng', lv: 6, mp: 30, cd: 9000, type: 'aoe', mult: 1.7, radius: 130, range: 300, fx: 'net', color: '#90ee90' },
       { id: 'dm3', name: 'Tâm Nhãn', lv: 20, mp: 40, cd: 25000, type: 'buff', buff: { crit: 25, dur: 12000 }, fx: 'aura', color: '#7fffd4' },
       { id: 'dm4', name: 'Truy Tâm Tiễn', lv: 35, mp: 40, cd: 8000, type: 'single', mult: 4.0, range: 380, fx: 'beam', color: '#a0ffd0' },
-      { id: 'dm5', name: 'Vạn Tiễn Xuyên Vân', lv: 50, mp: 80, cd: 30000, type: 'aoe', mult: 4.0, radius: 200, range: 340, fx: 'meteor', color: '#c8ffe8' }
+      { id: 'dm5', name: 'Vạn Tiễn Xuyên Vân', lv: 50, mp: 80, cd: 30000, type: 'aoe', mult: 4.0, radius: 200, range: 340, fx: 'arrowrain', color: '#b8ffd8' }
     ]
   },
   ngudoc: {
@@ -63,10 +63,10 @@ const CLASSES = {
     skills: [
       { id: 'nd0', name: 'Độc Châm', lv: 1, mp: 0, cd: 700, type: 'single', mult: 1.0, range: 240, fx: 'bolt', color: '#7cfc00' },
       { id: 'nd1', name: 'Xuyên Tâm Độc', lv: 3, mp: 14, cd: 5000, type: 'dot', mult: 0.9, ticks: 5, range: 260, fx: 'bolt', color: '#adff2f' },
-      { id: 'nd2', name: 'Vạn Cổ Thực Tâm', lv: 10, mp: 30, cd: 9000, type: 'aoe', mult: 1.5, radius: 140, range: 260, dotTicks: 3, fx: 'poison', color: '#9acd32' },
+      { id: 'nd2', name: 'Vạn Cổ Thực Tâm', lv: 6, mp: 30, cd: 9000, type: 'aoe', mult: 1.5, radius: 140, range: 260, dotTicks: 3, fx: 'toxic', color: '#8fe03a' },
       { id: 'nd3', name: 'Ngũ Độc Hộ Thể', lv: 20, mp: 40, cd: 25000, type: 'buff', buff: { atk: 0.3, def: 0.2, dur: 12000 }, fx: 'aura', color: '#32cd32' },
       { id: 'nd4', name: 'Kim Tằm Cổ', lv: 35, mp: 45, cd: 9000, type: 'line', mult: 3.0, range: 320, width: 70, dotTicks: 4, fx: 'dragon', color: '#b6ff3b' },
-      { id: 'nd5', name: 'Thiên Độc Vạn Xà', lv: 50, mp: 85, cd: 30000, type: 'aoe', mult: 3.8, radius: 200, range: 280, dotTicks: 5, fx: 'tornado', color: '#7dff4a' }
+      { id: 'nd5', name: 'Thiên Độc Vạn Xà', lv: 50, mp: 85, cd: 30000, type: 'aoe', mult: 3.8, radius: 200, range: 280, dotTicks: 5, fx: 'swarm', color: '#7dff4a' }
     ]
   },
   ngamy: {
@@ -79,10 +79,10 @@ const CLASSES = {
     skills: [
       { id: 'nm0', name: 'Phiêu Tuyết Kiếm', lv: 1, mp: 0, cd: 700, type: 'single', mult: 1.0, range: 220, fx: 'bolt', color: '#ffb6c1' },
       { id: 'nm1', name: 'Phật Quang Phổ Chiếu', lv: 3, mp: 18, cd: 6000, type: 'heal', heal: 0.3, radius: 200, fx: 'heal', color: '#fffacd' },
-      { id: 'nm2', name: 'Bất Diệt Kiếm Trận', lv: 10, mp: 30, cd: 9000, type: 'aoe', mult: 1.7, radius: 130, range: 240, fx: 'swords', color: '#ffc0cb' },
+      { id: 'nm2', name: 'Bất Diệt Kiếm Trận', lv: 6, mp: 30, cd: 9000, type: 'aoe', mult: 1.7, radius: 130, range: 240, fx: 'swords', color: '#ffc0cb' },
       { id: 'nm3', name: 'Từ Hàng Phổ Độ', lv: 20, mp: 45, cd: 25000, type: 'buff', buff: { def: 0.3, regen: 0.02, dur: 12000 }, fx: 'aura', color: '#ff69b4' },
       { id: 'nm4', name: 'Liên Hoa Kiếm Vũ', lv: 35, mp: 45, cd: 9000, type: 'aoe', mult: 2.8, radius: 150, range: 260, fx: 'lotus', color: '#ff9ed2' },
-      { id: 'nm5', name: 'Phổ Độ Chúng Sinh', lv: 50, mp: 90, cd: 30000, type: 'heal', heal: 0.8, radius: 260, fx: 'pillar', color: '#fff0f8' }
+      { id: 'nm5', name: 'Phổ Độ Chúng Sinh', lv: 50, mp: 90, cd: 30000, type: 'aoe', mult: 3.6, radius: 220, range: 0, healAllies: 0.4, fx: 'holylotus', color: '#ff9ed2' }
     ]
   },
   thuyyen: {
@@ -95,10 +95,10 @@ const CLASSES = {
     skills: [
       { id: 'ty0', name: 'Song Đao Liên Trảm', lv: 1, mp: 0, cd: 550, type: 'single', mult: 0.95, range: 85, fx: 'slash2', color: '#87cefa' },
       { id: 'ty1', name: 'Băng Tâm Tiên Tử', lv: 3, mp: 14, cd: 3500, type: 'single', mult: 2.6, range: 100, fx: 'slash2', color: '#00bfff' },
-      { id: 'ty2', name: 'Phong Hoa Tuyết Nguyệt', lv: 10, mp: 28, cd: 8500, type: 'aoe', mult: 1.8, radius: 130, range: 0, fx: 'blades', color: '#add8e6' },
+      { id: 'ty2', name: 'Phong Hoa Tuyết Nguyệt', lv: 6, mp: 28, cd: 8500, type: 'aoe', mult: 1.8, radius: 130, range: 0, fx: 'blades', color: '#add8e6' },
       { id: 'ty3', name: 'Ảnh Tung', lv: 20, mp: 35, cd: 22000, type: 'buff', buff: { spd: 0.35, crit: 20, dur: 10000 }, fx: 'aura', color: '#e0ffff' },
       { id: 'ty4', name: 'Thuấn Ảnh Sát', lv: 35, mp: 40, cd: 7000, type: 'dash', mult: 3.4, range: 340, fx: 'dash', color: '#5ad1ff' },
-      { id: 'ty5', name: 'Băng Phong Vạn Lý', lv: 50, mp: 80, cd: 30000, type: 'aoe', mult: 4.3, radius: 180, range: 0, fx: 'nova', color: '#9be8ff' }
+      { id: 'ty5', name: 'Băng Phong Vạn Lý', lv: 50, mp: 80, cd: 30000, type: 'aoe', mult: 4.3, radius: 180, range: 0, fx: 'frost', color: '#9be8ff' }
     ]
   },
   caibang: {
@@ -111,10 +111,10 @@ const CLASSES = {
     skills: [
       { id: 'cb0', name: 'Đả Cẩu Bổng', lv: 1, mp: 0, cd: 700, type: 'single', mult: 1.05, range: 100, fx: 'slash', color: '#deb887' },
       { id: 'cb1', name: 'Kháng Long Hữu Hối', lv: 3, mp: 15, cd: 4000, type: 'line', mult: 2.5, range: 220, width: 70, fx: 'dragon', color: '#ffd700' },
-      { id: 'cb2', name: 'Phi Long Tại Thiên', lv: 10, mp: 30, cd: 9000, type: 'aoe', mult: 2.0, radius: 150, range: 0, fx: 'ring', color: '#f4a460' },
+      { id: 'cb2', name: 'Phi Long Tại Thiên', lv: 6, mp: 30, cd: 9000, type: 'aoe', mult: 2.0, radius: 150, range: 0, fx: 'dragonring', color: '#ffc040' },
       { id: 'cb3', name: 'Túy Quyền', lv: 20, mp: 40, cd: 25000, type: 'buff', buff: { atk: 0.3, spd: 0.15, dur: 12000 }, fx: 'aura', color: '#daa520' },
       { id: 'cb4', name: 'Kiến Long Tại Điền', lv: 35, mp: 45, cd: 9000, type: 'dash', mult: 3.0, range: 300, fx: 'dash', color: '#ffc04d' },
-      { id: 'cb5', name: 'Hàng Long Thập Bát Chưởng', lv: 50, mp: 90, cd: 30000, type: 'line', mult: 5.0, range: 380, width: 110, fx: 'dragon', color: '#ffe14d' }
+      { id: 'cb5', name: 'Hàng Long Thập Bát Chưởng', lv: 50, mp: 90, cd: 30000, type: 'line', mult: 5.0, range: 380, width: 110, fx: 'hanglong', color: '#ffd23a' }
     ]
   },
   vodang: {
@@ -127,10 +127,10 @@ const CLASSES = {
     skills: [
       { id: 'vd0', name: 'Thái Cực Kiếm Khí', lv: 1, mp: 0, cd: 700, type: 'single', mult: 1.0, range: 260, fx: 'bolt', color: '#b0c4de' },
       { id: 'vd1', name: 'Vô Ngã Vô Kiếm', lv: 3, mp: 15, cd: 4000, type: 'line', mult: 2.3, range: 320, width: 50, fx: 'beam', color: '#87ceeb' },
-      { id: 'vd2', name: 'Thái Cực Đồ', lv: 10, mp: 32, cd: 9000, type: 'aoe', mult: 1.8, radius: 150, range: 260, fx: 'taiji', color: '#ffffff' },
+      { id: 'vd2', name: 'Thái Cực Đồ', lv: 6, mp: 32, cd: 9000, type: 'aoe', mult: 1.8, radius: 150, range: 260, fx: 'taiji', color: '#ffffff' },
       { id: 'vd3', name: 'Tọa Vong Vô Ngã', lv: 20, mp: 40, cd: 25000, type: 'buff', buff: { atk: 0.25, regen: 0.015, dur: 12000 }, fx: 'aura', color: '#4169e1' },
       { id: 'vd4', name: 'Thất Tinh Kiếm Trận', lv: 35, mp: 45, cd: 9000, type: 'aoe', mult: 2.9, radius: 150, range: 280, fx: 'swords', color: '#9fc5ff' },
-      { id: 'vd5', name: 'Thiên Địa Vô Cực', lv: 50, mp: 85, cd: 30000, type: 'aoe', mult: 4.3, radius: 200, range: 280, fx: 'taiji', color: '#e8f0ff' }
+      { id: 'vd5', name: 'Thiên Địa Vô Cực', lv: 50, mp: 85, cd: 30000, type: 'aoe', mult: 4.3, radius: 200, range: 280, fx: 'bagua', color: '#cfe0ff' }
     ]
   },
   conlon: {
@@ -143,10 +143,10 @@ const CLASSES = {
     skills: [
       { id: 'cl0', name: 'Lôi Phù', lv: 1, mp: 0, cd: 750, type: 'single', mult: 1.05, range: 260, fx: 'lightning', color: '#fff68f' },
       { id: 'cl1', name: 'Cuồng Phong Sậu Điện', lv: 3, mp: 16, cd: 4000, type: 'single', mult: 2.5, range: 280, fx: 'lightning', color: '#ffff00' },
-      { id: 'cl2', name: 'Thiên Lôi Địa Hỏa', lv: 10, mp: 35, cd: 9000, type: 'aoe', mult: 2.0, radius: 160, range: 280, fx: 'storm', color: '#e0b0ff' },
+      { id: 'cl2', name: 'Thiên Lôi Địa Hỏa', lv: 6, mp: 35, cd: 9000, type: 'aoe', mult: 2.0, radius: 160, range: 280, fx: 'storm', color: '#e0b0ff' },
       { id: 'cl3', name: 'Thanh Phong Phù', lv: 20, mp: 40, cd: 25000, type: 'buff', buff: { atk: 0.35, dur: 12000 }, fx: 'aura', color: '#da70d6' },
       { id: 'cl4', name: 'Hô Phong Hoán Vũ', lv: 35, mp: 45, cd: 9000, type: 'aoe', mult: 2.8, radius: 150, range: 280, fx: 'tornado', color: '#c9a6ff' },
-      { id: 'cl5', name: 'Cửu Thiên Huyền Lôi', lv: 50, mp: 90, cd: 30000, type: 'aoe', mult: 4.6, radius: 210, range: 300, fx: 'meteor', color: '#f0d0ff' }
+      { id: 'cl5', name: 'Cửu Thiên Huyền Lôi', lv: 50, mp: 90, cd: 30000, type: 'aoe', mult: 4.6, radius: 210, range: 300, fx: 'thunder', color: '#e6c8ff' }
     ]
   }
 };
