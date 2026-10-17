@@ -7,6 +7,7 @@ const { NPCS, TELEPORTS } = require('../data/npcs');
 const { TUTORIAL } = require('../data/quests');
 const { MOUNTS, MOUNT_MAX, mountExpNext, isBreakLevel } = require('../data/mounts');
 const { DRAGONS, DRAGON_SLOT } = require('../data/dragons');
+const { SKILL_MAX, scaleSkill, upgradeCost, skillPointsTotal, BOOKS } = require('../data/skillbooks');
 const RARITY_IDX = { common: 0, rare: 1, epic: 2, legendary: 3 };
 const { ENHANCE_MAX, ENHANCE_SAFE, ENHANCE_RATE, enhanceCost } = require('../data/enhance');
 const U = require('./util');
@@ -77,6 +78,13 @@ class World {
       lastPos: null
     };
     this.players.set(user.id, p);
+    if (!c.skills) { // nhân vật tạo trước khi có sách võ công: giữ các võ công đã mở theo cấp
+      c.skills = {};
+      CLASSES[c.cls].skills.forEach((sk, i) => { if (i > 0 && c.level >= sk.lv) c.skills[sk.id] = 1; });
+    }
+    for (const el in (c.dragons || {})) if (!c.skills[DRAGONS[el].id]) c.skills[DRAGONS[el].id] = 1;
+    if (!Array.isArray(c.hotbar) || c.hotbar.length !== 6) c.hotbar = [1, 2, 3, 4, 5, 6];
+    c.spSpent = c.spSpent || 0;
     this.recalc(p);
     if (!MAPS[c.map]) c.map = 'tuong_duong';
     const map = MAPS[c.map];
@@ -142,6 +150,7 @@ class World {
       expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until })),
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null,
+      skills: c.skills || {}, hotbar: c.hotbar, sp: skillPointsTotal(c.level) - (c.spSpent || 0),
       mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c)
     };
   }
@@ -192,7 +201,8 @@ class World {
     if (r.exp) { this.gainExp(p, r.exp, true); parts.push(`${r.exp} KN`); }
     if (r.gold) { p.c.gold += r.gold; parts.push(`${r.gold} lượng`); }
     if (r.knb) { p.c.knb += r.knb; parts.push(`${r.knb} Nguyên Bảo`); }
-    for (const [id, qty] of (r.items || [])) {
+    for (let [id, qty] of (r.items || [])) {
+      if (id === '@book1') id = 'sk_' + CLASSES[p.c.cls].skills[1].id;
       this.giveItem(p, id, qty);
       parts.push(`${ITEMS[id] ? ITEMS[id].name : id} x${qty}`);
     }
@@ -314,8 +324,10 @@ class World {
     if (p.dead) return;
     const cl = CLASSES[p.c.cls];
     idx = idx | 0;
-    const sk = idx === DRAGON_SLOT ? (p.c.dragon && p.c.dragons && p.c.dragons[p.c.dragon] ? DRAGONS[p.c.dragon] : null) : cl.skills[idx];
-    if (!sk) { if (idx === DRAGON_SLOT) this.toast(p, 'Chưa lĩnh ngộ Long Ấn. Dùng Bí Kíp rồng (cấp 30) để học.', 'error'); return; }
+    const base = idx === DRAGON_SLOT ? (p.c.dragon && p.c.dragons && p.c.dragons[p.c.dragon] ? DRAGONS[p.c.dragon] : null) : cl.skills[idx];
+    if (!base) { if (idx === DRAGON_SLOT) this.toast(p, 'Chưa lĩnh ngộ Long Ấn. Dùng Bí Kíp rồng (cấp 30) để học.', 'error'); return; }
+    if (idx > 0 && idx !== DRAGON_SLOT && !p.c.skills[base.id]) return this.toast(p, `Chưa học ${base.name}. Mua sách tại Tàng Kinh Các ở Tương Dương.`, 'error');
+    const sk = scaleSkill(base, p.c.skills[base.id] || 1);
     if (p.c.level < sk.lv) return this.toast(p, `Cần cấp ${sk.lv} để dùng ${sk.name}`, 'error');
     const now = Date.now();
     if ((p.cds[sk.id] || 0) > now) return;
@@ -645,11 +657,23 @@ class World {
     if (e.town) { U.removeByUid(c, uid, 1); this.teleport(p, 'tuong_duong'); p.dirtyMe = true; return; }
     if (e.expBuff) { c.expBuffUntil = Math.max(Date.now(), c.expBuffUntil || 0) + e.expBuff; this.toast(p, 'Nhân đôi kinh nghiệm 30 phút!', 'reward'); }
     if (e.wheel) { c.wheel.extra = (c.wheel.extra || 0) + 1; this.toast(p, 'Nhận thêm 1 lượt Vòng Quay', 'reward'); }
+    if (e.learn) {
+      const b = BOOKS[s.id];
+      if (b.cls !== c.cls) return this.toast(p, `Sách này của môn phái ${CLASSES[b.cls].name}, bạn không thể học`, 'error');
+      if (c.skills[e.learn]) return this.toast(p, 'Bạn đã học võ công này rồi. Nâng cấp trong bảng Võ Công (phím K).', 'error');
+      U.removeByUid(c, uid, 1);
+      c.skills[e.learn] = 1;
+      this.toast(p, `Lĩnh ngộ võ công: ${b.name}! Mở bảng Võ Công (phím K) để gán nút và nâng cấp.`, 'reward');
+      this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y, small: true });
+      p.dirtyMe = true; this.db.markDirty();
+      return;
+    }
     if (e.dragon) {
       c.dragons = c.dragons || {};
       if (c.dragons[e.dragon]) return this.toast(p, 'Bạn đã lĩnh ngộ Long Ấn này rồi', 'error');
       U.removeByUid(c, uid, 1);
       c.dragons[e.dragon] = true;
+      c.skills[DRAGONS[e.dragon].id] = c.skills[DRAGONS[e.dragon].id] || 1;
       c.dragon = e.dragon;
       this.toast(p, `Lĩnh ngộ Long Ấn: ${DRAGONS[e.dragon].name}! Nhấn phím 7 hoặc nút 🐉 để thi triển.`, 'reward');
       this.features.announce(`🐉 ${c.name} đã lĩnh ngộ Long Ấn [${DRAGONS[e.dragon].name}]!`);
@@ -740,6 +764,7 @@ class World {
     if (npc.shop) {
       const tier = MAPS[p.mapId].tier;
       out.shop = npc.shop.filter(id => !npc.field || ITEMS[id].type !== 'equip' || ITEMS[id].tier <= tier + 1)
+        .filter(id => !npc.bookShop || ITEMS[id].cls === p.c.cls)
         .map(id => ({ id, price: ITEMS[id].price }));
     }
     if (npc.knbShop) out.knbShop = npc.knbShop;
@@ -764,6 +789,7 @@ class World {
       c.knb -= cost;
     } else {
       if (!(npc.shop || []).includes(id)) return;
+      if (it.cls && it.cls !== c.cls) return this.toast(p, 'Sách này không thuộc môn phái của bạn', 'error');
       const cost = it.price * qty;
       if (c.gold < cost) return this.toast(p, 'Không đủ ngân lượng', 'error');
       if (!U.addItem(c, id, qty)) return this.toast(p, 'Túi đồ đầy', 'error');
@@ -829,6 +855,34 @@ class World {
     p.socket.emit('enhanceResult', { uid, plus: target.plus || 0, result });
     this.fx(p.mapId, { t: result === 'ok' ? 'levelup' : 'death', id: p.id, x: p.x, y: p.y, small: true });
     this.db.log('enhance', `${c.name} cường hóa ${it.name} +${plus}→+${target.plus} (${result})`, { user: p.userId });
+    this.db.markDirty();
+  }
+
+  skillAction(p, a) {
+    const c = p.c, cl = CLASSES[c.cls];
+    if (a.op === 'hotbar') {
+      const bar = Array.isArray(a.bar) ? a.bar.slice(0, 6).map(x => x | 0) : [];
+      if (bar.length !== 6 || bar.some(x => x < 0 || x > DRAGON_SLOT)) return;
+      c.hotbar = bar;
+    } else if (a.op === 'upgrade') {
+      const idx = a.idx | 0;
+      const base = idx === DRAGON_SLOT ? (c.dragon && DRAGONS[c.dragon]) : cl.skills[idx];
+      if (!base) return;
+      const learned = idx === 0 || (idx === DRAGON_SLOT ? c.dragons && c.dragons[c.dragon] : c.skills[base.id]);
+      if (!learned) return this.toast(p, 'Chưa học võ công này', 'error');
+      const lv = c.skills[base.id] || 1;
+      if (lv >= SKILL_MAX) return this.toast(p, 'Võ công đã đạt cảnh giới tối đa', 'error');
+      const cost = upgradeCost(idx === DRAGON_SLOT ? 5 : idx, lv);
+      const sp = skillPointsTotal(c.level) - (c.spSpent || 0);
+      if (sp < cost.sp) return this.toast(p, `Cần ${cost.sp} điểm võ học (mỗi cấp nhân vật nhận 1 điểm)`, 'error');
+      if (c.gold < cost.gold) return this.toast(p, `Cần ${cost.gold.toLocaleString('vi-VN')} lượng`, 'error');
+      c.gold -= cost.gold; c.spSpent = (c.spSpent || 0) + cost.sp;
+      c.skills[base.id] = lv + 1;
+      this.toast(p, `${base.name} đột phá lên tầng ${lv + 1}!`, 'reward');
+      this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y, small: true });
+      if (lv + 1 === SKILL_MAX) this.features.announce(`📖 ${c.name} đã luyện ${base.name} đến cảnh giới tối cao (tầng ${SKILL_MAX})!`);
+    }
+    p.dirtyMe = true;
     this.db.markDirty();
   }
 

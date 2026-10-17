@@ -42,6 +42,7 @@
   }
 
   // ================= HUD =================
+  UI.updateMusicBtn = () => { const b = $('btn-music'); if (b) { b.textContent = GameAudio.state.music ? '🎵' : '🔇'; b.title = GameAudio.state.music ? 'Tắt nhạc nền' : 'Bật nhạc nền'; } };
   UI.initHud = function () {
     document.querySelectorAll('#menu-buttons button').forEach(b => b.onclick = () => UI.togglePanel(b.dataset.panel));
     $('panel-close').onclick = UI.closePanel;
@@ -64,6 +65,9 @@
       chatFilter = b.dataset.ch; renderChat();
       if (b.dataset.ch !== 'all' && b.dataset.ch !== 'pm') { $('chat-ch').value = b.dataset.ch; $('chat-to').classList.add('hidden'); }
     });
+    $('chat-tabs').addEventListener('click', e => { if ($('chat').classList.contains('collapsed') && e.target.id !== 'chat-toggle') $('chat-toggle').click(); });
+    $('btn-music').onclick = () => { GameAudio.set('music', !GameAudio.state.music); UI.updateMusicBtn(); };
+    UI.updateMusicBtn();
     $('chat-toggle').onclick = () => { $('chat').classList.toggle('collapsed'); $('chat-toggle').textContent = $('chat').classList.contains('collapsed') ? '▴' : '▾'; };
     if (Input.isTouch) $('chat').classList.add('collapsed'), $('chat-toggle').textContent = '▴';
     $('chat-log').addEventListener('click', e => {
@@ -77,22 +81,28 @@
   };
 
   let builtFor = null;
+  const SLOT_KEYS = ['2', '3', '4', '5', '6', '7'];
   function buildSkillButtons() {
-    const bkey = G.me && (G.me.cls + ':' + (G.me.dragon || ''));
-    if (!G.me || builtFor === bkey) return;
-    builtFor = bkey;
+    if (!G.me) return;
     const skills = G.mySkills();
+    const hb = G.me.hotbar || [1, 2, 3, 4, 5, 6];
+    const bkey = G.me.cls + ':' + (G.me.dragon || '') + ':' + hb.join(',') + ':' + skills.map(s => s && s.learned ? s.slv : 0).join(',');
+    if (builtFor === bkey) return;
+    builtFor = bkey;
     const bar = $('skillbar');
     bar.innerHTML = '';
-    skills.forEach((s, i) => {
+    const mk = (s, key, onclick, slot) => {
       const d = document.createElement('div');
-      d.className = 'skill' + (i === 6 ? ' dragon el-' + s.el : ''); d.dataset.idx = i;
-      d.innerHTML = `<span class="key">${i === 0 ? '1/␣' : i + 1}</span>${esc(s.name)}<span class="mpc">${s.mp || ''}</span><div class="cdo"></div><div class="cdt"></div>`;
-      d.onclick = () => G.useSkill(i);
-      d.onmouseenter = e => tip(e, `<b>${esc(s.name)}</b><br>Cấp ${s.lv} · ${s.mp} MP · Hồi ${s.cd / 1000}s<br>${skillDesc(s)}`);
+      if (!s) { d.className = 'skill empty'; d.innerHTML = `<span class="key">${key}</span><span class="small muted">Trống</span>`; d.onclick = () => UI.openPanel('skills'); bar.appendChild(d); return; }
+      d.className = 'skill' + (s.idx === 6 ? ' dragon el-' + s.el : '') + (s.learned ? '' : ' unlearned'); d.dataset.idx = s.idx;
+      d.innerHTML = `<span class="key">${key}</span>${esc(s.name)}<span class="mpc">${s.mp || ''}</span>${s.slv > 1 ? `<span class="slv">${s.slv}</span>` : ''}<div class="cdo"></div><div class="cdt"></div>`;
+      d.onclick = onclick;
+      d.onmouseenter = e => tip(e, `<b>${esc(s.name)}</b>${s.learned ? ` · Tầng ${s.slv}` : ' · <span style="color:#ff9b8a">Chưa học</span>'}<br>Cấp ${s.lv} · ${s.mp} MP · Hồi ${s.cd / 1000}s<br>${skillDesc(s)}`);
       d.onmouseleave = hideTip;
       bar.appendChild(d);
-    });
+    };
+    mk(skills[0], '1/␣', () => G.useSkill(0));
+    hb.forEach((idx, n) => mk(idx ? skills[idx] : null, SLOT_KEYS[n], () => G.useSlot(n + 1)));
     for (const k of ['hp', 'mp']) {
       const d = document.createElement('div');
       d.className = 'skill'; d.id = 'pot-' + k;
@@ -102,14 +112,17 @@
       bar.appendChild(d);
     }
     document.querySelectorAll('.act.sk').forEach(b => {
-      const s = skills[+b.dataset.sk];
-      if (!s) { b.style.display = 'none'; return; }
-      b.style.display = '';
-      b.innerHTML = `${esc(s.name)}<div class="cdo"></div><div class="cdt"></div>`;
+      const idx = hb[+b.dataset.sk - 1], s = idx ? skills[idx] : null;
+      b.dataset.idx = s ? s.idx : '';
+      b.classList.toggle('empty', !s);
+      b.style.display = s ? '' : 'none';
+      b.classList.toggle('unlearned', !!s && !s.learned);
+      b.classList.toggle('dragon', !!s && s.idx === 6);
+      b.innerHTML = s ? `${esc(s.name)}<div class="cdo"></div><div class="cdt"></div>` : '<span class="muted">+</span>';
     });
   }
   function skillDesc(s) {
-    const t = { single: 'Tấn công đơn mục tiêu', aoe: `Sát thương diện rộng (bán kính ${s.radius})`, line: 'Tấn công theo đường thẳng', buff: 'Tăng cường bản thân', heal: 'Hồi máu bản thân và đồng đội xung quanh', dot: 'Gây độc theo thời gian' }[s.type];
+    const t = { single: 'Tấn công đơn mục tiêu', aoe: `Sát thương diện rộng (bán kính ${s.radius})`, line: 'Tấn công theo đường thẳng', buff: 'Tăng cường bản thân', heal: 'Hồi máu bản thân và đồng đội xung quanh', dot: 'Gây độc theo thời gian', dash: 'Lướt tới mục tiêu, sát thương lan quanh điểm đáp' }[s.type] || '';
     return `${t}${s.mult ? ' · x' + s.mult + ' sát thương' : ''}`;
   }
 
@@ -135,11 +148,8 @@
     }
     // khóa kỹ năng
     G.mySkills().forEach((s, i) => {
-      const locked = me.level < s.lv;
-      const el = document.querySelector(`#skillbar .skill[data-idx="${i}"]`);
-      if (el) el.classList.toggle('locked', locked);
-      const b = document.querySelector(`.act.sk[data-sk="${i}"]`);
-      if (b) b.classList.toggle('locked', locked);
+      const locked = !s.learned || me.level < s.lv;
+      document.querySelectorAll(`#skillbar .skill[data-idx="${i}"], .act.sk[data-idx="${i}"]`).forEach(el => el.classList.toggle('locked', locked));
     });
     const cnt = k => me.inv.filter(x => x.id.startsWith(k)).reduce((s, x) => s + x.qty, 0);
     const hpc = cnt('hp'), mpc = cnt('mp');
@@ -149,7 +159,7 @@
     $('btn-hp').innerHTML = `❤️<span class="cnt">${hpc}</span>`;
     $('btn-mp').innerHTML = `💧<span class="cnt">${mpc}</span>`;
     updateTutorial();
-    if (panel === 'inventory' || panel === 'character' || panel === 'mount' || (panel === 'npc' && npcData)) UI.refreshPanel(true);
+    if (panel === 'inventory' || panel === 'character' || panel === 'mount' || panel === 'skills' || (panel === 'npc' && npcData)) UI.refreshPanel(true);
   };
   function setBar(el, v, max) {
     if (!el) return;
@@ -197,8 +207,7 @@
       const cd = G.skillCd(i);
       const r = cd ? Math.max(0, (cd.until - now) / cd.total) : 0;
       const txt = cd && cd.until > now && cd.total > 1000 ? Math.ceil((cd.until - now) / 1000) : '';
-      for (const el of [document.querySelector(`#skillbar .skill[data-idx="${i}"]`), document.querySelector(`.act.sk[data-sk="${i}"]`)]) {
-        if (!el) continue;
+      for (const el of document.querySelectorAll(`#skillbar .skill[data-idx="${i}"], .act.sk[data-idx="${i}"]`)) {
         const o = el.querySelector('.cdo'), t = el.querySelector('.cdt');
         if (o) o.style.height = (r * 100) + '%';
         if (t && t.textContent != txt) t.textContent = txt;
@@ -229,7 +238,9 @@
     box.appendChild(d);
     while (box.children.length > 5) box.firstChild.remove();
     setTimeout(() => d.remove(), 3100);
-    if (type.startsWith('item')) G.sfx('pick');
+    if (type === 'item:epic' || type === 'item:legendary') GameAudio.sfx('rare');
+    else if (type.startsWith('item')) G.sfx('pick');
+    else if (type === 'level') GameAudio.sfx('level');
   };
   UI.announce = function (text) {
     const box = $('announce');
@@ -272,7 +283,7 @@
   function hideTip() { $('tooltip').classList.add('hidden'); }
 
   // ================= Bảng chức năng =================
-  const TITLES = { inventory: '🎒 Túi Đồ & Trang Bị', character: '🧍 Thông Tin Nhân Vật', quests: '📜 Nhiệm Vụ', guild: '🏯 Bang Hội', events: '🎉 Sự Kiện & Hoạt Động', leaderboard: '🏆 Bảng Xếp Hạng', settings: '⚙️ Cài Đặt', mount: '🐎 Thú Cưỡi', npc: '' , online: '👥 Người Chơi Trực Tuyến' };
+  const TITLES = { inventory: '🎒 Túi Đồ & Trang Bị', character: '🧍 Thông Tin Nhân Vật', quests: '📜 Nhiệm Vụ', guild: '🏯 Bang Hội', events: '🎉 Sự Kiện & Hoạt Động', leaderboard: '🏆 Bảng Xếp Hạng', settings: '⚙️ Cài Đặt', mount: '🐎 Thú Cưỡi', skills: '📖 Võ Công', npc: '' , online: '👥 Người Chơi Trực Tuyến' };
   UI.togglePanel = function (name) { if (panel === name) UI.closePanel(); else UI.openPanel(name); };
   UI.openPanel = function (name, state) {
     panel = name;
@@ -294,7 +305,7 @@
     const scroll = body.scrollTop;
     // không vẽ lại khi người dùng đang gõ
     if (soft && body.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
-    const fn = { inventory: renderInventory, character: renderCharacter, quests: renderQuests, guild: renderGuild, events: renderEvents, leaderboard: renderLeaderboard, settings: renderSettings, npc: renderNpc, online: renderOnline, mount: renderMount }[panel];
+    const fn = { inventory: renderInventory, character: renderCharacter, quests: renderQuests, guild: renderGuild, events: renderEvents, leaderboard: renderLeaderboard, settings: renderSettings, npc: renderNpc, online: renderOnline, mount: renderMount, skills: renderSkills }[panel];
     if (fn) fn(body);
     body.scrollTop = scroll;
   };
@@ -631,11 +642,12 @@
     body.innerHTML = `
       <div class="card"><h4>Hiển thị & âm thanh</h4>
         <label><input type="checkbox" data-set="names" ${s.names ? 'checked' : ''}> Hiện tên nhân vật/quái</label><br>
-        <label><input type="checkbox" data-set="sound" ${s.sound ? 'checked' : ''}> Âm thanh hiệu ứng</label><br>
+        <label><input type="checkbox" id="au-music" ${GameAudio.state.music ? 'checked' : ''}> 🎵 Nhạc nền võ lâm</label> <input type="range" id="au-mvol" min="0" max="1" step="0.05" value="${GameAudio.state.musicVol}" style="width:110px;vertical-align:middle"><br>
+        <label><input type="checkbox" id="au-sfx" ${GameAudio.state.sfx ? 'checked' : ''}> 🔊 Âm thanh hiệu ứng</label> <input type="range" id="au-svol" min="0" max="1" step="0.05" value="${GameAudio.state.sfxVol}" style="width:110px;vertical-align:middle"><br>
         <label><input type="checkbox" data-set="shake" ${s.shake ? 'checked' : ''}> Rung màn hình khi bị đánh</label>
         <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn small" id="set-fs">⛶ Toàn màn hình</button><button class="btn small" id="set-online">👥 Người chơi online</button></div></div>
       <div class="card small"><h4>Điều khiển</h4>
-        <div><b>PC:</b> WASD/mũi tên di chuyển · Nhấp chuột để đi/chọn mục tiêu · 1/Space đánh · 2–6 kỹ năng · Z/X thuốc · T cưỡi thú · Tab đổi mục tiêu · F nói chuyện NPC · R tự động · Enter chat · I/C/M/J/G/O/L mở bảng · Esc đóng</div>
+        <div><b>PC:</b> WASD/mũi tên di chuyển · Nhấp chuột để đi/chọn mục tiêu · 1/Space đánh · 2–7 các ô kỹ năng (tự gán trong bảng Võ Công, phím K) · Z/X thuốc · T cưỡi thú · Tab đổi mục tiêu · F nói chuyện NPC · R tự động · Enter chat · I/C/M/J/G/O/L mở bảng · Esc đóng</div>
         <div><b>Mobile:</b> Joystick trái để di chuyển · Nút ⚔️ (giữ để đánh liên tục) · 3 nút kỹ năng · ❤️💧 thuốc · 🎯 đổi mục tiêu · Chạm NPC/quái để tương tác</div>
         <div><b>Tay cầm:</b> Cần trái/D-pad di chuyển · A đánh · X/Y/B kỹ năng · LB/RB thuốc · LT đổi mục tiêu · RT nói chuyện NPC · Back mở túi · Start tự động ${pad ? `<br><span style="color:#4ade80">🎮 Đã kết nối: ${esc(pad.id.slice(0, 40))}</span>` : '<br><span class="muted">Chưa phát hiện tay cầm (nhấn một nút bất kỳ để kết nối)</span>'}</div></div>
       <div class="card"><h4>Tài khoản</h4>
@@ -644,6 +656,10 @@
         <button class="btn small primary" id="set-logout" style="margin-top:6px">Đăng xuất</button></div>`;
     body.querySelectorAll('[data-set]').forEach(c => c.onchange = () => { G.settings[c.dataset.set] = c.checked; G.saveSettings(); });
     $('set-fs').onclick = () => Input.toggleFullscreen();
+    $('au-music').onchange = e => { GameAudio.set('music', e.target.checked); UI.updateMusicBtn(); };
+    $('au-sfx').onchange = e => GameAudio.set('sfx', e.target.checked);
+    $('au-mvol').oninput = e => GameAudio.set('musicVol', +e.target.value);
+    $('au-svol').oninput = e => { GameAudio.set('sfxVol', +e.target.value); GameAudio.sfx('coin', 150); };
     $('set-online').onclick = () => UI.openPanel('online');
     $('set-logout').onclick = () => G.logout();
     const pc = $('pw-change');
@@ -657,6 +673,47 @@
 
   let onlineData = null;
   UI.onOnline = function (d) { onlineData = d; if (panel === 'online') UI.refreshPanel(); };
+  // ---------- Võ công: học, nâng cấp, gán nút ----------
+  function renderSkills(body) {
+    const me = G.me, skills = G.mySkills(), max = G.data.skillMax || 10;
+    const hb = me.hotbar || [1, 2, 3, 4, 5, 6];
+    const BOOK_PRICE = [0, 300, 2500, 12000, 50000, 180000];
+    const upCost = (idx, lv) => ({ sp: lv, gold: Math.round(400 * lv * lv * ((idx === 6 ? 5 : idx) + 1)) });
+    let html = `<div class="sk-head"><div>📜 Điểm võ học: <b style="color:#ffd76a">${me.sp}</b> <span class="small muted">(mỗi cấp nhân vật +1 điểm)</span></div><div class="small muted">Sách võ công bán tại <b>Tàng Kinh Các</b> – Tương Dương</div></div>`;
+    html += '<h4 class="sk-title">⌨️ Gán nút kỹ năng</h4><div class="sk-slots">';
+    const learnedList = skills.filter(s => s && s.idx > 0 && s.learned);
+    for (let n = 0; n < 6; n++) {
+      html += `<label class="sk-slot"><span class="key">${Input.isTouch ? 'Nút ' + (n + 1) : 'Phím ' + SLOT_KEYS[n]}</span><select data-slot="${n}"><option value="0">— Trống —</option>${learnedList.map(s => `<option value="${s.idx}" ${hb[n] === s.idx ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></label>`;
+    }
+    html += '</div><h4 class="sk-title">📖 Võ học môn phái</h4><div class="list">';
+    skills.forEach((s, i) => {
+      if (!s) return;
+      const lvOk = me.level >= s.lv;
+      const nextS = s.learned && s.slv < max ? G.scaleSkill(i === 6 ? G.data.dragons[me.dragon] : G.data.classes[me.cls].skills[i], s.slv + 1) : null;
+      const cost = upCost(i, s.slv);
+      const effect = s.mult ? `Sát thương x${s.mult}${nextS ? ` → <b style="color:#4ade80">x${nextS.mult}</b>` : ''}` : s.heal ? `Hồi ${Math.round(s.heal * 100)}%${nextS ? ` → <b style="color:#4ade80">${Math.round(nextS.heal * 100)}%</b>` : ''}` : s.buff ? `Hiệu lực ${Math.round(s.buff.dur / 1000)}s${nextS ? ` → <b style="color:#4ade80">${Math.round(nextS.buff.dur / 1000)}s</b>` : ''}` : '';
+      let right;
+      if (!s.learned) right = `<div class="sk-need"><span class="warn small">Chưa học</span><br><span class="small muted">Sách ${fmt(BOOK_PRICE[i])} lượng${lvOk ? '' : ' · cần cấp ' + s.lv}</span></div>`;
+      else if (s.slv >= max) right = '<span class="small" style="color:#ff9b2f">✦ Đại thành ✦</span>';
+      else right = `<button class="btn small green" data-up="${i}" ${me.sp >= cost.sp && me.gold >= cost.gold ? '' : 'disabled'}>Nâng tầng ${s.slv + 1}<br><span class="small">${cost.sp} điểm · ${fmt(cost.gold)} lượng</span></button>`;
+      html += `<div class="li sk-row ${s.learned ? 'done' : ''}"><div class="sk-ico ${i === 6 ? 'dragon' : ''}">${i === 0 ? '⚔️' : i === 6 ? '🐉' : ['', '①', '②', '③', '④', '⑤'][i]}</div><div class="grow"><b>${esc(s.name)}</b> ${s.learned ? `<span class="sk-lv">Tầng ${s.slv}/${max}</span>` : ''} ${lvOk ? '' : `<span class="warn small">(cấp ${s.lv})</span>`}
+        <div class="sub">${skillDesc(s)} · ${s.mp} MP · Hồi ${s.cd / 1000}s</div><div class="sub">${effect}</div>
+        ${s.learned ? `<div class="sk-bar">${Array.from({ length: max }, (_, k) => `<i class="${k < s.slv ? 'on' : ''}"></i>`).join('')}</div>` : ''}</div>${right}</div>`;
+    });
+    html += '</div>';
+    if (!skills[6]) html += '<p class="small muted">🐉 Long Ấn (rồng lửa / nước / băng) học bằng Bí Kíp từ Boss, Kỳ Trân Các hoặc đổi Hoa Đăng.</p>';
+    body.innerHTML = html;
+    body.querySelectorAll('[data-slot]').forEach(sel => sel.onchange = () => {
+      const bar = hb.slice();
+      const v = +sel.value, n = +sel.dataset.slot;
+      const dup = bar.indexOf(v);
+      if (v && dup >= 0 && dup !== n) bar[dup] = bar[n]; // đổi chỗ nếu đã gán ở ô khác
+      bar[n] = v;
+      emit('skillOp', { op: 'hotbar', bar });
+    });
+    body.querySelectorAll('[data-up]').forEach(b => b.onclick = () => emit('skillOp', { op: 'upgrade', idx: +b.dataset.up }));
+  }
+
   function mountStats(id, lv) {
     const m = G.data.mounts[id], out = {};
     for (const k of new Set([...Object.keys(m.stats), ...Object.keys(m.growth)])) out[k] = Math.round(((m.stats[k] || 0) + (m.growth[k] || 0) * (lv - 1)) * 10) / 10;

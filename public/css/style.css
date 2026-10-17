@@ -378,3 +378,50 @@ body.short .auth-right { padding-top: 40px; text-align: center; }
 body.short .auth-form input { padding: 7px 10px; font-size: 14px; }
 body.short .auth-form { gap: 5px; }
 body.short .auth-form .btn { padding: 7px; }
+
+/* ---------- Sửa chạm trên điện thoại: joystick nằm dưới các khung nhiệm vụ / chat ---------- */
+#joy-zone { z-index: 1; top: auto; height: 58%; }
+#action-pad { z-index: 3; }
+#tracker { z-index: 8; }
+#chat { z-index: 9; }
+#btn-auto, #btn-music { z-index: 8; }
+body.touch #tutorial-box .claim { padding: 7px 16px; font-size: 13px; margin-top: 6px; }
+body.touch #tutorial-box, body.touch #daily-box { padding: 8px 10px; }
+body.touch #chat-tabs { padding: 4px; gap: 4px; }
+body.touch #chat-tabs button { padding: 6px 9px; font-size: 12px; min-height: 30px; }
+body.touch #chat-toggle { min-width: 40px; font-size: 16px !important; }
+body.touch #chat-form { padding: 5px; gap: 5px; }
+body.touch #chat-form select, body.touch #chat-form input, body.touch #chat-form .btn { min-height: 34px; font-size: 14px; }
+body.touch #chat.collapsed #chat-tabs { cursor: pointer; }
+#btn-music { right: 8px; top: auto; bottom: 130px; }
+body:not(.touch) #btn-music { right: auto; left: calc(50% + 90px); bottom: 86px; }
+body.touch #btn-music { left: 12px; right: auto; bottom: 196px; }
+body.short.touch #btn-music { bottom: 172px; }
+
+/* ---------- Thanh kỹ năng & bảng Võ Công ---------- */
+.skill.empty { border-style: dashed; opacity: .55; }
+.skill.unlearned, .act.sk.unlearned { filter: grayscale(1) brightness(.5); }
+.act.sk.empty { border-style: dashed; opacity: .5; font-size: 22px; }
+.skill .slv { position: absolute; top: 1px; right: 3px; font-size: 9px; color: #ffd76a; font-weight: 900; }
+.sk-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; align-items: center; background: #120d18; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.sk-title { color: var(--gold); margin: 10px 0 6px; }
+.sk-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.sk-slot { display: flex; align-items: center; gap: 6px; background: #120d18; border: 1px solid #3a2a45; border-radius: 6px; padding: 5px 6px; }
+.sk-slot .key { color: var(--gold); font-weight: 800; font-size: 12px; white-space: nowrap; }
+.sk-slot select { flex: 1; min-width: 0; padding: 5px; font-size: 12px; }
+.sk-row { align-items: center; }
+.sk-ico { width: 38px; height: 38px; border-radius: 8px; border: 2px solid var(--gold2); background: radial-gradient(#4a3560, #1a1024); display: flex; align-items: center; justify-content: center; font-size: 20px; flex: none; }
+.sk-ico.dragon { border-color: #ff9b2f; box-shadow: 0 0 8px rgba(255,120,40,.5); }
+.sk-lv { font-size: 11px; color: #ffd76a; background: #3a2a1a; border-radius: 6px; padding: 1px 6px; }
+.sk-bar { display: flex; gap: 2px; margin-top: 4px; max-width: 220px; }
+.sk-bar i { flex: 1; height: 5px; border-radius: 2px; background: #2a1f35; }
+.sk-bar i.on { background: linear-gradient(90deg, #ffe48a, #c99a2e); box-shadow: 0 0 4px rgba(255,215,106,.6); }
+.sk-need { text-align: right; }
+.sk-row .btn { line-height: 1.2; }
+body.touch #chat { z-index: 9; }
+body.touch #tracker { top: 130px; }
+body.short.touch #tracker { top: 114px; }
+body.touch #chat.collapsed, body.short.touch #chat.collapsed { width: 210px; }
+#chat.collapsed #chat-log { padding: 0; overflow: hidden; }
+body.touch #btn-music, body.short.touch #btn-music { left: 172px; bottom: 160px; }
+body.short.touch #btn-music { bottom: 140px; }

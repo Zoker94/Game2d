@@ -445,6 +445,12 @@
       case 'blood': p(5, 2, 6, 3, '#ff3030'); p(4, 4, 8, 7, '#d01818'); p(5, 11, 6, 2, '#a00'); p(6, 5, 2, 3, '#ff9090'); break;
       case 'saddle': p(2, 6, 12, 5, '#8b1a1a'); p(2, 6, 12, 1, '#c03030'); p(1, 10, 14, 2, '#e8c25a'); p(7, 11, 2, 4, '#5a3a1a'); p(6, 14, 4, 1, '#aaa'); p(3, 3, 3, 3, '#8b1a1a'); break;
       case 'gold': p(3, 7, 10, 6, '#e8b830'); p(4, 6, 8, 1, '#ffe080'); p(5, 4, 6, 3, '#ffd040'); p(6, 3, 4, 1, '#fff0a0'); p(4, 12, 8, 1, '#a07810'); p(7, 8, 2, 3, '#a07810'); break;
+      case 'skillbook': {
+        const cov = { common: '#6b4a2a', rare: '#2a5aa0', epic: '#7a2ab8', legendary: '#b8601a' }[rarity] || '#6b4a2a';
+        p(3, 2, 10, 12, cov); p(4, 3, 8, 10, shade(cov, 0.25)); p(12, 2, 1, 12, '#f5e6c0'); p(3, 2, 1, 12, shade(cov, -0.3));
+        p(5, 4, 6, 7, '#f3ead6'); p(6, 5, 4, 1, '#8b1a1a'); p(7, 6, 2, 4, '#8b1a1a'); p(6, 8, 4, 1, '#8b1a1a');
+        break;
+      }
       case 'book_fire': case 'book_water': case 'book_ice': {
         const col = { book_fire: ['#c0301a', '#ff7a2a', '#ffd040'], book_water: ['#1a4aa0', '#2fa8ff', '#c0f0ff'], book_ice: ['#3a8ab0', '#9ee8ff', '#ffffff'] }[icon];
         p(3, 2, 10, 12, col[0]); p(4, 3, 8, 10, col[1]); p(12, 2, 1, 12, '#f5e6c0');

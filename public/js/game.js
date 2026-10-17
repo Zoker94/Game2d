@@ -242,6 +242,7 @@
   function connect() {
     if (G.socket) return;
     loading(true, 'Đang kết nối...');
+    GameAudio.init();
     const s = G.socket = io({ auth: { token: G.token }, transports: ['websocket', 'polling'] });
     s.on('connect', () => loading(false));
     s.on('connect_error', err => {
@@ -266,13 +267,13 @@
     s.on('init', onInit);
     s.on('snap', onSnap);
     s.on('leave', id => G.players.delete(id));
-    s.on('me', d => { G.me = d; UI.updateHud(); $('dead-overlay').classList.toggle('hidden', !d.dead); });
+    s.on('me', d => { if (G.me && d.riding !== G.me.riding) GameAudio.sfx('mount'); G.me = d; UI.updateHud(); $('dead-overlay').classList.toggle('hidden', !d.dead); });
     s.on('pos', d => { G.self.x = d.x; G.self.y = d.y; G.moveTo = null; });
     s.on('fx', onFx);
     s.on('dmg', onDmg);
     s.on('gain', d => {
       if (d.exp) addFloat(G.self.x, G.self.y - 90, `+${d.exp} KN`, '#ffe48a', 13);
-      if (d.gold) addFloat(G.self.x + 20, G.self.y - 74, `+${d.gold} 💰`, '#ffd700', 12);
+      if (d.gold) { addFloat(G.self.x + 20, G.self.y - 74, `+${d.gold} 💰`, '#ffd700', 12); GameAudio.sfx('coin', 90); }
     });
     s.on('dead', d => {
       $('dead-msg').textContent = `Bạn đã bị ${d.by} đánh trọng thương.${d.lost ? ' Mất ' + d.lost + ' kinh nghiệm.' : ''}`;
@@ -283,7 +284,7 @@
     s.on('cd', d => { const sk = mySkills()[d.idx]; if (sk) { G.cds[sk.id] = G.cds[d.idx] = { until: performance.now() + d.until, total: d.until, id: sk.id }; } G.pending[d.idx] = 0; });
     s.on('toast', d => UI.toast(d.text, d.type));
     s.on('notice', d => G.modal((d.type === 'admin' ? '📢 Thông báo từ quản trị viên:\n' : '') + d.text));
-    s.on('chat', d => UI.chatMsg(d));
+    s.on('chat', d => { UI.chatMsg(d); if (d.ch === 'sys' && /Boss .* đã xuất hiện/.test(d.text)) GameAudio.sfx('bossHorn', 2000); });
     s.on('events', d => { G.events = d; UI.onEvents(d); });
     s.on('daily', d => { G.daily = d; UI.updateDaily(); });
     s.on('dropAdd', d => G.drops.set(d.id, d));
@@ -293,7 +294,7 @@
     s.on('lb', d => UI.onLeaderboard(d));
     s.on('eventPanel', d => UI.onEventPanel(d));
     s.on('wheelResult', d => UI.onWheel(d));
-    s.on('enhanceResult', d => { UI.onEnhance(d); sfx(d.result === 'ok' ? 'level' : 'die'); });
+    s.on('enhanceResult', d => { UI.onEnhance(d); GameAudio.sfx(d.result === 'ok' ? 'enhOk' : 'enhFail'); });
     s.on('online', d => UI.onOnline(d));
   }
   $('respawn-btn').onclick = () => { G.socket.emit('respawn'); $('dead-overlay').classList.add('hidden'); };
@@ -362,7 +363,7 @@
     G.fx.push(f);
     FxSpawn(f);
     if (d.t === 'levelup' && !d.small) sfx('level');
-    else if (d.from === G.you) sfx('hit');
+    else fxSound(d);
   }
   function onDmg(d) {
     const e = entityById(d.id);
@@ -370,37 +371,66 @@
     const x = e.x + (Math.random() * 30 - 15), y = e.y - 70;
     if (d.k === 'heal') addFloat(x, y, '+' + d.v, '#4ade80', 15);
     else if (d.k === 'mana') addFloat(x, y, '+' + d.v, '#6bb0ff', 15);
-    else if (d.k === 'crit') addFloat(x, y, d.v + '!', '#ffcc00', 22, true);
+    else if (d.k === 'crit') { addFloat(x, y, d.v + '!', '#ffcc00', 22, true); if (Math.hypot(e.x - G.self.x, e.y - G.self.y) < 600) GameAudio.sfx('crit', 80); }
     else if (d.k === 'dot') addFloat(x, y, d.v, '#9acd32', 13);
-    else if (d.id === G.you) { addFloat(x, y, '-' + d.v, '#ff5050', 16); if (G.settings.shake) shake = 4; }
-    else addFloat(x, y, d.v, '#ffffff', 15);
+    else if (d.id === G.you) { addFloat(x, y, '-' + d.v, '#ff5050', 16); if (G.settings.shake) shake = 4; GameAudio.sfx('hurt', 150); }
+    else { addFloat(x, y, d.v, '#ffffff', 15); if (Math.hypot(e.x - G.self.x, e.y - G.self.y) < 500) GameAudio.sfx('hit', 70); }
     e.hitAt = performance.now();
   }
   function addFloat(x, y, text, color, size, bold) { G.floats.push({ x, y, text, color, size, bold, t0: performance.now() }); if (G.floats.length > 80) G.floats.shift(); }
 
   // ================== Âm thanh (WebAudio đơn giản) ==================
   let actx = null;
-  function sfx(kind) {
-    if (!G.settings.sound) return;
-    try {
-      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-      const o = actx.createOscillator(), g = actx.createGain();
-      const t = actx.currentTime;
-      const conf = { hit: [220, 120, 0.06, 'square'], level: [440, 880, 0.5, 'triangle'], portal: [300, 600, 0.25, 'sine'], die: [200, 60, 0.6, 'sawtooth'], pick: [700, 1000, 0.08, 'triangle'], click: [500, 500, 0.03, 'square'] }[kind] || [400, 400, 0.05, 'sine'];
-      o.type = conf[3]; o.frequency.setValueAtTime(conf[0], t); o.frequency.exponentialRampToValueAtTime(conf[1], t + conf[2]);
-      g.gain.setValueAtTime(0.06, t); g.gain.exponentialRampToValueAtTime(0.001, t + conf[2]);
-      o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + conf[2]);
-    } catch (e) { }
+  const SFX_ALIAS = { hit: 'hit', level: 'level', portal: 'portal', die: 'die', pick: 'pick', click: 'click' };
+  function sfx(kind) { GameAudio.sfx(SFX_ALIAS[kind] || kind); }
+  // Âm thanh theo kiểu hiệu ứng võ công
+  const FX_SOUND = { slash: 'swing', slash2: 'swing', palm: 'swing', bite: 'hurt', dart: 'whoosh', dartfan: 'whoosh', bolt: 'magic', beam: 'magic', dash: 'whoosh',
+    dragon: 'roar', hanglong: 'roar', lightning: 'thunder', storm: 'thunder', thunder: 'thunder', ring: 'boom', nova: 'boom', quake: 'boom', meteor: 'boom', pillar: 'boom',
+    buddha: 'boom', lionroar: 'roar', whirl: 'swing', arrowrain: 'whoosh', net: 'whoosh', swords: 'magic', taiji: 'magic', bagua: 'magic', lotus: 'heal', holylotus: 'heal',
+    blades: 'swing', tornado: 'whoosh', poison: 'whoosh', toxic: 'whoosh', swarm: 'whoosh', frost: 'ice', dragonring: 'roar', aura: 'buff', heal: 'heal',
+    firedragon: ['roar', 'fire'], waterdragon: ['roar', 'water'], icedragon: ['roar', 'ice'] };
+  function fxSound(d) {
+    const x = d.x != null ? d.x : 0, y = d.y != null ? d.y : 0;
+    if (d.from !== G.you && Math.hypot(x - G.self.x, y - G.self.y) > 700) return;
+    const snd = FX_SOUND[d.t];
+    if (!snd) return;
+    if (Array.isArray(snd)) { GameAudio.sfx(snd[0], 300); setTimeout(() => GameAudio.sfx(snd[1], 300), 750); }
+    else GameAudio.sfx(snd, d.from === G.you ? 40 : 120);
   }
+  // Nhạc nền theo khu vực: thành (êm), bãi luyện công (sôi động), có Boss gần (căng thẳng)
+  function updateMusic() {
+    if (!G.map) return;
+    let m = G.map.safe ? 'town' : 'field';
+    for (const e of G.monsters.values()) if (e.boss && Math.hypot(e.x - G.self.x, e.y - G.self.y) < 900) { m = 'boss'; break; }
+    GameAudio.music(m);
+  }
+  setInterval(updateMusic, 1000);
+  const unlockAudio = () => { GameAudio.init(); window.removeEventListener('pointerdown', unlockAudio); window.removeEventListener('keydown', unlockAudio); };
+  window.addEventListener('pointerdown', unlockAudio); window.addEventListener('keydown', unlockAudio);
   G.sfx = sfx;
 
   // ================== Kỹ năng / hành động ==================
+  // chỉ số võ công theo cấp võ học (giống server/data/skillbooks.js)
+  function scaleSkill(sk, lv) {
+    if (!lv || lv <= 1) return Object.assign({}, sk);
+    const k = lv - 1, out = Object.assign({}, sk);
+    if (sk.mult) out.mult = Math.round(sk.mult * (1 + 0.1 * k) * 100) / 100;
+    for (const f of ['heal', 'healAllies', 'healSelf']) if (sk[f]) out[f] = Math.round(sk[f] * (1 + 0.06 * k) * 1000) / 1000;
+    if (sk.freeze) out.freeze = Math.round(sk.freeze * (1 + 0.05 * k));
+    if (sk.buff) { out.buff = {}; for (const b in sk.buff) out.buff[b] = b === 'dur' ? Math.round(sk.buff.dur * (1 + 0.05 * k)) : Math.round(sk.buff[b] * (1 + 0.05 * k) * 1000) / 1000; }
+    if (sk.mp) out.mp = Math.round(sk.mp * (1 + 0.04 * k));
+    return out;
+  }
+  G.scaleSkill = scaleSkill;
   function mySkills() {
     if (!G.me) return [];
-    const list = G.data.classes[G.me.cls].skills.slice();
-    if (G.me.dragon && G.me.dragons && G.me.dragons[G.me.dragon]) list[6] = G.data.dragons[G.me.dragon];
+    const learnedMap = G.me.skills || {};
+    const list = G.data.classes[G.me.cls].skills.map((s, i) => Object.assign(scaleSkill(s, learnedMap[s.id] || 1), { idx: i, slv: learnedMap[s.id] || 1, learned: i === 0 || !!learnedMap[s.id] }));
+    if (G.me.dragon && G.me.dragons && G.me.dragons[G.me.dragon]) { const d = G.data.dragons[G.me.dragon]; list[6] = Object.assign(scaleSkill(d, learnedMap[d.id] || 1), { idx: 6, slv: learnedMap[d.id] || 1, learned: true }); }
     return list;
   }
+  // ô kỹ năng 1..6 -> chỉ số võ công (0 = trống)
+  G.useSlot = n => { const idx = G.me && G.me.hotbar ? G.me.hotbar[n - 1] : n; if (idx) useSkill(idx); };
   G.mySkills = mySkills;
   // hồi chiêu tính theo từng kỹ năng (ô Long Ấn có thể đổi rồng)
   function skillCd(i) { const sk = mySkills()[i]; return sk ? G.cds[sk.id] : null; }
@@ -412,6 +442,7 @@
     if (!G.me || G.me.dead || !G.map) return;
     const sk = mySkills()[i];
     if (!sk) return;
+    if (!sk.learned) { UI.toast(`Chưa học ${sk.name}. Mua sách tại Tàng Kinh Các (Tương Dương).`, 'error'); return; }
     if (G.me.level < sk.lv) { if (i > 0) UI.toast(`Cần cấp ${sk.lv} để dùng ${sk.name}`, 'error'); return; }
     if (!skillReady(i)) return;
     const now = performance.now();
@@ -486,6 +517,7 @@
   $('btn-auto').onclick = () => setAuto(!G.auto);
 
   Input.on('skill', i => { G.moveTo = null; useSkill(i); });
+  Input.on('slot', n => { G.moveTo = null; G.useSlot(n); });
   Input.on('potion', k => G.socket && G.socket.emit('quickUse', { kind: k }));
   Input.on('target', cycleTarget);
   Input.on('interact', interact);
@@ -651,7 +683,7 @@
     const order = [6, 5, 3, 4, 2, 1, 0];
     for (const i of order) {
       const sk = skills[i];
-      if (!sk || me.level < sk.lv || !skillReady(i) || me.mp < sk.mp) continue;
+      if (!sk || !sk.learned || me.level < sk.lv || !skillReady(i) || me.mp < sk.mp) continue;
       if (sk.type === 'buff') { if (!me.buffs.some(b => b.name === sk.name)) { useSkill(i); return; } continue; }
       if (sk.type === 'heal') { if (me.hp < st.maxHp * 0.6) { useSkill(i); return; } continue; }
       const range = (sk.type === 'aoe' && !sk.range ? sk.radius : (sk.range || G.data.classes[me.cls].range)) * 0.85;

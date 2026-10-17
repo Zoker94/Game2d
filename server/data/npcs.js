@@ -37,6 +37,9 @@ const NPCS = {
       { id: 'book_fire', knb: 800 }, { id: 'book_water', knb: 800 }, { id: 'book_ice', knb: 800 },
       { id: 'mount_bach_ho', knb: 1500 }, { id: 'mount_hoa_ky_lan', knb: 5000 }, { id: 'mount_thanh_long', knb: 8000 }
     ] },
+  tang_kinh: { name: 'Tàng Kinh Các', sprite: 'elder', color: '#2a6a4a', action: 'shop', bookShop: true,
+    talk: 'Võ học vô biên. Mỗi môn phái có bí truyền riêng – hãy mua sách để lĩnh ngộ, rồi rèn luyện trong bảng Võ Công (phím K).',
+    shop: Object.keys(require('./skillbooks').BOOKS) },
   xa_phu: { name: 'Xa Phu', sprite: 'driver', color: '#696969', action: 'teleport',
     talk: 'Khách quan muốn đi đâu? Xe ngựa đưa đón khắp giang hồ.' },
   bang_hoi: { name: 'Bang Hội Sứ Giả', sprite: 'guard', color: '#4682b4', action: 'guild',

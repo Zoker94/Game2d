@@ -33,6 +33,7 @@ function newCharacter(name, cls) {
     checkin: { date: null, streak: 0 },
     wheel: { date: null, used: 0, extra: 0 },
     expBuffUntil: 0, created: Date.now(), playTime: 0, power: 0, mounts: {}, mount: null, riding: false,
+    skills: {}, hotbar: [1, 2, 3, 4, 5, 6], spSpent: 0,
     quickHp: 'hp1', quickMp: 'mp1'
   };
   addItem(c, 'weapon_0_common', 1);
