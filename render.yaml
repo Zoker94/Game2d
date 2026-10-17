@@ -1,15 +1,20 @@
-# Cấu hình triển khai Render (https://render.com) - gói miễn phí, dùng để test nhanh
+# Triển khai miễn phí trên Render (https://render.com)
+# Dữ liệu lưu ở Postgres miễn phí bên ngoài (VD: Neon) qua biến DATABASE_URL, nên không mất khi máy chủ khởi động lại.
+# Máy chủ tự gọi chính nó mỗi 10 phút để không bị ngủ (gói Free có 750 giờ/tháng, đủ chạy 24/7 một dịch vụ).
 services:
   - type: web
     name: vo-lam-pixel
     runtime: node
     plan: free
+    region: singapore
     branch: ccr-5439a7cc-q4h8lm
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/config
     envVars:
-      - key: ALLOW_DEV_LOGIN
-        value: "1"          # Bật đăng nhập thử không cần Google. Xóa biến này khi mở cho người chơi thật.
       - key: GOOGLE_CLIENT_ID
-        sync: false         # Điền sau khi tạo OAuth Client ID trên Google Cloud
+        sync: false        # Client ID đăng nhập Google
+      - key: DATABASE_URL
+        sync: false        # Chuỗi kết nối Postgres (Neon)
+      - key: ADMIN_PASS
+        sync: false        # Mật khẩu admin zoker941 cho lần chạy đầu tiên

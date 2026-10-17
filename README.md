@@ -58,7 +58,9 @@ Tài khoản được tạo khi máy chủ khởi động lần đầu (mật kh
 | `PORT` | `3000` | Cổng HTTP |
 | `GOOGLE_CLIENT_ID` | – | OAuth Client ID của Google (bắt buộc để đăng nhập) |
 | `ADMIN_USER` / `ADMIN_PASS` | `zoker941` / `huongchi1` | Tài khoản admin khởi tạo |
-| `DATA_DIR` | `./data` | Thư mục lưu dữ liệu (`db.json`) |
+| `DATABASE_URL` | – | Chuỗi kết nối Postgres (VD Neon miễn phí). Có biến này thì dữ liệu lưu vào Postgres thay vì file |
+| `DATA_DIR` | `./data` | Thư mục lưu dữ liệu (`db.json`) khi không dùng Postgres |
+| `KEEP_AWAKE` | bật trên Render | `0` để tắt việc tự gọi máy chủ mỗi 10 phút (chống ngủ gói Free) |
 | `ALLOW_DEV_LOGIN` | tắt | `1` để bật đăng nhập thử không cần Google – **chỉ dùng khi phát triển** (`npm run dev`) |
 
 Khi triển khai thật hãy chạy sau HTTPS (Nginx/Caddy reverse proxy, nhớ bật WebSocket) – Google Sign-In và chế độ toàn màn hình/khóa xoay ngang trên điện thoại cần HTTPS.
