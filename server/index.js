@@ -17,7 +17,7 @@ const adminRoutes = require('./admin');
 
 const PORT = process.env.PORT || 3000;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
-const ALLOW_DEV_LOGIN = /^(1|true|yes)$/i.test(process.env.ALLOW_DEV_LOGIN || '');
+const ALLOW_DEV_LOGIN = process.argv.includes('--dev') || /^(1|true|yes)$/i.test(process.env.ALLOW_DEV_LOGIN || '');
 const ADMIN_USER = process.env.ADMIN_USER || 'zoker941';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'huongchi1';
 const SESSION_MS = 30 * 86400e3;
