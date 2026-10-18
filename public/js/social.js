@@ -66,7 +66,7 @@
       <h4 class="sk-title">Trang bị</h4><div class="insp-eq">`;
     for (const slot of SLOT_ORDER) {
       const e = d.equip[slot], it = e && G.data.items[e.id];
-      html += `<div class="slot ${it ? 'r-' + it.rarity : ''}" ${it ? `data-eqid="${e.id}" data-plus="${e.plus}" data-slot="${slot}"` : ''}>${it ? `<img src="${UI.iconUrl(e.id)}" width="32" height="32" style="image-rendering:pixelated">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}` : `<span class="lbl">${G.data.slots[slot]}</span>`}</div>`;
+      html += `<div class="slot ${it ? 'r-' + it.rarity : ''}" ${it ? `data-eqid="${e.id}" data-plus="${e.plus}" data-slot="${slot}"` : ''}>${it ? `<img src="${UI.iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}` : `<span class="lbl">${G.data.slots[slot]}</span>`}</div>`;
     }
     html += `</div>${d.mount && G.data.mounts[d.mount] ? `<div class="small">🐎 Thú cưỡi: <b class="r-${G.data.mounts[d.mount].rarity}-t">${esc(G.data.mounts[d.mount].name)}</b></div>` : ''}
       <div class="row insp-btns">
@@ -105,11 +105,11 @@
     if (!tradeData) { if (w) w.remove(); tradeSel = {}; return; }
     if (!w) { w = document.createElement('div'); w.id = 'trade-win'; $('screen-game').appendChild(w); }
     const d = tradeData, me = d.me, th = d.them;
-    const cell = x => { const it = G.data.items[x.id]; return `<div class="slot r-${it.rarity}" data-tid="${x.id}" data-plus="${x.plus}" data-tuid="${x.uid}"><img src="${UI.iconUrl(x.id)}" width="32" height="32" style="image-rendering:pixelated">${x.qty > 1 ? `<span class="q">${x.qty}</span>` : ''}${x.plus ? `<span class="plus">+${x.plus}</span>` : ''}</div>`; };
+    const cell = x => { const it = G.data.items[x.id]; return `<div class="slot r-${it.rarity}" data-tid="${x.id}" data-plus="${x.plus}" data-tuid="${x.uid}"><img src="${UI.iconUrl(x.id)}" class="ic" width="36" height="36">${x.qty > 1 ? `<span class="q">${x.qty}</span>` : ''}${x.plus ? `<span class="plus">+${x.plus}</span>` : ''}</div>`; };
     const side = (s, mine) => `<div class="tr-side ${s.lock ? 'locked' : ''}"><div class="tr-name">${mine ? 'Bạn đưa' : esc(s.name) + ' đưa'} ${s.ok ? '<span class="tr-ok">✔ Đã xác nhận</span>' : s.lock ? '<span class="tr-lock">🔒 Đã khóa</span>' : ''}</div>
       <div class="tr-items">${s.items.map(cell).join('') || '<span class="muted small">Chưa đặt vật phẩm</span>'}</div><div class="tr-gold">💰 ${s.gold.toLocaleString('vi-VN')} lượng</div></div>`;
     const offered = new Set(me.items.map(x => x.uid));
-    const inv = G.me.inv.map(s => { const it = G.data.items[s.id]; return `<div class="slot r-${it.rarity} ${offered.has(s.uid) ? 'sel' : ''}" data-inv="${s.uid}"><img src="${UI.iconUrl(s.id)}" width="32" height="32" style="image-rendering:pixelated">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}</div>`; }).join('');
+    const inv = G.me.inv.map(s => { const it = G.data.items[s.id]; return `<div class="slot r-${it.rarity} ${offered.has(s.uid) ? 'sel' : ''}" data-inv="${s.uid}"><img src="${UI.iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}</div>`; }).join('');
     w.innerHTML = `<div class="tr-box"><div class="panel-head"><h3>🔄 Giao dịch với ${esc(th.name)}</h3><button id="tr-x">✕</button></div>
       <div class="tr-body"><div class="tr-sides">${side(me, true)}${side(th, false)}</div>
       ${me.lock ? '' : `<div class="small muted">Chọn vật phẩm trong túi để đưa (chọn lại để bỏ):</div><div class="tr-inv">${inv}</div>

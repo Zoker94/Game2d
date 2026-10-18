@@ -862,7 +862,7 @@
         ctx.restore();
       }
       const di = d.item && G.data.items[UI.resolveId(d.item)];
-      ctx.drawImage(Sprites.itemIcon(di ? di.icon : d.icon, d.rarity), d.x - 16, d.y - 20 + bob, 32, 32);
+      ctx.imageSmoothingEnabled = true; ctx.drawImage(Sprites.itemIcon(di ? di.icon : d.icon, d.rarity, null, di && di.tier), d.x - 17, d.y - 22 + bob, 34, 34); ctx.imageSmoothingEnabled = false;
     }
     // Dấu nhấp chuột
     if (G.clickMark && now - G.clickMark.t0 < 500) { const a = 1 - (now - G.clickMark.t0) / 500; ctx.strokeStyle = `rgba(255,215,106,${a})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(G.clickMark.x, G.clickMark.y, 14 * (1.5 - a), 6 * (1.5 - a), 0, 0, Math.PI * 2); ctx.stroke(); }

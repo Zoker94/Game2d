@@ -22,11 +22,12 @@
   UI.resolveId = resolveId;
   function iconCanvas(itemId, plus) {
     const it = G.data.items[resolveId(itemId)];
-    const cv = document.createElement('canvas'); cv.width = 32; cv.height = 32;
-    if (it) cv.getContext('2d').drawImage(Sprites.itemIcon(it.icon, it.rarity), 0, 0);
+    const ic = it && Sprites.itemIcon(it.icon, it.rarity, null, it.tier);
+    const cv = document.createElement('canvas'); cv.width = cv.height = ic ? ic.width : 32;
+    if (ic) cv.getContext('2d').drawImage(ic, 0, 0);
     return cv;
   }
-  function iconHtml(itemId) { const c = iconCanvas(itemId); return `<img src="${c.toDataURL()}" width="32" height="32" style="image-rendering:pixelated">`; }
+  function iconHtml(itemId) { const c = iconCanvas(itemId); return `<img src="${c.toDataURL()}" class="ic" width="36" height="36">`; }
   const iconUrlCache = {};
   function iconUrl(itemId) { const id = resolveId(itemId); return iconUrlCache[id] || (iconUrlCache[id] = iconCanvas(id).toDataURL()); }
   UI.iconUrl = id => iconUrl(id); UI.esc = esc; UI.itemName = (id, plus) => itemName(id, plus);
@@ -411,7 +412,7 @@
       for (const s of slotsOrder) {
         const e = me.equip[s];
         const it = e && G.data.items[e.id];
-        html += `<div class="slot ${it ? 'r-' + it.rarity : ''} ${panelState.sel === 'eq:' + s ? 'sel' : ''}" data-eq="${s}">${it ? `<img src="${iconUrl(e.id)}" width="32" height="32" style="image-rendering:pixelated">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}` : `<span class="lbl">${G.data.slots[s]}</span>`}</div>`;
+        html += `<div class="slot ${it ? 'r-' + it.rarity : ''} ${panelState.sel === 'eq:' + s ? 'sel' : ''}" data-eq="${s}">${it ? `<img src="${iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}` : `<span class="lbl">${G.data.slots[s]}</span>`}</div>`;
       }
       html += '</div>';
     }
@@ -420,7 +421,7 @@
     for (const s of inv) {
       const it = G.data.items[s.id];
       const cant = it.lv > me.level;
-      html += `<div class="slot r-${it.rarity} ${cant ? 'cant' : ''} ${panelState.sel === s.uid ? 'sel' : ''}" data-uid="${s.uid}"><img src="${iconUrl(s.id)}" width="32" height="32" style="image-rendering:pixelated">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}</div>`;
+      html += `<div class="slot r-${it.rarity} ${cant ? 'cant' : ''} ${panelState.sel === s.uid ? 'sel' : ''}" data-uid="${s.uid}"><img src="${iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}</div>`;
     }
     for (let i = me.inv.length; i < 48 && !opts.filter; i++) html += '<div class="slot" style="opacity:.35"></div>';
     html += '</div></div>';
@@ -536,7 +537,7 @@
       <h4 style="color:#ffd76a">🐉 Long Ấn (phím 7)</h4>
       <div class="list">${Object.entries(G.data.dragons).map(([el, d]) => {
         const has = me.dragons && me.dragons[el], on = me.dragon === el;
-        return `<div class="li ${has ? 'done' : ''}"><img src="${iconUrl(d.book)}" width="32" height="32" style="image-rendering:pixelated"><div class="grow"><b class="dr-${el}">${esc(d.name)}</b>${on ? ' <span style="color:#4ade80">● Đang dùng</span>' : ''}<div class="sub">${esc(d.desc)} · ${d.mp} MP · Hồi ${d.cd / 1000}s · Cần cấp ${d.lv}</div></div>
+        return `<div class="li ${has ? 'done' : ''}"><img src="${iconUrl(d.book)}" class="ic" width="36" height="36"><div class="grow"><b class="dr-${el}">${esc(d.name)}</b>${on ? ' <span style="color:#4ade80">● Đang dùng</span>' : ''}<div class="sub">${esc(d.desc)} · ${d.mp} MP · Hồi ${d.cd / 1000}s · Cần cấp ${d.lv}</div></div>
           ${has ? (on ? '' : `<button class="btn small green" data-dragon="${el}">Dùng</button>`) : '<span class="small muted">Chưa học<br>(Bí kíp: Boss, Kỳ Trân Các, Hoa Đăng)</span>'}</div>`;
       }).join('')}</div>`;
     body.querySelectorAll('[data-dragon]').forEach(b => b.onclick = () => emit('dragon', { el: b.dataset.dragon }));
@@ -893,7 +894,7 @@
         const it = G.data.items[x.id];
         const cant = it.lv > G.me.level;
         const stats = it.stats ? Object.entries(it.stats).map(([k, v]) => `${STAT_NAME[k]} +${v}`).join(', ') : (it.desc || '');
-        return `<div class="li"><img src="${iconUrl(x.id)}" width="32" height="32" style="image-rendering:pixelated"><div class="grow">${itemName(x.id)} <span class="small ${cant ? 'warn' : 'muted'}">Cấp ${it.lv || 1}</span><div class="sub">${esc(stats)}</div></div>
+        return `<div class="li"><img src="${iconUrl(x.id)}" class="ic" width="36" height="36"><div class="grow">${itemName(x.id)} <span class="small ${cant ? 'warn' : 'muted'}">Cấp ${it.lv || 1}</span><div class="sub">${esc(stats)}</div></div>
           ${it.type !== 'equip' ? `<input type="number" min="1" max="999" value="${it.type === 'use' && x.price < 100 ? 10 : 1}" style="width:58px" data-qty="${x.id}">` : ''}
           <button class="btn small ${tab === 'knb' ? 'primary' : 'green'}" data-buy="${x.id}">${x.knb ? x.knb + ' 💎' : fmt(x.price) + ' 💰'}</button></div>`;
       }).join('') + '</div>';

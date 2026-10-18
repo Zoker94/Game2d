@@ -5,7 +5,7 @@
   const esc = s => UI.esc(s);
   const fmt = n => (n || 0).toLocaleString('vi-VN');
   const BANK = 60;
-  const cell = (s, key) => { const it = G.data.items[s.id]; if (!it) return ''; return `<div class="slot r-${it.rarity}" data-${key}="${s.uid}"><img src="${UI.iconUrl(s.id)}" width="32" height="32" style="image-rendering:pixelated">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}</div>`; };
+  const cell = (s, key) => { const it = G.data.items[s.id]; if (!it) return ''; return `<div class="slot r-${it.rarity}" data-${key}="${s.uid}"><img src="${UI.iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}</div>`; };
   const askQty = s => {
     if (s.qty <= 1) return 1;
     const n = Math.floor(+prompt(`Số lượng ${G.data.items[s.id].name} (tối đa ${s.qty}):`, s.qty) || 0);

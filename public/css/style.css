@@ -556,3 +556,6 @@ body.touch #escort-hud { top: 64px; font-size: 11px; min-width: 200px; }
 #wanted-hud { position: absolute; top: 118px; left: 50%; transform: translateX(-50%); z-index: 7; background: rgba(90,10,10,.88); border: 1px solid #ff5050; color: #ffd0c8; border-radius: 10px; padding: 4px 12px; font-size: 12px; font-weight: 600; max-width: 92vw; text-align: center; animation: wantedPulse 1.2s ease-in-out infinite; }
 @keyframes wantedPulse { 50% { box-shadow: 0 0 12px rgba(255,60,60,.7); } }
 body.touch #wanted-hud { top: 104px; font-size: 11px; }
+/* biểu tượng vật phẩm vẽ mịn (64px thu nhỏ) */
+img.ic { image-rendering: auto; width: 36px; height: 36px; filter: drop-shadow(0 1px 1px rgba(0,0,0,.45)); }
+.slot img.ic { width: 38px; height: 38px; }

@@ -42,6 +42,9 @@
   }
   const jobs = [];
   for (const c of CLASSES) { jobs.push(need(c + '_a0') || loading[c + '_a0']); if (c !== 'caibang') jobs.push(need(c + '_w0') || loading[c + '_w0']); }
+  // biểu tượng vật phẩm vẽ mới (tools/icons.py)
+  let ICONS = null;
+  jobs.push(Promise.all([load('icons.png'), fetch(BASE + 'icons.json').then(r => r.ok ? r.json() : null).catch(() => null)]).then(([im, j]) => { if (im && j) ICONS = { im, j }; }));
   for (const n of MONSTERS) jobs.push(load('monsters/' + n + '.png').then(im => { if (im) imgs['m:' + n] = im; }));
   const ready = Promise.all(jobs);
 
@@ -215,6 +218,22 @@
     if (!has(cls)) return procPlayer.call(this, cls, colors, dir, frame, !!atk, ap);
     const state = atk === 'skill' ? 'cast' : atk === true ? 'atk' : typeof atk === 'string' ? atk : frame > 0 ? 'walk' : 'idle';
     return charFrame(cls, dir, state, frame || 0, ap);
+  };
+
+  const procIcon = Sprites.itemIcon;
+  const GEAR_ICON = new Set(['weapon', 'w_sword', 'w_saber', 'w_staff', 'w_mace', 'w_dart', 'w_dual', 'w_glove', 'w_talisman', 'helmet', 'armor', 'boots', 'ring', 'amulet']);
+  Sprites.itemIcon = function (icon, rarity, rcolor, tier) {
+    if (!ICONS) return procIcon.apply(this, arguments);
+    let key = icon;
+    if (GEAR_ICON.has(icon)) key = icon + ':' + (tier >= 4 ? 2 : tier >= 2 ? 1 : 0) + ':' + (typeof rarity === 'string' ? rarity : 'common');
+    const i = ICONS.j.i[key];
+    if (i == null) return procIcon.apply(this, arguments);
+    const ck = 'ic:' + key;
+    if (cache[ck]) return cache[ck];
+    const n = ICONS.j.size, cols = ICONS.j.cols;
+    const [c, x] = mk(n, n);
+    x.drawImage(ICONS.im, (i % cols) * n, Math.floor(i / cols) * n, n, n, 0, 0, n, n);
+    return (cache[ck] = c);
   };
 
   const procMonster = Sprites.monsterSprite;
