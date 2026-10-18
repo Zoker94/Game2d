@@ -495,3 +495,15 @@ body.short.touch #tracker { top: 70px; }
 .tr-gold { font-size: 12px; margin-top: 4px; color: #ffd76a; }
 .tr-btns { gap: 6px; }
 body.short #trade-win .tr-inv { max-height: 84px; }
+
+/* ===== Cài đặt tự động ===== */
+#auto-cfg { margin-left: 6px; padding: 0 4px; border-left: 1px solid rgba(255,255,255,.25); cursor: pointer; }
+.au { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.au-box { background: rgba(255,255,255,.04); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.au-box h4 { margin: 0 0 6px; color: var(--gold); }
+.au-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 13px; cursor: pointer; }
+.au-row input[type=checkbox] { width: 18px; height: 18px; accent-color: #f2be4c; }
+.au-row select { flex: 1; min-width: 0; }
+.au-sl input { flex: 1; accent-color: #f2be4c; }
+.au-sl b { width: 36px; text-align: right; color: #ffd76a; }
+.au-sl span { font-size: 12px; color: var(--muted); }

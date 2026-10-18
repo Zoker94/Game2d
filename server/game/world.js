@@ -640,8 +640,10 @@ class World {
     this.io.to('map:' + mapId).emit('dropAdd', this.dropView(dr));
   }
   dropView(dr) {
-    if (dr.gold) return { id: dr.id, gold: dr.gold, icon: 'gold', rarity: 'common', name: dr.gold + ' lượng', qty: 1, x: dr.x, y: dr.y };
-    const it = ITEMS[dr.itemId]; return { id: dr.id, item: dr.itemId, icon: it.icon, rarity: it.rarity, name: it.name, qty: dr.qty, x: dr.x, y: dr.y };
+    // o/om: chủ sở hữu và số ms còn được ưu tiên nhặt (để tự động nhặt bỏ qua đồ của người khác)
+    const own = dr.owner && dr.ownerUntil > Date.now() ? { o: dr.owner, om: dr.ownerUntil - Date.now() } : {};
+    if (dr.gold) return { id: dr.id, gold: dr.gold, icon: 'gold', rarity: 'common', name: dr.gold + ' lượng', qty: 1, x: dr.x, y: dr.y, ...own };
+    const it = ITEMS[dr.itemId]; return { id: dr.id, item: dr.itemId, icon: it.icon, rarity: it.rarity, name: it.name, qty: dr.qty, x: dr.x, y: dr.y, ...own };
   }
 
   tryPickup(p, m) {

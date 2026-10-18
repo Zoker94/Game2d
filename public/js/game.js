@@ -10,7 +10,8 @@
     self: { x: 0, y: 0, dir: 0, moving: false, atkUntil: 0 },
     fx: [], floats: [], target: null, moveTo: null, npcGoal: null,
     cds: {}, pending: {}, auto: false, events: null, daily: null, inGame: false,
-    settings: Object.assign({ names: true, sound: true, shake: true }, JSON.parse(localStorage.getItem('vl_settings') || '{}'))
+    settings: Object.assign({ names: true, sound: true, shake: true }, JSON.parse(localStorage.getItem('vl_settings') || '{}')),
+    autoCfg: (() => { try { return JSON.parse(localStorage.getItem('vl_auto') || '{}'); } catch (e) { return {}; } })()
   };
   G.saveSettings = () => localStorage.setItem('vl_settings', JSON.stringify(G.settings));
 
@@ -315,7 +316,8 @@
     Social.bind(s);
     s.on('events', d => { G.events = d; UI.onEvents(d); });
     s.on('daily', d => { G.daily = d; UI.updateDaily(); });
-    s.on('dropAdd', d => G.drops.set(d.id, d));
+    s.on('dropAdd', d => { if (d.om) d.ownUntil = performance.now() + d.om; G.drops.set(d.id, d); });
+    s.on('noPot', d => { const now = performance.now(); if (!G.noPot[d.kind] || G.noPot[d.kind] < now) UI.toast(d.kind === 'mp' ? '⚠️ Hết bình nội lực! Hãy mua thêm ở Hiệu Thuốc.' : '⚠️ Hết bình máu! Hãy mua thêm ở Hiệu Thuốc.', 'error'); G.noPot[d.kind] = now + 20000; });
     s.on('dropDel', id => G.drops.delete(id));
     s.on('npc', d => UI.openNpc(d));
     s.on('guild', d => UI.onGuild(d));
@@ -337,7 +339,7 @@
     G.self.x = d.x; G.self.y = d.y; G.moveTo = null; G.npcGoal = null; G.target = null;
     G.players.clear(); G.monsters.clear(); G.drops.clear(); G.fx = [];
     WorldArt.setMap(d.map); G._camSnap = true;
-    d.drops.forEach(x => G.drops.set(x.id, x));
+    d.drops.forEach(x => { if (x.om) x.ownUntil = performance.now() + x.om; G.drops.set(x.id, x); });
     const m = d.map;
     $('map-name').innerHTML = `${m.name} <span class="${m.pvp ? 'pvp' : m.safe ? 'safe' : 'muted'}">${m.pvp ? '[PK]' : m.safe ? '[An toàn]' : '[Cấp ' + m.lv + ']'}</span>`;
     // nền minimap
@@ -547,12 +549,14 @@
     G.auto = on;
     const b = $('btn-auto');
     b.classList.toggle('on', on);
-    b.textContent = on ? '🤖 Tự động: BẬT' : '🤖 Tự động: TẮT';
+    b.innerHTML = (on ? '🤖 Tự động: BẬT' : '🤖 Tự động: TẮT') + ' <span id="auto-cfg" title="Cài đặt tự động">⚙️</span>';
+    $('auto-cfg').onclick = ev => { ev.stopPropagation(); UI.openPanel('auto'); };
     if (on && G.map && G.map.safe) UI.toast('Hãy ra bãi luyện công để dùng tự động đánh', 'error');
     G.autoHome = on ? { x: G.self.x, y: G.self.y } : null;
   }
   G.setAuto = setAuto;
   $('btn-auto').onclick = () => setAuto(!G.auto);
+  setTimeout(() => setAuto(false), 0);
 
   Input.on('skill', i => { G.moveTo = null; useSkill(i); });
   Input.on('slot', n => { G.moveTo = null; G.useSlot(n); });
@@ -656,6 +660,7 @@
       else if (Math.hypot(f.x - s.x, f.y - s.y) > 70) G.moveTo = { x: f.x, y: f.y + 10 };
       else G.moveTo = null;
     }
+    autoPotion(now);
     if (G.auto && !manual && !dead && !cc) autoPlay(now);
     if ((Input.attackHeld || Input.padAttack) && !dead && !cc) useSkill(0);
 
@@ -681,7 +686,7 @@
       } else { if (!blocked(s.x - spd, ny)) s.x -= spd; else if (!blocked(s.x + spd, ny)) s.x += spd; }
       if (Math.abs(v.x) > Math.abs(v.y)) s.dir = v.x > 0 ? 2 : 1; else s.dir = v.y > 0 ? 0 : 3;
       const movedD = Math.hypot(s.x - ox, s.y - oy);
-      if (movedD < spd * 0.2) { stuckT += dt; if (stuckT > 0.8 && G.moveTo) { G.moveTo = null; G.chase = null; if (G.auto) G.autoBlacklist = { id: G.target, until: now + 4000 }; G.target = G.auto ? null : G.target; } }
+      if (movedD < spd * 0.2) { stuckT += dt; if (stuckT > 0.8 && G.moveTo) { G.moveTo = null; G.chase = null; if (G.autoDrop) { G.dropSkip.set(G.autoDrop, now + 15000); G.autoDrop = null; } else if (G.auto) G.autoBlacklist = { id: G.target, until: now + 4000 }; G.target = G.auto ? null : G.target; } }
       else stuckT = 0;
     } else stuckT = 0;
     // Quay mặt về mục tiêu khi đánh
@@ -701,21 +706,66 @@
     for (const e of G.monsters.values()) { e.x += (e.tx - e.x) * k; e.y += (e.ty - e.y) * k; }
   }
 
+  // ===== Cài đặt tự động =====
+  const AUTO_DEF = { pickup: true, pickGold: true, pickMin: 'common', pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, potAlways: true, townLow: false, townPct: 15, skills: true, range: 700 };
+  function autoCfg() { return Object.assign({}, AUTO_DEF, G.autoCfg); }
+  G.autoCfgGet = autoCfg;
+  G.autoCfgSet = (k, v) => { G.autoCfg[k] = v; try { localStorage.setItem('vl_auto', JSON.stringify(G.autoCfg)); } catch (e) {} };
+  G.noPot = {};
+  const RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
+  G.dropSkip = new Map();
+  function pickableDrop(now, home, cfg) {
+    const s = G.self, invFull = G.me.inv.length >= 48;
+    let best = null, bd = 460;
+    for (const dr of G.drops.values()) {
+      if (dr.o && dr.o !== G.user.id && dr.ownUntil > now) continue;          // đồ của người khác
+      if ((G.dropSkip.get(dr.id) || 0) > now) continue;                      // không tới được
+      if (dr.gold) { if (!cfg.pickGold) continue; }
+      else {
+        const it = G.data.items[dr.item]; if (!it) continue;
+        const isBook = /^sk_|^book_/.test(dr.item);
+        if ((RANK[it.rarity] || 0) < (RANK[cfg.pickMin] || 0) && !(isBook && cfg.pickBooks)) continue;
+        if (invFull && !(it.type !== 'equip' && G.me.inv.some(x => x.id === dr.item))) continue;
+      }
+      if (Math.hypot(dr.x - home.x, dr.y - home.y) > cfg.range) continue;
+      const d = Math.hypot(dr.x - s.x, dr.y - s.y);
+      if (d < bd) { bd = d; best = dr; }
+    }
+    return best;
+  }
+  // tự bơm máu / nội lực (chạy cả khi không bật tự động nếu chọn "luôn bơm")
+  function autoPotion(now) {
+    const me = G.me, st = me.stats, cfg = autoCfg();
+    if (me.dead || !G.map || G.map.safe) return;
+    if (!G.auto && !cfg.potAlways) return;
+    if (G._autoPot && now - G._autoPot < 700) return;
+    if (cfg.hp && me.hp < st.maxHp * cfg.hpPct / 100 && !(G.noPot.hp > now)) { G.socket.emit('quickUse', { kind: 'hp', auto: 1 }); G._autoPot = now; return; }
+    if (cfg.mp && me.mp < st.maxMp * cfg.mpPct / 100 && !(G.noPot.mp > now)) { G.socket.emit('quickUse', { kind: 'mp', auto: 1 }); G._autoPot = now; return; }
+    // hết bình máu và máu quá thấp: dùng Hồi Thành Phù về thành
+    if (G.auto && cfg.townLow && G.noPot.hp > now && me.hp < st.maxHp * cfg.townPct / 100) {
+      const sc = me.inv.find(x => x.id === 'scroll_town');
+      if (sc) { G.socket.emit('useItem', { uid: sc.uid }); setAuto(false); UI.toast('🏃 Máu thấp và hết bình máu: tự về thành!', 'error'); G._autoPot = now + 5000; }
+    }
+  }
+
   // Tự động đánh quái (auto)
   function autoPlay(now) {
     const me = G.me, s = G.self;
     if (G.map.safe) return;
-    const st = me.stats;
-    if (!G._autoPot || now - G._autoPot > 800) {
-      if (me.hp < st.maxHp * 0.45) { G.socket.emit('quickUse', { kind: 'hp' }); G._autoPot = now; }
-      else if (me.mp < st.maxMp * 0.2) { G.socket.emit('quickUse', { kind: 'mp' }); G._autoPot = now; }
-    }
-    let t = validTarget();
+    const st = me.stats, cfg = autoCfg();
     const home = G.autoHome || s;
+    // tự nhặt đồ
+    if (cfg.pickup) {
+      const dr = pickableDrop(now, home, cfg);
+      if (dr) { G.autoDrop = dr.id; G.moveTo = { x: dr.x, y: dr.y }; return; }
+    }
+    G.autoDrop = null;
+    let t = validTarget();
     if (t && Math.hypot(t.x - home.x, t.y - home.y) > 900) t = null;
     if (!t) {
       let best = null, bd = 700;
       for (const e of G.monsters.values()) {
+        if (Math.hypot(e.x - home.x, e.y - home.y) > cfg.range) continue;
         if (G.autoBlacklist && G.autoBlacklist.id === e.id && G.autoBlacklist.until > now) continue;
         if (Math.hypot(e.x - home.x, e.y - home.y) > 900) continue;
         const d = Math.hypot(e.x - s.x, e.y - s.y);
@@ -730,7 +780,7 @@
     }
     const skills = mySkills();
     // ưu tiên buff -> kỹ năng mạnh -> đánh thường
-    const order = [6, 5, 3, 4, 2, 1, 0];
+    const order = cfg.skills ? [6, 5, 3, 4, 2, 1, 0] : [0];
     for (const i of order) {
       const sk = skills[i];
       if (!sk || !sk.learned || me.level < sk.lv || !skillReady(i) || me.mp < sk.mp) continue;

@@ -268,7 +268,7 @@ io.on('connection', socket => {
     const pref = d && d.kind === 'mp' ? ['mp3', 'mp2', 'mp1'] : ['hp3', 'hp2', 'hp1'];
     const order = [id, ...pref].filter(x => ITEMS[x] && player.c.level >= (ITEMS[x].lv || 1));
     const s = order.map(x => player.c.inv.find(i => i.id === x)).find(Boolean);
-    if (!s) return world.toast(player, 'Không còn thuốc!', 'error');
+    if (!s) return d && d.auto ? socket.emit('noPot', { kind: d.kind === 'mp' ? 'mp' : 'hp' }) : world.toast(player, 'Không còn thuốc!', 'error');
     world.useItem(player, s.uid);
   }));
   on('equip', inGame(d => world.equip(player, d && d.uid)));

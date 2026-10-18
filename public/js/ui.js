@@ -829,4 +829,40 @@
     body.querySelectorAll('[data-tp]').forEach(b => b.onclick = () => emit('teleport', { map: b.dataset.tp }));
     if (tab === 'sell' || tab === 'enhance') bindInv(body, { shop: tab === 'sell', enhance: tab === 'enhance' });
   }
+  // ---------- Cài đặt tự động: nhặt đồ, bơm máu ----------
+  UI.registerPanel('auto', '🤖 Cài Đặt Tự Động', body => {
+    const c = G.autoCfgGet(), me = G.me;
+    const cnt = id => me.inv.filter(x => x.id === id).reduce((a, x) => a + x.qty, 0);
+    const pots = k => ['1', '2', '3'].map(n => k + n).filter(id => G.data.items[id]);
+    const tg = (k, label) => `<label class="au-row"><input type="checkbox" data-k="${k}" ${c[k] ? 'checked' : ''}><span>${label}</span></label>`;
+    const sl = (k, min, max, label) => `<div class="au-row au-sl"><span>${label}</span><input type="range" min="${min}" max="${max}" step="5" value="${c[k]}" data-r="${k}"><b data-v="${k}">${c[k]}%</b></div>`;
+    const potSel = (kind, cur) => `<select data-pot="${kind}">${pots(kind).map(id => `<option value="${id}" ${cur === id ? 'selected' : ''} ${me.level < (G.data.items[id].lv || 1) ? 'disabled' : ''}>${esc(G.data.items[id].name)} (còn ${cnt(id)})</option>`).join('')}</select>`;
+    const totalHp = pots('hp').reduce((a, id) => a + cnt(id), 0), totalMp = pots('mp').reduce((a, id) => a + cnt(id), 0);
+    body.innerHTML = `<div class="au">
+      <div class="au-box"><h4>🎒 Tự nhặt đồ</h4>
+        ${tg('pickup', 'Tự nhặt vật phẩm rơi ra')}
+        ${tg('pickGold', 'Nhặt ngân lượng')}
+        <div class="au-row"><span>Chỉ nhặt đồ từ</span><select data-s="pickMin">
+          ${[['common', 'Tất cả'], ['rare', 'Hiếm trở lên'], ['epic', 'VIP trở lên'], ['legendary', 'Truyền Kỳ']].map(([v, n]) => `<option value="${v}" ${c.pickMin === v ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+        ${tg('pickBooks', 'Luôn nhặt sách võ công / bí kíp')}
+        <p class="small muted">Không nhặt đồ đang thuộc quyền người khác. Túi đầy thì chỉ nhặt vật phẩm cộng dồn được.</p></div>
+      <div class="au-box"><h4>❤️ Bơm máu & nội lực</h4>
+        ${tg('hp', 'Tự bơm máu')}${sl('hpPct', 10, 90, 'Khi sinh lực dưới')}
+        <div class="au-row"><span>Dùng bình</span>${potSel('hp', me.quickHp || 'hp1')}</div>
+        ${tg('mp', 'Tự bơm nội lực')}${sl('mpPct', 10, 90, 'Khi nội lực dưới')}
+        <div class="au-row"><span>Dùng bình</span>${potSel('mp', me.quickMp || 'mp1')}</div>
+        ${tg('potAlways', 'Luôn tự bơm, kể cả khi không bật Tự động')}
+        ${tg('townLow', 'Hết bình máu thì dùng Hồi Thành Phù về thành')}${sl('townPct', 5, 50, 'Khi sinh lực dưới')}
+        <p class="small ${totalHp < 10 ? 'warn' : 'muted'}">Còn ${totalHp} bình máu · ${totalMp} bình nội lực${totalHp < 10 ? ' — sắp hết, hãy mua thêm ở Hiệu Thuốc!' : ''}</p></div>
+      <div class="au-box"><h4>⚔️ Đánh quái</h4>
+        ${tg('skills', 'Dùng võ công (tắt = chỉ đánh thường)')}
+        <div class="au-row"><span>Phạm vi tìm quái</span><select data-s="range">${[[400, 'Gần'], [700, 'Vừa'], [1000, 'Xa']].map(([v, n]) => `<option value="${v}" ${+c.range === v ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+        <button class="btn primary" id="au-toggle">${G.auto ? '⏹ Tắt tự động' : '▶ Bật tự động'}</button></div>
+    </div>`;
+    body.querySelectorAll('[data-k]').forEach(el => el.onchange = () => G.autoCfgSet(el.dataset.k, el.checked));
+    body.querySelectorAll('[data-s]').forEach(el => el.onchange = () => G.autoCfgSet(el.dataset.s, el.dataset.s === 'range' ? +el.value : el.value));
+    body.querySelectorAll('[data-r]').forEach(el => el.oninput = () => { G.autoCfgSet(el.dataset.r, +el.value); body.querySelector(`[data-v="${el.dataset.r}"]`).textContent = el.value + '%'; });
+    body.querySelectorAll('[data-pot]').forEach(el => el.onchange = () => emit('setQuick', { kind: el.dataset.pot, id: el.value }));
+    $('au-toggle').onclick = () => { G.setAuto(!G.auto); UI.refreshPanel(); };
+  });
 })();
