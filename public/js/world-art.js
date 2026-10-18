@@ -332,7 +332,9 @@
 
   // ---------- API ----------
   function setMap(m) {
-    map = m; theme = THEME_OF[m.id] || 'plains';
+    map = m;
+    const ALIAS = { tomb: 'demon', ruins: 'plains', river: 'plains', cave: 'mountain' };   // chủ đề mới dùng nét vẽ gần nhất
+    theme = THEME_OF[m.id] || ALIAS[m.theme] || m.theme || 'plains';
     chunks = new Map(); amb.length = 0;
     buildDecos();
   }

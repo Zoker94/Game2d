@@ -365,7 +365,7 @@
       }
       let e = G.players.get(p.i);
       if (!e) { e = { x: p.x, y: p.y }; G.players.set(p.i, e); }
-      Object.assign(e, { id: p.i, name: p.n, cls: p.c, tx: p.x, ty: p.y, dir: p.d, moving: p.m, hp: p.h, maxHp: p.H, level: p.l, guild: p.g, dead: p.a, gm: p.v, ap: p.q, st: p.s || 0, pw: p.pw || 0, rk: p.rk || 0, k: p.k || 0, seen: now });
+      Object.assign(e, { id: p.i, name: p.n, cls: p.c, tx: p.x, ty: p.y, dir: p.d, moving: p.m, hp: p.h, maxHp: p.H, level: p.l, guild: p.g, dead: p.a, gm: p.v, ap: p.q, st: p.s || 0, el: p.el || '', pw: p.pw || 0, rk: p.rk || 0, k: p.k || 0, seen: now });
       if (p.d === 1 || p.d === 2) e.lastH = p.d;
     }
     for (const id of G.players.keys()) if (!seenP.has(id)) G.players.delete(id);
@@ -404,6 +404,9 @@
     const e = entityById(d.id);
     if (!e) return;
     const x = e.x, y = e.y - 70, near = Math.hypot(e.x - G.self.x, e.y - G.self.y);
+    if (d.k === 'miss') { Overhead.add(x, y, 'Né!', 'status', '#bfe8ff'); return; }
+    if (d.e === 1) Overhead.add(x, y - 16, 'Khắc!', 'status', '#ffd84a');
+    else if (d.e === -1 && (d.id === G.you || near < 300)) Overhead.add(x, y - 16, 'Bị khắc', 'status', '#a0a0a0');
     if (d.k === 'heal' || d.k === 'mana') Overhead.add(x, y, d.v, d.k);
     else if (d.k === 'crit') {
       Overhead.add(x, y, d.v, 'crit');
@@ -549,13 +552,13 @@
     G.auto = on;
     const b = $('btn-auto');
     b.classList.toggle('on', on);
-    b.innerHTML = (on ? '🤖 Tự động: BẬT' : '🤖 Tự động: TẮT') + ' <span id="auto-cfg" title="Cài đặt tự động">⚙️</span>';
-    $('auto-cfg').onclick = ev => { ev.stopPropagation(); UI.openPanel('auto'); };
+    b.textContent = on ? '🤖 Tự động: BẬT' : '🤖 Tự động: TẮT';
     if (on && G.map && G.map.safe) UI.toast('Hãy ra bãi luyện công để dùng tự động đánh', 'error');
     G.autoHome = on ? { x: G.self.x, y: G.self.y } : null;
   }
   G.setAuto = setAuto;
   $('btn-auto').onclick = () => setAuto(!G.auto);
+  $('btn-auto-cfg').onclick = () => UI.openPanel('auto');
   setTimeout(() => setAuto(false), 0);
 
   Input.on('skill', i => { G.moveTo = null; useSkill(i); });
@@ -837,7 +840,8 @@
         if (d.rarity === 'epic' || d.rarity === 'legendary') { const g2 = ctx.createLinearGradient(0, d.y - 90, 0, d.y); g2.addColorStop(0, Sprites.hexA(col, 0)); g2.addColorStop(1, Sprites.hexA(col, 0.6)); ctx.fillStyle = g2; ctx.fillRect(d.x - 4, d.y - 90, 8, 90); }
         ctx.restore();
       }
-      ctx.drawImage(Sprites.itemIcon(d.icon, d.rarity), d.x - 16, d.y - 20 + bob, 32, 32);
+      const di = d.item && G.data.items[UI.resolveId(d.item)];
+      ctx.drawImage(Sprites.itemIcon(di ? di.icon : d.icon, d.rarity), d.x - 16, d.y - 20 + bob, 32, 32);
     }
     // Dấu nhấp chuột
     if (G.clickMark && now - G.clickMark.t0 < 500) { const a = 1 - (now - G.clickMark.t0) / 500; ctx.strokeStyle = `rgba(255,215,106,${a})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(G.clickMark.x, G.clickMark.y, 14 * (1.5 - a), 6 * (1.5 - a), 0, 0, Math.PI * 2); ctx.stroke(); }

@@ -163,8 +163,10 @@ body.touch #skillbar { display: none; }
 .act .cnt { position: absolute; bottom: 2px; right: 6px; font-size: 9px; }
 
 .pill { position: absolute; background: var(--panel); border: 1px solid var(--line); color: var(--text); border-radius: 14px; padding: 4px 10px; font-size: 12px; cursor: pointer; }
-#btn-auto { right: 8px; bottom: 96px; }
-body:not(.touch) #btn-auto { right: auto; left: 50%; transform: translateX(-50%); bottom: 86px; }
+#auto-wrap { position: absolute; right: 8px; bottom: 96px; display: flex; gap: 4px; z-index: 8; }
+#auto-wrap .pill { position: static; transform: none; }
+#btn-auto-cfg { background: #3a2a10; border-color: #f2be4c; color: #ffe2a0; }
+body:not(.touch) #auto-wrap { right: auto; left: 50%; transform: translateX(-50%); bottom: 86px; }
 #btn-auto.on { background: #1f5a2a; border-color: #8fdc8f; color: #eaffea; }
 #btn-chat-mobile { display: none; }
 
@@ -259,7 +261,7 @@ body.touch #chat.collapsed #chat-tabs::before { content: '💬 Trò chuyện'; f
 body.touch #tracker { top: 116px; left: 8px; width: 210px; display: none; }
 body.touch.show-tracker #tracker { display: flex; }
 body.touch #daily-box { display: none; }
-body.touch #btn-auto { right: auto; left: 12px; bottom: 160px; }
+body.touch #auto-wrap { right: auto; left: 12px; bottom: 160px; }
 body.touch .act.sk { font-size: 9px; }
 body.touch #btn-chat-mobile { display: none; }
 body.touch #hud-status { width: 210px; padding: 3px 6px 3px 3px; }
@@ -278,7 +280,7 @@ body.touch #tutorial-box, body.touch #daily-box { font-size: 11px; }
   body.touch #chat { top: 70px; width: 250px; }
   body.touch #chat-log { height: 52px; }
   body.touch #tracker { top: 100px; }
-  body.touch #btn-auto { bottom: 140px; }
+  body.touch #auto-wrap { bottom: 140px; }
   #action-pad { transform: scale(.84); }
   #joy-base { width: 112px; height: 112px; left: 28px; bottom: 18px; }
   #joy-knob { left: 28px; top: 28px; width: 52px; height: 52px; }
@@ -359,7 +361,7 @@ body.short #hud-status { transform: scale(.88); transform-origin: top left; }
 body.short.touch #chat { top: 70px; width: 250px; }
 body.short.touch #chat-log { height: 52px; }
 body.short.touch #tracker { top: 100px; }
-body.short.touch #btn-auto { bottom: 140px; }
+body.short.touch #auto-wrap { bottom: 140px; }
 body.short #action-pad { transform: scale(.84); }
 body.short #joy-base { width: 112px; height: 112px; left: 28px; bottom: 18px; }
 body.short #joy-knob { left: 28px; top: 28px; width: 52px; height: 52px; }
@@ -384,7 +386,7 @@ body.short .auth-form .btn { padding: 7px; }
 #action-pad { z-index: 3; }
 #tracker { z-index: 8; }
 #chat { z-index: 9; }
-#btn-auto, #btn-music { z-index: 8; }
+#auto-wrap, #btn-music { z-index: 8; }
 body.touch #tutorial-box .claim { padding: 7px 16px; font-size: 13px; margin-top: 6px; }
 body.touch #tutorial-box, body.touch #daily-box { padding: 8px 10px; }
 body.touch #chat-tabs { padding: 4px; gap: 4px; }
@@ -394,7 +396,7 @@ body.touch #chat-form { padding: 5px; gap: 5px; }
 body.touch #chat-form select, body.touch #chat-form input, body.touch #chat-form .btn { min-height: 34px; font-size: 14px; }
 body.touch #chat.collapsed #chat-tabs { cursor: pointer; }
 #btn-music { right: 8px; top: auto; bottom: 130px; }
-body:not(.touch) #btn-music { right: auto; left: calc(50% + 90px); bottom: 86px; }
+body:not(.touch) #btn-music { right: auto; left: calc(50% + 150px); bottom: 86px; }
 body.touch #btn-music { left: 12px; right: auto; bottom: 196px; }
 body.short.touch #btn-music { bottom: 172px; }
 
@@ -423,7 +425,7 @@ body.touch #tracker { top: 130px; }
 body.short.touch #tracker { top: 114px; }
 body.touch #chat.collapsed, body.short.touch #chat.collapsed { width: 210px; }
 #chat.collapsed #chat-log { padding: 0; overflow: hidden; }
-body.touch #btn-music, body.short.touch #btn-music { left: 172px; bottom: 160px; }
+body.touch #btn-music, body.short.touch #btn-music { left: 222px; bottom: 160px; }
 body.short.touch #btn-music { bottom: 140px; }
 
 /* ---------- Khung chat thu gọn ở giữa phía dưới (điện thoại) ---------- */
@@ -509,3 +511,19 @@ body.short #trade-win .tr-inv { max-height: 84px; }
 .au-sl span { font-size: 12px; color: var(--muted); }
 #target-frame .t-pw { font-size: 11px; margin: 1px 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #target-frame .t-rel { font-weight: 700; }
+
+body.touch .hide-touch { display: none; }
+
+/* ===== So sánh trang bị / ngũ hành ===== */
+.fx-line { color: #ffd76a; }
+.cmp-box { margin-top: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.03); }
+.cmp-title { font-weight: 700; color: var(--gold); margin-bottom: 4px; font-size: 13px; }
+table.cmp { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.cmp th { font-weight: 600; font-size: 11px; text-align: left; color: var(--muted); padding: 2px 4px; vertical-align: bottom; }
+table.cmp td { padding: 2px 4px; border-top: 1px solid rgba(255,255,255,.06); }
+table.cmp td.up { color: #4ade80; font-weight: 700; } table.cmp td.down { color: #ff6a6a; font-weight: 700; }
+table.cmp tr.cmp-pw td { font-weight: 700; }
+.cmp-fx { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px; margin-top: 4px; }
+.fx-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2px 10px; font-size: 12px; color: #ffd76a; margin: 4px 0; }
+/* điện thoại: menu 5 nút / hàng để không đè lên nút thuốc */
+body.touch #menu-buttons { max-width: 236px; }

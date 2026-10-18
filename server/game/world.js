@@ -9,6 +9,9 @@ const { MOUNTS, MOUNT_MAX, mountExpNext, isBreakLevel } = require('../data/mount
 const { DRAGONS, DRAGON_SLOT } = require('../data/dragons');
 const { SKILL_MAX, scaleSkill, upgradeCost, skillPointsTotal, BOOKS } = require('../data/skillbooks');
 const RARITY_IDX = { common: 0, rare: 1, epic: 2, legendary: 3 };
+const { KHAC, AFFIX, PROC_KEYS } = require('../data/affixes');
+// ngũ hành tương khắc: khắc +20% sát thương, bị khắc -15%
+function elemMult(ae, de) { if (!ae || !de) return [1, 0]; if (KHAC[ae] === de) return [1.2, 1]; if (KHAC[de] === ae) return [0.85, -1]; return [1, 0]; }
 const { ENHANCE_MAX, ENHANCE_SAFE, ENHANCE_RATE, enhanceCost } = require('../data/enhance');
 const U = require('./util');
 
@@ -85,6 +88,7 @@ class World {
     for (const el in (c.dragons || {})) if (!c.skills[DRAGONS[el].id]) c.skills[DRAGONS[el].id] = 1;
     if (!Array.isArray(c.hotbar) || c.hotbar.length !== 6) c.hotbar = [1, 2, 3, 4, 5, 6];
     c.spSpent = c.spSpent || 0;
+    U.migrateItems(c);
     this.recalc(p);
     if (!MAPS[c.map]) c.map = 'tuong_duong';
     const map = MAPS[c.map];
@@ -119,7 +123,7 @@ class World {
     const d = m.def;
     p.socket.emit('init', {
       you: p.id,
-      map: { id: d.id, name: d.name, w: d.w, h: d.h, tiles: d.tiles, safe: d.safe, pvp: d.pvp, lv: d.lv,
+      map: { id: d.id, name: d.name, theme: d.theme, w: d.w, h: d.h, tiles: d.tiles, safe: d.safe, pvp: d.pvp, lv: d.lv,
         portals: d.portals, npcs: d.npcs.map(n => ({ ...n, name: NPCS[n.id].name, sprite: NPCS[n.id].sprite, color: NPCS[n.id].color, action: NPCS[n.id].action })) },
       x, y, solid: SOLID, tile: TILE,
       drops: [...m.drops.values()].map(dr => this.dropView(dr))
@@ -224,6 +228,7 @@ class World {
     let m = this.db.data.config.expRate || 1;
     if (this.features && this.features.isActive('doubleExp')) m *= 2;
     if (p.c.expBuffUntil > Date.now()) m *= 2;
+    if (p.stats && p.stats.fx && p.stats.fx.expup) m *= 1 + p.stats.fx.expup / 100;
     return m;
   }
 
@@ -457,6 +462,8 @@ class World {
     const now = Date.now();
     if (t.boss && (kind === 'stun' || kind === 'freeze')) ms *= 0.35;   // boss kháng khống chế
     if (t.c && (kind === 'stun' || kind === 'freeze')) ms *= 0.6;        // người chơi bị khống chế ngắn hơn
+    if (t.c && t.stats.fx && t.stats.fx.ccres && (kind === 'stun' || kind === 'freeze' || kind === 'slow')) ms *= 1 - t.stats.fx.ccres / 100;
+    if (ms < 150) return;
     t.st = t.st || {};
     t.st[kind] = Math.max(t.st[kind] || 0, now + ms);
     if (kind === 'freeze') t.frozenUntil = t.st.freeze;
@@ -474,25 +481,50 @@ class World {
     return o;
   }
 
-  calcDamage(atk, crit, def, mult, defK = 0.35) {
+  calcDamage(atk, crit, def, mult, defK = 0.35, critMult = 1.75) {
     let dmg = atk * mult * U.rand(0.9, 1.1) - def * defK;
     dmg = Math.max(1, dmg);
     const isCrit = Math.random() * 100 < crit;
-    if (isCrit) dmg *= 1.75;
+    if (isCrit) dmg *= critMult;
     return { dmg: Math.round(dmg), crit: isCrit };
   }
 
   damage(p, t, mult) {
-    const isPlayer = !!t.c;
-    const def = isPlayer ? t.stats.def : t.tpl.def;
-    let { dmg, crit } = this.calcDamage(p.stats.atk * 1.6, p.stats.crit, def, mult);
-    if (isPlayer) dmg = Math.round(dmg * 0.6); // giảm sát thương PK
-    this.applyDamage(t, dmg, p, crit ? 'crit' : 'hit');
+    const isPlayer = !!t.c, fx = p.stats.fx || {};
+    const def = (isPlayer ? t.stats.def : t.tpl.def) * (1 - (fx.pierce || 0) / 100);
+    let { dmg, crit } = this.calcDamage(p.stats.atk * 1.6, p.stats.crit, def, mult, 0.35, 1.75 + (fx.critdmg || 0) / 100);
+    const [em, ek] = elemMult(p.stats.el, isPlayer ? t.stats.del : t.tpl.el);
+    dmg *= em;
+    if (isPlayer) dmg *= 0.6; // giảm sát thương PK
+    dmg = Math.max(1, Math.round(dmg));
+    this.applyDamage(t, dmg, p, crit ? 'crit' : 'hit', ek);
+    if (t.dead || p.dead) return;
+    // hiệu ứng trang bị khi đánh trúng
+    for (const k of PROC_KEYS) if (fx[k] && Math.random() * 100 < fx[k]) this.applyStatus(t, AFFIX[k].st[0], AFFIX[k].st[1], p);
+    if (fx.lifesteal) {
+      const heal = Math.round(dmg * fx.lifesteal / 100);
+      if (heal > 0 && p.c.hp < p.stats.maxHp) { p.c.hp = Math.min(p.stats.maxHp, p.c.hp + heal); p.dirtyMe = true; if (heal >= 5) this.io.to('map:' + p.mapId).emit('dmg', { id: p.id, v: heal, k: 'heal' }); }
+    }
+    if (fx.double && Math.random() * 100 < fx.double) {
+      const mapId = p.mapId;
+      setTimeout(() => { if (!t.dead && !p.dead && p.mapId === mapId && t.mapId === mapId) this.applyDamage(t, Math.max(1, Math.round(dmg * 0.6)), p, 'hit', ek); }, 160);
+    }
   }
 
-  applyDamage(t, dmg, src, kind) {
+  applyDamage(t, dmg, src, kind, ek = 0) {
     if (t.dead) return;
-    this.io.to('map:' + (t.mapId)).emit('dmg', { id: t.id, v: dmg, k: kind });
+    // phòng thủ từ trang bị (chỉ với đòn đánh trực tiếp, không áp cho độc/bỏng)
+    if (t.c && src && (kind === 'hit' || kind === 'crit' || kind === 'hurt')) {
+      const fx = t.stats.fx || {};
+      if (fx.dodge && Math.random() * 100 < fx.dodge) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return; }
+      if (fx.dmgred) dmg = Math.max(1, Math.round(dmg * (1 - fx.dmgred / 100)));
+      if (fx.reflect && !t._reflecting && !src.dead && src.mapId === t.mapId) {
+        const back = Math.round(dmg * fx.reflect / 100);
+        if (back > 0) { src._reflecting = true; this.applyDamage(src, back, t, 'hit'); src._reflecting = false; }
+      }
+    }
+    if (t.dead) return;
+    this.io.to('map:' + (t.mapId)).emit('dmg', ek ? { id: t.id, v: dmg, k: kind, e: ek } : { id: t.id, v: dmg, k: kind });
     if (t.c) { // người chơi
       t.c.hp -= dmg; t.lastCombat = Date.now(); t.dirtyMe = true;
       if (t.c.hp <= 0) this.killPlayer(t, src);
@@ -658,8 +690,9 @@ class World {
       if (dr.gold) {
         m.drops.delete(dr.id);
         this.io.to('map:' + p.mapId).emit('dropDel', dr.id);
-        p.c.gold += dr.gold;
-        p.socket.emit('gain', { gold: dr.gold, x: dr.x, y: dr.y });
+        const gold = Math.round(dr.gold * (1 + ((p.stats.fx && p.stats.fx.goldup) || 0) / 100));
+        p.c.gold += gold;
+        p.socket.emit('gain', { gold, x: dr.x, y: dr.y });
         this.features.questProgress(p, 'gold', dr.gold);
         p.dirtyMe = true;
         continue;
@@ -667,7 +700,7 @@ class World {
       if (!U.addItem(p.c, dr.itemId, dr.qty, dr.plus)) { if (!p._fullWarn || p._fullWarn < now) { this.toast(p, 'Túi đồ đã đầy!', 'error'); p._fullWarn = now + 5000; } continue; }
       m.drops.delete(dr.id);
       this.io.to('map:' + p.mapId).emit('dropDel', dr.id);
-      const it = ITEMS[dr.itemId];
+      const it = ITEMS[U.resolveItem(p.c, dr.itemId)];
       this.toast(p, `Nhặt được ${it.name}${dr.qty > 1 ? ' x' + dr.qty : ''}`, 'item:' + it.rarity);
       if (it.rarity === 'epic' || it.rarity === 'legendary') {
         this.features.announce(`✨ ${p.c.name} nhặt được [${it.name}] (${RARITY[it.rarity].name}) tại ${m.def.name}!`);
@@ -769,10 +802,11 @@ class World {
     const s = c.inv[i], it = ITEMS[s.id];
     if (it.type !== 'equip') return;
     if (c.level < it.lv) return this.toast(p, `Cần đạt cấp ${it.lv} để trang bị`, 'error');
+    if (it.cls && it.cls !== c.cls) return this.toast(p, `${it.name} là vũ khí của ${CLASSES[it.cls].name}, không dùng được`, 'error');
     c.inv.splice(i, 1);
     const prev = c.equip[it.slot];
-    c.equip[it.slot] = { uid: s.uid, id: s.id, plus: s.plus || 0 };
-    if (prev) c.inv.push({ uid: prev.uid, id: prev.id, qty: 1, plus: prev.plus || 0 });
+    c.equip[it.slot] = { uid: s.uid, id: s.id, plus: s.plus || 0, el: s.el, fx: s.fx };
+    if (prev) c.inv.push({ uid: prev.uid, id: prev.id, qty: 1, plus: prev.plus || 0, el: prev.el, fx: prev.fx });
     this.recalc(p);
     if (it.slot === 'weapon') this.progressTutorial(p, 'equip');
     this.db.markDirty();
@@ -782,7 +816,7 @@ class World {
     if (!e) return;
     if (U.freeSlots(c) < 1) return this.toast(p, 'Túi đồ đầy', 'error');
     delete c.equip[slot];
-    c.inv.push({ uid: e.uid, id: e.id, qty: 1, plus: e.plus || 0 });
+    c.inv.push({ uid: e.uid, id: e.id, qty: 1, plus: e.plus || 0, el: e.el, fx: e.fx });
     this.recalc(p);
   }
   discard(p, uid) {
@@ -1062,10 +1096,11 @@ class World {
       if (d > range * 0.85) this.moveToward(mon, target.x, target.y, spd, m.def);
       if (d <= range + 10 && now >= mon.nextAtk) {
         mon.nextAtk = now + (mon.boss ? 1100 : 1300) * (slowed ? 1.4 : 1);
-        const { dmg, crit } = this.calcDamage(tpl.atk, mon.boss ? 10 : 3, target.stats.def, 1, 0.5);
+        let { dmg, crit } = this.calcDamage(tpl.atk, mon.boss ? 10 : 3, target.stats.def, 1, 0.5);
+        const [mem, mek] = elemMult(tpl.el, target.stats.del); dmg = Math.max(1, Math.round(dmg * mem));
         if (tpl.ranged || mon.boss) this.fx(mon.mapId, { t: 'bolt', from: mon.id, x: mon.x, y: mon.y, tx: target.x, ty: target.y, color: mon.boss ? '#ff3030' : '#c080ff' });
         else this.fx(mon.mapId, { t: 'bite', from: mon.id, x: target.x, y: target.y });
-        this.applyDamage(target, dmg, mon, crit ? 'crit' : 'hurt');
+        this.applyDamage(target, dmg, mon, crit ? 'crit' : 'hurt', mek);
         const ms = MON_STATUS[tpl.sprite];
         if (ms && !target.dead && Math.random() < ms[2] * (mon.boss ? 1.5 : 1)) this.applyStatus(target, ms[0], ms[1], mon);
       }
@@ -1118,7 +1153,7 @@ class World {
       ps.push({ i: p.id, n: p.c.name, c: p.c.cls, x: Math.round(p.x), y: Math.round(p.y), d: p.dir, m: p.moving ? 1 : 0,
         h: Math.max(0, Math.round(p.c.hp)), H: p.stats.maxHp, l: p.c.level, g: g ? g.name : '', a: p.dead ? 1 : 0,
         q: this.appearance(p.c), v: p.user.isAdmin ? 1 : 0, s: stMask(p, now),
-        pw: p.stats.power || 0, rk: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0, k: p.c.pk || 0 });
+        pw: p.stats.power || 0, el: p.stats.el || '', rk: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0, k: p.c.pk || 0 });
     }
     const ms = [];
     for (const mon of m.monsters.values()) {

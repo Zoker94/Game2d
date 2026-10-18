@@ -418,6 +418,15 @@
     const md = shade(metal, -0.35);
     switch (icon) {
       case 'weapon': for (let i = 0; i < 10; i++) p(4 + i, 11 - i, 2, 2, i < 8 ? metal : md); p(2, 11, 4, 1, '#b8860b'); p(4, 9, 1, 4, '#b8860b'); p(1, 13, 2, 2, '#5a3a1a'); break;
+      // vũ khí môn phái (lưới 16x16)
+      case 'w_staff': for (let i = 0; i < 14; i++) p(1 + i, 14 - i, 2, 1, i % 4 === 0 ? '#e8c050' : '#a06a30'); p(1, 14, 2, 1, metal); p(14, 1, 2, 1, metal); break;
+      case 'w_mace': for (let i = 0; i < 8; i++) p(2 + i, 13 - i, 1, 1, '#7a4a24'); p(8, 2, 6, 6, md); p(9, 3, 4, 4, metal); p(10, 1, 2, 1, '#e8c050'); p(14, 4, 1, 2, '#e8c050'); p(7, 4, 1, 2, '#e8c050'); p(10, 8, 2, 1, '#e8c050'); p(10, 4, 1, 1, '#fff'); break;
+      case 'w_dart': p(6, 2, 4, 12, md); p(2, 6, 12, 4, md); p(7, 1, 2, 14, metal); p(1, 7, 14, 2, metal); p(7, 7, 2, 2, '#333'); p(7, 2, 1, 4, '#fff'); break;
+      case 'w_saber': for (let i = 0; i < 9; i++) p(4 + i, 10 - i - (i > 5 ? 1 : 0), 2, 2, i < 7 ? metal : md); p(5, 9, 1, 1, '#7dff4a'); p(9, 5, 1, 1, '#7dff4a'); p(2, 11, 4, 1, '#3a6a2a'); p(1, 12, 2, 3, '#4a2a1a'); break;
+      case 'w_sword': for (let i = 0; i < 10; i++) p(4 + i, 11 - i, 2, 2, i < 8 ? metal : md); for (let i = 0; i < 7; i++) p(5 + i, 11 - i, 1, 1, '#fff'); p(2, 10, 5, 1, '#e8c050'); p(4, 8, 1, 5, '#e8c050'); p(1, 13, 2, 2, '#5a3a1a'); p(0, 15, 2, 1, '#d33'); break;
+      case 'w_dual': for (let i = 0; i < 7; i++) { p(2 + i, 9 - i, 2, 1, metal); p(7 + i, 9 - i, 2, 1, md); } p(1, 10, 3, 2, '#3a5a8a'); p(6, 10, 3, 2, '#3a5a8a'); p(1, 12, 2, 3, '#4a2a1a'); p(6, 12, 2, 3, '#4a2a1a'); break;
+      case 'w_glove': p(3, 5, 9, 8, '#a87a4a'); p(3, 3, 2, 3, '#a87a4a'); p(5, 2, 2, 4, '#a87a4a'); p(7, 2, 2, 4, '#a87a4a'); p(9, 3, 2, 3, '#a87a4a'); p(12, 6, 2, 4, '#a87a4a'); p(3, 11, 9, 3, metal); p(4, 12, 7, 1, md); p(5, 7, 4, 2, '#7a5230'); break;
+      case 'w_talisman': p(4, 1, 8, 14, '#ffe48c'); p(4, 1, 8, 1, '#c8a040'); p(4, 14, 8, 1, '#c8a040'); p(7, 3, 2, 10, '#d0302a'); p(5, 5, 6, 1, '#d0302a'); p(5, 9, 6, 1, '#d0302a'); p(6, 12, 4, 1, metal); break;
       case 'helmet': p(3, 5, 10, 7, metal); p(2, 10, 12, 2, md); p(5, 3, 6, 2, metal); p(7, 1, 2, 2, '#f33'); p(5, 7, 6, 2, '#222'); break;
       case 'armor': p(3, 3, 10, 11, metal); p(1, 3, 3, 5, md); p(12, 3, 3, 5, md); p(7, 3, 2, 11, md); p(3, 8, 10, 1, '#b8860b'); break;
       case 'boots': p(3, 3, 4, 9, metal); p(3, 11, 7, 3, md); p(9, 3, 4, 9, metal); p(9, 11, 6, 3, md); break;

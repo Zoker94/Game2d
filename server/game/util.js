@@ -1,6 +1,7 @@
 const { CLASSES } = require('../data/classes');
 const { ITEMS } = require('../data/items');
 const { mountStats } = require('../data/mounts');
+const { rollAffixes, elementBonus, CAP } = require('../data/affixes');
 
 // Hệ số chỉ số theo cấp cường hóa: +1..+10 mỗi cấp 12%, +11..+15 mỗi cấp 25%
 const plusMult = plus => 1 + Math.min(plus, 10) * 0.12 + Math.max(0, plus - 10) * 0.25;
@@ -45,7 +46,27 @@ function newCharacter(name, cls) {
 
 function isStack(id) { const it = ITEMS[id]; return it && it.type !== 'equip'; }
 
-function addItem(c, id, qty = 1, plus = 0) {
+// binh khí chung -> vũ khí môn phái của nhân vật
+function resolveItem(c, id) {
+  const it = ITEMS[id];
+  if (it && it.generic && c && c.cls && ITEMS[id + '_' + c.cls]) return id + '_' + c.cls;
+  return id;
+}
+// gieo hệ ngũ hành / hiệu ứng cho đồ cũ chưa có, đổi binh khí chung sang vũ khí môn phái
+function migrateItems(c) {
+  const fix = s => {
+    if (!s) return;
+    const nid = resolveItem(c, s.id);
+    if (nid !== s.id) s.id = nid;
+    const it = ITEMS[s.id];
+    if (it && it.type === 'equip' && !s.el) Object.assign(s, rollAffixes(it));
+  };
+  (c.inv || []).forEach(fix);
+  Object.values(c.equip || {}).forEach(fix);
+}
+
+function addItem(c, id, qty = 1, plus = 0, extra = null) {
+  id = resolveItem(c, id);
   const it = ITEMS[id];
   if (!it || qty <= 0) return false;
   if (isStack(id)) {
@@ -56,7 +77,7 @@ function addItem(c, id, qty = 1, plus = 0) {
     return true;
   }
   if (c.inv.length + qty > INV_SIZE) return false;
-  for (let i = 0; i < qty; i++) c.inv.push({ uid: newUid(), id, qty: 1, plus });
+  for (let i = 0; i < qty; i++) c.inv.push(Object.assign({ uid: newUid(), id, qty: 1, plus }, extra || rollAffixes(it)));
   return true;
 }
 function freeSlots(c) { return INV_SIZE - c.inv.length; }
@@ -94,16 +115,31 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
     spd: cl.base.spd,
     regen: 0
   };
+  const fx = {}, elCount = {};
+  const addStat = (k, v) => { if (k === 'hp') s.maxHp += v; else if (k === 'mp') s.maxMp += v; else s[k] += v; };
   for (const slot in c.equip) {
     const e = c.equip[slot];
     const it = e && ITEMS[e.id];
     if (!it) continue;
     const m = plusMult(e.plus || 0);
-    for (const k in it.stats) {
-      const v = it.stats[k] * (k === 'crit' || k === 'spd' ? 1 : m);
-      if (k === 'hp') s.maxHp += v; else if (k === 'mp') s.maxMp += v; else s[k] += v;
-    }
+    for (const k in it.stats) addStat(k, it.stats[k] * (k === 'crit' || k === 'spd' ? 1 : m));
+    // ngũ hành: mỗi món cộng chỉ số theo hệ
+    if (e.el) { elCount[e.el] = (elCount[e.el] || 0) + 1; const eb = elementBonus(e.el, it.tier); for (const k in eb) addStat(k, eb[k]); }
+    for (const [k, v] of e.fx || []) fx[k] = (fx[k] || 0) + v;
   }
+  // bộ ngũ hành: 3 món cùng hệ +6%, 5 món +12% chỉ số chính của hệ đó
+  let setEl = null, setN = 0;
+  for (const k in elCount) if (elCount[k] > setN) { setN = elCount[k]; setEl = k; }
+  if (setN >= 3) {
+    const bonus = setN >= 5 ? 0.12 : 0.06;
+    if (setEl === 'kim') s.atk *= 1 + bonus; else if (setEl === 'moc') s.maxHp *= 1 + bonus;
+    else if (setEl === 'thuy') { s.maxMp *= 1 + bonus; s.def *= 1 + bonus / 2; } else if (setEl === 'hoa') s.crit += bonus * 50; else if (setEl === 'tho') s.def *= 1 + bonus;
+  }
+  for (const k in fx) fx[k] = Math.round(Math.min(CAP[k] || 100, fx[k]) * 10) / 10;
+  s.fx = fx; s.set = setN >= 3 ? { el: setEl, n: setN } : null;
+  s.el = c.equip.weapon && c.equip.weapon.el || null;      // hệ tấn công
+  s.del = c.equip.armor && c.equip.armor.el || null;       // hệ phòng thủ
+  if (fx.regen) s.regen += fx.regen / 100;
   if (c.mount && c.mounts && c.mounts[c.mount]) {
     const ms = mountStats(c.mount, c.mounts[c.mount].lv);
     for (const k in ms) {
@@ -129,5 +165,5 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
 
 module.exports = {
   MAX_LEVEL, INV_SIZE, expNext, vnDate, vnDay, vnMinuteOfDay, rand, randInt, dist, clamp, newUid,
-  plusMult, newCharacter, addItem, freeSlots, countItem, removeItemById, removeByUid, calcStats, isStack
+  plusMult, newCharacter, addItem, resolveItem, migrateItems, freeSlots, countItem, removeItemById, removeByUid, calcStats, isStack
 };

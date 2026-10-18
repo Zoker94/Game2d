@@ -14,17 +14,25 @@
 
   const UI = window.UI = {};
 
+  // binh khí chung -> vũ khí môn phái của mình (để hiện đúng tên/biểu tượng)
+  function resolveId(id) {
+    const it = G.data.items[id];
+    return it && it.generic && G.me && G.data.items[id + '_' + G.me.cls] ? id + '_' + G.me.cls : id;
+  }
+  UI.resolveId = resolveId;
   function iconCanvas(itemId, plus) {
-    const it = G.data.items[itemId];
+    const it = G.data.items[resolveId(itemId)];
     const cv = document.createElement('canvas'); cv.width = 32; cv.height = 32;
     if (it) cv.getContext('2d').drawImage(Sprites.itemIcon(it.icon, it.rarity), 0, 0);
     return cv;
   }
   function iconHtml(itemId) { const c = iconCanvas(itemId); return `<img src="${c.toDataURL()}" width="32" height="32" style="image-rendering:pixelated">`; }
   const iconUrlCache = {};
-  function iconUrl(itemId) { return iconUrlCache[itemId] || (iconUrlCache[itemId] = iconCanvas(itemId).toDataURL()); }
-  UI.iconUrl = id => iconUrl(id); UI.esc = esc; UI.itemName = (id, plus) => itemName(id, plus); UI.itemTip = (e, id, plus) => tip(e, `<b>${itemName(id, plus)}</b>${statsHtml(G.data.items[id], plus)}`); UI.hideTip = () => hideTip();
-  function itemName(id, plus) { const it = G.data.items[id]; return `<span class="r-${it.rarity}-t">${esc(it.name)}${plus ? ' +' + plus : ''}</span>`; }
+  function iconUrl(itemId) { const id = resolveId(itemId); return iconUrlCache[id] || (iconUrlCache[id] = iconCanvas(id).toDataURL()); }
+  UI.iconUrl = id => iconUrl(id); UI.esc = esc; UI.itemName = (id, plus) => itemName(id, plus);
+  UI.itemTip = (e, id, plus, inst) => tip(e, `<b>${itemName(id, plus)}</b>${statsHtml(G.data.items[resolveId(id)], plus)}${elemFxHtml(G.data.items[resolveId(id)], inst)}`);
+  UI.hideTip = () => hideTip();
+  function itemName(id, plus) { const it = G.data.items[resolveId(id)]; return `<span class="r-${it.rarity}-t">${esc(it.name)}${plus ? ' +' + plus : ''}</span>`; }
   function statsHtml(it, plus) {
     if (!it.stats) return '';
     return Object.entries(it.stats).map(([k, v]) => {
@@ -33,12 +41,57 @@
     }).join('');
   }
   const plusMult = p => 1 + Math.min(p, 10) * 0.12 + Math.max(0, p - 10) * 0.25;
-  function itemDesc(id, plus) {
-    const it = G.data.items[id];
+  // chỉ số cộng theo hệ ngũ hành (giống máy chủ)
+  function elemBonus(el, t) {
+    return { kim: { atk: 2 + t * 3 }, moc: { hp: 15 + t * 25 }, thuy: { mp: 12 + t * 18, def: 1 + t }, hoa: { crit: Math.round((0.5 + t * 0.3) * 10) / 10 }, tho: { def: 2 + t * 3 } }[el] || {};
+  }
+  function fxText(k, v) { const a = G.data.affixes[k]; return a ? `<b>${a.name}</b>: ${a.text.replace('{v}', v)}` : k; }
+  function elemFxHtml(it, inst) {
+    if (!it || it.type !== 'equip' || !inst) return '';
+    let h = '';
+    if (inst.el) {
+      const E = G.data.elements[inst.el], b = elemBonus(inst.el, it.tier);
+      h += `<div class="st" style="color:${E.color}">◆ Hệ ${E.name}: ${Object.entries(b).map(([k, v]) => `${STAT_NAME[k]} +${v}${k === 'crit' ? '%' : ''}`).join(', ')}</div>`;
+    }
+    for (const [k, v] of inst.fx || []) h += `<div class="st fx-line">✦ ${fxText(k, v)}</div>`;
+    return h;
+  }
+  // tổng chỉ số của 1 món (gồm cường hóa + ngũ hành) để so sánh
+  function itemTotals(it, inst) {
+    const o = {};
+    if (!it) return o;
+    for (const [k, v] of Object.entries(it.stats || {})) o[k] = (o[k] || 0) + ((k === 'crit' || k === 'spd') ? v : v * plusMult((inst && inst.plus) || 0));
+    if (inst && inst.el) for (const [k, v] of Object.entries(elemBonus(inst.el, it.tier))) o[k] = (o[k] || 0) + v;
+    return o;
+  }
+  const powerOf = o => (o.atk || 0) * 3 + (o.def || 0) * 2 + (o.hp || 0) / 4 + (o.mp || 0) / 8 + (o.crit || 0) * 12;
+  function compareHtml(s) {
+    const it = G.data.items[s.id];
+    if (!it || it.type !== 'equip' || s.equipped) return '';
+    const cur = G.me.equip[it.slot], cit = cur && G.data.items[cur.id];
+    const a = itemTotals(cit, cur), b = itemTotals(it, s);
+    const keys = [...new Set([...Object.keys(a), ...Object.keys(b)])];
+    const fmtv = (k, v) => k === 'crit' ? Math.round(v * 10) / 10 + '%' : Math.round(v);
+    const rows = keys.map(k => {
+      const d = (b[k] || 0) - (a[k] || 0), dd = k === 'crit' ? Math.round(d * 10) / 10 : Math.round(d);
+      return `<tr><td>${STAT_NAME[k]}</td><td>${fmtv(k, a[k] || 0)}</td><td>${fmtv(k, b[k] || 0)}</td><td class="${dd > 0 ? 'up' : dd < 0 ? 'down' : ''}">${dd > 0 ? '▲ +' : dd < 0 ? '▼ ' : ''}${dd || '='}${dd && k === 'crit' ? '%' : ''}</td></tr>`;
+    }).join('');
+    const dp = Math.round(powerOf(b) - powerOf(a));
+    const fxList = inst => (inst && inst.fx || []).map(([k, v]) => `<div>✦ ${fxText(k, v)}</div>`).join('') || '<div class="muted">Không có hiệu ứng</div>';
+    const elName = inst => inst && inst.el ? `<span style="color:${G.data.elements[inst.el].color}">Hệ ${G.data.elements[inst.el].name}</span>` : '<span class="muted">—</span>';
+    return `<div class="cmp-box"><div class="cmp-title">⚖️ So sánh với đồ đang mặc ${cit ? '' : '<span class="muted small">(ô ' + G.data.slots[it.slot] + ' đang trống)</span>'}</div>
+      <table class="cmp"><tr><th></th><th>Đang mặc${cit ? `<br>${itemName(cur.id, cur.plus)}` : ''}</th><th>Đang chọn<br>${itemName(s.id, s.plus)}</th><th>Chênh lệch</th></tr>
+      <tr><td>Ngũ hành</td><td>${elName(cur)}</td><td>${elName(s)}</td><td></td></tr>${rows}
+      <tr class="cmp-pw"><td>Lực chiến</td><td colspan="2"></td><td class="${dp > 0 ? 'up' : dp < 0 ? 'down' : ''}">${dp > 0 ? '▲ +' : dp < 0 ? '▼ ' : ''}${dp || '='}</td></tr></table>
+      <div class="cmp-fx"><div><div class="small muted">Hiệu ứng đang mặc</div>${fxList(cur)}</div><div><div class="small muted">Hiệu ứng đang chọn</div>${fxList(s)}</div></div></div>`;
+  }
+  function itemDesc(id, plus, inst) {
+    const it = G.data.items[resolveId(id)];
     const rar = G.data.rarity[it.rarity];
+    const clsLine = it.cls ? `<div class="small" style="color:${it.cls === G.me.cls ? '#4ade80' : '#ff6a6a'}">${it.wtype} · Chỉ dành cho ${G.data.classes[it.cls].name}</div>` : it.generic ? '<div class="small muted">Nhặt / mua sẽ thành vũ khí môn phái của bạn</div>' : '';
     return `<h4>${itemName(id, plus)}</h4>
-      <div class="muted small">${it.type === 'equip' ? G.data.slots[it.slot] + ' · ' : ''}<span style="color:${rar.color}">${rar.name}</span> · Yêu cầu cấp ${it.lv || 1}</div>
-      ${statsHtml(it, plus)}${it.desc ? `<div class="small">${esc(it.desc)}</div>` : ''}
+      <div class="muted small">${it.type === 'equip' ? G.data.slots[it.slot] + ' · ' : ''}<span style="color:${rar.color}">${rar.name}</span> · Yêu cầu cấp ${it.lv || 1}</div>${clsLine}
+      ${statsHtml(it, plus)}${elemFxHtml(it, inst)}${it.desc ? `<div class="small">${esc(it.desc)}</div>` : ''}
       <div class="small muted">Giá bán: ${fmt(Math.floor(it.price * 0.3 * (1 + (plus || 0) * 0.2)))} lượng</div>`;
   }
 
@@ -208,7 +261,7 @@
     if (!t) { f.classList.add('hidden'); return; }
     f.classList.remove('hidden');
     let name;
-    if (t.type) { const info = G.data.monsters[t.type] || {}; name = `${t.boss ? '👑 ' : ''}${info.name} (Cấp ${info.lv})`; }
+    if (t.type) { const info = G.data.monsters[t.type] || {}; const E = info.el && G.data.elements[info.el]; name = `${t.boss ? '👑 ' : ''}${info.name} (Cấp ${info.lv})${E ? ' · Hệ ' + E.name : ''}`; }
     else name = `${t.name} (Cấp ${t.level})`;
     f.classList.toggle('boss', !!t.boss);
     const n = f.querySelector('.t-name');
@@ -219,7 +272,8 @@
     if (t.type || t.pw == null) { pw.style.display = 'none'; }
     else {
       const ti = Overhead.title(t.pw), rc = Overhead.relColor(t.pw, G.me.stats.power), pk = Overhead.pkLevel(t.k);
-      const html = `⚡ <b>${(t.pw || 0).toLocaleString('vi-VN')}</b> <span style="color:${ti.color}">${ti.name}</span> <span class="t-rel" style="color:${pk ? '#ff4a4a' : rc.color}">${pk ? '☠ Sát khí ' + t.k : rc.tip}</span>${t.rk ? ` <span style="color:#ffd84a">#${t.rk} lực chiến</span>` : ''}`;
+      const E = t.el && G.data.elements[t.el];
+      const html = `⚡ <b>${(t.pw || 0).toLocaleString('vi-VN')}</b> <span style="color:${ti.color}">${ti.name}</span>${E ? ` <span style="color:${E.color}">◆${E.name}</span>` : ''} <span class="t-rel" style="color:${pk ? '#ff4a4a' : rc.color}">${pk ? '☠ Sát khí ' + t.k : rc.tip}</span>${t.rk ? ` <span style="color:#ffd84a">#${t.rk} lực chiến</span>` : ''}`;
       if (pw.innerHTML !== html) pw.innerHTML = html;
       pw.style.display = '';
     }
@@ -375,7 +429,7 @@
   function selectedItem() {
     const me = G.me, sel = panelState.sel;
     if (!sel) return null;
-    if (sel.startsWith('eq:')) { const slot = sel.slice(3); const e = me.equip[slot]; return e ? { equipped: true, slot, uid: e.uid, id: e.id, plus: e.plus, qty: 1 } : null; }
+    if (sel.startsWith('eq:')) { const slot = sel.slice(3); const e = me.equip[slot]; return e ? { equipped: true, slot, uid: e.uid, id: e.id, plus: e.plus, qty: 1, el: e.el, fx: e.fx } : null; }
     const s = me.inv.find(x => x.uid === sel);
     return s ? Object.assign({ equipped: false }, s) : null;
   }
@@ -400,7 +454,7 @@
     let extra = '';
     if (ctx.enhance && it.type === 'equip') extra = enhanceBox(s, it);
     if (!s.equipped) btns += `<button class="btn small" data-act="discard">Vứt bỏ</button>`;
-    return `<div class="item-detail">${itemDesc(s.id, s.plus)}${s.qty > 1 ? `<div class="small">Số lượng: ${s.qty}</div>` : ''}<div class="row" style="justify-content:flex-start;margin-top:6px">${btns}</div>${extra}</div>`;
+    return `<div class="item-detail">${itemDesc(s.id, s.plus, s)}${compareHtml(s)}${s.qty > 1 ? `<div class="small">Số lượng: ${s.qty}</div>` : ''}<div class="row" style="justify-content:flex-start;margin-top:6px">${btns}</div>${extra}</div>`;
   }
   let lastTap = { id: null, t: 0 };
   function enhanceBox(s, it) {
@@ -452,6 +506,18 @@
     });
   }
 
+  // ngũ hành & hiệu ứng trang bị đang có
+  function elemPanel(st) {
+    const E = G.data.elements, K = G.data.khac;
+    const el = st.el && E[st.el], del = st.del && E[st.del];
+    const fx = Object.entries(st.fx || {});
+    return `<h4 style="color:#ffd76a">☯ Ngũ hành & hiệu ứng trang bị</h4>
+      <div class="small">Hệ tấn công (vũ khí): ${el ? `<b style="color:${el.color}">${el.name}</b> — khắc <b style="color:${E[K[st.el]].color}">${E[K[st.el]].name}</b> (+20% sát thương)` : '<span class="muted">chưa có</span>'}</div>
+      <div class="small">Hệ phòng thủ (áo): ${del ? `<b style="color:${del.color}">${del.name}</b>` : '<span class="muted">chưa có</span>'}</div>
+      ${st.set ? `<div class="small" style="color:${E[st.set.el].color}">◆ Bộ ${E[st.set.el].name} ${st.set.n} món: +${st.set.n >= 5 ? 12 : 6}% ${E[st.set.el].desc.toLowerCase()}</div>` : '<div class="small muted">Mặc 3 món cùng hệ để nhận thưởng bộ ngũ hành (5 món: gấp đôi).</div>'}
+      <div class="fx-grid">${fx.length ? fx.map(([k, v]) => `<div>✦ ${fxText(k, v)}</div>`).join('') : '<div class="muted small">Chưa có hiệu ứng đặc biệt. Đồ VIP có 1, đồ Truyền Kỳ có 2 hiệu ứng.</div>'}</div>
+      <div class="small muted">Tương khắc: Kim → Mộc → Thổ → Thủy → Hỏa → Kim (đánh hệ bị khắc +20%, đánh hệ khắc mình -15%).</div>`;
+  }
   // ---------- Nhân vật ----------
   function renderCharacter(body) {
     const me = G.me, st = me.stats, cl = G.data.classes[me.cls];
@@ -464,6 +530,7 @@
         <div>Tốc độ <b>${Math.round(st.spd)}</b></div><div>Kinh nghiệm <b>${fmt(me.exp)}/${fmt(me.expNext)}</b></div><div>Tầm đánh <b>${cl.range}</b></div>
         <div>Quái đã diệt <b>${fmt(me.kills)}</b></div><div>Hạ người chơi <b>${fmt(me.pvpKills)}</b></div><div>Boss đã đánh <b>${fmt(me.bossKills)}</b></div>
       </div>
+      ${elemPanel(st)}
       <h4 style="color:#ffd76a">Võ công</h4>
       <div class="list">${cl.skills.map((s, i) => `<div class="li ${me.level >= s.lv ? 'done' : ''}"><div class="grow"><b>${i + 1}. ${esc(s.name)}</b> ${me.level < s.lv ? `<span class="warn small">(Mở ở cấp ${s.lv})</span>` : ''}<div class="sub">${skillDesc(s)} · ${s.mp} MP · Hồi ${s.cd / 1000}s</div></div></div>`).join('')}</div>
       <h4 style="color:#ffd76a">🐉 Long Ấn (phím 7)</h4>
@@ -671,8 +738,10 @@
   // ---------- Cài đặt ----------
   function renderSettings(body) {
     const s = G.settings;
+    setTimeout(() => { const b = $('set-auto'); if (b) b.onclick = () => UI.openPanel('auto'); }, 0);
     const pad = navigator.getGamepads && [...navigator.getGamepads()].find(p => p && p.connected);
     body.innerHTML = `
+      <div class="card"><h4>🤖 Tự động</h4><button class="btn small primary" id="set-auto">⚙️ Cài đặt tự động (nhặt đồ, bơm máu...)</button></div>
       <div class="card"><h4>Hiển thị & âm thanh</h4>
         <label><input type="checkbox" data-set="names" ${s.names ? 'checked' : ''}> Hiện tên nhân vật/quái</label><br>
         <label><input type="checkbox" id="au-music" ${GameAudio.state.music ? 'checked' : ''}> 🎵 Nhạc nền võ lâm</label> <input type="range" id="au-mvol" min="0" max="1" step="0.05" value="${GameAudio.state.musicVol}" style="width:110px;vertical-align:middle"><br>
