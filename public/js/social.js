@@ -55,7 +55,9 @@
     let html = `<div class="insp"><div class="insp-left"><canvas id="insp-cv" width="128" height="128"></canvas>
       <h3>${esc(d.name)}</h3><div class="muted small">${cls ? cls.name : ''} · Cấp ${d.level}</div>
       ${d.guild ? `<div class="small" style="color:#7fb8ff">«${esc(d.guild)}» ${d.role === 'leader' ? '· Bang chủ' : d.role === 'elder' ? '· Trưởng lão' : ''}</div>` : ''}
-      <div class="insp-power">⚡ Lực chiến <b>${d.power.toLocaleString('vi-VN')}</b></div>
+      <div class="small" style="color:${Overhead.title(d.power).color};font-weight:700">【${Overhead.title(d.power).name}】${d.rank ? ` · <span style="color:#ffd84a">#${d.rank} lực chiến</span>` : ''}</div>
+      <div class="insp-power">⚡ Lực chiến <b>${d.power.toLocaleString('vi-VN')}</b> <span class="small" style="color:${Overhead.relColor(d.power, G.me.stats.power).color}">(${Overhead.relColor(d.power, G.me.stats.power).tip})</span></div>
+      ${d.pk >= 3 ? `<div class="small" style="color:#ff4a4a">☠ Sát khí ${d.pk}</div>` : ''}
       <div class="small muted">📍 ${esc(d.map)} · 💀 Quái ${d.kills} · ⚔️ PK ${d.pvpKills}</div></div>
       <div class="insp-right"><div class="insp-stats">
         <div>❤️ Sinh lực <b>${s.maxHp}</b></div><div>💧 Nội lực <b>${s.maxMp}</b></div>

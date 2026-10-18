@@ -152,7 +152,8 @@ class World {
       dragons: c.dragons || {}, dragon: c.dragon || null,
       skills: c.skills || {}, hotbar: c.hotbar, sp: skillPointsTotal(c.level) - (c.spSpent || 0),
       mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c),
-      st: this.statusView(p), friends: Object.keys(c.friends || {}).length
+      st: this.statusView(p), friends: Object.keys(c.friends || {}).length, pk: c.pk || 0,
+      rank: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0
     };
   }
 
@@ -518,6 +519,8 @@ class World {
     this.fx(t.mapId, { t: 'death', id: t.id, x: t.x, y: t.y });
     if (src && src.c) {
       src.c.pvpKills = (src.c.pvpKills || 0) + 1;
+      if (!(t.c.pk >= 3)) src.c.pk = Math.min(30, (src.c.pk || 0) + 1);   // giết người lương thiện mới tăng sát khí
+      src.pkDecayAt = Date.now() + 15 * 60000;
       this.features.questProgress(src, 'pvp', 1);
       this.features.announce(`🗡️ ${src.c.name} đã hạ gục ${t.c.name} tại ${map.def.name}!`, 'map:' + t.mapId);
       src.dirtyMe = true;
@@ -1010,6 +1013,7 @@ class World {
   }
 
   regen(p, m, now) {
+    if (p.c.pk > 0) { if (!p.pkDecayAt) p.pkDecayAt = now + 15 * 60000; else if (now >= p.pkDecayAt) { p.c.pk--; p.pkDecayAt = now + 15 * 60000; } }
     if (p.dead) return;
     const s = p.stats, c = p.c;
     const inCombat = now - p.lastCombat < 6000;
@@ -1113,7 +1117,8 @@ class World {
       const g = p.c.guildId && guilds[p.c.guildId];
       ps.push({ i: p.id, n: p.c.name, c: p.c.cls, x: Math.round(p.x), y: Math.round(p.y), d: p.dir, m: p.moving ? 1 : 0,
         h: Math.max(0, Math.round(p.c.hp)), H: p.stats.maxHp, l: p.c.level, g: g ? g.name : '', a: p.dead ? 1 : 0,
-        q: this.appearance(p.c), v: p.user.isAdmin ? 1 : 0, s: stMask(p, now) });
+        q: this.appearance(p.c), v: p.user.isAdmin ? 1 : 0, s: stMask(p, now),
+        pw: p.stats.power || 0, rk: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0, k: p.c.pk || 0 });
     }
     const ms = [];
     for (const mon of m.monsters.values()) {

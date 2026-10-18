@@ -626,6 +626,8 @@ class Features {
   // ---------------- Bảng xếp hạng ----------------
   computeLeaderboard() {
     const users = Object.values(this.db.data.users).filter(u => u.character && !u.banned);
+    // hạng lực chiến top 10 -> huy hiệu cạnh tên
+    this.powerRank = new Map(users.filter(u => u.character.power > 0).sort((a, b) => b.character.power - a.character.power).slice(0, 10).map((u, i) => [u.id, i + 1]));
     for (const p of this.w.players.values()) { p.c.x = p.x; p.c.y = p.y; }
     const gs = this.db.data.guilds;
     const row = (u, v) => ({ name: u.character.name, cls: u.character.cls, level: u.character.level, guild: u.character.guildId && gs[u.character.guildId] ? gs[u.character.guildId].name : '', v });

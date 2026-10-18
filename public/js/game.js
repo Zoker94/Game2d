@@ -365,7 +365,7 @@
       }
       let e = G.players.get(p.i);
       if (!e) { e = { x: p.x, y: p.y }; G.players.set(p.i, e); }
-      Object.assign(e, { id: p.i, name: p.n, cls: p.c, tx: p.x, ty: p.y, dir: p.d, moving: p.m, hp: p.h, maxHp: p.H, level: p.l, guild: p.g, dead: p.a, gm: p.v, ap: p.q, st: p.s || 0, seen: now });
+      Object.assign(e, { id: p.i, name: p.n, cls: p.c, tx: p.x, ty: p.y, dir: p.d, moving: p.m, hp: p.h, maxHp: p.H, level: p.l, guild: p.g, dead: p.a, gm: p.v, ap: p.q, st: p.s || 0, pw: p.pw || 0, rk: p.rk || 0, k: p.k || 0, seen: now });
       if (p.d === 1 || p.d === 2) e.lastH = p.d;
     }
     for (const id of G.players.keys()) if (!seenP.has(id)) G.players.delete(id);
@@ -892,25 +892,22 @@
         if (pm) Overhead.drawUnder(ctx, e, e.x, e.y, pm, now);
         const top = drawHero(e.x, e.y, e.cls, e.dir, e.lastH, e.moving, e.atkUntil > now, e.ap, e.dead, e.x / 50, now, e);
         if (pm) Overhead.drawOver(ctx, e, e.x, e.y, top, pm, now);
-        if (e.bubble) bubbles.push([e, top - (G.settings.names ? (e.guild ? 26 : 14) : 6)]);
-        if (G.settings.names) {
-          label(e.x, top - 8, (e.gm ? '[GM] ' : '') + e.name + ' Lv' + e.level, e.gm ? '#ff6060' : (G.map.pvp ? '#ff9b8a' : '#ffffff'), 12, true);
-          if (e.guild) label(e.x, top - 22, '«' + e.guild + '»', '#7fb8ff', 10);
-        }
+        let ptop = top - 6;
+        if (G.settings.names) ptop = Overhead.drawNameplate(ctx, e.x, top, { name: e.name, level: e.level, gm: e.gm, guild: e.guild, power: e.pw, myPower: G.me.stats.power, rank: e.rk, pk: e.k });
         hpBar(e.x, top - 4, 40, e.hp / e.maxHp, '#4ade80');
+        if (e.bubble) bubbles.push([e, ptop + 4]);
       } else if (it.k === 'self') {
         const me = G.me;
         if (s.dir === 1 || s.dir === 2) s.lastH = s.dir;
+        s.pw = me.stats.power; s.k = me.pk || 0;
         const sm = me.dead ? 0 : Overhead.mask(s, now);
         if (sm) Overhead.drawUnder(ctx, s, s.x, s.y, sm, now);
         const top = drawHero(s.x, s.y, me.cls, s.dir, s.lastH, s.moving, s.atkUntil > now, me.ap, me.dead, 0, now, s);
         if (sm) Overhead.drawOver(ctx, s, s.x, s.y, top, sm, now);
-        if (s.bubble) bubbles.push([s, top - (G.settings.names ? (me.guild ? 26 : 14) : 6)]);
-        if (G.settings.names) {
-          label(s.x, top - 8, (me.admin ? '[GM] ' : '') + me.name, '#ffd76a', 12, true);
-          if (me.guild) label(s.x, top - 22, '«' + me.guild.name + '»', '#7fb8ff', 10);
-        }
+        let stop = top - 6;
+        if (G.settings.names) stop = Overhead.drawNameplate(ctx, s.x, top, { self: true, name: me.name, gm: me.admin, guild: me.guild && me.guild.name, power: me.stats.power, rank: me.rank, pk: me.pk });
         hpBar(s.x, top - 4, 40, me.hp / me.stats.maxHp, '#ff5050');
+        if (s.bubble) bubbles.push([s, stop + 4]);
       }
     }
 
@@ -1046,7 +1043,21 @@
       const breathe = moving || dead ? 0 : (Math.floor(now / 650 + seed) % 2);
       if (moving && fr % 4 === 1 && !dead && Math.random() < 0.5) WorldArt.dust(x, y);
       if (art) {
+        const tier = Overhead.title(ent && ent.pw).tier;
+        if (!dead && tier >= 3 && dir !== 3) Overhead.drawWings(ctx, x, y, tier, dir, now);
+        const wr = ap[1] || 0;   // phẩm chất vũ khí: 1 Hiếm (xanh), 2 VIP (tím), 3 Truyền Kỳ (cam)
+        if (!dead && wr >= 1 && ap[0] >= 0) {
+          const g = Assets.weaponGlow(cls, dir, state, fi, ['', '#4fa3ff', '#c060ff', '#ff9b2f'][wr]);
+          if (g) {
+            ctx.save(); ctx.globalCompositeOperation = 'lighter';
+            ctx.globalAlpha = (wr === 3 ? 0.75 : 0.6) + Math.sin(now / (wr === 3 ? 140 : 320) + seed) * 0.25;
+            ctx.drawImage(g, x - 48, y - 86); if (wr === 3) ctx.drawImage(g, x - 48, y - 87);
+            ctx.restore();
+          }
+        }
+        if (!dead && ent && ent.k) Overhead.drawPkAura(ctx, x, y, ent.k, now);
         ctx.drawImage(Assets.charFrame(cls, dir, state, fi), x - 48, y - 86);
+        if (!dead && tier >= 3 && dir === 3) Overhead.drawWings(ctx, x, y, tier, dir, now);
         top = y - 72;
       } else {
         ctx.drawImage(Sprites.playerSprite(cls, colors, dir, fr, atk, ap), x - 32, y - 58 + breathe);

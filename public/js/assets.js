@@ -32,21 +32,41 @@
   }
   const jobs = [];
   for (const c of CLASSES) jobs.push(load('chars/' + c + '.png').then(im => { if (im) imgs['c:' + c] = im; }));
+  for (const c of CLASSES) if (c !== 'caibang') jobs.push(load('chars/' + c + '_w.png').then(im => { if (im) imgs['w:' + c] = im; }));
   for (const n of MONSTERS) jobs.push(load('monsters/' + n + '.png').then(im => { if (im) imgs['m:' + n] = im; }));
   const ready = Promise.all(jobs);
 
   const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; return [c, x]; };
   const cache = {};
   const has = cls => !!imgs['c:' + cls];
+  function cellOf(dir, state, i) {
+    if (state === 'dead') return [3, 0];
+    const a = ANIM[state] || ANIM.idle;
+    return [dir === 0 ? 0 : dir === 3 ? 1 : 2, a[0] + (i % a[1])];
+  }
+  // quầng sáng vũ khí theo phẩm chất (tô màu phần vũ khí của khung hình rồi loang ra xung quanh)
+  function weaponGlow(cls, dir, state, i, color) {
+    const im = imgs['w:' + cls];
+    if (!im || state === 'dead') return null;
+    const key = 'wg:' + cls + ':' + dir + ':' + state + ':' + i + ':' + color;
+    if (cache[key]) return cache[key];
+    const [row, col] = cellOf(dir, state, i);
+    const [m, mx] = mk(CELL, CELL);
+    if (dir === 1) { mx.translate(CELL, 0); mx.scale(-1, 1); }
+    mx.drawImage(im, col * CELL, row * CELL, CELL, CELL, 0, 0, CELL, CELL);
+    mx.setTransform(1, 0, 0, 1, 0, 0);
+    mx.globalCompositeOperation = 'source-in'; mx.fillStyle = color; mx.fillRect(0, 0, CELL, CELL);
+    const [c, x] = mk(CELL, CELL);
+    for (const [dx, dy, a] of [[-2, 0, 0.3], [2, 0, 0.3], [0, -2, 0.3], [0, 2, 0.3], [-1, -1, 0.55], [1, 1, 0.55], [1, -1, 0.55], [-1, 1, 0.55], [0, 0, 0.5]]) { x.globalAlpha = a; x.drawImage(m, dx, dy); }
+    return (cache[key] = c);
+  }
   // dir: 0 xuống, 1 trái, 2 phải, 3 lên; state: idle | walk | atk | cast | hurt | dead
   function charFrame(cls, dir, state, i) {
     const im = imgs['c:' + cls];
     const flip = dir === 1;
     const key = cls + ':' + dir + ':' + state + ':' + i;
     if (cache[key]) return cache[key];
-    let row = dir === 0 ? 0 : dir === 3 ? 1 : 2, col;
-    if (state === 'dead') { row = 3; col = 0; }
-    else { const a = ANIM[state] || ANIM.idle; col = a[0] + (i % a[1]); }
+    let [row, col] = cellOf(dir, state, i);
     const [c, x] = mk(CELL, CELL);
     x.fillStyle = 'rgba(0,0,0,0.3)'; x.beginPath(); x.ellipse(FOOT_X, FOOT_Y, state === 'dead' ? 22 : 13, 4, 0, 0, Math.PI * 2); x.fill();
     if (flip) { x.translate(CELL, 0); x.scale(-1, 1); }
@@ -103,5 +123,5 @@
     return `<i class="sk-img" style="background-image:url('${url}');--skc:${s.color || '#ffd76a'}"></i>`;
   }
 
-  window.Assets = { ready, imgs, has, charFrame, avatar, CELL, FOOT_X, FOOT_Y, CLASSES, SKILL_ICON, MONSTERS, skillIconUrl, skillIconHTML };
+  window.Assets = { ready, imgs, has, charFrame, weaponGlow, avatar, CELL, FOOT_X, FOOT_Y, CLASSES, SKILL_ICON, MONSTERS, skillIconUrl, skillIconHTML };
 })();

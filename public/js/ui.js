@@ -211,6 +211,16 @@
     f.classList.toggle('boss', !!t.boss);
     const n = f.querySelector('.t-name');
     if (n.textContent !== name) n.textContent = name;
+    // người chơi: hiện lực chiến, danh hiệu và mức nguy hiểm ngay trong khung mục tiêu
+    let pw = f.querySelector('.t-pw');
+    if (!pw) { pw = document.createElement('div'); pw.className = 't-pw'; n.after(pw); }
+    if (t.type || t.pw == null) { pw.style.display = 'none'; }
+    else {
+      const ti = Overhead.title(t.pw), rc = Overhead.relColor(t.pw, G.me.stats.power), pk = Overhead.pkLevel(t.k);
+      const html = `⚡ <b>${(t.pw || 0).toLocaleString('vi-VN')}</b> <span style="color:${ti.color}">${ti.name}</span> <span class="t-rel" style="color:${pk ? '#ff4a4a' : rc.color}">${pk ? '☠ Sát khí ' + t.k : rc.tip}</span>${t.rk ? ` <span style="color:#ffd84a">#${t.rk} lực chiến</span>` : ''}`;
+      if (pw.innerHTML !== html) pw.innerHTML = html;
+      pw.style.display = '';
+    }
     setBar(f.querySelector('.bar'), t.hp, t.maxHp);
   };
 

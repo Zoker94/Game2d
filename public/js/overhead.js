@@ -174,5 +174,101 @@
     return true;
   }
 
-  window.Overhead = { ST, mask, drawUnder, drawOver, add, drawFloats, drawBubble };
+
+  // ---------- nhận biết mạnh / yếu ----------
+  // danh hiệu theo lực chiến
+  const TITLES = [
+    { min: 0,     name: 'Sơ Nhập Giang Hồ',   color: '#a8a8a8' },
+    { min: 500,   name: 'Tam Lưu Võ Giả',     color: '#e8f0e0' },
+    { min: 1500,  name: 'Nhị Lưu Hảo Thủ',    color: '#6ec8ff' },
+    { min: 3000,  name: 'Nhất Lưu Cao Thủ',   color: '#c58aff' },
+    { min: 6000,  name: 'Tuyệt Đỉnh Cao Thủ', color: '#ffae3a' },
+    { min: 10000, name: 'Võ Lâm Chí Tôn',     color: '#ff4a3a' }
+  ];
+  function title(power) { let t = 0; for (let i = 0; i < TITLES.length; i++) if ((power || 0) >= TITLES[i].min) t = i; return Object.assign({ tier: t }, TITLES[t]); }
+  // màu tên theo sức mạnh so với mình
+  function relColor(theirs, mine) {
+    const r = (theirs || 1) / Math.max(1, mine || 1);
+    if (r < 0.6) return { color: '#9a9a9a', tip: 'Yếu hơn nhiều' };
+    if (r < 1.25) return { color: '#ffffff', tip: 'Ngang sức' };
+    if (r < 2) return { color: '#ffa040', tip: 'Mạnh hơn' };
+    return { color: '#ff3030', tip: 'Rất nguy hiểm' };
+  }
+  function pkLevel(pk) { return pk >= 8 ? 2 : pk >= 3 ? 1 : 0; }
+  // huy hiệu bảng xếp hạng lực chiến (vẽ bên trái tên)
+  function drawBadge(ctx, x, y, rank) {
+    if (!rank) return;
+    ctx.save(); ctx.translate(Math.round(x), Math.round(y));
+    if (rank <= 3) {
+      const c = ['#ffd84a', '#e4ecf4', '#e09a5a'][rank - 1], d = ['#9a6a00', '#6a7a8a', '#7a4a1a'][rank - 1];
+      ctx.fillStyle = c; ctx.strokeStyle = d; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(-7, 4); ctx.lineTo(-8, -4); ctx.lineTo(-4, 0); ctx.lineTo(0, -6); ctx.lineTo(4, 0); ctx.lineTo(8, -4); ctx.lineTo(7, 4); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ff3a5a'; ctx.beginPath(); ctx.arc(0, 1, 1.6, 0, TAU); ctx.fill();
+    } else {
+      star(ctx, 0, 0, 6, '#ffd84a', 0);
+      ctx.font = 'bold 7px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#5a3a00'; ctx.fillText(rank, 0, 0.5);
+    }
+    ctx.restore();
+  }
+  // tên + danh hiệu + bang + huy hiệu, trả về y trên cùng (để đặt bong bóng chat)
+  function drawNameplate(ctx, x, top, o) {
+    const t = title(o.power), pk = pkLevel(o.pk);
+    let nameCol = o.self ? '#ffd76a' : relColor(o.power, o.myPower).color;
+    if (pk) nameCol = pk === 2 ? '#c00010' : '#ff5a5a';
+    const name = (pk ? '☠ ' : '') + (o.gm ? '[GM] ' : '') + o.name + (o.level ? ' Lv' + o.level : '');
+    ctx.font = 'bold 12px system-ui, sans-serif';
+    const w = ctx.measureText(name).width;
+    outlined(ctx, name, x, top - 10, 12, nameCol, '#000', 700);
+    if (o.rank) drawBadge(ctx, x - w / 2 - 10, top - 11, o.rank);
+    // danh hiệu: chữ nhỏ có khung, bậc cao có viền sáng
+    const tt = '【' + t.name + '】';
+    ctx.font = '700 10px system-ui, sans-serif';
+    const tw = ctx.measureText(tt).width;
+    if (t.tier >= 3) {
+      ctx.save(); ctx.globalAlpha = 0.35 + Math.sin(performance.now() / 300) * 0.1; ctx.fillStyle = t.color;
+      ctx.fillRect(Math.round(x - tw / 2 - 2), top - 29, Math.round(tw + 4), 12); ctx.restore();
+    }
+    outlined(ctx, tt, x, top - 23, 10, t.color, '#000', 700);
+    let yTop = top - 30;
+    if (o.guild) { outlined(ctx, '«' + o.guild + '»', x, top - 36, 10, '#7fb8ff', '#000', 600); yTop = top - 43; }
+    return yTop;
+  }
+  // cánh sau lưng theo bậc danh hiệu (3: cánh linh khí, 4: cánh phượng vàng, 5: cánh lửa + Thái Cực)
+  const WING = { 3: ['#8fd8ff', '#3a7aff'], 4: ['#fff2a0', '#ffae2a'], 5: ['#ffe0a0', '#ff3a1a'] };
+  function drawWings(ctx, x, y, tier, dir, now) {
+    if (tier < 3) return;
+    const [c1, c2] = WING[tier];
+    const flap = Math.sin(now / 260) * 0.18;
+    const sy = y - 44, side = dir === 1 || dir === 2;
+    ctx.save();
+    if (tier >= 5 && window.FX && FX.sprite) FX.sprite(ctx, 'taiji', 0, x, sy - 2, { frame: Math.floor(now / 110), color: '#ffd76a', scale: 0.8, alpha: 0.5 });
+    ctx.globalCompositeOperation = 'lighter';
+    for (const s of side ? [dir === 2 ? -1 : 1] : [-1, 1]) {
+      ctx.save(); ctx.translate(x + (side ? s * 4 : s * 5), sy); ctx.scale(s * (side ? 0.75 : 1), 1); ctx.rotate(-0.25 - flap);
+      const n = tier >= 4 ? 6 : 5;
+      for (let i = 0; i < n; i++) {
+        const a = -0.95 + i * 0.32, len = 36 - i * 3 + (tier - 3) * 5;
+        const g = ctx.createLinearGradient(0, 0, Math.cos(a) * len, Math.sin(a) * len);
+        g.addColorStop(0, Sprites.hexA(c1, 0.75)); g.addColorStop(1, Sprites.hexA(c2, 0.05));
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.ellipse(Math.cos(a) * len / 2, Math.sin(a) * len / 2, len / 2, 3.8 + (tier - 3), a, 0, TAU); ctx.fill();
+      }
+      ctx.restore();
+    }
+    if (tier >= 5 && Math.random() < 0.25 && window.FX) FX.emit(1, x + (Math.random() - 0.5) * 50, sy + (Math.random() - 0.5) * 20, { speed: 10, vy: -40, life: 700, size: 3, color: '#ff8a3a' });
+    ctx.restore();
+  }
+  // sát khí: khói đen quanh người
+  function drawPkAura(ctx, x, y, pk, now) {
+    if (pkLevel(pk) < 2) return;
+    for (let i = 0; i < 6; i++) {
+      const t = ((now / 1300 + i / 6) % 1);
+      ctx.globalAlpha = 0.45 * (1 - t); ctx.fillStyle = i % 2 ? '#1a0008' : '#3a0010';
+      ctx.beginPath(); ctx.arc(x - 16 + (i * 7) % 32 + Math.sin(now / 400 + i) * 3, y - 8 - t * 52, 5 + t * 6, 0, TAU); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  window.Overhead = { ST, mask, drawUnder, drawOver, add, drawFloats, drawBubble, TITLES, title, relColor, pkLevel, drawBadge, drawNameplate, drawWings, drawPkAura };
 })();

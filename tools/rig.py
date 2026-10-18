@@ -367,7 +367,7 @@ def draw_weapon(L, J, pose, P):
     return parts
 
 # ---------------- dựng 1 khung hình ----------------
-def render(cls, view, pose, prev=None, eyes=True, sway=0):
+def render(cls, view, pose, prev=None, eyes=True, sway=0, weapon_only=False):
     L = LOOK[cls]; body = BODY[L['body']]
     J = solve(body, pose)
     P = projector(view)
@@ -542,7 +542,9 @@ def render(cls, view, pose, prev=None, eyes=True, sway=0):
     hf.depth = 1.1
     parts.append(hf)
     # ---- vũ khí ----
-    parts += draw_weapon(L, J, pose, P)
+    wparts = draw_weapon(L, J, pose, P)
+    for wp in wparts: wp.is_weapon = True
+    parts += wparts
     # ---- vệt chém ----
     if prev is not None and pose.get('trail'):
         tp = Part(5, outline=False, shade=False)
@@ -571,6 +573,7 @@ def render(cls, view, pose, prev=None, eyes=True, sway=0):
             gp.rect(h[0] + math.cos(t) * (rad + 3), h[1] + math.sin(t) * (rad + 3), h[0] + math.cos(t) * (rad + 3), h[1] + math.sin(t) * (rad + 3), light(L['glow'], 0.5))
         parts.append(gp)
     # ---- ghép ----
+    if weapon_only: parts = [q for q in parts if getattr(q, 'is_weapon', False)]
     parts.sort(key=lambda p: p.depth)
     canvas = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     for pt in parts:
@@ -686,7 +689,7 @@ ANIMS = [('idle', 4, anim_idle), ('walk', 6, anim_walk), ('atk', 4, anim_attack)
 VIEWS = ['down', 'up', 'right']
 COLS = sum(n for _, n, _ in ANIMS)
 
-def frame(cls, view, name, i):
+def frame(cls, view, name, i, weapon_only=False):
     L = LOOK[cls]
     fn = dict((a, f) for a, _, f in ANIMS)[name]
     n = dict((a, n) for a, n, _ in ANIMS)[name]
@@ -694,7 +697,7 @@ def frame(cls, view, name, i):
     prev = fn(L, i - 1) if (name == 'atk' and i > 0) else None
     sway = pose.pop('_sway', 0)
     if prev: prev.pop('_sway', 0)
-    return render(cls, view, pose, prev, sway=sway)
+    return render(cls, view, pose, None if weapon_only else prev, sway=sway, weapon_only=weapon_only)
 
 def dead_frame(cls):
     L = LOOK[cls]
@@ -708,15 +711,15 @@ def dead_frame(cls):
         out.alpha_composite(crop, (AX - crop.width // 2, AY - crop.height + 2))
     return out
 
-def sheet(cls):
-    """hàng 0..2: down/up/right; cột: idle4 walk6 atk4 cast4 hurt1; hàng 3: ngã"""
-    sh = Image.new('RGBA', (W * COLS, H * 4), (0, 0, 0, 0))
+def sheet(cls, weapon_only=False):
+    """hàng 0..2: down/up/right; cột: idle4 walk6 atk4 cast4 hurt1; hàng 3: ngã. weapon_only: chỉ vũ khí (để game vẽ hào quang)"""
+    sh = Image.new('RGBA', (W * COLS, H * (3 if weapon_only else 4)), (0, 0, 0, 0))
     for r, view in enumerate(VIEWS):
         c = 0
         for name, n, _ in ANIMS:
             for i in range(n):
-                sh.alpha_composite(frame(cls, view, name, i), (c * W, r * H)); c += 1
-    sh.alpha_composite(dead_frame(cls), (0, 3 * H))
+                sh.alpha_composite(frame(cls, view, name, i, weapon_only), (c * W, r * H)); c += 1
+    if not weapon_only: sh.alpha_composite(dead_frame(cls), (0, 3 * H))
     return sh
 
 if __name__ == '__main__':
@@ -725,4 +728,5 @@ if __name__ == '__main__':
     only = sys.argv[2:] or list(LOOK)
     for cls in only:
         sheet(cls).save(os.path.join(out, cls + '.png'), optimize=True)
+        if LOOK[cls]['weapon'] != 'palm': sheet(cls, True).save(os.path.join(out, cls + '_w.png'), optimize=True)
         print('ok', cls)

@@ -28,7 +28,7 @@ class Social {
       id: o.id, name: c.name, cls: c.cls, level: c.level, guild: g ? g.name : '', role: g ? g.members[o.userId] : '',
       power, stats: { maxHp: s.maxHp, maxMp: s.maxMp, atk: s.atk, def: s.def, crit: s.crit, spd: s.spd },
       equip, mount: c.mount || null, kills: c.kills || 0, pvpKills: c.pvpKills || 0, map: MAPS[o.mapId].name,
-      friend: !!(p.c.friends && p.c.friends[o.userId])
+      friend: !!(p.c.friends && p.c.friends[o.userId]), pk: c.pk || 0, rank: (this.f.powerRank && this.f.powerRank.get(o.userId)) || 0
     });
   }
 
