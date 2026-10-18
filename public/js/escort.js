@@ -17,6 +17,7 @@
     if (me.guild && e.guild && e.guild === me.guild.name) return false;
     if (G.map.pvp) return true;
     if (me.level < 10 || e.level < 10) return false;
+    if (e.rb) return true;   // kẻ cướp tiêu bị truy nã
     const ma = me.pkMode | 0, mb = e.pm | 0;
     return ma === 2 || mb === 2 || (ma === 1 && mb === 1);
   }
@@ -192,14 +193,27 @@
             <button class="btn small green" data-esc="${r.k}" ${lock ? 'disabled' : ''}>Nhận tiêu</button></div>`;
         }).join('') + '</div>';
     }
-    html += `<p class="small muted">⚠ Dọc đường có Cướp Tiêu Tặc phục kích. Người <b>đeo cờ PK</b> hoặc <b>đồ sát</b> có thể cướp tiêu và lấy một nửa tiền thưởng. Xe càng lành lặn khi giao thì thưởng càng cao.</p>`;
+    html += `<div class="esc-rob"><b>⚔️ Cướp tiêu</b>
+      <div class="small">• Dọc đường có <b>Cướp Tiêu Tặc</b> phục kích, đánh vào xe.</div>
+      <div class="small">• Người <b>đeo cờ PK</b> hoặc <b>đồ sát</b> có thể đánh xe tiêu của người khác. Xe bị phá sẽ văng <b>Rương Tiêu</b> và ngân lượng ra đất: kẻ phá xe được ưu tiên nhặt 8 giây, sau đó ai nhanh tay thì được.</div>
+      <div class="small">• Kẻ cướp bị <b>truy nã 5 phút</b>: ai cũng đánh được, hạ được nhận tiền thưởng.</div>
+      <div class="small">• Khi xe bị cướp, chủ xe và cả bang hội được báo để tới tiếp ứng. Xe bị Cướp Tiêu Tặc phá thì chủ xe được ưu tiên nhặt lại rương.</div>
+      <div class="small">• Xe càng lành lặn khi giao thì thưởng càng cao.</div></div>`;
     body.innerHTML = html;
     body.querySelectorAll('[data-esc]').forEach(b => b.onclick = () => emit('escort', { op: 'start', tier: b.dataset.esc }));
     if ($('esc-cancel')) $('esc-cancel').onclick = () => { if (confirm('Huỷ chuyến tiêu? Bạn sẽ mất tiền cọc.')) emit('escort', { op: 'cancel' }); };
   });
 
   // ---------- khung theo dõi chuyến tiêu ----------
+  function wanted() {
+    let h = $('wanted-hud');
+    const until = G.me && G.me.robUntil, left = until ? Math.round((until - Date.now()) / 1000) : 0;
+    if (left <= 0) { if (h) h.remove(); return; }
+    if (!h) { h = document.createElement('div'); h.id = 'wanted-hud'; $('screen-game').appendChild(h); }
+    h.textContent = `💰 Bạn đang bị truy nã vì cướp tiêu – ai cũng có thể đánh bạn (${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')})`;
+  }
   function hud() {
+    wanted();
     let h = $('escort-hud');
     const es = G.me && G.me.escort;
     if (!es || !es.id) { if (h) h.remove(); return; }

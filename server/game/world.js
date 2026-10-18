@@ -177,7 +177,7 @@ class World {
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null,
       skills: c.skills || {}, hotbar: c.hotbar, sp: skillPointsTotal(c.level) - (c.spSpent || 0),
-      mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p),
+      mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
       st: this.statusView(p), friends: Object.keys(c.friends || {}).length, pk: c.pk || 0,
       rank: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0
     };
@@ -342,6 +342,7 @@ class World {
     if (a.c.guildId && a.c.guildId === b.c.guildId) return false;
     if (def.pvp) return true;
     if (a.c.level < 10 || b.c.level < 10) return false;
+    if (b.c.robUntil > Date.now()) return true;      // kẻ cướp tiêu đang bị truy nã: ai cũng đánh được
     const ma = a.c.pkMode | 0, mb = b.c.pkMode | 0;
     return ma === 2 || mb === 2 || (ma === 1 && mb === 1);
   }
@@ -584,6 +585,7 @@ class World {
     } else if (t.cart) {   // xe tiêu
       t.hp -= dmg;
       if (src && src.c) t.dmgBy.set(src.userId, (t.dmgBy.get(src.userId) || 0) + dmg);
+      this.escort.onHit(t, src);
       if (t.hp <= 0) this.escort.destroyed(t, src && src.c ? src : null);
     } else {
       t.hp -= dmg;
@@ -612,6 +614,7 @@ class World {
       if (!map.def.pvp && !(t.c.pk >= 3) && !((t.c.pkMode | 0) >= 1)) src.c.pk = Math.min(30, (src.c.pk || 0) + 1);
       src.pkDecayAt = Date.now() + 15 * 60000;
       this.features.questProgress(src, 'pvp', 1);
+      this.escort.onKill(t, src);
       this.features.announce(`🗡️ ${src.c.name} đã hạ gục ${t.c.name} tại ${map.def.name}!`, 'map:' + t.mapId);
       src.dirtyMe = true;
     }
@@ -827,6 +830,13 @@ class World {
         if (mt.rarity === 'epic' || mt.rarity === 'legendary') this.features.announce(`🐉 ${c.name} đã thuần phục thú cưỡi [${mt.name}]!`);
       }
       this.recalc(p); this.db.markDirty();
+      return;
+    }
+    if (e.tieuChest) {
+      if (U.freeSlots(c) < 2) return this.toast(p, 'Cần ít nhất 2 ô trống trong túi', 'error');
+      U.removeByUid(c, uid, 1);
+      this.escort.openChest(p, e.tieuChest);
+      p.dirtyMe = true;
       return;
     }
     if (e.chest) {
@@ -1285,7 +1295,7 @@ class World {
       ps.push({ i: p.id, n: p.c.name, c: p.c.cls, x: Math.round(p.x), y: Math.round(p.y), d: p.dir, m: p.moving ? 1 : 0,
         h: Math.max(0, Math.round(p.c.hp)), H: p.stats.maxHp, l: p.c.level, g: g ? g.name : '', a: p.dead ? 1 : 0,
         q: this.appearance(p.c), v: p.user.isAdmin ? 1 : 0, s: stMask(p, now),
-        pw: p.stats.power || 0, el: p.stats.el || '', rk: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0, k: p.c.pk || 0, pm: p.c.pkMode | 0 });
+        pw: p.stats.power || 0, el: p.stats.el || '', rk: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0, k: p.c.pk || 0, pm: p.c.pkMode | 0, rb: p.c.robUntil > now ? 1 : 0 });
     }
     const ms = [];
     for (const mon of m.monsters.values()) {

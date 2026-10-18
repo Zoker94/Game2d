@@ -551,3 +551,8 @@ body.touch #pk-menu { bottom: 200px; }
 body.touch #escort-hud { top: 64px; font-size: 11px; min-width: 200px; }
 .esc-cur { border: 1px solid #c8963a; border-radius: 8px; padding: 8px; background: rgba(255,200,80,.06); display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }
 .esc-cur h4 { margin: 0; color: var(--gold); }
+.esc-rob { border: 1px solid #a03030; border-radius: 8px; padding: 6px 8px; background: rgba(160,30,30,.1); display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
+.esc-rob b { color: #ff7a6a; }
+#wanted-hud { position: absolute; top: 118px; left: 50%; transform: translateX(-50%); z-index: 7; background: rgba(90,10,10,.88); border: 1px solid #ff5050; color: #ffd0c8; border-radius: 10px; padding: 4px 12px; font-size: 12px; font-weight: 600; max-width: 92vw; text-align: center; animation: wantedPulse 1.2s ease-in-out infinite; }
+@keyframes wantedPulse { 50% { box-shadow: 0 0 12px rgba(255,60,60,.7); } }
+body.touch #wanted-hud { top: 104px; font-size: 11px; }

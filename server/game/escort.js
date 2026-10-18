@@ -4,6 +4,7 @@
 const U = require('./util');
 const { MAPS, TILE, isSolidAt } = require('../data/maps');
 const { MONSTERS } = require('../data/monsters');
+const { ITEMS, equipId } = require('../data/items');
 
 const ROUTES = {
   dong: { name: 'Tiêu Đồng', lv: 15, dest: 'thuy_trai', deposit: 2000,  gold: 7000,  exp: 0.18, hp: 2600,  def: 30,  time: 12, robber: 'tieu_tac1', color: '#c87a3a' },
@@ -14,7 +15,8 @@ const DAILY = 3;
 const START = 'tuong_duong';
 const DEST_NPC = 'tieu_cuc_pd';
 const FOLLOW_SPEED = 165;        // px / giây (chậm hơn người đi bộ một chút)
-const ROB_SHARE = 0.5;           // kẻ cướp nhận 50% tiền thưởng
+const CHESTS = { dong: 3, bac: 4, vang: 6 };   // số rương tiêu văng ra khi xe bị phá
+const WANTED_MS = 5 * 60000;                  // kẻ cướp bị truy nã 5 phút
 
 let seq = 1;
 
@@ -157,23 +159,77 @@ class Escort {
     w.features.questProgress && w.features.questProgress(p, 'escort', 1);
     p.dirtyMe = true;
   }
+  // Xe bị phá: rương tiêu + ngân lượng văng ra đất. Kẻ phá xe được ưu tiên nhặt 8 giây rồi ai nhanh tay thì được;
+  // nếu Cướp Tiêu Tặc phá thì chủ xe được ưu tiên nhặt lại. Kẻ cướp bị truy nã 5 phút (ai cũng đánh được, có thưởng).
   destroyed(cart, src) {
-    const r = ROUTES[cart.tier], w = this.w;
+    const r = ROUTES[cart.tier], w = this.w, now = Date.now();
     const killer = src && src.c ? src : null;
+    const { x, y, mapId } = cart;
     this.removeCart(cart);
-    w.fx(cart.mapId, { t: 'death', id: cart.id, x: cart.x, y: cart.y });
-    const owner = w.players.get(cart.owner);
-    if (killer) {
-      const loot = Math.round(r.gold * ROB_SHARE);
-      killer.c.gold += loot;
-      killer.socket.emit('gain', { gold: loot });
-      w.toast(killer, `Cướp được ${r.name}! +${loot.toLocaleString('vi-VN')} lượng`, 'reward');
-      killer.dirtyMe = true;
-      w.features.announce(`💰 ${killer.c.name} đã cướp ${r.name} của ${cart.ownerName} tại ${MAPS[cart.mapId].name}!`);
-    } else {
-      w.features.announce(`💥 ${r.name} của ${cart.ownerName} bị Cướp Tiêu Tặc phá tại ${MAPS[cart.mapId].name}!`, 'map:' + cart.mapId);
+    w.fx(mapId, { t: 'death', id: cart.id, x, y });
+    w.fx(mapId, { t: 'levelup', x, y, small: 1 });
+    const prio = killer ? killer.userId : cart.owner;
+    const n = CHESTS[cart.tier];
+    for (let k = 0; k < n; k++) {
+      const a = k / n * Math.PI * 2 + Math.random() * 0.4, rr = 34 + Math.random() * 30;
+      w.createDrop(mapId, x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.7, 'tieu_chest_' + cart.tier, 1, prio, 0, killer ? 8000 : 15000);
     }
-    if (owner) { w.toast(owner, `Xe tiêu đã bị ${killer ? killer.c.name + ' cướp' : 'phá huỷ'}! Mất tiền cọc.`, 'error'); owner.dirtyMe = true; }
+    for (let k = 0; k < 3; k++) {
+      const a = Math.random() * Math.PI * 2;
+      w.createGoldDrop(mapId, x + Math.cos(a) * 55, y + Math.sin(a) * 40, Math.round(r.gold * 0.05), prio);
+    }
+    const owner = w.players.get(cart.owner);
+    const where = MAPS[mapId].name;
+    if (killer) {
+      killer.c.robUntil = now + WANTED_MS; killer.c.robTier = cart.tier;
+      killer.dirtyMe = true;
+      w.toast(killer, `Cướp được ${r.name}! Nhanh nhặt rương tiêu. Bạn bị truy nã 5 phút – ai cũng có thể đánh bạn!`, 'reward');
+      w.features.announce(`💰 ${killer.c.name} đã cướp ${r.name} của ${cart.ownerName} tại ${where}! Rương tiêu văng khắp nơi – ai nhanh tay thì được. ${killer.c.name} bị truy nã 5 phút!`);
+    } else {
+      w.features.announce(`💥 ${r.name} của ${cart.ownerName} bị Cướp Tiêu Tặc phá tại ${where}!`, 'map:' + mapId);
+    }
+    if (owner) {
+      w.toast(owner, `Xe tiêu đã bị ${killer ? killer.c.name + ' cướp' : 'phá huỷ'}! Mất tiền cọc.` + (killer ? ' Hạ kẻ cướp để nhận tiền thưởng truy nã!' : ' Nhanh nhặt lại rương tiêu!'), 'error');
+      owner.dirtyMe = true;
+    }
+  }
+  // xe bị đánh: báo chủ xe và bang hội (giãn cách để không dồn dập)
+  onHit(cart, src) {
+    if (cart.dead || !src) return;
+    const w = this.w, now = Date.now(), r = ROUTES[cart.tier], where = MAPS[cart.mapId].name;
+    const owner = w.players.get(cart.owner);
+    if (src.c) {
+      if (now < (cart.alertAt || 0)) return;
+      cart.alertAt = now + 15000;
+      const msg = `⚠️ ${r.name} của ${cart.ownerName} đang bị ${src.c.name} cướp tại ${where}!`;
+      if (owner) w.toast(owner, `⚠️ ${src.c.name} đang cướp xe tiêu của bạn tại ${where}! Bảo vệ xe!`, 'error');
+      if (cart.guildId) for (const o of w.players.values()) if (o !== owner && o.c.guildId === cart.guildId) w.toast(o, msg + ' Mau tới tiếp ứng!', 'error');
+      if (cart.tier === 'vang' && !cart.announced) { cart.announced = true; w.features.announce(msg); }
+    } else if (owner && now > (cart.banditAlert || 0)) {
+      cart.banditAlert = now + 20000;
+      if (owner.mapId !== cart.mapId || U.dist(owner, cart) > 400) w.toast(owner, `⚠️ Xe tiêu đang bị Cướp Tiêu Tặc tấn công tại ${where}!`, 'error');
+    }
+  }
+  // hạ kẻ cướp tiêu đang bị truy nã: nhận tiền thưởng
+  onKill(t, src) {
+    if (!(t.c.robUntil > Date.now()) || !src || !src.c) return;
+    const r = ROUTES[t.c.robTier] || ROUTES.dong, bounty = Math.round(r.gold * 0.15);
+    t.c.robUntil = 0; t.dirtyMe = true;
+    src.c.gold += bounty; src.dirtyMe = true;
+    src.socket.emit('gain', { gold: bounty });
+    this.w.toast(src, `Hạ kẻ cướp tiêu ${t.c.name}! Thưởng truy nã +${bounty.toLocaleString('vi-VN')} lượng`, 'reward');
+    this.w.features.announce(`⚔️ ${src.c.name} đã trừng trị kẻ cướp tiêu ${t.c.name}, nhận ${bounty.toLocaleString('vi-VN')} lượng tiền thưởng!`);
+  }
+  openChest(p, tier) {
+    const R = { dong: [550, 900, 1, 2], bac: [2800, 4000, 2, 3], vang: [7000, 9500, 3, 5] }[tier] || [500, 800, 1, 1];
+    const reward = { gold: U.randInt(R[0], R[1]), items: [['stone', U.randInt(R[2], R[3])]] };
+    const lvTier = Math.min(6, Math.floor(p.c.level / 10)), slot = ['weapon', 'helmet', 'armor', 'boots', 'ring', 'amulet'][U.randInt(0, 5)];
+    let rare = null;
+    if (tier === 'bac' && Math.random() < 0.15) rare = 'rare';
+    if (tier === 'vang') { const x = Math.random(); rare = x < 0.04 ? 'legendary' : x < 0.3 ? 'epic' : 'rare'; if (Math.random() < 0.2) reward.knb = 10; }
+    if (rare) reward.items.push([equipId(slot, lvTier, rare), 1]);
+    this.w.giveReward(p, reward, ITEMS['tieu_chest_' + tier].name);
+    if (rare === 'epic' || rare === 'legendary') this.w.features.announce(`🎁 ${p.c.name} mở ${ITEMS['tieu_chest_' + tier].name} nhận được [${ITEMS[equipId(slot, lvTier, rare)].name}]!`);
   }
 
   // ---------- đổi bản đồ: xe đi theo khi chủ qua cổng cùng xe ----------

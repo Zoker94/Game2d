@@ -104,6 +104,9 @@ const CONSUMABLES = [
   { id: 'mount_stone', name: 'Long Huyết Thạch', desc: 'Dùng để đột phá thú cưỡi ở cấp 10, 20, 30, 40.', price: 6000, icon: 'blood', material: true },
   { id: 'lucky_chest', name: 'Rương Bí Ẩn', desc: 'Mở ra nhận vật phẩm ngẫu nhiên, có thể ra đồ VIP!', effect: { chest: 1 }, price: 5000, icon: 'chest' },
   { id: 'boss_chest', name: 'Rương Thủ Lĩnh', desc: 'Rương từ Boss, chắc chắn có đồ Hiếm trở lên', effect: { chest: 2 }, price: 20000, icon: 'chest_gold' },
+  { id: 'tieu_chest_dong', name: 'Rương Tiêu Đồng', desc: 'Rương hàng văng ra khi xe Tiêu Đồng bị cướp. Mở nhận ngân lượng, Huyền Tinh.', effect: { tieuChest: 'dong' }, price: 600, icon: 'chest' },
+  { id: 'tieu_chest_bac', name: 'Rương Tiêu Bạc', desc: 'Rương hàng văng ra khi xe Tiêu Bạc bị cướp. Mở nhận nhiều ngân lượng, Huyền Tinh, có thể ra trang bị.', effect: { tieuChest: 'bac' }, price: 2500, icon: 'chest', rarity: 'rare' },
+  { id: 'tieu_chest_vang', name: 'Rương Tiêu Vàng', desc: 'Rương hàng quý văng ra khi xe Tiêu Vàng bị cướp. Mở nhận rất nhiều ngân lượng, có thể ra đồ VIP, Nguyên Bảo.', effect: { tieuChest: 'vang' }, price: 6000, icon: 'chest_gold', rarity: 'epic' },
   { id: 'wheel_ticket', name: 'Vé Vòng Quay', desc: 'Thêm 1 lượt quay Vòng Quay May Mắn', effect: { wheel: 1 }, price: 3000, icon: 'ticket' },
   { id: 'event_token', name: 'Hoa Đăng', desc: 'Vật phẩm sự kiện. Đổi quà tại Lễ Quan.', price: 0, icon: 'lantern', material: true }
 ];
