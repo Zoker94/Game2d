@@ -152,11 +152,13 @@
     const ep = me.expNext ? me.exp / me.expNext : 0;
     $('exp-bar').querySelector('i').style.width = (ep * 100).toFixed(2) + '%';
     $('exp-bar').querySelector('span').textContent = `Cấp ${me.level} · KN ${fmt(me.exp)}/${fmt(me.expNext)} (${(ep * 100).toFixed(1)}%)`;
-    if (UI._avatarCls !== me.cls) {
-      UI._avatarCls = me.cls;
+    const avKey = me.cls + ':' + (me.ap || []).join(',');
+    if (UI._avatarCls !== avKey || UI._avatarRetry > 0) {
+      UI._avatarRetry = UI._avatarCls !== avKey ? 20 : UI._avatarRetry - 1;   // vẽ lại vài lần khi ảnh trang bị mới tải xong
+      UI._avatarCls = avKey;
       const c = $('hud-avatar').getContext('2d'); c.imageSmoothingEnabled = false;
       c.clearRect(0, 0, 64, 64);
-      if (Assets.has(me.cls)) c.drawImage(Assets.avatar(me.cls, 52), 8, 4);
+      if (Assets.has(me.cls)) c.drawImage(Assets.avatar(me.cls, 52, me.ap), 8, 4);
       else c.drawImage(Sprites.playerSprite(me.cls, G.data.classes[me.cls].colors, 0, 0), 0, 0);
     }
     // khóa kỹ năng
@@ -454,7 +456,7 @@
   function renderCharacter(body) {
     const me = G.me, st = me.stats, cl = G.data.classes[me.cls];
     body.innerHTML = `
-      <div class="npc-head"><canvas width="64" height="64" id="char-cv"></canvas><div><h3 style="margin:0;color:#ffd76a">${esc(me.name)}</h3>
+      <div class="npc-head"><canvas width="96" height="96" id="char-cv" style="width:96px;height:96px;image-rendering:pixelated"></canvas><div><h3 style="margin:0;color:#ffd76a">${esc(me.name)}</h3>
       <div>${cl.name} · ${cl.role} · Cấp ${me.level}</div><div class="small muted">${me.guild ? 'Bang: ' + esc(me.guild.name) + ' (' + ROLE_NAME[me.guild.role] + ')' : 'Chưa gia nhập bang hội'}</div></div></div>
       <div class="stat-grid">
         <div>Lực chiến <b>${fmt(st.power)}</b></div><div>Sinh lực <b>${fmt(me.hp)}/${fmt(st.maxHp)}</b></div><div>Nội lực <b>${fmt(me.mp)}/${fmt(st.maxMp)}</b></div>
@@ -471,7 +473,9 @@
           ${has ? (on ? '' : `<button class="btn small green" data-dragon="${el}">Dùng</button>`) : '<span class="small muted">Chưa học<br>(Bí kíp: Boss, Kỳ Trân Các, Hoa Đăng)</span>'}</div>`;
       }).join('')}</div>`;
     body.querySelectorAll('[data-dragon]').forEach(b => b.onclick = () => emit('dragon', { el: b.dataset.dragon }));
-    const c = $('char-cv').getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(Sprites.playerSprite(me.cls, cl.colors, 0, 0), 0, 0);
+    const c = $('char-cv').getContext('2d'); c.imageSmoothingEnabled = false;
+    if (Assets.has(me.cls)) { c.drawImage(Assets.charFrame(me.cls, 0, 'idle', 0, me.ap), 0, 0); setTimeout(() => { if ($('char-cv')) { c.clearRect(0, 0, 96, 96); c.drawImage(Assets.charFrame(me.cls, 0, 'idle', 0, me.ap), 0, 0); } }, 600); }
+    else c.drawImage(Sprites.playerSprite(me.cls, cl.colors, 0, 0), 0, 0);
   }
 
   // ---------- Nhiệm vụ ----------

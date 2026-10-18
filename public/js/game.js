@@ -1021,7 +1021,7 @@
       }
       ctx.drawImage(Sprites.mountSprite(mountId, info, mf, face === 1), x - 48, y - 66);
       if (art) {
-        const rider = Assets.charFrame(cls, face, state === 'walk' || state === 'dead' ? 'idle' : state, fi);
+        const rider = Assets.charFrame(cls, face, state === 'walk' || state === 'dead' ? 'idle' : state, fi, ap);
         const ry = y - 86 - 26 + (moving && mf % 2 ? 1 : 0);
         ctx.drawImage(rider, 0, 0, 96, 66, x - 48 + (face === 1 ? 2 : -2), ry, 96, 66);
         top = y - 96;
@@ -1040,7 +1040,7 @@
         if (!dead && tier >= 3 && dir !== 3) Overhead.drawWings(ctx, x, y, tier, dir, now);
         const wr = ap[1] || 0;   // phẩm chất vũ khí: 1 Hiếm (xanh), 2 VIP (tím), 3 Truyền Kỳ (cam)
         if (!dead && wr >= 1 && ap[0] >= 0) {
-          const g = Assets.weaponGlow(cls, dir, state, fi, ['', '#4fa3ff', '#c060ff', '#ff9b2f'][wr]);
+          const g = Assets.weaponGlow(cls, dir, state, fi, ['', '#4fa3ff', '#c060ff', '#ff9b2f'][wr], ap);
           if (g) {
             ctx.save(); ctx.globalCompositeOperation = 'lighter';
             ctx.globalAlpha = (wr === 3 ? 0.75 : 0.6) + Math.sin(now / (wr === 3 ? 140 : 320) + seed) * 0.25;
@@ -1049,7 +1049,7 @@
           }
         }
         if (!dead && ent && ent.k) Overhead.drawPkAura(ctx, x, y, ent.k, now);
-        ctx.drawImage(Assets.charFrame(cls, dir, state, fi), x - 48, y - 86);
+        ctx.drawImage(Assets.charFrame(cls, dir, state, fi, ap), x - 48, y - 86);
         if (!dead && tier >= 3 && dir === 3) Overhead.drawWings(ctx, x, y, tier, dir, now);
         top = y - 72;
       } else {

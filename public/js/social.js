@@ -74,7 +74,7 @@
         <button class="btn small" data-act="pm">💌 Nhắn riêng</button><button class="btn small green" data-act="trade">🔄 Giao dịch</button></div></div></div>`;
     body.innerHTML = html;
     const cv = $('insp-cv');
-    if (cv && Assets.has(d.cls)) { const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(Assets.charFrame(d.cls, 0, 'idle', 0), -3, -4, 134, 134); }
+    if (cv && Assets.has(d.cls)) { const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(Assets.charFrame(d.cls, 0, 'idle', 0, (G.players.get(d.id) || {}).ap), -3, -4, 134, 134); }
     body.querySelectorAll('[data-eqid]').forEach(el => { el.onmouseenter = ev => UI.itemTip(ev, el.dataset.eqid, +el.dataset.plus); el.onmouseleave = () => UI.hideTip(); el.onclick = ev => UI.itemTip(ev, el.dataset.eqid, +el.dataset.plus); });
     body.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
       if (b.dataset.act === 'friend') emit('friend', { op: 'add', id: d.id });

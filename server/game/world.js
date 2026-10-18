@@ -1128,12 +1128,12 @@ class World {
     this.io.to('map:' + m.def.id).emit('snap', { p: ps, m: ms });
   }
 
-  // Ngoại hình: [bậc vũ khí, độ hiếm vũ khí, +vũ khí, bậc áo, độ hiếm áo, +áo, bậc nón, thú cưỡi đang cưỡi]
+  // Ngoại hình: [bậc vũ khí, độ hiếm vũ khí, +vũ khí, bậc áo, độ hiếm áo, +áo, bậc nón, thú cưỡi đang cưỡi, độ hiếm nón]
   appearance(c) {
     const e = c.equip, w = e.weapon && ITEMS[e.weapon.id], a = e.armor && ITEMS[e.armor.id], h = e.helmet && ITEMS[e.helmet.id];
     return [w ? w.tier : -1, w ? RARITY_IDX[w.rarity] : 0, w ? e.weapon.plus || 0 : 0,
       a ? a.tier : -1, a ? RARITY_IDX[a.rarity] : 0, a ? e.armor.plus || 0 : 0,
-      h ? h.tier : -1, c.riding && c.mount ? c.mount : ''];
+      h ? h.tier : -1, c.riding && c.mount ? c.mount : '', h ? RARITY_IDX[h.rarity] : 0];
   }
 
   fx(mapId, data) { this.io.to('map:' + mapId).emit('fx', data); }

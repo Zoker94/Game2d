@@ -291,30 +291,34 @@ def draw_hair(L, view, cx, cy, r, sway, back):
 def unit(v):
     n = math.sqrt(sum(c * c for c in v)) or 1; return tuple(c / n for c in v)
 
+WSCALE = [0.85, 1.1, 1.35]      # độ dài vũ khí theo cấp: thường / tinh luyện / thần binh
+MARKER = '#00e8c0'               # màu đánh dấu kim loại giáp/mũ: game tô lại theo phẩm chất
+
 def weapon_line(L, J, pose):
     """(gốc, mũi) của vũ khí trong 3D, dùng cho vẽ và vệt chém"""
     k = L['weapon']
+    sc = WSCALE[pose.get('ws', 1)]
     armR = pose.get('armR', (0, 0, 0))
     hand = J['haR']
     if k == 'staff':
         if pose.get('two'):
             d = unit(tuple(J['haR'][i] - J['haL'][i] for i in range(3)))
             c = tuple((J['haR'][i] + J['haL'][i]) / 2 for i in range(3))
-            return v_add(c, d, -13), v_add(c, d, 17)
+            return v_add(c, d, -13 * sc), v_add(c, d, 17 * sc)
         d = unit(limb_dir(pose.get('wa', math.pi), pose.get('wb', 0.0), 1))
-        return v_add(hand, d, -11), v_add(hand, d, 19)
+        return v_add(hand, d, -11 * sc), v_add(hand, d, 19 * sc)
     if k == 'hammer':
         d = unit(limb_dir(armR[0] + armR[2] + pose.get('w', 0), armR[1], 1))
-        return v_add(hand, d, -3), v_add(hand, d, 18)
+        return v_add(hand, d, -3), v_add(hand, d, 18 * sc)
     if k in ('sword', 'saber'):
         d = unit(limb_dir(armR[0] + armR[2] + pose.get('w', 1.4), armR[1], 1))
-        return v_add(hand, d, -2), v_add(hand, d, 16 if k == 'sword' else 14)
+        return v_add(hand, d, -2), v_add(hand, d, (16 if k == 'sword' else 14) * sc)
     if k == 'daggers':
         d = unit(limb_dir(armR[0] + armR[2] + pose.get('w', 1.2), armR[1], 1))
-        return v_add(hand, d, -1), v_add(hand, d, 8)
+        return v_add(hand, d, -1), v_add(hand, d, 8 * sc)
     if k == 'knife':
         d = unit(limb_dir(armR[0] + armR[2] + pose.get('w', 1.5), armR[1], 1))
-        return v_add(hand, d, 0), v_add(hand, d, 6)
+        return v_add(hand, d, 0), v_add(hand, d, 6 * sc)
     if k == 'talisman':
         d = unit(limb_dir(armR[0] + armR[2] + pose.get('w', 1.5), armR[1], 1))
         return v_add(hand, d, 0), v_add(hand, d, 6)
@@ -323,51 +327,132 @@ def weapon_line(L, J, pose):
 def draw_weapon(L, J, pose, P):
     k = L['weapon']
     if k == 'palm' or pose.get('noweapon'): return []
+    ws = pose.get('ws', 1)
     parts = []
     b3, t3 = weapon_line(L, J, pose)
     b, t = P(b3), P(t3)
-    wc = L['wcol']
+    wc = L['wcol'] if ws < 2 else light(L['glow'], 0.35)
+    gold = '#e8c050' if ws < 2 else '#ffd84a'
     pt = Part((b[2] + t[2]) / 2 + 0.6, side=False)
+    dx, dy = t[0] - b[0], t[1] - b[1]; n = math.hypot(dx, dy) or 1
+    ux, uy, nx, ny = dx / n, dy / n, -dy / n, dx / n
     if k in ('sword', 'saber'):
-        pt.line(b[:2], t[:2], wc, 2)
-        pt.line(b[:2], t[:2], light(wc, 0.5), 1)
+        bw = 2 if ws < 2 else 3
+        pt.line(b[:2], t[:2], wc, bw)
+        pt.line(b[:2], t[:2], light(wc, 0.55), 1)
         g = P(v_add(b3, unit(tuple(t3[i] - b3[i] for i in range(3))), 2))
-        nx, ny = t[1] - b[1], -(t[0] - b[0]); n = math.hypot(nx, ny) or 1
-        pt.line((g[0] - nx / n * 2, g[1] - ny / n * 2), (g[0] + nx / n * 2, g[1] + ny / n * 2), '#e8c050', 1)
+        gw = [2, 3, 4][ws]
+        pt.line((g[0] - nx * gw, g[1] - ny * gw), (g[0] + nx * gw, g[1] + ny * gw), gold, 1 if ws == 0 else 2)
         pt.line(b[:2], g[:2], '#5a3420', 2)
-        if k == 'saber': pt.line(((b[0] + t[0]) / 2, (b[1] + t[1]) / 2), t[:2], light(wc, 0.2), 2)
+        if k == 'saber': pt.line(((b[0] + t[0]) / 2, (b[1] + t[1]) / 2), t[:2], light(wc, 0.2), bw)
+        if ws >= 1: pt.line(b[:2], (b[0] - ux * 3 + nx * 1.5, b[1] - uy * 3 + ny * 1.5), '#d0302a', 1)   # tua kiếm
+        if ws == 2: pt.mark(lambda q: q.line((g[0] + ux * 3, g[1] + uy * 3), (t[0] - ux * 2, t[1] - uy * 2), '#ffffff', 1))
     elif k == 'staff':
-        pt.line(b[:2], t[:2], wc, 2)
-        for e in (b, t): pt.ell(e[0], e[1], 1.2, 1.2, '#f2c24a')
+        pt.line(b[:2], t[:2], wc if ws < 2 else '#8a4a2a', 2 if ws < 2 else 3)
+        cr = [1.0, 1.5, 2.2][ws]
+        for e in (b, t): pt.ell(e[0], e[1], cr, cr, gold)
+        if ws >= 1: pt.ell((b[0] + t[0]) / 2, (b[1] + t[1]) / 2, 1.2, 1.2, gold)
+        if ws == 2:
+            for i in range(3): pt.line((t[0] + nx * 3, t[1] + ny * 3), (t[0] - nx * 3, t[1] - ny * 3), gold, 1)
+            pt.ell(t[0], t[1], 3.5, 3.5, (0, 0, 0, 0)); pt.d.ellipse([t[0] - 3.5, t[1] - 3.5, t[0] + 3.5, t[1] + 3.5], outline=hx(gold))
     elif k == 'hammer':   # chùy gai
-        pt.line(b[:2], t[:2], '#6a4024', 2)
-        dx, dy = t[0] - b[0], t[1] - b[1]; n = math.hypot(dx, dy) or 1
-        cx, cy = t[0] - dx / n * 2, t[1] - dy / n * 2
-        for i in range(6):
-            a_ = i / 6 * TAU + 0.3
-            pt.line((cx, cy), (cx + math.cos(a_) * 6, cy + math.sin(a_) * 6), '#f2be4c', 1)
-        pt.ell(cx, cy, 4.2, 4.2, '#7c8292')
+        pt.line(b[:2], t[:2], '#6a4024', 2 if ws < 2 else 3)
+        cx, cy = t[0] - ux * 2, t[1] - uy * 2
+        hr, ns = [3.6, 4.6, 5.6][ws], [6, 8, 10][ws]
+        for i in range(ns):
+            a_ = i / ns * TAU + 0.3
+            pt.line((cx, cy), (cx + math.cos(a_) * (hr + 2), cy + math.sin(a_) * (hr + 2)), gold, 1)
+        pt.ell(cx, cy, hr, hr, '#7c8292' if ws < 2 else '#a8584a')
         pt.mark(lambda q: q.rect(cx - 2, cy - 2, cx - 1, cy - 1, '#e8ecf4'))
     elif k == 'daggers':
         for key in ('R', 'L'):
             arm = pose.get('arm' + key, (0, 0, 0)); side = 1 if key == 'R' else -1
             d = unit(limb_dir(arm[0] + arm[2] + pose.get('w', 1.2), arm[1], side))
             h = J['ha' + key]
-            p0, p1 = P(v_add(h, d, -1)), P(v_add(h, d, 8))
+            p0, p1 = P(v_add(h, d, -1)), P(v_add(h, d, 8 * WSCALE[ws]))
             q = Part((p0[2] + p1[2]) / 2 + 0.6, side=False)
-            q.line(p0[:2], p1[:2], wc, 2); q.line(p0[:2], p1[:2], '#ffffff', 1)
+            q.line(p0[:2], p1[:2], wc, 2 if ws < 2 else 3); q.line(p0[:2], p1[:2], '#ffffff', 1)
+            if ws >= 1: q.rect(p0[0] - 1, p0[1] - 1, p0[0] + 1, p0[1] + 1, gold)
             parts.append(q)
         return parts
     elif k == 'knife':
-        pt.line(b[:2], t[:2], wc, 2); pt.rect(b[0] - 0.5, b[1] - 0.5, b[0] + 0.5, b[1] + 0.5, '#3a2a20')
+        pt.line(b[:2], t[:2], wc, 2 if ws < 2 else 3); pt.rect(b[0] - 0.5, b[1] - 0.5, b[0] + 0.5, b[1] + 0.5, '#3a2a20' if ws == 0 else gold)
     elif k == 'talisman':
-        pt.poly([(b[0] - 1.5, b[1] - 2.5), (b[0] + 1.5, b[1] - 2.5), (b[0] + 1.5, b[1] + 3), (b[0] - 1.5, b[1] + 3)], '#ffe48c')
-        pt.line((b[0], b[1] - 1.5), (b[0], b[1] + 2), '#d0302a')
+        w2, h2 = [1.3, 1.7, 2.2][ws], [2.5, 3, 3.6][ws]
+        pt.poly([(b[0] - w2, b[1] - h2), (b[0] + w2, b[1] - h2), (b[0] + w2, b[1] + h2 + 0.5), (b[0] - w2, b[1] + h2 + 0.5)], '#ffe48c')
+        pt.line((b[0], b[1] - h2 + 1), (b[0], b[1] + h2 - 0.5), '#d0302a')
+        if ws == 2: pt.ell(b[0], b[1] - h2 - 1.5, 1.4, 1.4, L['glow'])
     parts.append(pt)
     return parts
 
+# ---------------- giáp & mũ ----------------
+def armor_parts(L, body, J, P, view, style, hemU, kfR, kfL, rp):
+    """vẽ thêm giáp lên áo choàng (rp) theo kiểu: 1 giáp da, 2 giáp sắt, 3 thần giáp; trả về các bộ phận rời (áo choàng sau lưng)"""
+    if style <= 0: return []
+    extra = []
+    hip, neck = J['hip'], J['neck']; sw_ = body['shoulder']
+    leather = '#6e4a30'
+    chest = hull(ring((neck[0], neck[1], 0), neck[2] - 1.5, sw_ - 0.2, 4.2, P) + ring((hip[0], hip[1], 0), hip[2] + 4, body['hipw'] + 1.8, 3.9, P))
+    rp.poly(chest, leather if style == 1 else MARKER)
+    nk = P(neck)
+    if style >= 2:
+        tasset = hull(ring((hip[0], hip[1], 0), hip[2] + 1, body['hipw'] + 3, 4.4, P) + ring((hip[0], hip[1], 0), hip[2] - 6, body['hipw'] + 4.4, 5, P, kfR, kfL))
+        rp.poly(tasset, dark(MARKER, 0.28))
+        c = P((hip[0], hip[1] + (4 if view == 'down' else 0), hip[2] - 2))
+        if view != 'right':
+            for dxx in (-3, 0, 3): rp.line((c[0] + dxx, c[1] - 3), (c[0] + dxx, c[1] + 3), dark(MARKER, 0.5))
+        mid = P((hip[0], hip[1] + (4.2 if view != 'up' else -4.2), hip[2] + 8))
+        rp.line((mid[0], mid[1] - 5), (mid[0], mid[1] + 4), dark(MARKER, 0.4))
+    if view != 'up':
+        c = P((hip[0], hip[1] + 4.2, hip[2] + 9))
+        if style == 1:
+            for dxx in (-2, 2): rp.rect(c[0] + dxx, c[1], c[0] + dxx, c[1], MARKER)
+        if style == 3:
+            rp.ell(c[0], c[1], 1.8, 1.8, '#ff3048'); rp.rect(c[0] - 0.5, c[1] - 1, c[0], c[1] - 0.5, '#ffc0c8')
+    bk = P((hip[0], hip[1] + (3 if view != 'up' else -3), hip[2] + 2.2))
+    rp.rect(bk[0] - 1.5, bk[1] - 1.2, bk[0] + 1.5, bk[1] + 0.8, MARKER)
+    if style == 3:   # áo choàng
+        cape = Part(0.95 if view == 'up' else -4)
+        back = -1 if view != 'up' else 1
+        top = [P((J['shL'][0], J['shL'][1] - 1.5, J['shL'][2])), P((J['shR'][0], J['shR'][1] - 1.5, J['shR'][2]))]
+        bottom = [P((hip[0] - body['hipw'] - 5, hip[1] - 4, 3)), P((hip[0] + body['hipw'] + 5, hip[1] - 4, 3))]
+        if view == 'right':
+            top = [P((0, neck[1] - 2, neck[2])), P((0, neck[1] - 1, neck[2] - 1))]
+            bottom = [P((0, hip[1] - 9, 3)), P((0, hip[1] - 2, 3))]
+        cape.poly([top[0][:2], top[1][:2], bottom[1][:2], bottom[0][:2]], '#86162a')
+        cape.line(bottom[0][:2], bottom[1][:2], MARKER, 2)
+        extra.append(cape)
+    return extra
+
+def helmet_part(L, view, cx, cy, r, style):
+    if style <= 0: return None
+    pt = Part(1.15, side=False)
+    hat = L['style'] in ('straw', 'official', 'turban')
+    sx = -1 if view == 'right' else 0
+    if style >= 2 and not hat:   # mũ trụ che đỉnh đầu (vẽ trước rồi cắt phần dưới trán)
+        pt.ell(cx + sx, cy - 3.5, r + 1.3, r * 0.78, MARKER)
+        pt.rect(cx - r - 3, cy - 3.4, cx + r + 3, cy + r + 2, (0, 0, 0, 0))
+        pt.line((cx + sx - 1, cy - r - 2.5), (cx + sx - 1, cy - 4.5), light(MARKER, 0.3))
+    pt.rect(cx - r - 0.6 + sx, cy - 4.4, cx + r + 0.6 + sx, cy - 2.6, MARKER if style == 1 else dark(MARKER, 0.12))   # băng trán kim loại
+    if view == 'down': pt.rect(cx - 1, cy - 4.6, cx + 1, cy - 2.4, '#ff3048')
+    elif view == 'right': pt.rect(cx + r - 1.5, cy - 4.6, cx + r, cy - 2.4, '#ff3048')
+    if style >= 2:   # giáp tai
+        if view == 'right': pt.poly([(cx - 3, cy - 3), (cx + 0.5, cy - 3), (cx, cy + 3), (cx - 3, cy + 2)], MARKER)
+        else:
+            for e in (-1, 1): pt.poly([(cx + e * (r + 0.8), cy - 3), (cx + e * (r - 1.2), cy - 3), (cx + e * (r - 0.8), cy + 3), (cx + e * (r + 1.2), cy + 2)], MARKER)
+    if style >= 3:
+        ty = cy - r - (7 if L['style'] == 'straw' else 6 if L['style'] == 'official' else 2.5)
+        for i, e in enumerate((-4, 0, 4)):
+            h = 6 if e == 0 else 4
+            pt.poly([(cx + sx + e - 1.5, ty + 1), (cx + sx + e + 1.5, ty + 1), (cx + sx + e, ty + 1 - h)], MARKER)
+        pt.ell(cx + sx, ty - 1, 1.3, 1.3, '#ff3048')
+        # chùm lông đỏ
+        if view == 'right': pt.poly([(cx - 2, ty - 2), (cx - 1, ty - 4), (cx - 10, ty + 2), (cx - 9, ty + 4)], '#e0283a')
+        else: pt.poly([(cx + sx - 1, ty - 4), (cx + sx + 1, ty - 4), (cx + sx + 3, ty - 10), (cx + sx - 3, ty - 10)], '#e0283a')
+    return pt
+
 # ---------------- dựng 1 khung hình ----------------
-def render(cls, view, pose, prev=None, eyes=True, sway=0, weapon_only=False):
+def render(cls, view, pose, prev=None, eyes=True, sway=0, armor=0, helm=0, ws=None):
     L = LOOK[cls]; body = BODY[L['body']]
     J = solve(body, pose)
     P = projector(view)
@@ -454,6 +539,7 @@ def render(cls, view, pose, prev=None, eyes=True, sway=0, weapon_only=False):
     if L.get('patches') and view != 'up':
         c = P((hip[0], hip[1] + 3, hip[2] + 6)); rp.rect(c[0] + 1, c[1] - 1, c[0] + 3, c[1] + 1, robe2)
         c = P((hip[0], hip[1] + 4, hemU + 3)); rp.rect(c[0] - 4, c[1] - 1, c[0] - 2, c[1] + 1, robe2)
+    parts += armor_parts(L, body, J, P, view, armor, hemU, kfR, kfL, rp)
     parts.append(rp)
     # khăn quàng / chuỗi hạt / hồ lô
     if L.get('scarf'):
@@ -495,6 +581,13 @@ def render(cls, view, pose, prev=None, eyes=True, sway=0, weapon_only=False):
         ap.ell(h[0], h[1], 2, 2, skin)
         if L.get('armor'):
             ap.ell(s[0], s[1] - 0.5, 3.2, 2.6, robe2); ap.line((s[0] - 3, s[1] - 2), (s[0] + 3, s[1] - 2), trim, 1)
+        if armor >= 1:   # giáp vai + hộ cổ tay
+            pr = [0, 2.8, 3.8, 4.4][armor]
+            ap.ell(s[0], s[1] - 0.5, pr, pr * 0.8, '#7a5236' if armor == 1 else MARKER)
+            ap.line((s[0] - pr, s[1] - pr * 0.6), (s[0] + pr, s[1] - pr * 0.6), MARKER if armor == 1 else light(MARKER, 0.35), 1)
+            if armor == 3: ap.poly([(s[0] - 1, s[1] - pr * 0.7), (s[0] + 1, s[1] - pr * 0.7), (s[0], s[1] - pr - 3)], MARKER)
+            br0 = (e[0] + (h[0] - e[0]) * 0.45, e[1] + (h[1] - e[1]) * 0.45); br1 = (e[0] + (h[0] - e[0]) * 0.85, e[1] + (h[1] - e[1]) * 0.85)
+            ap.cap(br0, br1, 5 if L['sleeve'] != 'wide' else 4, '#7a5236' if armor == 1 else MARKER)
         parts.append(ap)
     # ---- đầu ----
     hc = P(J['head']); cx, cy = hc[0], hc[1]; r = body['headr']
@@ -541,10 +634,10 @@ def render(cls, view, pose, prev=None, eyes=True, sway=0, weapon_only=False):
     hf = draw_hair(L, view, cx, cy, r, sway, False)
     hf.depth = 1.1
     parts.append(hf)
+    hm = helmet_part(L, view, cx, cy, r, helm)
+    if hm: parts.append(hm)
     # ---- vũ khí ----
-    wparts = draw_weapon(L, J, pose, P)
-    for wp in wparts: wp.is_weapon = True
-    parts += wparts
+    if ws is not None: parts += draw_weapon(L, J, dict(pose, ws=ws), P)
     # ---- vệt chém ----
     if prev is not None and pose.get('trail'):
         tp = Part(5, outline=False, shade=False)
@@ -573,7 +666,6 @@ def render(cls, view, pose, prev=None, eyes=True, sway=0, weapon_only=False):
             gp.rect(h[0] + math.cos(t) * (rad + 3), h[1] + math.sin(t) * (rad + 3), h[0] + math.cos(t) * (rad + 3), h[1] + math.sin(t) * (rad + 3), light(L['glow'], 0.5))
         parts.append(gp)
     # ---- ghép ----
-    if weapon_only: parts = [q for q in parts if getattr(q, 'is_weapon', False)]
     parts.sort(key=lambda p: p.depth)
     canvas = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     for pt in parts:
@@ -689,20 +781,19 @@ ANIMS = [('idle', 4, anim_idle), ('walk', 6, anim_walk), ('atk', 4, anim_attack)
 VIEWS = ['down', 'up', 'right']
 COLS = sum(n for _, n, _ in ANIMS)
 
-def frame(cls, view, name, i, weapon_only=False):
+def frame(cls, view, name, i, armor=0, helm=0, ws=None, trail=True):
     L = LOOK[cls]
     fn = dict((a, f) for a, _, f in ANIMS)[name]
-    n = dict((a, n) for a, n, _ in ANIMS)[name]
     pose = fn(L, i)
-    prev = fn(L, i - 1) if (name == 'atk' and i > 0) else None
+    prev = fn(L, i - 1) if (trail and name == 'atk' and i > 0) else None
     sway = pose.pop('_sway', 0)
     if prev: prev.pop('_sway', 0)
-    return render(cls, view, pose, None if weapon_only else prev, sway=sway, weapon_only=weapon_only)
+    return render(cls, view, pose, prev, sway=sway, armor=armor, helm=helm, ws=ws)
 
-def dead_frame(cls):
+def dead_frame(cls, armor=0):
     L = LOOK[cls]
     pose = dict(REST); pose.update(noweapon=1, armR=(0.4, 0.5, 0.3), armL=(0.4, 0.5, 0.3))
-    im = render(cls, 'right', pose, eyes=False)
+    im = render(cls, 'right', pose, eyes=False, armor=armor)
     im = im.rotate(90, expand=False)
     bb = im.getbbox()
     out = Image.new('RGBA', (W, H), (0, 0, 0, 0))
@@ -711,22 +802,41 @@ def dead_frame(cls):
         out.alpha_composite(crop, (AX - crop.width // 2, AY - crop.height + 2))
     return out
 
-def sheet(cls, weapon_only=False):
-    """hàng 0..2: down/up/right; cột: idle4 walk6 atk4 cast4 hurt1; hàng 3: ngã. weapon_only: chỉ vũ khí (để game vẽ hào quang)"""
-    sh = Image.new('RGBA', (W * COLS, H * (3 if weapon_only else 4)), (0, 0, 0, 0))
+def overlay(full, base):
+    """chỉ giữ những điểm ảnh khác với ảnh nền (phần vũ khí / mũ thực sự nhìn thấy)"""
+    a, b = np.array(full), np.array(base)
+    m = np.abs(a.astype(int) - b.astype(int)).sum(2) > 0
+    o = np.zeros_like(a); o[m] = a[m]
+    return Image.fromarray(o, 'RGBA')
+
+ARMOR_STYLES, HELM_STYLES, WEAPON_STYLES = 4, 3, 3
+
+def sheets(cls):
+    """Ảnh của 1 môn phái (ô 96x96; hàng 0..2: xuống/lên/phải; cột: đứng4 đi6 đánh4 chiêu4 trúng1):
+       <cls>_a0..3: thân theo kiểu áo (hàng 3: ngã), <cls>_w0..2: lớp vũ khí theo cấp, <cls>_h1..3: lớp mũ"""
+    L = LOOK[cls]
+    out = {f'a{k}': Image.new('RGBA', (W * COLS, H * 4)) for k in range(ARMOR_STYLES)}
+    if L['weapon'] != 'palm':
+        for k in range(WEAPON_STYLES): out[f'w{k}'] = Image.new('RGBA', (W * COLS, H * 3))
+    for k in range(1, HELM_STYLES + 1): out[f'h{k}'] = Image.new('RGBA', (W * COLS, H * 3))
     for r, view in enumerate(VIEWS):
         c = 0
         for name, n, _ in ANIMS:
             for i in range(n):
-                sh.alpha_composite(frame(cls, view, name, i, weapon_only), (c * W, r * H)); c += 1
-    if not weapon_only: sh.alpha_composite(dead_frame(cls), (0, 3 * H))
-    return sh
+                pos = (c * W, r * H)
+                for k in range(ARMOR_STYLES): out[f'a{k}'].alpha_composite(frame(cls, view, name, i, armor=k), pos)
+                base0 = frame(cls, view, name, i, trail=False)
+                if L['weapon'] != 'palm':
+                    for k in range(WEAPON_STYLES): out[f'w{k}'].alpha_composite(overlay(frame(cls, view, name, i, ws=k, trail=False), base0), pos)
+                for k in range(1, HELM_STYLES + 1): out[f'h{k}'].alpha_composite(overlay(frame(cls, view, name, i, helm=k, trail=False), base0), pos)
+                c += 1
+    for k in range(ARMOR_STYLES): out[f'a{k}'].alpha_composite(dead_frame(cls, k), (0, 3 * H))
+    return out
 
 if __name__ == '__main__':
     out = sys.argv[1] if len(sys.argv) > 1 else 'public/assets/chars'
     os.makedirs(out, exist_ok=True)
     only = sys.argv[2:] or list(LOOK)
     for cls in only:
-        sheet(cls).save(os.path.join(out, cls + '.png'), optimize=True)
-        if LOOK[cls]['weapon'] != 'palm': sheet(cls, True).save(os.path.join(out, cls + '_w.png'), optimize=True)
+        for key, im in sheets(cls).items(): im.save(os.path.join(out, f'{cls}_{key}.png'), optimize=True)
         print('ok', cls)

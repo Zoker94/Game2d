@@ -1,8 +1,11 @@
 // Ảnh asset vẽ tay (public/assets). Có ảnh thì dùng ảnh, chưa có thì dùng sprite vẽ thủ tục cũ.
 (function () {
   const BASE = '/assets/';
-  // Nhân vật: mỗi môn phái 1 tấm ảnh chars/<cls>.png (vẽ bởi tools/rig.py), ô 96x96, chân ở (48, 86).
-  // Hàng: 0 nhìn xuống, 1 nhìn lên, 2 nhìn phải (trái = lật), 3 ngã. Cột: đứng 0-3, đi 4-9, đánh 10-13, ra chiêu 14-17, trúng đòn 18
+  // Nhân vật (vẽ bởi tools/rig.py), ô 96x96, chân ở (48, 86). Mỗi môn phái có các lớp ghép theo trang bị:
+  //   chars/<cls>_a0..3.png  thân theo kiểu áo (vải / giáp da / giáp sắt / thần giáp), hàng 3 = ngã
+  //   chars/<cls>_w0..2.png  lớp vũ khí (thường / tinh luyện / thần binh), chars/<cls>_h1..3.png lớp mũ
+  // Phần kim loại vẽ bằng màu đánh dấu (xanh ngọc) rồi tô lại theo phẩm chất trang bị.
+  // Hàng: 0 nhìn xuống, 1 nhìn lên, 2 nhìn phải (trái = lật). Cột: đứng 0-3, đi 4-9, đánh 10-13, ra chiêu 14-17, trúng đòn 18
   const CLASSES = ['thieulam', 'ngudoc', 'thienvuong', 'caibang', 'vodang', 'ngamy', 'thuyyen', 'conlon', 'duongmon'];
   const CELL = 96, FOOT_X = 48, FOOT_Y = 86;
   const ANIM = { idle: [0, 4], walk: [4, 6], atk: [10, 4], cast: [14, 4], hurt: [18, 1] };
@@ -30,25 +33,71 @@
       im.src = BASE + path;
     });
   }
+  // tải theo nhu cầu: kiểu đồ nào xuất hiện mới tải ảnh đó
+  const loading = {};
+  function need(key) {
+    if (imgs[key] || loading[key]) return imgs[key] || null;
+    loading[key] = load('chars/' + key + '.png').then(im => { if (im) imgs[key] = im; });
+    return null;
+  }
   const jobs = [];
-  for (const c of CLASSES) jobs.push(load('chars/' + c + '.png').then(im => { if (im) imgs['c:' + c] = im; }));
-  for (const c of CLASSES) if (c !== 'caibang') jobs.push(load('chars/' + c + '_w.png').then(im => { if (im) imgs['w:' + c] = im; }));
+  for (const c of CLASSES) { jobs.push(need(c + '_a0') || loading[c + '_a0']); if (c !== 'caibang') jobs.push(need(c + '_w0') || loading[c + '_w0']); }
   for (const n of MONSTERS) jobs.push(load('monsters/' + n + '.png').then(im => { if (im) imgs['m:' + n] = im; }));
   const ready = Promise.all(jobs);
 
   const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; return [c, x]; };
   const cache = {};
-  const has = cls => !!imgs['c:' + cls];
+  let cacheN = 0;
+  const put = (k, v) => { if (++cacheN > 6000) { for (const key in cache) if (!key.startsWith('rc:')) delete cache[key]; cacheN = 0; } return (cache[k] = v); };
+  const has = cls => !!imgs[cls + '_a0'];
   function cellOf(dir, state, i) {
     if (state === 'dead') return [3, 0];
     const a = ANIM[state] || ANIM.idle;
     return [dir === 0 ? 0 : dir === 3 ? 1 : 2, a[0] + (i % a[1])];
   }
-  // quầng sáng vũ khí theo phẩm chất (tô màu phần vũ khí của khung hình rồi loang ra xung quanh)
-  function weaponGlow(cls, dir, state, i, color) {
-    const im = imgs['w:' + cls];
-    if (!im || state === 'dead') return null;
-    const key = 'wg:' + cls + ':' + dir + ':' + state + ':' + i + ':' + color;
+  // ----- trang bị -> kiểu hình -----
+  const METAL = ['#a8b0bc', '#4fa3ff', '#b060ff', '#ffb02a'];   // Thường / Hiếm / VIP / Truyền Kỳ
+  // ap = [bậc vũ khí, độ hiếm vũ khí, +vũ khí, bậc áo, độ hiếm áo, +áo, bậc nón, thú cưỡi, độ hiếm nón]
+  function lookOf(ap) {
+    ap = ap || [];
+    const at = ap[3] == null ? -1 : ap[3], ht = ap[6] == null ? -1 : ap[6], wt = ap[0] == null ? -1 : ap[0];
+    return {
+      a: at < 2 ? 0 : at < 4 ? 1 : at < 6 ? 2 : 3, ar: ap[4] || 0,
+      h: ht < 0 ? 0 : ht < 3 ? 1 : ht < 5 ? 2 : 3, hr: ap[8] || 0,
+      w: wt < 3 ? 0 : wt < 5 ? 1 : 2
+    };
+  }
+  // tô lại phần kim loại (màu đánh dấu, sắc độ ~168) theo màu phẩm chất, giữ độ sáng tối
+  function recolor(img, hex) {
+    const [c, x] = mk(img.width, img.height);
+    x.drawImage(img, 0, 0);
+    const d = x.getImageData(0, 0, c.width, c.height), a = d.data;
+    const cr = parseInt(hex.slice(1, 3), 16), cg = parseInt(hex.slice(3, 5), 16), cb = parseInt(hex.slice(5, 7), 16);
+    for (let i = 0; i < a.length; i += 4) {
+      if (!a[i + 3]) continue;
+      const r = a[i], g = a[i + 1], b = a[i + 2], mx = Math.max(r, g, b), mn = Math.min(r, g, b), dd = mx - mn;
+      if (dd < mx * 0.3 || g < r) continue;
+      let h = mx === g ? 60 * ((b - r) / dd + 2) : mx === b ? 60 * ((r - g) / dd + 4) : -1;
+      if (Math.abs(h - 168) > 14) continue;
+      const L = mx / 232, hi = Math.max(0, L - 1) * 120;
+      a[i] = Math.min(255, cr * L * 1.05 + hi); a[i + 1] = Math.min(255, cg * L * 1.05 + hi); a[i + 2] = Math.min(255, cb * L * 1.05 + hi);
+    }
+    x.putImageData(d, 0, 0);
+    return c;
+  }
+  function sheetFor(key, rar) {   // ảnh đã tô màu theo phẩm chất (thân áo, mũ)
+    const im = need(key);
+    if (!im) return null;
+    const k = 'rc:' + key + ':' + rar;
+    return cache[k] || (cache[k] = recolor(im, METAL[rar] || METAL[0]));
+  }
+  // quầng sáng vũ khí theo phẩm chất (tô màu lớp vũ khí của khung hình rồi loang ra xung quanh)
+  function weaponGlow(cls, dir, state, i, color, ap) {
+    if (state === 'dead') return null;
+    const w = lookOf(ap).w;
+    const im = need(cls + '_w' + w) || imgs[cls + '_w0'];
+    if (!im) return null;
+    const key = 'wg:' + cls + w + ':' + dir + ':' + state + ':' + i + ':' + color;
     if (cache[key]) return cache[key];
     const [row, col] = cellOf(dir, state, i);
     const [m, mx] = mk(CELL, CELL);
@@ -58,29 +107,37 @@
     mx.globalCompositeOperation = 'source-in'; mx.fillStyle = color; mx.fillRect(0, 0, CELL, CELL);
     const [c, x] = mk(CELL, CELL);
     for (const [dx, dy, a] of [[-2, 0, 0.3], [2, 0, 0.3], [0, -2, 0.3], [0, 2, 0.3], [-1, -1, 0.55], [1, 1, 0.55], [1, -1, 0.55], [-1, 1, 0.55], [0, 0, 0.5]]) { x.globalAlpha = a; x.drawImage(m, dx, dy); }
-    return (cache[key] = c);
+    return put(key, c);
   }
-  // dir: 0 xuống, 1 trái, 2 phải, 3 lên; state: idle | walk | atk | cast | hurt | dead
-  function charFrame(cls, dir, state, i) {
-    const im = imgs['c:' + cls];
-    const flip = dir === 1;
-    const key = cls + ':' + dir + ':' + state + ':' + i;
+  // dir: 0 xuống, 1 trái, 2 phải, 3 lên; state: idle | walk | atk | cast | hurt | dead; ap: ngoại hình trang bị
+  function charFrame(cls, dir, state, i, ap) {
+    const L = lookOf(ap);
+    // kiểu đồ chưa tải xong thì tạm dùng kiểu cơ bản
+    const body = sheetFor(cls + '_a' + L.a, L.ar) || sheetFor(cls + '_a0', 0);
+    const wpn = cls !== 'caibang' ? (need(cls + '_w' + L.w) || imgs[cls + '_w0']) : null;
+    const helm = L.h ? sheetFor(cls + '_h' + L.h, L.hr) : null;
+    const key = cls + ':' + dir + ':' + state + ':' + i + ':' + (body ? L.a + '.' + L.ar : 'x') + ':' + (wpn ? L.w : 'x') + ':' + (helm ? L.h + '.' + L.hr : 0);
     if (cache[key]) return cache[key];
-    let [row, col] = cellOf(dir, state, i);
+    const [row, col] = cellOf(dir, state, i);
     const [c, x] = mk(CELL, CELL);
     x.fillStyle = 'rgba(0,0,0,0.3)'; x.beginPath(); x.ellipse(FOOT_X, FOOT_Y, state === 'dead' ? 22 : 13, 4, 0, 0, Math.PI * 2); x.fill();
-    if (flip) { x.translate(CELL, 0); x.scale(-1, 1); }
-    x.drawImage(im, col * CELL, row * CELL, CELL, CELL, 0, 0, CELL, CELL);
-    return (cache[key] = c);
+    if (dir === 1) { x.translate(CELL, 0); x.scale(-1, 1); }
+    if (body) x.drawImage(body, col * CELL, row * CELL, CELL, CELL, 0, 0, CELL, CELL);
+    if (state !== 'dead') {
+      if (wpn) x.drawImage(wpn, col * CELL, row * CELL, CELL, CELL, 0, 0, CELL, CELL);
+      if (helm) x.drawImage(helm, col * CELL, row * CELL, CELL, CELL, 0, 0, CELL, CELL);
+    }
+    // ảnh chưa tải xong thì không lưu bộ nhớ đệm để lần sau vẽ đúng
+    if (!body || (L.w && wpn === imgs[cls + '_w0'] && !imgs[cls + '_w' + L.w]) || (L.h && !helm) || (L.a && !imgs[cls + '_a' + L.a])) return c;
+    return put(key, c);
   }
   // ảnh đại diện (đầu + vai) cho khung avatar / thẻ môn phái
-  function avatar(cls, size) {
+  function avatar(cls, size, ap) {
     size = size || 64;
-    const key = 'av:' + cls + ':' + size;
-    if (cache[key]) return cache[key];
+    const f = charFrame(cls, 0, 'idle', 0, ap);
     const [c, x] = mk(size, size);
-    if (has(cls)) x.drawImage(imgs['c:' + cls], 48 - 17, 18, 34, 34, 0, 0, size, size);
-    return (cache[key] = c);
+    x.drawImage(f, 48 - 17, 18, 34, 34, 0, 0, size, size);
+    return c;
   }
 
   const procPlayer = Sprites.playerSprite;
@@ -88,7 +145,7 @@
   Sprites.playerSprite = function (cls, colors, dir, frame, atk, ap) {
     if (!has(cls)) return procPlayer.call(this, cls, colors, dir, frame, !!atk, ap);
     const state = atk === 'skill' ? 'cast' : atk === true ? 'atk' : typeof atk === 'string' ? atk : frame > 0 ? 'walk' : 'idle';
-    return charFrame(cls, dir, state, frame || 0);
+    return charFrame(cls, dir, state, frame || 0, ap);
   };
 
   const procMonster = Sprites.monsterSprite;
@@ -123,5 +180,5 @@
     return `<i class="sk-img" style="background-image:url('${url}');--skc:${s.color || '#ffd76a'}"></i>`;
   }
 
-  window.Assets = { ready, imgs, has, charFrame, weaponGlow, avatar, CELL, FOOT_X, FOOT_Y, CLASSES, SKILL_ICON, MONSTERS, skillIconUrl, skillIconHTML };
+  window.Assets = { ready, imgs, has, charFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, SKILL_ICON, MONSTERS, skillIconUrl, skillIconHTML };
 })();
