@@ -1007,14 +1007,7 @@
     const gcol = Sprites.enhanceGlow(plus);
     x = Math.round(x); y = Math.round(y);
     if (dead) ctx.globalAlpha = art ? 0.9 : 0.4;
-    if (gcol && !dead) {
-      ctx.save(); ctx.globalCompositeOperation = 'lighter';
-      const pulse = 0.5 + Math.sin(now / 300 + seed) * 0.2;
-      FX.glowDot(ctx, x, y - (mountId ? 40 : 28), plus >= 13 ? 64 : 50, gcol, pulse * 0.45, true);
-      ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.4); FX.glowDot(ctx, 0, 0, 44, gcol, pulse * 0.9, true); ctx.restore();
-      ctx.restore();
-      if (plus >= 10 && Math.random() < (plus >= 13 ? 0.5 : 0.25)) FX.emit(1, x, y - 20, { speed: 10, vy: -70, life: 800, size: 3, color: plus >= 15 ? ['#ff3030', '#ffd700', '#40c0ff'][Math.floor(Math.random() * 3)] : gcol, jitter: 18, jitterY: 20 });
-    }
+    if (gcol && !dead) Overhead.drawEnhance(ctx, x, y, plus, gcol, now, seed, !!mountId, 'under');
     let top;
     if (mountId && G.data.mounts[mountId]) {
       const info = G.data.mounts[mountId];
@@ -1064,6 +1057,7 @@
         top = y - 58;
       }
     }
+    if (gcol && !dead) Overhead.drawEnhance(ctx, x, y, plus, gcol, now, seed, !!mountId, 'over');
     ctx.globalAlpha = 1;
     return top;
   }

@@ -270,5 +270,49 @@
     ctx.globalAlpha = 1;
   }
 
-  window.Overhead = { ST, mask, drawUnder, drawOver, add, drawFloats, drawBubble, TITLES, title, relColor, pkLevel, drawBadge, drawNameplate, drawWings, drawPkAura };
+  // cường hóa: vòng ấn dưới chân (không trùm sáng lên người)
+  //  +7..9: 1 vòng · +10..12: 2 vòng + ký hiệu + 2 đốm bay quanh · +13..14: thêm hạt nhỏ · +15: vòng 3 màu + 3 đốm
+  function drawEnhance(ctx, x, y, plus, col, now, seed, riding, layer) {
+    const t = now / 1000 + (seed || 0);
+    const over = layer === 'over';
+    const rx = riding ? 30 : 22, cols = plus >= 15 ? ['#ff4040', '#ffd040', '#40b8ff'] : [col];
+    if (!over) {
+    ctx.save();
+    ctx.translate(x, y + 1); ctx.scale(1, 0.38);
+    ctx.globalAlpha = 0.85; ctx.lineWidth = 2;
+    // vòng ngoài: các cung xoay
+    const seg = plus >= 10 ? 6 : 4;
+    for (let i = 0; i < seg; i++) {
+      const a0 = t * 0.9 + i * TAU / seg;
+      ctx.strokeStyle = cols[i % cols.length];
+      ctx.beginPath(); ctx.arc(0, 0, rx, a0, a0 + TAU / seg * 0.62); ctx.stroke();
+    }
+    if (plus >= 10) {
+      ctx.globalAlpha = 0.6; ctx.lineWidth = 1.5;
+      ctx.strokeStyle = cols[cols.length - 1];
+      ctx.beginPath(); ctx.arc(0, 0, rx - 6, -t * 1.4, -t * 1.4 + TAU * 0.85); ctx.stroke();
+      // ký hiệu nhỏ trên vòng
+      ctx.fillStyle = cols[0];
+      for (let i = 0; i < 8; i++) { const a = -t * 0.7 + i * TAU / 8; ctx.fillRect(Math.cos(a) * (rx + 4) - 1, Math.sin(a) * (rx + 4) - 1, 2, 2); }
+    }
+    ctx.restore();
+    }
+    // đốm sáng bay quanh người: nửa sau vẽ dưới nhân vật, nửa trước vẽ đè lên
+    if (plus >= 10) {
+      const n = plus >= 15 ? 3 : 2;
+      for (let i = 0; i < n; i++) {
+        const a = t * 2.2 + i * TAU / n, ox = Math.cos(a) * (rx - 2), oy = Math.sin(a) * 6 - 22 - Math.sin(t * 3 + i) * 4;
+        if ((Math.sin(a) >= 0) !== over) continue;
+        ctx.globalAlpha = 0.9; ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(x + ox, y + oy, 1.6, 0, TAU); ctx.fill();
+        ctx.globalAlpha = 0.5; ctx.fillStyle = cols[i % cols.length];
+        ctx.beginPath(); ctx.arc(x + ox, y + oy, 3.2, 0, TAU); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    if (over && plus >= 13 && Math.random() < (plus >= 15 ? 0.12 : 0.06) && window.FX)
+      FX.emit(1, x + (Math.random() - 0.5) * 30, y - 4, { speed: 6, vy: -45, life: 700, size: 2, color: cols[Math.floor(Math.random() * cols.length)] });
+  }
+
+  window.Overhead = { ST, mask, drawUnder, drawOver, add, drawFloats, drawBubble, TITLES, title, relColor, pkLevel, drawBadge, drawNameplate, drawWings, drawPkAura, drawEnhance };
 })();
