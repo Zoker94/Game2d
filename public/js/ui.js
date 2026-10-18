@@ -690,14 +690,14 @@
       const l = evPanel;
       html += `<p>Bạn có <b>${l ? l.tokens : 0}</b> 🏮 Hoa Đăng. Hoa Đăng rơi từ quái khi diễn ra Lễ Hội Hoa Đăng.</p><div class="list">${l ? l.lantern.map((x, i) => `<div class="li"><div class="grow"><b>${esc(x.name)}</b><div class="sub">Cần ${x.cost} Hoa Đăng</div></div><button class="btn small green" data-lantern="${i}" ${l.tokens >= x.cost ? '' : 'disabled'}>Đổi</button></div>`).join('') : ''}</div>`;
     } else if (tab === 'code') {
-      html += `<div class="card"><h4>Nhập Gift Code</h4><div class="row" style="justify-content:flex-start"><input id="gc-input" placeholder="Nhập mã quà tặng" maxlength="24" style="text-transform:uppercase"><button class="btn green" id="gc-btn">Nhận quà</button></div><p class="small muted">Theo dõi fanpage/thông báo để nhận gift code từ quản trị viên.</p></div>`;
+      html += `<div class="card"><h4>🎁 Gift Code</h4><p class="small">Gift code đã có mục riêng: nhập mã, xem code đang phát và lịch sử nhận quà.</p><button class="btn green" id="gc-open">Mở mục Gift Code</button></div>`;
     }
     body.innerHTML = html;
     bindTabs(body);
     updateCountdowns();
     if (tab === 'wheel') { drawWheel(); const b = $('wheel-spin'); if (b) b.onclick = () => { if (!wheelSpinning) emit('wheel'); }; }
     const ci = $('checkin-btn'); if (ci) ci.onclick = () => emit('checkin');
-    const gc = $('gc-btn'); if (gc) gc.onclick = () => emit('giftcode', { code: $('gc-input').value });
+    const gc = $('gc-open'); if (gc) gc.onclick = () => UI.openPanel('giftcode');
     body.querySelectorAll('[data-lantern]').forEach(b => b.onclick = () => emit('lantern', { idx: +b.dataset.lantern }));
   }
   const WHEEL_COLORS = ['#b8322a', '#d4a020', '#2a6ab8', '#7a2ab8', '#2a8a3a', '#b86a2a', '#2aa8a8', '#a82a6a', '#ff9b2f', '#555'];

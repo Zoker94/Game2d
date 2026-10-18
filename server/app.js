@@ -306,6 +306,7 @@ io.on('connection', socket => {
   on('wheel', inGame(() => features.spinWheel(player)));
   on('checkin', inGame(() => features.doCheckin(player)));
   on('giftcode', inGame(d => features.redeemCode(player, d && d.code)));
+  on('giftcodes', inGame(() => socket.emit('giftcodes', features.giftView(player))));
   on('lantern', inGame(d => features.exchangeLantern(player, d && d.idx)));
   on('chat', inGame(d => features.chat(player, d || {})));
   on('guild', inGame(d => d && d.op ? features.guildAction(player, d) : features.guildPanel(player)));

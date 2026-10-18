@@ -141,16 +141,19 @@
         <label>Mã (để trống = ngẫu nhiên)<input id="gc-code" maxlength="24" style="text-transform:uppercase"></label>
         <label>Ngân lượng<input id="gc-gold" type="number" value="0" style="width:110px"></label><label>Nguyên bảo<input id="gc-knb" type="number" value="0" style="width:90px"></label>
         <label>Kinh nghiệm<input id="gc-exp" type="number" value="0" style="width:110px"></label>
-        <label>Số lượt tối đa (0 = vô hạn)<input id="gc-max" type="number" value="0" style="width:110px"></label><label>Hạn (ngày, 0 = vĩnh viễn)<input id="gc-days" type="number" value="0" style="width:90px"></label></div>
+        <label>Số lượt tối đa (0 = vô hạn)<input id="gc-max" type="number" value="0" style="width:110px"></label><label>Hạn (ngày, 0 = vĩnh viễn)<input id="gc-days" type="number" value="0" style="width:90px"></label>
+        <label>Cấp tối thiểu<input id="gc-minlv" type="number" value="0" style="width:80px"></label></div>
+        <div class="row" style="margin-top:8px"><label style="flex:1">Ghi chú (hiện trong game)<input id="gc-note" maxlength="80" placeholder="VD: Quà ra mắt máy chủ"></label>
+        <label style="flex-direction:row;align-items:center;gap:6px"><input id="gc-pub" type="checkbox"> Công khai trong game (người chơi thấy và bấm nhận)</label></div>
         <div class="row" style="margin-top:8px"><label style="flex:1">Vật phẩm<select id="gc-item">${itemOptions(items)}</select></label><label>SL<input id="gc-qty" type="number" value="1" style="width:70px"></label><button class="btn" id="gc-add">+ Thêm</button></div>
         <div class="items" id="gc-items" style="margin:8px 0"></div><button class="btn primary" id="gc-create">Tạo gift code</button></div>
         <div class="card"><h3>Danh sách</h3><table><tr><th>Mã</th><th>Phần thưởng</th><th>Đã dùng</th><th>Hết hạn</th><th></th></tr>
-        ${codes.map(c => `<tr><td><b>${esc(c.code)}</b></td><td class="small">${rewardStr(c.reward, items)}</td><td>${c.used}${c.maxUses ? '/' + c.maxUses : ''}</td><td class="small">${c.exp ? dt(c.exp) : 'Vĩnh viễn'}</td><td><button class="btn small danger" data-del="${esc(c.code)}">Xóa</button></td></tr>`).join('') || '<tr><td colspan="5" class="muted">Chưa có</td></tr>'}</table></div>`;
+        ${codes.map(c => `<tr><td><b>${esc(c.code)}</b>${c.pub ? ' <span class="small" style="color:#4ade80">● công khai</span>' : ''}${c.note ? `<div class="small muted">${esc(c.note)}</div>` : ''}${c.minLv ? `<div class="small muted">Cấp ${c.minLv}+</div>` : ''}</td><td class="small">${rewardStr(c.reward, items)}</td><td>${c.used}${c.maxUses ? '/' + c.maxUses : ''}</td><td class="small">${c.exp ? dt(c.exp) : 'Vĩnh viễn'}</td><td><button class="btn small danger" data-del="${esc(c.code)}">Xóa</button></td></tr>`).join('') || '<tr><td colspan="5" class="muted">Chưa có</td></tr>'}</table></div>`;
       const sel = [];
       const draw = () => { $('gc-items').innerHTML = sel.map(([id, q], i) => `<span class="item">${esc(items.find(x => x.id === id).name)} x${q} <a data-rm="${i}" style="cursor:pointer">✕</a></span>`).join(''); $('gc-items').querySelectorAll('[data-rm]').forEach(a => a.onclick = () => { sel.splice(+a.dataset.rm, 1); draw(); }); };
       $('gc-add').onclick = () => { sel.push([$('gc-item').value, +$('gc-qty').value || 1]); draw(); };
       $('gc-create').onclick = async () => {
-        const r = await run(() => api('/giftcodes', { code: $('gc-code').value, gold: +$('gc-gold').value, knb: +$('gc-knb').value, exp: +$('gc-exp').value, maxUses: +$('gc-max').value, days: +$('gc-days').value, items: sel }));
+        const r = await run(() => api('/giftcodes', { code: $('gc-code').value, gold: +$('gc-gold').value, knb: +$('gc-knb').value, exp: +$('gc-exp').value, maxUses: +$('gc-max').value, days: +$('gc-days').value, minLv: +$('gc-minlv').value, note: $('gc-note').value, pub: $('gc-pub').checked, items: sel }));
         if (r) { toast('Đã tạo mã ' + r.code); show('giftcodes'); }
       };
       el.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await run(() => api('/giftcodes/' + encodeURIComponent(b.dataset.del), null, 'DELETE'), 'Đã xóa'); show('giftcodes'); });

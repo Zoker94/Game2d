@@ -282,6 +282,8 @@
     s.on('snap', onSnap);
     s.on('leave', id => G.players.delete(id));
     s.on('storyScene', d => Story.show(d));
+    s.on('giftcodes', d => Gift.onView(d));
+    s.on('giftResult', d => Gift.onResult(d));
     s.on('me', d => { if (G.me && d.riding !== G.me.riding) GameAudio.sfx('mount'); G.me = d; UI.updateHud(); $('dead-overlay').classList.toggle('hidden', !d.dead); });
     s.on('pos', d => { G.self.x = d.x; G.self.y = d.y; G.moveTo = null; });
     s.on('weather', w => Weather.set(w));

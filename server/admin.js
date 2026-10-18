@@ -311,7 +311,8 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     const items = (b.items || []).filter(x => ITEMS[x[0]]).map(([id, q]) => [id, U.clamp(q | 0, 1, 9999)]);
     db.data.giftcodes[code] = {
       reward: { gold: Math.max(0, +b.gold | 0), knb: Math.max(0, +b.knb | 0), exp: Math.max(0, +b.exp | 0), items },
-      maxUses: Math.max(0, +b.maxUses | 0), exp: b.days ? Date.now() + b.days * 86400e3 : 0, usedBy: [], created: Date.now()
+      maxUses: Math.max(0, +b.maxUses | 0), exp: b.days ? Date.now() + b.days * 86400e3 : 0, usedBy: [], created: Date.now(),
+      pub: !!b.pub, note: String(b.note || '').slice(0, 80), minLv: U.clamp(+b.minLv | 0, 0, U.MAX_LEVEL)
     };
     act(req, `Tạo gift code ${code}`);
     db.markDirty();

@@ -358,14 +358,36 @@ class Features {
   }
   redeemCode(p, code) {
     code = String(code || '').trim().toUpperCase();
+    const fail = msg => { this.w.toast(p, msg, 'error'); p.socket.emit('giftResult', { ok: false, code, msg }); };
+    if (!code) return fail('Hãy nhập gift code');
+    const now = Date.now();
+    if (p._gcFail && p._gcFail.n >= 8 && now - p._gcFail.t < 60000) return fail('Nhập sai quá nhiều, thử lại sau 1 phút');
     const g = this.db.data.giftcodes[code];
-    if (!g) return this.w.toast(p, 'Gift code không tồn tại', 'error');
-    if (g.exp && g.exp < Date.now()) return this.w.toast(p, 'Gift code đã hết hạn', 'error');
-    if (g.maxUses && g.usedBy.length >= g.maxUses) return this.w.toast(p, 'Gift code đã hết lượt sử dụng', 'error');
-    if (g.usedBy.includes(p.userId)) return this.w.toast(p, 'Bạn đã dùng gift code này', 'error');
+    if (!g) { p._gcFail = { n: (p._gcFail && now - p._gcFail.t < 60000 ? p._gcFail.n : 0) + 1, t: now }; return fail('Gift code không tồn tại'); }
+    if (g.exp && g.exp < now) return fail('Gift code đã hết hạn');
+    if (g.maxUses && g.usedBy.length >= g.maxUses) return fail('Gift code đã hết lượt sử dụng');
+    if (g.usedBy.includes(p.userId)) return fail('Bạn đã dùng gift code này rồi');
+    if (g.minLv && p.c.level < g.minLv) return fail(`Gift code yêu cầu cấp ${g.minLv}`);
     g.usedBy.push(p.userId);
     this.w.giveReward(p, g.reward, `Gift code ${code}`);
+    const log = p.c.giftLog || (p.c.giftLog = []);
+    log.unshift({ code, t: now, reward: g.reward });
+    if (log.length > 30) log.length = 30;
     this.db.log('giftcode', `${p.c.name} dùng code ${code}`);
+    this.db.markDirty();
+    p.socket.emit('giftResult', { ok: true, code, reward: g.reward, note: g.note || '' });
+    p.socket.emit('giftcodes', this.giftView(p));
+  }
+  // bảng Gift code: code công khai còn dùng được + lịch sử đã nhận
+  giftView(p) {
+    const now = Date.now(), pub = [];
+    for (const [code, g] of Object.entries(this.db.data.giftcodes)) {
+      if (!g.pub || (g.exp && g.exp < now)) continue;
+      const left = g.maxUses ? Math.max(0, g.maxUses - g.usedBy.length) : -1;
+      pub.push({ code, note: g.note || '', reward: g.reward, exp: g.exp || 0, left, used: g.usedBy.includes(p.userId), minLv: g.minLv || 0 });
+    }
+    pub.sort((a, b) => a.used - b.used || (b.exp || 9e15) - (a.exp || 9e15));
+    return { pub, history: p.c.giftLog || [] };
   }
   exchangeLantern(p, idx) {
     const ex = LANTERN_EXCHANGE[idx | 0];
