@@ -368,7 +368,7 @@
       }
       let e = G.players.get(p.i);
       if (!e) { e = { x: p.x, y: p.y }; G.players.set(p.i, e); }
-      Object.assign(e, { id: p.i, name: p.n, cls: p.c, tx: p.x, ty: p.y, dir: p.d, moving: p.m, hp: p.h, maxHp: p.H, level: p.l, guild: p.g, dead: p.a, gm: p.v, ap: p.q, st: p.s || 0, el: p.el || '', pw: p.pw || 0, rk: p.rk || 0, k: p.k || 0, pm: p.pm || 0, rb: p.rb || 0, seen: now });
+      Object.assign(e, { id: p.i, name: p.n, cls: p.c, tx: p.x, ty: p.y, dir: p.d, moving: p.m, hp: p.h, maxHp: p.H, level: p.l, guild: p.g, dead: p.a, gm: p.v, ap: p.q, st: p.s || 0, el: p.el || '', pw: p.pw || 0, rk: p.rk || 0, k: p.k || 0, pm: p.pm || 0, rb: p.rb || 0, bf: p.bf || null, seen: now });
       if (p.d === 1 || p.d === 2) e.lastH = p.d;
     }
     for (const id of G.players.keys()) if (!seenP.has(id)) G.players.delete(id);
@@ -517,6 +517,7 @@
     if (sk.mult) out.mult = Math.round(sk.mult * (1 + 0.1 * k) * 100) / 100;
     for (const f of ['heal', 'healAllies', 'healSelf']) if (sk[f]) out[f] = Math.round(sk[f] * (1 + 0.06 * k) * 1000) / 1000;
     if (sk.freeze) out.freeze = Math.round(sk.freeze * (1 + 0.05 * k));
+    if (sk.passive) { out.passive = {}; for (const b in sk.passive) out.passive[b] = Math.round(sk.passive[b] * (1 + 0.1 * k) * 1000) / 1000; }
     if (sk.buff) { out.buff = {}; for (const b in sk.buff) out.buff[b] = b === 'dur' ? Math.round(sk.buff.dur * (1 + 0.05 * k)) : Math.round(sk.buff[b] * (1 + 0.05 * k) * 1000) / 1000; }
     if (sk.mp) out.mp = Math.round(sk.mp * (1 + 0.04 * k));
     return out;
@@ -527,6 +528,7 @@
     const learnedMap = G.me.skills || {};
     const list = G.data.classes[G.me.cls].skills.map((s, i) => Object.assign(scaleSkill(s, learnedMap[s.id] || 1), { idx: i, slv: learnedMap[s.id] || 1, learned: i === 0 || !!learnedMap[s.id] }));
     if (G.me.dragon && G.me.dragons && G.me.dragons[G.me.dragon]) { const d = G.data.dragons[G.me.dragon]; list[6] = Object.assign(scaleSkill(d, learnedMap[d.id] || 1), { idx: 6, slv: learnedMap[d.id] || 1, learned: true }); }
+    (G.data.classes[G.me.cls].extra || []).forEach((s, k) => { list[7 + k] = Object.assign(scaleSkill(s, learnedMap[s.id] || 1), { idx: 7 + k, slv: learnedMap[s.id] || 1, learned: !!learnedMap[s.id] }); });
     return list;
   }
   // ô kỹ năng 1..6 -> chỉ số võ công (0 = trống)
@@ -543,6 +545,7 @@
     if (Overhead.mask(G.self, performance.now()) & 3) return;
     const sk = mySkills()[i];
     if (!sk) return;
+    if (sk.type === 'passive') { UI.toast(`${sk.name} là nội công bị động, luôn có hiệu lực khi đã học`, 'info'); return; }
     if (!sk.learned) { UI.toast(`Chưa học ${sk.name}. Mua sách tại Tàng Kinh Các (Tương Dương).`, 'error'); return; }
     if (G.me.level < sk.lv) { if (i > 0) UI.toast(`Cần cấp ${sk.lv} để dùng ${sk.name}`, 'error'); return; }
     if (!skillReady(i)) return;
@@ -896,7 +899,7 @@
     }
     const skills = mySkills();
     // ưu tiên buff -> kỹ năng mạnh -> đánh thường
-    const order = cfg.skills ? [6, 5, 3, 4, 2, 1, 0] : [0];
+    const order = cfg.skills ? [7, 6, 5, 3, 4, 2, 1, 0] : [0];
     for (const i of order) {
       const sk = skills[i];
       if (!sk || !sk.learned || me.level < sk.lv || !skillReady(i) || me.mp < sk.mp) continue;
@@ -1025,7 +1028,10 @@
         const e = it.e;
         const pm = e.dead ? 0 : Overhead.mask(e, now);
         if (pm) Overhead.drawUnder(ctx, e, e.x, e.y, pm, now);
+        const elift = e.ap && e.ap[7] ? 24 : 0;
+        if (e.bf && !e.dead) Auras.draw(ctx, e.x, e.y, e.bf, now, 'under', elift);
         const top = drawHero(e.x, e.y, e.cls, e.dir, e.lastH, e.moving, e.atkUntil > now, e.ap, e.dead, e.x / 50, now, e);
+        if (e.bf && !e.dead) Auras.draw(ctx, e.x, e.y, e.bf, now, 'over', elift);
         if (e.pm && !e.dead && !G.map.pvp) Escort.drawFlag(ctx, e.x, e.y, top, e.dir === 1 || e.dir === 2 ? e.dir : (e.lastH || 2), e.pm, now);
         if (pm) Overhead.drawOver(ctx, e, e.x, e.y, top, pm, now);
         let ptop = top - 6;
@@ -1039,7 +1045,11 @@
         s.pw = me.stats.power; s.k = me.pk || 0;
         const sm = me.dead ? 0 : Overhead.mask(s, now);
         if (sm) Overhead.drawUnder(ctx, s, s.x, s.y, sm, now);
+        const tnow = Date.now(), mbf = me.dead ? null : me.buffs.filter(b => b.until > tnow && b.aura).map(b => [b.aura, b.color]);
+        const slift = me.ap && me.ap[7] ? 24 : 0;
+        if (mbf && mbf.length) Auras.draw(ctx, s.x, s.y, mbf, now, 'under', slift);
         const top = drawHero(s.x, s.y, me.cls, s.dir, s.lastH, s.moving, s.atkUntil > now, me.ap, me.dead, 0, now, s);
+        if (mbf && mbf.length) Auras.draw(ctx, s.x, s.y, mbf, now, 'over', slift);
         if (me.pkMode && !me.dead && !G.map.pvp) Escort.drawFlag(ctx, s.x, s.y, top, s.dir === 1 || s.dir === 2 ? s.dir : (s.lastH || 2), me.pkMode, now);
         if (sm) Overhead.drawOver(ctx, s, s.x, s.y, top, sm, now);
         let stop = top - 6;

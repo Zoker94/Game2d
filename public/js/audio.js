@@ -1,6 +1,6 @@
 // Âm thanh: hiệu ứng tổng hợp bằng WebAudio + nhạc nền võ lâm (ngũ cung, đàn tranh, sáo trúc, trống).
 (function () {
-  let ctx = null, master, sfxBus, musicBus, reverb, noiseBuf;
+  let ctx = null, master, sfxBus, musicBus, musicWet, sfxWet, reverb, noiseBuf;
   const st = { music: true, sfx: true, musicVol: 0.5, sfxVol: 0.7 };
   try { Object.assign(st, JSON.parse(localStorage.getItem('vl_audio') || '{}')); } catch (e) { }
   const save = () => { try { localStorage.setItem('vl_audio', JSON.stringify(st)); } catch (e) { } };
@@ -20,6 +20,7 @@
     reverb.buffer = ir;
     const rvGain = ctx.createGain(); rvGain.gain.value = 0.35;
     reverb.connect(rvGain); rvGain.connect(master);
+    musicWet = ctx.createGain(); musicWet.connect(reverb); sfxWet = ctx.createGain(); sfxWet.connect(reverb);   // vang của nhạc đi qua cổng riêng để tắt nhạc là tắt hẳn
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
     const nd = noiseBuf.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
     applyVol();
@@ -28,7 +29,10 @@
   function applyVol() {
     if (!ctx) return;
     sfxBus.gain.value = st.sfx ? st.sfxVol * 0.6 : 0;
-    musicBus.gain.setTargetAtTime(st.music ? st.musicVol * 0.35 : 0, ctx.currentTime, 0.3);
+    const mv = st.music ? st.musicVol * 0.35 : 0;
+    musicBus.gain.setTargetAtTime(mv, ctx.currentTime, 0.15);
+    musicWet.gain.setTargetAtTime(st.music ? 1 : 0, ctx.currentTime, 0.15);
+    sfxWet.gain.setTargetAtTime(st.sfx ? st.sfxVol : 0, ctx.currentTime, 0.05);
   }
 
   // ---------- các khối âm cơ bản ----------
@@ -37,14 +41,14 @@
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = type; o.frequency.setValueAtTime(f0, t); if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
     env(g, t, 0.005, vol, dur);
-    o.connect(g); g.connect(bus); if (wet) { const w = ctx.createGain(); w.gain.value = wet; g.connect(w); w.connect(reverb); }
+    o.connect(g); g.connect(bus); if (wet) { const w = ctx.createGain(); w.gain.value = wet; g.connect(w); w.connect(bus === musicBus ? musicWet : sfxWet); }
     o.start(t); o.stop(t + dur + 0.05);
   }
   function noise(t, dur, vol, type = 'bandpass', f0 = 1500, f1 = 0, q = 1, bus = sfxBus, wet = 0) {
     const s = ctx.createBufferSource(); s.buffer = noiseBuf; s.loop = true;
     const fl = ctx.createBiquadFilter(); fl.type = type; fl.Q.value = q; fl.frequency.setValueAtTime(f0, t); if (f1) fl.frequency.exponentialRampToValueAtTime(f1, t + dur);
     const g = ctx.createGain(); env(g, t, 0.004, vol, dur);
-    s.connect(fl); fl.connect(g); g.connect(bus); if (wet) { const w = ctx.createGain(); w.gain.value = wet; g.connect(w); w.connect(reverb); }
+    s.connect(fl); fl.connect(g); g.connect(bus); if (wet) { const w = ctx.createGain(); w.gain.value = wet; g.connect(w); w.connect(bus === musicBus ? musicWet : sfxWet); }
     s.start(t); s.stop(t + dur + 0.05);
   }
 
@@ -105,7 +109,7 @@
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     const g2 = ctx.createGain(); g2.gain.value = 0.3;
     o.connect(fl); o2.connect(g2); g2.connect(fl); fl.connect(g); g.connect(musicBus);
-    const w = ctx.createGain(); w.gain.value = 0.5; g.connect(w); w.connect(reverb);
+    const w = ctx.createGain(); w.gain.value = 0.5; g.connect(w); w.connect(musicWet);
     o.start(t); o2.start(t); o.stop(t + dur + 0.1); o2.stop(t + dur + 0.1);
   }
   function flute(f, t, dur, vol) { // sáo trúc
@@ -115,7 +119,7 @@
     fl.type = 'lowpass'; fl.frequency.value = f * 4;
     g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.18); g.gain.setValueAtTime(vol, t + dur * 0.7); g.gain.linearRampToValueAtTime(0.0001, t + dur);
     o.connect(fl); fl.connect(g); g.connect(musicBus);
-    const w = ctx.createGain(); w.gain.value = 0.7; g.connect(w); w.connect(reverb);
+    const w = ctx.createGain(); w.gain.value = 0.7; g.connect(w); w.connect(musicWet);
     const br = ctx.createBufferSource(); br.buffer = noiseBuf; br.loop = true;
     const bf = ctx.createBiquadFilter(); bf.type = 'bandpass'; bf.frequency.value = f * 2; bf.Q.value = 4;
     const bg = ctx.createGain(); bg.gain.setValueAtTime(0.0001, t); bg.gain.linearRampToValueAtTime(vol * 0.12, t + 0.1); bg.gain.linearRampToValueAtTime(0.0001, t + dur);
@@ -172,11 +176,11 @@
     }
   }
   function music(newMood) {
-    if (newMood === mood) return;
+    if (newMood === mood && (timer || !st.music)) return;
     mood = newMood;
     if (!init()) return;
-    if (timer) clearInterval(timer);
-    if (!mood) { stopDrone(); return; }
+    if (timer) { clearInterval(timer); timer = null; }
+    if (!mood || !st.music) { stopDrone(); return; }   // tắt nhạc: dừng hẳn bộ phát nhạc
     nextT = ctx.currentTime + 0.2; step = 0;
     startDrone(MOODS[mood]);
     timer = setInterval(schedule, 100);
@@ -205,7 +209,7 @@
 
   window.GameAudio = {
     init, sfx, music, ambience, get state() { return st; },
-    set(k, v) { st[k] = v; save(); applyVol(); if (k === 'music' && v && mood) { const m = mood; mood = null; music(m); } },
+    set(k, v) { st[k] = v; save(); applyVol(); if (k === 'music') { if (v && mood) { const m = mood; mood = null; music(m); } else if (!v) { if (timer) { clearInterval(timer); timer = null; } if (ctx) stopDrone(); } } },
     get mood() { return mood; }
   };
 })();

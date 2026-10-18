@@ -1,4 +1,5 @@
 const { CLASSES } = require('../data/classes');
+const { scaleSkill } = require('../data/skillbooks');
 const { ITEMS } = require('../data/items');
 const { mountStats } = require('../data/mounts');
 const { rollAffixes, elementBonus, CAP } = require('../data/affixes');
@@ -34,7 +35,7 @@ function newCharacter(name, cls) {
     checkin: { date: null, streak: 0 },
     wheel: { date: null, used: 0, extra: 0 },
     expBuffUntil: 0, created: Date.now(), playTime: 0, power: 0, mounts: {}, mount: null, riding: false,
-    skills: {}, hotbar: [1, 2, 3, 4, 5, 6], spSpent: 0,
+    skills: {}, hotbar: [1, 2, 3, 4, 5, 6, 7, 0], spSpent: 0,
     quickHp: 'hp1', quickMp: 'mp1'
   };
   addItem(c, 'weapon_0_common', 1);
@@ -148,7 +149,18 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
     }
   }
   if (guildLevel > 0) { s.atk *= 1 + guildLevel * 0.02; s.def *= 1 + guildLevel * 0.02; s.maxHp *= 1 + guildLevel * 0.02; }
+  // nội công bị động (đã học thì luôn có hiệu lực, mạnh dần theo tầng)
+  const ps = cl.extra && cl.extra[1];
+  const FXK = ['dodge', 'dmgred', 'lifesteal', 'reflect', 'critdmg', 'ccres'];
+  if (ps && c.skills && c.skills[ps.id]) {
+    const pv = scaleSkill(ps, c.skills[ps.id]).passive;
+    if (pv.hp) s.maxHp *= 1 + pv.hp; if (pv.mp) s.maxMp *= 1 + pv.mp; if (pv.atk) s.atk *= 1 + pv.atk; if (pv.def) s.def *= 1 + pv.def;
+    if (pv.spd) s.spd *= 1 + pv.spd; if (pv.crit) s.crit += pv.crit; if (pv.regen) s.regen += pv.regen;
+    for (const k of FXK) if (pv[k]) fx[k] = Math.min(CAP[k] || 100, (fx[k] || 0) + pv[k]);
+  }
   for (const b of buffs) {
+    if (b.hp) s.maxHp *= 1 + b.hp;
+    for (const k of FXK) if (b[k]) fx[k] = Math.min(CAP[k] || 100, (fx[k] || 0) + b[k]);
     if (b.atk) s.atk *= 1 + b.atk;
     if (b.def) s.def *= 1 + b.def;
     if (b.spd) s.spd *= 1 + b.spd;

@@ -269,6 +269,22 @@
       if (!cache[k]) cache[k] = Sprites.itemIcon(book, 3).toDataURL();
       return cache[k];
     }
+    if (s.idx === 7 || s.idx === 8) {   // buff chủ động / nội công: vẽ biểu tượng ấn ký
+      const k = 'skx:' + s.id;
+      if (!cache[k]) {
+        const [c, x] = mk(64, 64); x.imageSmoothingEnabled = true;
+        const g = x.createRadialGradient(26, 24, 4, 32, 32, 32);
+        g.addColorStop(0, '#ffffff'); g.addColorStop(0.35, s.color || '#ffd76a'); g.addColorStop(1, '#1a1024');
+        x.fillStyle = g; x.beginPath(); x.arc(32, 32, 30, 0, Math.PI * 2); x.fill();
+        x.strokeStyle = s.idx === 8 ? '#ffe9a8' : '#ffffff'; x.lineWidth = 3; x.beginPath(); x.arc(32, 32, 27, 0, Math.PI * 2); x.stroke();
+        if (s.idx === 8) { x.setLineDash([4, 4]); x.beginPath(); x.arc(32, 32, 21, 0, Math.PI * 2); x.stroke(); x.setLineDash([]); }
+        x.font = 'bold 30px serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+        x.lineWidth = 4; x.strokeStyle = '#1a1024'; const ch = s.idx === 8 ? '心' : '護';
+        x.strokeText(ch, 32, 34); x.fillStyle = '#fffbe8'; x.fillText(ch, 32, 34);
+        cache[k] = c.toDataURL();
+      }
+      return cache[k];
+    }
     const n = SKILL_ICON[cls] && SKILL_ICON[cls][s.idx];
     return n ? BASE + 'icons/' + n + '.png' : null;
   }

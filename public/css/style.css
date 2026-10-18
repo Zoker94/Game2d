@@ -574,3 +574,28 @@ img.ic { image-rendering: auto; width: 36px; height: 36px; filter: drop-shadow(0
 .act.dodge { right: 212px; bottom: 2px; width: 50px; height: 50px; }
 body.touch #btn-music, body.short.touch #btn-music { left: 12px; bottom: 204px; }
 body.short.touch #btn-music { bottom: 184px; }
+
+/* ---------- Bảng võ công: gán phím ---------- */
+.kb-fixed { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.03); margin-bottom: 6px; }
+.kb-fixed b { color: var(--gold); margin-right: 4px; }
+.kb-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
+.kb-slot { position: relative; border: 2px solid var(--line); border-radius: 10px; padding: 6px 4px; text-align: center; cursor: pointer; background: rgba(0,0,0,.25); min-height: 84px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.kb-slot.sel { border-color: var(--gold); box-shadow: 0 0 10px rgba(255,215,0,.45); background: rgba(255,215,0,.08); }
+.kb-slot.empty .kb-ico { color: #6a5a7a; font-size: 22px; }
+.kb-key { font-size: 11px; font-weight: 700; color: #ffd76a; }
+.kb-ico { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.kb-ico .sk-img { width: 40px; height: 40px; }
+.kb-name { font-size: 11px; line-height: 1.15; }
+.kb-x { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border-radius: 50%; border: 1px solid #a03030; background: #3a1018; color: #ffb0a0; font-size: 11px; cursor: pointer; padding: 0; }
+.kb-pool { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }
+.kb-sk { position: relative; border: 1px solid var(--line); border-radius: 10px; padding: 6px 4px 18px; text-align: center; cursor: pointer; background: rgba(255,255,255,.04); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.kb-sk:hover { border-color: var(--gold2); }
+.kb-sk.on { border-color: #4ade80; }
+.kb-at { position: absolute; top: 2px; left: 4px; font-size: 10px; color: #4ade80; font-weight: 700; }
+.kb-cat { font-size: 10px; padding: 0 6px; border-radius: 8px; }
+.kb-sk .kb-cat { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+.kb-attack { background: rgba(255,80,60,.2); color: #ff9b8a; } .kb-support { background: rgba(80,200,255,.18); color: #9ae0ff; }
+.kb-dragon { background: rgba(255,150,40,.2); color: #ffb060; } .kb-passive { background: rgba(255,215,0,.15); color: #ffd76a; }
+.sk-key { font-size: 11px; color: #4ade80; font-weight: 700; margin-left: 4px; }
+body.touch .kb-slots { grid-template-columns: repeat(4, 1fr); } body.touch .kb-slot { min-height: 72px; }
+.kb-slot.unl .kb-ico { opacity: .4; filter: grayscale(1); }

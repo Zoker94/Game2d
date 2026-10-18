@@ -151,4 +151,41 @@ const CLASSES = {
   }
 };
 
-module.exports = { CLASSES };
+// Võ công hỗ trợ: [7] chiêu buff chủ động (có hào quang quanh người khi đang hiệu lực),
+// [8] nội công bị động (luôn cộng chỉ số khi đã học). Chỉ số buff: atk/def/hp/spd là tỉ lệ (0.2 = +20%),
+// crit / dodge / dmgred / lifesteal / reflect / critdmg / ccres là điểm %, regen là % sinh lực mỗi giây.
+const EXTRA = {
+  thieulam:   [{ id: 'tl6', name: 'Kim Chung Tráo', lv: 25, mp: 50, cd: 32000, type: 'buff', buff: { dmgred: 25, hp: 0.15, dur: 15000 }, aura: 'bell', fx: 'aura', color: '#ffd24a', desc: 'Chuông vàng hộ thể: giảm 25% sát thương nhận vào, +15% sinh lực tối đa.' },
+               { id: 'tl7', name: 'Đạt Ma Tâm Kinh', lv: 40, type: 'passive', passive: { hp: 0.10, def: 0.08 }, color: '#ffb347', desc: 'Nội công Thiếu Lâm: +10% sinh lực, +8% phòng thủ.' }],
+  thienvuong: [{ id: 'tv6', name: 'Bá Vương Nộ', lv: 25, mp: 50, cd: 30000, type: 'buff', buff: { atk: 0.3, critdmg: 40, dur: 12000 }, aura: 'flame', fx: 'aura', color: '#ff4a1a', desc: 'Lửa giận bừng bừng: +30% tấn công, +40% sát thương bạo kích.' },
+               { id: 'tv7', name: 'Kim Cương Bất Hoại', lv: 40, type: 'passive', passive: { atk: 0.08, hp: 0.06 }, color: '#ff6a3a', desc: 'Thân thể cứng như kim cương: +8% tấn công, +6% sinh lực.' }],
+  duongmon:   [{ id: 'dm6', name: 'Ám Ảnh Bộ', lv: 25, mp: 45, cd: 28000, type: 'buff', buff: { dodge: 20, spd: 0.25, dur: 12000 }, aura: 'shadow', fx: 'aura', color: '#5aff9a', desc: 'Bóng ảnh phiêu hốt: +20% né tránh, +25% tốc độ.' },
+               { id: 'dm7', name: 'Đường Môn Độc Công', lv: 40, type: 'passive', passive: { crit: 6, critdmg: 15 }, color: '#7fffd4', desc: 'Ám khí tẩm độc: +6% chí mạng, +15% sát thương bạo kích.' }],
+  ngudoc:     [{ id: 'nd6', name: 'Vạn Độc Quy Tông', lv: 25, mp: 50, cd: 30000, type: 'buff', buff: { lifesteal: 12, atk: 0.15, dur: 12000 }, aura: 'poison', fx: 'aura', color: '#7aff3a', desc: 'Vạn độc nhập thể: hút 12% sát thương thành sinh lực, +15% tấn công.' },
+               { id: 'nd7', name: 'Ngũ Độc Bách Thể', lv: 40, type: 'passive', passive: { hp: 0.06, ccres: 15 }, color: '#5acd32', desc: 'Bách độc bất xâm: +6% sinh lực, giảm 15% thời gian bị khống chế.' }],
+  ngamy:      [{ id: 'nm6', name: 'Phật Quang Phổ Chiếu', lv: 25, mp: 55, cd: 32000, type: 'buff', buff: { regen: 0.03, def: 0.2, dur: 15000 }, aura: 'lotus', fx: 'aura', color: '#ff8ac8', desc: 'Phật quang che chở: hồi 3% sinh lực mỗi giây, +20% phòng thủ.' },
+               { id: 'nm7', name: 'Nga My Tâm Pháp', lv: 40, type: 'passive', passive: { mp: 0.12, regen: 0.005 }, color: '#ff69b4', desc: 'Tâm pháp thanh tịnh: +12% nội lực, hồi 0,5% sinh lực mỗi giây.' }],
+  thuyyen:    [{ id: 'ty6', name: 'Băng Tâm Quyết', lv: 25, mp: 45, cd: 28000, type: 'buff', buff: { crit: 15, critdmg: 30, dur: 12000 }, aura: 'ice', fx: 'aura', color: '#9ae8ff', desc: 'Tâm như băng tuyết: +15% chí mạng, +30% sát thương bạo kích.' },
+               { id: 'ty7', name: 'Lăng Ba Vi Bộ', lv: 40, type: 'passive', passive: { spd: 0.06, dodge: 5 }, color: '#bfefff', desc: 'Bộ pháp nhẹ như sóng: +6% tốc độ, +5% né tránh.' }],
+  caibang:    [{ id: 'cb6', name: 'Hàng Long Hộ Thể', lv: 25, mp: 50, cd: 30000, type: 'buff', buff: { def: 0.3, reflect: 15, dur: 12000 }, aura: 'dragon', fx: 'aura', color: '#ffc040', desc: 'Long khí hộ thân: +30% phòng thủ, phản lại 15% sát thương.' },
+               { id: 'cb7', name: 'Cái Bang Tâm Pháp', lv: 40, type: 'passive', passive: { hp: 0.08, atk: 0.05 }, color: '#daa520', desc: 'Nội lực hùng hậu: +8% sinh lực, +5% tấn công.' }],
+  vodang:     [{ id: 'vd6', name: 'Thái Cực Kiếm Ý', lv: 25, mp: 50, cd: 30000, type: 'buff', buff: { atk: 0.2, dodge: 12, dur: 14000 }, aura: 'taiji', fx: 'aura', color: '#7ab0ff', desc: 'Kiếm ý thái cực: +20% tấn công, +12% né tránh.' },
+               { id: 'vd7', name: 'Thuần Dương Vô Cực', lv: 40, type: 'passive', passive: { mp: 0.10, def: 0.06 }, color: '#4169e1', desc: 'Thuần dương chân khí: +10% nội lực, +6% phòng thủ.' }],
+  conlon:     [{ id: 'cl6', name: 'Ngũ Lôi Hộ Pháp', lv: 25, mp: 50, cd: 30000, type: 'buff', buff: { atk: 0.2, reflect: 10, crit: 10, dur: 12000 }, aura: 'thunder', fx: 'aura', color: '#d08aff', desc: 'Ngũ lôi quấn thân: +20% tấn công, +10% chí mạng, phản lại 10% sát thương.' },
+               { id: 'cl7', name: 'Côn Lôn Đạo Pháp', lv: 40, type: 'passive', passive: { atk: 0.06, mp: 0.08 }, color: '#da70d6', desc: 'Đạo pháp huyền môn: +6% tấn công, +8% nội lực.' }]
+};
+for (const k in CLASSES) {
+  CLASSES[k].extra = EXTRA[k];
+  CLASSES[k].skills.forEach(s => { if (s.type === 'buff' && !s.aura) s.aura = 'ring'; });
+}
+// lấy võ công theo ô: 0-5 chiêu môn phái, 7 buff chủ động, 8 nội công bị động (6 là Long Ấn, xem dragons.js)
+const ACTIVE_BUFF_SLOT = 7, PASSIVE_SLOT = 8;
+function classSkill(cls, idx) {
+  const cl = CLASSES[cls];
+  if (!cl) return null;
+  if (idx >= 0 && idx < cl.skills.length) return cl.skills[idx];
+  if (idx === ACTIVE_BUFF_SLOT || idx === PASSIVE_SLOT) return cl.extra[idx - ACTIVE_BUFF_SLOT];
+  return null;
+}
+
+module.exports = { CLASSES, classSkill, ACTIVE_BUFF_SLOT, PASSIVE_SLOT };

@@ -3,7 +3,7 @@
 const { CLASSES } = require('./classes');
 
 const SKILL_MAX = 10;
-const BOOK_PRICE = [0, 300, 2500, 12000, 50000, 180000];
+const BOOK_PRICE = [0, 300, 2500, 12000, 50000, 180000, 0, 30000, 90000];   // ô 7: buff chủ động, ô 8: nội công
 
 // Chỉ số võ công theo cấp võ học: mỗi cấp +10% sát thương, +6% hồi máu, +5% hiệu quả buff, +4% nội lực
 function scaleSkill(sk, lv) {
@@ -16,6 +16,10 @@ function scaleSkill(sk, lv) {
   if (sk.healAllies) out.healAllies = Math.round(sk.healAllies * (1 + 0.06 * k) * 1000) / 1000;
   if (sk.healSelf) out.healSelf = Math.round(sk.healSelf * (1 + 0.06 * k) * 1000) / 1000;
   if (sk.freeze) out.freeze = Math.round(sk.freeze * (1 + 0.05 * k));
+  if (sk.passive) {
+    out.passive = {};
+    for (const key in sk.passive) out.passive[key] = Math.round(sk.passive[key] * (1 + 0.1 * k) * 1000) / 1000;
+  }
   if (sk.buff) {
     out.buff = {};
     for (const key in sk.buff) out.buff[key] = key === 'dur' ? Math.round(sk.buff.dur * (1 + 0.05 * k)) : Math.round(sk.buff[key] * (1 + 0.05 * k) * 1000) / 1000;
@@ -25,7 +29,8 @@ function scaleSkill(sk, lv) {
 }
 // Chi phí nâng từ cấp lv lên lv+1: điểm võ học & ngân lượng
 function upgradeCost(idx, lv) {
-  return { sp: lv, gold: Math.round(400 * lv * lv * (idx + 1)) };
+  const w = idx === 7 ? 4 : idx === 8 ? 5 : idx;
+  return { sp: lv, gold: Math.round(400 * lv * lv * (w + 1)) };
 }
 // Điểm võ học: mỗi cấp nhân vật +1
 const skillPointsTotal = level => Math.max(0, level - 1);
@@ -35,6 +40,10 @@ for (const [cls, cl] of Object.entries(CLASSES)) {
   cl.skills.forEach((sk, idx) => {
     if (idx === 0) return;
     BOOKS['sk_' + sk.id] = { cls, skillId: sk.id, idx, name: sk.name, lv: sk.lv, price: BOOK_PRICE[idx] };
+  });
+  (cl.extra || []).forEach((sk, k) => {
+    const idx = 7 + k;
+    BOOKS['sk_' + sk.id] = { cls, skillId: sk.id, idx, name: sk.name, lv: sk.lv, price: BOOK_PRICE[idx], passive: sk.type === 'passive' };
   });
 }
 

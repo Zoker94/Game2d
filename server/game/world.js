@@ -1,5 +1,5 @@
 // Lõi thế giới game: bản đồ, người chơi, quái vật, chiến đấu, rơi đồ, NPC.
-const { CLASSES } = require('../data/classes');
+const { CLASSES, classSkill, PASSIVE_SLOT } = require('../data/classes');
 const { ITEMS, RARITY, equipId } = require('../data/items');
 const { MONSTERS, BOSSES } = require('../data/monsters');
 const { MAPS, TILE, isSolidAt, SOLID } = require('../data/maps');
@@ -16,6 +16,7 @@ const { ENHANCE_MAX, ENHANCE_SAFE, ENHANCE_RATE, enhanceCost } = require('../dat
 const U = require('./util');
 const { Escort } = require('./escort');
 
+const HOTBAR_N = 8;          // số ô gán phím (phím 2..9)
 const DODGE_DIST = 170, DODGE_CD = 5000;   // né chiêu: quãng lướt, thời gian hồi
 const TICK = 50;            // 20 tick/giây
 const SNAP_EVERY = 2;       // gửi trạng thái 10 lần/giây
@@ -106,7 +107,8 @@ class World {
       CLASSES[c.cls].skills.forEach((sk, i) => { if (i > 0 && c.level >= sk.lv) c.skills[sk.id] = 1; });
     }
     for (const el in (c.dragons || {})) if (!c.skills[DRAGONS[el].id]) c.skills[DRAGONS[el].id] = 1;
-    if (!Array.isArray(c.hotbar) || c.hotbar.length !== 6) c.hotbar = [1, 2, 3, 4, 5, 6];
+    if (!Array.isArray(c.hotbar) || (c.hotbar.length !== 6 && c.hotbar.length !== HOTBAR_N)) c.hotbar = [1, 2, 3, 4, 5, 6, 7, 0];
+    while (c.hotbar.length < HOTBAR_N) c.hotbar.push(c.hotbar.length === 6 ? 7 : 0);   // thêm ô phím 8, 9
     c.spSpent = c.spSpent || 0;
     U.migrateItems(c);
     this.recalc(p);
@@ -174,7 +176,7 @@ class World {
       gold: c.gold, knb: c.knb, hp: c.hp, mp: c.mp, stats: p.stats,
       inv: c.inv, equip: c.equip, kills: c.kills, pvpKills: c.pvpKills, bossKills: c.bossKills,
       tutorial: this.tutorialView(c), guild: g ? { id: g.id, name: g.name, role: g.members[p.userId] } : null,
-      expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until })),
+      expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null,
       skills: c.skills || {}, hotbar: c.hotbar, sp: skillPointsTotal(c.level) - (c.spSpent || 0),
@@ -412,9 +414,10 @@ class World {
     if (isCC(p, Date.now())) return this.toast(p, 'Đang bị khống chế, không thể ra chiêu!', 'error');
     const cl = CLASSES[p.c.cls];
     idx = idx | 0;
-    const base = idx === DRAGON_SLOT ? (p.c.dragon && p.c.dragons && p.c.dragons[p.c.dragon] ? DRAGONS[p.c.dragon] : null) : cl.skills[idx];
+    const base = idx === DRAGON_SLOT ? (p.c.dragon && p.c.dragons && p.c.dragons[p.c.dragon] ? DRAGONS[p.c.dragon] : null) : classSkill(p.c.cls, idx);
     if (!base) { if (idx === DRAGON_SLOT) this.toast(p, 'Chưa lĩnh ngộ Long Ấn. Dùng Bí Kíp rồng (cấp 30) để học.', 'error'); return; }
     if (idx > 0 && idx !== DRAGON_SLOT && !p.c.skills[base.id]) return this.toast(p, `Chưa học ${base.name}. Mua sách tại Tàng Kinh Các ở Tương Dương.`, 'error');
+    if (base.type === 'passive') return this.toast(p, `${base.name} là nội công bị động, đã tự có hiệu lực`, 'info');
     const sk = scaleSkill(base, p.c.skills[base.id] || 1);
     if (p.c.level < sk.lv) return this.toast(p, `Cần cấp ${sk.lv} để dùng ${sk.name}`, 'error');
     const now = Date.now();
@@ -424,7 +427,7 @@ class World {
 
     if (sk.type === 'buff') {
       p.buffs = p.buffs.filter(b => b.id !== sk.id);
-      p.buffs.push(Object.assign({ id: sk.id, name: sk.name, until: now + sk.buff.dur }, sk.buff));
+      p.buffs.push(Object.assign({ id: sk.id, name: sk.name, until: now + sk.buff.dur, aura: sk.aura || 'ring', color: sk.color }, sk.buff));
       this.recalc(p);
     } else if (sk.type === 'heal') {
       for (const o of map.players) {
@@ -846,6 +849,7 @@ class World {
       if (c.skills[e.learn]) return this.toast(p, 'Bạn đã học võ công này rồi. Nâng cấp trong bảng Võ Công (phím K).', 'error');
       U.removeByUid(c, uid, 1);
       c.skills[e.learn] = 1;
+      if (b.passive) this.recalc(p);
       this.toast(p, `Lĩnh ngộ võ công: ${b.name}! Mở bảng Võ Công (phím K) để gán nút và nâng cấp.`, 'reward');
       this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y, small: true });
       p.dirtyMe = true; this.db.markDirty();
@@ -1094,12 +1098,12 @@ class World {
   skillAction(p, a) {
     const c = p.c, cl = CLASSES[c.cls];
     if (a.op === 'hotbar') {
-      const bar = Array.isArray(a.bar) ? a.bar.slice(0, 6).map(x => x | 0) : [];
-      if (bar.length !== 6 || bar.some(x => x < 0 || x > DRAGON_SLOT)) return;
+      const bar = Array.isArray(a.bar) ? a.bar.slice(0, HOTBAR_N).map(x => x | 0) : [];
+      if (bar.length !== HOTBAR_N || bar.some(x => x < 0 || x >= PASSIVE_SLOT)) return;   // nội công bị động không gán phím
       c.hotbar = bar;
     } else if (a.op === 'upgrade') {
       const idx = a.idx | 0;
-      const base = idx === DRAGON_SLOT ? (c.dragon && DRAGONS[c.dragon]) : cl.skills[idx];
+      const base = idx === DRAGON_SLOT ? (c.dragon && DRAGONS[c.dragon]) : classSkill(c.cls, idx);
       if (!base) return;
       const learned = idx === 0 || (idx === DRAGON_SLOT ? c.dragons && c.dragons[c.dragon] : c.skills[base.id]);
       if (!learned) return this.toast(p, 'Chưa học võ công này', 'error');
@@ -1111,6 +1115,7 @@ class World {
       if (c.gold < cost.gold) return this.toast(p, `Cần ${cost.gold.toLocaleString('vi-VN')} lượng`, 'error');
       c.gold -= cost.gold; c.spSpent = (c.spSpent || 0) + cost.sp;
       c.skills[base.id] = lv + 1;
+      if (base.type === 'passive') this.recalc(p);
       this.toast(p, `${base.name} đột phá lên tầng ${lv + 1}!`, 'reward');
       this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y, small: true });
       if (lv + 1 === SKILL_MAX) this.features.announce(`📖 ${c.name} đã luyện ${base.name} đến cảnh giới tối cao (tầng ${SKILL_MAX})!`);
@@ -1340,7 +1345,7 @@ class World {
       ps.push({ i: p.id, n: p.c.name, c: p.c.cls, x: Math.round(p.x), y: Math.round(p.y), d: p.dir, m: p.moving ? 1 : 0,
         h: Math.max(0, Math.round(p.c.hp)), H: p.stats.maxHp, l: p.c.level, g: g ? g.name : '', a: p.dead ? 1 : 0,
         q: this.appearance(p.c), v: p.user.isAdmin ? 1 : 0, s: stMask(p, now),
-        pw: p.stats.power || 0, el: p.stats.el || '', rk: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0, k: p.c.pk || 0, pm: p.c.pkMode | 0, rb: p.c.robUntil > now ? 1 : 0 });
+        pw: p.stats.power || 0, el: p.stats.el || '', rk: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0, k: p.c.pk || 0, pm: p.c.pkMode | 0, rb: p.c.robUntil > now ? 1 : 0, bf: p.buffs.length ? p.buffs.filter(b => b.until > now && b.aura).map(b => [b.aura, b.color]) : 0 });
     }
     const ms = [];
     for (const mon of m.monsters.values()) {
