@@ -69,7 +69,11 @@ const MONSTERS = {
   viem_quy:     { name: 'Viêm Quỷ',           lv: 53, sprite: 'demon',    color: '#c03000', aggro: true,  speed: 105, range: 70 },
   u_minh_quy:   { name: 'U Minh Quỷ',         lv: 60, sprite: 'ghost',    color: '#4a0a6a', aggro: true,  speed: 115, range: 180, ranged: true },
   xich_lang:    { name: 'Xích Lang',          lv: 61, sprite: 'wolf',     color: '#8a1010', aggro: true,  speed: 125, range: 55 },
-  diem_la:      { name: 'Diêm La Sứ',         lv: 63, sprite: 'demon',    color: '#5a0000', aggro: true,  speed: 108, range: 75 }
+  diem_la:      { name: 'Diêm La Sứ',         lv: 63, sprite: 'demon',    color: '#5a0000', aggro: true,  speed: 108, range: 75 },
+  // Cướp tiêu tặc: chỉ xuất hiện khi phục kích xe tiêu
+  tieu_tac1:    { name: 'Cướp Tiêu Tặc',      lv: 18, sprite: 'bandit',   color: '#3a1a1a', aggro: true,  speed: 115, range: 60 },
+  tieu_tac2:    { name: 'Cướp Tiêu Đầu Lĩnh', lv: 33, sprite: 'bandit',   color: '#5a0a2a', aggro: true,  speed: 120, range: 65 },
+  tieu_tac3:    { name: 'Hắc Đạo Cướp Tiêu',  lv: 48, sprite: 'bandit',   color: '#1a0a3a', aggro: true,  speed: 125, range: 65 }
 };
 // hệ ngũ hành của quái theo loài
 const MON_EL = { rabbit: 'moc', wolf: 'kim', bandit: 'kim', snake: 'moc', bear: 'tho', tiger: 'kim', monkey: 'moc', scorpion: 'tho', ghost: 'thuy', yeti: 'thuy', demon: 'hoa' };

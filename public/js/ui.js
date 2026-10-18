@@ -227,7 +227,7 @@
     $('btn-hp').innerHTML = `❤️<span class="cnt">${hpc}</span>`;
     $('btn-mp').innerHTML = `💧<span class="cnt">${mpc}</span>`;
     updateTutorial();
-    if (panel === 'inventory' || panel === 'character' || panel === 'mount' || panel === 'skills' || panel === 'bank' || (panel === 'npc' && npcData)) UI.refreshPanel(true);
+    if (panel === 'inventory' || panel === 'character' || panel === 'mount' || panel === 'skills' || panel === 'bank' || panel === 'escort' || (panel === 'npc' && npcData)) UI.refreshPanel(true);
   };
   function setBar(el, v, max) {
     if (!el) return;
@@ -868,6 +868,8 @@
     if (d.action === 'event') { UI.openPanel('events', { tab: 'checkin' }); UI.toast(d.talk); return; }
     if (d.action === 'quest') { UI.openPanel('quests', { tab: 'daily' }); return; }
     if (d.action === 'bank') { UI.openPanel('bank'); UI.toast(d.talk); return; }
+    if (d.action === 'escort') { Escort.open(d); return; }
+    if (d.action === 'escortDest') { UI.toast(G.me.escort && G.me.escort.id ? 'Đưa xe tiêu tới sát bên Phân Đà để giao tiêu!' : d.talk); return; }
     npcData = d;
     panel = 'npc';
     panelState = { tab: d.shop ? 'buy' : d.knbShop ? 'knb' : 'talk' };

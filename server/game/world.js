@@ -14,6 +14,7 @@ const { KHAC, AFFIX, PROC_KEYS } = require('../data/affixes');
 function elemMult(ae, de) { if (!ae || !de) return [1, 0]; if (KHAC[ae] === de) return [1.2, 1]; if (KHAC[de] === ae) return [0.85, -1]; return [1, 0]; }
 const { ENHANCE_MAX, ENHANCE_SAFE, ENHANCE_RATE, enhanceCost } = require('../data/enhance');
 const U = require('./util');
+const { Escort } = require('./escort');
 
 const TICK = 50;            // 20 tick/giây
 const SNAP_EVERY = 2;       // gửi trạng thái 10 lần/giây
@@ -48,6 +49,7 @@ class World {
     this.maps = {};
     this.tickN = 0;
     this.features = null;       // gắn sau (bang hội, sự kiện,...)
+    this.escort = new Escort(this);
     for (const id in MAPS) {
       this.maps[id] = { def: MAPS[id], players: new Set(), monsters: new Map(), drops: new Map() };
       this.spawnMap(id);
@@ -126,11 +128,13 @@ class World {
     p.user.lastSeen = Date.now();
     const m = this.maps[p.mapId];
     if (m) { m.players.delete(p); this.io.to('map:' + p.mapId).emit('leave', p.id); }
+    this.escort.onLeave(p);
     this.players.delete(p.userId);
     this.db.markDirty();
   }
 
-  enterMap(p, mapId, x, y) {
+  enterMap(p, mapId, x, y, viaPortal = false) {
+    const prev = p.mapId ? { mapId: p.mapId, x: p.x, y: p.y } : null;
     const old = this.maps[p.mapId];
     if (old) { old.players.delete(p); p.socket.leave('map:' + p.mapId); this.io.to('map:' + p.mapId).emit('leave', p.id); }
     const m = this.maps[mapId];
@@ -146,6 +150,7 @@ class World {
       drops: [...m.drops.values()].map(dr => this.dropView(dr))
     });
     p.dirtyMe = true;
+    this.escort.onEnterMap(p, prev, viaPortal);
     this.progressTutorial(p, 'map', { map: mapId });
   }
 
@@ -172,7 +177,7 @@ class World {
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null,
       skills: c.skills || {}, hotbar: c.hotbar, sp: skillPointsTotal(c.level) - (c.spSpent || 0),
-      mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 },
+      mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p),
       st: this.statusView(p), friends: Object.keys(c.friends || {}).length, pk: c.pk || 0,
       rank: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0
     };
@@ -303,7 +308,7 @@ class World {
           p.socket.emit('pos', { x: p.x, y: p.y });
           return;
         }
-        this.enterMap(p, pt.to, (pt.tx + 0.5) * TILE, (pt.ty + 0.5) * TILE);
+        this.enterMap(p, pt.to, (pt.tx + 0.5) * TILE, (pt.ty + 0.5) * TILE, true);
         return;
       }
     }
@@ -322,8 +327,38 @@ class World {
     const m = this.maps[p.mapId];
     const list = [];
     for (const mon of m.monsters.values()) if (!mon.dead) list.push(mon);
-    if (m.def.pvp) for (const o of m.players) if (o !== p && !o.dead && !(o.c.guildId && o.c.guildId === p.c.guildId)) list.push(o);
+    for (const o of m.players) if (this.canHarm(p, o)) list.push(o);
+    for (const c of this.escort.targetsFor(p)) list.push(c);
     return list;
+  }
+
+  // ---------- Chế độ PK: 0 Luyện công, 1 Đeo cờ PK, 2 Đồ sát ----------
+  // Luyện công: không đánh ai. Cờ PK: đánh được người cũng đeo cờ và cướp tiêu.
+  // Đồ sát: đánh được tất cả, và ai cũng đánh được kẻ đồ sát. Người dưới cấp 10 được bảo hộ.
+  canHarm(a, b) {
+    if (!b || a === b || !b.c || b.dead || a.dead || a.mapId !== b.mapId) return false;
+    const def = this.maps[a.mapId].def;
+    if (def.safe) return false;
+    if (a.c.guildId && a.c.guildId === b.c.guildId) return false;
+    if (def.pvp) return true;
+    if (a.c.level < 10 || b.c.level < 10) return false;
+    const ma = a.c.pkMode | 0, mb = b.c.pkMode | 0;
+    return ma === 2 || mb === 2 || (ma === 1 && mb === 1);
+  }
+  setPkMode(p, mode) {
+    mode = mode | 0;
+    if (mode < 0 || mode > 2) return;
+    const c = p.c, now = Date.now(), cur = c.pkMode | 0;
+    if (mode === cur) return;
+    if (mode > 0 && c.level < 10) return this.toast(p, 'Cần đạt cấp 10 mới được tham gia PK', 'error');
+    if (p.pkModeCd && p.pkModeCd > now) return this.toast(p, `Đợi ${Math.ceil((p.pkModeCd - now) / 1000)} giây nữa mới đổi chế độ được`, 'error');
+    if (mode < cur && now - p.lastCombat < 10000) return this.toast(p, 'Đang giao chiến, chưa thể hạ chế độ PK', 'error');
+    c.pkMode = mode;
+    p.pkModeCd = now + 5000;
+    const name = ['☮️ Luyện công', '🚩 Đeo cờ PK', '☠️ Đồ sát'][mode];
+    this.toast(p, `Chế độ: ${name}` + (mode === 1 ? ' – đánh được người đeo cờ / đồ sát và cướp tiêu' : mode === 2 ? ' – đánh được tất cả, nhưng ai cũng có thể đánh bạn!' : ''), mode ? 'error' : 'info');
+    if (mode === 2 && !this.maps[p.mapId].def.safe) this.features.announce(`☠️ ${c.name} đã bật ĐỒ SÁT tại ${this.maps[p.mapId].def.name}!`, 'map:' + p.mapId);
+    p.dirtyMe = true;
   }
 
   findTarget(p, range, targetId) {
@@ -367,7 +402,7 @@ class World {
     } else if (sk.type === 'heal') {
       for (const o of map.players) {
         if (o.dead || U.dist(o, p) > sk.radius) continue;
-        if (map.def.pvp && o !== p && !(o.c.guildId && o.c.guildId === p.c.guildId)) continue;
+        if (o !== p && this.canHarm(p, o)) continue;
         const amt = Math.round(o.stats.maxHp * sk.heal + p.stats.atk);
         o.c.hp = Math.min(o.stats.maxHp, o.c.hp + amt);
         this.io.to('map:' + p.mapId).emit('dmg', { id: o.id, v: amt, k: 'heal' });
@@ -408,7 +443,7 @@ class World {
       if (sk.healAllies) {
         for (const o of map.players) {
           if (o.dead || U.dist(o, p) > sk.radius) continue;
-          if (map.def.pvp && o !== p && !(o.c.guildId && o.c.guildId === p.c.guildId)) continue;
+          if (o !== p && this.canHarm(p, o)) continue;
           const amt = Math.round(o.stats.maxHp * sk.healAllies);
           o.c.hp = Math.min(o.stats.maxHp, o.c.hp + amt);
           this.io.to('map:' + p.mapId).emit('dmg', { id: o.id, v: amt, k: 'heal' });
@@ -458,6 +493,7 @@ class World {
   }
 
   addDot(p, t, sk, kind = 'poison') {
+    if (t.cart) return;
     const ticks = sk.ticks || sk.dotTicks || 3;
     this.addDotRaw(t, p, Math.max(1, Math.round(p.stats.atk * 0.7)), ticks, kind, sk.id);
   }
@@ -475,7 +511,7 @@ class World {
   }
   // Gây hiệu ứng: choáng, đóng băng, độc, bỏng, chậm, chảy máu
   applyStatus(t, kind, ms, src) {
-    if (!t || t.dead || !ST_BITS[kind]) return;
+    if (!t || t.dead || t.cart || !ST_BITS[kind]) return;
     const now = Date.now();
     if (t.boss && (kind === 'stun' || kind === 'freeze')) ms *= 0.35;   // boss kháng khống chế
     if (t.c && (kind === 'stun' || kind === 'freeze')) ms *= 0.6;        // người chơi bị khống chế ngắn hơn
@@ -545,6 +581,10 @@ class World {
     if (t.c) { // người chơi
       t.c.hp -= dmg; t.lastCombat = Date.now(); t.dirtyMe = true;
       if (t.c.hp <= 0) this.killPlayer(t, src);
+    } else if (t.cart) {   // xe tiêu
+      t.hp -= dmg;
+      if (src && src.c) t.dmgBy.set(src.userId, (t.dmgBy.get(src.userId) || 0) + dmg);
+      if (t.hp <= 0) this.escort.destroyed(t, src && src.c ? src : null);
     } else {
       t.hp -= dmg;
       if (src && src.c) {
@@ -568,7 +608,8 @@ class World {
     this.fx(t.mapId, { t: 'death', id: t.id, x: t.x, y: t.y });
     if (src && src.c) {
       src.c.pvpKills = (src.c.pvpKills || 0) + 1;
-      if (!(t.c.pk >= 3)) src.c.pk = Math.min(30, (src.c.pk || 0) + 1);   // giết người lương thiện mới tăng sát khí
+      // giết người lương thiện (đang luyện công, không mang sát khí) ngoài lôi đài mới tăng sát khí
+      if (!map.def.pvp && !(t.c.pk >= 3) && !((t.c.pkMode | 0) >= 1)) src.c.pk = Math.min(30, (src.c.pk || 0) + 1);
       src.pkDecayAt = Date.now() + 15 * 60000;
       this.features.questProgress(src, 'pvp', 1);
       this.features.announce(`🗡️ ${src.c.name} đã hạ gục ${t.c.name} tại ${map.def.name}!`, 'map:' + t.mapId);
@@ -863,6 +904,7 @@ class World {
         .map(id => ({ id, price: ITEMS[id].price }));
     }
     if (npc.knbShop) out.knbShop = npc.knbShop;
+    if (npc.action === 'escort' || npc.action === 'escortDest') { out.routes = this.escort.routeView(); out.escort = this.escort.meView(p); }
     if (npc.action === 'teleport') out.teleports = TELEPORTS.map(t => ({ ...t, name: MAPS[t.map].name, lv: MAPS[t.map].lv, minLv: MAPS[t.map].minLv }));
     p.socket.emit('npc', out);
   }
@@ -1113,6 +1155,7 @@ class World {
     this.tickN++;
     const sec = this.tickN % 20 === 0;
     if (sec) this.rollWeather(now);
+    this.escort.tick(now, TICK);
     for (const id in this.maps) {
       const m = this.maps[id];
       if (m.players.size === 0 && !sec) continue; // bản đồ trống: cập nhật thưa
@@ -1149,6 +1192,7 @@ class World {
 
   updateMonster(mon, m, now, dt) {
     if (mon.dead) {
+      if (mon.robber) { m.monsters.delete(mon.id); return; }
       if (!mon.boss && !mon.event && now >= mon.respawnAt) {
         const pos = this.randomSpotNear(m.def, mon.sp.x + 0.5, mon.sp.y + 0.5, mon.sp.r);
         Object.assign(mon, { dead: false, hp: mon.maxHp, x: pos.x, y: pos.y, hx: pos.x, hy: pos.y, target: null, dmgBy: new Map(), dots: [], st: {} });
@@ -1241,14 +1285,15 @@ class World {
       ps.push({ i: p.id, n: p.c.name, c: p.c.cls, x: Math.round(p.x), y: Math.round(p.y), d: p.dir, m: p.moving ? 1 : 0,
         h: Math.max(0, Math.round(p.c.hp)), H: p.stats.maxHp, l: p.c.level, g: g ? g.name : '', a: p.dead ? 1 : 0,
         q: this.appearance(p.c), v: p.user.isAdmin ? 1 : 0, s: stMask(p, now),
-        pw: p.stats.power || 0, el: p.stats.el || '', rk: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0, k: p.c.pk || 0 });
+        pw: p.stats.power || 0, el: p.stats.el || '', rk: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0, k: p.c.pk || 0, pm: p.c.pkMode | 0 });
     }
     const ms = [];
     for (const mon of m.monsters.values()) {
       if (mon.dead) continue;
       ms.push({ i: mon.id, t: mon.tpl.id, x: Math.round(mon.x), y: Math.round(mon.y), d: mon.dir, m: mon.moving ? 1 : 0, h: Math.max(0, Math.round(mon.hp)), H: mon.maxHp, b: mon.boss ? 1 : 0, e: mon.event ? 1 : 0, f: mon.frozenUntil > now ? 1 : 0, s: stMask(mon, now) });
     }
-    this.io.to('map:' + m.def.id).emit('snap', { p: ps, m: ms });
+    const cs = m.carts && m.carts.size ? this.escort.snapshot(m.def.id) : null;
+    this.io.to('map:' + m.def.id).emit('snap', cs ? { p: ps, m: ms, c: cs } : { p: ps, m: ms });
   }
 
   // Ngoại hình: [bậc vũ khí, độ hiếm vũ khí, +vũ khí, bậc áo, độ hiếm áo, +áo, bậc nón, thú cưỡi đang cưỡi, độ hiếm nón]

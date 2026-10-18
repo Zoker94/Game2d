@@ -6,7 +6,7 @@
   const G = window.G = {
     data: null, config: null, socket: null, token: localStorage.getItem('vl_token'), user: null,
     me: null, you: null, map: null, solid: new Set(),
-    players: new Map(), monsters: new Map(), drops: new Map(),
+    players: new Map(), monsters: new Map(), drops: new Map(), carts: new Map(),
     self: { x: 0, y: 0, dir: 0, moving: false, atkUntil: 0 },
     fx: [], floats: [], target: null, moveTo: null, npcGoal: null,
     cds: {}, pending: {}, auto: false, events: null, daily: null, inGame: false,
@@ -284,6 +284,7 @@
     s.on('me', d => { if (G.me && d.riding !== G.me.riding) GameAudio.sfx('mount'); G.me = d; UI.updateHud(); $('dead-overlay').classList.toggle('hidden', !d.dead); });
     s.on('pos', d => { G.self.x = d.x; G.self.y = d.y; G.moveTo = null; });
     s.on('weather', w => Weather.set(w));
+    s.on('cartGone', id => { G.carts.delete(id); if (G.target === id) G.target = null; });
     s.on('fx', onFx);
     s.on('dmg', onDmg);
     s.on('gain', d => {
@@ -338,7 +339,7 @@
   function onInit(d) {
     G.you = d.you; G.map = d.map; G.solid = new Set(d.solid);
     G.self.x = d.x; G.self.y = d.y; G.moveTo = null; G.npcGoal = null; G.target = null;
-    G.players.clear(); G.monsters.clear(); G.drops.clear(); G.fx = [];
+    G.players.clear(); G.monsters.clear(); G.drops.clear(); G.carts.clear(); G.fx = [];
     WorldArt.setMap(d.map); G._camSnap = true;
     d.drops.forEach(x => { if (x.om) x.ownUntil = performance.now() + x.om; G.drops.set(x.id, x); });
     const m = d.map;
@@ -367,7 +368,7 @@
       }
       let e = G.players.get(p.i);
       if (!e) { e = { x: p.x, y: p.y }; G.players.set(p.i, e); }
-      Object.assign(e, { id: p.i, name: p.n, cls: p.c, tx: p.x, ty: p.y, dir: p.d, moving: p.m, hp: p.h, maxHp: p.H, level: p.l, guild: p.g, dead: p.a, gm: p.v, ap: p.q, st: p.s || 0, el: p.el || '', pw: p.pw || 0, rk: p.rk || 0, k: p.k || 0, seen: now });
+      Object.assign(e, { id: p.i, name: p.n, cls: p.c, tx: p.x, ty: p.y, dir: p.d, moving: p.m, hp: p.h, maxHp: p.H, level: p.l, guild: p.g, dead: p.a, gm: p.v, ap: p.q, st: p.s || 0, el: p.el || '', pw: p.pw || 0, rk: p.rk || 0, k: p.k || 0, pm: p.pm || 0, seen: now });
       if (p.d === 1 || p.d === 2) e.lastH = p.d;
     }
     for (const id of G.players.keys()) if (!seenP.has(id)) G.players.delete(id);
@@ -380,11 +381,20 @@
       if (m.d === 1 || m.d === 2) e.face = m.d;
     }
     for (const id of G.monsters.keys()) if (!seenM.has(id)) { G.monsters.delete(id); if (G.target === id) G.target = null; }
+    // xe tiêu
+    const seenC = new Set();
+    for (const c of d.c || []) {
+      seenC.add(c.i);
+      let e = G.carts.get(c.i);
+      if (!e) { e = { x: c.x, y: c.y, cart: true }; G.carts.set(c.i, e); }
+      Object.assign(e, { id: c.i, tx: c.x, ty: c.y, dir: c.d, moving: c.m, hp: c.h, maxHp: c.H, t: c.t, o: c.o, u: c.u, g: c.g, name: '🛒 Xe tiêu của ' + c.o, level: { dong: 15, bac: 30, vang: 45 }[c.t] || 1 });
+    }
+    for (const id of G.carts.keys()) if (!seenC.has(id)) { G.carts.delete(id); if (G.target === id) G.target = null; }
   }
 
   function entityById(id) {
     if (id === G.you) return G.self;
-    return G.players.get(id) || G.monsters.get(id);
+    return G.players.get(id) || G.monsters.get(id) || G.carts.get(id);
   }
 
   const FX_DUR = { levelup: 1300, death: 500, aura: 900, heal: 900, ring: 550, net: 550, poison: 800, swords: 700, taiji: 900, storm: 800,
@@ -511,7 +521,8 @@
   function enemies() {
     const list = [];
     for (const m of G.monsters.values()) list.push(m);
-    if (G.map && G.map.pvp) for (const p of G.players.values()) if (!p.dead && !(G.me.guild && p.guild && p.guild === G.me.guild.name)) list.push(p);
+    for (const p of G.players.values()) if (Escort.canHarm(p)) list.push(p);
+    for (const c of G.carts.values()) if (Escort.canHitCart(c)) list.push(c);
     return list;
   }
   function nearestEnemy(range, exclude) {
@@ -525,7 +536,8 @@
   }
   function validTarget() {
     if (!G.target) return null;
-    const e = G.monsters.get(G.target) || (G.map.pvp && G.players.get(G.target));
+    const pl = G.players.get(G.target), ct = G.carts.get(G.target);
+    const e = G.monsters.get(G.target) || (pl && Escort.canHarm(pl) ? pl : null) || (ct && Escort.canHitCart(ct) ? ct : null);
     if (!e || e.dead) { G.target = null; return null; }
     return e;
   }
@@ -607,7 +619,7 @@
     }
     // Quái / người chơi
     let best = null, bd = 48;
-    for (const e2 of [...G.monsters.values(), ...G.players.values()]) {
+    for (const e2 of [...G.monsters.values(), ...G.players.values(), ...G.carts.values()]) {
       const r = e2.boss ? 70 : 40;
       const d = Math.hypot(w.x - e2.x, w.y - (e2.y - (e2.boss ? 50 : 26)));
       if (d < Math.max(bd, r) && d < r) { bd = d; best = e2; }
@@ -615,9 +627,10 @@
     if (best) {
       const isPl = G.players.has(best.id);
       // người chơi khác: mở menu tương tác (bản đồ PK: bấm lần 2 vào cùng người mới mở menu)
-      if (isPl && (!G.map.pvp || G.target === best.id)) { G.target = best.id; Social.menu(best, e.clientX, e.clientY); return; }
+      const hostile = isPl ? Escort.canHarm(best) : best.cart ? Escort.canHitCart(best) : true;
+      if (isPl && (!hostile || G.target === best.id)) { G.target = best.id; Social.menu(best, e.clientX, e.clientY); return; }
       G.target = best.id;
-      if (G.monsters.has(best.id) || (G.map.pvp)) { if (!Input.isTouch || e.detail >= 1) G.chase = { id: best.id, skill: 0 }; }
+      if (hostile) { if (!Input.isTouch || e.detail >= 1) G.chase = { id: best.id, skill: 0 }; }
       return;
     }
     if (!Input.isTouch) { G.moveTo = { x: w.x, y: w.y }; G.chase = null; G.npcGoal = null; G.clickMark = { x: w.x, y: w.y, t0: performance.now() }; }
@@ -709,6 +722,7 @@
     const k = Math.min(1, dt * 10);
     for (const e of G.players.values()) { e.x += (e.tx - e.x) * k; e.y += (e.ty - e.y) * k; }
     for (const e of G.monsters.values()) { e.x += (e.tx - e.x) * k; e.y += (e.ty - e.y) * k; }
+    for (const e of G.carts.values()) { e.x += (e.tx - e.x) * k; e.y += (e.ty - e.y) * k; }
   }
 
   // ===== Cài đặt tự động =====
@@ -857,6 +871,7 @@
     for (const n of m.npcs) list.push({ y: (n.y + 0.5) * TILE + 20, k: 'npc', n });
     for (const e of G.monsters.values()) if (inView(e)) list.push({ y: e.y, k: 'mon', e });
     for (const e of G.players.values()) if (inView(e)) list.push({ y: e.y, k: 'pl', e });
+    for (const e of G.carts.values()) if (inView(e)) list.push({ y: e.y, k: 'cart', e });
     list.push({ y: s.y, k: 'self' });
     const bubbles = [];
     WorldArt.visibleDecos(cam, vw, vh, list);
@@ -864,10 +879,10 @@
     list.sort((a, b) => a.y - b.y);
 
     // vòng chọn mục tiêu
-    const tgt = G.target && (G.monsters.get(G.target) || G.players.get(G.target));
+    const tgt = G.target && (G.monsters.get(G.target) || G.players.get(G.target) || G.carts.get(G.target));
     if (tgt) {
       ctx.strokeStyle = '#ff4040'; ctx.lineWidth = 2;
-      const rr = tgt.boss ? 44 : 22;
+      const rr = tgt.boss ? 44 : tgt.cart ? 40 : 22;
       ctx.beginPath(); ctx.ellipse(tgt.x, tgt.y + 2, rr, rr * 0.4, 0, 0, Math.PI * 2); ctx.stroke();
     }
 
@@ -892,11 +907,14 @@
         if (mm) Overhead.drawUnder(ctx, it.e, it.e.x, it.e.y, mm, now);
         drawMonster(it.e, now);
         if (mm) Overhead.drawOver(ctx, it.e, it.e.x, it.e.y, it.e.y + (it.e.boss ? -120 : -56), mm, now);
+      } else if (it.k === 'cart') {
+        Escort.drawCart(ctx, it.e, now, label, hpBar);
       } else if (it.k === 'pl') {
         const e = it.e;
         const pm = e.dead ? 0 : Overhead.mask(e, now);
         if (pm) Overhead.drawUnder(ctx, e, e.x, e.y, pm, now);
         const top = drawHero(e.x, e.y, e.cls, e.dir, e.lastH, e.moving, e.atkUntil > now, e.ap, e.dead, e.x / 50, now, e);
+        if (e.pm && !e.dead && !G.map.pvp) Escort.drawFlag(ctx, e.x, e.y, top, e.dir === 1 || e.dir === 2 ? e.dir : (e.lastH || 2), e.pm, now);
         if (pm) Overhead.drawOver(ctx, e, e.x, e.y, top, pm, now);
         let ptop = top - 6;
         if (G.settings.names) ptop = Overhead.drawNameplate(ctx, e.x, top, { name: e.name, level: e.level, gm: e.gm, guild: e.guild, power: e.pw, myPower: G.me.stats.power, rank: e.rk, pk: e.k });
@@ -909,6 +927,7 @@
         const sm = me.dead ? 0 : Overhead.mask(s, now);
         if (sm) Overhead.drawUnder(ctx, s, s.x, s.y, sm, now);
         const top = drawHero(s.x, s.y, me.cls, s.dir, s.lastH, s.moving, s.atkUntil > now, me.ap, me.dead, 0, now, s);
+        if (me.pkMode && !me.dead && !G.map.pvp) Escort.drawFlag(ctx, s.x, s.y, top, s.dir === 1 || s.dir === 2 ? s.dir : (s.lastH || 2), me.pkMode, now);
         if (sm) Overhead.drawOver(ctx, s, s.x, s.y, top, sm, now);
         let stop = top - 6;
         if (G.settings.names) stop = Overhead.drawNameplate(ctx, s.x, top, { self: true, name: me.name, gm: me.admin, guild: me.guild && me.guild.name, power: me.stats.power, rank: me.rank, pk: me.pk });
@@ -934,6 +953,7 @@
 
     // Mũi tên hướng dẫn tân thủ
     drawGuideArrow(now);
+    Escort.drawArrow(ctx, now);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     WorldArt.overlay(ctx, canvas.width, canvas.height);
     Weather.draw(ctx, canvas.width, canvas.height, DPR, now, cam, zoom);
@@ -1137,7 +1157,8 @@
     const pt = (x, y, col, r) => { mctx.fillStyle = col; mctx.fillRect(ox + x / TILE * sc - r / 2, oy + y / TILE * sc - r / 2, r, r); };
     for (const n of m.npcs) pt((n.x + 0.5) * TILE, (n.y + 0.5) * TILE, '#7fffd4', 3);
     for (const e of G.monsters.values()) pt(e.x, e.y, e.boss ? '#ff00ff' : e.event ? '#ffd700' : '#ff4040', e.boss ? 6 : 2);
-    for (const e of G.players.values()) pt(e.x, e.y, '#4fa3ff', 3);
+    for (const e of G.players.values()) pt(e.x, e.y, e.pm === 2 ? '#ff2020' : e.pm === 1 ? '#ff9a3a' : '#4fa3ff', 3);
+    for (const e of G.carts.values()) pt(e.x, e.y, '#ffd23f', 5);
     pt(G.self.x, G.self.y, '#ffffff', 4);
     mctx.strokeStyle = 'rgba(255,255,255,.5)';
     mctx.strokeRect(ox + cam.x / TILE * sc, oy + cam.y / TILE * sc, W / zoom / TILE * sc, H / zoom / TILE * sc);

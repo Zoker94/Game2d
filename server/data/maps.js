@@ -45,6 +45,7 @@ const MAP_DEFS = {
       { id: 'su_gia',     x: 17, y: 8 },
       { id: 'ma_phu',     x: 8,  y: 13 },
       { id: 'thu_kho',    x: 8,  y: 17 },
+      { id: 'tieu_cuc',   x: 28, y: 13 },
       { id: 'tang_kinh',  x: 26, y: 18 }
     ],
     spawns: []
@@ -65,7 +66,7 @@ const MAP_DEFS = {
   thuy_trai: {
     name: 'Thủy Trại Hắc Phong', theme: 'ruins', w: 40, h: 30, seed: 25, lv: '8-15', tier: 1,
     portals: [{ side: 'W', to: 'ben_do', at: 0.4 }],
-    npcs: [],
+    npcs: [{ id: 'tieu_cuc_pd', x: 22, y: 16 }],
     spawns: [['thuy_tac', 6], ['hac_phong_tac', 8], ['hac_phong_tac', 7], ['dau_muc', 4]]
   },
   co_mo: {
@@ -95,7 +96,7 @@ const MAP_DEFS = {
   dong_gau: {
     name: 'Hắc Hùng Động', theme: 'cave', w: 38, h: 30, seed: 35, lv: '15-22', tier: 2,
     portals: [{ side: 'S', to: 'truc_lam', at: 0.4 }],
-    npcs: [],
+    npcs: [{ id: 'tieu_cuc_pd', x: 21, y: 16 }],
     spawns: [['ran_hang', 8], ['gau_dong', 8], ['gau_dong', 6], ['hung_vuong', 3]]
   },
   vuc_sau: {
@@ -113,7 +114,7 @@ const MAP_DEFS = {
   kiem_trung: {
     name: 'Kiếm Trủng Cổ Mộ', theme: 'arena', w: 38, h: 30, seed: 43, lv: '25-32', tier: 3,
     portals: [{ side: 'S', to: 'hoa_son', at: 0.6 }],
-    npcs: [],
+    npcs: [{ id: 'tieu_cuc_pd', x: 21, y: 16 }],
     spawns: [['kiem_hon', 8], ['kiem_no', 8], ['kiem_no', 6], ['kiem_ma', 4]]
   },
   co_dao: {
