@@ -1,11 +1,11 @@
 // Ảnh asset vẽ tay (public/assets). Có ảnh thì dùng ảnh, chưa có thì dùng sprite vẽ thủ tục cũ.
 (function () {
   const BASE = '/assets/';
-  // Nhân vật: góc nghiêng (nhìn sang phải) – đi bộ x2, chạy, nhảy, đánh thường, kỹ năng, trúng đòn, ngã, đứng;
-  // góc trước (f) và sau (b) – đứng (fi/bi) + 4 khung bước chân
+  // Nhân vật: mỗi môn phái 1 tấm ảnh chars/<cls>.png (vẽ bởi tools/rig.py), ô 96x96, chân ở (48, 86).
+  // Hàng: 0 nhìn xuống, 1 nhìn lên, 2 nhìn phải (trái = lật), 3 ngã. Cột: đứng 0-3, đi 4-9, đánh 10-13, ra chiêu 14-17, trúng đòn 18
   const CLASSES = ['thieulam', 'ngudoc', 'thienvuong', 'caibang', 'vodang', 'ngamy', 'thuyyen', 'conlon', 'duongmon'];
-  const POSES = ['walk0', 'walk1', 'run', 'jump', 'atk', 'skill', 'hurt', 'dead', 'idle',
-    'fi', 'f0', 'f1', 'f2', 'f3', 'bi', 'b0', 'b1', 'b2', 'b3'];
+  const CELL = 96, FOOT_X = 48, FOOT_Y = 86;
+  const ANIM = { idle: [0, 4], walk: [4, 6], atk: [10, 4], cast: [14, 4], hurt: [18, 1] };
   // Biểu tượng võ công theo thứ tự 6 chiêu của mỗi môn phái
   const SKILL_ICON = {
     vodang:     ['vodang_i2', 'vodang_i1', 'vd_taiji2', 'vodang_i3', 'cl_swords', 'vodang_i0'],
@@ -31,45 +31,44 @@
     });
   }
   const jobs = [];
-  for (const c of CLASSES) for (const p of POSES) jobs.push(load('chars/' + c + '_' + p + '.png').then(im => { if (im) imgs['c:' + c + '_' + p] = im; }));
+  for (const c of CLASSES) jobs.push(load('chars/' + c + '.png').then(im => { if (im) imgs['c:' + c] = im; }));
   for (const n of MONSTERS) jobs.push(load('monsters/' + n + '.png').then(im => { if (im) imgs['m:' + n] = im; }));
-  // chân dung môn phái (màn chọn môn phái, khung avatar)
-  const portraits = {};
-  for (const c of CLASSES) jobs.push(load('portraits/' + c + '.png').then(im => { if (im) portraits[c] = im; }));
   const ready = Promise.all(jobs);
 
   const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; return [c, x]; };
-  // chu kỳ đi 8 khung: 2 khung bước + nhún người
-  const WALK = ['walk0', 'walk0', 'walk0', 'walk0', 'walk1', 'walk1', 'walk1', 'walk1'], BOB = [0, -1, -1, 0, 0, -1, -1, 0];
   const cache = {};
-  function charFrame(cls, pose, flip, bob) {
-    const key = cls + ':' + pose + ':' + (flip ? 1 : 0) + ':' + bob;
+  const has = cls => !!imgs['c:' + cls];
+  // dir: 0 xuống, 1 trái, 2 phải, 3 lên; state: idle | walk | atk | cast | hurt | dead
+  function charFrame(cls, dir, state, i) {
+    const im = imgs['c:' + cls];
+    const flip = dir === 1;
+    const key = cls + ':' + dir + ':' + state + ':' + i;
     if (cache[key]) return cache[key];
-    const im = imgs['c:' + cls + '_' + pose];
-    const [c, x] = mk(im.width, 64);
-    if (pose !== 'dead') { x.fillStyle = 'rgba(0,0,0,0.3)'; x.beginPath(); x.ellipse(im.width / 2, 61, 12, 3.5, 0, 0, Math.PI * 2); x.fill(); }
-    if (flip) { x.translate(im.width, 0); x.scale(-1, 1); }
-    x.drawImage(im, 0, bob);
+    let row = dir === 0 ? 0 : dir === 3 ? 1 : 2, col;
+    if (state === 'dead') { row = 3; col = 0; }
+    else { const a = ANIM[state] || ANIM.idle; col = a[0] + (i % a[1]); }
+    const [c, x] = mk(CELL, CELL);
+    x.fillStyle = 'rgba(0,0,0,0.3)'; x.beginPath(); x.ellipse(FOOT_X, FOOT_Y, state === 'dead' ? 22 : 13, 4, 0, 0, Math.PI * 2); x.fill();
+    if (flip) { x.translate(CELL, 0); x.scale(-1, 1); }
+    x.drawImage(im, col * CELL, row * CELL, CELL, CELL, 0, 0, CELL, CELL);
     return (cache[key] = c);
   }
-  const has = cls => !!imgs['c:' + cls + '_idle'];
+  // ảnh đại diện (đầu + vai) cho khung avatar / thẻ môn phái
+  function avatar(cls, size) {
+    size = size || 64;
+    const key = 'av:' + cls + ':' + size;
+    if (cache[key]) return cache[key];
+    const [c, x] = mk(size, size);
+    if (has(cls)) x.drawImage(imgs['c:' + cls], 48 - 17, 18, 34, 34, 0, 0, size, size);
+    return (cache[key] = c);
+  }
 
   const procPlayer = Sprites.playerSprite;
-  // atk: false | true | 'atk' | 'skill' | 'hurt' | 'dead' | 'run'
+  // tương thích chỗ cũ: frame > 0 khi đang đi; atk: true/'atk'/'skill'/'hurt'/'dead'
   Sprites.playerSprite = function (cls, colors, dir, frame, atk, ap) {
-    if (!has(cls)) return procPlayer.call(this, cls, colors, dir, frame, atk === true || atk === 'atk' || atk === 'skill', ap);
-    frame = frame || 0;
-    let pose, bob = 0;
-    if (atk === true) pose = 'atk';
-    else if (typeof atk === 'string') pose = atk;
-    else if (dir === 0 || dir === 3) {
-      const v = dir === 0 ? 'f' : 'b';
-      pose = frame > 0 ? v + (Math.floor((frame - 1) / 2) % 4) : v + 'i';
-    }
-    else if (frame > 0) { pose = WALK[(frame - 1) % 8]; bob = BOB[(frame - 1) % 8]; }
-    else pose = 'idle';
-    if (!imgs['c:' + cls + '_' + pose]) pose = 'idle';
-    return charFrame(cls, pose, dir === 1, bob);
+    if (!has(cls)) return procPlayer.call(this, cls, colors, dir, frame, !!atk, ap);
+    const state = atk === 'skill' ? 'cast' : atk === true ? 'atk' : typeof atk === 'string' ? atk : frame > 0 ? 'walk' : 'idle';
+    return charFrame(cls, dir, state, frame || 0);
   };
 
   const procMonster = Sprites.monsterSprite;
@@ -104,5 +103,5 @@
     return `<i class="sk-img" style="background-image:url('${url}');--skc:${s.color || '#ffd76a'}"></i>`;
   }
 
-  window.Assets = { ready, imgs, has, portraits, CLASSES, SKILL_ICON, MONSTERS, skillIconUrl, skillIconHTML };
+  window.Assets = { ready, imgs, has, charFrame, avatar, CELL, FOOT_X, FOOT_Y, CLASSES, SKILL_ICON, MONSTERS, skillIconUrl, skillIconHTML };
 })();

@@ -59,7 +59,8 @@
       const ids = Object.keys(G.data.classes);
       ids.forEach((id, i) => {
         const x = ((i * 64 + splashT * 1.6) % (cv.width + 64)) - 64;
-        c.drawImage(Sprites.playerSprite(id, G.data.classes[id].colors, 2, Math.floor(splashT / 8 + i) % 4, false), Math.round(x), 8);
+        if (Assets.has(id)) c.drawImage(Assets.charFrame(id, 2, 'walk', Math.floor(splashT / 6 + i) % 6), Math.round(x) - 16, -12);
+        else c.drawImage(Sprites.playerSprite(id, G.data.classes[id].colors, 2, Math.floor(splashT / 8 + i) % 4, false), Math.round(x), 8);
       });
     }
     if (splashT % 200 === 1) { $('splash-tip').textContent = TIPS[tipI++ % TIPS.length]; }
@@ -190,14 +191,11 @@
     for (const [id, cl] of Object.entries(G.data.classes)) {
       const card = document.createElement('div');
       card.className = 'class-card' + (id === selCls ? ' sel' : '');
-      if (Assets.portraits[id]) {
-        const im = new Image(); im.src = Assets.portraits[id].src; im.className = 'portrait'; im.alt = cl.name;
-        card.appendChild(im); card.classList.add('has-portrait');
-      } else {
-        const cv = document.createElement('canvas'); cv.width = 64; cv.height = 64;
-        cv.getContext('2d').drawImage(Sprites.playerSprite(id, cl.colors, 0, 0), 0, 0);
-        card.appendChild(cv);
-      }
+      const cv = document.createElement('canvas'); cv.width = 72; cv.height = 72;
+      const cx2 = cv.getContext('2d'); cx2.imageSmoothingEnabled = false;
+      if (Assets.has(id)) cx2.drawImage(Assets.charFrame(id, 0, 'idle', 0), 12, 18, 72, 72, 0, 0, 72, 72);
+      else cx2.drawImage(Sprites.playerSprite(id, cl.colors, 0, 0), 4, 4);
+      card.appendChild(cv);
       card.insertAdjacentHTML('beforeend', `<b>${cl.name}</b><small>${cl.role}</small>`);
       card.onclick = () => { selCls = id; showCreate(); };
       grid.appendChild(card);
@@ -220,13 +218,13 @@
       const ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, 128, 128);
       if (Assets.has(cls)) {
-        // xem trước: đứng – đi – đánh – kỹ năng
-        const ph = Math.floor(previewT / 70) % 5, wf = 1 + Math.floor(previewT / 6) % 8;
-        const img = ph === 0 ? Sprites.playerSprite(cls, null, 0, 0, false)
-          : ph === 1 ? Sprites.playerSprite(cls, null, 0, wf, false)
-          : ph === 2 ? Sprites.playerSprite(cls, null, 2, wf, false)
-          : Sprites.playerSprite(cls, null, 2, 0, ph === 3 ? 'atk' : 'skill');
-        ctx.drawImage(img, 64 - img.width, 0, img.width * 2, 128);
+        // xem trước: đứng – đi xuống – đi ngang – đánh – ra chiêu
+        const ph = Math.floor(previewT / 90) % 5;
+        const img = ph === 0 ? Assets.charFrame(cls, 0, 'idle', Math.floor(previewT / 16) % 4)
+          : ph === 1 ? Assets.charFrame(cls, 0, 'walk', Math.floor(previewT / 6) % 6)
+          : ph === 2 ? Assets.charFrame(cls, 2, 'walk', Math.floor(previewT / 6) % 6)
+          : Assets.charFrame(cls, 2, ph === 3 ? 'atk' : 'cast', Math.min(3, Math.floor((previewT % 90) / 8)) % 4);
+        ctx.drawImage(img, -3, -4, 134, 134);
       } else ctx.drawImage(Sprites.playerSprite(cls, G.data.classes[cls].colors, [0, 1, 3, 2][dir], f), 0, 0, 128, 128);
     }
     if (!G.inGame) requestAnimationFrame(animPreview);
@@ -378,7 +376,7 @@
   function onFx(d) {
     const now = performance.now();
     const src = d.from && entityById(d.from);
-    if (src && d.from !== G.you) { src.atkUntil = now + 240; src.atkKind = BASIC_FX.has(d.t) ? 'atk' : 'skill'; }
+    if (src && d.from !== G.you) { src.atkKind = BASIC_FX.has(d.t) ? 'atk' : 'skill'; src.atkStart = now; src.atkDur = src.atkKind === 'atk' ? 300 : 440; src.atkUntil = now + src.atkDur; }
     const f = Object.assign({ t0: now, dur: FX_DUR[d.t] || 300 }, d);
     G.fx.push(f);
     FxSpawn(f);
@@ -478,7 +476,7 @@
       }
     }
     G.pending[i] = now;
-    G.self.atkUntil = now + (i ? 320 : 220); G.self.atkKind = i ? 'skill' : 'atk';
+    G.self.atkKind = i ? 'skill' : 'atk'; G.self.atkStart = now; G.self.atkDur = i ? 440 : 300; G.self.atkUntil = now + G.self.atkDur;
     G.socket.emit('skill', { idx: i, target: G.target });
   }
   G.useSkill = useSkill;
@@ -897,19 +895,24 @@
   function drawHero(x, y, cls, dir, lastH, moving, atk, ap, dead, seed, now, ent) {
     ap = ap || [];
     const art = Assets.has(cls);
+    let state = 'idle', fi = 0;
     if (art) {
-      if (atk) atk = (ent && ent.atkKind) || 'atk';
-      else if (ent && ent.hitAt && now - ent.hitAt < 180) atk = 'hurt';
-      if (dead) atk = 'dead';
-      // đánh / trúng đòn / ngã chỉ có góc nghiêng: quay theo hướng trái/phải gần nhất
-      if (atk && dir !== 1 && dir !== 2) dir = lastH || 2;
+      if (dead) state = 'dead';
+      else if (atk) {
+        state = ent && ent.atkKind === 'skill' ? 'cast' : 'atk';
+        const p = ent && ent.atkStart ? (now - ent.atkStart) / (ent.atkDur || 300) : 0.5;
+        fi = Math.max(0, Math.min(3, Math.floor(p * 4)));
+      }
+      else if (ent && ent.hitAt && now - ent.hitAt < 160) state = 'hurt';
+      else if (moving) { state = 'walk'; fi = Math.floor(now / 105 + seed) % 6; }
+      else fi = Math.floor(now / 280 + seed) % 4;
     }
     const colors = G.data.classes[cls].colors;
     const mountId = ap[7];
     const plus = Math.max(ap[2] || 0, ap[5] || 0);
     const gcol = Sprites.enhanceGlow(plus);
     x = Math.round(x); y = Math.round(y);
-    if (dead) ctx.globalAlpha = art ? 0.85 : 0.4;
+    if (dead) ctx.globalAlpha = art ? 0.9 : 0.4;
     if (gcol && !dead) {
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
       const pulse = 0.5 + Math.sin(now / 300 + seed) * 0.2;
@@ -930,17 +933,28 @@
         if (Math.random() < 0.4) FX.emit(1, x + (face === 1 ? 10 : -10), y - 10, { speed: 15, vy: -50, life: 600, size: 4, color: info.mane, jitter: 34, jitterY: 6 });
       }
       ctx.drawImage(Sprites.mountSprite(mountId, info, mf, face === 1), x - 48, y - 66);
-      const rider = Sprites.playerSprite(cls, colors, face, 0, atk, ap);
-      const rx = x - 32 + (face === 1 ? 2 : -2), ry = y - 75 + (moving && mf % 2 ? 1 : 0);
-      ctx.drawImage(rider, 0, 0, 64, 52, rx, ry, 64, 52);
-      top = y - 80;
+      if (art) {
+        const rider = Assets.charFrame(cls, face, state === 'walk' || state === 'dead' ? 'idle' : state, fi);
+        const ry = y - 86 - 26 + (moving && mf % 2 ? 1 : 0);
+        ctx.drawImage(rider, 0, 0, 96, 66, x - 48 + (face === 1 ? 2 : -2), ry, 96, 66);
+        top = y - 96;
+      } else {
+        const rider = Sprites.playerSprite(cls, colors, face, 0, atk, ap);
+        const rx = x - 32 + (face === 1 ? 2 : -2), ry = y - 75 + (moving && mf % 2 ? 1 : 0);
+        ctx.drawImage(rider, 0, 0, 64, 52, rx, ry, 64, 52);
+        top = y - 80;
+      }
     } else {
       const fr = moving ? Math.floor(now / 95 + seed) % 8 : 0;
       const breathe = moving || dead ? 0 : (Math.floor(now / 650 + seed) % 2);
       if (moving && fr % 4 === 1 && !dead && Math.random() < 0.5) WorldArt.dust(x, y);
-      const img = Sprites.playerSprite(cls, colors, dir, art && moving && !atk ? fr + 1 : fr, atk, ap);
-      ctx.drawImage(img, x - (img.width >> 1), y - 58 + breathe);
-      top = y - 58;
+      if (art) {
+        ctx.drawImage(Assets.charFrame(cls, dir, state, fi), x - 48, y - 86);
+        top = y - 72;
+      } else {
+        ctx.drawImage(Sprites.playerSprite(cls, colors, dir, fr, atk, ap), x - 32, y - 58 + breathe);
+        top = y - 58;
+      }
     }
     ctx.globalAlpha = 1;
     return top;

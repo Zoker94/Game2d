@@ -522,6 +522,123 @@
   SIG.waterdragon = dragonSkill('water', 1700, 0.5);
   SIG.icedragon = dragonSkill('ice', 1800, 0.48);
 
+
+  // ===== Hình chiêu thức (assets/fx.png, vẽ bởi tools/fxsheet.py), tô màu theo chiêu =====
+  const SHEET = { img: null, meta: null, tint: {} };
+  (function loadSheet() {
+    const im = new Image(); im.onload = () => { SHEET.img = im; }; im.src = '/assets/fx.png';
+    fetch('/assets/fx.json').then(r => r.json()).then(m => { SHEET.meta = m; }).catch(() => {});
+  })();
+  function tinted(name, i, color) {
+    const key = name + i + color;
+    if (SHEET.tint[key]) return SHEET.tint[key];
+    const C = SHEET.meta.cell, [row] = SHEET.meta.fx[name];
+    const cv = document.createElement('canvas'); cv.width = cv.height = C;
+    const x = cv.getContext('2d'); x.imageSmoothingEnabled = false;
+    x.drawImage(SHEET.img, i * C, row * C, C, C, 0, 0, C, C);
+    x.globalCompositeOperation = 'source-atop'; x.globalAlpha = 0.82; x.fillStyle = color; x.fillRect(0, 0, C, C);
+    x.globalCompositeOperation = 'lighter'; x.globalAlpha = 0.22; x.drawImage(SHEET.img, i * C, row * C, C, C, 0, 0, C, C);
+    return (SHEET.tint[key] = cv);
+  }
+  // vẽ 1 khung hình chiêu: p = tiến trình 0..1 (chọn khung), hoặc o.frame
+  function fxSprite(ctx, name, p, x, y, o = {}) {
+    if (!SHEET.img || !SHEET.meta || !SHEET.meta.fx[name]) return;
+    const n = SHEET.meta.fx[name][1];
+    const i = o.frame != null ? o.frame % n : Math.min(n - 1, Math.floor(Math.max(0, p) * n));
+    const img = tinted(name, i, o.color || '#ffffff');
+    const s = o.scale || 1, C = SHEET.meta.cell;
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = o.alpha == null ? 1 : Math.max(0, Math.min(1, o.alpha));
+    ctx.translate(Math.round(x), Math.round(y));
+    if (o.rot) ctx.rotate(o.rot);
+    if (o.flat) ctx.scale(1, o.flat);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, -C / 2 * s, -(o.anchor || 0.5) * C * s, C * s, C * s);
+    ctx.restore();
+  }
+  // vũ khí ném theo môn phái
+  const THROW = { duongmon: 'dart', conlon: 'talisman', thuyyen: 'shuriken' };
+  function spriteLayer(ctx, f, p, g) {
+    const { sx, sy, tx, ty, bx, by, ex, ey, src, r, c } = g;
+    const a = Math.atan2(ey - by, ex - bx), now = performance.now();
+    const cls = src && (src.cls || (src === window.G.self && window.G.me ? window.G.me.cls : null));
+    switch (f.t) {
+      case 'slash': case 'slash2': case 'bite':
+        fxSprite(ctx, 'slash', p * 1.3, ex, ey, { rot: a + Math.PI / 2 * 0, color: f.t === 'bite' ? '#ff5050' : c, scale: f.t === 'bite' ? 0.8 : 1.15, alpha: 1.2 - p });
+        if (f.t === 'slash2') fxSprite(ctx, 'slash', p * 1.3 - 0.15, ex, ey, { rot: a + Math.PI, color: c, scale: 1, alpha: 1.1 - p });
+        if (p > 0.25) fxSprite(ctx, 'burst', (p - 0.25) / 0.75, ex, ey, { color: c, scale: 0.8 });
+        break;
+      case 'palm': {
+        const q = Math.min(1, p / 0.45);
+        fxSprite(ctx, 'palm', 0, bx + (ex - bx) * ease(q), by + (ey - by) * ease(q), { frame: Math.floor(now / 80), rot: a, color: c, scale: 0.9 + q * 0.5, alpha: p < 0.6 ? 1 : 1 - (p - 0.6) / 0.4 });
+        if (p > 0.45) fxSprite(ctx, 'burst', (p - 0.45) / 0.55, ex, ey, { color: c, scale: 1.2 });
+        break;
+      }
+      case 'dart': case 'bolt': case 'dartfan': {
+        const n = f.t === 'dartfan' ? 5 : 1, q = Math.min(1, p / 0.85), len = Math.hypot(ex - bx, ey - by);
+        const kind = THROW[cls] || (f.t === 'bolt' ? 'qi' : 'dart');
+        for (let i = 0; i < n; i++) {
+          const aa = a + (i - (n - 1) / 2) * 0.16;
+          if (q < 1) fxSprite(ctx, kind, 0, bx + Math.cos(aa) * len * q, by + Math.sin(aa) * len * q,
+            { frame: Math.floor(now / 70), rot: kind === 'shuriken' || kind === 'talisman' ? 0 : aa, color: c, scale: kind === 'qi' ? 0.7 : 0.8 });
+        }
+        if (q >= 1) fxSprite(ctx, 'burst', (p - 0.85) / 0.15, ex, ey, { color: c, scale: 0.9 });
+        break;
+      }
+      case 'beam': {
+        const q = Math.min(1, p / 0.5);
+        fxSprite(ctx, 'qi', 0, bx + (ex - bx) * q, by + (ey - by) * q, { frame: Math.floor(now / 60), rot: a, color: c, scale: 1.5, alpha: 1 - p });
+        break;
+      }
+      case 'lightning': case 'storm':
+        if (f.t === 'lightning') fxSprite(ctx, 'lightning', 0, ex, ty, { frame: Math.floor(now / 60), color: c, scale: 2.2, anchor: 0.95, alpha: 1 - p });
+        break;
+      case 'ring': case 'net':
+        fxSprite(ctx, 'shock', p, ex, ty, { color: c, scale: r / 26 });
+        break;
+      case 'nova':
+        fxSprite(ctx, 'shock', p, ex, ty, { color: c, scale: r / 20 });
+        fxSprite(ctx, 'burst', p, ex, ey, { color: c, scale: 1.8 });
+        break;
+      case 'poison':
+        fxSprite(ctx, 'skull', p, ex, ty - 20, { color: c, scale: Math.max(1.2, r / 45), alpha: 1.2 - p });
+        break;
+      case 'swords':
+        for (let i = 0; i < 3; i++) fxSprite(ctx, 'swords', p * 1.4 - i * 0.1, ex + (i - 1) * r * 0.45, ty - 30 + (i % 2) * 14, { color: c, scale: 1.4, alpha: 1.2 - p });
+        break;
+      case 'taiji':
+        fxSprite(ctx, 'taiji', 0, ex, ty - 4, { frame: Math.floor(now / 90), color: c, scale: r / 26, flat: 0.45, alpha: 1 - p });
+        break;
+      case 'lotus':
+        fxSprite(ctx, 'lotus', p * 1.2, ex, ty - 6, { color: c, scale: r / 30, alpha: 1.2 - p });
+        break;
+      case 'tornado':
+        fxSprite(ctx, 'tornado', 0, ex, ty, { frame: Math.floor(now / 70), color: c, scale: 2.4, anchor: 0.9, alpha: p < 0.15 ? p / 0.15 : 1 - Math.max(0, (p - 0.7) / 0.3) });
+        break;
+      case 'meteor': case 'pillar':
+        fxSprite(ctx, 'flame', p, ex, ty, { color: c, scale: 2.2, anchor: 0.9, alpha: 1.2 - p });
+        break;
+      case 'blades':
+        for (let i = 0; i < 4; i++) { const aa = i / 4 * Math.PI * 2 + p * 6; fxSprite(ctx, 'slash', p, bx + Math.cos(aa) * (20 + r * 0.5 * ease(p)), sy - 20 + Math.sin(aa) * (10 + r * 0.25 * ease(p)), { rot: aa, color: c, scale: 0.9 }); }
+        break;
+      case 'dash':
+        fxSprite(ctx, 'slash', p, ex, ey, { rot: a, color: c, scale: 1.6, alpha: 1.2 - p });
+        fxSprite(ctx, 'burst', p, ex, ey, { color: c, scale: 1.3 });
+        break;
+      case 'aura': {
+        const x = src ? src.x : f.x, y = src ? src.y : f.y;
+        fxSprite(ctx, 'aura', 0, x, y, { frame: Math.floor(now / 90), color: c, scale: 1.4, anchor: 0.92, alpha: 1 - p });
+        break;
+      }
+      case 'heal': {
+        const x = src ? src.x : f.x, y = src ? src.y : f.y;
+        fxSprite(ctx, 'lotus', p * 1.4, x, y - 4, { color: '#8dffb0', scale: 1.6, alpha: 1.2 - p });
+        break;
+      }
+    }
+  }
+
   // Bắn hạt khi hiệu ứng bắt đầu
   function spawn(f) {
     const { sx, sy, tx, ty } = pos(f);
@@ -798,6 +915,7 @@
           break;
         }
       }
+      spriteLayer(ctx, f, p, { sx, sy, tx, ty, bx, by, ex, ey, src, r, c });
     }
     // hạt sáng
     for (let i = parts.length - 1; i >= 0; i--) {
@@ -815,7 +933,7 @@
 
   window.FX = {
     init(fn) { entityById = fn; },
-    spawn, draw, emit, glowDot,
+    spawn, draw, emit, glowDot, sprite: fxSprite,
     flash(now) { if (!flash) return null; const p = (now - flash.t0) / flash.dur; if (p > 1) { flash = null; return null; } return p < 0 ? null : { color: flash.color, a: 0.35 * (1 - p) }; }
   };
 })();

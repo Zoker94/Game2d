@@ -155,8 +155,7 @@
       UI._avatarCls = me.cls;
       const c = $('hud-avatar').getContext('2d'); c.imageSmoothingEnabled = false;
       c.clearRect(0, 0, 64, 64);
-      const pt = Assets.portraits[me.cls];
-      if (pt) { const h = pt.height * 0.8; c.imageSmoothingEnabled = true; c.drawImage(pt, (pt.width - h) / 2, 0, h, h, 8, 4, 52, 52); }
+      if (Assets.has(me.cls)) c.drawImage(Assets.avatar(me.cls, 52), 8, 4);
       else c.drawImage(Sprites.playerSprite(me.cls, G.data.classes[me.cls].colors, 0, 0), 0, 0);
     }
     // khóa kỹ năng
