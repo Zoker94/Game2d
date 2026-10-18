@@ -1,9 +1,11 @@
 // Ảnh asset vẽ tay (public/assets). Có ảnh thì dùng ảnh, chưa có thì dùng sprite vẽ thủ tục cũ.
 (function () {
   const BASE = '/assets/';
-  // Nhân vật: mỗi môn phái 9 khung (nhìn sang phải) – đi bộ x2, chạy, nhảy, đánh thường, kỹ năng, trúng đòn, ngã, đứng
+  // Nhân vật: góc nghiêng (nhìn sang phải) – đi bộ x2, chạy, nhảy, đánh thường, kỹ năng, trúng đòn, ngã, đứng;
+  // góc trước (f) và sau (b) – đứng (fi/bi) + 4 khung bước chân
   const CLASSES = ['thieulam', 'ngudoc', 'thienvuong', 'caibang', 'vodang', 'ngamy', 'thuyyen', 'conlon', 'duongmon'];
-  const POSES = ['walk0', 'walk1', 'run', 'jump', 'atk', 'skill', 'hurt', 'dead', 'idle'];
+  const POSES = ['walk0', 'walk1', 'run', 'jump', 'atk', 'skill', 'hurt', 'dead', 'idle',
+    'fi', 'f0', 'f1', 'f2', 'f3', 'bi', 'b0', 'b1', 'b2', 'b3'];
   // Biểu tượng võ công theo thứ tự 6 chiêu của mỗi môn phái
   const SKILL_ICON = {
     vodang:     ['vodang_i2', 'vodang_i1', 'vd_taiji2', 'vodang_i3', 'cl_swords', 'vodang_i0'],
@@ -60,6 +62,10 @@
     let pose, bob = 0;
     if (atk === true) pose = 'atk';
     else if (typeof atk === 'string') pose = atk;
+    else if (dir === 0 || dir === 3) {
+      const v = dir === 0 ? 'f' : 'b';
+      pose = frame > 0 ? v + (Math.floor((frame - 1) / 2) % 4) : v + 'i';
+    }
     else if (frame > 0) { pose = WALK[(frame - 1) % 8]; bob = BOB[(frame - 1) % 8]; }
     else pose = 'idle';
     if (!imgs['c:' + cls + '_' + pose]) pose = 'idle';

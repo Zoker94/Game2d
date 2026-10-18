@@ -221,9 +221,11 @@
       ctx.clearRect(0, 0, 128, 128);
       if (Assets.has(cls)) {
         // xem trước: đứng – đi – đánh – kỹ năng
-        const ph = Math.floor(previewT / 70) % 4;
-        const img = ph === 1 ? Sprites.playerSprite(cls, null, 2, 1 + Math.floor(previewT / 6) % 8, false)
-          : Sprites.playerSprite(cls, null, 2, 0, ph === 2 ? 'atk' : ph === 3 ? 'skill' : false);
+        const ph = Math.floor(previewT / 70) % 5, wf = 1 + Math.floor(previewT / 6) % 8;
+        const img = ph === 0 ? Sprites.playerSprite(cls, null, 0, 0, false)
+          : ph === 1 ? Sprites.playerSprite(cls, null, 0, wf, false)
+          : ph === 2 ? Sprites.playerSprite(cls, null, 2, wf, false)
+          : Sprites.playerSprite(cls, null, 2, 0, ph === 3 ? 'atk' : 'skill');
         ctx.drawImage(img, 64 - img.width, 0, img.width * 2, 128);
       } else ctx.drawImage(Sprites.playerSprite(cls, G.data.classes[cls].colors, [0, 1, 3, 2][dir], f), 0, 0, 128, 128);
     }
@@ -896,11 +898,11 @@
     ap = ap || [];
     const art = Assets.has(cls);
     if (art) {
-      // ảnh asset chỉ có góc nghiêng: đi lên/xuống giữ hướng trái/phải gần nhất
-      if (dir !== 1 && dir !== 2) dir = lastH || 2;
       if (atk) atk = (ent && ent.atkKind) || 'atk';
       else if (ent && ent.hitAt && now - ent.hitAt < 180) atk = 'hurt';
       if (dead) atk = 'dead';
+      // đánh / trúng đòn / ngã chỉ có góc nghiêng: quay theo hướng trái/phải gần nhất
+      if (atk && dir !== 1 && dir !== 2) dir = lastH || 2;
     }
     const colors = G.data.classes[cls].colors;
     const mountId = ap[7];
