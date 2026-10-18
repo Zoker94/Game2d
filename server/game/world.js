@@ -15,6 +15,7 @@ function elemMult(ae, de) { if (!ae || !de) return [1, 0]; if (KHAC[ae] === de) 
 const { ENHANCE_MAX, ENHANCE_SAFE, ENHANCE_RATE, enhanceCost } = require('../data/enhance');
 const U = require('./util');
 const { Escort } = require('./escort');
+const { Story } = require('./story');
 
 const HOTBAR_N = 8;          // số ô gán phím (phím 2..9)
 const DODGE_DIST = 170, DODGE_CD = 5000;   // né chiêu: quãng lướt, thời gian hồi
@@ -52,6 +53,7 @@ class World {
     this.tickN = 0;
     this.features = null;       // gắn sau (bang hội, sự kiện,...)
     this.escort = new Escort(this);
+    this.story = new Story(this);
     for (const id in MAPS) {
       this.maps[id] = { def: MAPS[id], players: new Set(), monsters: new Map(), drops: new Map() };
       this.spawnMap(id);
@@ -155,6 +157,7 @@ class World {
     p.dirtyMe = true;
     this.escort.onEnterMap(p, prev, viaPortal);
     this.progressTutorial(p, 'map', { map: mapId });
+    this.story.on(p, 'map', { map: mapId });
   }
 
   recalc(p) {
@@ -180,7 +183,7 @@ class World {
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null,
       skills: c.skills || {}, hotbar: c.hotbar, sp: skillPointsTotal(c.level) - (c.spSpent || 0),
-      mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
+      mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
       st: this.statusView(p), friends: Object.keys(c.friends || {}).length, pk: c.pk || 0,
       rank: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0
     };
@@ -275,6 +278,7 @@ class World {
       for (const s of unlocked) this.toast(p, `Lĩnh ngộ võ công mới: ${s.name}`, 'reward');
       if (c.level % 10 === 0) this.features.announce(`⚔️ ${c.name} (${CLASSES[c.cls].name}) đã đạt cấp ${c.level}!`);
       this.progressTutorial(p, 'level');
+      this.story.on(p, 'level');
     }
     p.dirtyMe = true;
     return add;
@@ -323,6 +327,16 @@ class World {
     if (p.c.level < (map.minLv || 1)) return this.toast(p, `Cần đạt cấp ${map.minLv}`, 'error');
     const s = this.randomSpotNear(map, map.center.x + 0.5, map.center.y + 1.5, 1);
     this.enterMap(p, mapId, s.x, s.y);
+  }
+
+  // boss cốt truyện: thưởng kinh nghiệm / ngân lượng cho chủ nhân (không rơi đồ boss thật)
+  rewardStoryElite(mon, killer) {
+    const owner = this.players.get(mon.story);
+    if (!owner || owner.mapId !== mon.mapId) return;
+    const gained = this.gainExp(owner, mon.tpl.exp);
+    owner.c.gold += mon.tpl.gold;
+    owner.socket.emit('gain', { exp: gained, gold: mon.tpl.gold, x: mon.x, y: mon.y });
+    owner.dirtyMe = true;
   }
 
   // ---------- Né chiêu (lướt) ----------
@@ -672,6 +686,7 @@ class World {
     const cfg = this.db.data.config;
 
     if (mon.event) { this.features.onEventMonsterKilled(mon, killer); map.monsters.delete(mon.id); return; }
+    if (mon.story) { this.rewardStoryElite(mon, killer); this.story.onEliteKilled(mon, killer); map.monsters.delete(mon.id); return; }
 
     // Chia kinh nghiệm theo sát thương
     const total = [...mon.dmgBy.values()].reduce((a, b) => a + b, 0) || 1;
@@ -696,6 +711,7 @@ class World {
         this.features.questProgress(p, 'kill', 1, tpl.id);
         this.features.questProgress(p, 'killAny', 1);
         this.progressTutorial(p, 'kill', { mon: tpl.id });
+        this.story.on(p, 'kill', { mon: tpl.id });
         this.features.onKill(p, mon);
       }
       p.dirtyMe = true;
@@ -955,6 +971,7 @@ class World {
     const npc = this.nearNpc(p, npcId);
     if (!npc) return this.toast(p, 'Hãy lại gần NPC hơn', 'error');
     this.progressTutorial(p, 'talk', { npc: npcId });
+    if (this.story.on(p, 'talk', { npc: npcId })) return;   // NPC đang có cảnh cốt truyện
     const out = { id: npc.id, name: npc.name, talk: npc.talk, action: npc.action, sprite: npc.sprite, color: npc.color, enhance: !!npc.enhance };
     if (npc.shop) {
       const tier = MAPS[p.mapId].tier;
@@ -1214,7 +1231,7 @@ class World {
     const now = Date.now();
     this.tickN++;
     const sec = this.tickN % 20 === 0;
-    if (sec) this.rollWeather(now);
+    if (sec) { this.rollWeather(now); this.story.tick(); }
     this.escort.tick(now, TICK);
     for (const id in this.maps) {
       const m = this.maps[id];

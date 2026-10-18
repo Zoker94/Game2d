@@ -192,7 +192,7 @@ app.get('/api/gamedata', (req, res) => {
     for (let l = 1; l <= M.MOUNT_MAX; l++) mountExp[l] = M.mountExpNext(l);
     gamedataCache = { enhance: { max: E.ENHANCE_MAX, safe: E.ENHANCE_SAFE, rate: E.ENHANCE_RATE, cost: Array.from({ length: 15 }, (_, p) => [0, 1, 2, 3, 4, 5, 6].map(t => E.enhanceCost(p, t))) },
       skillMax: require('./data/skillbooks').SKILL_MAX,
-      dragons: require('./data/dragons').DRAGONS, mounts: M.MOUNTS, mountMax: M.MOUNT_MAX, mountExp, classes: CLASSES, items: ITEMS, rarity: RARITY, slots: Object.fromEntries(Object.entries(SLOTS).map(([k, v]) => [k, v.name])), monsters: mons, maps, npcs,
+      dragons: require('./data/dragons').DRAGONS, mounts: M.MOUNTS, mountMax: M.MOUNT_MAX, mountExp, classes: CLASSES, story: require('./data/story'), items: ITEMS, rarity: RARITY, slots: Object.fromEntries(Object.entries(SLOTS).map(([k, v]) => [k, v.name])), monsters: mons, maps, npcs,
       elements: require('./data/affixes').ELEMENTS, affixes: Object.fromEntries(Object.entries(require('./data/affixes').AFFIX).map(([k, a]) => [k, { name: a.name, text: a.text }])), khac: require('./data/affixes').KHAC };
   }
   res.json(gamedataCache);
@@ -257,6 +257,7 @@ io.on('connection', socket => {
       socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', text: '🛡️ Bạn là chủ server. Gõ /admin để mở trang quản trị, /help để xem lệnh.', t: Date.now() });
       if (!db.usingDatabase) socket.emit('notice', { text: '⚠ CẢNH BÁO: Máy chủ chưa cấu hình DATABASE_URL. Dữ liệu đang lưu vào file tạm và SẼ MẤT mỗi lần cập nhật / khởi động lại trên Render. Hãy thêm DATABASE_URL (Neon) trong Render → Environment.', type: 'admin' });
     }
+    world.story.onJoin(player);
     if (!user.character.tutorial.done) socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', text: 'Mẹo: Làm theo khung Hướng Dẫn Tân Thủ ở góc trái để nhận quà!', t: Date.now() });
   });
 
@@ -264,6 +265,7 @@ io.on('connection', socket => {
   on('skill', inGame(d => world.useSkill(player, d && d.idx, d && d.target)));
   on('respawn', inGame(() => world.respawn(player)));
   on('dodge', inGame(d => world.dodge(player, d)));
+  on('story', inGame(d => world.story.action(player, d)));
   on('pickup', inGame(d => world.pickupItem(player, d && typeof d.id === 'string' ? d.id : null)));
   on('useItem', inGame(d => world.useItem(player, d && d.uid)));
   on('quickUse', inGame(d => {

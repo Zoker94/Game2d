@@ -599,3 +599,54 @@ body.short.touch #btn-music { bottom: 184px; }
 .sk-key { font-size: 11px; color: #4ade80; font-weight: 700; margin-left: 4px; }
 body.touch .kb-slots { grid-template-columns: repeat(4, 1fr); } body.touch .kb-slot { min-height: 72px; }
 .kb-slot.unl .kb-ico { opacity: .4; filter: grayscale(1); }
+
+/* ---------- Cốt truyện ---------- */
+#story-dlg { position: absolute; inset: 0; z-index: 60; pointer-events: auto; }
+#story-dlg.hidden { display: none; }
+#story-dlg:not(.cine) { background: linear-gradient(to top, rgba(0,0,0,.45), transparent 45%); }
+.sd-panel { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(760px, calc(100% - 32px)); display: flex; gap: 12px; align-items: flex-end;
+  background: linear-gradient(180deg, rgba(40,26,14,.96), rgba(22,14,8,.97)); border: 2px solid #b8893a; border-radius: 10px; padding: 10px 14px 10px 10px;
+  box-shadow: 0 0 0 1px #3a2410, 0 8px 30px rgba(0,0,0,.6), inset 0 0 24px rgba(255,200,100,.08); animation: sdIn .25s ease-out; }
+.sd-panel.hidden { display: none; }
+@keyframes sdIn { from { opacity: 0; transform: translate(-50%, 16px); } to { opacity: 1; transform: translate(-50%, 0); } }
+#sd-face { width: 120px; height: 120px; flex: none; image-rendering: pixelated; background: radial-gradient(circle at 50% 60%, rgba(255,215,106,.22), rgba(0,0,0,.35) 70%); border: 1px solid #7a5a2a; border-radius: 8px; margin-top: -40px; }
+#sd-face.hidden { display: none; }
+.sd-body { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 104px; }
+.sd-title { font-size: 11px; color: #c8a060; letter-spacing: .5px; }
+.sd-name { display: inline-block; align-self: flex-start; margin: 2px 0 4px; padding: 1px 10px; background: #7a2a14; color: #ffe8b0; font-weight: 700; border-radius: 4px; font-size: 14px; }
+.sd-name.hidden { display: none; }
+.sd-text { flex: 1; font-size: 15px; line-height: 1.5; color: #f6ead0; white-space: pre-wrap; }
+.sd-panel.narr .sd-text { font-style: italic; color: #e8d8b0; text-align: center; padding: 8px 0; }
+.sd-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+#sd-cine { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(30,12,6,.94), rgba(0,0,0,.98)); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; animation: scIn .6s ease-out; }
+#sd-cine.hidden { display: none; }
+@keyframes scIn { from { opacity: 0; } to { opacity: 1; } }
+.sc-title { font-size: 30px; font-weight: 800; color: #ffd76a; letter-spacing: 2px; text-align: center; text-shadow: 0 0 18px rgba(255,160,40,.6), 0 2px 0 #3a1a00; margin-bottom: 22px; }
+.sc-title::before, .sc-title::after { content: '❖'; margin: 0 14px; color: #b8893a; font-size: 18px; vertical-align: middle; }
+.sc-text { max-width: 680px; font-size: 18px; line-height: 1.7; color: #f0e2c0; text-align: center; min-height: 6em; font-family: Georgia, 'Times New Roman', serif; }
+.sc-hint { position: absolute; bottom: 22px; font-size: 12px; color: #a08860; animation: blink 1.6s infinite; }
+@keyframes blink { 50% { opacity: .3; } }
+#story-box { background: linear-gradient(180deg, rgba(60,30,10,.9), rgba(30,16,8,.9)); border: 1px solid #ff9a3a; border-radius: 8px; padding: 6px 8px; font-size: 12px; cursor: pointer; box-shadow: 0 0 10px rgba(255,140,40,.3); margin-bottom: 4px; }
+#story-box h4 { margin: 0 0 3px; color: #ffb060; font-size: 12px; }
+#story-box b { color: #ffd76a; }
+.story-intro { border-color: #b8893a; }
+.story-ch { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-top: 8px; background: rgba(0,0,0,.2); }
+.story-ch.now { border-color: #ff9a3a; box-shadow: 0 0 10px rgba(255,140,40,.2); }
+.story-ch.done { opacity: .85; }
+.story-ch.locked { opacity: .5; }
+.story-ch p { margin: 4px 0; }
+.sc-tag { font-size: 11px; padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,.08); margin-left: 4px; }
+.sc-tag.ok { color: #4ade80; } .sc-tag.cur { color: #ffb060; background: rgba(255,140,40,.15); }
+.sc-steps { margin: 6px 0; }
+.sc-step { font-size: 12px; padding: 2px 0; color: #9a9080; }
+.sc-step.ok { color: #6ac080; } .sc-step.cur { color: #ffe0a0; font-weight: 600; }
+body.touch .sd-panel { bottom: 8px; padding: 8px; }
+body.touch #sd-face { width: 84px; height: 84px; margin-top: -24px; }
+body.touch .sd-text { font-size: 14px; }
+body.touch .sd-body { min-height: 80px; }
+body.touch .sc-title { font-size: 22px; margin-bottom: 12px; }
+body.touch .sc-text { font-size: 15px; }
+body.touch #story-box { font-size: 11px; padding: 6px 8px; }
+body.touch #story-box .muted { display: none; }
+body.touch #story-box + #tutorial-box > div { display: none; }
+body.touch #story-box + #tutorial-box .claim { margin-top: 2px; padding: 4px 12px; }

@@ -237,6 +237,8 @@
     $('btn-hp').innerHTML = `❤️<span class="cnt">${hpc}</span>`;
     $('btn-mp').innerHTML = `💧<span class="cnt">${mpc}</span>`;
     updateTutorial();
+    const sk = JSON.stringify(me.story);
+    if (sk !== UI._storyKey) { UI._storyKey = sk; if (panel === 'quests' && panelState.tab === 'story') UI.refreshPanel(true); }
     if (panel === 'inventory' || panel === 'character' || panel === 'mount' || panel === 'skills' || panel === 'bank' || panel === 'escort' || (panel === 'npc' && npcData)) UI.refreshPanel(true);
   };
   function setBar(el, v, max) {
@@ -574,7 +576,12 @@
   }
   function renderQuests(body) {
     const tab = panelState.tab || (G.me.tutorial.done ? 'daily' : 'tutorial');
-    let html = tabs([['tutorial', '📖 Tân thủ'], ['daily', '📅 Hàng ngày']], tab);
+    let html = tabs([['story', '📜 Cốt truyện'], ['tutorial', '📖 Tân thủ'], ['daily', '📅 Hàng ngày']], tab);
+    if (tab === 'story') {
+      body.innerHTML = html + Story.renderTab();
+      bindTabs(body); Story.bindTab(body);
+      return;
+    }
     if (tab === 'tutorial') {
       const t = G.me.tutorial;
       if (t.done) html += '<p>Bạn đã hoàn thành toàn bộ hướng dẫn tân thủ. Chúc đại hiệp sớm danh chấn giang hồ!</p>';
