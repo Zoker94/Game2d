@@ -201,6 +201,16 @@
     }
     return { img, sx: col * m.w, sy: row * m.h, w: m.w, h: m.h, fx: m.fx, fy: m.fy, top: m.top, half: m.half, rig: m.k === 'rig' };
   }
+  // ----- NPC vẽ mới (tools/npcs.py): hàng 0 nhìn xuống, hàng 1 nhìn nghiêng; 4 khung đứng thở -----
+  let NPC_META = null; const npcImgs = {}, npcLoading = {};
+  fetch(BASE + 'npcs.json').then(r => r.ok ? r.json() : null).then(j => { NPC_META = j; }).catch(() => { });
+  function npcFrame(id, i, side) {
+    if (!NPC_META || NPC_META.ids.indexOf(id) < 0) return null;
+    const img = npcImgs[id];
+    if (!img) { if (!npcLoading[id]) npcLoading[id] = load('npcs/' + id + '.png').then(im => { if (im) npcImgs[id] = im; }); return null; }
+    const c = NPC_META.cell;
+    return { img, sx: (i % 4) * c, sy: side ? c : 0, w: c, h: c, fx: NPC_META.foot[0], fy: NPC_META.foot[1] };
+  }
   function monsterReady(id) { return !!(MON_META && MON_META.mon[id]); }
   function monsterTop(id) { const m = MON_META && MON_META.mon[id]; return m && monImgs[id] ? m.top : 0; }
   // ảnh đại diện (đầu + vai) cho khung avatar / thẻ môn phái
@@ -268,5 +278,5 @@
     return `<i class="sk-img" style="background-image:url('${url}');--skc:${s.color || '#ffd76a'}"></i>`;
   }
 
-  window.Assets = { ready, imgs, has, charFrame, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, SKILL_ICON, MONSTERS, skillIconUrl, skillIconHTML };
+  window.Assets = { ready, imgs, has, charFrame, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, SKILL_ICON, MONSTERS, skillIconUrl, skillIconHTML };
 })();

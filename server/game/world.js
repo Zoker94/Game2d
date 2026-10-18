@@ -16,6 +16,7 @@ const { ENHANCE_MAX, ENHANCE_SAFE, ENHANCE_RATE, enhanceCost } = require('../dat
 const U = require('./util');
 const { Escort } = require('./escort');
 
+const DODGE_DIST = 170, DODGE_CD = 5000;   // né chiêu: quãng lướt, thời gian hồi
 const TICK = 50;            // 20 tick/giây
 const SNAP_EVERY = 2;       // gửi trạng thái 10 lần/giây
 const PICKUP_R = 56;
@@ -322,6 +323,31 @@ class World {
     this.enterMap(p, mapId, s.x, s.y);
   }
 
+  // ---------- Né chiêu (lướt) ----------
+  // Lướt nhanh ~170px theo hướng chỉ định, bất tử 0,4 giây (đòn đánh trúng sẽ hiện "Né!"), hồi 5 giây.
+  dodge(p, d) {
+    const now = Date.now();
+    if (!d || p.dead) return;
+    if (isCC(p, now)) return this.toast(p, 'Đang bị khống chế, không thể né!', 'error');
+    if (p.dodgeCd && p.dodgeCd > now) return;
+    let vx = +d.x, vy = +d.y;
+    const n = Math.hypot(vx, vy);
+    if (!Number.isFinite(n) || n < 0.1) return;
+    vx /= n; vy /= n;
+    const map = MAPS[p.mapId];
+    let x = p.x, y = p.y;
+    for (let k = 0; k < DODGE_DIST; k += 8) {
+      const nx = x + vx * 8, ny = y + vy * 8;
+      if (isSolidAt(map, nx, ny)) break;
+      x = nx; y = ny;
+    }
+    const x0 = p.x, y0 = p.y;
+    p.x = x; p.y = y; p.lastMove = now;
+    p.dodgeCd = now + DODGE_CD; p.dodgeUntil = now + 400;
+    p.dir = Math.abs(vx) > Math.abs(vy) ? (vx > 0 ? 2 : 1) : (vy > 0 ? 0 : 3);
+    this.fx(p.mapId, { t: 'dodge', from: p.id, x: x0, y: y0, tx: x, ty: y, cd: DODGE_CD });
+  }
+
   // ---------- Chiến đấu ----------
   enemiesOf(p) {
     const m = this.maps[p.mapId];
@@ -513,6 +539,7 @@ class World {
   // Gây hiệu ứng: choáng, đóng băng, độc, bỏng, chậm, chảy máu
   applyStatus(t, kind, ms, src) {
     if (!t || t.dead || t.cart || !ST_BITS[kind]) return;
+    if (t.c && t.dodgeUntil > Date.now()) return;
     const now = Date.now();
     if (t.boss && (kind === 'stun' || kind === 'freeze')) ms *= 0.35;   // boss kháng khống chế
     if (t.c && (kind === 'stun' || kind === 'freeze')) ms *= 0.6;        // người chơi bị khống chế ngắn hơn
@@ -567,6 +594,7 @@ class World {
 
   applyDamage(t, dmg, src, kind, ek = 0) {
     if (t.dead) return;
+    if (t.c && src && t.dodgeUntil > Date.now()) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return; }   // đang lướt né
     // phòng thủ từ trang bị (chỉ với đòn đánh trực tiếp, không áp cho độc/bỏng)
     if (t.c && src && (kind === 'hit' || kind === 'crit' || kind === 'hurt')) {
       const fx = t.stats.fx || {};

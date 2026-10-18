@@ -36,7 +36,7 @@
   };
 
   // ---------- Bàn phím ----------
-  const KEYMAP = { Digit1: ['skill', 0], Space: ['skill', 0], Digit2: ['slot', 1], Digit3: ['slot', 2], Digit4: ['slot', 3], Digit5: ['slot', 4], Digit6: ['slot', 5], Digit7: ['slot', 6], KeyT: ['mount'],
+  const KEYMAP = { Digit1: ['skill', 0], Space: ['skill', 0], Digit2: ['slot', 1], Digit3: ['slot', 2], Digit4: ['slot', 3], Digit5: ['slot', 4], Digit6: ['slot', 5], Digit7: ['slot', 6], KeyT: ['mount'], ShiftLeft: ['dodge'], ShiftRight: ['dodge'], KeyQ: ['dodge'],
     KeyZ: ['potion', 'hp'], KeyX: ['potion', 'mp'], Tab: ['target'], KeyF: ['interact'], KeyR: ['auto'],
     KeyI: ['panel', 'inventory'], KeyC: ['panel', 'character'], KeyJ: ['panel', 'quests'], KeyG: ['panel', 'guild'], KeyB: ['panel', 'friends'],
     KeyO: ['panel', 'events'], KeyL: ['panel', 'leaderboard'], KeyM: ['panel', 'mount'], KeyK: ['panel', 'skills'], Escape: ['escape'], Enter: ['chat'] };
@@ -115,6 +115,7 @@
   hold(document.getElementById('btn-mp'), () => emit('potion', 'mp'));
   hold(document.getElementById('btn-target'), () => emit('target'));
   hold(document.getElementById('btn-mount'), () => emit('mount'));
+  hold(document.getElementById('btn-dodge'), () => emit('dodge'));
 
   // ---------- Tay cầm (Gamepad) ----------
   const prevBtn = {};
@@ -158,12 +159,13 @@
   };
   Input.goLandscape = async function () {
     if (isTouch) {
+      const tmo = (pr) => Promise.race([pr, new Promise(r => setTimeout(r, 1200))]);   // trình duyệt treo lời gọi thì bỏ qua
       try {
         const el = document.documentElement;
-        if (!document.fullscreenElement && el.requestFullscreen) await el.requestFullscreen({ navigationUI: 'hide' });
+        if (!document.fullscreenElement && el.requestFullscreen) await tmo(el.requestFullscreen({ navigationUI: 'hide' }));
         else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
       } catch (e) { /* trình duyệt không hỗ trợ */ }
-      try { if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape'); } catch (e) { /* iOS: dùng xoay bằng CSS */ }
+      try { if (screen.orientation && screen.orientation.lock) await tmo(screen.orientation.lock('landscape')); } catch (e) { /* iOS: dùng xoay bằng CSS */ }
     }
     this.applyLayout();
   };

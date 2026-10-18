@@ -559,3 +559,10 @@ body.touch #wanted-hud { top: 104px; font-size: 11px; }
 /* biểu tượng vật phẩm vẽ mịn (64px thu nhỏ) */
 img.ic { image-rendering: auto; width: 36px; height: 36px; filter: drop-shadow(0 1px 1px rgba(0,0,0,.45)); }
 .slot img.ic { width: 38px; height: 38px; }
+
+/* ---------- Né chiêu ---------- */
+.act.dodge { width: 54px; height: 54px; right: 214px; bottom: 30px; font-size: 24px; background: radial-gradient(#3a7ab8, #0e2240); border-color: #8fd0ff; }
+.act.dodge.ready { box-shadow: 0 0 10px rgba(120,200,255,.55); }
+#skillbar .dodge-sk { font-size: 22px; background: radial-gradient(#2a5a8a, #0e1c30); border-color: #6ab0e8; }
+#skillbar .dodge-sk.ready { box-shadow: 0 0 8px rgba(120,200,255,.5); }
+.dg-ic { position: relative; z-index: 1; }

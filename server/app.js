@@ -263,6 +263,7 @@ io.on('connection', socket => {
   on('move', inGame(d => world.handleMove(player, d)));
   on('skill', inGame(d => world.useSkill(player, d && d.idx, d && d.target)));
   on('respawn', inGame(() => world.respawn(player)));
+  on('dodge', inGame(d => world.dodge(player, d)));
   on('useItem', inGame(d => world.useItem(player, d && d.uid)));
   on('quickUse', inGame(d => {
     const id = d && d.kind === 'mp' ? player.c.quickMp : player.c.quickHp;

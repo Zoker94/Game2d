@@ -6,7 +6,7 @@
   const G = window.G = {
     data: null, config: null, socket: null, token: localStorage.getItem('vl_token'), user: null,
     me: null, you: null, map: null, solid: new Set(),
-    players: new Map(), monsters: new Map(), drops: new Map(), carts: new Map(), corpses: [],
+    players: new Map(), monsters: new Map(), drops: new Map(), carts: new Map(), corpses: [], ghosts: [], dash: null, dodgeCd: null,
     self: { x: 0, y: 0, dir: 0, moving: false, atkUntil: 0 },
     fx: [], floats: [], target: null, moveTo: null, npcGoal: null,
     cds: {}, pending: {}, auto: false, events: null, daily: null, inGame: false,
@@ -404,6 +404,7 @@
   const FxSpawn = f => FX.spawn(f);
   function onFx(d) {
     const now = performance.now();
+    if (d.t === 'dodge') { onDodge(d, now); return; }
     const src = d.from && entityById(d.from);
     if (src && d.from !== G.you) { src.atkKind = BASIC_FX.has(d.t) ? 'atk' : 'skill'; src.atkStart = now; src.atkDur = src.atkKind === 'atk' ? 300 : 440; src.atkUntil = now + src.atkDur; }
     if (d.t === 'death' && G.monsters.has(d.id)) {   // giữ xác quái để chạy khung ngã
@@ -416,6 +417,47 @@
     if (d.t === 'levelup' && !d.small) sfx('level');
     else fxSound(d);
   }
+  // lướt né: để lại 5 bóng mờ dọc đường lướt
+  function onDodge(d, now) {
+    const self = d.from === G.you, e = self ? G.self : G.players.get(d.from);
+    const cls = self ? G.me && G.me.cls : e && e.cls, ap = self ? G.me && G.me.ap : e && e.ap;
+    const dir = Math.abs(d.tx - d.x) > Math.abs(d.ty - d.y) ? (d.tx > d.x ? 2 : 1) : (d.ty > d.y ? 0 : 3);
+    if (cls) G.ghosts.push({ cls, ap, dir, x0: d.x, y0: d.y, x1: d.tx, y1: d.ty, t0: now });
+    if (self) {
+      G.dash = { x0: d.x, y0: d.y, x1: d.tx, y1: d.ty, t0: now, dur: 150 };
+      G.self.dir = dir; G.moveTo = null; G.chase = null;
+      G.dodgeCd = { until: now + d.cd, total: d.cd };
+    } else if (e) { e.x = d.tx; e.y = d.ty; e.tx = d.tx; e.ty = d.ty; e.dir = dir; }
+    const near = Math.hypot(d.x - G.self.x, d.y - G.self.y);
+    if (near < 700) GameAudio.sfx('whoosh', 60);
+    FX.emit(10, d.x, d.y - 6, { speed: 60, life: 380, size: 4, color: '#c8e8ff', drag: 3 });
+  }
+  const ghostCache = {};
+  function ghostFrame(cls, dir, ap) {
+    const key = cls + dir + (ap || []).join(',');
+    if (ghostCache[key]) return ghostCache[key];
+    const fr = Assets.charFrame(cls, dir, 'walk', 2, ap);
+    const c = document.createElement('canvas'); c.width = fr.width; c.height = fr.height;
+    const x = c.getContext('2d');
+    x.drawImage(fr, 0, 0);
+    x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(140,215,255,0.62)'; x.fillRect(0, 0, c.width, c.height);
+    return (ghostCache[key] = c);
+  }
+  function drawGhosts(now) {
+    G.ghosts = G.ghosts.filter(g => now - g.t0 < 650);
+    for (const g of G.ghosts) {
+      if (!Assets.has(g.cls)) continue;
+      const fr = ghostFrame(g.cls, g.dir, g.ap), age = (now - g.t0) / 650;
+      for (let k = 0; k < 5; k++) {
+        const t = k / 5;
+        ctx.globalAlpha = Math.max(0, (0.32 + t * 0.45) * (1 - age * age));
+        ctx.save(); ctx.translate(Math.round(g.x0 + (g.x1 - g.x0) * t), Math.round(g.y0 + (g.y1 - g.y0) * t));
+        ctx.drawImage(fr, -48, -86); ctx.restore();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
   function onDmg(d) {
     const e = entityById(d.id);
     if (!e) return;
@@ -586,6 +628,17 @@
   Input.on('interact', interact);
   Input.on('auto', () => setAuto(!G.auto));
   Input.on('mount', () => G.socket && G.socket.emit('mount', { op: 'ride' }));
+  // Né chiêu (lướt): theo hướng đang đi, không đi thì theo hướng đang nhìn
+  Input.on('dodge', () => {
+    const now = performance.now();
+    if (!G.socket || !G.me || G.me.dead || G.dash || (G.dodgeCd && G.dodgeCd.until > now)) return;
+    if (Overhead.mask(G.self, now) & 3) return;
+    let v = Input.vector();
+    if (Math.hypot(v.x, v.y) < 0.1 && G.moveTo) { const dx = G.moveTo.x - G.self.x, dy = G.moveTo.y - G.self.y, d = Math.hypot(dx, dy) || 1; v = { x: dx / d, y: dy / d }; }
+    if (Math.hypot(v.x, v.y) < 0.1) v = [{ x: 0, y: 1 }, { x: -1, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }][G.self.dir || 0];
+    G.socket.emit('dodge', { x: v.x, y: v.y });
+    G.dodgeCd = { until: now + 600, total: 5000, pending: true };   // chờ máy chủ xác nhận
+  });
   Input.on('panel', n => UI.togglePanel(n));
   Input.on('escape', () => UI.closePanel());
   Input.on('chat', () => UI.focusChat());
@@ -660,6 +713,12 @@
     const dead = G.me.dead;
     const myMask = Overhead.mask(s, now);
     const cc = !!(myMask & 3);   // choáng / đóng băng: không đi, không đánh được
+    if (G.dash) {   // đang lướt: trượt nhanh tới điểm đích
+      const p = Math.min(1, (now - G.dash.t0) / G.dash.dur), e2 = 1 - (1 - p) * (1 - p);
+      s.x = G.dash.x0 + (G.dash.x1 - G.dash.x0) * e2; s.y = G.dash.y0 + (G.dash.y1 - G.dash.y0) * e2; s.moving = true;
+      if (p >= 1) { G.dash = null; lastSent = { x: s.x, y: s.y, m: false }; lastSend = now; }
+      return;
+    }
     let v = dead || cc ? { x: 0, y: 0 } : Input.vector();
     const manual = Math.hypot(v.x, v.y) > 0.01;
     if (manual) { G.moveTo = null; G.npcGoal = null; G.chase = null; }
@@ -893,6 +952,7 @@
       ctx.beginPath(); ctx.ellipse(tgt.x, tgt.y + 2, rr, rr * 0.4, 0, 0, Math.PI * 2); ctx.stroke();
     }
 
+    drawGhosts(now);
     const frameOf = (moving, seed) => moving ? Math.floor(now / 140 + (seed || 0)) % 4 : 0;
     for (const it of list) {
       if (it.k === 'tall') {
@@ -901,13 +961,23 @@
         WorldArt.drawDeco(ctx, it.d, now, nearPl);
       } else if (it.k === 'npc') {
         const n = it.n, nx = (n.x + 0.5) * TILE, ny = (n.y + 0.5) * TILE;
-        const img = Sprites.npcSprite(n.sprite, n.color, Math.floor(now / 600) % 2 ? 0 : 0);
-        ctx.drawImage(img, nx - 32, ny - 44);
-        label(nx, ny - 50, n.name, '#7fffd4', 12, true);
+        const dxp = G.self.x - nx, dyp = G.self.y - (ny + 20);
+        const near = Math.hypot(dxp, dyp) < TILE * 3.5, side = near && Math.abs(dxp) > Math.abs(dyp) * 1.2;
+        const nf = Assets.npcFrame(n.id, Math.floor(now / 320 + n.x) % 4, side);
+        let ntop = ny - 50;
+        if (nf) {
+          const fy = ny + 20;
+          ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(nx, fy, 14, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.save(); ctx.translate(nx, fy); if (side && dxp < 0) ctx.scale(-1, 1);
+          ctx.drawImage(nf.img, nf.sx, nf.sy, nf.w, nf.h, -nf.fx, -nf.fy, nf.w, nf.h);
+          ctx.restore();
+          ntop = fy - 76;
+        } else ctx.drawImage(Sprites.npcSprite(n.sprite, n.color, 0), nx - 32, ny - 44);
+        label(nx, ntop, n.name, '#7fffd4', 12, true);
         const tut = G.me && G.me.tutorial;
         if (tut && !tut.done && ((tut.type === 'talk' && tut.npc === n.id) || (tut.type === 'buy' && n.action === 'shop') || (tut.type === 'daily' && n.id === 'su_gia'))) {
           const by = Math.sin(now / 200) * 4;
-          label(nx, ny - 72 + by, '❗', '#ffd700', 22);
+          label(nx, ntop - 22 + by, '❗', '#ffd700', 22);
         }
       } else if (it.k === 'mon') {
         const mm = Overhead.mask(it.e, now) & ~2;   // băng của quái đã vẽ trong drawMonster

@@ -166,6 +166,15 @@
     };
     mk(skills[0], '1/␣', () => G.useSkill(0));
     hb.forEach((idx, n) => mk(idx ? skills[idx] : null, SLOT_KEYS[n], () => G.useSlot(n + 1)));
+    {   // nút né chiêu
+      const d = document.createElement('div');
+      d.className = 'skill dodge-sk'; d.id = 'dodge-sk';
+      d.innerHTML = `<span class="key">⇧/Q</span><span class="dg-ic">💨</span><div class="cdo"></div><div class="cdt"></div>`;
+      d.onclick = () => Input.emit('dodge');
+      d.onmouseenter = e => tip(e, '<b>Né chiêu (lướt)</b><br>Lướt nhanh theo hướng đang đi, né mọi đòn đánh trong 0,4 giây và để lại bóng mờ.<br>Phím Shift hoặc Q · Hồi 5 giây');
+      d.onmouseleave = hideTip;
+      bar.appendChild(d);
+    }
     for (const k of ['hp', 'mp']) {
       const d = document.createElement('div');
       d.className = 'skill'; d.id = 'pot-' + k;
@@ -282,6 +291,15 @@
   };
 
   UI.frame = function (now) {
+    // hồi né chiêu
+    const dc = G.dodgeCd, dr = dc && dc.until > now ? (dc.until - now) / dc.total : 0;
+    const dtx = dc && dc.until > now && !dc.pending ? Math.ceil((dc.until - now) / 1000) : '';
+    for (const el of document.querySelectorAll('#dodge-sk, #btn-dodge')) {
+      const o = el.querySelector('.cdo'), t = el.querySelector('.cdt');
+      if (o) o.style.height = (dc && dc.pending ? 0 : dr * 100) + '%';
+      if (t && t.textContent != dtx) t.textContent = dtx;
+      el.classList.toggle('ready', !dr);
+    }
     // hồi chiêu
     G.mySkills().forEach((s, i) => {
       const cd = G.skillCd(i);
