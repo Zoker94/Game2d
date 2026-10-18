@@ -182,8 +182,29 @@
     timer = setInterval(schedule, 100);
   }
 
+  // âm nền thời tiết: tiếng mưa / gió liên tục
+  let amb = null;
+  const AMB = { rain: [0.16, 'lowpass', 2600, 0], storm: [0.28, 'lowpass', 1800, 0], wind: [0.14, 'bandpass', 500, 1], blizzard: [0.2, 'bandpass', 700, 1], snow: [0.04, 'bandpass', 400, 1] };
+  function ambience(kind) {
+    if (!init()) return;
+    const cfg = AMB[kind], t = ctx.currentTime;
+    if (amb && amb.kind === kind) return;
+    if (amb) { const a = amb; a.g.gain.setTargetAtTime(0.0001, t, 0.6); setTimeout(() => { try { a.s.stop(); a.lfo && a.lfo.stop(); } catch (e) { } }, 3000); amb = null; }
+    if (!cfg) return;
+    const s = ctx.createBufferSource(); s.buffer = noiseBuf; s.loop = true;
+    const fl = ctx.createBiquadFilter(); fl.type = cfg[1]; fl.frequency.value = cfg[2]; fl.Q.value = cfg[3] ? 0.8 : 0.5;
+    const g = ctx.createGain(); g.gain.value = 0.0001; g.gain.setTargetAtTime(cfg[0], t, 1.2);
+    let lfo = null;
+    if (cfg[3]) {   // gió: tần số dao động như từng cơn
+      lfo = ctx.createOscillator(); lfo.frequency.value = 0.13;
+      const lg = ctx.createGain(); lg.gain.value = cfg[2] * 0.6; lfo.connect(lg); lg.connect(fl.frequency); lfo.start();
+    }
+    s.connect(fl); fl.connect(g); g.connect(sfxBus); s.start();
+    amb = { kind, s, g, lfo };
+  }
+
   window.GameAudio = {
-    init, sfx, music, get state() { return st; },
+    init, sfx, music, ambience, get state() { return st; },
     set(k, v) { st[k] = v; save(); applyVol(); if (k === 'music' && v && mood) { const m = mood; mood = null; music(m); } },
     get mood() { return mood; }
   };

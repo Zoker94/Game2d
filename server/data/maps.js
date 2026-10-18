@@ -44,6 +44,7 @@ const MAP_DEFS = {
       { id: 'le_quan',    x: 26, y: 9 },
       { id: 'su_gia',     x: 17, y: 8 },
       { id: 'ma_phu',     x: 8,  y: 13 },
+      { id: 'thu_kho',    x: 8,  y: 17 },
       { id: 'tang_kinh',  x: 26, y: 18 }
     ],
     spawns: []

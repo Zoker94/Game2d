@@ -527,3 +527,9 @@ table.cmp tr.cmp-pw td { font-weight: 700; }
 .fx-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2px 10px; font-size: 12px; color: #ffd76a; margin: 4px 0; }
 /* điện thoại: menu 5 nút / hàng để không đè lên nút thuốc */
 body.touch #menu-buttons { max-width: 236px; }
+
+/* ---------- Tiền Trang ---------- */
+.bank-gold { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,215,0,.05); margin-bottom: 6px; }
+.bank-grid { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; background: rgba(0,0,0,.2); border-radius: 6px; max-height: 220px; overflow: auto; margin-bottom: 6px; }
+#weather-tag { font-weight: 600; color: #cfe3ff; font-size: 12px; }
+#weather-tag.wt-sun { color: #ffb84a; } #weather-tag.wt-storm { color: #b8a8ff; } #weather-tag.wt-snow, #weather-tag.wt-blizzard { color: #e8f6ff; }

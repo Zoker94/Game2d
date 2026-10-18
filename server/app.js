@@ -266,7 +266,7 @@ io.on('connection', socket => {
   on('useItem', inGame(d => world.useItem(player, d && d.uid)));
   on('quickUse', inGame(d => {
     const id = d && d.kind === 'mp' ? player.c.quickMp : player.c.quickHp;
-    const pref = d && d.kind === 'mp' ? ['mp3', 'mp2', 'mp1'] : ['hp3', 'hp2', 'hp1'];
+    const pref = d && d.kind === 'mp' ? ['mp5', 'mp4', 'mp6', 'mp3', 'mp2', 'mp1'] : ['hp5', 'hp4', 'hp6', 'hp3', 'hp2', 'hp1'];
     const order = [id, ...pref].filter(x => ITEMS[x] && player.c.level >= (ITEMS[x].lv || 1));
     const s = order.map(x => player.c.inv.find(i => i.id === x)).find(Boolean);
     if (!s) return d && d.auto ? socket.emit('noPot', { kind: d.kind === 'mp' ? 'mp' : 'hp' }) : world.toast(player, 'Không còn thuốc!', 'error');
@@ -277,6 +277,7 @@ io.on('connection', socket => {
   on('discard', inGame(d => world.discard(player, d && d.uid)));
   on('npc', inGame(d => world.talkNpc(player, d && d.id)));
   on('buy', inGame(d => world.buy(player, d || {})));
+  on('bank', inGame(d => world.bankOp(player, d)));
   on('sell', inGame(d => world.sell(player, d || {})));
   on('enhance', inGame(d => world.enhance(player, d || {})));
   on('mount', inGame(d => d && world.mountAction(player, d)));

@@ -23,6 +23,23 @@ const LEASH_R = 650;
 
 let entSeq = 1;
 
+// Thời tiết: trọng số theo chủ đề bản đồ
+const WEATHER_NAME = { clear: 'Trời quang', rain: 'Mưa', storm: 'Bão giông', wind: 'Gió lớn', snow: 'Tuyết rơi', blizzard: 'Bão tuyết', sun: 'Nắng gắt' };
+const WEATHER_TABLE = {
+  plains:   [['clear', 45], ['rain', 18], ['storm', 8], ['wind', 15], ['sun', 14]],
+  town:     [['clear', 50], ['rain', 18], ['storm', 6], ['wind', 12], ['sun', 14]],
+  river:    [['clear', 40], ['rain', 25], ['storm', 12], ['wind', 15], ['sun', 8]],
+  bamboo:   [['clear', 45], ['rain', 25], ['storm', 8], ['wind', 22]],
+  ruins:    [['clear', 45], ['rain', 20], ['storm', 10], ['wind', 15], ['sun', 10]],
+  mountain: [['clear', 40], ['rain', 15], ['storm', 10], ['wind', 20], ['snow', 15]],
+  arena:    [['clear', 50], ['rain', 15], ['storm', 10], ['wind', 10], ['sun', 15]],
+  desert:   [['clear', 30], ['sun', 45], ['wind', 25]],
+  snow:     [['clear', 20], ['snow', 45], ['blizzard', 25], ['wind', 10]],
+  tomb:     [['clear', 55], ['rain', 25], ['wind', 20]],
+  demon:    [['clear', 50], ['storm', 30], ['wind', 20]],
+  cave:     [['clear', 1]]
+};
+
 class World {
   constructor(io, db) {
     this.io = io;
@@ -124,7 +141,7 @@ class World {
     p.socket.emit('init', {
       you: p.id,
       map: { id: d.id, name: d.name, theme: d.theme, w: d.w, h: d.h, tiles: d.tiles, safe: d.safe, pvp: d.pvp, lv: d.lv,
-        portals: d.portals, npcs: d.npcs.map(n => ({ ...n, name: NPCS[n.id].name, sprite: NPCS[n.id].sprite, color: NPCS[n.id].color, action: NPCS[n.id].action })) },
+        weather: this.weatherOf(mapId), portals: d.portals, npcs: d.npcs.map(n => ({ ...n, name: NPCS[n.id].name, sprite: NPCS[n.id].sprite, color: NPCS[n.id].color, action: NPCS[n.id].action })) },
       x, y, solid: SOLID, tile: TILE,
       drops: [...m.drops.values()].map(dr => this.dropView(dr))
     });
@@ -155,7 +172,7 @@ class World {
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null,
       skills: c.skills || {}, hotbar: c.hotbar, sp: skillPointsTotal(c.level) - (c.spSpent || 0),
-      mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c),
+      mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 },
       st: this.statusView(p), friends: Object.keys(c.friends || {}).length, pk: c.pk || 0,
       rank: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0
     };
@@ -640,7 +657,7 @@ class World {
       map.monsters.delete(mon.id);
     } else {
       const r = Math.random;
-      if (r() < 0.10) drops.push(tier >= 4 ? (r() < 0.5 ? 'hp3' : 'mp3') : tier >= 2 ? (r() < 0.5 ? 'hp2' : 'mp2') : (r() < 0.5 ? 'hp1' : 'mp1'));
+      if (r() < 0.10) drops.push(tier >= 6 ? (r() < 0.5 ? 'hp4' : 'mp4') : tier >= 4 ? (r() < 0.5 ? 'hp3' : 'mp3') : tier >= 2 ? (r() < 0.5 ? 'hp2' : 'mp2') : (r() < 0.5 ? 'hp1' : 'mp1'));
       if (r() < 0.03 * dr) drops.push('stone');
       if (r() < 0.04 * dr) drops.push(equipId(rslot(), tier, 'common'));
       if (r() < 0.012 * dr) drops.push(equipId(rslot(), tier, 'rare'));
@@ -721,12 +738,14 @@ class World {
     if (p.dead) return;
     if (c.level < (it.lv || 1)) return this.toast(p, `Cần cấp ${it.lv}`, 'error');
     const e = it.effect || {};
-    if (e.hp || e.mp) {
+    if (e.hp || e.mp || e.hpPct || e.mpPct) {
       if (p._potCd && p._potCd > Date.now()) return;
       p._potCd = Date.now() + 500;
-      if (e.hp) c.hp = Math.min(p.stats.maxHp, c.hp + e.hp);
-      if (e.mp) c.mp = Math.min(p.stats.maxMp, c.mp + e.mp);
-      this.io.to('map:' + p.mapId).emit('dmg', { id: p.id, v: e.hp || e.mp, k: e.hp ? 'heal' : 'mana' });
+      const hv = (e.hp || 0) + Math.round(p.stats.maxHp * (e.hpPct || 0) / 100);
+      const mv = (e.mp || 0) + Math.round(p.stats.maxMp * (e.mpPct || 0) / 100);
+      if (hv) c.hp = Math.min(p.stats.maxHp, c.hp + hv);
+      if (mv) c.mp = Math.min(p.stats.maxMp, c.mp + mv);
+      this.io.to('map:' + p.mapId).emit('dmg', { id: p.id, v: hv || mv, k: hv ? 'heal' : 'mana' });
       this.features.questProgress(p, 'potion', 1);
     }
     if (e.town) { U.removeByUid(c, uid, 1); this.teleport(p, 'tuong_duong'); p.dirtyMe = true; return; }
@@ -846,6 +865,47 @@ class World {
     if (npc.knbShop) out.knbShop = npc.knbShop;
     if (npc.action === 'teleport') out.teleports = TELEPORTS.map(t => ({ ...t, name: MAPS[t.map].name, lv: MAPS[t.map].lv, minLv: MAPS[t.map].minLv }));
     p.socket.emit('npc', out);
+  }
+
+  // Tiền trang: cất / rút vật phẩm và ngân lượng
+  bankOp(p, d) {
+    if (!d || !this.nearNpc(p, 'thu_kho')) return this.toast(p, 'Hãy đến gặp Thủ Kho Tiền Trang trong thành', 'error');
+    const c = p.c, BANK = 60;
+    const b = c.bank || (c.bank = { items: [], gold: 0 });
+    if (p.trade) return this.toast(p, 'Đang giao dịch, không thể dùng kho', 'error');
+    const qtyOf = (s) => U.clamp(Math.floor(+d.qty || s.qty), 1, s.qty);
+    if (d.op === 'put') {
+      const s = c.inv.find(x => x.uid === d.uid);
+      if (!s) return;
+      const n = qtyOf(s);
+      if (U.isStack(s.id)) {
+        const ex = b.items.find(x => x.id === s.id);
+        if (!ex && b.items.length >= BANK) return this.toast(p, 'Kho đã đầy', 'error');
+        U.removeByUid(c, s.uid, n);
+        if (ex) ex.qty += n; else b.items.push({ uid: U.newUid(), id: s.id, qty: n });
+      } else {
+        if (b.items.length >= BANK) return this.toast(p, 'Kho đã đầy', 'error');
+        c.inv.splice(c.inv.indexOf(s), 1);
+        b.items.push(s);
+      }
+    } else if (d.op === 'take') {
+      const i = b.items.findIndex(x => x.uid === d.uid);
+      if (i < 0) return;
+      const s = b.items[i], n = qtyOf(s);
+      if (U.isStack(s.id)) {
+        if (!U.addItem(c, s.id, n)) return this.toast(p, 'Túi đồ đầy', 'error');
+        s.qty -= n; if (s.qty <= 0) b.items.splice(i, 1);
+      } else {
+        if (U.freeSlots(c) <= 0) return this.toast(p, 'Túi đồ đầy', 'error');
+        b.items.splice(i, 1); c.inv.push(s);
+      }
+    } else if (d.op === 'gold') {
+      const v = Math.floor(+d.v || 0);
+      if (v > 0) { if (c.gold < v) return this.toast(p, 'Không đủ ngân lượng', 'error'); c.gold -= v; b.gold += v; }
+      else if (v < 0) { if (b.gold < -v) return this.toast(p, 'Kho không đủ ngân lượng', 'error'); b.gold += v; c.gold -= v; }
+      else return;
+    } else return;
+    p.dirtyMe = true;
   }
 
   buy(p, { npc: npcId, id, qty, knb }) {
@@ -1021,10 +1081,38 @@ class World {
     this.timer = setInterval(() => this.tick(), TICK);
   }
 
+  // ---------- thời tiết theo bản đồ ----------
+  weatherOf(mapId) {
+    const w = this.weather && this.weather[mapId];
+    return w ? { k: w.k, until: w.until } : { k: 'clear', until: 0 };
+  }
+  setWeather(mapId, k, dur) {
+    if (!WEATHER_NAME[k] || !this.maps[mapId]) return false;
+    this.weather = this.weather || {};
+    this.weather[mapId] = { k, until: Date.now() + dur };
+    this.io.to('map:' + mapId).emit('weather', this.weatherOf(mapId));
+    return true;
+  }
+  rollWeather(now) {
+    this.weather = this.weather || {};
+    for (const id in this.maps) {
+      const cur = this.weather[id];
+      if (cur && cur.until > now) continue;
+      const tbl = WEATHER_TABLE[this.maps[id].def.theme] || WEATHER_TABLE.plains;
+      let r = Math.random() * tbl.reduce((a, x) => a + x[1], 0), k = 'clear';
+      for (const [kk, w] of tbl) { if ((r -= w) < 0) { k = kk; break; } }
+      const dur = (k === 'clear' ? 4 : 2.5) * 60000 + Math.random() * 3 * 60000;
+      const changed = !cur || cur.k !== k;
+      this.weather[id] = { k, until: now + dur };
+      if (changed && this.maps[id].players.size) this.io.to('map:' + id).emit('weather', this.weatherOf(id));
+    }
+  }
+
   tick() {
     const now = Date.now();
     this.tickN++;
     const sec = this.tickN % 20 === 0;
+    if (sec) this.rollWeather(now);
     for (const id in this.maps) {
       const m = this.maps[id];
       if (m.players.size === 0 && !sec) continue; // bản đồ trống: cập nhật thưa
@@ -1209,4 +1297,5 @@ function segDist(px, py, ax, ay, bx, by) {
   return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
 }
 
+World.WEATHER_NAME = WEATHER_NAME;
 module.exports = { World, MONSTERS, BOSSES };

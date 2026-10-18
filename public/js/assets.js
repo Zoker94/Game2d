@@ -8,7 +8,7 @@
   // Hàng: 0 nhìn xuống, 1 nhìn lên, 2 nhìn phải (trái = lật). Cột: đứng 0-3, đi 4-9, đánh 10-13, ra chiêu 14-17, trúng đòn 18
   const CLASSES = ['thieulam', 'ngudoc', 'thienvuong', 'caibang', 'vodang', 'ngamy', 'thuyyen', 'conlon', 'duongmon'];
   const CELL = 96, FOOT_X = 48, FOOT_Y = 86;
-  const ANIM = { idle: [0, 4], walk: [4, 6], atk: [10, 4], cast: [14, 4], hurt: [18, 1] };
+  const ANIM = { idle: [0, 4], walk: [4, 6], atk: [10, 4], cast: [14, 4], hurt: [18, 1], ride: [19, 2] };
   // Biểu tượng võ công theo thứ tự 6 chiêu của mỗi môn phái
   const SKILL_ICON = {
     vodang:     ['vodang_i2', 'vodang_i1', 'vd_taiji2', 'vodang_i3', 'cl_swords', 'vodang_i0'],
@@ -120,7 +120,7 @@
     if (cache[key]) return cache[key];
     const [row, col] = cellOf(dir, state, i);
     const [c, x] = mk(CELL, CELL);
-    x.fillStyle = 'rgba(0,0,0,0.3)'; x.beginPath(); x.ellipse(FOOT_X, FOOT_Y, state === 'dead' ? 22 : 13, 4, 0, 0, Math.PI * 2); x.fill();
+    if (state !== 'ride') { x.fillStyle = 'rgba(0,0,0,0.3)'; x.beginPath(); x.ellipse(FOOT_X, FOOT_Y, state === 'dead' ? 22 : 13, 4, 0, 0, Math.PI * 2); x.fill(); }
     if (dir === 1) { x.translate(CELL, 0); x.scale(-1, 1); }
     if (body) x.drawImage(body, col * CELL, row * CELL, CELL, CELL, 0, 0, CELL, CELL);
     if (state !== 'dead') {
@@ -130,6 +130,39 @@
     // ảnh chưa tải xong thì không lưu bộ nhớ đệm để lần sau vẽ đúng
     if (!body || (L.w && wpn === imgs[cls + '_w0'] && !imgs[cls + '_w' + L.w]) || (L.h && !helm) || (L.a && !imgs[cls + '_a' + L.a])) return c;
     return put(key, c);
+  }
+  // ----- người cưỡi: ngồi trên yên, giữ nguyên đôi chân -----
+  // Đánh / ra chiêu khi cưỡi: thân trên lấy từ khung đánh, phần chân lấy từ khung ngồi.
+  const HIP_Y = 66;
+  const riderCache = new WeakMap();
+  function riderFrame(cls, dir, state, i, ap) {
+    const legs = charFrame(cls, dir, 'ride', i % 2, ap);
+    if (state !== 'atk' && state !== 'cast' && state !== 'hurt') return legs;
+    const up = charFrame(cls, dir, state, i, ap);
+    let m = riderCache.get(up);
+    if (m && m.get(legs)) return m.get(legs);
+    const [c, x] = mk(CELL, CELL);
+    x.drawImage(legs, 0, HIP_Y - 4, CELL, CELL - HIP_Y + 4, 0, HIP_Y - 4, CELL, CELL - HIP_Y + 4);
+    x.clearRect(0, 0, CELL, HIP_Y - 4);
+    x.drawImage(up, 0, 0, CELL, HIP_Y - 1, 0, 0, CELL, HIP_Y - 1);
+    if (!m) riderCache.set(up, m = new WeakMap());
+    m.set(legs, c);
+    return c;
+  }
+  // ----- thú cưỡi (ảnh tools/mounts.py): ô 128x96, nhìn ngang quay phải, kèm điểm yên từng khung -----
+  let MOUNT_META = null;
+  fetch(BASE + 'mounts.json').then(r => r.ok ? r.json() : null).then(j => { MOUNT_META = j; }).catch(() => { });
+  const mountImgs = {}, mountLoading = {};
+  function mountFrame(id, moving, t) {
+    if (!MOUNT_META || !MOUNT_META.seat[id]) return null;
+    if (!mountImgs[id]) {
+      if (!mountLoading[id]) mountLoading[id] = load('mounts/' + id + '.png').then(im => { if (im) mountImgs[id] = im; });
+      return null;
+    }
+    const [fs, fn] = MOUNT_META.frames[moving ? 'run' : 'idle'];
+    const k = Math.floor(t / (moving ? 95 : 700)) % fn;
+    const col = fs + k, [cw, ch] = MOUNT_META.cell;
+    return { img: mountImgs[id], sx: col * cw, cw, ch, foot: MOUNT_META.foot, seat: MOUNT_META.seat[id][col], k };
   }
   // ảnh đại diện (đầu + vai) cho khung avatar / thẻ môn phái
   function avatar(cls, size, ap) {
@@ -180,5 +213,5 @@
     return `<i class="sk-img" style="background-image:url('${url}');--skc:${s.color || '#ffd76a'}"></i>`;
   }
 
-  window.Assets = { ready, imgs, has, charFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, SKILL_ICON, MONSTERS, skillIconUrl, skillIconHTML };
+  window.Assets = { ready, imgs, has, charFrame, riderFrame, mountFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, SKILL_ICON, MONSTERS, skillIconUrl, skillIconHTML };
 })();

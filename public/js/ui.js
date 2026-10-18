@@ -227,7 +227,7 @@
     $('btn-hp').innerHTML = `❤️<span class="cnt">${hpc}</span>`;
     $('btn-mp').innerHTML = `💧<span class="cnt">${mpc}</span>`;
     updateTutorial();
-    if (panel === 'inventory' || panel === 'character' || panel === 'mount' || panel === 'skills' || (panel === 'npc' && npcData)) UI.refreshPanel(true);
+    if (panel === 'inventory' || panel === 'character' || panel === 'mount' || panel === 'skills' || panel === 'bank' || (panel === 'npc' && npcData)) UI.refreshPanel(true);
   };
   function setBar(el, v, max) {
     if (!el) return;
@@ -850,7 +850,7 @@
       html += '<div class="card"><p>Bạn chưa có thú cưỡi. Hãy đến <b>Mã Phu Lão Trương</b> ở Tương Dương để mua Ngựa Nâu, hoặc săn Boss / mở Kỳ Trân Các để có thú cưỡi hiếm như Bạch Hổ, Hỏa Kỳ Lân, Thanh Long!</p></div>';
     }
     body.innerHTML = html;
-    body.querySelectorAll('[data-mcv]').forEach(cv => { const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(Sprites.mountSprite(cv.dataset.mcv, all[cv.dataset.mcv], 0), 0, 0); });
+    body.querySelectorAll('[data-mcv]').forEach(cv => { const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; const f = Assets.mountFrame(cv.dataset.mcv, false, 0); if (f) c.drawImage(f.img, f.sx, 0, f.cw, f.ch, 0, 0, 96, 72); else { c.drawImage(Sprites.mountSprite(cv.dataset.mcv, all[cv.dataset.mcv], 0), 0, 0); if ((UI._mcvTry = (UI._mcvTry || 0) + 1) < 6) setTimeout(() => panel === 'mount' && UI.refreshPanel(true), 400); } });
     body.querySelectorAll('[data-mount]').forEach(el => el.onclick = () => { if (owned[el.dataset.mount]) { panelState.sel = el.dataset.mount; UI.refreshPanel(); } });
     body.querySelectorAll('[data-mop]').forEach(b => b.onclick = () => emit('mount', { op: b.dataset.mop, id: sel, n: +b.dataset.n || 1 }));
   }
@@ -867,6 +867,7 @@
     if (d.action === 'guild') { UI.openPanel('guild'); return; }
     if (d.action === 'event') { UI.openPanel('events', { tab: 'checkin' }); UI.toast(d.talk); return; }
     if (d.action === 'quest') { UI.openPanel('quests', { tab: 'daily' }); return; }
+    if (d.action === 'bank') { UI.openPanel('bank'); UI.toast(d.talk); return; }
     npcData = d;
     panel = 'npc';
     panelState = { tab: d.shop ? 'buy' : d.knbShop ? 'knb' : 'talk' };
@@ -916,7 +917,7 @@
   UI.registerPanel('auto', '🤖 Cài Đặt Tự Động', body => {
     const c = G.autoCfgGet(), me = G.me;
     const cnt = id => me.inv.filter(x => x.id === id).reduce((a, x) => a + x.qty, 0);
-    const pots = k => ['1', '2', '3'].map(n => k + n).filter(id => G.data.items[id]);
+    const pots = k => ['1', '2', '3', '6', '4', '5'].map(n => k + n).filter(id => G.data.items[id]);
     const tg = (k, label) => `<label class="au-row"><input type="checkbox" data-k="${k}" ${c[k] ? 'checked' : ''}><span>${label}</span></label>`;
     const sl = (k, min, max, label) => `<div class="au-row au-sl"><span>${label}</span><input type="range" min="${min}" max="${max}" step="5" value="${c[k]}" data-r="${k}"><b data-v="${k}">${c[k]}%</b></div>`;
     const potSel = (kind, cur) => `<select data-pot="${kind}">${pots(kind).map(id => `<option value="${id}" ${cur === id ? 'selected' : ''} ${me.level < (G.data.items[id].lv || 1) ? 'disabled' : ''}>${esc(G.data.items[id].name)} (còn ${cnt(id)})</option>`).join('')}</select>`;

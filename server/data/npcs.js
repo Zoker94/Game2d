@@ -21,7 +21,7 @@ const NPCS = {
     shop: equipOf(['ring', 'amulet']) },
   duoc_diem: { name: 'Dược Điếm Hồi Xuân', sprite: 'doctor', color: '#2e8b57', action: 'shop',
     talk: 'Thuốc thang đầy đủ, hành tẩu giang hồ không thể thiếu!',
-    shop: ['hp1', 'hp2', 'hp3', 'mp1', 'mp2', 'mp3'] },
+    shop: ['hp1', 'hp2', 'hp3', 'hp4', 'hp5', 'hp6', 'mp1', 'mp2', 'mp3', 'mp4', 'mp5', 'mp6'] },
   tap_hoa: { name: 'Tạp Hóa Tiểu Nhị', sprite: 'merchant', color: '#8b4513', action: 'shop',
     talk: 'Đủ thứ trên đời, cứ chọn thoải mái.',
     shop: ['scroll_town', 'stone', 'mount_food', 'exp_x2', 'wheel_ticket', 'hp1', 'mp1'] },
@@ -40,6 +40,8 @@ const NPCS = {
   tang_kinh: { name: 'Tàng Kinh Các', sprite: 'elder', color: '#2a6a4a', action: 'shop', bookShop: true,
     talk: 'Võ học vô biên. Mỗi môn phái có bí truyền riêng – hãy mua sách để lĩnh ngộ, rồi rèn luyện trong bảng Võ Công (phím K).',
     shop: Object.keys(require('./skillbooks').BOOKS) },
+  thu_kho: { name: 'Thủ Kho Tiền Trang', sprite: 'rich', color: '#b8860b', action: 'bank',
+    talk: 'Vàng bạc châu báu, binh khí y phục, cứ gửi ở Tiền Trang ta – mất một đền mười!' },
   xa_phu: { name: 'Xa Phu', sprite: 'driver', color: '#696969', action: 'teleport',
     talk: 'Khách quan muốn đi đâu? Xe ngựa đưa đón khắp giang hồ.' },
   bang_hoi: { name: 'Bang Hội Sứ Giả', sprite: 'guard', color: '#4682b4', action: 'guild',
@@ -50,7 +52,7 @@ const NPCS = {
     talk: 'Mỗi ngày đều có nhiệm vụ mới, hoàn thành để nhận thưởng hậu hĩnh.' },
   thuong_nhan: { name: 'Thương Nhân Lưu Động', sprite: 'merchant', color: '#cd853f', action: 'shop', field: true,
     talk: 'Đường xa vất vả, mua chút thuốc đi đường nào!',
-    shop: ['hp1', 'hp2', 'hp3', 'mp1', 'mp2', 'mp3', 'scroll_town', 'stone', 'mount_food'] }
+    shop: ['hp1', 'hp2', 'hp3', 'hp4', 'hp6', 'mp1', 'mp2', 'mp3', 'mp4', 'mp6', 'scroll_town', 'stone', 'mount_food'] }
 };
 
 for (const id in NPCS) {

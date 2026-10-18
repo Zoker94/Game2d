@@ -398,7 +398,7 @@ class Features {
     const findPlayer = name => [...w.players.values()].find(o => o.c.name.toLowerCase() === String(name || '').toLowerCase());
     switch (c) {
       case 'help': case 'lenh':
-        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: 'Lệnh admin: /admin (mở trang quản trị) · /tb <nội dung> · /tp <bản đồ> · /level <cấp> · /gold <số> · /knb <số> · /give <mã vật phẩm> [số lượng] [+cường hóa] · /heal · /boss <mã boss> · /event <mã sự kiện> [phút] · /kick <tên> · /goto <tên> · /keo <tên> · /online' });
+        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: 'Lệnh admin: /admin (mở trang quản trị) · /tb <nội dung> · /tp <bản đồ> · /level <cấp> · /gold <số> · /knb <số> · /give <mã vật phẩm> [số lượng] [+cường hóa] · /heal · /boss <mã boss> · /event <mã sự kiện> [phút] · /kick <tên> · /goto <tên> · /keo <tên> · /online · /thoitiet <clear|rain|storm|wind|snow|blizzard|sun> [phút]' });
         break;
       case 'tb': case 'thongbao': {
         const msg = args.join(' ');
@@ -431,6 +431,7 @@ class Features {
       }
       case 'goto': { const o = findPlayer(args.join(' ')); if (!o) return err('Người chơi không online'); w.enterMap(p, o.mapId, o.x + 40, o.y); break; }
       case 'keo': { const o = findPlayer(args.join(' ')); if (!o) return err('Người chơi không online'); w.enterMap(o, p.mapId, p.x + 40, p.y); ok('Đã kéo ' + o.c.name + ' tới chỗ bạn'); break; }
+      case 'thoitiet': case 'weather': { if (!w.setWeather(p.mapId, args[0], (+args[1] || 5) * 60000)) err('Kiểu: ' + Object.keys(w.constructor.WEATHER_NAME || {}).join(', ')); else ok('Đổi thời tiết bản đồ'); break; }
       case 'online': ok(`${w.players.size} người online: ` + [...w.players.values()].map(o => o.c.name).slice(0, 30).join(', ')); break;
       default: return err('Lệnh không tồn tại. Gõ /help để xem danh sách lệnh');
     }

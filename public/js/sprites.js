@@ -432,11 +432,23 @@
       case 'boots': p(3, 3, 4, 9, metal); p(3, 11, 7, 3, md); p(9, 3, 4, 9, metal); p(9, 11, 6, 3, md); break;
       case 'ring': p(4, 6, 8, 8, metal); p(6, 8, 4, 4, '#1b1b24'); p(6, 3, 4, 3, '#4fe'); p(7, 3, 1, 1, '#fff'); break;
       case 'amulet': p(3, 1, 1, 6, '#b8860b'); p(12, 1, 1, 6, '#b8860b'); p(4, 6, 8, 1, '#b8860b'); p(5, 7, 6, 7, metal); p(7, 9, 2, 3, '#3f3'); break;
-      case 'potion_r': case 'potion_r2': case 'potion_r3': case 'potion_b': case 'potion_b2': case 'potion_b3': {
-        const col = icon.startsWith('potion_r') ? '#e53935' : '#1e88e5';
-        const big = icon.endsWith('3') ? 1 : 0;
+      case 'potion_r': case 'potion_r2': case 'potion_r3': case 'potion_r4': case 'potion_r5': case 'potion_r6':
+      case 'potion_b': case 'potion_b2': case 'potion_b3': case 'potion_b4': case 'potion_b5': case 'potion_b6': {
+        const red = icon.startsWith('potion_r'), lvl = +(icon.slice(8) || 1);
+        const col = red ? ['#e53935', '#e53935', '#e53935', '#ff3d7f', '#c2185b', '#ff8a00'][lvl - 1] : ['#1e88e5', '#1e88e5', '#1e88e5', '#7c4dff', '#00acc1', '#26c6da'][lvl - 1];
+        if (lvl >= 4) {
+          // bình lớn: hồ lô / bình ngọc
+          const glass = lvl === 5 ? '#fff4c0' : '#e8e8f0';
+          p(6, 1, 4, 2, lvl === 5 ? '#ffd700' : '#8b5a2b'); p(6, 3, 4, 3, glass); p(7, 4, 2, 2, col);
+          p(3, 6, 10, 9, glass); p(4, 7, 8, 7, col); p(4, 7, 2, 3, '#fff'); p(5, 14, 6, 1, shade(col, -0.3));
+          p(3, 10, 10, 1, '#ffd700');
+          if (lvl === 6) { p(7, 9, 2, 4, '#fff'); p(6, 10, 4, 2, '#fff'); }
+          if (lvl === 5) { p(2, 6, 1, 2, '#ffd700'); p(13, 6, 1, 2, '#ffd700'); }
+          break;
+        }
+        const big = lvl === 3 ? 1 : 0;
         p(6, 2, 4, 2, '#8b5a2b'); p(7, 4, 2, 2, '#ddd'); p(4 - big, 6, 8 + big * 2, 8, '#ddd'); p(5 - big, 7, 6 + big * 2, 6, col); p(5, 7, 1, 2, '#fff');
-        if (icon.endsWith('2') || big) p(6, 10, 4, 1, '#ffd700');
+        if (lvl >= 2) p(6, 10, 4, 1, '#ffd700');
         break;
       }
       case 'scroll': p(3, 3, 10, 10, '#f5deb3'); p(2, 2, 12, 2, '#8b4513'); p(2, 12, 12, 2, '#8b4513'); p(5, 6, 6, 1, '#c00'); p(5, 8, 6, 1, '#c00'); break;

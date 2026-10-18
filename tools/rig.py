@@ -473,6 +473,7 @@ def render(cls, view, pose, prev=None, eyes=True, sway=0, armor=0, helm=0, ws=No
     hip, neck = J['hip'], J['neck']
     shR = J['shR']; shL = J['shL']
     hemU = max(1.5, L['hem'] * 1.18)
+    if pose.get('seated'): hemU = J['hip'][2] - 5   # ngồi trên ngựa: vạt áo phủ đùi, lộ cẳng chân
     knR, knL = J['knR'], J['knL']
     kfR, kfL = (knR[1] - hip[1]) * 0.8, (knL[1] - hip[1]) * 0.8
     sw_ = body['shoulder']
@@ -777,7 +778,17 @@ def anim_hurt(L, i):
     p.update(lean=-0.3, armR=(0.7, 0.75, 0.6), armL=(0.7, 0.75, 0.6), legR=(0.2, 0.3), legL=(-0.2, 0.1), _sway=3)
     return p
 
-ANIMS = [('idle', 4, anim_idle), ('walk', 6, anim_walk), ('atk', 4, anim_attack), ('cast', 4, anim_cast), ('hurt', 1, anim_hurt)]
+def anim_ride(L, i):
+    """ngồi trên lưng thú cưỡi: đùi đưa ra trước, giạng hai bên, cẳng chân buông xuống bàn đạp, tay nắm cương"""
+    p = stance(L)
+    rein = (0.95 + 0.06 * i, 0.18, 0.95)
+    p['armL'] = rein
+    if L['weapon'] in ('palm', 'daggers', 'talisman'): p['armR'] = rein
+    p.update(legR=(1.3, 1.45), legL=(1.3, 1.45), legb=0.34, air=True, seated=True, lean=0.06 + 0.05 * i)
+    p['_sway'] = [0, 1][i]
+    return p
+
+ANIMS = [('idle', 4, anim_idle), ('walk', 6, anim_walk), ('atk', 4, anim_attack), ('cast', 4, anim_cast), ('hurt', 1, anim_hurt), ('ride', 2, anim_ride)]
 VIEWS = ['down', 'up', 'right']
 COLS = sum(n for _, n, _ in ANIMS)
 
@@ -812,7 +823,7 @@ def overlay(full, base):
 ARMOR_STYLES, HELM_STYLES, WEAPON_STYLES = 4, 3, 3
 
 def sheets(cls):
-    """Ảnh của 1 môn phái (ô 96x96; hàng 0..2: xuống/lên/phải; cột: đứng4 đi6 đánh4 chiêu4 trúng1):
+    """Ảnh của 1 môn phái (ô 96x96; hàng 0..2: xuống/lên/phải; cột: đứng4 đi6 đánh4 chiêu4 trúng1 cưỡi2):
        <cls>_a0..3: thân theo kiểu áo (hàng 3: ngã), <cls>_w0..2: lớp vũ khí theo cấp, <cls>_h1..3: lớp mũ"""
     L = LOOK[cls]
     out = {f'a{k}': Image.new('RGBA', (W * COLS, H * 4)) for k in range(ARMOR_STYLES)}

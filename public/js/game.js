@@ -283,6 +283,7 @@
     s.on('leave', id => G.players.delete(id));
     s.on('me', d => { if (G.me && d.riding !== G.me.riding) GameAudio.sfx('mount'); G.me = d; UI.updateHud(); $('dead-overlay').classList.toggle('hidden', !d.dead); });
     s.on('pos', d => { G.self.x = d.x; G.self.y = d.y; G.moveTo = null; });
+    s.on('weather', w => Weather.set(w));
     s.on('fx', onFx);
     s.on('dmg', onDmg);
     s.on('gain', d => {
@@ -342,6 +343,7 @@
     d.drops.forEach(x => { if (x.om) x.ownUntil = performance.now() + x.om; G.drops.set(x.id, x); });
     const m = d.map;
     $('map-name').innerHTML = `${m.name} <span class="${m.pvp ? 'pvp' : m.safe ? 'safe' : 'muted'}">${m.pvp ? '[PK]' : m.safe ? '[An toàn]' : '[Cấp ' + m.lv + ']'}</span>`;
+    Weather.set(m.weather, WorldArt.theme, true);
     // nền minimap
     const cv = document.createElement('canvas'); cv.width = m.w * 3; cv.height = m.h * 3;
     const ctx = cv.getContext('2d');
@@ -934,6 +936,7 @@
     drawGuideArrow(now);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     WorldArt.overlay(ctx, canvas.width, canvas.height);
+    Weather.draw(ctx, canvas.width, canvas.height, DPR, now, cam, zoom);
     const fl = FX.flash(now);
     if (fl) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = fl.a; ctx.fillStyle = fl.color; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.globalAlpha = 1; }
     // Khung mục tiêu
@@ -1023,6 +1026,22 @@
         ctx.restore();
         if (Math.random() < 0.4) FX.emit(1, x + (face === 1 ? 10 : -10), y - 10, { speed: 15, vy: -50, life: 600, size: 4, color: info.mane, jitter: 34, jitterY: 6 });
       }
+      const mfr = art ? Assets.mountFrame(mountId, moving && !dead, now + seed * 37) : null;
+      if (mfr) {
+        // thú cưỡi vẽ mới + người ngồi đúng yên, không bị cắt chân
+        const flip = face === 1, [fx, fy] = mfr.foot;
+        ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(x, y - 1, 34, 6, 0, 0, Math.PI * 2); ctx.fill();
+        if (moving && mfr.k % 3 === 0 && !dead && Math.random() < 0.5) WorldArt.dust(x + (flip ? 22 : -22), y);
+        ctx.save(); ctx.translate(x, y);
+        if (flip) ctx.scale(-1, 1);
+        ctx.drawImage(mfr.img, mfr.sx, 0, mfr.cw, mfr.ch, -fx, -fy, mfr.cw, mfr.ch);
+        ctx.restore();
+        const sx = x + (flip ? fx - mfr.seat[0] : mfr.seat[0] - fx), sy = y + mfr.seat[1] - fy;
+        const rs = state === 'walk' || state === 'idle' || state === 'dead' ? 'ride' : state;
+        const rider = Assets.riderFrame(cls, face, rs, rs === 'ride' ? mfr.k : fi, ap);
+        ctx.drawImage(rider, Math.round(sx - 48), Math.round(sy - 66));
+        top = Math.round(sy - 54);
+      } else {
       ctx.drawImage(Sprites.mountSprite(mountId, info, mf, face === 1), x - 48, y - 66);
       if (art) {
         const rider = Assets.charFrame(cls, face, state === 'walk' || state === 'dead' ? 'idle' : state, fi, ap);
@@ -1034,6 +1053,7 @@
         const rx = x - 32 + (face === 1 ? 2 : -2), ry = y - 75 + (moving && mf % 2 ? 1 : 0);
         ctx.drawImage(rider, 0, 0, 64, 52, rx, ry, 64, 52);
         top = y - 80;
+      }
       }
     } else {
       const fr = moving ? Math.floor(now / 95 + seed) % 8 : 0;
