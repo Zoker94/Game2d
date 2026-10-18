@@ -552,90 +552,146 @@
     ctx.globalAlpha = o.alpha == null ? 1 : Math.max(0, Math.min(1, o.alpha));
     ctx.translate(Math.round(x), Math.round(y));
     if (o.rot) ctx.rotate(o.rot);
+    if (o.flipY) ctx.scale(1, -1);
     if (o.flat) ctx.scale(1, o.flat);
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(img, -C / 2 * s, -(o.anchor || 0.5) * C * s, C * s, C * s);
     ctx.restore();
   }
-  // vũ khí ném theo môn phái
-  const THROW = { duongmon: 'dart', conlon: 'talisman', thuyyen: 'shuriken' };
-  function spriteLayer(ctx, f, p, g) {
+  // Biểu tượng chiêu thức riêng của từng môn phái
+  const MOTIF = {
+    vodang:     { proj: 'sword', aoe: 'swordrain', hit: 'sword' },
+    ngamy:      { proj: 'sword', aoe: 'lotus', hit: 'lotus' },
+    thuyyen:    { proj: 'snow', aoe: 'ice', hit: 'snow' },
+    thieulam:   { proj: 'wan', aoe: 'wan', hit: 'wan' },
+    thienvuong: { proj: 'fireball', aoe: 'flame', hit: 'fireball' },
+    duongmon:   { proj: 'dart', aoe: 'dartrain', hit: 'shuriken' },
+    ngudoc:     { proj: 'snake', aoe: 'skull', hit: 'skull' },
+    caibang:    { proj: 'dragonhead', aoe: 'dragonhead', hit: 'palm' },
+    conlon:     { proj: 'talisman', aoe: 'bagua', hit: 'lightning' }
+  };
+  const ROTATES = new Set(['sword', 'dart', 'fireball', 'dragonhead', 'snake', 'qi']);
+  const PROJ = new Set(['dart', 'bolt', 'dartfan', 'beam', 'dragon']);
+  const MELEE = new Set(['slash', 'slash2', 'palm', 'dash', 'bite']);
+  const AOE = new Set(['ring', 'net', 'swords', 'taiji', 'lotus', 'poison', 'tornado', 'nova', 'meteor', 'pillar', 'storm', 'blades', 'lightning']);
+  function seeded(i) { const x = Math.sin(i * 91.7 + 13.3) * 43758.5453; return x - Math.floor(x); }
+  // bay theo hướng a: hình nhìn sang trái thì lật dọc để không bị lộn ngược
+  function flying(ctx, kind, x, y, a, o) {
+    const rot = ROTATES.has(kind);
+    fxSprite(ctx, kind, 0, x, y, Object.assign({ frame: Math.floor(performance.now() / 80), rot: rot ? a : 0, flipY: rot && Math.abs(a) > Math.PI / 2 }, o));
+  }
+  function aoeMotif(ctx, kind, p, x, y, r, c) {
+    const fade = Math.min(1, 1.25 - p), now = performance.now();
+    switch (kind) {
+      case 'swordrain':   // kiếm từ trời cắm xuống
+        for (let i = 0; i < 7; i++) {
+          const ang = i / 7 * Math.PI * 2, d = i === 0 ? 0 : r * (0.35 + seeded(i) * 0.45);
+          const gx = x + Math.cos(ang) * d, gy = y + Math.sin(ang) * d * 0.45;
+          const lp = Math.min(1, Math.max(0, (p - i * 0.04) / 0.35));
+          if (lp <= 0) continue;
+          fxSprite(ctx, 'sword', 0, gx, gy - 14 - 220 * (1 - ease(lp)), { frame: i, rot: Math.PI / 2, color: c, scale: 1.1, alpha: fade });
+          if (lp >= 1) fxSprite(ctx, 'burst', (p - i * 0.04 - 0.35) * 3, gx, gy - 6, { color: c, scale: 0.6 });
+        }
+        break;
+      case 'wan':         // chữ Vạn vàng in xuống đất + chữ Vạn lớn bay lên
+        fxSprite(ctx, 'wan', 0, x, y, { frame: Math.floor(now / 120), color: c, scale: Math.max(1.6, r / 24), flat: 0.45, alpha: fade });
+        fxSprite(ctx, 'wan', 0, x, y - 40 - p * 40, { frame: Math.floor(now / 120), color: c, scale: 1.3 + p * 0.6, alpha: fade * 0.9 });
+        break;
+      case 'lotus':
+        fxSprite(ctx, 'lotus', p * 1.3, x, y - 4, { color: c, scale: Math.max(1.6, r / 28), alpha: fade });
+        for (let i = 0; i < 5; i++) { const ang = i / 5 * Math.PI * 2 + p; fxSprite(ctx, 'lotus', p * 1.3 - 0.1, x + Math.cos(ang) * r * 0.6, y + Math.sin(ang) * r * 0.27 - 4, { color: c, scale: 0.8, alpha: fade }); }
+        break;
+      case 'ice':
+        for (let i = 0; i < 6; i++) { const ang = i / 6 * Math.PI * 2, d = i ? r * 0.55 : 0; fxSprite(ctx, 'ice', p * 1.4 - i * 0.05, x + Math.cos(ang) * d, y + Math.sin(ang) * d * 0.45 - 20, { color: c, scale: i ? 0.9 : 1.4, alpha: fade }); }
+        fxSprite(ctx, 'snow', 0, x, y - 60, { frame: Math.floor(now / 90), color: c, scale: 1.2 + p, alpha: fade });
+        break;
+      case 'flame':
+        for (let i = 0; i < 7; i++) { const ang = i / 7 * Math.PI * 2, d = i ? r * (0.4 + seeded(i) * 0.4) : 0; fxSprite(ctx, 'flame', p * 1.2, x + Math.cos(ang) * d, y + Math.sin(ang) * d * 0.45, { color: c, scale: i ? 1 : 1.6, anchor: 0.9, alpha: fade }); }
+        break;
+      case 'dartrain':    // mưa phi đao
+        for (let i = 0; i < 12; i++) {
+          const ang = seeded(i) * Math.PI * 2, d = Math.sqrt(seeded(i + 50)) * r;
+          const gx = x + Math.cos(ang) * d, gy = y + Math.sin(ang) * d * 0.45;
+          const lp = Math.min(1, Math.max(0, (p - seeded(i + 9) * 0.3) / 0.3));
+          if (lp <= 0 || lp >= 1) continue;
+          fxSprite(ctx, 'dart', 0, gx + 40 * (1 - lp), gy - 180 * (1 - lp), { rot: Math.PI / 2 + 0.2, color: c, scale: 0.9 });
+        }
+        fxSprite(ctx, 'shuriken', 0, x, y - 30, { frame: Math.floor(now / 50), color: c, scale: 1.6, alpha: fade });
+        break;
+      case 'skull':
+        fxSprite(ctx, 'skull', p, x, y - 26, { color: c, scale: Math.max(1.5, r / 40), alpha: fade });
+        for (let i = 0; i < 4; i++) { const ang = i / 4 * Math.PI * 2 + p * 2; flying(ctx, 'snake', x + Math.cos(ang) * r * 0.6, y + Math.sin(ang) * r * 0.27, ang + Math.PI / 2, { color: c, scale: 0.8, alpha: fade }); }
+        break;
+      case 'dragonhead':
+        flying(ctx, 'dragonhead', x - r * 0.8 + r * 1.6 * ease(Math.min(1, p * 1.4)), y - 40, 0, { color: c, scale: 2.2, alpha: fade });
+        break;
+      case 'bagua':
+        fxSprite(ctx, 'bagua', 0, x, y, { frame: Math.floor(now / 100), color: c, scale: Math.max(1.6, r / 24), flat: 0.45, alpha: fade });
+        for (let i = 0; i < 3; i++) {
+          const lp = (p - i * 0.18) / 0.25; if (lp < 0 || lp > 1) continue;
+          const ang = seeded(i + 3) * Math.PI * 2, d = r * 0.5;
+          fxSprite(ctx, 'lightning', 0, x + Math.cos(ang) * d, y + Math.sin(ang) * d * 0.45, { frame: i, color: c, scale: 2, anchor: 0.95, alpha: 1 - lp });
+        }
+        break;
+    }
+  }
+  function spriteLayer(ctx, f, p, g, sigOnly) {
     const { sx, sy, tx, ty, bx, by, ex, ey, src, r, c } = g;
     const a = Math.atan2(ey - by, ex - bx), now = performance.now();
     const cls = src && (src.cls || (src === window.G.self && window.G.me ? window.G.me.cls : null));
-    switch (f.t) {
-      case 'slash': case 'slash2': case 'bite':
-        fxSprite(ctx, 'slash', p * 1.3, ex, ey, { rot: a + Math.PI / 2 * 0, color: f.t === 'bite' ? '#ff5050' : c, scale: f.t === 'bite' ? 0.8 : 1.15, alpha: 1.2 - p });
-        if (f.t === 'slash2') fxSprite(ctx, 'slash', p * 1.3 - 0.15, ex, ey, { rot: a + Math.PI, color: c, scale: 1, alpha: 1.1 - p });
-        if (p > 0.25) fxSprite(ctx, 'burst', (p - 0.25) / 0.75, ex, ey, { color: c, scale: 0.8 });
-        break;
-      case 'palm': {
+    const M = MOTIF[cls] || { proj: 'qi', aoe: null, hit: 'burst' };
+    if (sigOnly) { if (M.aoe) aoeMotif(ctx, M.aoe, p, tx, ty, r, c); return; }
+    if (MELEE.has(f.t)) {
+      if (f.t !== 'palm' || cls !== 'caibang')
+        fxSprite(ctx, 'slash', p * 1.3, ex, ey, { rot: a, color: f.t === 'bite' ? '#ff5050' : c, scale: f.t === 'bite' ? 0.8 : f.t === 'dash' ? 1.6 : 1.15, alpha: 1.2 - p });
+      if (f.t === 'slash2') fxSprite(ctx, 'slash', p * 1.3 - 0.15, ex, ey, { rot: a + Math.PI, color: c, alpha: 1.1 - p });
+      if (f.t === 'bite') return;
+      if (M.hit === 'sword') {   // mũi kiếm đâm tới
+        const q = Math.min(1, p / 0.35);
+        flying(ctx, 'sword', ex - Math.cos(a) * 30 * (1 - q), ey - Math.sin(a) * 30 * (1 - q), a, { color: c, scale: 0.9, alpha: 1.2 - p });
+      } else if (M.hit === 'palm' || f.t === 'palm') {
         const q = Math.min(1, p / 0.45);
-        fxSprite(ctx, 'palm', 0, bx + (ex - bx) * ease(q), by + (ey - by) * ease(q), { frame: Math.floor(now / 80), rot: a, color: c, scale: 0.9 + q * 0.5, alpha: p < 0.6 ? 1 : 1 - (p - 0.6) / 0.4 });
-        if (p > 0.45) fxSprite(ctx, 'burst', (p - 0.45) / 0.55, ex, ey, { color: c, scale: 1.2 });
-        break;
+        fxSprite(ctx, 'palm', 0, bx + (ex - bx) * ease(q), by + (ey - by) * ease(q), { frame: Math.floor(now / 80), rot: a, flipY: Math.abs(a) > Math.PI / 2, color: c, scale: 0.9 + q * 0.5, alpha: p < 0.6 ? 1 : 1 - (p - 0.6) / 0.4 });
+      } else if (M.hit === 'lightning') {
+        fxSprite(ctx, 'lightning', 0, ex, ey + 24, { frame: Math.floor(now / 60), color: c, scale: 1.4, anchor: 0.95, alpha: 1 - p });
+      } else {
+        flying(ctx, M.hit, ex, ey - 6 - p * 10, a, { color: c, scale: 0.5 + ease(Math.min(1, p * 2)) * 0.5, alpha: 1.2 - p });
       }
-      case 'dart': case 'bolt': case 'dartfan': {
-        const n = f.t === 'dartfan' ? 5 : 1, q = Math.min(1, p / 0.85), len = Math.hypot(ex - bx, ey - by);
-        const kind = THROW[cls] || (f.t === 'bolt' ? 'qi' : 'dart');
-        for (let i = 0; i < n; i++) {
-          const aa = a + (i - (n - 1) / 2) * 0.16;
-          if (q < 1) fxSprite(ctx, kind, 0, bx + Math.cos(aa) * len * q, by + Math.sin(aa) * len * q,
-            { frame: Math.floor(now / 70), rot: kind === 'shuriken' || kind === 'talisman' ? 0 : aa, color: c, scale: kind === 'qi' ? 0.7 : 0.8 });
-        }
-        if (q >= 1) fxSprite(ctx, 'burst', (p - 0.85) / 0.15, ex, ey, { color: c, scale: 0.9 });
-        break;
+      if (p > 0.3) fxSprite(ctx, 'burst', (p - 0.3) / 0.7, ex, ey, { color: c, scale: 0.8 });
+      return;
+    }
+    if (PROJ.has(f.t)) {
+      const n = f.t === 'dartfan' ? 5 : 1, travel = f.t === 'beam' ? 0.5 : 0.85, q = Math.min(1, p / travel), len = Math.hypot(ex - bx, ey - by);
+      const big = f.t === 'beam' || f.t === 'dragon';
+      for (let i = 0; i < n; i++) {
+        const aa = a + (i - (n - 1) / 2) * 0.16;
+        if (q < 1) flying(ctx, M.proj, bx + Math.cos(aa) * len * q, by + Math.sin(aa) * len * q, aa, { color: c, scale: big ? 1.6 : 0.95 });
       }
-      case 'beam': {
-        const q = Math.min(1, p / 0.5);
-        fxSprite(ctx, 'qi', 0, bx + (ex - bx) * q, by + (ey - by) * q, { frame: Math.floor(now / 60), rot: a, color: c, scale: 1.5, alpha: 1 - p });
-        break;
+      if (q >= 1) {
+        const ep = (p - travel) / (1 - travel);
+        fxSprite(ctx, 'burst', ep, ex, ey, { color: c, scale: big ? 1.4 : 0.9 });
+        if (M.hit !== 'sword' && M.hit !== 'palm' && M.hit !== 'lightning') flying(ctx, M.hit, ex, ey - 8, a, { color: c, scale: 0.7 + ep * 0.4, alpha: 1 - ep });
       }
-      case 'lightning': case 'storm':
-        if (f.t === 'lightning') fxSprite(ctx, 'lightning', 0, ex, ty, { frame: Math.floor(now / 60), color: c, scale: 2.2, anchor: 0.95, alpha: 1 - p });
-        break;
-      case 'ring': case 'net':
-        fxSprite(ctx, 'shock', p, ex, ty, { color: c, scale: r / 26 });
-        break;
-      case 'nova':
-        fxSprite(ctx, 'shock', p, ex, ty, { color: c, scale: r / 20 });
-        fxSprite(ctx, 'burst', p, ex, ey, { color: c, scale: 1.8 });
-        break;
-      case 'poison':
-        fxSprite(ctx, 'skull', p, ex, ty - 20, { color: c, scale: Math.max(1.2, r / 45), alpha: 1.2 - p });
-        break;
-      case 'swords':
-        for (let i = 0; i < 3; i++) fxSprite(ctx, 'swords', p * 1.4 - i * 0.1, ex + (i - 1) * r * 0.45, ty - 30 + (i % 2) * 14, { color: c, scale: 1.4, alpha: 1.2 - p });
-        break;
-      case 'taiji':
-        fxSprite(ctx, 'taiji', 0, ex, ty - 4, { frame: Math.floor(now / 90), color: c, scale: r / 26, flat: 0.45, alpha: 1 - p });
-        break;
-      case 'lotus':
-        fxSprite(ctx, 'lotus', p * 1.2, ex, ty - 6, { color: c, scale: r / 30, alpha: 1.2 - p });
-        break;
-      case 'tornado':
-        fxSprite(ctx, 'tornado', 0, ex, ty, { frame: Math.floor(now / 70), color: c, scale: 2.4, anchor: 0.9, alpha: p < 0.15 ? p / 0.15 : 1 - Math.max(0, (p - 0.7) / 0.3) });
-        break;
-      case 'meteor': case 'pillar':
-        fxSprite(ctx, 'flame', p, ex, ty, { color: c, scale: 2.2, anchor: 0.9, alpha: 1.2 - p });
-        break;
-      case 'blades':
+      return;
+    }
+    if (AOE.has(f.t)) {
+      if (f.t === 'taiji') fxSprite(ctx, 'taiji', 0, ex, ty - 4, { frame: Math.floor(now / 90), color: c, scale: r / 26, flat: 0.45, alpha: 1 - p });
+      if (f.t === 'tornado') fxSprite(ctx, 'tornado', 0, ex, ty, { frame: Math.floor(now / 70), color: c, scale: 2.4, anchor: 0.9, alpha: p < 0.15 ? p / 0.15 : 1 - Math.max(0, (p - 0.7) / 0.3) });
+      if (f.t === 'ring' || f.t === 'net' || f.t === 'nova') fxSprite(ctx, 'shock', p, ex, ty, { color: c, scale: r / 26 });
+      if (f.t === 'blades') {
         for (let i = 0; i < 4; i++) { const aa = i / 4 * Math.PI * 2 + p * 6; fxSprite(ctx, 'slash', p, bx + Math.cos(aa) * (20 + r * 0.5 * ease(p)), sy - 20 + Math.sin(aa) * (10 + r * 0.25 * ease(p)), { rot: aa, color: c, scale: 0.9 }); }
-        break;
-      case 'dash':
-        fxSprite(ctx, 'slash', p, ex, ey, { rot: a, color: c, scale: 1.6, alpha: 1.2 - p });
-        fxSprite(ctx, 'burst', p, ex, ey, { color: c, scale: 1.3 });
-        break;
-      case 'aura': {
-        const x = src ? src.x : f.x, y = src ? src.y : f.y;
-        fxSprite(ctx, 'aura', 0, x, y, { frame: Math.floor(now / 90), color: c, scale: 1.4, anchor: 0.92, alpha: 1 - p });
-        break;
       }
-      case 'heal': {
-        const x = src ? src.x : f.x, y = src ? src.y : f.y;
-        fxSprite(ctx, 'lotus', p * 1.4, x, y - 4, { color: '#8dffb0', scale: 1.6, alpha: 1.2 - p });
-        break;
-      }
+      if (M.aoe) aoeMotif(ctx, M.aoe, p, f.t === 'blades' ? sx : tx, f.t === 'blades' ? sy : ty, r, c);
+      else if (f.t === 'poison') fxSprite(ctx, 'skull', p, ex, ty - 20, { color: c, scale: 1.4, alpha: 1.2 - p });
+      return;
+    }
+    if (f.t === 'aura' || f.t === 'heal') {
+      const x = src ? src.x : f.x, y = src ? src.y : f.y;
+      if (f.t === 'aura') fxSprite(ctx, 'aura', 0, x, y, { frame: Math.floor(now / 90), color: c, scale: 1.4, anchor: 0.92, alpha: 1 - p });
+      else fxSprite(ctx, 'lotus', p * 1.4, x, y - 4, { color: '#8dffb0', scale: 1.6, alpha: 1.2 - p });
+      // biểu tượng môn phái hiện trên đầu khi vận công
+      const em = cls === 'vodang' ? 'taiji' : M.hit === 'palm' ? 'dragonhead' : M.hit;
+      if (em && em !== 'burst') fxSprite(ctx, em, 0, x, y - 92 - p * 16, { frame: Math.floor(now / 100), color: c, scale: 0.8, alpha: Math.min(1, (1 - p) * 1.6) });
     }
   }
 
@@ -709,7 +765,7 @@
       const { sx, sy, tx, ty, src } = pos(f);
       const c = f.color || '#fff', r = f.r || 140;
       const bx = sx, by = sy - 28, ex = tx, ey = ty - 28;
-      if (SIG[f.t]) { SIG[f.t].draw(ctx, f, p, { sx, sy, tx, ty, src }); continue; }
+      if (SIG[f.t]) { SIG[f.t].draw(ctx, f, p, { sx, sy, tx, ty, src }); if (!/dragon$/.test(f.t)) spriteLayer(ctx, f, p, { sx, sy, tx, ty, bx, by, ex, ey, src, r, c }, true); continue; }
       switch (f.t) {
         case 'slash': case 'slash2': case 'bite': {
           const a = Math.atan2(ey - by, ex - bx);

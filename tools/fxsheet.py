@@ -261,6 +261,121 @@ for i in range(5):
     fr.append(im)
 add('aura', fr)
 
+
+# ======== biểu tượng riêng từng môn phái ========
+def rot_img(im, deg): return im.rotate(deg, resample=Image.NEAREST)
+
+# phi kiếm (Võ Đang / Nga My) – hướng phải
+fr = []
+for i in range(2):
+    im, d = new()
+    d.polygon([(4, 28), (50, 28), (60, 32), (50, 36), (4, 36)], fill=A_GLOW)
+    d.polygon([(18, 30), (50, 30), (58, 32), (50, 34), (18, 34)], fill=A_BODY)
+    d.line([(20, 32), (55, 32)], fill=CORE)
+    d.rectangle([14, 25, 17, 39], fill=A_BODY); d.rectangle([5, 31, 14, 33], fill=A_BODY)
+    d.ellipse([2, 30, 6, 34], fill=CORE)
+    for k in range(3 + i): d.line([(0, 26 + k * 4), (10 - k * 2, 26 + k * 4)], fill=A_GLOW)
+    fr.append(im)
+add('sword', fr)
+
+# chữ Vạn 卍 (Thiếu Lâm) – chữ luôn đứng thẳng, chỉ vòng hạt quanh chữ xoay
+fr = []
+for i in range(4):
+    im, d = new()
+    d.ellipse([4, 4, 60, 60], outline=A_GLOW, width=3)
+    for k in range(12):
+        a_ = (k + i * 0.25) / 12 * TAU; x, y = 32 + math.cos(a_) * 26, 32 + math.sin(a_) * 26
+        d.ellipse([x - 1.5, y - 1.5, x + 1.5, y + 1.5], fill=A_BODY)
+    t, L = 3, 15
+    for col, w in ((A_BODY, t + 2), (CORE, t)):
+        h = w / 2
+        d.rectangle([32 - h, 32 - L, 32 + h, 32 + L], fill=col); d.rectangle([32 - L, 32 - h, 32 + L, 32 + h], fill=col)
+        d.rectangle([32 - L, 32 - L - h, 32 + h, 32 - L + h], fill=col)      # nét trên quặt trái
+        d.rectangle([32 + L - h, 32 - L, 32 + L + h, 32 + h], fill=col)      # nét phải quặt lên
+        d.rectangle([32 - h, 32 + L - h, 32 + L, 32 + L + h], fill=col)      # nét dưới quặt phải
+        d.rectangle([32 - L - h, 32 - h, 32 - L + h, 32 + L], fill=col)      # nét trái quặt xuống
+    fr.append(im)
+add('wan', fr)
+
+# bông tuyết (Thúy Yên)
+fr = []
+for i in range(3):
+    im, d = new(); r0 = i * 10
+    for k in range(6):
+        a = math.radians(k * 60 + r0); ca, sa = math.cos(a), math.sin(a)
+        e = (32 + ca * 24, 32 + sa * 24)
+        d.line([(32, 32), e], fill=A_GLOW, width=5); d.line([(32, 32), e], fill=CORE, width=2)
+        for f_, ln in ((0.45, 8), (0.72, 6)):
+            px, py = 32 + ca * 24 * f_, 32 + sa * 24 * f_
+            for sg in (-1, 1):
+                b = a + sg * 0.75
+                d.line([(px, py), (px + math.cos(b) * ln, py + math.sin(b) * ln)], fill=A_BODY, width=2)
+    d.ellipse([27, 27, 37, 37], fill=CORE)
+    fr.append(im)
+add('snow', fr)
+
+# hỏa cầu (Thiên Vương) – hướng phải
+fr = []
+rnd = random.Random(9)
+for i in range(4):
+    im, d = new()
+    for k in range(6):
+        x = 34 - k * 5; w = 14 - k * 2; yj = rnd.randint(-2, 2)
+        d.ellipse([x - w, 32 - w * 0.75 + yj, x + w * 0.6, 32 + w * 0.75 + yj], fill=A_GLOW if k else A_BODY)
+    d.ellipse([28, 20, 52, 44], fill=A_BODY); d.ellipse([33, 25, 49, 39], fill=CORE)
+    for k in range(5):
+        x, y = 22 - k * 4 + rnd.randint(-2, 2), 32 + rnd.randint(-10, 10)
+        d.rectangle([x, y, x + 1, y + 1], fill=CORE)
+    fr.append(im)
+add('fireball', fr)
+
+# đầu rồng (Cái Bang – Hàng Long) – hướng phải, há miệng
+fr = []
+for i in range(4):
+    im, d = new(); j = [0, 3, 5, 3][i]
+    # bờm lửa
+    for k in range(5):
+        x = 8 + k * 5; d.polygon([(x, 22), (x - 6, 8 + (k * 7 + i * 3) % 6), (x + 4, 20)], fill=A_GLOW)
+        d.polygon([(x, 42), (x - 6, 56 - (k * 5 + i * 3) % 6), (x + 4, 44)], fill=A_GLOW)
+    d.polygon([(6, 24), (34, 18), (50, 22), (58, 28), (40, 30), (10, 36)], fill=A_BODY)       # hàm trên
+    d.polygon([(10, 36), (40, 32 + j), (54, 36 + j), (36, 42 + j), (12, 42)], fill=A_BODY)     # hàm dưới
+    d.polygon([(26, 19), (20, 6), (32, 17)], fill=CORE); d.polygon([(34, 18), (34, 6), (40, 19)], fill=CORE)   # sừng
+    d.ellipse([36, 21, 42, 26], fill=CORE); d.rectangle([39, 22, 40, 24], fill=(0, 0, 0, 0))    # mắt
+    for k in range(4): d.polygon([(44 + k * 3, 29), (45 + k * 3, 32), (46 + k * 3, 29)], fill=CORE)  # răng
+    d.line([(56, 27), (62, 20 + i)], fill=A_BODY); d.line([(54, 33 + j), (62, 40 - i)], fill=A_BODY)  # râu
+    fr.append(im)
+add('dragonhead', fr)
+
+# rắn độc (Ngũ Độc) – hướng phải, uốn lượn
+fr = []
+for i in range(4):
+    im, d = new()
+    pts = [(x, 32 + math.sin(x / 7 + i * 1.5) * 7 * (x / 50)) for x in range(4, 50, 2)]
+    d.line(pts, fill=A_GLOW, width=8); d.line(pts, fill=A_BODY, width=5)
+    for k in range(0, len(pts) - 1, 3): d.point(pts[k], fill=CORE)
+    hx_, hy = pts[-1]
+    d.polygon([(hx_ - 2, hy - 5), (hx_ + 9, hy - 2), (hx_ + 11, hy + 1), (hx_ + 8, hy + 4), (hx_ - 2, hy + 5)], fill=A_BODY)
+    d.rectangle([hx_ + 4, hy - 2, hx_ + 5, hy - 1], fill=CORE)
+    d.line([(hx_ + 11, hy + 1), (hx_ + 15, hy - 1)], fill=CORE); d.line([(hx_ + 11, hy + 1), (hx_ + 15, hy + 3)], fill=CORE)
+    fr.append(im)
+add('snake', fr)
+
+# bát quái (Côn Lôn) – xoay
+base, d = new()
+oct_ = [(32 + math.cos(k / 8 * TAU + math.pi / 8) * 28, 32 + math.sin(k / 8 * TAU + math.pi / 8) * 28) for k in range(8)]
+d.polygon(oct_, outline=A_BODY); d.line(oct_ + [oct_[0]], fill=A_BODY, width=2)
+for k in range(8):
+    a = k / 8 * TAU; ca, sa = math.cos(a), math.sin(a)
+    for m in range(3):
+        rr = 16 + m * 3.2; broken = (k >> m) & 1
+        cx, cy = 32 + ca * rr, 32 + sa * rr; tx, ty = -sa * 5, ca * 5
+        if broken:
+            d.line([(cx - tx, cy - ty), (cx - tx * 0.25, cy - ty * 0.25)], fill=CORE, width=2); d.line([(cx + tx * 0.25, cy + ty * 0.25), (cx + tx, cy + ty)], fill=CORE, width=2)
+        else: d.line([(cx - tx, cy - ty), (cx + tx, cy + ty)], fill=CORE, width=2)
+d.ellipse([24, 24, 40, 40], fill=A_BODY); d.pieslice([24, 24, 40, 40], 90, 270, fill=CORE)
+d.ellipse([28, 24, 36, 32], fill=CORE); d.ellipse([28, 32, 36, 40], fill=A_BODY)
+add('bagua', [rot_img(base, -k * 11.25) for k in range(4)])
+
 out = sys.argv[1] if len(sys.argv) > 1 else 'public/assets'
 os.makedirs(out, exist_ok=True)
 cols = max(len(r) for r in rows)
