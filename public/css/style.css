@@ -566,3 +566,7 @@ img.ic { image-rendering: auto; width: 36px; height: 36px; filter: drop-shadow(0
 #skillbar .dodge-sk { font-size: 22px; background: radial-gradient(#2a5a8a, #0e1c30); border-color: #6ab0e8; }
 #skillbar .dodge-sk.ready { box-shadow: 0 0 8px rgba(120,200,255,.5); }
 .dg-ic { position: relative; z-index: 1; }
+.act.pick { width: 52px; height: 52px; right: 150px; bottom: 172px; font-size: 18px; flex-direction: column; background: radial-gradient(#7a6a2a, #2a2008); border-color: #ffd860; animation: pickPulse 1s ease-in-out infinite; }
+.act.pick span { font-size: 9px; }
+.act.pick.hidden { display: none; }
+@keyframes pickPulse { 50% { box-shadow: 0 0 12px rgba(255,216,96,.7); } }

@@ -770,33 +770,50 @@ class World {
     const it = ITEMS[dr.itemId]; return { id: dr.id, item: dr.itemId, icon: it.icon, rarity: it.rarity, name: it.name, qty: dr.qty, x: dr.x, y: dr.y, ...own };
   }
 
+  // Đi ngang qua chỉ tự nhặt ngân lượng; vật phẩm phải bấm nhặt (hoặc bật tự động nhặt) để túi không đầy nhanh
   tryPickup(p, m) {
     if (p.dead) return;
     const now = Date.now();
     for (const dr of m.drops.values()) {
+      if (!dr.gold) continue;
       if (Math.abs(dr.x - p.x) > PICKUP_R || Math.abs(dr.y - p.y) > PICKUP_R) continue;
       if (dr.owner && dr.owner !== p.userId && dr.ownerUntil > now) continue;
-      if (dr.gold) {
-        m.drops.delete(dr.id);
-        this.io.to('map:' + p.mapId).emit('dropDel', dr.id);
-        const gold = Math.round(dr.gold * (1 + ((p.stats.fx && p.stats.fx.goldup) || 0) / 100));
-        p.c.gold += gold;
-        p.socket.emit('gain', { gold, x: dr.x, y: dr.y });
-        this.features.questProgress(p, 'gold', dr.gold);
-        p.dirtyMe = true;
-        continue;
-      }
-      if (!U.addItem(p.c, dr.itemId, dr.qty, dr.plus)) { if (!p._fullWarn || p._fullWarn < now) { this.toast(p, 'Túi đồ đã đầy!', 'error'); p._fullWarn = now + 5000; } continue; }
       m.drops.delete(dr.id);
       this.io.to('map:' + p.mapId).emit('dropDel', dr.id);
-      const it = ITEMS[U.resolveItem(p.c, dr.itemId)];
-      this.toast(p, `Nhặt được ${it.name}${dr.qty > 1 ? ' x' + dr.qty : ''}`, 'item:' + it.rarity);
-      if (it.rarity === 'epic' || it.rarity === 'legendary') {
-        this.features.announce(`✨ ${p.c.name} nhặt được [${it.name}] (${RARITY[it.rarity].name}) tại ${m.def.name}!`);
-        this.db.log('drop', `${p.c.name} nhặt ${it.name}`, { user: p.userId });
-      }
+      const gold = Math.round(dr.gold * (1 + ((p.stats.fx && p.stats.fx.goldup) || 0) / 100));
+      p.c.gold += gold;
+      p.socket.emit('gain', { gold, x: dr.x, y: dr.y });
+      this.features.questProgress(p, 'gold', dr.gold);
       p.dirtyMe = true;
     }
+  }
+  // Bấm nhặt: id cụ thể, hoặc không có id thì nhặt món gần nhất trong tầm tay
+  pickupItem(p, id) {
+    if (p.dead) return;
+    const m = this.maps[p.mapId], now = Date.now(), reach = PICKUP_R * 1.7;
+    let dr = id ? m.drops.get(id) : null;
+    if (!id) {
+      let bd = reach;
+      for (const d of m.drops.values()) {
+        const dd = Math.hypot(d.x - p.x, d.y - p.y);
+        if (d.gold || dd > bd || (d.owner && d.owner !== p.userId && d.ownerUntil > now)) continue;
+        bd = dd; dr = d;
+      }
+      if (!dr) return this.toast(p, 'Không có vật phẩm nào ở gần', 'error');
+    }
+    if (!dr || dr.gold) return;
+    if (Math.hypot(dr.x - p.x, dr.y - p.y) > reach) return this.toast(p, 'Hãy lại gần vật phẩm hơn', 'error');
+    if (dr.owner && dr.owner !== p.userId && dr.ownerUntil > now) return this.toast(p, `Vật phẩm của người khác, ${Math.ceil((dr.ownerUntil - now) / 1000)} giây nữa mới nhặt được`, 'error');
+    if (!U.addItem(p.c, dr.itemId, dr.qty, dr.plus)) return this.toast(p, 'Túi đồ đã đầy!', 'error');
+    m.drops.delete(dr.id);
+    this.io.to('map:' + p.mapId).emit('dropDel', dr.id);
+    const it = ITEMS[U.resolveItem(p.c, dr.itemId)];
+    this.toast(p, `Nhặt được ${it.name}${dr.qty > 1 ? ' x' + dr.qty : ''}`, 'item:' + it.rarity);
+    if (it.rarity === 'epic' || it.rarity === 'legendary') {
+      this.features.announce(`✨ ${p.c.name} nhặt được [${it.name}] (${RARITY[it.rarity].name}) tại ${m.def.name}!`);
+      this.db.log('drop', `${p.c.name} nhặt ${it.name}`, { user: p.userId });
+    }
+    p.dirtyMe = true;
   }
 
   // ---------- Túi đồ / trang bị ----------

@@ -598,8 +598,28 @@
     const i = list.findIndex(x => x.e.id === G.target);
     G.target = list[(i + 1) % list.length].e.id;
   }
+  // vật phẩm (không tính tiền) gần nhất, nhặt được ngay
+  function nearItem(r) {
+    let best = null, bd = r, now = performance.now();
+    for (const dr of G.drops.values()) {
+      if (dr.gold || (dr.o && dr.o !== (G.user && G.user.id) && dr.ownUntil > now)) continue;
+      const d = Math.hypot(dr.x - G.self.x, dr.y - G.self.y);
+      if (d < bd) { bd = d; best = dr; }
+    }
+    return best;
+  }
+  G.nearItem = nearItem;
+  function pickNear() {
+    const dr = nearItem(150);
+    if (!dr) return false;
+    if (Math.hypot(dr.x - G.self.x, dr.y - G.self.y) < 80) G.socket.emit('pickup', { id: dr.id });
+    else { G.pickGoal = dr.id; G.moveTo = { x: dr.x, y: dr.y }; }
+    return true;
+  }
+  G.pickNear = pickNear;
   function interact() {
     if (!G.map) return;
+    if (pickNear()) return;   // phím F: ưu tiên nhặt vật phẩm ở gần
     let best = null, bd = TILE * 3;
     for (const n of G.map.npcs) {
       const d = Math.hypot((n.x + 0.5) * TILE - G.self.x, (n.y + 0.5) * TILE - G.self.y);
@@ -626,6 +646,7 @@
   Input.on('potion', k => G.socket && G.socket.emit('quickUse', { kind: k }));
   Input.on('target', cycleTarget);
   Input.on('interact', interact);
+  Input.on('pickup', () => { if (!pickNear()) UI.toast('Không có vật phẩm ở gần', 'error'); });
   Input.on('auto', () => setAuto(!G.auto));
   Input.on('mount', () => G.socket && G.socket.emit('mount', { op: 'ride' }));
   // Né chiêu (lướt): theo hướng đang đi, không đi thì theo hướng đang nhìn
@@ -673,6 +694,11 @@
       if (Math.abs(w.x - nx) < 30 && w.y > ny - 70 && w.y < ny + 12) {
         G.npcGoal = n; G.moveTo = { x: nx, y: ny + 40 }; return;
       }
+    }
+    // Vật phẩm rơi: bấm vào để đi tới nhặt
+    for (const dr of G.drops.values()) {
+      if (dr.gold || Math.abs(w.x - dr.x) > 22 || Math.abs(w.y - (dr.y - 6)) > 22) continue;
+      G.pickGoal = dr.id; G.moveTo = { x: dr.x, y: dr.y }; G.chase = null; G.npcGoal = null; return;
     }
     // Quái / người chơi
     let best = null, bd = 48;
@@ -755,6 +781,13 @@
       const nx = (G.npcGoal.x + 0.5) * TILE, ny = (G.npcGoal.y + 0.5) * TILE;
       if (Math.hypot(nx - s.x, ny - s.y) < TILE * 2) { G.socket.emit('npc', { id: G.npcGoal.id }); G.npcGoal = null; G.moveTo = null; v = { x: 0, y: 0 }; }
     }
+    const pg = G.pickGoal || G.autoDrop;
+    if (pg && now - (G._pickT || 0) > 350) {
+      const dr = G.drops.get(pg);
+      if (!dr) { if (G.pickGoal === pg) G.pickGoal = null; }
+      else if (Math.hypot(dr.x - s.x, dr.y - s.y) < 44 && !dr.gold) { G.socket.emit('pickup', { id: pg }); G._pickT = now; if (G.pickGoal === pg) { G.pickGoal = null; G.moveTo = null; v = { x: 0, y: 0 }; } }
+    }
+    if (manual) G.pickGoal = null;
     const moving = Math.hypot(v.x, v.y) > 0.01;
     if (moving) {
       const spd = (G.me.stats.spd || 150) * dt * (myMask & 16 ? 0.55 : 1);
@@ -1017,6 +1050,10 @@
       }
     }
 
+    if (!Input.isTouch && G.me && !G.me.dead) {
+      const ni = nearItem(80);
+      if (ni) label(ni.x, ni.y - 34 + Math.sin(now / 200) * 2, '[F] Nhặt', '#ffe9a8', 11, true);
+    }
     for (const [e, top] of bubbles) if (!Overhead.drawBubble(ctx, e.x, top, e.bubble, now)) e.bubble = null;
 
     WorldArt.ambient(now, cam, vw, vh, fdt);
@@ -1042,7 +1079,7 @@
     if (fl) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = fl.a; ctx.fillStyle = fl.color; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.globalAlpha = 1; }
     // Khung mục tiêu
     UI.updateTarget(tgt);
-    if (now - lastMini > 200) { lastMini = now; drawMinimap(); }
+    if (now - lastMini > 200) { lastMini = now; drawMinimap(); const pb = $('btn-pick'); if (pb) pb.classList.toggle('hidden', !(G.me && !G.me.dead && nearItem(150))); }
   }
 
   function inView(e) { return e.x > cam.x - 150 && e.x < cam.x + W / zoom + 150 && e.y > cam.y - 150 && e.y < cam.y + H / zoom + 200; }

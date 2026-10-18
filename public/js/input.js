@@ -116,6 +116,7 @@
   hold(document.getElementById('btn-target'), () => emit('target'));
   hold(document.getElementById('btn-mount'), () => emit('mount'));
   hold(document.getElementById('btn-dodge'), () => emit('dodge'));
+  hold(document.getElementById('btn-pick'), () => emit('pickup'));
 
   // ---------- Tay cầm (Gamepad) ----------
   const prevBtn = {};
