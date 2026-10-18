@@ -850,7 +850,7 @@
       html += '<div class="card"><p>Bạn chưa có thú cưỡi. Hãy đến <b>Mã Phu Lão Trương</b> ở Tương Dương để mua Ngựa Nâu, hoặc săn Boss / mở Kỳ Trân Các để có thú cưỡi hiếm như Bạch Hổ, Hỏa Kỳ Lân, Thanh Long!</p></div>';
     }
     body.innerHTML = html;
-    body.querySelectorAll('[data-mcv]').forEach(cv => { const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; const f = Assets.mountFrame(cv.dataset.mcv, false, 0); if (f) c.drawImage(f.img, f.sx, 0, f.cw, f.ch, 0, 0, 96, 72); else { c.drawImage(Sprites.mountSprite(cv.dataset.mcv, all[cv.dataset.mcv], 0), 0, 0); if ((UI._mcvTry = (UI._mcvTry || 0) + 1) < 6) setTimeout(() => panel === 'mount' && UI.refreshPanel(true), 400); } });
+    body.querySelectorAll('[data-mcv]').forEach(cv => { const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; const f = Assets.mountFrame(cv.dataset.mcv, false, 0); if (f) c.drawImage(f.img, f.sx, f.ch - 96, f.cw, 96, 0, 0, 96, 72); else { c.drawImage(Sprites.mountSprite(cv.dataset.mcv, all[cv.dataset.mcv], 0), 0, 0); if ((UI._mcvTry = (UI._mcvTry || 0) + 1) < 6) setTimeout(() => panel === 'mount' && UI.refreshPanel(true), 400); } });
     body.querySelectorAll('[data-mount]').forEach(el => el.onclick = () => { if (owned[el.dataset.mount]) { panelState.sel = el.dataset.mount; UI.refreshPanel(); } });
     body.querySelectorAll('[data-mop]').forEach(b => b.onclick = () => emit('mount', { op: b.dataset.mop, id: sel, n: +b.dataset.n || 1 }));
   }

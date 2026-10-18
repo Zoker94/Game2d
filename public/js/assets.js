@@ -153,16 +153,25 @@
   let MOUNT_META = null;
   fetch(BASE + 'mounts.json').then(r => r.ok ? r.json() : null).then(j => { MOUNT_META = j; }).catch(() => { });
   const mountImgs = {}, mountLoading = {};
-  function mountFrame(id, moving, t) {
+  // view: 'side' | 'down' | 'up'. Nhìn trước/sau có 2 lớp: back vẽ trước người cưỡi, front vẽ đè lên.
+  function mountFrame(id, moving, t, view) {
     if (!MOUNT_META || !MOUNT_META.seat[id]) return null;
     if (!mountImgs[id]) {
       if (!mountLoading[id]) mountLoading[id] = load('mounts/' + id + '.png').then(im => { if (im) mountImgs[id] = im; });
       return null;
     }
+    const seats = MOUNT_META.seats && MOUNT_META.seats[id];
+    if (!view || !seats || !seats[view]) view = 'side';
     const [fs, fn] = MOUNT_META.frames[moving ? 'run' : 'idle'];
     const k = Math.floor(t / (moving ? 95 : 700)) % fn;
     const col = fs + k, [cw, ch] = MOUNT_META.cell;
-    return { img: mountImgs[id], sx: col * cw, cw, ch, foot: MOUNT_META.foot, seat: MOUNT_META.seat[id][col], k };
+    const rows = (MOUNT_META.rows && MOUNT_META.rows[view]) || [0];
+    return {
+      img: mountImgs[id], sx: col * cw, cw, ch, k, view,
+      sy: rows[0] * ch, fy: rows[1] != null ? rows[1] * ch : -1,
+      foot: view === 'side' ? MOUNT_META.foot : (MOUNT_META.footFB || MOUNT_META.foot),
+      seat: seats ? seats[view][col] : MOUNT_META.seat[id][col]
+    };
   }
   // ảnh đại diện (đầu + vai) cho khung avatar / thẻ môn phái
   function avatar(cls, size, ap) {

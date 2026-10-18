@@ -1026,20 +1026,27 @@
         ctx.restore();
         if (Math.random() < 0.4) FX.emit(1, x + (face === 1 ? 10 : -10), y - 10, { speed: 15, vy: -50, life: 600, size: 4, color: info.mane, jitter: 34, jitterY: 6 });
       }
-      const mfr = art ? Assets.mountFrame(mountId, moving && !dead, now + seed * 37) : null;
+      // hướng nhìn của thú: đi xuống thấy mặt trước, đi lên thấy lưng, trái/phải nhìn ngang
+      const mview = dir === 0 ? 'down' : dir === 3 ? 'up' : 'side';
+      const mfr = art ? Assets.mountFrame(mountId, moving && !dead, now + seed * 37, mview) : null;
       if (mfr) {
         // thú cưỡi vẽ mới + người ngồi đúng yên, không bị cắt chân
-        const flip = face === 1, [fx, fy] = mfr.foot;
-        ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(x, y - 1, 34, 6, 0, 0, Math.PI * 2); ctx.fill();
-        if (moving && mfr.k % 3 === 0 && !dead && Math.random() < 0.5) WorldArt.dust(x + (flip ? 22 : -22), y);
-        ctx.save(); ctx.translate(x, y);
-        if (flip) ctx.scale(-1, 1);
-        ctx.drawImage(mfr.img, mfr.sx, 0, mfr.cw, mfr.ch, -fx, -fy, mfr.cw, mfr.ch);
-        ctx.restore();
+        const side = mfr.view === 'side', flip = side && face === 1, [fx, fy] = mfr.foot;
+        ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(x, y - 1, side ? 34 : 16, side ? 6 : 12, 0, 0, Math.PI * 2); ctx.fill();
+        if (moving && mfr.k % 3 === 0 && !dead && Math.random() < 0.5) WorldArt.dust(x + (side ? (flip ? 22 : -22) : 0), y + (mfr.view === 'down' ? -10 : side ? 0 : 10));
+        const layer = sy0 => {
+          ctx.save(); ctx.translate(x, y);
+          if (flip) ctx.scale(-1, 1);
+          ctx.drawImage(mfr.img, mfr.sx, sy0, mfr.cw, mfr.ch, -fx, -fy, mfr.cw, mfr.ch);
+          ctx.restore();
+        };
+        layer(mfr.sy);
         const sx = x + (flip ? fx - mfr.seat[0] : mfr.seat[0] - fx), sy = y + mfr.seat[1] - fy;
         const rs = state === 'walk' || state === 'idle' || state === 'dead' ? 'ride' : state;
-        const rider = Assets.riderFrame(cls, face, rs, rs === 'ride' ? mfr.k : fi, ap);
+        const rdir = side ? face : dir;
+        const rider = Assets.riderFrame(cls, rdir, rs, rs === 'ride' ? mfr.k : fi, ap);
         ctx.drawImage(rider, Math.round(sx - 48), Math.round(sy - 66));
+        if (mfr.fy >= 0) layer(mfr.fy);      // đầu ngựa / chân trước (hoặc mông, đuôi) đè lên người cưỡi
         top = Math.round(sy - 54);
       } else {
       ctx.drawImage(Sprites.mountSprite(mountId, info, mf, face === 1), x - 48, y - 66);

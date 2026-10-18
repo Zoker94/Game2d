@@ -1,14 +1,15 @@
 # Vẽ thú cưỡi pixel kiểu tả thực (nhìn ngang, quay mặt sang phải).
 # Mỗi thú = khung xương 2D (thân, cổ, đầu, 4 chân 3 đốt) -> vẽ từng bộ phận có đổ bóng theo khối,
-# viền nội bộ dịu + viền ngoài đậm. Xuất ô 128x96: cột 0-1 đứng thở, 2-7 phi nước đại.
+# viền nội bộ dịu + viền ngoài đậm. Xuất ô 128x120: cột 0-1 đứng thở, 2-7 phi nước đại; hàng 0 nhìn ngang, 1-4 nhìn xuống / nhìn lên.
 # Kèm mounts.json: điểm yên ngựa (seat) từng khung để game đặt hông nhân vật ngồi đúng chỗ.
 # Dùng: python3 tools/mounts.py public/assets
 import json, math, os, sys
 import numpy as np
 from PIL import Image, ImageDraw
 
-CW, CH = 128, 96
-GY = 91                 # mặt đất
+CW, CH = 128, 120
+GY = 114                # mặt đất (nhìn ngang)
+FB_GY = 102             # mặt đất dưới tâm thú khi nhìn trước / sau
 TAU = math.pi * 2
 FRAMES = [('idle', 0), ('idle', 1)] + [('run', i) for i in range(6)]
 
@@ -494,24 +495,298 @@ def tiger_frame(T, kind, i):
     parts.append(st)
     return compose(parts), (round(seat[0], 1), round(seat[1], 1))
 
+# ---------------- nhìn trước / nhìn sau (chạy xuống / chạy lên) ----------------
+# Dựng thú bằng các khối 3D (x: bên phải con thú, f: phía trước, u: lên trên) rồi chiếu giống nhân vật:
+# nhìn xuống: sx = giữa - x, sy = đất - u + f*0.28 ; nhìn lên: sx = giữa + x, sy = đất - u - f*0.28.
+# Mỗi khung trả 2 lớp: lớp sau (vẽ trước người cưỡi) và lớp trước (vẽ đè lên người cưỡi).
+DEPTH = 0.55   # đậm hơn nhân vật một chút để thấy rõ thân dài của thú
+
+def fb_frame(mid, view, kind, i):
+    tiger = mid == 'bach_ho'
+    H = TIGER if tiger else HORSE[mid]
+    dragon = None if tiger else H.get('dragon')
+    coat = H['coat']; mane = H.get('mane', H.get('stripe'))
+    soft = dark(coat, 0.5)
+    down = view == 'down'
+    p = (i / 6) if kind == 'run' else 0
+    bob = (math.sin(p * TAU * 2 + 0.6) * 1.4) if kind == 'run' else (0.6 if i else 0)
+    # chân: dùng cùng nhịp với dáng nghiêng, toạ độ (f, u)
+    q = [(p + o) % 1 for o in ((0.0, 0.12, 0.5, 0.62) if tiger else (0.0, 0.1, 0.48, 0.58))]
+    legdef = []   # (x, fore, q)
+    if tiger:
+        legdef = [(-7, 0, q[0]), (7, 0, q[1]), (-7, 1, q[2]), (7, 1, q[3])]
+        tops = {0: (-20, 31), 1: (21, 30)}; lens = {0: [12, 11, 4], 1: [13, 9, 4]}
+    else:
+        legdef = [(-6, 0, q[0]), (6, 0, q[1]), (-5.5, 1, q[2]), (5.5, 1, q[3])]
+        tops = {0: (-20, 31), 1: (21, 29)}; lens = {0: [13, 10, 4.5], 1: [12, 8, 4.5]}
+    legs = []
+    for x, fore, qq in legdef:
+        ang = fore_angles(qq, kind) if fore else hind_angles(qq, kind)
+        if tiger:
+            ang = [ang[0] * 0.8, ang[1] * 0.8, ang[2]]
+        f0, u0 = tops[fore]
+        pts = [(f0, u0 + bob)]
+        for a, l in zip(ang, lens[fore]):
+            f, u = pts[-1]; pts.append((f + math.sin(a) * l, u - math.cos(a) * l))
+        legs.append((x, fore, pts))
+    low = min(pts[-1][1] for _, _, pts in legs)
+    du = 2 - low     # nâng / hạ cả con để móng thấp nhất chạm đất
+    def P(x, f, u):
+        u += du
+        return (CW / 2 - x, FB_GY - u + f * DEPTH) if down else (CW / 2 + x, FB_GY - u - f * DEPTH)
+    near_f = (lambda f: f) if down else (lambda f: -f)     # độ gần người xem
+    back, front = [], []
+
+    # ----- chân -----
+    def leg_part(x, fore, pts, near):
+        col = coat if near else dark(coat, 0.28)
+        pc = (H.get('points', coat) if not tiger else coat)
+        pc = pc if near else dark(pc, 0.28)
+        lp = Part('h', dark(col, 0.5))
+        s = [P(x, f, u) for f, u in pts]
+        if tiger:
+            lp.cap(s[0], s[1], 9, col, 7); lp.cap(s[1], s[2], 7, col, 6)
+            lp.ell(s[3][0], s[3][1] + 0.5, 4.2, 2.8, col)
+            lp.mark(lambda d: [d.ln((s[0][0] - 3, (s[0][1] + s[1][1]) / 2 + k * 3), (s[0][0] + 1, (s[0][1] + s[1][1]) / 2 + k * 3 + 1), H['stripe']) for k in range(2)]
+                    + [d.ln((s[3][0] + k, s[3][1] + 1), (s[3][0] + k, s[3][1] + 3), dark(col, 0.5)) for k in (-2, 0, 2)])
+            return [lp]
+        lp.cap(s[0], s[1], 7 if fore else 7.5, col, 5)
+        if not fore: lp.ell(s[1][0], s[1][1], 2.6, 2.6, col)
+        lp.cap(s[1], s[2], 4.2, pc, 3.6); lp.cap(s[2], s[3], 3.6, pc, 3.4)
+        hp = Part('h', None)
+        hb = s[3]
+        hp.poly([(hb[0] - 2.6, hb[1] - 1.5), (hb[0] + 2.6, hb[1] - 1.5), (hb[0] + 3, hb[1] + 1.8), (hb[0] - 3, hb[1] + 1.8)], H['hoof'] if near else dark(H['hoof'], 0.3))
+        out = [lp, hp]
+        if kind == 'run' and (H.get('fire') or H.get('cloud')):
+            fp = Part(None, None, rim=False)
+            for k in range(3):
+                c = ['#fff0a0', '#ffb020', '#ff5010'][k] if H.get('fire') else light(mane, 0.2 + k * 0.1)
+                fp.ell(hb[0] + (k - 1) * 2.5, hb[1] + 1 - k * 0.4 + (k % 2), 2.4 - k * 0.4, 1.6, c)
+            out.append(fp)
+        return out
+    far_legs = [l for l in legs if (l[1] == 0) == down]      # nhìn xuống: chân sau ở xa
+    near_legs = [l for l in legs if (l[1] == 0) != down]
+
+    # ----- thân: chuỗi elip từ xa tới gần -----
+    if tiger:
+        sec = [(-27, 30, 13, 10.5), (-18, 32, 15, 11.5), (-6, 31, 14, 11), (6, 31, 14, 11), (18, 32, 15, 12), (26, 31, 13, 11)]
+    else:
+        sec = [(-28, 40, 12, 10.5), (-21, 40, 14.5, 12.5), (-12, 37, 14, 12.5), (0, 36, 13.5, 12.5), (12, 36, 13.5, 12.5), (21, 37, 13.5, 12.5), (26, 38, 12, 11)]
+    sec = [(f, u + bob, rx, ry) for f, u, rx, ry in sec]
+    order = sorted(sec, key=lambda s_: near_f(s_[0]))
+    body = Part('v', soft)
+    for f, u, rx, ry in order:
+        c = P(0, f, u); body.ell(c[0], c[1], rx, ry, coat)
+    top_u = max(u + ry for f, u, rx, ry in sec)
+    def body_marks(d):
+        if H.get('belly'):
+            for f, u, rx, ry in order:
+                c = P(0, f, u - ry * 0.75); d.ell(c[0], c[1], rx * 0.55, ry * 0.25, H['belly'])
+        if H.get('scales'):
+            for f, u, rx, ry in order[:-1]:
+                for k in (-1, 0, 1):
+                    c = P(k * 5, f, u + 4)
+                    d.d.arc([round(c[0] - 2), round(c[1] - 2), round(c[0] + 2), round(c[1] + 2)], 20, 160, fill=hx(H['scales']))
+        if H.get('dapple'):
+            for k, (x, f) in enumerate(((-5, -18), (4, -10), (-3, 6), (6, 14))):
+                c = P(x, f, 42 + bob); d.ell(c[0], c[1], 1.5, 1.2, dark(coat, 0.1))
+        if tiger:
+            for k, f in enumerate((-22, -14, -6, 4, 12, 20)):
+                for sx_ in (-1, 1):
+                    a = P(sx_ * 4, f, top_u - 1); b = P(sx_ * 12, f + 1, 26 + bob)
+                    d.ln(a, ((a[0] + b[0]) / 2 + sx_ * 1, (a[1] + b[1]) / 2), H['stripe'], 2); d.ln(((a[0] + b[0]) / 2 + sx_, (a[1] + b[1]) / 2), b, H['stripe'], 1)
+            c = P(0, -2, top_u); d.ln((c[0], c[1] - 6), (c[0], c[1] + 4), H['stripe'], 2)
+    body.mark(body_marks)
+
+    # ----- đuôi -----
+    sw = math.sin(p * TAU + 1) * (4 if kind == 'run' else 0) + (1 if (kind == 'idle' and i) else 0)
+    tail = Part('h', dark(mane if not tiger else coat, 0.45))
+    if tiger:
+        tpts = [(-29, 34), (-36, 40), (-40, 52), (-36, 60)]
+        pts2 = [P(sw * (k / 3), f, u + bob) for k, (f, u) in enumerate(tpts)]
+        tail.curve(pts2, 5, 3.5, coat, 12)
+        tail.mark(lambda d: [d.ell(pts2[-1][0], pts2[-1][1], 2.4, 2.4, H['stripe'])] + [d.ln((pt[0] - 2, pt[1]), (pt[0] + 2, pt[1]), H['stripe']) for pt in bez(pts2, 8)[2:8:2]])
+    else:
+        run = kind == 'run'
+        tpts = [(-29, 44), (-34, 40), (-38, 30), (-37, 18)] if not run else [(-29, 44), (-36, 44), (-43, 40), (-49, 36)]
+        pts2 = [P(sw * (k / 3) * 1.2, f, u + bob) for k, (f, u) in enumerate(tpts)]
+        if H.get('fire'):
+            tail.curve(pts2, 6, 2, '#ff6a10'); tail.curve(pts2, 3, 1, '#ffd040')
+        elif H.get('cloud'):
+            tail.curve(pts2, 4.5, 2, mane); e = pts2[-1]; tail.ell(e[0], e[1], 4, 3, light(mane, 0.2))
+        else:
+            tail.curve(pts2, 6, 3, mane)
+
+    # ----- cổ + đầu -----
+    nod = math.sin(p * TAU * 2 + 1.2) * 1.2 if kind == 'run' else (0.5 if i else 0)
+    head = []
+    if tiger:
+        hc = P(0, 33, 36 + bob + nod)
+        hp = Part('v', soft)
+        if down:
+            hp.ell(hc[0], hc[1], 11.5, 10.5, coat)
+            hp.ell(hc[0] - 9, hc[1] - 8, 3.5, 4, coat); hp.ell(hc[0] + 9, hc[1] - 8, 3.5, 4, coat)
+            def tm(d):
+                for sx_ in (-1, 1):
+                    d.ell(hc[0] + sx_ * 9, hc[1] - 8, 1.6, 2, '#e8a0a8')
+                    e = (hc[0] + sx_ * 4.5, hc[1] - 2); d.ell(e[0], e[1], 2.2, 1.6, H['eye']); d.rect(e[0], e[1] - 1, e[0], e[1] + 1, '#101018')
+                    d.ln((hc[0] + sx_ * 10, hc[1] - 1), (hc[0] + sx_ * 7, hc[1]), H['stripe']); d.ln((hc[0] + sx_ * 10, hc[1] + 2), (hc[0] + sx_ * 7, hc[1] + 2.5), H['stripe'])
+                d.ell(hc[0] - 3, hc[1] + 4.5, 3.5, 3, H['belly']); d.ell(hc[0] + 3, hc[1] + 4.5, 3.5, 3, H['belly'])
+                d.poly([(hc[0] - 2, hc[1] + 1.5), (hc[0] + 2, hc[1] + 1.5), (hc[0], hc[1] + 3.5)], H['nose'])
+                for k in range(3): d.ln((hc[0] - 3, hc[1] - 8 + k * 2), (hc[0] + 3, hc[1] - 8 + k * 2), H['stripe'])   # 王
+                d.ln((hc[0], hc[1] - 8), (hc[0], hc[1] - 4), H['stripe'])
+                if kind == 'run' and i in (2, 3): d.ell(hc[0], hc[1] + 7, 2.2, 1.6, '#7a1a2a')
+            hp.mark(tm)
+        else:
+            hp.ell(hc[0], hc[1], 10, 9, coat)
+            hp.ell(hc[0] - 8.5, hc[1] - 7, 3.5, 4, coat); hp.ell(hc[0] + 8.5, hc[1] - 7, 3.5, 4, coat)
+            hp.mark(lambda d: [d.ln((hc[0] + k * 3, hc[1] - 8), (hc[0] + k * 2.5, hc[1] + 2), H['stripe'], 2) for k in (-2, 0, 2)])
+        head = [hp]
+    else:
+        np_ = Part('h', soft)
+        neck = [(22, 44, 8), (27, 50, 7.5), (31, 56, 7), (34, 61, 6.5)]
+        nk = sorted(neck, key=lambda s_: near_f(s_[0]))
+        for f, u, r in nk:
+            c = P(0, f, u + bob + nod * (u - 44) / 17); np_.ell(c[0], c[1], r, r + 1, coat)
+        hp = Part('v', soft)
+        fh, uh = (40, 58) if down else (37, 63)
+        uh += bob + nod
+        if down:
+            # mặt nhìn thẳng: trán ở trên, mõm ở dưới
+            top = P(0, fh, uh); mz = P(0, fh + 6, uh - 15)
+            hp.ell(top[0], top[1], 7, 6, coat)
+            hp.poly([(top[0] - 7, top[1]), (top[0] + 7, top[1]), (mz[0] + 5.2, mz[1]), (mz[0] - 5.2, mz[1])], coat)
+            hp.ell(mz[0], mz[1], 5.4, 4.2, H['muzzle'] if not dragon else coat)
+            if dragon:
+                hp.ell(mz[0], mz[1] + 1, 5.5, 3.2, coat)
+            def hm(d):
+                for sx_ in (-1, 1):
+                    e = (top[0] + sx_ * 6.5, top[1] + 2)
+                    d.rect(e[0] - (1 if sx_ > 0 else 0), e[1] - 1, e[0] + (0 if sx_ > 0 else 1), e[1] + 1, '#ff3020' if (H.get('eyeRed') or dragon) else '#1a1010')
+                    n = (mz[0] + sx_ * 2, mz[1] + 1); d.rect(n[0], n[1], n[0], n[1] + 1, dark(H['muzzle'], 0.6))
+                if H.get('blaze'):
+                    d.poly([(top[0] - 1, top[1] - 3), (top[0] + 1, top[1] - 3), (mz[0] + 1.5, mz[1] - 2), (mz[0] - 1.5, mz[1] - 2)], '#f4ece0')
+                if dragon:
+                    d.ln((mz[0] - 4, mz[1] + 2), (mz[0] + 4, mz[1] + 2), '#3a0a0a')
+                    for k in (-2, 2): d.rect(mz[0] + k, mz[1] + 2, mz[0] + k, mz[1] + 3, '#ffffff')
+                else:   # dây cương trên mặt
+                    d.ln((top[0] - 5, top[1] + 4), (mz[0] - 4, mz[1] - 1), '#3a2010'); d.ln((top[0] + 5, top[1] + 4), (mz[0] + 4, mz[1] - 1), '#3a2010')
+                    d.ln((mz[0] - 4, mz[1] - 2), (mz[0] + 4, mz[1] - 2), '#3a2010')
+            hp.mark(hm)
+            face_top, face_bot = top, mz
+        else:
+            top = P(0, fh - 2, uh)
+            hp.ell(top[0], top[1], 7, 7, coat)
+            face_top, face_bot = top, top
+        ep = Part('h', soft)
+        et = face_top
+        for sx_ in (-1, 1):
+            ep.poly([(et[0] + sx_ * 2.5, et[1] - 4), (et[0] + sx_ * 7, et[1] - 3), (et[0] + sx_ * 6, et[1] - 12)], coat)
+        if dragon == 'long':
+            for sx_ in (-1, 1):
+                a = (et[0] + sx_ * 3, et[1] - 4); b = (et[0] + sx_ * 8, et[1] - 16)
+                ep.cap(a, b, 2.6, H['horn'], 1.4); m_ = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2); ep.cap(m_, (m_[0] + sx_ * 4, m_[1] - 2), 1.8, H['horn'], 1)
+        elif dragon == 'qilin':
+            ep.cap((et[0], et[1] - 4), (et[0], et[1] - 16), 3.2, H['horn'], 1.2)
+        mp = Part('h', dark(mane, 0.45))
+        if down:
+            fl = face_top   # chỏm bờm trán + bờm hai bên cổ
+            mp.poly([(fl[0] - 3, fl[1] - 4), (fl[0] + 3, fl[1] - 4), (fl[0], fl[1] + 3)], mane if not H.get('fire') else '#ffb020')
+            if H.get('fire'):
+                for k, col in enumerate(('#ff5010', '#ff9a20', '#ffe060')):
+                    mp.poly([(fl[0] - 6 + k, fl[1] + 2), (fl[0] + 6 - k, fl[1] + 2), (fl[0] + (k - 1) * 3, fl[1] - 14 + k * 3 + nod)], col)
+        else:
+            # nhìn từ sau: bờm chạy dọc sống cổ
+            for k, (f, u, r) in enumerate(neck):
+                c = P(0, f, u + bob + nod * (u - 44) / 17)
+                w_ = 3 if not H.get('fire') else 4
+                col = mane if not H.get('fire') else ['#ff5010', '#ff9a20', '#ffe060', '#ff9a20'][k]
+                mp.poly([(c[0] - w_, c[1] - r), (c[0] + w_, c[1] - r), (c[0] + w_ * 0.6 + (k % 2), c[1] + 3), (c[0] - w_ * 0.6, c[1] + 3)], col)
+        head = [np_, hp, mp, ep]
+        if dragon and down:
+            wp = Part(None, None, rim=False)
+            sw2 = math.sin(p * TAU) * 2
+            for sx_ in (-1, 1):
+                a = (face_bot[0] + sx_ * 4, face_bot[1])
+                wp.curve([a, (a[0] + sx_ * 7, a[1] - 2 + sw2), (a[0] + sx_ * 11, a[1] + 4 + sw2)], 1.6, 1, mane)
+            head.append(wp)
+
+    # ----- yên cương -----
+    seat_f, seat_u = (-1, top_u + 1.5)
+    tk = Part('v', dark(H['blanket'], 0.5))
+    def drape(f):
+        return [P(-13, f, 28 + bob), P(-12, f, top_u - 5), P(-6, f, top_u), P(6, f, top_u), P(12, f, top_u - 5), P(13, f, 28 + bob)]
+    cl = drape(seat_f + (5 if down else -5))
+    tk.poly(cl, H['blanket'])
+    tk.mark(lambda d: [d.ln(cl[0], cl[1], H['trim'], 2), d.ln(cl[5], cl[4], H['trim'], 2)])
+    sd = Part('v', dark(H['saddle'], 0.55))
+    sc = P(0, seat_f, seat_u)
+    sd.ell(sc[0], sc[1], 7, 3.5, H['saddle'])
+    pm = P(0, seat_f + 7, seat_u + 2.5); ct = P(0, seat_f - 7, seat_u + 3)
+    sd.ell(pm[0], pm[1], 3, 2.2, H['saddle']); sd.ell(ct[0], ct[1], 6, 2.5, H['saddle'])
+    st = Part(None, None, rim=False)
+    for sx_ in (-1, 1):
+        a = P(sx_ * 11, seat_f, seat_u - 3); b = P(sx_ * 13, seat_f + 1, 22 + bob)
+        st.ln(a, b, '#3a2414')
+        st.d.rectangle([round(b[0] - 1.5), round(b[1]), round(b[0] + 1.5), round(b[1] + 2)], outline=hx('#d0c8b0'))
+    seat = P(0, seat_f, seat_u - 1.5)
+
+    # ----- dây cương + đai ngực (lớp trước khi nhìn xuống) -----
+    tack = Part(None, None, rim=False)
+    if down:
+        ch = [P(x, 27, 36 + bob) for x in (-9, -5, 0, 5, 9)]
+        for a, b in zip(ch, ch[1:]): tack.ln(a, b, '#4a2c18', 2)
+        tack.ell(ch[2][0], ch[2][1] + 1, 1.6, 1.6, H['trim'])
+        if not tiger:
+            for sx_ in (-1, 1):
+                bit = (face_bot[0] + sx_ * 4, face_bot[1] - 1)
+                hand = (seat[0] + sx_ * 7, seat[1] - 8)
+                rp = bez([bit, ((bit[0] + hand[0]) / 2 + sx_ * 2, (bit[1] + hand[1]) / 2 + 3), hand], 5)
+                for a, b in zip(rp, rp[1:]): tack.ln(a, b, '#2a160a')
+        else:
+            col_ = (hc[0], hc[1] + 9)
+            tack.ell(col_[0], col_[1], 1.6, 1.6, H['trim'])
+            for sx_ in (-1, 1):
+                hand = (seat[0] + sx_ * 7, seat[1] - 8)
+                tack.ln(col_, hand, '#2a160a')
+
+    farL = [pp for l in far_legs for pp in leg_part(*l, False)]
+    nearL = [pp for l in near_legs for pp in leg_part(*l, True)]
+    if down:
+        # xa -> gần: chân sau, đuôi, thân, chăn + yên | người cưỡi | chân trước, cổ, đầu, dây cương
+        back = farL + [tail, body, tk, sd, st]
+        front = nearL + head + [tack]
+    else:
+        # nhìn lên: chân trước + đầu ở xa, thân, yên | người cưỡi | chân sau, đuôi
+        back = farL + head + [body, tk, sd, st]
+        front = nearL + [tail]
+    return compose(back), compose(front), (round(seat[0], 1), round(seat[1], 1))
+
 MOUNTS = ['ngua_nau', 'bach_ma', 'hac_ma', 'bach_ho', 'hoa_ky_lan', 'thanh_long']
 
 def sheet(mid):
-    img = Image.new('RGBA', (CW * len(FRAMES), CH), (0, 0, 0, 0))
-    seats = []
+    """hàng 0: nhìn ngang; 1-2: nhìn xuống (lớp sau / lớp trước người cưỡi); 3-4: nhìn lên (lớp sau / lớp trước)"""
+    img = Image.new('RGBA', (CW * len(FRAMES), CH * 5), (0, 0, 0, 0))
+    seats = {'side': [], 'down': [], 'up': []}
     for c, (kind, i) in enumerate(FRAMES):
         fr, seat = tiger_frame(TIGER, kind, i) if mid == 'bach_ho' else horse_frame(HORSE[mid], kind, i)
-        img.alpha_composite(fr, (c * CW, 0)); seats.append(seat)
+        img.alpha_composite(fr, (c * CW, 0)); seats['side'].append(seat)
+        for r, view in ((1, 'down'), (3, 'up')):
+            b, f, seat = fb_frame(mid, view, kind, i)
+            img.alpha_composite(b, (c * CW, r * CH)); img.alpha_composite(f, (c * CW, (r + 1) * CH))
+            seats[view].append(seat)
     return img, seats
 
 if __name__ == '__main__':
     root = sys.argv[1] if len(sys.argv) > 1 else 'public/assets'
     os.makedirs(os.path.join(root, 'mounts'), exist_ok=True)
-    meta = {'cell': [CW, CH], 'foot': [CW // 2, GY], 'frames': {'idle': [0, 2], 'run': [2, 6]}, 'seat': {}}
+    meta = {'cell': [CW, CH], 'foot': [CW // 2, GY], 'footFB': [CW // 2, FB_GY], 'frames': {'idle': [0, 2], 'run': [2, 6]},
+            'rows': {'side': [0], 'down': [1, 2], 'up': [3, 4]}, 'seat': {}, 'seats': {}}
     for mid in (sys.argv[2:] or MOUNTS):
         img, seats = sheet(mid)
         img.save(os.path.join(root, 'mounts', mid + '.png'), optimize=True)
-        meta['seat'][mid] = seats
+        meta['seat'][mid] = seats['side']
+        meta['seats'][mid] = seats
         print('ok', mid)
     if not sys.argv[2:]:
         with open(os.path.join(root, 'mounts.json'), 'w') as f: json.dump(meta, f)
