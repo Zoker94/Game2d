@@ -240,15 +240,15 @@
     if (tier < 3) return;
     const [c1, c2] = WING[tier];
     const flap = Math.sin(now / 260) * 0.18;
-    const sy = y - 44, side = dir === 1 || dir === 2;
+    const sy = y - 33, side = dir === 1 || dir === 2;   // gắn giữa lưng
     ctx.save();
     if (tier >= 5 && window.FX && FX.sprite) FX.sprite(ctx, 'taiji', 0, x, sy - 2, { frame: Math.floor(now / 110), color: '#ffd76a', scale: 0.8, alpha: 0.5 });
     ctx.globalCompositeOperation = 'lighter';
     for (const s of side ? [dir === 2 ? -1 : 1] : [-1, 1]) {
-      ctx.save(); ctx.translate(x + (side ? s * 4 : s * 5), sy); ctx.scale(s * (side ? 0.75 : 1), 1); ctx.rotate(-0.25 - flap);
+      ctx.save(); ctx.translate(x + (side ? s * 4 : s * 5), sy); ctx.scale(s * (side ? 0.75 : 1), 1); ctx.rotate(0.05 - flap);
       const n = tier >= 4 ? 6 : 5;
       for (let i = 0; i < n; i++) {
-        const a = -0.95 + i * 0.32, len = 36 - i * 3 + (tier - 3) * 5;
+        const a = -0.75 + i * 0.3, len = 34 - i * 3 + (tier - 3) * 5;
         const g = ctx.createLinearGradient(0, 0, Math.cos(a) * len, Math.sin(a) * len);
         g.addColorStop(0, Sprites.hexA(c1, 0.75)); g.addColorStop(1, Sprites.hexA(c2, 0.05));
         ctx.fillStyle = g;

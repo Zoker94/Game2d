@@ -570,3 +570,7 @@ img.ic { image-rendering: auto; width: 36px; height: 36px; filter: drop-shadow(0
 .act.pick span { font-size: 9px; }
 .act.pick.hidden { display: none; }
 @keyframes pickPulse { 50% { box-shadow: 0 0 12px rgba(255,216,96,.7); } }
+/* bố trí lại nút điện thoại không đè nhau */
+.act.dodge { right: 212px; bottom: 2px; width: 50px; height: 50px; }
+body.touch #btn-music, body.short.touch #btn-music { left: 12px; bottom: 204px; }
+body.short.touch #btn-music { bottom: 184px; }
