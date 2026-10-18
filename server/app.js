@@ -40,6 +40,8 @@ const io = new Server(server, { cors: { origin: false }, pingInterval: 10000, pi
 
 const world = new World(io, db);
 const features = new Features(world, db);
+const { Social } = require('./game/social');
+const social = new Social(world, features, db);
 world.start();
 
 // ---------------- Hỗ trợ xác thực ----------------
@@ -244,6 +246,7 @@ io.on('connection', socket => {
   on('enter', () => {
     if (!user.character || player) return;
     player = world.addPlayer(user, socket);
+    social.notifyFriends(player, true);
     if (user.character.guildId) socket.join('guild:' + user.character.guildId);
     features.ensureDaily(player);
     socket.emit('events', features.eventsView());
@@ -302,7 +305,12 @@ io.on('connection', socket => {
   on('online', inGame(() => socket.emit('online', [...world.players.values()].map(p => ({ name: p.c.name, cls: p.c.cls, level: p.c.level, map: MAPS[p.mapId].name })))));
   on('setQuick', inGame(d => { if (d && ITEMS[d.id]) { if (d.kind === 'mp') player.c.quickMp = d.id; else player.c.quickHp = d.id; player.dirtyMe = true; } }));
 
-  socket.on('disconnect', () => { if (player) world.removePlayer(player); });
+  on('inspect', inGame(d => d && social.inspect(player, d.id)));
+  on('friend', inGame(d => d && social.friend(player, d)));
+  on('trade', inGame(d => d && social.trade(player, d)));
+  on('ginvite', inGame(d => d && social.guildInvite(player, d)));
+
+  socket.on('disconnect', () => { if (player) { social.leave(player); world.removePlayer(player); } });
 });
 
 // Lưu định kỳ

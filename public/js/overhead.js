@@ -1,0 +1,178 @@
+// Vẽ trên đầu nhân vật: số sát thương bay lên, hiệu ứng trạng thái (choáng, băng, độc...), bong bóng chat
+(function () {
+  const TAU = Math.PI * 2;
+  const ST = {
+    stun:   { bit: 1,  name: 'Choáng!',     color: '#ffe04a' },
+    freeze: { bit: 2,  name: 'Đóng băng!',  color: '#9ee8ff' },
+    poison: { bit: 4,  name: 'Trúng độc!',  color: '#8cff4a' },
+    burn:   { bit: 8,  name: 'Bỏng!',       color: '#ff8a3a' },
+    slow:   { bit: 16, name: 'Làm chậm!',   color: '#7fb8ff' },
+    bleed:  { bit: 32, name: 'Chảy máu!',   color: '#ff4a5a' }
+  };
+  const DOT_COLOR = { poison: '#8cff4a', burn: '#ff9a3a', bleed: '#ff5a6a', dot: '#9acd32' };
+
+  // mặt nạ trạng thái: lấy từ máy chủ (s) + hiệu ứng vừa nhận (stLocal) để hiện ngay
+  function mask(e, now) {
+    let m = e.st || 0;
+    if (e.stLocal) for (const k in e.stLocal) if (e.stLocal[k] > now) m |= ST[k].bit;
+    return m;
+  }
+
+  // ---------- trạng thái ----------
+  function drawUnder(ctx, e, x, y, m, now) {   // dưới chân (vẽ trước nhân vật)
+    if (m & ST.slow.bit) {
+      ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.4);
+      ctx.strokeStyle = 'rgba(120,180,255,0.8)'; ctx.lineWidth = 3;
+      for (let i = 0; i < 2; i++) { ctx.beginPath(); ctx.arc(0, 0, 18 + i * 8, now / 300 + i, now / 300 + i + 4.2); ctx.stroke(); }
+      ctx.restore();
+    }
+    if (m & ST.poison.bit) {
+      ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.4); ctx.fillStyle = 'rgba(110,230,60,0.28)'; ctx.beginPath(); ctx.arc(0, 0, 24, 0, TAU); ctx.fill(); ctx.restore();
+    }
+  }
+  function drawOver(ctx, e, x, y, top, m, now) {   // trên người (vẽ sau nhân vật)
+    const seed = (e.x || 0) * 0.13;
+    if (m & ST.freeze.bit) {
+      ctx.save();
+      ctx.globalAlpha = 0.42; ctx.fillStyle = '#bff0ff';
+      ctx.fillRect(x - 17, top + 6, 34, y - top - 4);
+      ctx.globalAlpha = 0.95; ctx.strokeStyle = '#e8fbff'; ctx.lineWidth = 2; ctx.strokeRect(x - 17, top + 6, 34, y - top - 4);
+      ctx.beginPath(); ctx.moveTo(x - 11, top + 14); ctx.lineTo(x - 3, top + 24); ctx.moveTo(x + 6, top + 12); ctx.lineTo(x + 12, top + 20); ctx.stroke();
+      ctx.restore();
+    }
+    if (m & ST.poison.bit) {
+      for (let i = 0; i < 4; i++) {
+        const t = ((now / 900 + i / 4 + seed) % 1);
+        ctx.globalAlpha = 1 - t; ctx.fillStyle = i % 2 ? '#7dff4a' : '#b4ff5a';
+        const bx = x - 12 + i * 8 + Math.sin(now / 200 + i) * 2, by = y - 10 - t * 50;
+        ctx.beginPath(); ctx.arc(bx, by, 2.5 + (i % 2), 0, TAU); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    if (m & ST.burn.bit) {
+      for (let i = 0; i < 5; i++) {
+        const t = ((now / 600 + i / 5 + seed) % 1);
+        const fx = x - 14 + i * 7 + Math.sin(now / 90 + i) * 2, fy = y - 6 - t * 44;
+        ctx.globalAlpha = 1 - t;
+        ctx.fillStyle = t < 0.4 ? '#fff0a0' : t < 0.7 ? '#ffa030' : '#ff4a1a';
+        ctx.beginPath(); ctx.moveTo(fx - 3, fy); ctx.quadraticCurveTo(fx, fy - 9, fx + 3, fy); ctx.closePath(); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    if (m & ST.bleed.bit) {
+      for (let i = 0; i < 3; i++) {
+        const t = ((now / 700 + i / 3 + seed) % 1);
+        ctx.globalAlpha = 1 - t * 0.6; ctx.fillStyle = '#e02030';
+        ctx.beginPath(); ctx.ellipse(x - 8 + i * 8, top + 26 + t * 30, 1.6, 2.6, 0, 0, TAU); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    if (m & ST.stun.bit) {   // sao vàng xoay quanh đầu
+      for (let i = 0; i < 3; i++) {
+        const a = now / 220 + i * TAU / 3;
+        const sx = x + Math.cos(a) * 14, sy = top + 2 + Math.sin(a) * 4;
+        star(ctx, sx, sy, Math.sin(a) > 0 ? 5 : 4, '#ffe04a', a);
+      }
+    }
+  }
+  function star(ctx, x, y, r, c, rot) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.fillStyle = c; ctx.strokeStyle = '#6a4a00'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) { const rr = i % 2 ? r * 0.45 : r, a = i * Math.PI / 5 - Math.PI / 2; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+    ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+  }
+
+  // ---------- số sát thương ----------
+  const floats = [];
+  // kind: hit | crit | hurt | heal | mana | poison | burn | bleed | dot | status | miss
+  function add(x, y, text, kind, color) {
+    floats.push({ x: x + (Math.random() * 24 - 12), y, text: String(text), kind, color, t0: performance.now(), vx: (Math.random() - 0.5) * 30 });
+    if (floats.length > 90) floats.shift();
+  }
+  function outlined(ctx, text, x, y, size, fill, stroke, weight) {
+    ctx.font = `${weight || 900} ${size}px system-ui, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(3, size / 5); ctx.strokeStyle = stroke; ctx.strokeText(text, x, y);
+    ctx.fillStyle = fill; ctx.fillText(text, x, y);
+  }
+  function drawFloats(ctx, now) {
+    for (let i = floats.length - 1; i >= 0; i--) {
+      const f = floats[i];
+      const life = f.kind === 'crit' ? 1300 : f.kind === 'status' ? 1200 : 1000;
+      const p = (now - f.t0) / life;
+      if (p >= 1) { floats.splice(i, 1); continue; }
+      const a = p < 0.7 ? 1 : 1 - (p - 0.7) / 0.3;
+      ctx.globalAlpha = a;
+      if (f.kind === 'crit') {
+        // bạo kích: số to, nảy lên rồi thu lại, viền đỏ, tia sáng phía sau
+        const pop = p < 0.12 ? 0.6 + p / 0.12 * 1.2 : p < 0.25 ? 1.8 - (p - 0.12) / 0.13 * 0.5 : 1.3;
+        const y = f.y - 10 - p * 36, x = f.x + f.vx * p;
+        if (p < 0.35) {
+          ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(x, y);
+          const q = p / 0.35;
+          for (let k = 0; k < 10; k++) {
+            const ang = k / 10 * TAU + 0.3, r0 = 8 + q * 20, r1 = 22 + q * 40;
+            ctx.strokeStyle = `rgba(255,${180 - k * 6},60,${(1 - q) * 0.9})`; ctx.lineWidth = 3 * (1 - q) + 1;
+            ctx.beginPath(); ctx.moveTo(Math.cos(ang) * r0, Math.sin(ang) * r0); ctx.lineTo(Math.cos(ang) * r1, Math.sin(ang) * r1); ctx.stroke();
+          }
+          ctx.fillStyle = `rgba(255,220,120,${(1 - q) * 0.55})`; ctx.beginPath(); ctx.arc(0, 0, 14 + q * 26, 0, TAU); ctx.fill();
+          ctx.restore();
+        }
+        outlined(ctx, 'BẠO KÍCH', x, y - 22 * pop, 11 * Math.min(1.2, pop), '#fff3b0', '#7a1a00');
+        const g = ctx.createLinearGradient(0, y - 14 * pop, 0, y + 14 * pop);
+        g.addColorStop(0, '#fff6a0'); g.addColorStop(0.5, '#ffb020'); g.addColorStop(1, '#ff3a1a');
+        outlined(ctx, f.text, x, y, 24 * pop, g, '#3a0a00');
+      } else if (f.kind === 'status') {
+        const y = f.y - 26 - p * 22;
+        outlined(ctx, f.text, f.x, y, 13, f.color, '#1a1020', 800);
+      } else {
+        const big = f.kind === 'hurt' ? 17 : f.kind === 'hit' ? 16 : 14;
+        const pop = p < 0.1 ? 0.7 + p / 0.1 * 0.5 : p < 0.2 ? 1.2 - (p - 0.1) / 0.1 * 0.2 : 1;
+        const y = f.y - p * 42, x = f.x + f.vx * p * 0.6;
+        const col = f.color || (f.kind === 'hurt' ? '#ff4a4a' : f.kind === 'heal' ? '#4ade80' : f.kind === 'mana' ? '#6bb0ff' : DOT_COLOR[f.kind] || '#ffffff');
+        const pre = f.kind === 'heal' || f.kind === 'mana' ? '+' : f.kind === 'hurt' ? '-' : '';
+        outlined(ctx, pre + f.text, x, y, big * pop, col, '#140c18');
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ---------- bong bóng chat ----------
+  function wrap(ctx, text, maxW) {
+    const words = text.split(' '), lines = [];
+    let cur = '';
+    for (const w of words) {
+      const t = cur ? cur + ' ' + w : w;
+      if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t;
+      while (ctx.measureText(cur).width > maxW && cur.length > 4) { let k = cur.length - 1; while (k > 1 && ctx.measureText(cur.slice(0, k)).width > maxW) k--; lines.push(cur.slice(0, k)); cur = cur.slice(k); }
+    }
+    if (cur) lines.push(cur);
+    if (lines.length > 3) { lines.length = 3; lines[2] = lines[2].replace(/.{0,2}$/, '…'); }
+    return lines;
+  }
+  function drawBubble(ctx, x, top, b, now) {
+    const age = now - b.t0;
+    if (age > b.dur) return false;
+    const a = age < 150 ? age / 150 : age > b.dur - 400 ? (b.dur - age) / 400 : 1;
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.font = '600 11px system-ui, sans-serif';
+    if (!b.lines) b.lines = wrap(ctx, b.text, 130);
+    const w = Math.max(30, ...b.lines.map(l => ctx.measureText(l).width)) + 14, lh = 13, h = b.lines.length * lh + 10;
+    const bx = Math.round(x - w / 2), by = Math.round(top - h - 12 - (age < 150 ? (1 - age / 150) * 6 : 0));
+    const col = b.ch === 'guild' ? '#7fb8ff' : b.ch === 'world' ? '#ffd76a' : b.ch === 'pm' ? '#ff9ad8' : '#ffffff';
+    ctx.fillStyle = 'rgba(20,14,30,0.86)'; ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(bx, by, w, h, 6); else ctx.rect(bx, by, w, h);
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - 5, by + h - 0.5); ctx.lineTo(x, by + h + 7); ctx.lineTo(x + 5, by + h - 0.5); ctx.closePath();
+    ctx.fill(); ctx.beginPath(); ctx.moveTo(x - 5, by + h); ctx.lineTo(x, by + h + 7); ctx.lineTo(x + 5, by + h); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    b.lines.forEach((l, i) => ctx.fillText(l, x, by + 5 + i * lh));
+    ctx.restore();
+    return true;
+  }
+
+  window.Overhead = { ST, mask, drawUnder, drawOver, add, drawFloats, drawBubble };
+})();

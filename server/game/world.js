@@ -151,7 +151,8 @@ class World {
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null,
       skills: c.skills || {}, hotbar: c.hotbar, sp: skillPointsTotal(c.level) - (c.spSpent || 0),
-      mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c)
+      mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c),
+      st: this.statusView(p), friends: Object.keys(c.friends || {}).length
     };
   }
 
@@ -257,6 +258,7 @@ class World {
     const dt = Math.min(1000, now - p.lastMove);
     p.lastMove = now;
     const map = MAPS[p.mapId];
+    if (isCC(p, now)) { p.moving = false; p.socket.emit('pos', { x: p.x, y: p.y }); return; }
     const maxD = p.stats.spd * (dt / 1000) * 1.5 + 24;
     const d = Math.hypot(x - p.x, y - p.y);
     if (d > maxD || isSolidAt(map, x, y)) {
@@ -322,6 +324,7 @@ class World {
 
   useSkill(p, idx, targetId) {
     if (p.dead) return;
+    if (isCC(p, Date.now())) return this.toast(p, 'Đang bị khống chế, không thể ra chiêu!', 'error');
     const cl = CLASSES[p.c.cls];
     idx = idx | 0;
     const base = idx === DRAGON_SLOT ? (p.c.dragon && p.c.dragons && p.c.dragons[p.c.dragon] ? DRAGONS[p.c.dragon] : null) : cl.skills[idx];
@@ -395,9 +398,11 @@ class World {
         for (const h of list) {
           if (h.dead) continue;
           this.damage(p, h, sk.mult);
-          if (sk.type === 'dot' || sk.dotTicks) this.addDot(p, h, sk);
+          if (sk.type === 'dot' || sk.dotTicks) this.addDot(p, h, sk, 'poison');
           if (h.dead) continue;
-          if (sk.freeze && !h.c) h.frozenUntil = t + sk.freeze;
+          if (sk.freeze) this.applyStatus(h, 'freeze', sk.freeze, p);
+          const stDef = SKILL_STATUS[base.id] || FX_STATUS[sk.fx];
+          if (stDef && Math.random() < stDef[2]) this.applyStatus(h, stDef[0], stDef[1], p);
           if (sk.knock && !h.c && !h.boss) {
             const a = Math.atan2(h.y - cy, h.x - cx), nx = h.x + Math.cos(a) * sk.knock, ny = h.y + Math.sin(a) * sk.knock;
             if (!isSolidAt(MAPS[p.mapId], nx, ny)) { h.x = nx; h.y = ny; }
@@ -429,11 +434,43 @@ class World {
     p.dirtyMe = true;
   }
 
-  addDot(p, t, sk) {
-    if (!t.dots) t.dots = [];
+  addDot(p, t, sk, kind = 'poison') {
     const ticks = sk.ticks || sk.dotTicks || 3;
-    t.dots = t.dots.filter(d => d.src !== sk.id || d.owner !== p);
-    t.dots.push({ src: sk.id, owner: p, dmg: Math.max(1, Math.round(p.stats.atk * 0.7)), left: ticks, next: Date.now() + 1000 });
+    this.addDotRaw(t, p, Math.max(1, Math.round(p.stats.atk * 0.7)), ticks, kind, sk.id);
+  }
+  addDotRaw(t, owner, dmg, ticks, kind, src) {
+    if (!t.dots) t.dots = [];
+    t.dots = t.dots.filter(d => d.src !== src || d.owner !== owner);
+    t.dots.push({ src, owner, dmg, left: ticks, next: Date.now() + 1000, kind });
+  }
+  tickDots(t, now) {
+    if (!t.dots || !t.dots.length) return;
+    for (const d of t.dots) {
+      if (now >= d.next && d.left > 0) { d.left--; d.next = now + 1000; this.applyDamage(t, d.dmg, d.owner || null, d.kind || 'dot'); if (t.dead) { t.dots = []; return; } }
+    }
+    t.dots = t.dots.filter(d => d.left > 0);
+  }
+  // Gây hiệu ứng: choáng, đóng băng, độc, bỏng, chậm, chảy máu
+  applyStatus(t, kind, ms, src) {
+    if (!t || t.dead || !ST_BITS[kind]) return;
+    const now = Date.now();
+    if (t.boss && (kind === 'stun' || kind === 'freeze')) ms *= 0.35;   // boss kháng khống chế
+    if (t.c && (kind === 'stun' || kind === 'freeze')) ms *= 0.6;        // người chơi bị khống chế ngắn hơn
+    t.st = t.st || {};
+    t.st[kind] = Math.max(t.st[kind] || 0, now + ms);
+    if (kind === 'freeze') t.frozenUntil = t.st.freeze;
+    if (DOT_KINDS.has(kind)) {
+      const base = src ? (src.stats ? src.stats.atk : (src.tpl ? src.tpl.atk : 10)) : 10;
+      const mult = kind === 'burn' ? 0.55 : kind === 'bleed' ? 0.45 : 0.6;
+      this.addDotRaw(t, src, Math.max(1, Math.round(base * mult * (t.c ? 0.5 : 1))), Math.max(1, Math.round(ms / 1000)), kind, 'st:' + kind);
+    }
+    this.io.to('map:' + t.mapId).emit('status', { id: t.id, k: kind, ms: Math.round(ms) });
+    if (t.c) t.dirtyMe = true;
+  }
+  statusView(t) {
+    const now = Date.now(), o = {};
+    if (t.st) for (const k in t.st) if (t.st[k] > now) o[k] = t.st[k] - now;
+    return o;
   }
 
   calcDamage(atk, crit, def, mult, defK = 0.35) {
@@ -469,7 +506,7 @@ class World {
   }
 
   killPlayer(t, src) {
-    t.dead = true; t.c.hp = 0; t.c.deaths = (t.c.deaths || 0) + 1;
+    t.dead = true; t.c.hp = 0; t.c.deaths = (t.c.deaths || 0) + 1; t.st = {}; t.dots = [];
     if (t.c.riding) { t.c.riding = false; this.recalc(t); }
     const map = this.maps[t.mapId];
     let lost = 0;
@@ -955,6 +992,7 @@ class World {
       for (const mon of m.monsters.values()) this.updateMonster(mon, m, now, m.players.size === 0 ? 1000 : TICK);
       for (const dr of m.drops.values()) if (dr.expire < now) { m.drops.delete(dr.id); this.io.to('map:' + id).emit('dropDel', dr.id); }
       for (const p of m.players) {
+        if (p.dots && p.dots.length && !p.dead) this.tickDots(p, now);
         this.tryPickup(p, m);
         if (sec) this.regen(p, m, now);
       }
@@ -985,19 +1023,16 @@ class World {
     if (mon.dead) {
       if (!mon.boss && !mon.event && now >= mon.respawnAt) {
         const pos = this.randomSpotNear(m.def, mon.sp.x + 0.5, mon.sp.y + 0.5, mon.sp.r);
-        Object.assign(mon, { dead: false, hp: mon.maxHp, x: pos.x, y: pos.y, hx: pos.x, hy: pos.y, target: null, dmgBy: new Map(), dots: [] });
+        Object.assign(mon, { dead: false, hp: mon.maxHp, x: pos.x, y: pos.y, hx: pos.x, hy: pos.y, target: null, dmgBy: new Map(), dots: [], st: {} });
       }
       return;
     }
     if (mon.tpl.static) return;
-    if (mon.frozenUntil && mon.frozenUntil > now) { mon.moving = false; return; }
-    // Độc
-    if (mon.dots && mon.dots.length) {
-      for (const d of mon.dots) {
-        if (now >= d.next && d.left > 0) { d.left--; d.next = now + 1000; this.applyDamage(mon, d.dmg, d.owner, 'dot'); if (mon.dead) return; }
-      }
-      mon.dots = mon.dots.filter(d => d.left > 0);
-    }
+    // Độc / bỏng / chảy máu
+    this.tickDots(mon, now);
+    if (mon.dead) return;
+    if (isCC(mon, now)) { mon.moving = false; return; }
+    const slowed = mon.st && (mon.st.slow || 0) > now;
     const tpl = mon.tpl;
     let target = mon.target ? this.players.get(mon.target) : null;
     if (target && (target.dead || target.mapId !== mon.mapId || Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > LEASH_R)) {
@@ -1013,18 +1048,20 @@ class World {
       }
       if (best && Math.hypot(best.x - mon.hx, best.y - mon.hy) < LEASH_R * 0.8) { target = best; mon.target = best.userId; }
     }
-    const spd = (tpl.speed || 90) * (dt / 1000);
+    const spd = (tpl.speed || 90) * (dt / 1000) * (slowed ? 0.45 : 1);
     mon.moving = false;
     if (target) {
       const d = U.dist(target, mon);
       const range = tpl.range || 60;
       if (d > range * 0.85) this.moveToward(mon, target.x, target.y, spd, m.def);
       if (d <= range + 10 && now >= mon.nextAtk) {
-        mon.nextAtk = now + (mon.boss ? 1100 : 1300);
+        mon.nextAtk = now + (mon.boss ? 1100 : 1300) * (slowed ? 1.4 : 1);
         const { dmg, crit } = this.calcDamage(tpl.atk, mon.boss ? 10 : 3, target.stats.def, 1, 0.5);
         if (tpl.ranged || mon.boss) this.fx(mon.mapId, { t: 'bolt', from: mon.id, x: mon.x, y: mon.y, tx: target.x, ty: target.y, color: mon.boss ? '#ff3030' : '#c080ff' });
         else this.fx(mon.mapId, { t: 'bite', from: mon.id, x: target.x, y: target.y });
         this.applyDamage(target, dmg, mon, crit ? 'crit' : 'hurt');
+        const ms = MON_STATUS[tpl.sprite];
+        if (ms && !target.dead && Math.random() < ms[2] * (mon.boss ? 1.5 : 1)) this.applyStatus(target, ms[0], ms[1], mon);
       }
       if (mon.boss && now >= mon.nextAoe) {
         mon.nextAoe = now + 6000;
@@ -1032,6 +1069,7 @@ class World {
         for (const p of m.players) if (!p.dead && U.dist(p, mon) < 170) {
           const { dmg } = this.calcDamage(tpl.atk, 0, p.stats.def, 1.3, 0.5);
           this.applyDamage(p, dmg, mon, 'hurt');
+          if (!p.dead) this.applyStatus(p, 'stun', 900, mon);
         }
       }
       const dx = target.x - mon.x;
@@ -1067,18 +1105,18 @@ class World {
   }
 
   snapshot(m) {
-    const guilds = this.db.data.guilds;
+    const guilds = this.db.data.guilds, now = Date.now();
     const ps = [];
     for (const p of m.players) {
       const g = p.c.guildId && guilds[p.c.guildId];
       ps.push({ i: p.id, n: p.c.name, c: p.c.cls, x: Math.round(p.x), y: Math.round(p.y), d: p.dir, m: p.moving ? 1 : 0,
         h: Math.max(0, Math.round(p.c.hp)), H: p.stats.maxHp, l: p.c.level, g: g ? g.name : '', a: p.dead ? 1 : 0,
-        q: this.appearance(p.c), v: p.user.isAdmin ? 1 : 0 });
+        q: this.appearance(p.c), v: p.user.isAdmin ? 1 : 0, s: stMask(p, now) });
     }
     const ms = [];
     for (const mon of m.monsters.values()) {
       if (mon.dead) continue;
-      ms.push({ i: mon.id, t: mon.tpl.id, x: Math.round(mon.x), y: Math.round(mon.y), d: mon.dir, m: mon.moving ? 1 : 0, h: Math.max(0, Math.round(mon.hp)), H: mon.maxHp, b: mon.boss ? 1 : 0, e: mon.event ? 1 : 0, f: mon.frozenUntil > Date.now() ? 1 : 0 });
+      ms.push({ i: mon.id, t: mon.tpl.id, x: Math.round(mon.x), y: Math.round(mon.y), d: mon.dir, m: mon.moving ? 1 : 0, h: Math.max(0, Math.round(mon.hp)), H: mon.maxHp, b: mon.boss ? 1 : 0, e: mon.event ? 1 : 0, f: mon.frozenUntil > now ? 1 : 0, s: stMask(mon, now) });
     }
     this.io.to('map:' + m.def.id).emit('snap', { p: ps, m: ms });
   }
@@ -1094,6 +1132,32 @@ class World {
   fx(mapId, data) { this.io.to('map:' + mapId).emit('fx', data); }
   toast(p, text, type = 'info') { p.socket.emit('toast', { text, type }); }
 }
+
+// ---------- Hiệu ứng khống chế / sát thương theo thời gian ----------
+// võ công -> [kiểu, thời gian (ms), tỉ lệ]
+const SKILL_STATUS = {
+  tl1: ['stun', 1000, 0.35], tl2: ['stun', 800, 0.3], tl5: ['stun', 1500, 1],
+  tv1: ['stun', 900, 0.3], tv2: ['bleed', 3000, 0.5], tv4: ['burn', 3000, 1], tv5: ['stun', 1200, 0.7],
+  dm1: ['bleed', 3000, 0.4], dm2: ['slow', 2500, 1], dm4: ['bleed', 4000, 1], dm5: ['slow', 2000, 0.6],
+  nd0: ['poison', 3000, 0.35], nd1: ['poison', 5000, 1], nd2: ['poison', 3000, 1], nd4: ['poison', 4000, 1], nd5: ['poison', 5000, 1],
+  nm2: ['slow', 1500, 0.4], nm4: ['slow', 2000, 0.6],
+  ty1: ['slow', 1500, 0.5], ty2: ['slow', 2000, 1], ty4: ['bleed', 3000, 0.6], ty5: ['freeze', 2000, 1],
+  cb1: ['stun', 800, 0.3], cb2: ['slow', 2000, 0.5], cb5: ['stun', 1500, 1],
+  vd1: ['slow', 1500, 0.4], vd2: ['slow', 2000, 1], vd5: ['stun', 1200, 0.7],
+  cl0: ['stun', 500, 0.15], cl1: ['stun', 800, 0.35], cl2: ['burn', 3000, 0.6], cl4: ['slow', 2500, 1], cl5: ['stun', 1500, 0.8]
+};
+const FX_STATUS = { firedragon: ['burn', 4000, 1] };
+// quái gây hiệu ứng khi đánh trúng
+const MON_STATUS = { snake: ['poison', 4000, 0.25], scorpion: ['poison', 4000, 0.3], yeti: ['slow', 2000, 0.3], demon: ['burn', 3000, 0.25], bear: ['stun', 700, 0.12], tiger: ['bleed', 3000, 0.2], ghost: ['slow', 1500, 0.2] };
+const ST_BITS = { stun: 1, freeze: 2, poison: 4, burn: 8, slow: 16, bleed: 32 };
+const DOT_KINDS = new Set(['poison', 'burn', 'bleed']);
+function stMask(e, now) {
+  if (!e.st) return 0;
+  let m = 0;
+  for (const k in e.st) if (e.st[k] > now) m |= ST_BITS[k];
+  return m;
+}
+function isCC(e, now) { return !!e.st && ((e.st.stun || 0) > now || (e.st.freeze || 0) > now); }
 
 function segDist(px, py, ax, ay, bx, by) {
   const dx = bx - ax, dy = by - ay;

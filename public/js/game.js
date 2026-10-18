@@ -297,7 +297,22 @@
     s.on('cd', d => { const sk = mySkills()[d.idx]; if (sk) { G.cds[sk.id] = G.cds[d.idx] = { until: performance.now() + d.until, total: d.until, id: sk.id }; } G.pending[d.idx] = 0; });
     s.on('toast', d => UI.toast(d.text, d.type));
     s.on('notice', d => G.modal((d.type === 'admin' ? '📢 Thông báo từ quản trị viên:\n' : '') + d.text));
-    s.on('chat', d => { UI.chatMsg(d); if (d.ch === 'sys' && /Boss .* đã xuất hiện/.test(d.text)) GameAudio.sfx('bossHorn', 2000); });
+    s.on('chat', d => {
+      if (d.pid && Social.blocked(d.from)) return;
+      UI.chatMsg(d);
+      if (d.ch === 'sys' && /Boss .* đã xuất hiện/.test(d.text)) GameAudio.sfx('bossHorn', 2000);
+      const e = d.pid && d.ch !== 'pm' && entityById(d.pid);   // hiện bong bóng trên đầu người nói
+      if (e) e.bubble = { text: d.text, ch: d.ch, t0: performance.now(), dur: Math.min(9000, 4000 + d.text.length * 60) };
+    });
+    s.on('status', d => {
+      const e = entityById(d.id); if (!e) return;
+      const now = performance.now();
+      (e.stLocal = e.stLocal || {})[d.k] = now + d.ms;
+      const st = Overhead.ST[d.k];
+      if (st) Overhead.add(e.x, e.y - 70, st.name, 'status', st.color);
+      if (d.id === G.you && (d.k === 'stun' || d.k === 'freeze')) { G.moveTo = null; G.chase = null; }
+    });
+    Social.bind(s);
     s.on('events', d => { G.events = d; UI.onEvents(d); });
     s.on('daily', d => { G.daily = d; UI.updateDaily(); });
     s.on('dropAdd', d => G.drops.set(d.id, d));
@@ -342,13 +357,13 @@
     for (const p of d.p) {
       seenP.add(p.i);
       if (p.i === G.you) {
-        G.selfSnap = p;
+        G.selfSnap = p; G.self.st = p.s || 0;
         if (G.me) { G.me.hp = p.h; }
         continue;
       }
       let e = G.players.get(p.i);
       if (!e) { e = { x: p.x, y: p.y }; G.players.set(p.i, e); }
-      Object.assign(e, { id: p.i, name: p.n, cls: p.c, tx: p.x, ty: p.y, dir: p.d, moving: p.m, hp: p.h, maxHp: p.H, level: p.l, guild: p.g, dead: p.a, gm: p.v, ap: p.q, seen: now });
+      Object.assign(e, { id: p.i, name: p.n, cls: p.c, tx: p.x, ty: p.y, dir: p.d, moving: p.m, hp: p.h, maxHp: p.H, level: p.l, guild: p.g, dead: p.a, gm: p.v, ap: p.q, st: p.s || 0, seen: now });
       if (p.d === 1 || p.d === 2) e.lastH = p.d;
     }
     for (const id of G.players.keys()) if (!seenP.has(id)) G.players.delete(id);
@@ -357,7 +372,7 @@
       seenM.add(m.i);
       let e = G.monsters.get(m.i);
       if (!e) { e = { x: m.x, y: m.y, born: now }; G.monsters.set(m.i, e); }
-      Object.assign(e, { id: m.i, type: m.t, tx: m.x, ty: m.y, dir: m.d, moving: m.m, hp: m.h, maxHp: m.H, boss: m.b, event: m.e, frozen: m.f });
+      Object.assign(e, { id: m.i, type: m.t, tx: m.x, ty: m.y, dir: m.d, moving: m.m, hp: m.h, maxHp: m.H, boss: m.b, event: m.e, frozen: m.f, st: m.s || 0 });
       if (m.d === 1 || m.d === 2) e.face = m.d;
     }
     for (const id of G.monsters.keys()) if (!seenM.has(id)) { G.monsters.delete(id); if (G.target === id) G.target = null; }
@@ -386,13 +401,17 @@
   function onDmg(d) {
     const e = entityById(d.id);
     if (!e) return;
-    const x = e.x + (Math.random() * 30 - 15), y = e.y - 70;
-    if (d.k === 'heal') addFloat(x, y, '+' + d.v, '#4ade80', 15);
-    else if (d.k === 'mana') addFloat(x, y, '+' + d.v, '#6bb0ff', 15);
-    else if (d.k === 'crit') { addFloat(x, y, d.v + '!', '#ffcc00', 22, true); if (Math.hypot(e.x - G.self.x, e.y - G.self.y) < 600) GameAudio.sfx('crit', 80); }
-    else if (d.k === 'dot') addFloat(x, y, d.v, '#9acd32', 13);
-    else if (d.id === G.you) { addFloat(x, y, '-' + d.v, '#ff5050', 16); if (G.settings.shake) shake = 4; GameAudio.sfx('hurt', 150); }
-    else { addFloat(x, y, d.v, '#ffffff', 15); if (Math.hypot(e.x - G.self.x, e.y - G.self.y) < 500) GameAudio.sfx('hit', 70); }
+    const x = e.x, y = e.y - 70, near = Math.hypot(e.x - G.self.x, e.y - G.self.y);
+    if (d.k === 'heal' || d.k === 'mana') Overhead.add(x, y, d.v, d.k);
+    else if (d.k === 'crit') {
+      Overhead.add(x, y, d.v, 'crit');
+      FX.emit(14, e.x, e.y - 30, { speed: 170, life: 420, size: 4, color: '#ffb020', drag: 3 });
+      if (near < 600) GameAudio.sfx('crit', 80);
+      if (G.settings.shake && (d.id === G.you || near < 260)) shake = Math.max(shake, d.id === G.you ? 6 : 3);
+    }
+    else if (d.k === 'dot' || d.k === 'poison' || d.k === 'burn' || d.k === 'bleed') Overhead.add(x, y + 8, d.v, d.k);
+    else if (d.id === G.you) { Overhead.add(x, y, d.v, 'hurt'); if (G.settings.shake) shake = Math.max(shake, 4); GameAudio.sfx('hurt', 150); }
+    else { Overhead.add(x, y, d.v, 'hit'); if (near < 500) GameAudio.sfx('hit', 70); }
     e.hitAt = performance.now();
   }
   function addFloat(x, y, text, color, size, bold) { G.floats.push({ x, y, text, color, size, bold, t0: performance.now() }); if (G.floats.length > 80) G.floats.shift(); }
@@ -458,6 +477,7 @@
 
   function useSkill(i) {
     if (!G.me || G.me.dead || !G.map) return;
+    if (Overhead.mask(G.self, performance.now()) & 3) return;
     const sk = mySkills()[i];
     if (!sk) return;
     if (!sk.learned) { UI.toast(`Chưa học ${sk.name}. Mua sách tại Tàng Kinh Các (Tương Dương).`, 'error'); return; }
@@ -584,6 +604,9 @@
       if (d < Math.max(bd, r) && d < r) { bd = d; best = e2; }
     }
     if (best) {
+      const isPl = G.players.has(best.id);
+      // người chơi khác: mở menu tương tác (bản đồ PK: bấm lần 2 vào cùng người mới mở menu)
+      if (isPl && (!G.map.pvp || G.target === best.id)) { G.target = best.id; Social.menu(best, e.clientX, e.clientY); return; }
       G.target = best.id;
       if (G.monsters.has(best.id) || (G.map.pvp)) { if (!Input.isTouch || e.detail >= 1) G.chase = { id: best.id, skill: 0 }; }
       return;
@@ -608,12 +631,14 @@
     const s = G.self;
     if (!G.me || !G.map) return;
     const dead = G.me.dead;
-    let v = dead ? { x: 0, y: 0 } : Input.vector();
+    const myMask = Overhead.mask(s, now);
+    const cc = !!(myMask & 3);   // choáng / đóng băng: không đi, không đánh được
+    let v = dead || cc ? { x: 0, y: 0 } : Input.vector();
     const manual = Math.hypot(v.x, v.y) > 0.01;
     if (manual) { G.moveTo = null; G.npcGoal = null; G.chase = null; }
 
     // Đuổi theo mục tiêu để đánh
-    if (!manual && G.chase && !dead) {
+    if (!manual && G.chase && !dead && !cc) {
       const t = G.monsters.get(G.chase.id) || G.players.get(G.chase.id);
       if (!t || t.dead) G.chase = null;
       else {
@@ -624,10 +649,17 @@
         else { G.moveTo = null; useSkill(G.chase.skill); if (G.chase.skill !== 0) G.chase.skill = 0; }
       }
     }
-    if (G.auto && !manual && !dead) autoPlay(now);
-    if ((Input.attackHeld || Input.padAttack) && !dead) useSkill(0);
+    if (manual) G.follow = null;
+    if (G.follow && !manual && !dead && !cc && !G.chase) {   // đi theo người chơi khác
+      const f = G.players.get(G.follow);
+      if (!f) G.follow = null;
+      else if (Math.hypot(f.x - s.x, f.y - s.y) > 70) G.moveTo = { x: f.x, y: f.y + 10 };
+      else G.moveTo = null;
+    }
+    if (G.auto && !manual && !dead && !cc) autoPlay(now);
+    if ((Input.attackHeld || Input.padAttack) && !dead && !cc) useSkill(0);
 
-    if (!manual && G.moveTo) {
+    if (!manual && G.moveTo && !cc) {
       const dx = G.moveTo.x - s.x, dy = G.moveTo.y - s.y, d = Math.hypot(dx, dy);
       if (d < 8) { G.moveTo = null; }
       else v = { x: dx / d, y: dy / d };
@@ -638,7 +670,7 @@
     }
     const moving = Math.hypot(v.x, v.y) > 0.01;
     if (moving) {
-      const spd = (G.me.stats.spd || 150) * dt;
+      const spd = (G.me.stats.spd || 150) * dt * (myMask & 16 ? 0.55 : 1);
       const nx = s.x + v.x * spd, ny = s.y + v.y * spd;
       const ox = s.x, oy = s.y;
       if (!blocked(nx, ny)) { s.x = nx; s.y = ny; }
@@ -770,6 +802,7 @@
     for (const e of G.monsters.values()) if (inView(e)) list.push({ y: e.y, k: 'mon', e });
     for (const e of G.players.values()) if (inView(e)) list.push({ y: e.y, k: 'pl', e });
     list.push({ y: s.y, k: 'self' });
+    const bubbles = [];
     WorldArt.visibleDecos(cam, vw, vh, list);
     const nearPl = [s, ...G.players.values()];
     list.sort((a, b) => a.y - b.y);
@@ -799,10 +832,17 @@
           label(nx, ny - 72 + by, '❗', '#ffd700', 22);
         }
       } else if (it.k === 'mon') {
+        const mm = Overhead.mask(it.e, now) & ~2;   // băng của quái đã vẽ trong drawMonster
+        if (mm) Overhead.drawUnder(ctx, it.e, it.e.x, it.e.y, mm, now);
         drawMonster(it.e, now);
+        if (mm) Overhead.drawOver(ctx, it.e, it.e.x, it.e.y, it.e.y + (it.e.boss ? -120 : -56), mm, now);
       } else if (it.k === 'pl') {
         const e = it.e;
+        const pm = e.dead ? 0 : Overhead.mask(e, now);
+        if (pm) Overhead.drawUnder(ctx, e, e.x, e.y, pm, now);
         const top = drawHero(e.x, e.y, e.cls, e.dir, e.lastH, e.moving, e.atkUntil > now, e.ap, e.dead, e.x / 50, now, e);
+        if (pm) Overhead.drawOver(ctx, e, e.x, e.y, top, pm, now);
+        if (e.bubble) bubbles.push([e, top - (G.settings.names ? (e.guild ? 26 : 14) : 6)]);
         if (G.settings.names) {
           label(e.x, top - 8, (e.gm ? '[GM] ' : '') + e.name + ' Lv' + e.level, e.gm ? '#ff6060' : (G.map.pvp ? '#ff9b8a' : '#ffffff'), 12, true);
           if (e.guild) label(e.x, top - 22, '«' + e.guild + '»', '#7fb8ff', 10);
@@ -811,7 +851,11 @@
       } else if (it.k === 'self') {
         const me = G.me;
         if (s.dir === 1 || s.dir === 2) s.lastH = s.dir;
+        const sm = me.dead ? 0 : Overhead.mask(s, now);
+        if (sm) Overhead.drawUnder(ctx, s, s.x, s.y, sm, now);
         const top = drawHero(s.x, s.y, me.cls, s.dir, s.lastH, s.moving, s.atkUntil > now, me.ap, me.dead, 0, now, s);
+        if (sm) Overhead.drawOver(ctx, s, s.x, s.y, top, sm, now);
+        if (s.bubble) bubbles.push([s, top - (G.settings.names ? (me.guild ? 26 : 14) : 6)]);
         if (G.settings.names) {
           label(s.x, top - 8, (me.admin ? '[GM] ' : '') + me.name, '#ffd76a', 12, true);
           if (me.guild) label(s.x, top - 22, '«' + me.guild.name + '»', '#7fb8ff', 10);
@@ -819,6 +863,8 @@
         hpBar(s.x, top - 4, 40, me.hp / me.stats.maxHp, '#ff5050');
       }
     }
+
+    for (const [e, top] of bubbles) if (!Overhead.drawBubble(ctx, e.x, top, e.bubble, now)) e.bubble = null;
 
     WorldArt.ambient(now, cam, vw, vh, fdt);
     WorldArt.drawAmbient(ctx, now);
@@ -831,6 +877,7 @@
       label(f.x, f.y - p * 40, f.text, f.color, f.size * (f.bold ? (1 + Math.max(0, 0.3 - p)) : 1), true);
     }
     ctx.globalAlpha = 1;
+    Overhead.drawFloats(ctx, now);
 
     // Mũi tên hướng dẫn tân thủ
     drawGuideArrow(now);

@@ -447,7 +447,7 @@ class Features {
     if (p.user.muted && (p.user.muted === true || p.user.muted > now)) return this.w.toast(p, 'Bạn đang bị cấm chat', 'error');
     if (now - p.lastChat < 1200) return this.w.toast(p, 'Bạn chat quá nhanh', 'error');
     p.lastChat = now;
-    const base = { from: p.c.name, cls: p.c.cls, lv: p.c.level, t: now, admin: !!p.user.isAdmin };
+    const base = { from: p.c.name, pid: p.id, cls: p.c.cls, lv: p.c.level, t: now, admin: !!p.user.isAdmin };
     let msg;
     if (ch === 'map') {
       msg = { ...base, ch: 'map', text };

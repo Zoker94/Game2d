@@ -461,3 +461,37 @@ body.short.touch #tracker { top: 70px; }
 .class-card.has-portrait b { padding-top: 3px; }
 .class-card.has-portrait small { padding-bottom: 4px; }
 .class-card.sel .portrait { filter: brightness(1.12); }
+
+/* ===== Menu người chơi / xem thông tin / bạn bè / giao dịch ===== */
+#pl-menu { position: absolute; z-index: 40; min-width: 180px; background: linear-gradient(#2a1c38, #1a1024); border: 2px solid var(--gold2); border-radius: 10px; padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.6); display: flex; flex-direction: column; gap: 3px; }
+#pl-menu .pm-head { padding: 4px 6px 6px; border-bottom: 1px solid var(--line); margin-bottom: 3px; }
+#pl-menu .pm-head b { display: block; color: var(--gold); font-size: 14px; }
+#pl-menu .pm-head small { color: var(--muted); font-size: 11px; }
+#pl-menu button { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.04); border: 1px solid transparent; color: var(--text); border-radius: 6px; padding: 7px 8px; font-size: 13px; cursor: pointer; text-align: left; }
+#pl-menu button:hover, #pl-menu button:active { border-color: var(--gold2); background: rgba(255,215,106,.12); }
+#pl-menu button span { width: 20px; text-align: center; }
+.insp { display: flex; gap: 14px; flex-wrap: wrap; }
+.insp-left { text-align: center; min-width: 150px; flex: 0 0 auto; }
+.insp-left canvas { image-rendering: pixelated; background: radial-gradient(#3a2a50, transparent 70%); border-radius: 50%; }
+.insp-left h3 { margin: 2px 0; color: var(--gold); }
+.insp-power { margin: 6px 0; padding: 4px 8px; border-radius: 6px; background: rgba(255,160,40,.15); color: #ffcf7a; }
+.insp-right { flex: 1; min-width: 220px; }
+.insp-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 12px; }
+.insp-stats div { background: rgba(255,255,255,.05); padding: 4px 6px; border-radius: 5px; }
+.insp-eq { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.insp-btns { gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.fr-dot { width: 10px; height: 10px; border-radius: 50%; background: #666; flex: none; }
+.fr-dot.on { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+#trade-win { position: absolute; inset: 0; z-index: 35; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; }
+#trade-win .tr-box { width: min(560px, 96%); max-height: 94%; display: flex; flex-direction: column; background: var(--panel); border: 2px solid var(--gold2); border-radius: 12px; overflow: hidden; }
+#trade-win .tr-body { padding: 8px 10px; overflow: auto; display: flex; flex-direction: column; gap: 6px; }
+.tr-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tr-side { border: 1px solid var(--line); border-radius: 8px; padding: 6px; min-height: 90px; background: rgba(255,255,255,.03); }
+.tr-side.locked { border-color: #f2be4c; background: rgba(242,190,76,.08); }
+.tr-name { font-weight: 700; font-size: 12px; margin-bottom: 4px; }
+.tr-ok { color: #4ade80; font-size: 11px; } .tr-lock { color: #f2be4c; font-size: 11px; }
+.tr-items, .tr-inv { display: flex; flex-wrap: wrap; gap: 4px; }
+.tr-inv { max-height: 130px; overflow: auto; padding: 4px; background: rgba(0,0,0,.2); border-radius: 6px; }
+.tr-gold { font-size: 12px; margin-top: 4px; color: #ffd76a; }
+.tr-btns { gap: 6px; }
+body.short #trade-win .tr-inv { max-height: 84px; }

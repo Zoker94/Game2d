@@ -23,6 +23,7 @@
   function iconHtml(itemId) { const c = iconCanvas(itemId); return `<img src="${c.toDataURL()}" width="32" height="32" style="image-rendering:pixelated">`; }
   const iconUrlCache = {};
   function iconUrl(itemId) { return iconUrlCache[itemId] || (iconUrlCache[itemId] = iconCanvas(itemId).toDataURL()); }
+  UI.iconUrl = id => iconUrl(id); UI.esc = esc; UI.itemName = (id, plus) => itemName(id, plus); UI.itemTip = (e, id, plus) => tip(e, `<b>${itemName(id, plus)}</b>${statsHtml(G.data.items[id], plus)}`); UI.hideTip = () => hideTip();
   function itemName(id, plus) { const it = G.data.items[id]; return `<span class="r-${it.rarity}-t">${esc(it.name)}${plus ? ' +' + plus : ''}</span>`; }
   function statsHtml(it, plus) {
     if (!it.stats) return '';
@@ -296,17 +297,23 @@
 
   // ================= Bảng chức năng =================
   const TITLES = { inventory: '🎒 Túi Đồ & Trang Bị', character: '🧍 Thông Tin Nhân Vật', quests: '📜 Nhiệm Vụ', guild: '🏯 Bang Hội', events: '🎉 Sự Kiện & Hoạt Động', leaderboard: '🏆 Bảng Xếp Hạng', settings: '⚙️ Cài Đặt', mount: '🐎 Thú Cưỡi', skills: '📖 Võ Công', npc: '' , online: '👥 Người Chơi Trực Tuyến' };
+  // bảng do file khác đăng ký (bạn bè, xem thông tin...)
+  UI.extraPanels = {};
+  UI.registerPanel = (name, title, render, onOpen) => { UI.extraPanels[name] = { title, render, onOpen }; };
+  UI.panelName = () => panel;
+  UI.pmTo = name => { UI.closePanel(); $('chat-ch').value = 'pm'; $('chat-to').value = name; $('chat-to').classList.remove('hidden'); UI.focusChat(); };
   UI.togglePanel = function (name) { if (panel === name) UI.closePanel(); else UI.openPanel(name); };
   UI.openPanel = function (name, state) {
     panel = name;
     panelState = Object.assign({}, state || {});
     $('panel').classList.remove('hidden');
-    $('panel-title').textContent = TITLES[name] || '';
+    $('panel-title').textContent = TITLES[name] || (UI.extraPanels[name] && UI.extraPanels[name].title) || '';
     if (name === 'guild') emit('guild');
     if (name === 'leaderboard') emit('lb');
     if (name === 'events') emit('eventPanel');
     if (name === 'quests') emit('daily');
     if (name === 'online') emit('online');
+    if (UI.extraPanels[name] && UI.extraPanels[name].onOpen) UI.extraPanels[name].onOpen();
     UI.refreshPanel();
     G.sfx('click');
   };
@@ -317,7 +324,7 @@
     const scroll = body.scrollTop;
     // không vẽ lại khi người dùng đang gõ
     if (soft && body.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
-    const fn = { inventory: renderInventory, character: renderCharacter, quests: renderQuests, guild: renderGuild, events: renderEvents, leaderboard: renderLeaderboard, settings: renderSettings, npc: renderNpc, online: renderOnline, mount: renderMount, skills: renderSkills }[panel];
+    const fn = { inventory: renderInventory, character: renderCharacter, quests: renderQuests, guild: renderGuild, events: renderEvents, leaderboard: renderLeaderboard, settings: renderSettings, npc: renderNpc, online: renderOnline, mount: renderMount, skills: renderSkills }[panel] || (UI.extraPanels[panel] && UI.extraPanels[panel].render);
     if (fn) fn(body);
     body.scrollTop = scroll;
   };

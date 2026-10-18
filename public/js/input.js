@@ -38,7 +38,7 @@
   // ---------- Bàn phím ----------
   const KEYMAP = { Digit1: ['skill', 0], Space: ['skill', 0], Digit2: ['slot', 1], Digit3: ['slot', 2], Digit4: ['slot', 3], Digit5: ['slot', 4], Digit6: ['slot', 5], Digit7: ['slot', 6], KeyT: ['mount'],
     KeyZ: ['potion', 'hp'], KeyX: ['potion', 'mp'], Tab: ['target'], KeyF: ['interact'], KeyR: ['auto'],
-    KeyI: ['panel', 'inventory'], KeyC: ['panel', 'character'], KeyJ: ['panel', 'quests'], KeyG: ['panel', 'guild'],
+    KeyI: ['panel', 'inventory'], KeyC: ['panel', 'character'], KeyJ: ['panel', 'quests'], KeyG: ['panel', 'guild'], KeyB: ['panel', 'friends'],
     KeyO: ['panel', 'events'], KeyL: ['panel', 'leaderboard'], KeyM: ['panel', 'mount'], KeyK: ['panel', 'skills'], Escape: ['escape'], Enter: ['chat'] };
   window.addEventListener('keydown', e => {
     if (!Input.inGame) return;
