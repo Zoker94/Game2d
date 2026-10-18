@@ -628,6 +628,17 @@ def render(cls, view, pose, prev=None, eyes=True, sway=0, armor=0, helm=0, ws=No
             if L.get('beard'): pt.poly([(cx + 2, cy + 6), (cx + 7, cy + 6), (cx + 6, cy + 9), (cx + 3, cy + 9)], hcol)
             if female or L['style'] in ('taoist', 'ponytail'): pt.rect(cx + 1, cy + 4, cx + 3, cy + 4, '#ffa8a0')
     hp.mark(face)
+    if L.get('mask') and view != 'up':   # khăn che mặt (thổ phỉ, sát thủ)
+        mc = L['mask']
+        def mask(pt):
+            if view == 'down':
+                pt.poly([(cx - r + 0.5, cy + 3.8), (cx + r - 0.5, cy + 3.8), (cx + r - 1.5, cy + r - 1), (cx, cy + r + 1.5), (cx - r + 1.5, cy + r - 1)], mc)
+                pt.rect(cx - r + 1, cy + 3.8, cx + r - 1, cy + 3.8, light(mc, 0.25))
+            else:
+                pt.poly([(cx - 1, cy + 3.8), (cx + r + 1, cy + 3.8), (cx + r + 0.5, cy + 7.5), (cx + 2, cy + r + 1), (cx - 1, cy + r - 1)], mc)
+                pt.rect(cx - 1, cy + 3.8, cx + r, cy + 3.8, light(mc, 0.25))
+                pt.poly([(cx - r + 1, cy + 3), (cx - r - 3 + 0, cy + 6), (cx - r - 1, cy + 7)], mc)   # đuôi khăn sau gáy
+        hp.mark(mask)
     parts.append(hp)
     hb = draw_hair(L, view, cx, cy, r, sway, True)
     hb.depth = 0.9 if view == 'up' else -3

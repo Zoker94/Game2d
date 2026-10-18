@@ -6,7 +6,7 @@
   const G = window.G = {
     data: null, config: null, socket: null, token: localStorage.getItem('vl_token'), user: null,
     me: null, you: null, map: null, solid: new Set(),
-    players: new Map(), monsters: new Map(), drops: new Map(), carts: new Map(),
+    players: new Map(), monsters: new Map(), drops: new Map(), carts: new Map(), corpses: [],
     self: { x: 0, y: 0, dir: 0, moving: false, atkUntil: 0 },
     fx: [], floats: [], target: null, moveTo: null, npcGoal: null,
     cds: {}, pending: {}, auto: false, events: null, daily: null, inGame: false,
@@ -339,7 +339,7 @@
   function onInit(d) {
     G.you = d.you; G.map = d.map; G.solid = new Set(d.solid);
     G.self.x = d.x; G.self.y = d.y; G.moveTo = null; G.npcGoal = null; G.target = null;
-    G.players.clear(); G.monsters.clear(); G.drops.clear(); G.carts.clear(); G.fx = [];
+    G.players.clear(); G.monsters.clear(); G.drops.clear(); G.carts.clear(); G.fx = []; G.corpses = [];
     WorldArt.setMap(d.map); G._camSnap = true;
     d.drops.forEach(x => { if (x.om) x.ownUntil = performance.now() + x.om; G.drops.set(x.id, x); });
     const m = d.map;
@@ -406,6 +406,10 @@
     const now = performance.now();
     const src = d.from && entityById(d.from);
     if (src && d.from !== G.you) { src.atkKind = BASIC_FX.has(d.t) ? 'atk' : 'skill'; src.atkStart = now; src.atkDur = src.atkKind === 'atk' ? 300 : 440; src.atkUntil = now + src.atkDur; }
+    if (d.t === 'death' && G.monsters.has(d.id)) {   // giữ xác quái để chạy khung ngã
+      const m = G.monsters.get(d.id);
+      if (Assets.monsterTop(m.type)) G.corpses.push({ type: m.type, x: m.x, y: m.y, dir: m.dir, face: m.face || 2, t0: now });
+    }
     const f = Object.assign({ t0: now, dur: FX_DUR[d.t] || 300 }, d);
     G.fx.push(f);
     FxSpawn(f);
@@ -620,8 +624,9 @@
     // Quái / người chơi
     let best = null, bd = 48;
     for (const e2 of [...G.monsters.values(), ...G.players.values(), ...G.carts.values()]) {
-      const r = e2.boss ? 70 : 40;
-      const d = Math.hypot(w.x - e2.x, w.y - (e2.y - (e2.boss ? 50 : 26)));
+      const mt = e2.type ? Assets.monsterTop(e2.type) : 0;
+      const r = mt ? Math.max(30, mt * 0.6) : e2.boss ? 70 : 40;
+      const d = Math.hypot(w.x - e2.x, w.y - (e2.y - (mt ? mt * 0.45 : e2.boss ? 50 : 26)));
       if (d < Math.max(bd, r) && d < r) { bd = d; best = e2; }
     }
     if (best) {
@@ -869,6 +874,8 @@
       if (Sprites.TALL.has(t)) list.push({ y: (y + 1) * TILE - 2, k: 'tall', t, tx: x, ty: y });
     }
     for (const n of m.npcs) list.push({ y: (n.y + 0.5) * TILE + 20, k: 'npc', n });
+    G.corpses = G.corpses.filter(c => now - c.t0 < 1500);
+    for (const c of G.corpses) list.push({ y: c.y - 1, k: 'corpse', c });
     for (const e of G.monsters.values()) if (inView(e)) list.push({ y: e.y, k: 'mon', e });
     for (const e of G.players.values()) if (inView(e)) list.push({ y: e.y, k: 'pl', e });
     for (const e of G.carts.values()) if (inView(e)) list.push({ y: e.y, k: 'cart', e });
@@ -906,7 +913,9 @@
         const mm = Overhead.mask(it.e, now) & ~2;   // băng của quái đã vẽ trong drawMonster
         if (mm) Overhead.drawUnder(ctx, it.e, it.e.x, it.e.y, mm, now);
         drawMonster(it.e, now);
-        if (mm) Overhead.drawOver(ctx, it.e, it.e.x, it.e.y, it.e.y + (it.e.boss ? -120 : -56), mm, now);
+        if (mm) Overhead.drawOver(ctx, it.e, it.e.x, it.e.y, it.e.y - (Assets.monsterTop(it.e.type) || (it.e.boss ? 120 : 56)), mm, now);
+      } else if (it.k === 'corpse') {
+        drawCorpse(it.c, now);
       } else if (it.k === 'cart') {
         Escort.drawCart(ctx, it.e, now, label, hpBar);
       } else if (it.k === 'pl') {
@@ -968,13 +977,50 @@
 
   function inView(e) { return e.x > cam.x - 150 && e.x < cam.x + W / zoom + 150 && e.y > cam.y - 150 && e.y < cam.y + H / zoom + 200; }
 
+  // trạng thái hoạt ảnh của quái: đánh / trúng đòn / đi / đứng
+  function monsterAnim(e, now, info) {
+    const atkAge = e.atkStart ? now - e.atkStart : 1e9;
+    if (atkAge < 420) return [info.ranged ? 'cast' : 'atk', Math.min(3, Math.floor(atkAge / 105))];
+    if (e.hitAt && now - e.hitAt < 160) return ['hurt', 0];
+    if (e.moving) return ['walk', Math.floor(now / 105 + e.x / 70) % 6];
+    return ['idle', Math.floor(now / 300 + e.x / 50) % 4];
+  }
   function drawMonster(e, now) {
     const info = G.data.monsters[e.type] || { sprite: 'wolf', color: '#888', name: '?' };
+    const hit = e.hitAt && now - e.hitAt < 120;
+    const [state, fi] = monsterAnim(e, now, info);
+    const mf = Assets.monsterFrame(e.type, state, fi, e.dir);
+    if (mf) {
+      const face = e.face || 2, flip = mf.rig ? e.dir === 1 : face === 1;
+      const half = Math.max(12, mf.half * 0.8);
+      ctx.save();
+      ctx.translate(Math.round(e.x), Math.round(e.y));
+      if (e.boss) {
+        const g = ctx.createRadialGradient(0, -mf.top / 2, 10, 0, -mf.top / 2, mf.top);
+        g.addColorStop(0, 'rgba(255,40,40,0.32)'); g.addColorStop(1, 'rgba(255,0,0,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, -mf.top / 2, mf.top, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(0, 0, half, Math.max(4, half * 0.28), 0, 0, Math.PI * 2); ctx.fill();
+      if (e.born && now - e.born < 300) ctx.globalAlpha = (now - e.born) / 300;
+      if (flip) ctx.scale(-1, 1);
+      ctx.drawImage(mf.img, mf.sx, mf.sy, mf.w, mf.h, -mf.fx, -mf.fy, mf.w, mf.h);
+      if (hit) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.55; ctx.drawImage(mf.img, mf.sx, mf.sy, mf.w, mf.h, -mf.fx, -mf.fy, mf.w, mf.h); }
+      if (e.frozen) {
+        ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.45; ctx.drawImage(mf.img, mf.sx, mf.sy, mf.w, mf.h, -mf.fx, -mf.fy, mf.w, mf.h);
+        ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 0.32; ctx.fillStyle = '#bff0ff';
+        const bw = half * 2 + 6, bh = mf.top + 4;
+        ctx.fillRect(-bw / 2, -bh, bw, bh);
+        ctx.globalAlpha = 0.9; ctx.strokeStyle = '#e8fbff'; ctx.lineWidth = 2; ctx.strokeRect(-bw / 2, -bh, bw, bh);
+        ctx.beginPath(); ctx.moveTo(-bw / 3, -bh * 0.8); ctx.lineTo(-bw / 8, -bh * 0.6); ctx.moveTo(bw / 6, -bh * 0.9); ctx.lineTo(bw / 3, -bh * 0.75); ctx.stroke();
+      }
+      ctx.restore();
+      monsterLabel(e, info, -mf.top - 8);
+      return;
+    }
     const frame = e.moving ? Math.floor(now / 160 + e.x / 70) % 4 : Math.floor(now / 500) % 2;
     const img = Sprites.monsterSprite(e.type, info, frame, e.dir);
     const scale = e.boss ? 2 : 1;
     const flip = info.sprite !== 'bandit' && (e.face || 2) === 1;
-    const hit = e.hitAt && now - e.hitAt < 120;
     ctx.save();
     ctx.translate(Math.round(e.x), Math.round(e.y));
     if (e.boss) {
@@ -994,7 +1040,21 @@
       ctx.beginPath(); ctx.moveTo(-16 * scale, -40 * scale); ctx.lineTo(-6 * scale, -30 * scale); ctx.moveTo(8 * scale, -44 * scale); ctx.lineTo(16 * scale, -36 * scale); ctx.stroke();
     }
     ctx.restore();
-    const top = e.boss ? -130 : -62;
+    monsterLabel(e, info, e.boss ? -130 : -62);
+  }
+  // xác quái: khung ngã rồi mờ dần
+  function drawCorpse(c, now) {
+    const age = now - c.t0;
+    const mf = Assets.monsterFrame(c.type, 'dead', 0, c.dir);
+    if (!mf) return;
+    ctx.save();
+    ctx.translate(Math.round(c.x), Math.round(c.y));
+    ctx.globalAlpha = Math.max(0, 1 - Math.max(0, age - 700) / 800);
+    if (mf.rig ? c.dir === 1 : c.face === 1) ctx.scale(-1, 1);
+    ctx.drawImage(mf.img, mf.sx, mf.sy, mf.w, mf.h, -mf.fx, -mf.fy, mf.w, mf.h);
+    ctx.restore();
+  }
+  function monsterLabel(e, info, top) {
     if (e.event) { label(e.x, e.y + top - 6, info.name, '#ffd700', 12, true); return; }
     const lvDiff = G.me ? info.lv - G.me.level : 0;
     const col = e.boss ? '#ff4040' : lvDiff > 5 ? '#ff7070' : lvDiff < -8 ? '#9a9a9a' : '#ffe9a8';

@@ -173,6 +173,33 @@
       seat: seats ? seats[view][col] : MOUNT_META.seat[id][col]
     };
   }
+  // ----- quái vật (ảnh tools/monsters.py) -----
+  // 'side': nhìn ngang quay phải (game tự lật), cột đứng4 đi6 đánh4 trúng1 chết1
+  // 'rig' : quái hình người 4 hướng như nhân vật (hàng xuống / lên / phải, hàng 3 cột 0 là ngã)
+  let MON_META = null;
+  fetch(BASE + 'monsters.json').then(r => r.ok ? r.json() : null).then(j => { MON_META = j; }).catch(() => { });
+  const monImgs = {}, monLoading = {};
+  const MON_N = { idle: 4, walk: 6, atk: 4, cast: 4, hurt: 1, dead: 1 };
+  function monsterFrame(id, state, i, dir) {
+    const m = MON_META && MON_META.mon[id];
+    if (!m) return null;
+    const img = monImgs[id];
+    if (!img) {
+      if (!monLoading[id]) monLoading[id] = load('monsters/' + id + '.png').then(im => { if (im) monImgs[id] = im; });
+      return null;
+    }
+    let row = 0, col;
+    if (m.k === 'rig') {
+      if (state === 'dead') { row = 3; col = 0; }
+      else { row = dir === 0 ? 0 : dir === 3 ? 1 : 2; col = MON_META.frames.rig[state] + (i % MON_N[state]); }
+    } else {
+      if (state === 'cast') state = 'atk';
+      col = MON_META.frames.side[state] + (i % MON_N[state]);
+    }
+    return { img, sx: col * m.w, sy: row * m.h, w: m.w, h: m.h, fx: m.fx, fy: m.fy, top: m.top, half: m.half, rig: m.k === 'rig' };
+  }
+  function monsterReady(id) { return !!(MON_META && MON_META.mon[id]); }
+  function monsterTop(id) { const m = MON_META && MON_META.mon[id]; return m && monImgs[id] ? m.top : 0; }
   // ảnh đại diện (đầu + vai) cho khung avatar / thẻ môn phái
   function avatar(cls, size, ap) {
     size = size || 64;
@@ -222,5 +249,5 @@
     return `<i class="sk-img" style="background-image:url('${url}');--skc:${s.color || '#ffd76a'}"></i>`;
   }
 
-  window.Assets = { ready, imgs, has, charFrame, riderFrame, mountFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, SKILL_ICON, MONSTERS, skillIconUrl, skillIconHTML };
+  window.Assets = { ready, imgs, has, charFrame, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, SKILL_ICON, MONSTERS, skillIconUrl, skillIconHTML };
 })();
