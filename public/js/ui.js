@@ -719,7 +719,7 @@
     body.querySelectorAll('[data-dragon]').forEach(b => b.onclick = () => emit('dragon', { el: b.dataset.dragon }));
     bindAttr(body);
     const c = $('char-cv').getContext('2d'); c.imageSmoothingEnabled = false;
-    if (Assets.has(me.cls)) { c.drawImage(Assets.charFrame(me.cls, 0, 'idle', 0, me.ap), 0, 0); setTimeout(() => { if ($('char-cv')) { c.clearRect(0, 0, 96, 96); c.drawImage(Assets.charFrame(me.cls, 0, 'idle', 0, me.ap), 0, 0); } }, 600); }
+    if (Assets.has(me.cls)) { c.imageSmoothingEnabled = true; c.drawImage(Assets.charFrame(me.cls, 0, 'idle', 0, me.ap), 0, 0, 96, 96); setTimeout(() => { if ($('char-cv')) { c.clearRect(0, 0, 96, 96); c.drawImage(Assets.charFrame(me.cls, 0, 'idle', 0, me.ap), 0, 0, 96, 96); } }, 600); }
     else c.drawImage(Sprites.playerSprite(me.cls, cl.colors, 0, 0), 0, 0);
   }
 
@@ -1114,7 +1114,7 @@
       html += '<div class="card"><p>Bạn chưa có thú cưỡi. Hãy đến <b>Mã Phu Lão Trương</b> ở Tương Dương để mua Ngựa Nâu, hoặc săn Boss / mở Kỳ Trân Các để có thú cưỡi hiếm như Bạch Hổ, Hỏa Kỳ Lân, Thanh Long!</p></div>';
     }
     body.innerHTML = html;
-    body.querySelectorAll('[data-mcv]').forEach(cv => { const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; const f = Assets.mountFrame(cv.dataset.mcv, false, 0); if (f) c.drawImage(f.img, f.sx, f.ch - 96, f.cw, 96, 0, 0, 96, 72); else { c.drawImage(Sprites.mountSprite(cv.dataset.mcv, all[cv.dataset.mcv], 0), 0, 0); if ((UI._mcvTry = (UI._mcvTry || 0) + 1) < 6) setTimeout(() => panel === 'mount' && UI.refreshPanel(true), 400); } });
+    body.querySelectorAll('[data-mcv]').forEach(cv => { const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; const f = Assets.mountFrame(cv.dataset.mcv, false, 0); if (f) { c.imageSmoothingEnabled = true; c.drawImage(f.img, f.sx, f.sy + f.ch * 0.25, f.cw, f.ch * 0.75, 0, 0, 96, 72); } else { c.drawImage(Sprites.mountSprite(cv.dataset.mcv, all[cv.dataset.mcv], 0), 0, 0); if ((UI._mcvTry = (UI._mcvTry || 0) + 1) < 6) setTimeout(() => panel === 'mount' && UI.refreshPanel(true), 400); } });
     body.querySelectorAll('[data-mount]').forEach(el => el.onclick = () => { if (owned[el.dataset.mount]) { panelState.sel = el.dataset.mount; UI.refreshPanel(); } });
     body.querySelectorAll('[data-mop]').forEach(b => b.onclick = () => emit('mount', { op: b.dataset.mop, id: sel, n: +b.dataset.n || 1 }));
   }

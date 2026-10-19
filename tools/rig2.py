@@ -435,7 +435,7 @@ def solve(B, P):
         for k in pts: J[k] = J[k] + sh_
     soles = min(J[k][2] for k in ('heelR', 'heelL', 'toeR', 'toeL'))
     body = min(J[k][2] for k in pts if not k.startswith(('heel', 'toe')))
-    dz = max(-soles, 3.0 - body) + P['lift']
+    dz = P['lift'] if P.get('air') else max(-soles, 3.0 - body) + P['lift']
     for k in pts: J[k] = J[k] + V(0, 0, dz)
     return J
 
@@ -450,7 +450,8 @@ def base_pose(L):
     if w in ('sword', 'saber'): P.update(armR=(0.16, 0.2, 0.55), wR=(0.3, -0.95))
     if L['name'] == 'Võ Đang': P.update(ikL=(3, -8.5, -9))       # tay trái chắp sau lưng
     if w == 'daggers': P.update(armR=(0.12, 0.22, 0.55), wR=(0.45, -1.1), armL=(0.12, 0.22, 0.55), wL=(-0.45, -1.1))
-    if w == 'staff': P.update(armR=(0.3, 0.24, 0.55), wR=(0.05, 1.4), armL=(0.12, 0.14, 0.5))
+    if w in ('staff', 'cane', 'spear'): P.update(armR=(0.3, 0.24, 0.55), wR=(0.05, 1.4), armL=(0.12, 0.14, 0.5))
+    if w == 'cane': P.update(armR=(0.34, 0.26, 0.42), wR=(0.08, 1.45), lean=0.06, head=(0.1, 0.0))
     if w == 'hammer': P.update(armR=(0.2, 0.3, 0.25), wR=(0.35, -1.35))
     if w == 'knife': P.update(armR=(0.1, 0.2, 0.45), wR=(0.3, -1.25))
     if w == 'palm': P.update(armL=(-0.4, 0.12, 1.7))
@@ -555,7 +556,24 @@ def cast_keys(L, base0):
     if w == 'hammer': k[1][1].update(wR=(0.0, 1.45))
     return k
 
+RIDE_PELVIS = 29.0      # khi cưỡi: hông ở độ cao này (y = 99 trong ô 144 -> 66 trong ô 96 như game)
+
 def anim_pose(L, B, name):
+    if name.startswith('ride'):   # ngồi trên yên: giữ thân trên của động tác gốc, chân kẹp hai bên
+        base_name = {'ride': 'idle', 'ride_attack': 'attack', 'ride_cast': 'cast', 'ride_hurt': 'hurt'}[name]
+        f0 = _anim_pose(L, B, base_name)
+        def f(t):
+            P = dict(f0(t))
+            bob = math.cos(TAU * t) * 1.2 if name == 'ride' else 0.0
+            P.update(legR=(1.32, 1.62, 0.36), legL=(1.32, 1.62, 0.36), footR=-0.25, footL=-0.25, air=True, hipyaw=0.0,
+                     root=(0.0, 0.0, RIDE_PELVIS - B['hip'] + bob), lift=0.0, fall=0.0)
+            P['lean'] = P['lean'] + 0.05
+            if name == 'ride': P['breath'] = 0.5 + 0.5 * math.sin(TAU * t)
+            return P
+        return f
+    return _anim_pose(L, B, name)
+
+def _anim_pose(L, B, name):
     base = base_pose(L)
     w = L['weapon']
     armed = {'R'} if w in ('sword', 'saber', 'staff', 'hammer', 'knife') else ({'R', 'L'} if w == 'daggers' else set())
@@ -626,8 +644,10 @@ def anim_pose(L, B, name):
     return lambda t: keyed(keys, t)
 
 ANIMS = [('idle', 8, 1.6, True), ('walk', 8, 0.8, True), ('run', 8, 0.56, True), ('attack', 8, 0.62, False),
+         ('ride', 4, 0.44, True), ('ride_attack', 8, 0.62, False), ('ride_cast', 8, 0.9, False), ('ride_hurt', 3, 0.3, False),
          ('cast', 8, 0.9, False), ('hurt', 3, 0.3, False), ('death', 6, 0.9, False)]
 FRAME_T = {'attack': [0, .16, .3, .42, .5, .6, .76, .9], 'cast': [0, .14, .28, .42, .56, .7, .84, .96],
+           'ride_attack': [0, .16, .3, .42, .5, .6, .76, .9], 'ride_cast': [0, .14, .28, .42, .56, .7, .84, .96], 'ride_hurt': [0, .35, .7],
            'hurt': [0, .35, .7], 'death': [0, .2, .4, .6, .8, 1.0]}
 
 
@@ -909,7 +929,7 @@ def build_parts(L, B, J, CH, view, P, gear):
             rp.mark(lambda d, pc=pc: (d.poly([(pc[0] - 2.5, pc[1] - 2), (pc[0] + 2, pc[1] - 2.4), (pc[0] + 2.4, pc[1] + 2), (pc[0] - 2, pc[1] + 2.4)], '#9a8b70'),
                                       d.line([(pc[0] - 2.5, pc[1] - 2), (pc[0] + 2, pc[1] - 2.4)], 0, 0.5)))
         parts += [tp, rp]
-    if frac0 is not None:
+    if frac0 is not None and not P.get('air'):
         if inner:
             cp = center_panel(0, r2, -0.04, frac0)
             if cp: parts.append(cp)
@@ -1031,6 +1051,14 @@ def build_parts(L, B, J, CH, view, P, gear):
     if front and L.get('sash'):
         kc = pr(T3(-1.5, wc[1] + 2.2, 8.8))
         parts.append(Part(bdp + 0.05, L['belt'], sig=1.0, spec=0.2, ol=2).ell(kc, 2.2, 1.7).ell((kc[0] - 2.2, kc[1] + 0.4), 1.6, 1.1).ell((kc[0] + 2.2, kc[1] + 0.4), 1.6, 1.1))
+    if L.get('apron') and view != 'up':   # tạp dề da thợ rèn
+        km = (J['knR'] + J['knL']) / 2 + J['Rp'] @ V(0, 6, 3)
+        q = [pr(T3(-5.5, B['chest'][1] + 2.2, 23))[:2], pr(T3(5.5, B['chest'][1] + 2.2, 23))[:2], pr(T3(wc[0] + 2.4, wc[1] + 2.6, 8))[:2],
+             pr(km + J['Rp'] @ V(6.5, 0, 0))[:2], pr(km + J['Rp'] @ V(-6.5, 0, 0))[:2], pr(T3(-wc[0] - 2.4, wc[1] + 2.6, 8))[:2]]
+        if view == 'right': q = [pr(T3(0, B['chest'][1] + 2.2, 23))[:2], pr(T3(0, wc[1] + 2.8, 8))[:2], pr(km)[:2], pr(km + J['Rp'] @ V(0, -3, 0))[:2], pr(T3(0, wc[1] + 1.6, 8))[:2], pr(T3(0, B['chest'][1] + 1, 23))[:2]]
+        ap_ = Part(bdp + 0.1, L['apron'], sig=2.0, spec=0.2).poly(q)
+        ap_.mark(lambda d, q=q: (d.line([q[0], q[1]], 4, 0.7), [d.px(x[0], x[1], 0) for x in q[2:3]]))
+        parts.append(ap_)
     if L.get('pouches'):
         for x in (-6.5, 6.5):
             pc3 = T3(x, wc[1] * 0.6, 6.5)
@@ -1372,12 +1400,34 @@ def weapon_parts(L, J, pr, CH, wt=0):
             if wt == 1: bp.mark(lambda d_, B_=Bq, ux=ux, uy=uy: d_.line([(B_[0] + ux * 1.8, B_[1] + uy * 1.8), (B_[0] + ux * 7, B_[1] + uy * 7)], GOLD, 0.5))
             if wt == 2: bp.mark(lambda d_, p=pts: (d_.line([p[0], p[1]], light(glow, 0.55), 0.6), d_.line([p[4], p[3]], light(glow, 0.55), 0.6)))
         out.append(bp)
-    if w == 'sword': blade('R', 27, 2.6, L['blade'])
+    if w == 'cane':     # gậy chống của trưởng lão: gỗ mấu, đầu uốn
+        g, d = J['palmR'], J['wdR']
+        e0, e1 = g - d * 47, g + d * 7
+        hdp = (D(J['shR']) + D(J['elR']) + D(J['haR'])) / 3 + 1.2
+        cp = WP(hdp - 0.05, L.get('wood', '#7a5230'), sig=0.9, spec=0.3, ol=2).cap(pr(e0)[:2], pr(e1)[:2], 1.4, 1.6).ell(pr(e1 + d * 1.5)[:2], 2.6, 2.4)
+        cp.mark(lambda d_, a=pr(e0), b=pr(e1): [d_.px(a[0] + (b[0] - a[0]) * u + 1, a[1] + (b[1] - a[1]) * u, 1) for u in (0.25, 0.5, 0.72)])
+        out.append(cp)
+        if L.get('canegourd'):
+            q = pr(e1 + d * 0.5 + V(0, 0, -5))
+            out.append(WP(hdp - 0.04, '#c87a2a', sig=1.0, spec=0.4, ol=2).ell((q[0] + 2.5, q[1] + 1.5), 2.4, 2.6).ell((q[0] + 2.5, q[1] - 2), 1.6, 1.7))
+    elif w == 'spear':  # giáo tiêu đầu: mũi lá liễu, tua đỏ
+        g, d = J['palmR'], J['wdR']
+        e0, e1 = g - d * 36, g + d * 44
+        dp = (D(e0) + D(e1)) / 2 + 0.1
+        hdp = (D(J['shR']) + D(J['elR']) + D(J['haR'])) / 3 + 1.2
+        if abs(dp - hdp) < 6: dp = hdp - 0.05
+        out.append(WP(dp, '#5a3a22', sig=0.9, spec=0.3, ol=2).cap(pr(e0)[:2], pr(e1)[:2], 1.3))
+        A, Bq = pr(e1), pr(e1 + d * 10)
+        vx, vy = Bq[0] - A[0], Bq[1] - A[1]; ln = math.hypot(vx, vy) or 1; nx, ny = -vy / ln * 2.2, vx / ln * 2.2
+        out.append(WP(dp + 0.05, '#dfe6ee', sig=0.8, spec=0.95, ol=2).poly([(A[0] + nx * 0.5, A[1] + ny * 0.5), (A[0] + vx * 0.4 + nx, A[1] + vy * 0.4 + ny), (Bq[0], Bq[1]), (A[0] + vx * 0.4 - nx, A[1] + vy * 0.4 - ny), (A[0] - nx * 0.5, A[1] - ny * 0.5)]))
+        tq = pr(e1 - d * 1.5)
+        out.append(WP(dp + 0.04, '#d02a20', sig=0.8, spec=0.2, ol=2).poly([(tq[0] - 2.4, tq[1]), (tq[0] + 2.4, tq[1]), (tq[0] + 1.4, tq[1] + 6), (tq[0] - 1.6, tq[1] + 6.5)]))
+    elif w == 'sword': blade('R', 27, 2.6, L['blade'])
     elif w == 'daggers':
         blade('R', 11, 2.4, L['blade'], hilt=3.4); blade('L', 11, 2.4, L['blade'], hilt=3.4)
     elif w == 'knife': blade('R', 10, 2.6, L['blade'], hilt=3.6)
     elif w == 'saber': blade('R', 23, 3.0, L['blade'], curve=2.6)
-    elif w == 'staff':
+    if w == 'staff':
         g, d = J['palmR'], J['wdR']
         e0, e1 = g - d * 38 * sc, g + d * 44 * sc
         dp = (D(e0) + D(e1)) / 2 + 0.1
@@ -1581,6 +1631,9 @@ def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
             lip = mix(skin, '#c0304a', 0.55 if fem else 0.3)
             d.px(cx - 1, cy + 6, lip); d.px(cx, cy + 6, lip)
             if fem: d.px(cx - 4, cy + 4, mix(skin, '#ff6a8a', 0.35)); d.px(cx + 4, cy + 4, mix(skin, '#ff6a8a', 0.35))
+            if L.get('old'):
+                for ex in (cx - 3, cx + 3): d.px(ex - 1, cy + 3, 1); d.px(ex + 1, cy + 3, 1)
+                d.px(cx - 4, cy + 5, 1); d.px(cx + 4, cy + 5, 1)
             if L.get('mustache'):
                 for x in (cx - 2, cx - 1, cx, cx + 1): d.px(x, cy + 5, hair)
                 d.px(cx - 0.5, cy + 8, hair)
@@ -1700,10 +1753,10 @@ def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
         ht.mark(weave)
         parts.append(ht)
         parts.append(Part(dp + 4.3, '#c8c08a', sig=0.6, spec=0.5, ol=2).ell(tip[:2], 1.2))
-        mk = Part(dp + 3.4, L['mask'], sig=1.4, spec=0.1, ol=2)
+        mk = Part(dp + 3.4, L.get('mask') or '#000000', sig=1.4, spec=0.1, ol=2)
         if view == 'down': mk.poly([(cx - 6.5, cy + 2.8), (cx + 6.5, cy + 2.8), (cx + 5.5, cy + 5), (cx + 3, cy + 7.6), (cx, cy + 8.9), (cx - 3, cy + 7.6), (cx - 5.5, cy + 5)])
         elif view == 'right': mk.poly([(cx + 0.2, cy + 2.6), (cx + 7.2, cy + 2.6), (cx + 6.4, cy + 6.2), (cx + 4.6, cy + 8.8), (cx + 0.6, cy + 8.8)])
-        if mk.ops: parts.append(mk)
+        if mk.ops and L.get('mask'): parts.append(mk)
     elif st == 'turban':
         tb = Part(hd, '#231a3c', sig=2.0, spec=0.25)
         if view == 'down':
@@ -1735,6 +1788,15 @@ def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
         elif view == 'right': rag.poly([(cx - 8.4, cy - 3.8), (cx + 5, cy - 4.6), (cx + 5.1, cy - 3.2), (cx - 8.3, cy - 2.4)])
         else: rag.poly([(cx - 7.2, cy - 3.8), (cx + 7.2, cy - 3.8), (cx + 7, cy - 2.4), (cx - 7, cy - 2.4)])
         parts.append(rag)
+    elif st == 'cap':     # mũ quả dưa chưởng quỹ
+        parts.append(cap('swept'))
+        cp = acc('#1e1a22', 1.6, 0.35, 0.4, 3)
+        if view == 'down': cp.ell((cx, cy - 3.6), 7.3, 5.8).erase([(cx - 8, cy - 2.6), (cx + 8, cy - 2.6), (cx + 8, cy + 6), (cx - 8, cy + 6)])
+        elif view == 'right': cp.ell((cx - 1.2, cy - 3.6), 7.4, 5.8).erase([(cx - 9, cy - 2.4), (cx + 8, cy - 3.0), (cx + 8, cy + 6), (cx - 9, cy + 6)])
+        else: cp.ell((cx, cy - 3.2), 7.3, 6.0).erase([(cx - 8, cy - 1.8), (cx + 8, cy - 1.8), (cx + 8, cy + 6), (cx - 8, cy + 6)])
+        cp.mark(lambda d: [d.line([(cx + x, cy - 9), (cx + x * 1.5, cy - 3)], 1, 0.5) for x in (-3, 0, 3)])
+        parts.append(cp)
+        parts.append(acc('#d02a20', 0.6, 0.5, 0.5).ell((cx - (1 if view == 'right' else 0), cy - 9.4), 1.3, 1.2))
     elif st == 'official':
         parts.append(cap('swept'))
         hcol = '#1d1a26'
@@ -1748,6 +1810,17 @@ def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
         topc = ((q[2][0] + q[3][0]) / 2, (q[2][1] + q[3][1]) / 2 - 1.4)
         parts.append(acc('#f2c24e', 0.6, 0.9, 0.5).ell(topc, 1.6, 1.4))
         if view == 'down': parts.append(acc('#e8402a', 0.4, 0.5, 0.5, 0).ell((cx, cy - 9.6), 1.0, 1.0))
+    if L.get('beard') == 'long' and view != 'up':
+        bc = L.get('beardcol', hair)
+        bd = Part(dp + 3.3, bc, sig=1.4, spec=0.45, ol=2)
+        if view == 'down':
+            bd.poly([(cx - 5.8, cy + 2.6), (cx - 5.0, cy + 8), (cx - 2.8, cy + 13), (cx, cy + 18), (cx + 2.8, cy + 13), (cx + 5.0, cy + 8), (cx + 5.8, cy + 2.6), (cx + 3.8, cy + 4.6), (cx + 1.4, cy + 5.4), (cx - 1.4, cy + 5.4), (cx - 3.8, cy + 4.6)])
+            bd.erase([(cx - 1.6, cy + 5.8), (cx + 1.6, cy + 5.8), (cx + 1.0, cy + 7.0), (cx - 1.0, cy + 7.0)])
+            bd.mark(lambda d: (d.line([(cx - 2.4, cy + 9), (cx - 1, cy + 15)], 1, 0.5), d.line([(cx + 2.2, cy + 9), (cx + 0.8, cy + 15)], 1, 0.5), d.line([(cx - 4, cy + 4.8), (cx - 1, cy + 5.2)], 3, 0.6), d.line([(cx + 1, cy + 5.2), (cx + 4, cy + 4.8)], 3, 0.6)))
+        else:
+            bd.poly([(cx + 0.8, cy + 2.6), (cx + 5.0, cy + 4.6), (cx + 6.2, cy + 6.5), (cx + 5.6, cy + 11), (cx + 4.2, cy + 17), (cx + 2.4, cy + 12), (cx - 0.6, cy + 7)])
+            bd.mark(lambda d: d.line([(cx + 3.6, cy + 8), (cx + 3.8, cy + 14)], 1, 0.5))
+        parts.append(bd)
     if htier: helmet_parts(L, B, J, pr, view, htier, cx, cy, hd + 1.0, helm)
 
 

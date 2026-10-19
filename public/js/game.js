@@ -69,7 +69,7 @@
       const ids = Object.keys(G.data.classes);
       ids.forEach((id, i) => {
         const x = ((i * 64 + splashT * 1.6) % (cv.width + 64)) - 64;
-        if (Assets.has(id)) c.drawImage(Assets.charFrame(id, 2, 'walk', Math.floor(splashT / 6 + i) % 6), Math.round(x) - 16, -12);
+        if (Assets.has(id)) c.drawImage(Assets.charFrame(id, 2, 'walk', Math.floor(splashT / 5 + i) % 8), Math.round(x) - 16, -12, 96, 96);
         else c.drawImage(Sprites.playerSprite(id, G.data.classes[id].colors, 2, Math.floor(splashT / 8 + i) % 4, false), Math.round(x), 8);
       });
     }
@@ -203,7 +203,7 @@
       card.className = 'class-card' + (id === selCls ? ' sel' : '');
       const cv = document.createElement('canvas'); cv.width = 72; cv.height = 72;
       const cx2 = cv.getContext('2d'); cx2.imageSmoothingEnabled = false;
-      if (Assets.has(id)) cx2.drawImage(Assets.charFrame(id, 0, 'idle', 0), 12, 18, 72, 72, 0, 0, 72, 72);
+      if (Assets.has(id)) { cx2.imageSmoothingEnabled = true; cx2.drawImage(Assets.charFrame(id, 0, 'idle', 0), 18, 27, 108, 108, 0, 0, 72, 72); }
       else cx2.drawImage(Sprites.playerSprite(id, cl.colors, 0, 0), 4, 4);
       card.appendChild(cv);
       card.insertAdjacentHTML('beforeend', `<b>${cl.name}</b><small>${cl.role}</small>`);
@@ -230,11 +230,12 @@
       if (Assets.has(cls)) {
         // xem trước: đứng – đi xuống – đi ngang – đánh – ra chiêu
         const ph = Math.floor(previewT / 90) % 5;
-        const img = ph === 0 ? Assets.charFrame(cls, 0, 'idle', Math.floor(previewT / 16) % 4)
-          : ph === 1 ? Assets.charFrame(cls, 0, 'walk', Math.floor(previewT / 6) % 6)
-          : ph === 2 ? Assets.charFrame(cls, 2, 'walk', Math.floor(previewT / 6) % 6)
-          : Assets.charFrame(cls, 2, ph === 3 ? 'atk' : 'cast', Math.min(3, Math.floor((previewT % 90) / 8)) % 4);
-        ctx.drawImage(img, -3, -4, 134, 134);
+        const img = ph === 0 ? Assets.charFrame(cls, 0, 'idle', Math.floor(previewT / 12) % 8)
+          : ph === 1 ? Assets.charFrame(cls, 0, 'walk', Math.floor(previewT / 6) % 8)
+          : ph === 2 ? Assets.charFrame(cls, 2, 'walk', Math.floor(previewT / 6) % 8)
+          : Assets.charFrame(cls, 2, ph === 3 ? 'atk' : 'cast', Math.min(7, Math.floor((previewT % 90) / 6)));
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(img, -8, -12, 144, 144);
       } else ctx.drawImage(Sprites.playerSprite(cls, G.data.classes[cls].colors, [0, 1, 3, 2][dir], f), 0, 0, 128, 128);
     }
     if (!G.inGame) requestAnimationFrame(animPreview);
@@ -534,7 +535,7 @@
         const t = k / 5;
         ctx.globalAlpha = Math.max(0, (0.32 + t * 0.45) * (1 - age * age));
         ctx.save(); ctx.translate(Math.round(g.x0 + (g.x1 - g.x0) * t), Math.round(g.y0 + (g.y1 - g.y0) * t));
-        ctx.drawImage(fr, -48, -86); ctx.restore();
+        ctx.drawImage(fr, -48, -86, 96, 96); ctx.restore();
       }
     }
     ctx.globalAlpha = 1;
@@ -1141,7 +1142,7 @@
           const fy = ny + 20;
           ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(nx, fy, 14, 4.5, 0, 0, Math.PI * 2); ctx.fill();
           ctx.save(); ctx.translate(nx, fy); if (side && dxp < 0) ctx.scale(-1, 1);
-          ctx.drawImage(nf.img, nf.sx, nf.sy, nf.w, nf.h, -nf.fx, -nf.fy, nf.w, nf.h);
+          ctx.drawImage(nf.img, nf.sx, nf.sy, nf.w, nf.h, -nf.fx, -nf.fy, nf.dw || nf.w, nf.dh || nf.h);
           ctx.restore();
           ntop = fy - 76;
         } else ctx.drawImage(Sprites.npcSprite(n.sprite, n.color, 0), nx - 32, ny - 44);
@@ -1369,11 +1370,11 @@
       else if (atk) {
         state = ent && ent.atkKind === 'skill' ? 'cast' : 'atk';
         const p = ent && ent.atkStart ? (now - ent.atkStart) / (ent.atkDur || 300) : 0.5;
-        fi = Math.max(0, Math.min(3, Math.floor(p * 4)));
+        fi = Math.max(0, Math.min(7, Math.floor(p * 8)));
       }
-      else if (ent && ent.hitAt && now - ent.hitAt < 160) state = 'hurt';
-      else if (moving) { state = 'walk'; fi = Math.floor(now / 105 + seed) % 6; }
-      else fi = Math.floor(now / 280 + seed) % 4;
+      else if (ent && ent.hitAt && now - ent.hitAt < 300) { state = 'hurt'; fi = Math.min(2, Math.floor((now - ent.hitAt) / 100)); }
+      else if (moving) { state = 'walk'; fi = Math.floor(now / 100 + seed) % 8; }
+      else fi = Math.floor(now / 200 + seed) % 8;
     }
     const colors = G.data.classes[cls].colors;
     const mountId = ap[7];
@@ -1406,15 +1407,15 @@
         const layer = sy0 => {
           ctx.save(); ctx.translate(x, y);
           if (flip) ctx.scale(-1, 1);
-          ctx.drawImage(mfr.img, mfr.sx, sy0, mfr.cw, mfr.ch, -fx, -fy, mfr.cw, mfr.ch);
+          ctx.drawImage(mfr.img, mfr.sx, sy0, mfr.cw, mfr.ch, -fx, -fy, mfr.dw, mfr.dh);
           ctx.restore();
         };
         layer(mfr.sy);
         const sx = x + (flip ? fx - mfr.seat[0] : mfr.seat[0] - fx), sy = y + mfr.seat[1] - fy;
         const rs = state === 'walk' || state === 'idle' || state === 'dead' ? 'ride' : state;
         const rdir = side ? face : dir;
-        const rider = Assets.riderFrame(cls, rdir, rs, rs === 'ride' ? mfr.k : fi, ap);
-        ctx.drawImage(rider, Math.round(sx - 48), Math.round(sy - 66));
+        const rider = Assets.riderFrame(cls, rdir, rs, rs === 'ride' ? Math.floor(mfr.k / 2) : fi, ap);
+        ctx.drawImage(rider, Math.round(sx - 48), Math.round(sy - 66), 96, 96);
         if (mfr.fy >= 0) layer(mfr.fy);      // đầu ngựa / chân trước (hoặc mông, đuôi) đè lên người cưỡi
         if (!dead) MountFX.over(ctx, mountId, x, y, now, mfr.view, moving, seed, flip, ap[9] || 1);
         top = Math.round(sy - 54);
@@ -1423,7 +1424,7 @@
       if (art) {
         const rider = Assets.charFrame(cls, face, state === 'walk' || state === 'dead' ? 'idle' : state, fi, ap);
         const ry = y - 86 - 26 + (moving && mf % 2 ? 1 : 0);
-        ctx.drawImage(rider, 0, 0, 96, 66, x - 48 + (face === 1 ? 2 : -2), ry, 96, 66);
+        ctx.drawImage(rider, 0, 0, 144, 99, x - 48 + (face === 1 ? 2 : -2), ry, 96, 66);
         top = y - 96;
       } else {
         const rider = Sprites.playerSprite(cls, colors, face, 0, atk, ap);
@@ -1445,12 +1446,12 @@
           if (g) {
             ctx.save(); ctx.globalCompositeOperation = 'lighter';
             ctx.globalAlpha = (wr === 3 ? 0.75 : 0.6) + Math.sin(now / (wr === 3 ? 140 : 320) + seed) * 0.25;
-            ctx.drawImage(g, x - 48, y - 86); if (wr === 3) ctx.drawImage(g, x - 48, y - 87);
+            ctx.drawImage(g, x - 48, y - 86, 96, 96); if (wr === 3) ctx.drawImage(g, x - 48, y - 87, 96, 96);
             ctx.restore();
           }
         }
         if (!dead && ent && ent.k) Overhead.drawPkAura(ctx, x, y, ent.k, now);
-        ctx.drawImage(Assets.charFrame(cls, dir, state, fi, ap), x - 48, y - 86);
+        ctx.drawImage(Assets.charFrame(cls, dir, state, fi, ap), x - 48, y - 86, 96, 96);
         if (!dead && tier >= 3 && dir === 3) Overhead.drawWings(ctx, x, y, tier, dir, now);
         top = y - 72;
       } else {

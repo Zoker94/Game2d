@@ -108,7 +108,7 @@
     const sy = layer === 'front' ? f.fy : f.sy;
     if (sy < 0) return;
     ctx.save(); ctx.translate(x, y); if (flip) ctx.scale(-1, 1);
-    ctx.drawImage(f.img, f.sx, sy, f.cw, f.ch, -fx, -fy, f.cw, f.ch);
+    ctx.drawImage(f.img, f.sx, sy, f.cw, f.ch, -fx, -fy, f.dw, f.dh);
     ctx.restore();
   }
   // vẽ xe tiêu (ngựa kéo); trả về y đỉnh để vẽ tên

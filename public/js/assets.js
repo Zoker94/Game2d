@@ -1,19 +1,23 @@
 // Ảnh asset vẽ tay (public/assets). Có ảnh thì dùng ảnh, chưa có thì dùng sprite vẽ thủ tục cũ.
 (function () {
   const BASE = '/assets/';
-  // Nhân vật (vẽ bởi tools/rig.py), ô 96x96, chân ở (48, 86). Mỗi môn phái có các lớp ghép theo trang bị:
-  //   chars/<cls>_a0..3.png  thân theo kiểu áo (vải / giáp da / giáp sắt / thần giáp), hàng 3 = ngã
-  //   chars/<cls>_w0..2.png  lớp vũ khí (thường / tinh luyện / thần binh), chars/<cls>_h1..3.png lớp mũ
-  // Phần kim loại vẽ bằng màu đánh dấu (xanh ngọc) rồi tô lại theo phẩm chất trang bị.
-  // Hàng: 0 nhìn xuống, 1 nhìn lên, 2 nhìn phải (trái = lật). Cột: đứng 0-3, đi 4-9, đánh 10-13, ra chiêu 14-17, trúng đòn 18
+  // Nhân vật (vẽ bởi tools/rig2.py): ô gốc 144x144, chân ở (72, 128). Khung trả về là canvas 144 nhưng mọi chỗ vẽ
+  // thu về 96x96 (x2/3, chân (48, 86)) để giữ chi tiết trên màn hình mật độ cao. Mỗi môn phái có các lớp ghép:
+  //   chars/<cls>.json          hàng của từng động tác (đứng, đi, chạy, đánh, ra chiêu, trúng đòn, ngã, cưỡi...)
+  //   chars/<cls>_a0..a3.png    thân theo kiểu áo (vải / giáp da / giáp sắt / thần giáp)
+  //   chars/<cls>_am1..am3.png  phần kim loại của áo (xám) -> tô màu theo phẩm chất
+  //   chars/<cls>_w0..w2.png    vũ khí (thường / tinh luyện / thần binh), đã trừ sẵn chỗ bị thân che
+  //   chars/<cls>_h1..h3.png    mũ, _hm1..hm3 kim loại mũ;  _fxu / _fxo hiệu ứng dưới / trên nhân vật
+  // Mỗi động tác có 3 hàng liên tiếp: nhìn xuống, nhìn lên, nhìn phải (trái = lật).
   const CLASSES = ['thieulam', 'ngudoc', 'thienvuong', 'caibang', 'vodang', 'ngamy', 'thuyyen', 'conlon', 'duongmon'];
-  const CELL = 96, FOOT_X = 48, FOOT_Y = 86;
-  const ANIM = { idle: [0, 4], walk: [4, 6], atk: [10, 4], cast: [14, 4], hurt: [18, 1], ride: [19, 2] };
+  const SRC = 144, CELL = 96, FOOT_X = 48, FOOT_Y = 86;
+  const STATE_ANIM = { idle: 'idle', walk: 'walk', run: 'run', atk: 'attack', cast: 'cast', hurt: 'hurt', dead: 'death',
+                       ride: 'ride', ride_atk: 'ride_attack', ride_cast: 'ride_cast', ride_hurt: 'ride_hurt' };
   // Quái / boss: thêm tên quái (id trong server/data/monsters.js) vào đây khi có ảnh
   // public/assets/monsters/<id>.png (ảnh nền trong suốt, chân nhân vật ở đáy ảnh).
   const MONSTERS = [];
 
-  const imgs = {};
+  const imgs = {}, META = {};
   function load(path) {
     return new Promise(res => {
       const im = new Image();
@@ -29,7 +33,11 @@
     return null;
   }
   const jobs = [];
-  for (const c of CLASSES) { jobs.push(need(c + '_a0') || loading[c + '_a0']); if (c !== 'caibang') jobs.push(need(c + '_w0') || loading[c + '_w0']); }
+  for (const c of CLASSES) {
+    jobs.push(fetch(BASE + 'chars/' + c + '.json').then(r => r.ok ? r.json() : null).then(j => { if (j) META[c] = j; }).catch(() => { }));
+    jobs.push(need(c + '_a0') || loading[c + '_a0']);
+    if (c !== 'caibang') jobs.push(need(c + '_w0') || loading[c + '_w0']);
+  }
   // biểu tượng vật phẩm vẽ mới (tools/icons.py)
   let ICONS = null;
   jobs.push(Promise.all([load('icons.png'), fetch(BASE + 'icons.json').then(r => r.ok ? r.json() : null).catch(() => null)]).then(([im, j]) => { if (im && j) ICONS = { im, j }; }));
@@ -39,13 +47,16 @@
   const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; return [c, x]; };
   const cache = {};
   let cacheN = 0;
-  const put = (k, v) => { if (++cacheN > 6000) { for (const key in cache) if (!key.startsWith('rc:')) delete cache[key]; cacheN = 0; } return (cache[k] = v); };
-  const has = cls => !!imgs[cls + '_a0'];
-  function cellOf(dir, state, i) {
-    if (state === 'dead') return [3, 0];
-    const a = ANIM[state] || ANIM.idle;
-    return [dir === 0 ? 0 : dir === 3 ? 1 : 2, a[0] + (i % a[1])];
+  const put = (k, v) => { if (++cacheN > 1400) { for (const key in cache) delete cache[key]; cacheN = 0; } return (cache[k] = v); };
+  const has = cls => !!(imgs[cls + '_a0'] && META[cls]);
+  function layerOf(cls, name) { const m = META[cls]; return m && m.layers.indexOf(name) >= 0 ? need(cls + '_' + name) : null; }
+  // (hàng, cột) của khung: trạng thái game -> động tác trong sheet; ngã = khung cuối của động tác ngã
+  function cellOf(cls, dir, state, i) {
+    const m = META[cls], a = m.anims[STATE_ANIM[state] || 'idle'] || m.anims.idle;
+    const col = state === 'dead' ? a.n - 1 : ((i % a.n) + a.n) % a.n;
+    return [a.row + (dir === 0 ? 0 : dir === 3 ? 1 : 2), col];
   }
+  function frameCount(cls, state) { const m = META[cls], a = m && m.anims[STATE_ANIM[state]]; return a ? a.n : 1; }
   // ----- trang bị -> kiểu hình -----
   const METAL = ['#a8b0bc', '#4fa3ff', '#b060ff', '#ffb02a'];   // Thường / Hiếm / VIP / Truyền Kỳ
   // ap = [bậc vũ khí, độ hiếm vũ khí, +vũ khí, bậc áo, độ hiếm áo, +áo, bậc nón, thú cưỡi, độ hiếm nón]
@@ -58,89 +69,65 @@
       w: wt < 3 ? 0 : wt < 5 ? 1 : 2
     };
   }
-  // tô lại phần kim loại (màu đánh dấu, sắc độ ~168) theo màu phẩm chất, giữ độ sáng tối
-  function recolor(img, hex) {
-    const [c, x] = mk(img.width, img.height);
-    x.drawImage(img, 0, 0);
-    const d = x.getImageData(0, 0, c.width, c.height), a = d.data;
-    const cr = parseInt(hex.slice(1, 3), 16), cg = parseInt(hex.slice(3, 5), 16), cb = parseInt(hex.slice(5, 7), 16);
-    for (let i = 0; i < a.length; i += 4) {
-      if (!a[i + 3]) continue;
-      const r = a[i], g = a[i + 1], b = a[i + 2], mx = Math.max(r, g, b), mn = Math.min(r, g, b), dd = mx - mn;
-      if (dd < mx * 0.3 || g < r) continue;
-      let h = mx === g ? 60 * ((b - r) / dd + 2) : mx === b ? 60 * ((r - g) / dd + 4) : -1;
-      if (Math.abs(h - 168) > 14) continue;
-      const L = mx / 232, hi = Math.max(0, L - 1) * 120;
-      a[i] = Math.min(255, cr * L * 1.05 + hi); a[i + 1] = Math.min(255, cg * L * 1.05 + hi); a[i + 2] = Math.min(255, cb * L * 1.05 + hi);
-    }
-    x.putImageData(d, 0, 0);
-    return c;
-  }
-  function sheetFor(key, rar) {   // ảnh đã tô màu theo phẩm chất (thân áo, mũ)
-    const im = need(key);
-    if (!im) return null;
-    const k = 'rc:' + key + ':' + rar;
-    return cache[k] || (cache[k] = recolor(im, METAL[rar] || METAL[0]));
+  // tô màu phẩm chất lên lớp kim loại xám (chế độ hòa 'color': giữ sáng tối, lấy sắc màu phẩm chất)
+  const [tcv, tcx] = mk(SRC, SRC);
+  function tinted(im, sx, sy, color) {
+    tcx.globalCompositeOperation = 'source-over'; tcx.clearRect(0, 0, SRC, SRC);
+    tcx.drawImage(im, sx, sy, SRC, SRC, 0, 0, SRC, SRC);
+    tcx.globalCompositeOperation = 'color'; tcx.fillStyle = color; tcx.fillRect(0, 0, SRC, SRC);
+    tcx.globalCompositeOperation = 'destination-in'; tcx.drawImage(im, sx, sy, SRC, SRC, 0, 0, SRC, SRC);
+    tcx.globalCompositeOperation = 'source-over';
+    return tcv;
   }
   // quầng sáng vũ khí theo phẩm chất (tô màu lớp vũ khí của khung hình rồi loang ra xung quanh)
   function weaponGlow(cls, dir, state, i, color, ap) {
-    if (state === 'dead') return null;
+    if (state === 'dead' || !has(cls)) return null;
     const w = lookOf(ap).w;
-    const im = need(cls + '_w' + w) || imgs[cls + '_w0'];
+    const im = layerOf(cls, 'w' + w) || imgs[cls + '_w0'];
     if (!im) return null;
     const key = 'wg:' + cls + w + ':' + dir + ':' + state + ':' + i + ':' + color;
     if (cache[key]) return cache[key];
-    const [row, col] = cellOf(dir, state, i);
-    const [m, mx] = mk(CELL, CELL);
-    if (dir === 1) { mx.translate(CELL, 0); mx.scale(-1, 1); }
-    mx.drawImage(im, col * CELL, row * CELL, CELL, CELL, 0, 0, CELL, CELL);
+    const [row, col] = cellOf(cls, dir, state, i);
+    const [m, mx] = mk(SRC, SRC);
+    if (dir === 1) { mx.translate(SRC, 0); mx.scale(-1, 1); }
+    mx.drawImage(im, col * SRC, row * SRC, SRC, SRC, 0, 0, SRC, SRC);
     mx.setTransform(1, 0, 0, 1, 0, 0);
-    mx.globalCompositeOperation = 'source-in'; mx.fillStyle = color; mx.fillRect(0, 0, CELL, CELL);
-    const [c, x] = mk(CELL, CELL);
-    for (const [dx, dy, a] of [[-2, 0, 0.3], [2, 0, 0.3], [0, -2, 0.3], [0, 2, 0.3], [-1, -1, 0.55], [1, 1, 0.55], [1, -1, 0.55], [-1, 1, 0.55], [0, 0, 0.5]]) { x.globalAlpha = a; x.drawImage(m, dx, dy); }
+    mx.globalCompositeOperation = 'source-in'; mx.fillStyle = color; mx.fillRect(0, 0, SRC, SRC);
+    const [c, x] = mk(SRC, SRC);
+    for (const [dx, dy, a] of [[-3, 0, 0.3], [3, 0, 0.3], [0, -3, 0.3], [0, 3, 0.3], [-2, -2, 0.5], [2, 2, 0.5], [2, -2, 0.5], [-2, 2, 0.5], [0, 0, 0.5]]) { x.globalAlpha = a; x.drawImage(m, dx, dy); }
     return put(key, c);
   }
-  // dir: 0 xuống, 1 trái, 2 phải, 3 lên; state: idle | walk | atk | cast | hurt | dead; ap: ngoại hình trang bị
+  // dir: 0 xuống, 1 trái, 2 phải, 3 lên; state: idle | walk | run | atk | cast | hurt | dead | ride | ride_atk | ride_cast | ride_hurt
+  // Trả về canvas 144x144 (vẽ ra 96x96 tại x-48, y-86).
   function charFrame(cls, dir, state, i, ap) {
     const L = lookOf(ap);
-    // kiểu đồ chưa tải xong thì tạm dùng kiểu cơ bản
-    const body = sheetFor(cls + '_a' + L.a, L.ar) || sheetFor(cls + '_a0', 0);
-    const wpn = cls !== 'caibang' ? (need(cls + '_w' + L.w) || imgs[cls + '_w0']) : null;
-    const helm = L.h ? sheetFor(cls + '_h' + L.h, L.hr) : null;
-    const key = cls + ':' + dir + ':' + state + ':' + i + ':' + (body ? L.a + '.' + L.ar : 'x') + ':' + (wpn ? L.w : 'x') + ':' + (helm ? L.h + '.' + L.hr : 0);
+    const body = layerOf(cls, 'a' + L.a), base = imgs[cls + '_a0'];
+    const wpn = layerOf(cls, 'w' + L.w) || imgs[cls + '_w0'] || null;
+    const helm = L.h ? layerOf(cls, 'h' + L.h) : null;
+    const metal = L.a && L.ar ? layerOf(cls, 'am' + L.a) : null, hmetal = L.h && L.hr ? layerOf(cls, 'hm' + L.h) : null;
+    const fxu = layerOf(cls, 'fxu'), fxo = layerOf(cls, 'fxo');
+    const key = cls + ':' + dir + ':' + state + ':' + i + ':' + (body ? L.a + '.' + L.ar + (metal ? 'm' : '') : 'x') + ':' + (wpn ? L.w : 'x') + ':' + (helm ? L.h + '.' + L.hr + (hmetal ? 'm' : '') : 0) + (fxo ? 'f' : '');
     if (cache[key]) return cache[key];
-    const [row, col] = cellOf(dir, state, i);
-    const [c, x] = mk(CELL, CELL);
-    if (state !== 'ride') { x.fillStyle = 'rgba(0,0,0,0.3)'; x.beginPath(); x.ellipse(FOOT_X, FOOT_Y, state === 'dead' ? 22 : 13, 4, 0, 0, Math.PI * 2); x.fill(); }
-    if (dir === 1) { x.translate(CELL, 0); x.scale(-1, 1); }
-    if (body) x.drawImage(body, col * CELL, row * CELL, CELL, CELL, 0, 0, CELL, CELL);
-    if (state !== 'dead') {
-      if (wpn) x.drawImage(wpn, col * CELL, row * CELL, CELL, CELL, 0, 0, CELL, CELL);
-      if (helm) x.drawImage(helm, col * CELL, row * CELL, CELL, CELL, 0, 0, CELL, CELL);
-    }
+    const [row, col] = cellOf(cls, dir, state, i), sx = col * SRC, sy = row * SRC;
+    const [c, x] = mk(SRC, SRC);
+    if (!state.startsWith('ride')) { x.fillStyle = 'rgba(0,0,0,0.3)'; x.beginPath(); x.ellipse(72, 128, state === 'dead' ? 33 : 19, 6, 0, 0, Math.PI * 2); x.fill(); }
+    if (dir === 1) { x.translate(SRC, 0); x.scale(-1, 1); }
+    const put2 = im => { if (im) x.drawImage(im, sx, sy, SRC, SRC, 0, 0, SRC, SRC); };
+    put2(fxu); put2(body || base);
+    if (metal) x.drawImage(tinted(metal, sx, sy, METAL[L.ar]), 0, 0);
+    put2(wpn);
+    if (helm) { put2(helm); if (hmetal) x.drawImage(tinted(hmetal, sx, sy, METAL[L.hr]), 0, 0); }
+    put2(fxo);
     // ảnh chưa tải xong thì không lưu bộ nhớ đệm để lần sau vẽ đúng
-    if (!body || (L.w && wpn === imgs[cls + '_w0'] && !imgs[cls + '_w' + L.w]) || (L.h && !helm) || (L.a && !imgs[cls + '_a' + L.a])) return c;
+    if (!body || (L.w && wpn === imgs[cls + '_w0'] && !imgs[cls + '_w' + L.w]) || (L.h && !helm) || (L.a && L.ar && !metal) || (L.h && L.hr && !hmetal) || (!fxo && META[cls] && META[cls].layers.indexOf('fxo') >= 0)) return c;
     return put(key, c);
   }
-  // ----- người cưỡi: ngồi trên yên, giữ nguyên đôi chân -----
-  // Đánh / ra chiêu khi cưỡi: thân trên lấy từ khung đánh, phần chân lấy từ khung ngồi.
-  const HIP_Y = 66;
-  const riderCache = new WeakMap();
+  // ----- người cưỡi: sheet có sẵn động tác ngồi yên (cưỡi, đánh, ra chiêu, trúng đòn khi cưỡi); hông ở y = 66 (ô 96) -----
   function riderFrame(cls, dir, state, i, ap) {
-    const legs = charFrame(cls, dir, 'ride', i % 2, ap);
-    if (state !== 'atk' && state !== 'cast' && state !== 'hurt') return legs;
-    const up = charFrame(cls, dir, state, i, ap);
-    let m = riderCache.get(up);
-    if (m && m.get(legs)) return m.get(legs);
-    const [c, x] = mk(CELL, CELL);
-    x.drawImage(legs, 0, HIP_Y - 4, CELL, CELL - HIP_Y + 4, 0, HIP_Y - 4, CELL, CELL - HIP_Y + 4);
-    x.clearRect(0, 0, CELL, HIP_Y - 4);
-    x.drawImage(up, 0, 0, CELL, HIP_Y - 1, 0, 0, CELL, HIP_Y - 1);
-    if (!m) riderCache.set(up, m = new WeakMap());
-    m.set(legs, c);
-    return c;
+    const st = state === 'atk' ? 'ride_atk' : state === 'cast' ? 'ride_cast' : state === 'hurt' ? 'ride_hurt' : 'ride';
+    return charFrame(cls, dir, st, i, ap);
   }
-  // ----- thú cưỡi (ảnh tools/mounts.py): ô 128x96, nhìn ngang quay phải, kèm điểm yên từng khung -----
+  // ----- thú cưỡi (ảnh tools/mounts2.py): ô 192 vẽ ra x2/3, nhìn ngang quay phải, kèm điểm yên (hông người cưỡi) từng khung -----
   let MOUNT_META = null;
   fetch(BASE + 'mounts.json').then(r => r.ok ? r.json() : null).then(j => { MOUNT_META = j; }).catch(() => { });
   const mountImgs = {}, mountLoading = {};
@@ -157,11 +144,13 @@
     const k = Math.floor(t / (moving ? 95 : 700)) % fn;
     const col = fs + k, [cw, ch] = MOUNT_META.cell;
     const rows = (MOUNT_META.rows && MOUNT_META.rows[view]) || [0];
+    const s = MOUNT_META.scale || 1;   // thú vẽ mới (tools/mounts2.py): ô 192 thu về x2/3
+    const foot = view === 'side' ? MOUNT_META.foot : (MOUNT_META.footFB || MOUNT_META.foot);
+    const seat = seats ? seats[view][col] : MOUNT_META.seat[id][col];
     return {
-      img: mountImgs[id], sx: col * cw, cw, ch, k, view,
+      img: mountImgs[id], sx: col * cw, cw, ch, dw: cw * s, dh: ch * s, k, view,
       sy: rows[0] * ch, fy: rows[1] != null ? rows[1] * ch : -1,
-      foot: view === 'side' ? MOUNT_META.foot : (MOUNT_META.footFB || MOUNT_META.foot),
-      seat: seats ? seats[view][col] : MOUNT_META.seat[id][col]
+      foot: [foot[0] * s, foot[1] * s], seat: [seat[0] * s, seat[1] * s]
     };
   }
   // ----- quái vật (ảnh tools/monsters.py) -----
@@ -192,15 +181,15 @@
     }
     return { img, sx: col * m.w, sy: row * m.h, w: m.w, h: m.h, fx: m.fx, fy: m.fy, top: m.top, half: m.half, rig: m.k === 'rig' };
   }
-  // ----- NPC vẽ mới (tools/npcs.py): hàng 0 nhìn xuống, hàng 1 nhìn nghiêng; 4 khung đứng thở -----
+  // ----- NPC vẽ mới (tools/npcs2.py): hàng 0 nhìn xuống, hàng 1 nhìn nghiêng; 4 khung đứng thở -----
   let NPC_META = null; const npcImgs = {}, npcLoading = {};
   fetch(BASE + 'npcs.json').then(r => r.ok ? r.json() : null).then(j => { NPC_META = j; }).catch(() => { });
   function npcFrame(id, i, side) {
     if (!NPC_META || NPC_META.ids.indexOf(id) < 0) return null;
     const img = npcImgs[id];
     if (!img) { if (!npcLoading[id]) npcLoading[id] = load('npcs/' + id + '.png').then(im => { if (im) npcImgs[id] = im; }); return null; }
-    const c = NPC_META.cell;
-    return { img, sx: (i % 4) * c, sy: side ? c : 0, w: c, h: c, fx: NPC_META.foot[0], fy: NPC_META.foot[1] };
+    const c = NPC_META.cell, k = NPC_META.scale || 1;   // NPC vẽ mới: ô 144 thu về x2/3 cho cân với nhân vật
+    return { img, sx: (i % 4) * c, sy: side ? c : 0, w: c, h: c, dw: c * k, dh: c * k, fx: NPC_META.foot[0] * k, fy: NPC_META.foot[1] * k, k };
   }
   function monsterReady(id) { id = artOf(id); return !!(MON_META && MON_META.mon[id]); }
   function monsterTop(id) { id = artOf(id); const m = MON_META && MON_META.mon[id]; return m && monImgs[id] ? m.top : 0; }
@@ -209,7 +198,8 @@
     size = size || 64;
     const f = charFrame(cls, 0, 'idle', 0, ap);
     const [c, x] = mk(size, size);
-    x.drawImage(f, 48 - 15, 24, 30, 30, 0, 0, size, size);
+    x.imageSmoothingEnabled = true;
+    x.drawImage(f, 72 - 17, 17, 34, 34, 0, 0, size, size);
     return c;
   }
 
@@ -261,5 +251,5 @@
     return `<i class="sk-img" style="background-image:url('${url}');--skc:${s.color || '#ffd76a'}"></i>`;
   }
 
-  window.Assets = { ready, imgs, has, charFrame, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, MONSTERS, skillIconUrl, skillIconHTML };
+  window.Assets = { ready, imgs, has, charFrame, frameCount, SRC, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, MONSTERS, skillIconUrl, skillIconHTML };
 })();

@@ -18,8 +18,8 @@
   function portrait(cv, sp) {
     const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; c.clearRect(0, 0, cv.width, cv.height);
     let img = null, sx = 0, sy = 0, sw = 96, sh = 96, ox = 0, oy = 0, sc = 2;
-    if (sp === 'me' && G.me && Assets.has(G.me.cls)) { img = Assets.charFrame(G.me.cls, 0, 'idle', 0, G.me.ap); sx = 18; sy = 8; sw = 60; sh = 60; }
-    else if (sp.startsWith('npc:')) { const f = Assets.npcFrame(sp.slice(4), 0, false); if (f) { img = f.img; sx = f.sx + 18; sy = f.sy + 8; sw = 60; sh = 60; } }
+    if (sp === 'me' && G.me && Assets.has(G.me.cls)) { img = Assets.charFrame(G.me.cls, 0, 'idle', 0, G.me.ap); sx = 27; sy = 12; sw = 90; sh = 90; sc = 4 / 3; }
+    else if (sp.startsWith('npc:')) { const f = Assets.npcFrame(sp.slice(4), 0, false); if (f) { const k = f.w / 96; img = f.img; sx = f.sx + 18 * k; sy = f.sy + 8 * k; sw = 60 * k; sh = 60 * k; sc = 2 / k; } }
     else if (sp.startsWith('mon:')) {
       const f = Assets.monsterFrame(sp.slice(4), 'idle', 0, 0);
       if (f) { img = f.img; sx = f.sx; sy = f.sy; sw = f.w; sh = f.h; const top = Math.max(30, f.top + 6); sy = f.sy + f.fy - top; sh = top; sx = f.sx + f.fx - top / 2 - 8; sw = top + 16; sc = Math.min(120 / sw, 120 / sh); }
