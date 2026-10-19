@@ -300,7 +300,7 @@
     s.on('dead', d => {
       $('dead-msg').textContent = `${d.by && d.by !== '?' ? `Bạn đã bị ${d.by} đánh trọng thương.` : 'Bạn đã bị trọng thương.'}${d.lost ? ' Mất ' + d.lost + ' kinh nghiệm.' : ''}`;
       const c = d.cost || { gold: 0, knb: 0 }, me = G.me || {};
-      $('revive-gold').textContent = `${c.gold.toLocaleString('vi-VN')} 💰`;
+      $('revive-gold').textContent = c.gold ? `${c.gold.toLocaleString('vi-VN')} 💰` : 'Miễn phí (tân thủ)';
       $('revive-here').classList.toggle('poor', (me.gold || 0) < c.gold);
       $('revive-knb').textContent = `Hoặc hồi sinh tại chỗ bằng ${c.knb} 💎 Nguyên Bảo`;
       $('revive-knb').classList.toggle('hidden', (me.gold || 0) >= c.gold);

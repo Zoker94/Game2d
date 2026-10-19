@@ -676,13 +676,19 @@ class World {
   }
 
   // giá hồi sinh tại chỗ: theo cấp (lượng), không đủ lượng thì dùng Nguyên Bảo
-  reviveCost(p) { return { gold: 200 + p.c.level * p.c.level * 6, knb: 5 + Math.floor(p.c.level / 20) * 5 }; }
+  // ≈ tiền rơi của 25–85 con quái cùng cấp (vài phút luyện công); tân thủ dưới cấp 10 miễn phí
+  reviveCost(p) {
+    const lv = p.c.level;
+    if (lv < 10) return { gold: 0, knb: 0 };
+    return { gold: Math.round((100 + lv * 40 + lv * lv * 1.2) / 10) * 10, knb: 2 + Math.floor(lv / 20) * 2 };
+  }
   // hồi sinh: mode 'here' = trả tiền hồi sinh tại chỗ (đầy máu, bảo hộ 3 giây); mặc định về thành với 10% máu, hồi từ từ
   respawn(p, mode) {
     if (!p.dead) return;
     const now = Date.now();
     if (mode === 'here' || mode === 'here_knb') {
       const cost = this.reviveCost(p), useKnb = mode === 'here_knb';
+      if (!cost.gold) mode = 'here';
       if (useKnb ? p.c.knb < cost.knb : p.c.gold < cost.gold) return this.toast(p, useKnb ? `Cần ${cost.knb} Nguyên Bảo để hồi sinh tại chỗ` : `Cần ${cost.gold.toLocaleString('vi-VN')} lượng để hồi sinh tại chỗ`, 'error');
       if (useKnb) p.c.knb -= cost.knb; else p.c.gold -= cost.gold;
       p.dead = false; p.weakUntil = 0;
@@ -690,7 +696,7 @@ class World {
       p.dodgeUntil = now + 3000;   // bảo hộ ngắn để kịp đứng dậy
       p.lastCombat = 0;
       this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y, small: true });
-      this.toast(p, `✨ Hồi sinh tại chỗ (−${useKnb ? cost.knb + ' Nguyên Bảo' : cost.gold.toLocaleString('vi-VN') + ' lượng'})`, 'reward');
+      this.toast(p, cost.gold ? `✨ Hồi sinh tại chỗ (−${useKnb ? cost.knb + ' Nguyên Bảo' : cost.gold.toLocaleString('vi-VN') + ' lượng'})` : '✨ Hồi sinh tại chỗ (miễn phí cho tân thủ dưới cấp 10)', 'reward');
       p.dirtyMe = true; p.socket.emit('revived', { here: true });
       return;
     }
