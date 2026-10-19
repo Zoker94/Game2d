@@ -365,6 +365,26 @@ class World {
     }
   }
 
+  // Thẻ Đổi Tên: kiểm tra tên hợp lệ, không trùng, trừ thẻ rồi đổi
+  renameChar(p, d) {
+    const c = p.c, s = d && c.inv.find(x => x.uid === d.uid && x.id === 'rename_card');
+    if (!s) return this.toast(p, 'Bạn không có Thẻ Đổi Tên', 'error');
+    const name = String((d && d.name) || '').trim();
+    if (!/^[\p{L}\p{N}_]{3,14}$/u.test(name)) return this.toast(p, 'Tên 3-14 ký tự, chỉ gồm chữ, số, dấu _', 'error');
+    if (name === c.name) return this.toast(p, 'Tên mới trùng tên hiện tại', 'error');
+    const low = name.toLowerCase();
+    if (Object.values(this.db.data.users).some(u => u.character && u !== p.user && u.character.name.toLowerCase() === low)) return this.toast(p, 'Tên này đã có người dùng', 'error');
+    if (!U.removeByUid(c, s.uid, 1)) return;
+    const old = c.name;
+    c.name = name;
+    const mc = this.db.data.minhChu; if (mc && mc.uid === p.userId) mc.name = name;
+    this.db.log('rename', `${old} → ${name} (${p.userId})`);
+    this.db.markDirty();
+    p.dirtyMe = true;
+    this.toast(p, `✨ Đổi tên thành công: ${name}`, 'reward');
+    if (this.features) this.features.announce(`📜 ${old} đã đổi tên thành ${name}`);
+  }
+
   // thú cưng rồng: khi chủ đang đánh quái (trong 3 giây gần nhất), cứ 4 giây lao tới phun lửa vào mục tiêu
   petTick(p, now) {
     if (p.dead || !p.c.pet || now < (p.petNext || 0) || now - (p.lastHitMon || 0) > 3000) return;
@@ -1018,6 +1038,7 @@ class World {
       this.features.questProgress(p, 'potion', 1);
     }
     if (e.town) { this.startRecall(p); return; }   // niệm phép, xong mới trừ phù
+    if (e.rename) { p.socket.emit('renamePrompt', { uid }); return; }   // nhập tên mới ở máy khách
     if (e.pet) {   // thú cưng: triệu hồi / thu hồi, không mất vật phẩm
       c.pet = c.pet === e.pet ? null : e.pet;
       this.toast(p, c.pet ? `🐉 Đã triệu hồi ${it.name}` : `Đã thu hồi ${it.name}`, c.pet ? 'reward' : 'info');
@@ -1147,6 +1168,7 @@ class World {
         .map(id => ({ id, price: ITEMS[id].price }));
     }
     if (npc.knbShop) out.knbShop = npc.knbShop;
+    out.freeRename = !p.c.renameFree;
     if (npc.action === 'escort' || npc.action === 'escortDest') { out.routes = this.escort.routeView(); out.escort = this.escort.meView(p); }
     if (npc.action === 'daihoi') Object.assign(out, this.daihoi.npcView(p));
     if (npc.action === 'teleport') {
@@ -1207,6 +1229,12 @@ class World {
     if (!it) return;
     if (it.type === 'equip') qty = Math.min(qty, 10);
     const c = p.c;
+    if (id === 'rename_card' && !c.renameFree && ((npc.shop || []).includes(id) || (npc.knbShop || []).some(x => x.id === id))) {   // thẻ đổi tên: lần mua đầu miễn phí
+      if (!U.addItem(c, id, 1)) return this.toast(p, 'Túi đồ đầy', 'error');
+      c.renameFree = 1;
+      this.toast(p, '🎁 Nhận Thẻ Đổi Tên miễn phí (lần đầu). Vào túi đồ → Sử dụng để đổi tên.', 'reward');
+      p.dirtyMe = true; this.db.markDirty(); return;
+    }
     if (knb) {
       const entry = (npc.knbShop || []).find(x => x.id === id);
       if (!entry) return;

@@ -298,6 +298,7 @@ io.on('connection', socket => {
   on('attr', inGame(d => world.attrAction(player, d)));
   on('party', inGame(d => world.party.action(player, d)));
   on('recall', inGame(() => world.startRecall(player)));
+  on('rename', inGame(d => world.renameChar(player, d)));
   on('dungeon', inGame(d => world.dungeon.action(player, d)));
   on('sect', inGame(d => world.sect.action(player, d)));
   on('daihoi', inGame(d => {

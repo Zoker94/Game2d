@@ -1260,3 +1260,9 @@ body.touch #pb-hud { bottom: auto; top: 46%; transform: translateY(-50%); width:
 #sect-box b { color: #ffd76a; }
 #sect-box.done { border-color: #6ad890; }
 body.trk-min #sect-box > :not(h4) { display: none; }
+
+/* ---------- hộp nhập (đổi tên) ---------- */
+#ui-prompt { position: absolute; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.5); }
+#ui-prompt .up-card { width: min(360px, 90%); padding: 14px 16px; border-radius: 12px; background: linear-gradient(180deg, #2a1a12, #140c0a); border: 1px solid var(--g2, #d8a84a); box-shadow: 0 8px 30px rgba(0,0,0,.7); }
+#ui-prompt h3 { margin: 0 0 6px; color: #ffd86a; }
+#ui-prompt input { width: 100%; box-sizing: border-box; font-size: 16px; padding: 8px 10px; }

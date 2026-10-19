@@ -156,6 +156,7 @@ class Social {
         for (const x of (Array.isArray(a.items) ? a.items : []).slice(0, 12)) {
           const s = p.c.inv.find(i => i.uid === x.uid);
           const qty = Math.max(1, Math.min(s ? s.qty : 0, x.qty | 0 || 1));
+          if (s && ITEMS[s.id] && ITEMS[s.id].noTrade) { this.toast(p, `${ITEMS[s.id].name} không thể giao dịch`, 'error'); continue; }
           if (s && !items.some(i => i.uid === s.uid)) items.push({ uid: s.uid, qty });
         }
         const gold = Math.max(0, Math.min(p.c.gold, Math.floor(+a.gold || 0)));

@@ -108,6 +108,7 @@ const CONSUMABLES = [
   { id: 'tieu_chest_bac', name: 'Rương Tiêu Bạc', desc: 'Rương hàng văng ra khi xe Tiêu Bạc bị cướp. Mở nhận nhiều ngân lượng, Huyền Tinh, có thể ra trang bị.', effect: { tieuChest: 'bac' }, price: 2500, icon: 'chest', rarity: 'rare' },
   { id: 'tieu_chest_vang', name: 'Rương Tiêu Vàng', desc: 'Rương hàng quý văng ra khi xe Tiêu Vàng bị cướp. Mở nhận rất nhiều ngân lượng, có thể ra đồ VIP, Nguyên Bảo.', effect: { tieuChest: 'vang' }, price: 6000, icon: 'chest_gold', rarity: 'epic' },
   { id: 'wheel_ticket', name: 'Vé Vòng Quay', desc: 'Thêm 1 lượt quay Vòng Quay May Mắn', effect: { wheel: 1 }, price: 3000, icon: 'ticket' },
+  { id: 'rename_card', name: 'Thẻ Đổi Tên', desc: 'Sử dụng để đổi tên nhân vật (3-14 ký tự, không trùng tên người khác). Không thể giao dịch. Lần mua đầu tiên miễn phí.', effect: { rename: 1 }, price: 50000, icon: 'ticket', rarity: 'epic', noTrade: true },
   { id: 'pet_hong_long', name: 'Hồng Long Ấu Thú', desc: 'Thú cưng rồng lửa (bản thử nghiệm). Sử dụng để triệu hồi / thu hồi. Rồng bay theo chủ, khi chủ giao chiến sẽ lao tới phun lửa vào mục tiêu (sát thương theo 35% công của chủ, gây bỏng).', effect: { pet: 'hong_long' }, price: 0, icon: 'pet:hong_long', rarity: 'legendary', stack: false, noSell: true },
   { id: 'event_token', name: 'Hoa Đăng', desc: 'Vật phẩm sự kiện. Đổi quà tại Lễ Quan.', price: 0, icon: 'lantern', material: true }
 ];

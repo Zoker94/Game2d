@@ -492,6 +492,17 @@
   const TITLES = { inventory: '🎒 Túi Đồ & Trang Bị', character: '🧍 Thông Tin Nhân Vật', quests: '📜 Nhiệm Vụ', guild: '🏯 Bang Hội', events: '🎉 Sự Kiện & Hoạt Động', leaderboard: '🏆 Bảng Xếp Hạng', settings: '⚙️ Cài Đặt', mount: '🐎 Thú Cưỡi', skills: '📖 Võ Công', npc: '' , online: '👥 Người Chơi Trực Tuyến' };
   // bảng do file khác đăng ký (bạn bè, xem thông tin...)
   UI.extraPanels = {};
+  // hộp nhập chữ đơn giản (đổi tên...)
+  UI.prompt = function (title, text, value, cb) {
+    let box = $('ui-prompt'); if (box) box.remove();
+    box = document.createElement('div'); box.id = 'ui-prompt';
+    box.innerHTML = `<div class="up-card"><h3>${esc(title)}</h3><p class="small">${esc(text)}</p><input id="up-in" maxlength="14" autocomplete="off"><div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn" id="up-no">Hủy</button><button class="btn primary" id="up-ok">Xác nhận</button></div></div>`;
+    $('screen-game').appendChild(box);
+    const inp = $('up-in'); inp.value = value || ''; setTimeout(() => { inp.focus(); inp.select(); }, 30);
+    const done = ok => { const v = inp.value.trim(); box.remove(); if (ok) cb(v); };
+    $('up-ok').onclick = () => done(true); $('up-no').onclick = () => done(false);
+    inp.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') done(true); if (e.key === 'Escape') done(false); };
+  };
   UI.registerPanel = (name, title, render, onOpen) => { UI.extraPanels[name] = { title, render, onOpen }; };
   UI.panelName = () => panel;
   UI.pmTo = name => { UI.closePanel(); $('chat-ch').value = 'pm'; $('chat-to').value = name; $('chat-to').classList.remove('hidden'); UI.focusChat(); };
@@ -1119,7 +1130,7 @@
         const stats = it.stats ? Object.entries(it.stats).map(([k, v]) => `${STAT_NAME[k]} +${v}`).join(', ') : (it.desc || '');
         return `<div class="li"><img src="${iconUrl(x.id)}" class="ic" width="36" height="36"><div class="grow">${itemName(x.id)} <span class="small ${cant ? 'warn' : 'muted'}">Cấp ${it.lv || 1}</span><div class="sub">${esc(stats)}</div></div>
           ${it.type !== 'equip' ? `<input type="number" min="1" max="999" value="${it.type === 'use' && x.price < 100 ? 10 : 1}" style="width:58px" data-qty="${x.id}">` : ''}
-          <button class="btn small ${tab === 'knb' ? 'primary' : 'green'}" data-buy="${x.id}">${x.knb ? x.knb + ' 💎' : fmt(x.price) + ' 💰'}</button></div>`;
+          <button class="btn small ${tab === 'knb' ? 'primary' : 'green'}" data-buy="${x.id}">${x.id === 'rename_card' && d.freeRename ? '🎁 Miễn phí (lần đầu)' : x.knb ? x.knb + ' 💎' : fmt(x.price) + ' 💰'}</button></div>`;
       }).join('') + '</div>';
     } else if (tab === 'sell') {
       html += quickSellHtml() + invGrid(body, { noEquip: true, mark: sellMark }) + (sellMulti ? '' : itemActions({ shop: true }));

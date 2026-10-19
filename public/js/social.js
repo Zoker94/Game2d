@@ -114,7 +114,7 @@
     const side = (s, mine) => `<div class="tr-side ${s.lock ? 'locked' : ''}"><div class="tr-name">${mine ? 'Bạn đưa' : esc(s.name) + ' đưa'} ${s.ok ? '<span class="tr-ok">✔ Đã xác nhận</span>' : s.lock ? '<span class="tr-lock">🔒 Đã khóa</span>' : ''}</div>
       <div class="tr-items">${s.items.map(cell).join('') || '<span class="muted small">Chưa đặt vật phẩm</span>'}</div><div class="tr-gold">💰 ${s.gold.toLocaleString('vi-VN')} lượng</div></div>`;
     const offered = new Set(me.items.map(x => x.uid));
-    const inv = G.me.inv.map(s => { const it = G.data.items[s.id]; return `<div class="slot r-${it.rarity} ${offered.has(s.uid) ? 'sel' : ''}" data-inv="${s.uid}"><img src="${UI.iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}</div>`; }).join('');
+    const inv = G.me.inv.map(s => { const it = G.data.items[s.id]; return `<div class="slot r-${it.rarity} ${offered.has(s.uid) ? 'sel' : ''} ${it.noTrade ? 'cant' : ''}" data-inv="${s.uid}" ${it.noTrade ? 'title="Không thể giao dịch"' : ''}><img src="${UI.iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}</div>`; }).join('');
     w.innerHTML = `<div class="tr-box"><div class="panel-head"><h3>🔄 Giao dịch với ${esc(th.name)}</h3><button id="tr-x">✕</button></div>
       <div class="tr-body"><div class="tr-sides">${side(me, true)}${side(th, false)}</div>
       ${me.lock ? '' : `<div class="small muted">Chọn vật phẩm trong túi để đưa (chọn lại để bỏ):</div><div class="tr-inv">${inv}</div>
@@ -132,6 +132,7 @@
     w.querySelectorAll('[data-inv]').forEach(el => el.onclick = () => {
       const uid = el.dataset.inv, s = G.me.inv.find(x => x.uid === uid);
       if (!s) return;
+      if (G.data.items[s.id].noTrade) return UI.toast(`${G.data.items[s.id].name} không thể giao dịch`, 'error');
       let items = curItems();
       if (items.some(x => x.uid === uid)) items = items.filter(x => x.uid !== uid);
       else {
@@ -164,6 +165,11 @@
       { t: 'Gia nhập', cls: 'primary', fn: () => emit('ginvite', { op: 'accept' }) },
       { t: 'Từ chối', fn: () => emit('ginvite', { op: 'decline' }) }]));
     s.on('trade', d => { tradeData = d; tradeWin(); });
+    // Thẻ Đổi Tên: hỏi tên mới
+    s.on('renamePrompt', d => UI.prompt('📜 Thẻ Đổi Tên', `Tên hiện tại: ${G.me.name}. Nhập tên mới (3-14 ký tự, chữ, số, dấu _):`, G.me.name, name => {
+      if (!name || name === G.me.name) return;
+      G.modal(`Đổi tên thành "${name}"? Thẻ Đổi Tên sẽ bị dùng hết.`, [{ t: 'Đổi tên', cls: 'primary', fn: () => emit('rename', { uid: d.uid, name }) }, { t: 'Hủy' }]);
+    }));
     s.on('me', () => { if (tradeData && !(document.activeElement && document.activeElement.id === 'tr-gold')) setTimeout(tradeWin, 0); });
   }
 
