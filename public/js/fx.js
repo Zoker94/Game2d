@@ -8,6 +8,8 @@
   const ease = p => 1 - Math.pow(1 - p, 3);
 
   function emit(n, x, y, o = {}) {
+    const q = (window.G && G.gfx && G.gfx.fx) || 1;   // đồ họa thấp: bớt hạt
+    if (q < 1) { n *= q; n = Math.floor(n) + (Math.random() < n % 1 ? 1 : 0); if (!n) return; }
     const now = performance.now();
     for (let i = 0; i < n; i++) {
       const a = o.angle != null ? o.angle + (R() - 0.5) * (o.spread == null ? Math.PI * 2 : o.spread) : R() * Math.PI * 2;
@@ -20,7 +22,8 @@
         size: (o.size || 4) * (0.6 + R() * 0.8), color: o.color || '#fff', drag: o.drag || 0
       });
     }
-    if (parts.length > 900) parts.splice(0, parts.length - 900);
+    const cap = q < 1 ? 450 : 900;
+    if (parts.length > cap) parts.splice(0, parts.length - cap);
   }
   function glowDot(ctx, x, y, r, color, a = 1, soft) {
     const g = Sprites.glow(color, r, soft);

@@ -19,13 +19,13 @@
       $('tracker').prepend(f);
       f.onclick = onClick;
     }
-    const html = `<div class="pf-h">👥 Tổ đội <span>${pt.members.length}/6</span><button data-act="leave" title="Rời tổ đội">Rời</button></div>` +
+    // gọn: mỗi thành viên 1 dòng (vương miện, tên, cấp) + vạch máu mỏng
+    const html = `<div class="pf-h">👥 <span>${pt.members.length}/6</span><button data-act="leave" title="Rời tổ đội">Rời</button></div>` +
       pt.members.map(m => {
         const me = m.uid === pt.you, far = m.on && G.map && m.map !== G.map.id;
-        const cls = m.cls && G.data.classes[m.cls];
-        return `<div class="pf-m${me ? ' me' : ''}${m.dead ? ' dead' : ''}${m.on ? '' : ' off'}" data-uid="${m.uid}">
-          <div class="pf-n">${m.uid === pt.leader ? '<i>👑</i>' : ''}<b>${esc(m.name)}</b><small>${m.on ? `Lv${m.level}${cls ? ' ' + cls.name : ''}` : 'ngoại tuyến'}</small>${m.dead ? '<em>💀</em>' : far ? '<em title="Ở bản đồ khác">🗺</em>' : ''}</div>
-          <div class="pf-b hp"><i style="width:${pct(m.hp, m.maxHp)}%"></i></div><div class="pf-b mp"><i style="width:${pct(m.mp, m.maxMp)}%"></i></div></div>`;
+        return `<div class="pf-m${me ? ' me' : ''}${m.dead ? ' dead' : ''}${m.on ? '' : ' off'}" data-uid="${m.uid}" title="${esc(m.name)}${m.on ? ' · cấp ' + m.level : ' · ngoại tuyến'}">
+          <div class="pf-n">${m.uid === pt.leader ? '<i>👑</i>' : ''}<b>${esc(m.name)}</b>${m.on ? `<small>${m.level}</small>` : ''}${m.dead ? '<em>💀</em>' : far ? '<em title="Ở bản đồ khác">🗺</em>' : !m.on ? '<em>⚪</em>' : ''}</div>
+          <div class="pf-b"><i class="hp" style="width:${pct(m.hp, m.maxHp)}%"></i><i class="mp" style="width:${pct(m.mp, m.maxMp)}%"></i></div></div>`;
       }).join('');
     if (f._h !== html) { f.innerHTML = html; f._h = html; }
   }

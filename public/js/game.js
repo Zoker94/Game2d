@@ -737,17 +737,56 @@
 
   // ================== Nhấp/chạm vào màn hình ==================
   const canvas = $('game');
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: false });   // nền luôn được tô kín: bỏ kênh trong suốt cho trình duyệt ghép hình nhanh hơn
   let W = 0, H = 0, DPR = 1, zoom = 1, cam = { x: 0, y: 0 }, shake = 0;
+  // ---------- chất lượng đồ họa ----------
+  // Số điểm ảnh phải vẽ là chi phí lớn nhất trên điện thoại. 'auto': bắt đầu ở mức vừa (điện thoại) / cao (PC),
+  // đo thời gian khung hình rồi tự hạ độ phân giải khi giật, nâng lại khi mượt ổn định.
+  const GFX_STEPS = [2, 1.75, 1.5, 1.25, 1];
+  const GFX_FIXED = { high: 2, medium: 1.5, low: 1 };
+  const gfx = { scale: 1.5, lowFx: false, win: [], since: 0, fail: {} };
+  G.gfx = gfx;
+  function gfxCap() { return Math.min(window.devicePixelRatio || 1, 2); }
+  function gfxApply(scale) {
+    gfx.scale = Math.max(1, Math.min(gfxCap(), scale));
+    // hiệu ứng tiết kiệm: ít hạt thời tiết / hiệu ứng, bỏ lớp ám màu kiểu 'overlay'
+    const mode = G.settings.gfx || 'auto';
+    gfx.lowFx = mode === 'low' || (mode === 'auto' && gfx.scale <= 1.25);
+    gfx.fx = mode === 'low' ? 0.4 : gfx.lowFx ? 0.55 : mode === 'high' ? 1 : (Input.isTouch ? 0.8 : 1);
+    resize();
+  }
+  G.setGfx = mode => {
+    G.settings.gfx = mode; G.saveSettings();
+    gfx.fail = {}; gfx.win = []; gfx.since = performance.now();
+    gfxApply(GFX_FIXED[mode] || (Input.isTouch ? 1.5 : 2));
+  };
+  // gọi mỗi khung hình với thời gian khung (ms)
+  function gfxTick(ms, now) {
+    if ((G.settings.gfx || 'auto') !== 'auto' || document.hidden) return;
+    gfx.win.push(Math.min(ms, 120));
+    if (gfx.win.length < 90) return;          // ~1,5 giây mỗi lần đánh giá
+    const w = gfx.win.slice().sort((a, b) => a - b), med = w[w.length >> 1], p90 = w[Math.floor(w.length * 0.9)];
+    gfx.win = [];
+    const i = GFX_STEPS.findIndex(v => v <= gfx.scale + 1e-6);
+    if ((med > 22 || p90 > 40) && gfx.scale > 1) {            // dưới ~45 FPS: hạ một bậc
+      gfx.fail[gfx.scale] = (gfx.fail[gfx.scale] || 0) + 1;
+      gfx.since = now; gfxApply(GFX_STEPS[Math.min(GFX_STEPS.length - 1, i + 1)]);
+    } else if (med < 17.5 && p90 < 22 && i > 0 && now - gfx.since > 12000) {   // mượt liên tục 12 giây: thử nâng
+      const up = GFX_STEPS[i - 1];
+      if (up <= gfxCap() && (gfx.fail[up] || 0) < 2) { gfx.since = now; gfxApply(up); }
+    }
+  }
   function resize() {
     const s = Input.size();
     W = s.w; H = s.h;
-    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    DPR = Math.min(gfxCap(), gfx.scale);
     canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
     zoom = Math.max(0.8, Math.min(1.6, Math.min(W / (TILE * 12), H / (TILE * 6.6)))); // gần hơn để thấy rõ nhân vật
   }
-  window.addEventListener('load', resize); resize();
+  window.addEventListener('load', resize);
+  gfx.since = performance.now();
+  gfxApply(GFX_FIXED[G.settings.gfx] || (Input.isTouch ? 1.5 : 2));
 
   function screenToWorld(cx, cy) {
     const p = Input.toLocal(cx, cy);
@@ -1153,8 +1192,8 @@
     Story.drawArrow(ctx, now);
     WorldMap.drawArrow(ctx, now);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    WorldArt.overlay(ctx, canvas.width, canvas.height);
-    Weather.draw(ctx, canvas.width, canvas.height, DPR, now, cam, zoom);
+    WorldArt.overlay(ctx, canvas.width, canvas.height, gfx.lowFx || Input.isTouch);
+    Weather.draw(ctx, canvas.width, canvas.height, DPR, now, cam, zoom, gfx.fx);
     const fl = FX.flash(now);
     if (fl) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = fl.a; ctx.fillStyle = fl.color; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.globalAlpha = 1; }
     // Khung mục tiêu
@@ -1250,6 +1289,7 @@
   }
 
   function label(x, y, text, color, size = 12, outline) {
+    if (outline !== false && Number.isInteger(size)) return Overhead.cachedText(ctx, text, x, y, size, color, 'rgba(0,0,0,0.85)', 'bold', 3);
     ctx.font = `bold ${size}px system-ui, sans-serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     if (outline !== false) { ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.strokeText(text, x, y); }
@@ -1418,6 +1458,7 @@
 
   function loop(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
+    gfxTick(now - last, now);
     last = now;
     try { update(dt); draw(now); UI.frame(now); } catch (e) { console.error(e); }
     if (G.inGame) requestAnimationFrame(loop);

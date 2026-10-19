@@ -1170,3 +1170,42 @@ body.touch #cmp-pop .cp-col { min-width: 130px; }
 .mfx-tiers span { padding: 2px 7px; border-radius: 8px; border: 1px solid rgba(255,255,255,.12); color: var(--muted); background: rgba(0,0,0,.25); font-size: 11px; }
 .mfx-tiers span small { margin-left: 4px; opacity: .7; }
 .mfx-tiers span.on { color: #e8fcff; border-color: rgba(120,230,255,.6); background: rgba(80,200,255,.14); box-shadow: 0 0 6px rgba(120,230,255,.35); }
+
+/* ---------- Thu gọn menu cạnh bản đồ mini ---------- */
+#mini-wrap { position: relative; line-height: 0; }
+#btn-menu-min { position: absolute; left: 4px; bottom: 4px; width: 24px; height: 24px; border-radius: 50%; padding: 0; z-index: 2; cursor: pointer;
+  background: linear-gradient(180deg, #5a3a1a, #2a1608); border: 1px solid var(--g2, #d8a84a); color: #ffe6a8; font-size: 12px; line-height: 22px; text-align: center;
+  box-shadow: 0 0 0 1px #000, 0 2px 6px rgba(0,0,0,.6); }
+#btn-menu-min:active { transform: scale(.92); }
+#btn-menu-min .dot { position: absolute; top: -2px; right: -2px; }
+body.menu-min #menu-buttons { display: none; }
+body.touch #btn-menu-min { width: 28px; height: 28px; line-height: 26px; font-size: 14px; }
+
+/* ---------- Khung nhiệm vụ + tổ đội gọn hơn ---------- */
+#tracker { width: 220px; gap: 4px; }
+body.touch #tracker { width: 178px; }
+#trk-min { position: absolute; right: -24px; top: 0; width: 18px; height: 18px; padding: 0; border-radius: 50%; z-index: 3; cursor: pointer; font-size: 13px; line-height: 15px;
+  background: #2a1608; border: 1px solid var(--g2, #d8a84a); color: #ffe6a8; box-shadow: 0 0 0 1px #000; }
+body.touch #trk-min { width: 22px; height: 22px; line-height: 19px; font-size: 15px; right: -27px; top: 0; }
+#story-box, #tutorial-box, #daily-box { padding: 4px 7px !important; font-size: 11px !important; line-height: 1.3; margin-bottom: 0; }
+#story-box h4, #tutorial-box h4, #daily-box h4 { font-size: 11px !important; margin: 0 0 2px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#story-box > div:not(.small), #tutorial-box > div:not(.claim) { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+body.touch #story-box, body.touch #tutorial-box, body.touch #daily-box { font-size: 10.5px !important; padding: 3px 6px !important; }
+body.touch #tutorial-box .claim { padding: 3px 10px; font-size: 11px; margin-top: 3px; }
+/* thu gọn: mỗi khung chỉ còn dòng tiêu đề */
+body.trk-min #story-box > :not(h4), body.trk-min #tutorial-box > :not(h4):not(.claim), body.trk-min #daily-box > :not(h4) { display: none !important; }
+body.trk-min #story-box h4, body.trk-min #tutorial-box h4, body.trk-min #daily-box h4 { margin: 0 !important; }
+body.trk-min #party-frame .pf-b .mp { display: none; }
+
+#party-frame { padding: 3px 5px 4px; font-size: 11px; border-radius: 8px; }
+#party-frame .pf-h { font-size: 11px; margin-bottom: 1px; gap: 4px; }
+#party-frame .pf-h button { padding: 0 6px; font-size: 10px; line-height: 15px; }
+#party-frame .pf-m { padding: 2px 3px; border-radius: 5px; }
+#party-frame .pf-n { gap: 3px; line-height: 13px; }
+#party-frame .pf-n b { max-width: none; flex: 0 1 auto; min-width: 0; font-weight: 600; }
+#party-frame .pf-n small { display: inline !important; flex: none; color: var(--muted); font-size: 9.5px; }
+#party-frame .pf-b { position: relative; height: 4px; margin-top: 1px; background: rgba(0,0,0,.55); border-radius: 2px; overflow: hidden; }
+#party-frame .pf-b i { position: absolute; left: 0; display: block; transition: width .3s; }
+#party-frame .pf-b i.hp { top: 0; height: 3px; background: linear-gradient(90deg, #c0262a, #ff5a4a); }
+#party-frame .pf-b i.mp { bottom: 0; height: 1px; background: #4fa3ff; }
+body.touch #party-frame { font-size: 10.5px; padding: 3px 4px; }

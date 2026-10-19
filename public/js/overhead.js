@@ -90,7 +90,40 @@
     floats.push({ x: x + (Math.random() * 24 - 12), y, text: String(text), kind, color, t0: performance.now(), vx: (Math.random() - 0.5) * 30 });
     if (floats.length > 90) floats.shift();
   }
+  // Chữ có viền vẽ lại mỗi khung (strokeText) rất tốn trên điện thoại: chữ cố định (tên, danh hiệu, nhãn quái)
+  // được vẽ sẵn thành ảnh nhỏ theo độ phóng hiện tại rồi chỉ drawImage. Chữ đổi cỡ liên tục (số sát thương nảy) vẽ trực tiếp.
+  const tcache = new Map(), mcv = document.createElement('canvas').getContext('2d');
+  function textSprite(text, size, fill, stroke, weight, lw, sc) {
+    const k = text + '|' + size + '|' + fill + '|' + stroke + '|' + weight + '|' + lw + '|' + sc;
+    let c = tcache.get(k);
+    if (c) return c;
+    const font = `${weight} ${size}px system-ui, sans-serif`;
+    mcv.font = font;
+    const w = mcv.measureText(text).width, pad = lw + 2, cw = w + pad * 2, ch = size * 1.5 + pad * 2;
+    c = document.createElement('canvas'); c.width = Math.max(1, Math.ceil(cw * sc)); c.height = Math.max(1, Math.ceil(ch * sc));
+    const x = c.getContext('2d');
+    x.scale(sc, sc); x.font = font; x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineJoin = 'round';
+    if (stroke && lw) { x.lineWidth = lw; x.strokeStyle = stroke; x.strokeText(text, cw / 2, ch / 2); }
+    x.fillStyle = fill; x.fillText(text, cw / 2, ch / 2);
+    c._w = cw; c._h = ch;
+    if (tcache.size > 600) tcache.clear();
+    tcache.set(k, c);
+    return c;
+  }
+  const wcache = new Map();   // độ rộng chữ (đặt font + measureText mỗi khung cũng tốn)
+  function textW(font, text) {
+    const k = font + '|' + text;
+    let w = wcache.get(k);
+    if (w == null) { mcv.font = font; w = mcv.measureText(text).width; if (wcache.size > 800) wcache.clear(); wcache.set(k, w); }
+    return w;
+  }
+  function cachedText(ctx, text, x, y, size, fill, stroke, weight, lw) {
+    const sc = Math.max(1, Math.round(ctx.getTransform().a * 4) / 4);
+    const c = textSprite(text, size, fill, stroke, weight, lw, sc);
+    ctx.drawImage(c, x - c._w / 2, y - c._h / 2, c._w, c._h);
+  }
   function outlined(ctx, text, x, y, size, fill, stroke, weight) {
+    if (typeof fill === 'string' && Number.isInteger(size)) return cachedText(ctx, text, x, y, size, fill, stroke, weight || 900, Math.max(3, size / 5));
     ctx.font = `${weight || 900} ${size}px system-ui, sans-serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(3, size / 5); ctx.strokeStyle = stroke; ctx.strokeText(text, x, y);
@@ -218,15 +251,13 @@
     if (pk) nameCol = pk === 2 ? '#c00010' : '#ff5a5a';
     else if (o.party) nameCol = '#5dff8a';
     const name = (pk ? '☠ ' : '') + (o.party ? '👥 ' : '') + (o.gm ? '[GM] ' : '') + o.name + (o.level ? ' Lv' + o.level : '');
-    ctx.font = 'bold 12px system-ui, sans-serif';
-    const w = ctx.measureText(name).width;
+    const w = textW('bold 12px system-ui, sans-serif', name);
     outlined(ctx, name, x, top - 10, 12, nameCol, '#000', 700);
     if (o.rank) drawBadge(ctx, x - w / 2 - 10, top - 11, o.rank);
     // Võ Lâm Minh Chủ: danh hiệu riêng vàng rực thay cho danh hiệu lực chiến
     if (o.mc) {
       const now = performance.now(), mt = '👑【Võ Lâm Minh Chủ】';
-      ctx.font = '900 11px system-ui, sans-serif';
-      const mw = ctx.measureText(mt).width;
+      const mw = textW('900 11px system-ui, sans-serif', mt);
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
       const g = ctx.createLinearGradient(x - mw / 2, 0, x + mw / 2, 0);
       const sh = (now / 1500) % 1;
@@ -239,8 +270,7 @@
     }
     // danh hiệu: chữ nhỏ có khung, bậc cao có viền sáng
     const tt = '【' + t.name + '】';
-    ctx.font = '700 10px system-ui, sans-serif';
-    const tw = ctx.measureText(tt).width;
+    const tw = textW('700 10px system-ui, sans-serif', tt);
     if (t.tier >= 3) {
       ctx.save(); ctx.globalAlpha = 0.35 + Math.sin(performance.now() / 300) * 0.1; ctx.fillStyle = t.color;
       ctx.fillRect(Math.round(x - tw / 2 - 2), top - 29, Math.round(tw + 4), 12); ctx.restore();
@@ -330,5 +360,5 @@
       FX.emit(1, x + (Math.random() - 0.5) * 30, y - 4, { speed: 6, vy: -45, life: 700, size: 2, color: cols[Math.floor(Math.random() * cols.length)] });
   }
 
-  window.Overhead = { ST, mask, drawUnder, drawOver, add, drawFloats, drawBubble, TITLES, title, relColor, pkLevel, drawBadge, drawNameplate, drawWings, drawPkAura, drawEnhance };
+  window.Overhead = { cachedText, ST, mask, drawUnder, drawOver, add, drawFloats, drawBubble, TITLES, title, relColor, pkLevel, drawBadge, drawNameplate, drawWings, drawPkAura, drawEnhance };
 })();

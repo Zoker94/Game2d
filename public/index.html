@@ -129,7 +129,7 @@
             <button id="btn-tlist" class="qb" title="Chọn mục tiêu (V)"><i>🎯</i><span>Mục tiêu</span></button>
             <button id="btn-auto" class="qb" title="Tự động đánh (R)"><i>🤖</i><span>Tự động</span></button>
           </div>
-          <canvas id="minimap" width="150" height="112"></canvas>
+          <div id="mini-wrap"><canvas id="minimap" width="150" height="112"></canvas><button id="btn-menu-min" title="Thu gọn / mở các nút menu">▴<i class="dot hidden"></i></button></div>
         </div>
         <div id="menu-buttons">
           <button data-panel="inventory" title="Túi đồ (I)">🎒<span>Túi</span></button>
@@ -149,6 +149,7 @@
       </div>
 
       <div id="tracker">
+        <button id="trk-min" title="Thu gọn khung nhiệm vụ">−</button>
         <div id="tutorial-box" class="hidden"></div>
         <div id="daily-box"></div>
       </div>

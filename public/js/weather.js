@@ -50,7 +50,7 @@
   }
 
   // ---------- vẽ ----------
-  function draw(ctx, cw, ch, dpr, now, cam, zoom) {
+  function draw(ctx, cw, ch, dpr, now, cam, zoom, fxq) {
     const dt = Math.min(50, lastT ? now - lastT : 16) / 16.67; lastT = now;
     // đổi thời tiết: giảm dần cái cũ rồi tăng cái mới
     if (pending) { level = Math.max(0, level - 0.012 * dt); if (level === 0) { kind = pending; pending = null; drops = []; flakes = []; streaks = []; bits = []; splashes = []; } }
@@ -63,7 +63,7 @@
     lastCam = cam && { x: cam.x, y: cam.y };
     ctx.save();
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const area = W * H / 100000;
+    const area = W * H / 100000 * (fxq || 1);   // máy yếu: ít hạt mưa / tuyết hơn
     if (kind === 'rain' || kind === 'storm') drawRain(ctx, W, H, dt, dx, dy, area, now);
     if (kind === 'snow' || kind === 'blizzard') drawSnow(ctx, W, H, dt, dx, dy, area, now);
     if (kind === 'wind' || kind === 'blizzard' || kind === 'storm') drawWind(ctx, W, H, dt, dx, dy, area, now);

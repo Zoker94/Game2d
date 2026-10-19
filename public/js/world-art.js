@@ -314,19 +314,24 @@
   // ---------- ánh sáng & tông màu (toạ độ màn hình) ----------
   let vigCanvas = null, vigKey = '';
   const TINT = { town: ['#ffcf80', 0.08], plains: ['#ffe0a0', 0.07], bamboo: ['#a0ffb0', 0.06], mountain: ['#ffb070', 0.08], desert: ['#ffb050', 0.1], snow: ['#a0d0ff', 0.1], demon: ['#ff2040', 0.12], arena: ['#ffd090', 0.06] };
-  function overlay(ctx, cw, ch) {
-    const k = cw + 'x' + ch;
-    if (vigKey !== k) {
-      vigKey = k; vigCanvas = document.createElement('canvas'); vigCanvas.width = cw; vigCanvas.height = ch;
-      const g = vigCanvas.getContext('2d');
-      const grd = g.createRadialGradient(cw / 2, ch / 2, Math.min(cw, ch) * 0.35, cw / 2, ch / 2, Math.max(cw, ch) * 0.75);
-      grd.addColorStop(0, 'rgba(0,0,0,0)'); grd.addColorStop(1, 'rgba(10,5,20,0.55)');
-      g.fillStyle = grd; g.fillRect(0, 0, cw, ch);
-    }
+  // lớp ám màu theo vùng + tối viền. cheap: gộp sẵn màu ám vào ảnh tối viền (1 lần vẽ, không dùng hòa trộn 'overlay'
+  // vốn rất nặng trên điện thoại); ảnh dựng ở 1/4 độ phân giải rồi phóng lên vì chỉ là dải màu mịn.
+  function overlay(ctx, cw, ch, cheap) {
     const [tc, ta] = TINT[theme] || TINT.plains;
+    const k = cw + 'x' + ch + (cheap ? ':' + theme : '');
+    if (vigKey !== k) {
+      vigKey = k; vigCanvas = document.createElement('canvas');
+      const sw = Math.max(32, cw >> 2), sh = Math.max(32, ch >> 2);
+      vigCanvas.width = sw; vigCanvas.height = sh;
+      const g = vigCanvas.getContext('2d');
+      if (cheap) { g.globalAlpha = ta; g.fillStyle = tc; g.fillRect(0, 0, sw, sh); g.globalAlpha = 1; }
+      const grd = g.createRadialGradient(sw / 2, sh / 2, Math.min(sw, sh) * 0.35, sw / 2, sh / 2, Math.max(sw, sh) * 0.75);
+      grd.addColorStop(0, 'rgba(0,0,0,0)'); grd.addColorStop(1, 'rgba(10,5,20,0.55)');
+      g.fillStyle = grd; g.fillRect(0, 0, sw, sh);
+    }
     ctx.save();
-    ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = ta * 2; ctx.fillStyle = tc; ctx.fillRect(0, 0, cw, ch);
-    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.drawImage(vigCanvas, 0, 0);
+    if (!cheap) { ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = ta * 2; ctx.fillStyle = tc; ctx.fillRect(0, 0, cw, ch); }
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.imageSmoothingEnabled = true; ctx.drawImage(vigCanvas, 0, 0, cw, ch);
     ctx.restore();
   }
 

@@ -209,6 +209,18 @@
     $('tutorial-box').onclick = () => { const t = G.me && G.me.tutorial; if (t && t.complete) emit('tutorialClaim'); else UI.openPanel('quests'); };
     $('daily-box').onclick = () => UI.openPanel('quests', { tab: 'daily' });
     if (Input.isTouch) document.body.classList.add('show-tracker');
+    // nút thu gọn cụm nút menu cạnh bản đồ mini, và thu gọn khung nhiệm vụ (nhớ trên máy)
+    const lsGet = k => { try { return localStorage.getItem(k) === '1'; } catch (e) { return false; } };
+    const lsSet = (k, v) => { try { localStorage.setItem(k, v ? '1' : '0'); } catch (e) {} };
+    const setMenuMin = v => { document.body.classList.toggle('menu-min', v); $('btn-menu-min').textContent = v ? '☰' : '▴'; $('btn-menu-min').appendChild(menuDot); lsSet('vl_menu_min', v); };
+    const menuDot = $('btn-menu-min').querySelector('.dot');
+    $('btn-menu-min').onclick = e => { e.stopPropagation(); setMenuMin(!document.body.classList.contains('menu-min')); G.sfx && G.sfx('click'); };
+    setMenuMin(lsGet('vl_menu_min'));
+    // khi đang thu gọn mà có thông báo (sự kiện, quà, điểm tiềm năng...) thì hiện chấm đỏ trên nút
+    setInterval(() => { const any = [...document.querySelectorAll('#menu-buttons .dot')].some(d => !d.classList.contains('hidden')); menuDot.classList.toggle('hidden', !(any && document.body.classList.contains('menu-min'))); }, 1000);
+    const setTrkMin = v => { document.body.classList.toggle('trk-min', v); $('trk-min').textContent = v ? '+' : '−'; $('trk-min').title = v ? 'Mở rộng khung nhiệm vụ' : 'Thu gọn khung nhiệm vụ'; lsSet('vl_trk_min', v); };
+    $('trk-min').onclick = e => { e.stopPropagation(); setTrkMin(!document.body.classList.contains('trk-min')); };
+    setTrkMin(lsGet('vl_trk_min'));
     buildSkillButtons();
   };
 
@@ -386,21 +398,25 @@
     // hồi né chiêu
     const dc = G.dodgeCd, dr = dc && dc.until > now ? (dc.until - now) / dc.total : 0;
     const dtx = dc && dc.until > now && !dc.pending ? Math.ceil((dc.until - now) / 1000) : '';
-    for (const el of document.querySelectorAll('#dodge-sk, #btn-dodge')) {
-      const o = el.querySelector('.cdo'), t = el.querySelector('.cdt');
-      if (o) o.style.height = (dc && dc.pending ? 0 : dr * 100) + '%';
-      if (t && t.textContent != dtx) t.textContent = dtx;
-      el.classList.toggle('ready', !dr);
+    // phần tử nút được nhớ lại, chỉ tìm lại khi thanh kỹ năng dựng lại (tránh querySelectorAll mỗi khung)
+    const bar = $('skillbar');
+    if (!UI._fc || UI._fc.bar !== bar.firstChild || now - UI._fc.t > 1000) {
+      UI._fc = { bar: bar.firstChild, t: now, dodge: [...document.querySelectorAll('#dodge-sk, #btn-dodge')].map(el => [el, el.querySelector('.cdo'), el.querySelector('.cdt')]), sk: {} };
+      document.querySelectorAll('#skillbar .skill[data-idx], .act.sk[data-idx]').forEach(el => (UI._fc.sk[el.dataset.idx] = UI._fc.sk[el.dataset.idx] || []).push([el, el.querySelector('.cdo'), el.querySelector('.cdt')]));
+    }
+    for (const [el, o, t] of UI._fc.dodge) {
+      if (o) { const hh = (dc && dc.pending ? 0 : Math.round(dr * 100)) + '%'; if (o._h !== hh) { o.style.height = hh; o._h = hh; } }
+      if (t && t._t !== dtx) { t.textContent = dtx; t._t = dtx; }
+      if (el._r !== !dr) { el.classList.toggle('ready', !dr); el._r = !dr; }
     }
     // hồi chiêu
     G.mySkills().forEach((s, i) => {
       const cd = G.skillCd(i);
       const r = cd ? Math.max(0, (cd.until - now) / cd.total) : 0;
       const txt = cd && cd.until > now && cd.total > 1000 ? Math.ceil((cd.until - now) / 1000) : '';
-      for (const el of document.querySelectorAll(`#skillbar .skill[data-idx="${i}"], .act.sk[data-idx="${i}"]`)) {
-        const o = el.querySelector('.cdo'), t = el.querySelector('.cdt');
-        if (o) o.style.height = (r * 100) + '%';
-        if (t && t.textContent != txt) t.textContent = txt;
+      for (const [, o, t] of UI._fc.sk[i] || []) {
+        if (o) { const hh = Math.round(r * 100) + '%'; if (o._h !== hh) { o.style.height = hh; o._h = hh; } }   // chỉ ghi khi đổi: đỡ vẽ lại DOM mỗi khung
+        if (t && t._t !== txt) { t.textContent = txt; t._t = txt; }
       }
     });
     if (!UI._lastBuff || now - UI._lastBuff > 500) {
@@ -899,6 +915,9 @@
         <label><input type="checkbox" id="au-music" ${GameAudio.state.music ? 'checked' : ''}> 🎵 Nhạc nền võ lâm</label> <input type="range" id="au-mvol" min="0" max="1" step="0.05" value="${GameAudio.state.musicVol}" style="width:110px;vertical-align:middle"><br>
         <label><input type="checkbox" id="au-sfx" ${GameAudio.state.sfx ? 'checked' : ''}> 🔊 Âm thanh hiệu ứng</label> <input type="range" id="au-svol" min="0" max="1" step="0.05" value="${GameAudio.state.sfxVol}" style="width:110px;vertical-align:middle"><br>
         <label><input type="checkbox" data-set="shake" ${s.shake ? 'checked' : ''}> Rung màn hình khi bị đánh</label>
+        <div class="row gfx-row" style="justify-content:flex-start;margin-top:6px;align-items:center">🖥️ Đồ họa
+          ${[['auto', 'Tự động'], ['high', 'Cao'], ['medium', 'Vừa'], ['low', 'Thấp (mượt nhất)']].map(([k, n]) => `<button class="btn small ${(s.gfx || 'auto') === k ? 'primary' : ''}" data-gfx="${k}">${n}</button>`).join('')}
+          <span class="small muted">Độ nét hiện tại: ${Math.round(G.gfx.scale * 100)}%${G.gfx.lowFx ? ' · tiết kiệm hiệu ứng' : ''}</span></div>
         <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn small" id="set-fs">⛶ Toàn màn hình</button><button class="btn small" id="set-online">👥 Người chơi online</button>${G.user && G.user.owner ? '<button class="btn small primary" id="set-admin">🛡️ Trang quản trị</button>' : ''}</div></div>
       <div class="card small"><h4>Điều khiển</h4>
         <div><b>PC:</b> WASD/mũi tên di chuyển · Nhấp chuột để đi/chọn mục tiêu · 1/Space đánh · 2–7 các ô kỹ năng (tự gán trong bảng Võ Công, phím K) · Z/X thuốc · T cưỡi thú · Tab đổi mục tiêu · F nói chuyện NPC · R tự động · Enter chat · I/C/M/J/G/O/L mở bảng · Esc đóng</div>
@@ -909,6 +928,7 @@
         ${G.user && G.user.username ? `<div class="row" style="justify-content:flex-start;margin-top:6px"><input id="pw-old" type="password" placeholder="Mật khẩu cũ" style="width:130px"><input id="pw-new" type="password" placeholder="Mật khẩu mới" style="width:130px"><button class="btn small" id="pw-change">Đổi mật khẩu</button></div>` : ''}
         <button class="btn small primary" id="set-logout" style="margin-top:6px">Đăng xuất</button></div>`;
     body.querySelectorAll('[data-set]').forEach(c => c.onchange = () => { G.settings[c.dataset.set] = c.checked; G.saveSettings(); });
+    body.querySelectorAll('[data-gfx]').forEach(b => b.onclick = () => { G.setGfx(b.dataset.gfx); UI.refreshPanel(); });
     $('set-fs').onclick = () => Input.toggleFullscreen();
     $('au-music').onchange = e => { GameAudio.set('music', e.target.checked); UI.updateMusicBtn(); };
     $('au-sfx').onchange = e => GameAudio.set('sfx', e.target.checked);
