@@ -338,6 +338,7 @@
     Party.bind(s);
     Travel.bind(s);
     Dungeon.bind(s);
+    SectUI.bind(s);
     s.on('events', d => { G.events = d; UI.onEvents(d); });
     s.on('daily', d => { G.daily = d; UI.updateDaily(); });
     s.on('dropAdd', d => { if (d.om) d.ownUntil = performance.now() + d.om; G.drops.set(d.id, d); });
@@ -1071,7 +1072,7 @@
 
     // Thực thể sắp xếp theo y
     const list = [];
-    for (let y = Math.max(0, y0 - 1); y <= Math.min(m.h - 1, y1 + 3); y++) for (let x = Math.max(0, x0 - 1); x <= Math.min(m.w - 1, x1 + 1); x++) {
+    for (let y = Math.max(0, y0 - 1); y <= Math.min(m.h - 1, y1 + 4); y++) for (let x = Math.max(0, x0 - 8); x <= Math.min(m.w - 1, x1 + 1); x++) {   // lùi 8 ô: công trình rộng neo ở góc trái
       const t = m.tiles[y * m.w + x];
       if (Sprites.TALL.has(t)) list.push({ y: (y + 1) * TILE - 2, k: 'tall', t, tx: x, ty: y });
     }

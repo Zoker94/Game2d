@@ -31,7 +31,7 @@
     }
     // bản đồ không có cổng (Đại Hội Võ Lâm): đặt cạnh Tương Dương, nối nét đứt
     const extra = [];
-    for (const id in maps) if (!pos[id]) {
+    for (const id in maps) if (!pos[id] && !maps[id].sect) {   // bản đồ môn phái đi bằng Xa Phu, không vẽ trên bản đồ thế giới
       for (const [x, y] of [[-1, 1], [-1, -1], [0, 2], [-2, 0]]) if (!used.has(x + ',' + y)) { put(id, x, y); extra.push([id, 'tuong_duong']); break; }
     }
     const xs = Object.values(pos).map(p => p[0]), ys = Object.values(pos).map(p => p[1]);
@@ -73,6 +73,7 @@
     svg += '</svg>';
     let nodes = '';
     for (const id in maps) {
+      if (!px[id]) continue;
       const m = maps[id], [x, y] = px[id];
       const lock = G.me && m.minLv > 1 && G.me.level < m.minLv;
       const tag = m.safe && !m.tourney ? '🏯 An toàn' : m.tourney ? '⚔️ Đại Hội' : m.pvp ? '⚔️ PK' : `Cấp ${m.lv}`;
@@ -168,5 +169,12 @@
     if (el._h !== html) { el.innerHTML = html; el._h = html; }
   }, 500);
 
-  window.WorldMap = { open, close, toggle: () => isOpen() ? close() : open(), drawArrow, onEnterMap, stop, get open_() { return isOpen(); } };
+  // dẫn đường tới bản đồ (dùng cho nhiệm vụ): false nếu không có đường qua cổng
+  function navTo(id, auto) {
+    if (!G.data.maps[id] || !G.map) return false;
+    if (G.map.id !== id && !route(G.map.id, id)) return false;
+    nav.to = id; nav.auto = !!auto; UI.toast(`🧭 Dẫn đường tới ${G.data.maps[id].name}${auto ? ' (tự chạy)' : ''}`, 'info'); step();
+    return true;
+  }
+  window.WorldMap = { navTo, open, close, toggle: () => isOpen() ? close() : open(), drawArrow, onEnterMap, stop, get open_() { return isOpen(); } };
 })();

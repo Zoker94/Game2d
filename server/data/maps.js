@@ -7,7 +7,7 @@ const SOLID = new Set([T.WATER, T.TREE, T.ROCK, T.WALL, T.BAMBOO, T.LAVA, T.CACT
 const TILE = 64;
 
 const THEMES = {
-  town:   { base: T.GRASS, border: T.WALL, obstacles: [[T.TREE, 1]], deco: [[T.FLOWER, 1]], density: 0.0, water: 1, path: T.FLOOR },
+  town:   { base: T.GRASS, border: T.WALL, obstacles: [[T.TREE, 1]], deco: [[T.FLOWER, 1]], density: 0.0, water: 0, path: T.FLOOR },
   plains: { base: T.GRASS, border: T.TREE, obstacles: [[T.TREE, 3], [T.ROCK, 1]], deco: [[T.FLOWER, 2], [T.PATH, 1]], density: 0.16, water: 3, path: T.PATH },
   bamboo: { base: T.GRASS, border: T.BAMBOO, obstacles: [[T.BAMBOO, 4], [T.TREE, 1]], deco: [[T.FLOWER, 1]], density: 0.22, water: 2, path: T.PATH },
   mountain:{ base: T.PATH, border: T.ROCK, obstacles: [[T.ROCK, 3], [T.TREE, 2]], deco: [[T.GRASS, 3]], density: 0.2, water: 1, path: T.FLOOR },
@@ -259,6 +259,61 @@ const MAP_DEFS = {
     npcs: [],
     spawns: [['doan_hon_thi', 8], ['quy_vuong', 8], ['quy_vuong', 6], ['thien_ma_ve', 7]]
   },
+  // ---- Bản đồ môn phái: đi bằng Xa Phu; Trưởng Môn giao nhiệm vụ môn phái ----
+  thieu_lam_tu: {
+    name: 'Thiếu Lâm Tự', theme: 'mountain', w: 44, h: 34, seed: 201, lv: '1+', sect: 'thieulam', noPk: true, arch: { left: 'tower', right: 'pavilion', centre: 'censer' },
+    portals: [],
+    npcs: [{ id: 'chuong_mon_thieulam', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
+  },
+  thien_vuong_dao: {
+    name: 'Thiên Vương Đảo', theme: 'river', w: 44, h: 34, seed: 203, lv: '1+', sect: 'thienvuong', noPk: true, arch: { water: 1, left: 'tower', right: 'pavilion', centre: 'brazier' },
+    portals: [],
+    npcs: [{ id: 'chuong_mon_thienvuong', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
+  },
+  duong_gia_bao: {
+    name: 'Đường Gia Bảo', theme: 'bamboo', w: 44, h: 34, seed: 205, lv: '1+', sect: 'duongmon', noPk: true, arch: { left: 'tower', right: 'pavilion', centre: 'brazier' },
+    portals: [],
+    npcs: [{ id: 'chuong_mon_duongmon', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
+  },
+  van_doc_coc: {
+    name: 'Vạn Độc Cốc', theme: 'tomb', w: 44, h: 34, seed: 207, lv: '1+', sect: 'ngudoc', noPk: true, arch: { left: 'hut', right: 'hut', centre: 'cauldron' },
+    portals: [],
+    npcs: [{ id: 'chuong_mon_ngudoc', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
+  },
+  nga_my_son: {
+    name: 'Nga My Sơn', theme: 'plains', w: 44, h: 34, seed: 209, lv: '1+', sect: 'ngamy', noPk: true, arch: { water: 1, left: 'tower', right: 'pavilion', centre: 'censer' },
+    portals: [],
+    npcs: [{ id: 'chuong_mon_ngamy', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
+  },
+  thuy_yen_mon: {
+    name: 'Thúy Yên Môn', theme: 'river', w: 44, h: 34, seed: 211, lv: '1+', sect: 'thuyyen', noPk: true, arch: { water: 1, left: 'pavilion', right: 'pavilion', centre: 'fountain' },
+    portals: [],
+    npcs: [{ id: 'chuong_mon_thuyyen', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
+  },
+  cai_bang_da: {
+    name: 'Cái Bang Tổng Đà', theme: 'ruins', w: 44, h: 34, seed: 213, lv: '1+', sect: 'caibang', noPk: true, arch: { left: 'hut', right: 'hut', centre: 'bonfire' },
+    portals: [],
+    npcs: [{ id: 'chuong_mon_caibang', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
+  },
+  vo_dang_son: {
+    name: 'Võ Đang Sơn', theme: 'mountain', w: 44, h: 34, seed: 215, lv: '1+', sect: 'vodang', noPk: true, arch: { left: 'pavilion', right: 'tower', centre: 'taiji' },
+    portals: [],
+    npcs: [{ id: 'chuong_mon_vodang', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
+  },
+  con_lon_phai: {
+    name: 'Côn Lôn Phái', theme: 'snow', w: 44, h: 34, seed: 217, lv: '1+', sect: 'conlon', noPk: true, arch: { left: 'tower', right: 'pavilion', centre: 'brazier' },
+    portals: [],
+    npcs: [{ id: 'chuong_mon_conlon', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
+  },
   dai_hoi: {
     name: 'Đại Hội Võ Lâm', theme: 'arena', w: 40, h: 30, seed: 91, lv: '20+', safe: true, tourney: true, minLv: 20,
     portals: [],
@@ -350,15 +405,51 @@ function generate(id, def = MAP_DEFS[id]) {
     }
   };
 
-  if (def.theme === 'town') {
+  const buildings = [], props = [];
+  // công trình nhiều ô: các ô bên dưới là HOUSE (vật cản), máy khách vẽ một hình lớn cho cả công trình
+  function building(x, y, bw, bh, kind, style) {
+    for (let yy = 0; yy < bh; yy++) for (let xx = 0; xx < bw; xx++) set(x + xx, y + yy, T.HOUSE);
+    buildings.push({ x, y, w: bw, h: bh, kind, style, v: buildings.length });
+  }
+  if (def.sect) layoutSect();
+  else if (def.theme === 'town') {
     // Quảng trường đá ở giữa thành
     for (let y = 7; y <= h - 8; y++) for (let x = 7; x <= w - 8; x++) set(x, y, T.FLOOR);
     for (let y = 9; y <= h - 10; y++) for (let x = 9; x <= w - 10; x++) set(x, y, (x + y) % 7 === 0 ? T.FLOWER : T.FLOOR);
-    // Nhà cửa quanh thành
-    const houses = [[3, 3], [9, 3], [22, 3], [28, 3], [3, 21], [9, 22], [22, 22], [28, 21], [3, 12], [30, 16]];
-    for (const [hx, hy] of houses) for (let y = 0; y < 2; y++) for (let x = 0; x < 3; x++) set(hx + x, hy + y, T.HOUSE);
+    // Nhà cửa quanh thành: mỗi căn là một công trình (máy khách vẽ nguyên căn), kiểu nhà khác nhau theo vị trí
+    const houses = [[3, 3, 'house'], [9, 3, 'shop'], [22, 3, 'shop'], [28, 3, 'house'], [3, 21, 'house'], [9, 22, 'shop'], [22, 22, 'tavern'], [28, 21, 'house'], [3, 12, 'tavern'], [30, 16, 'house']];
+    for (const [hx, hy, kind] of houses) building(hx, hy, 3, 2, kind, 'town');
     // Hồ sen
     for (let y = -1; y <= 1; y++) for (let x = -2; x <= 2; x++) set(cx + x + 0, cy + y + 1, T.WATER);
+  }
+  // Bản đồ môn phái: chính điện ở trên, quảng trường lát đá, điện hai bên, tháp / đình, nhà đệ tử, bãi luyện công
+  function layoutSect() {
+    const st = def.sect, A = def.arch || {};
+    for (let y = 3; y < h - 3; y++) for (let x = 6; x < w - 6; x++) set(x, y, th.base);   // dọn khoảng giữa
+    // rìa bản đồ: rừng cây / trúc / tuyết tùng dày theo cảnh môn phái
+    const tree = { snow: T.PINE, bamboo: T.BAMBOO, tomb: T.DEADTREE }[def.theme] || T.TREE;
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const edge = x < 5 || x > w - 6 || y < 3;
+      if (edge && !(y >= 24 && x >= cx - 2 && x <= cx + 2) && r() < (x < 3 || x > w - 4 || y < 2 ? 0.75 : 0.4)) set(x, y, tree);
+    }
+    for (let y = 9; y <= 25; y++) for (let x = 13; x <= 30; x++) set(x, y, T.FLOOR);      // quảng trường
+    for (let x = 6; x <= 37; x++) { set(x, 12, T.FLOOR); set(x, 22, T.FLOOR); }          // đường ngang nối các điện
+    for (let y = 26; y < h - 1; y++) for (let x = cx - 1; x <= cx + 1; x++) set(x, y, T.FLOOR);   // đường vào
+    for (let x = cx - 3; x <= cx + 2; x++) set(x, 8, T.FLOOR);                            // bậc trước chính điện
+    if (A.water) for (const [qx, qy] of [[15, 15], [26, 15]]) for (let y = 0; y < 3; y++) for (let x = 0; x < 3; x++) set(qx + x, qy + y, T.WATER);   // hồ hai bên
+    building(cx - 6, 5, 12, 3, 'hall', st);
+    building(6, 9, 6, 2, 'side', st);
+    building(32, 9, 6, 2, 'side', st);
+    building(7, 14, 3, 3, A.left || 'tower', st);
+    building(33, 15, 3, 2, A.right || 'pavilion', st);
+    building(6, 19, 5, 2, 'house', st);
+    building(33, 19, 5, 2, 'house', st);
+    building(6, 24, 5, 2, 'house', st);
+    building(33, 24, 5, 2, 'house', st);
+    for (const [tx, ty] of [[13, 10], [30, 10], [13, 17], [30, 17], [13, 24], [30, 24]]) set(tx, ty, tree);   // cây trồng quanh sân
+    for (const dy of [11, 20, 24]) for (const dx of [-4, 4]) props.push({ x: cx + dx, y: dy, k: 'stonelamp' });   // đèn đá dọc trục chính
+    props.push({ x: cx, y: 16, k: A.centre || 'censer' }, { x: 15, y: 8, k: 'banner' }, { x: 28, y: 8, k: 'banner' }, { x: 14, y: 25, k: 'lantern' }, { x: 29, y: 25, k: 'lantern' },
+      { x: cx - 2, y: 27, k: 'lantern' }, { x: cx + 2, y: 27, k: 'lantern' });
   }
   if (def.theme === 'arena') {
     for (let y = 5; y < h - 5; y++) for (let x = 6; x < w - 6; x++) set(x, y, T.FLOOR);
@@ -434,7 +525,8 @@ function generate(id, def = MAP_DEFS[id]) {
     const x = i % w, y = (i / w) | 0;
     return portals.every(p => Math.abs(p.x - x) + Math.abs(p.y - y) > 9) && def.npcs.every(n => Math.abs(n.x - x) + Math.abs(n.y - y) > 7);
   });
-  const spawns = def.spawns.map(([mon, count], idx) => {
+  const spawns = def.spawns.map(([mon, count, fx, fy, fr], idx) => {
+    if (fx != null) return { mon, count, x: fx, y: fy, r: fr || 2 };   // vị trí đặt sẵn (bãi luyện mộc nhân)
     const pool = farFromPortals.length ? farFromPortals : walkable;
     // chia vùng theo thứ tự để bãi quái cấp thấp gần cổng vào
     const sorted = pool.slice().sort((a, b) => (a % w) - (b % w));
@@ -448,7 +540,7 @@ function generate(id, def = MAP_DEFS[id]) {
 
   return {
     id, name: def.name, theme: def.theme, w, h, tiles: g, safe: !!def.safe, pvp: !!def.pvp, tourney: !!def.tourney, minLv: def.minLv || 1, lv: def.lv, tier: def.tier ?? 0, town: !!def.town,
-    portals, npcs: def.npcs, spawns, walkable,
+    portals, npcs: def.npcs, spawns, walkable, buildings, props, sect: def.sect || null, noPk: !!def.noPk,
     boss: { x: bossSpot % w, y: (bossSpot / w) | 0 },
     center: { x: cx, y: cy }
   };

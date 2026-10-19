@@ -1091,6 +1091,8 @@
     if (d.action === 'escort') { Escort.open(d); return; }
     if (d.action === 'daihoi') { DaiHoi.open(d); return; }
     if (d.action === 'dungeon') { Dungeon.open(d); return; }
+    if (d.action === 'sect') { SectUI.open(d); return; }
+    if (d.action === 'sectshop') { SectUI.openShop(d); return; }
     if (d.action === 'escortDest') { UI.toast(G.me.escort && G.me.escort.id ? 'Đưa xe tiêu tới sát bên Phân Đà để giao tiêu!' : d.talk); return; }
     npcData = d;
     panel = 'npc';
@@ -1126,9 +1128,10 @@
         invGrid(body, { filter: s => G.data.items[s.id].type === 'equip' }) + itemActions({ enhance: true });
     } else if (d.teleports) {
       // nhóm: thành trấn rồi bãi luyện công; chưa đủ cấp thì mờ đi
-      const row = t => { const lock = G.me.level < (t.minLv || 1); return `<div class="li ${lock ? 'locked' : ''}"><div class="grow"><b>${t.town ? '🏯 ' : ''}${esc(t.name)}</b><div class="sub">Cấp ${t.lv}${t.minLv > 1 ? ` · <span class="${lock ? 'warn' : ''}">Yêu cầu cấp ${t.minLv}</span>` : ''}</div></div><button class="btn small green" data-tp="${t.map}" ${G.map.id === t.map || lock ? 'disabled' : ''}>${t.price ? fmt(t.price) + ' 💰' : 'Miễn phí'}</button></div>`; };
+      const row = t => { const lock = G.me.level < (t.minLv || 1); return `<div class="li ${lock ? 'locked' : ''}"><div class="grow"><b>${t.town ? '🏯 ' : ''}${esc(t.name)}</b><div class="sub">${t.sect ? esc(t.lv) + (t.mine ? ' · Bổn phái' : '') : 'Cấp ' + t.lv}${t.minLv > 1 ? ` · <span class="${lock ? 'warn' : ''}">Yêu cầu cấp ${t.minLv}</span>` : ''}</div></div><button class="btn small green" data-tp="${t.map}" ${G.map.id === t.map || lock ? 'disabled' : ''}>${t.price ? fmt(t.price) + ' 💰' : 'Miễn phí'}</button></div>`; };
       html += `<h4 class="tp-h">🏯 Thành trấn</h4><div class="list">${d.teleports.filter(t => t.town).map(row).join('')}</div>
-        <h4 class="tp-h">⚔️ Bãi luyện công</h4><div class="list">${d.teleports.filter(t => !t.town).map(row).join('')}</div>`;
+        <h4 class="tp-h">⚔️ Bãi luyện công</h4><div class="list">${d.teleports.filter(t => !t.town && !t.sect).map(row).join('')}</div>
+        <h4 class="tp-h">🏮 Môn phái</h4><div class="list">${d.teleports.filter(t => t.sect).map(t => row(Object.assign({}, t, { name: (t.mine ? '⭐ ' : '') + t.name }))).join('')}</div>`;
     }
     body.innerHTML = html;
     const c = $('npc-cv').getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(Sprites.npcSprite(d.sprite, d.color, 0), 0, 0);

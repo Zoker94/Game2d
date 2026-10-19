@@ -522,6 +522,29 @@ def rabbit(C, pal, kind, i, ex):
         parts.append(fl)
     return compose(C, parts)
 
+# ---------------- MỘC NHÂN LUYỆN CÔNG (cọc gỗ có tay, đế chữ thập) ----------------
+def dummy(C, pal, kind, i, ex):
+    wood, dk, rope = '#a0743e', '#6a4a24', '#d8c890'
+    sh = {'hurt': 2.5, 'atk': [0, 1.5, -1.5, 0][i % 4]}.get(kind, 0) if kind != 'dead' else 0
+    if kind == 'hurt': sh = 2.5
+    def B(x, y): return rot((x, y), (0, 0), (sh * 0.03) if kind != 'dead' else 1.45)
+    parts = []
+    base = Part(C, 'v', dk)
+    base.poly([B(-12, 0), B(12, 0), B(9, -3), B(-9, -3)], dk); base.cap(B(-11, -1.5), B(11, -1.5), 3, dk)
+    post = Part(C, 'h', dk)
+    post.cap(B(0, -2), B(0, -30), 6, wood, 5.5)
+    post.ell(*B(0, -34), 5.2, 5, wood)                                   # đầu
+    post.cap(B(-12, -24), B(12, -24), 2.6, wood)                         # tay ngang
+    post.cap(B(-9, -16), B(-15, -12), 2.4, wood); post.cap(B(9, -16), B(15, -12), 2.4, wood)   # tay dưới chéo
+    def m(q_):
+        for y in (-8, -14, -20): q_.ln(B(-3, y), B(3, y), dk)            # vân gỗ
+        q_.ln(B(-3, -26), B(3, -22), rope, 1); q_.ln(B(-3, -22), B(3, -26), rope, 1)   # dây quấn
+        q_.dot(B(-1.8, -35), '#3a2410', 0.7 * C.s); q_.dot(B(1.8, -35), '#3a2410', 0.7 * C.s)
+        q_.ln(B(-2, -31.5), B(2, -31.5), '#3a2410')
+    post.mark(m)
+    parts += [base, post]
+    return compose(C, parts)
+
 # ---------------- KHỈ / HẦU VƯƠNG ----------------
 def monkey(C, pal, kind, i, ex):
     if kind == 'dead': return lay_dead(C, lambda: monkey(C, pal, 'hurt', 0, ex))
@@ -1086,8 +1109,9 @@ def demon(C, pal, kind, i, ex):
 # =====================================================================
 # Bảng thiết kế từng quái: (hàm vẽ, thông số riêng, cỡ)
 # =====================================================================
-SIZE = dict(rabbit=1.0, wolf=1.0, bear=1.1, cat=1.0, monkey=1.35, snake=1.2, scorpion=1.35, jiangshi=1.25, wraith=1.25, yeti=1.05, demon=1.05)
+SIZE = dict(dummy=1.1, rabbit=1.0, wolf=1.0, bear=1.1, cat=1.0, monkey=1.35, snake=1.2, scorpion=1.35, jiangshi=1.25, wraith=1.25, yeti=1.05, demon=1.05)
 BEAST = {
+    'moc_nhan': ('dummy', {}),
     'tho_rung': ('rabbit', {}),
     'soi_xam': ('wolf', {}), 'soi_hoang': ('wolf', {}), 'lang_xam': ('wolf', {}), 'soi_doi': ('wolf', {'scar': 1}),
     'bang_lang': ('wolf', {'frost': 1, 'eye': '#7ae0ff'}), 'tuyet_lang': ('wolf', {'frost': 1, 'eye': '#7ae0ff'}),

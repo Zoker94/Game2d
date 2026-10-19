@@ -1244,3 +1244,19 @@ body.touch #party-frame { font-size: 10.5px; padding: 3px 4px; }
 #pb-hud .pb-fail { color: #ff7070; font-weight: 800; }
 #pb-hud .pb-buff { margin-top: 3px; color: #9effb0; font-size: 10px; }
 body.touch #pb-hud { bottom: auto; top: 46%; transform: translateY(-50%); width: 160px; font-size: 10px; right: 6px; }
+
+/* ---------- Môn phái ---------- */
+.sect-hero h3 { margin: 0 0 3px; color: #ffd86a; }
+.sect-rank .progress { margin: 5px 0; }
+.sect-ranks { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.sect-ranks span { font-size: 10px; padding: 2px 6px; border-radius: 8px; background: rgba(0,0,0,.3); color: var(--muted); border: 1px solid rgba(255,255,255,.1); }
+.sect-ranks span small { margin-left: 3px; opacity: .7; }
+.sect-ranks span.on { color: #ffe9a0; border-color: rgba(255,215,106,.5); background: rgba(255,200,80,.12); }
+.sect-q { padding: 5px 7px; border-radius: 7px; background: rgba(255,255,255,.04); margin-bottom: 4px; }
+.sect-q.done { color: #9effb0; }
+#sect-box { background: linear-gradient(180deg, rgba(70,40,14,.92), rgba(30,18,8,.9)); border: 1px solid #e0a040; border-left: 3px solid #e0a040; border-radius: 10px; padding: 4px 7px; font-size: 11px; cursor: pointer; line-height: 1.3; }
+#sect-box h4 { margin: 0 0 2px; color: #ffcf70; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#sect-box h4 .ok { color: #9effb0; font-weight: 600; }
+#sect-box b { color: #ffd76a; }
+#sect-box.done { border-color: #6ad890; }
+body.trk-min #sect-box > :not(h4) { display: none; }

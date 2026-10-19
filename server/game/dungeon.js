@@ -164,6 +164,7 @@ class Dungeon {
       if (Math.random() < 0.35) items.push(['stone2', 1]);
       if (Math.random() < 0.2) items.push(['mount_stone', 1]);
       if (fast) items.push(['lucky_chest', 1]);
+      if (this.w.sect) this.w.sect.onDungeon(q);
       this.w.giveReward(q, { exp: Math.round(def.exp * mult), gold: Math.round(def.gold * mult), knb: def.knb, items }, `🏆 Vượt ${def.name}${fast ? ' (thần tốc)' : ''}`);
     }
     this.w.features.announce(`🏆 ${players.map(q => q.c.name).join(', ')} đã vượt phó bản ${def.name}!`);

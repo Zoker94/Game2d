@@ -42,6 +42,7 @@ const world = new World(io, db);
 const features = new Features(world, db);
 world.party = new (require('./game/party').Party)(world);
 world.dungeon = new (require('./game/dungeon').Dungeon)(world);
+world.sect = new (require('./game/sect').Sect)(world);
 world.daihoi = new (require('./game/daihoi').DaiHoi)(world, features, db);
 const { Social } = require('./game/social');
 const social = new Social(world, features, db);
@@ -190,7 +191,7 @@ app.get('/api/gamedata', (req, res) => {
     for (const id in MAPS) {
       if (MAPS[id].instance) continue;   // bản đồ phó bản tạm thời
       const m = MAPS[id], boss = Object.values(BOSSES).find(b => b.map === id);
-      maps[id] = { name: m.name, lv: m.lv, pvp: m.pvp, safe: m.safe, theme: m.theme, minLv: m.minLv, tourney: m.tourney, town: m.town,
+      maps[id] = { name: m.name, lv: m.lv, pvp: m.pvp, safe: m.safe, theme: m.theme, minLv: m.minLv, tourney: m.tourney, town: m.town, sect: m.sect,
         portals: m.portals.map(p => ({ to: p.to, side: p.side })), boss: boss ? boss.name : null };
     }
     const npcs = {};
@@ -298,6 +299,7 @@ io.on('connection', socket => {
   on('party', inGame(d => world.party.action(player, d)));
   on('recall', inGame(() => world.startRecall(player)));
   on('dungeon', inGame(d => world.dungeon.action(player, d)));
+  on('sect', inGame(d => world.sect.action(player, d)));
   on('daihoi', inGame(d => {
     if (!d) return;
     if (d.op === 'enter' && world.nearNpc(player, 'dh_su_gia')) world.daihoi.enter(player);
@@ -312,7 +314,9 @@ io.on('connection', socket => {
   on('adminPanel', () => features.openAdminPanel(user, socket));
   on('teleport', inGame(d => {
     if (!world.nearNpc(player, 'xa_phu')) return world.toast(player, 'Hãy gặp Xa Phu để đi xe', 'error');
-    const t = require('./data/npcs').TELEPORTS.find(x => x.map === (d && d.map));
+    let t = require('./data/npcs').TELEPORTS.find(x => x.map === (d && d.map));
+    const sm = require('./data/sect').SECT_MAP;
+    if (!t && d && Object.values(sm).includes(d.map)) t = { map: d.map, price: sm[player.c.cls] === d.map ? 0 : 300 };   // bản đồ môn phái
     if (!t) return;
     if (player.c.gold < t.price) return world.toast(player, 'Không đủ ngân lượng', 'error');
     if (player.c.level < (MAPS[t.map].minLv || 1)) return world.toast(player, `Cần cấp ${MAPS[t.map].minLv}`, 'error');

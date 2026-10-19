@@ -4,7 +4,7 @@
   const TILE = 64, BS = 2, BPT = TILE / BS;           // 1 "điểm ảnh" = 2px, 32 điểm / ô
   const CH = 8, CPX = CH * TILE, CB = CH * BPT;        // chunk 8x8 ô
   const T = { GRASS: 0, PATH: 1, WATER: 2, TREE: 3, ROCK: 4, SAND: 5, SNOW: 6, FLOOR: 7, WALL: 8, BAMBOO: 9, FLOWER: 10, DARK: 11, LAVA: 12, ICE: 13, CACTUS: 14, HOUSE: 15, PINE: 16, DEADTREE: 17 };
-  const THEME_OF = { tuong_duong: 'town', ngoai_o: 'plains', truc_lam: 'bamboo', hoa_son: 'mountain', sa_mac: 'desert', bang_cung: 'snow', ma_giao: 'demon', chien_truong: 'arena' };
+  const THEME_OF = { nga_my_son: 'town', tuong_duong: 'town', ngoai_o: 'plains', truc_lam: 'bamboo', hoa_son: 'mountain', sa_mac: 'desert', bang_cung: 'snow', ma_giao: 'demon', chien_truong: 'arena' };
   const THEME_BASE = { town: T.GRASS, plains: T.GRASS, bamboo: T.GRASS, mountain: T.PATH, desert: T.SAND, snow: T.SNOW, demon: T.DARK, arena: T.PATH };
   const SOFT = new Set([T.GRASS, T.PATH, T.SAND, T.SNOW, T.DARK, T.ICE, T.FLOWER]);
 
@@ -33,7 +33,7 @@
     lava: P(['#8a1800', '#b02a04', '#d84408', '#ff6a10', '#ffa030'])
   };
 
-  let map = null, theme = 'plains', chunks = new Map(), decos = [], typeCache = null;
+  let map = null, theme = 'plains', chunks = new Map(), decos = [], typeCache = null, bIndex = new Map();
 
   function tileAt(tx, ty) {
     if (tx < 0 || ty < 0 || tx >= map.w || ty >= map.h) return -1;
@@ -192,6 +192,29 @@
       p(10, 8, 3, 14, '#c040ff'); p(11, 6, 1, 2, '#f0a0ff'); p(14, 12, 2, 10, '#a030e0'); p(7, 13, 2, 9, '#a030e0'); p(10, 8, 1, 14, '#f0c0ff');
     } else if (kind === 'bones') {
       p(6, 19, 10, 2, '#e8e0cc'); p(5, 18, 2, 4, '#e8e0cc'); p(15, 18, 2, 4, '#e8e0cc'); p(14, 15, 5, 4, '#ece6d4'); p(15, 16, 1, 1, '#333'); p(17, 16, 1, 1, '#333');
+    } else if (kind === 'stonelamp') {   // đèn đá
+      p(9, 21, 6, 2, '#6a6a72'); p(10, 14, 4, 7, '#8a8a92'); p(10, 14, 1, 7, '#b0b0b8'); p(8, 10, 8, 4, '#9a9aa2'); p(9, 11, 6, 2, '#ffd070'); p(7, 8, 10, 2, '#7a7a82'); p(9, 6, 6, 2, '#8a8a92'); p(11, 4, 2, 2, '#9a9aa2');
+    } else if (kind === 'censer') {   // lư hương đồng ba chân
+      p(8, 20, 8, 2, '#5a3a14'); p(7, 13, 10, 7, '#a8762a'); p(7, 13, 10, 1, '#e0b050'); p(6, 12, 12, 2, '#7a5418');
+      p(8, 20, 2, 3, '#7a5418'); p(14, 20, 2, 3, '#7a5418'); p(6, 14, 1, 3, '#7a5418'); p(17, 14, 1, 3, '#7a5418');
+      p(9, 15, 6, 2, '#5a3a14'); p(11, 9, 1, 4, '#c03020'); p(12, 8, 1, 5, '#c03020'); p(13, 9, 1, 4, '#c03020'); p(11, 8, 3, 1, '#ff9040');
+    } else if (kind === 'brazier') {  // vạc lửa đá
+      p(8, 17, 8, 6, '#6a6a72'); p(7, 15, 10, 3, '#8a8a92'); p(7, 15, 10, 1, '#b0b0b8'); p(9, 23, 6, 1, '#4a4a50'); p(9, 13, 6, 2, '#ff8a20'); p(10, 11, 4, 2, '#ffd040');
+    } else if (kind === 'cauldron') { // nồi luyện độc
+      p(6, 14, 12, 8, '#2a2a30'); p(5, 13, 14, 2, '#4a4a54'); p(7, 13, 10, 2, '#6aff40'); p(9, 13, 2, 1, '#c8ff90'); p(7, 22, 2, 2, '#2a2a30'); p(15, 22, 2, 2, '#2a2a30'); p(9, 17, 6, 1, '#4a4a54');
+    } else if (kind === 'fountain') { // bể nước đá + vòi
+      p(4, 17, 16, 6, '#8a929a'); p(4, 17, 16, 1, '#c0c8d0'); p(5, 18, 14, 3, '#3a86c8'); p(6, 18, 4, 1, '#9ad8ff'); p(11, 10, 2, 8, '#a0a8b0'); p(10, 9, 4, 2, '#c0c8d0');
+    } else if (kind === 'bonfire') {  // đống lửa + nồi Cái Bang
+      p(6, 21, 12, 2, '#4a2e16'); p(7, 20, 4, 2, '#6a4626'); p(13, 20, 4, 2, '#6a4626'); p(9, 16, 6, 4, '#ff8a20'); p(10, 13, 4, 4, '#ffb030'); p(11, 11, 2, 3, '#ffe070');
+      p(4, 8, 1, 14, '#5a3a1e'); p(19, 8, 1, 14, '#5a3a1e'); p(4, 8, 16, 1, '#5a3a1e');
+    } else if (kind === 'taiji') {    // đồ hình Thái Cực khắc trên nền đá (phẳng)
+      for (let y = -9; y <= 9; y++) for (let x = -12; x <= 12; x++) { const dd = (x / 12) ** 2 + (y / 9) ** 2; if (dd > 1) continue;
+        let w = x < 0; const up = ((x + 6) / 6) ** 2 + (y / 4.5) ** 2 < 1, dn = ((x - 6) / 6) ** 2 + (y / 4.5) ** 2 < 1;
+        if (y < 0 && up) w = false; if (y >= 0 && dn) w = true; if (((x + 6) / 2) ** 2 + (y / 1.5) ** 2 < 1) w = true; if (((x - 6) / 2) ** 2 + (y / 1.5) ** 2 < 1) w = false;
+        p(12 + x, 14 + y, 1, 1, dd > 0.85 ? '#5a5a62' : w ? '#e8e8e0' : '#2a2a30'); }
+    } else if (kind === 'banner') {   // cờ phướn mang màu môn phái
+      const bc = ['#c02020', '#d89a20', '#3a5ac0', '#d0507a', '#2e8b57', '#7a2ab0', '#2a7ab0', '#6b8e23', '#c02020', '#7a4ab0'][v % 10];
+      p(11, 0, 2, 24, '#4a3020'); p(10, 0, 4, 1, '#ffd040'); p(13, 2, 8, 12, bc); p(13, 2, 8, 1, '#ffffff'); p(15, 5, 4, 4, '#ffd040'); for (let i = 0; i < 4; i++) p(13 + i * 2, 14, 1, 2, bc);
     } else if (kind === 'lantern') {
       p(11, 4, 2, 20, '#4a3020'); p(8, 6, 8, 7, '#c02020'); p(9, 7, 6, 5, '#ff6030'); p(10, 8, 4, 3, '#ffd060'); p(8, 13, 8, 1, '#e8c25a');
     }
@@ -219,6 +242,11 @@
       if (kind) decos.push({ x, y, kind, v, sway, ph: hash(tx, ty, 105) * 6.28 });
     }
     if (theme === 'town') for (const n of map.npcs) decos.push({ x: (n.x + 1.2) * TILE, y: (n.y + 0.9) * TILE, kind: 'lantern', v: 0, sway: false, ph: 0, glow: '#ffb040' });
+    for (const pr of map.props || []) {   // đồ trang trí đặt sẵn (lư hương, vạc lửa, cờ phướn...)
+      const glow = { stonelamp: '#ffc060', brazier: '#ff9030', bonfire: '#ff9030', cauldron: '#7aff40', lantern: '#ffb040', censer: '#ffb060' }[pr.k];
+      const sv = ['town', 'thieulam', 'vodang', 'ngamy', 'duongmon', 'ngudoc', 'thuyyen', 'caibang', 'thienvuong', 'conlon'].indexOf(map.sect || 'town');
+      decos.push({ x: (pr.x + 0.5) * TILE, v: Math.max(0, sv), y: pr.k === 'taiji' ? (pr.y + 1.7) * TILE : (pr.y + 0.8) * TILE, kind: pr.k, sway: false, ph: hash(pr.x, pr.y, 9) * 6, glow, fx: pr.k, flat: pr.k === 'taiji' });
+    }
   }
 
   // ---------- cây chi tiết (thay cho cây cũ) ----------
@@ -338,6 +366,8 @@
   // ---------- API ----------
   function setMap(m) {
     map = m;
+    bIndex = new Map();   // ô -> công trình chứa ô đó
+    for (const b of m.buildings || []) for (let y = b.y; y < b.y + b.h; y++) for (let x = b.x; x < b.x + b.w; x++) bIndex.set(y * m.w + x, b);
     const ALIAS = { tomb: 'demon', ruins: 'plains', river: 'plains', cave: 'mountain' };   // chủ đề mới dùng nét vẽ gần nhất
     theme = THEME_OF[m.id] || ALIAS[m.theme] || m.theme || 'plains';
     chunks = new Map(); amb.length = 0;
@@ -382,24 +412,38 @@
   function visibleDecos(cam, vw, vh, out) {
     for (const d of decos) {
       if (d.x < cam.x - 60 || d.x > cam.x + vw + 60 || d.y < cam.y - 40 || d.y > cam.y + vh + 60) continue;
-      out.push({ y: d.y, k: 'deco', d });
+      out.push({ y: d.flat ? -1e9 : d.y, k: 'deco', d });   // đồ hình phẳng luôn nằm dưới mọi thứ
     }
   }
   function drawDeco(ctx, d, now, nearPlayers) {
-    const img = decoSprite(d.kind, d.v % 6);
+    const img = decoSprite(d.kind, d.kind === 'banner' ? d.v : d.v % 6);
     ctx.save(); ctx.translate(Math.round(d.x), Math.round(d.y));
     if (d.sway) {
       let sk = Math.sin(now / 900 + d.ph) * 0.12;
       for (const p of nearPlayers) if (Math.abs(p.x - d.x) < 26 && Math.abs(p.y - d.y) < 18) sk += (d.x - p.x) > 0 ? 0.35 : -0.35; // cỏ rạp khi đi qua
       ctx.transform(1, 0, sk, 1, 0, 0);
     }
+    if (d.flat) ctx.scale(3.6, 3.6);   // đồ hình phẳng khắc trên nền: phóng to giữa sân
     ctx.drawImage(img, -24, -46);
     ctx.restore();
+    if (d.fx && Math.random() < 0.15) {   // khói hương, lửa, bọt độc
+      const fx = { censer: [0, -34, '#d8d0c8', -18, 1400, 3], brazier: [0, -30, '#ffa030', -60, 600, 3], bonfire: [0, -22, '#ffb030', -55, 650, 3], cauldron: [0, -20, '#8aff50', -25, 900, 2.6], fountain: [0, -24, '#bfeaff', -30, 500, 2] }[d.fx];
+      if (fx) FX.emit(1, d.x + fx[0] + (Math.random() - 0.5) * 10, d.y + fx[1], { speed: 4, vy: fx[3], life: fx[4], size: fx[5], color: fx[2], drag: 0.5 });
+    }
     if (d.glow) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; FX.glowDot(ctx, d.x, d.y - 30, 34, d.glow, 0.45 + Math.sin(now / 300 + d.x) * 0.1, true); ctx.restore(); }
     if (d.kind === 'crystal') { ctx.save(); ctx.globalCompositeOperation = 'lighter'; FX.glowDot(ctx, d.x, d.y - 18, 26, '#c040ff', 0.5 + Math.sin(now / 500 + d.ph) * 0.2, true); ctx.restore(); }
   }
   // vẽ vật thể cao (cây...), cây đung đưa nhẹ theo gió
   function drawTall(ctx, t, tx, ty, now) {
+    if (t === T.HOUSE) {   // công trình: chỉ vẽ một lần ở ô góc dưới-trái, các ô còn lại bỏ qua
+      const b = bIndex.get(ty * map.w + tx);
+      if (b) {
+        if (tx !== b.x || ty !== b.y + b.h - 1) return;
+        const sp = Buildings.sprite(b);
+        ctx.drawImage(sp.img, tx * TILE + sp.ox, (ty + 1) * TILE + sp.oy);
+        return;
+      }
+    }
     let img, big = false;
     if (t === T.TREE || t === T.PINE) { img = bigTree(t, ((tx * 7 + ty * 13) >>> 0) % 3); big = true; }
     else img = Sprites.tallTileOld(t, tx, ty);

@@ -19,6 +19,7 @@ const { Story } = require('./story');
 const { Duel } = require('./duel');
 const { DaiHoi, DAIHOI_MAP } = require('./daihoi');
 const { ATTRS, attrTotal, attrUsed, attrResetCost } = require('../data/attrs');
+const { SECT_MAP } = require('../data/sect');
 
 const HOTBAR_N = 8;          // số ô gán phím (phím 2..9)
 const DODGE_DIST = 170, DODGE_CD = 5000;   // né chiêu: quãng lướt, thời gian hồi
@@ -181,7 +182,7 @@ class World {
     p.socket.emit('init', {
       you: p.id,
       map: { id: d.id, name: d.name, theme: d.theme, w: d.w, h: d.h, tiles: d.tiles, safe: d.safe, pvp: d.pvp, lv: d.lv,
-        weather: this.weatherOf(mapId), portals: d.portals, npcs: d.npcs.map(n => ({ ...n, name: NPCS[n.id].name, sprite: NPCS[n.id].sprite, color: NPCS[n.id].color, action: NPCS[n.id].action })) },
+        weather: this.weatherOf(mapId), portals: d.portals, buildings: d.buildings || [], props: d.props || [], sect: d.sect || null, npcs: d.npcs.map(n => ({ ...n, name: NPCS[n.id].name, sprite: NPCS[n.id].sprite, color: NPCS[n.id].color, action: NPCS[n.id].action })) },
       x, y, solid: SOLID, tile: TILE,
       drops: [...m.drops.values()].map(dr => this.dropView(dr))
     });
@@ -218,6 +219,7 @@ class World {
       attr: c.attr || {}, attrFree: attrTotal(c.level) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
       skills: c.skills || {}, hotbar: c.hotbar, sp: skillPointsTotal(c.level) - (c.spSpent || 0),
       mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
+      sect: this.sect ? this.sect.meView(p) : null,
       st: this.statusView(p), friends: Object.keys(c.friends || {}).length, friendIds: this.friendIds(c), pk: c.pk || 0,
       rank: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0
     };
@@ -463,6 +465,7 @@ class World {
     if (this.duel.fighting(a, b)) return true;         // đang thách đấu với nhau: đánh được ở mọi nơi
     const def = this.maps[a.mapId].def;
     if (def.safe) return false;
+    if (def.noPk) return false;   // bản đồ môn phái: cấm tranh đấu (chỉ thách đấu)
     if (a.c.guildId && a.c.guildId === b.c.guildId) return false;
     if (this.party && this.party.same(a, b)) return false;   // cùng tổ đội
     if (def.pvp) return true;
@@ -827,6 +830,7 @@ class World {
         this.progressTutorial(p, 'kill', { mon: tpl.id });
         this.story.on(p, 'kill', { mon: tpl.id });
         this.features.onKill(p, mon);
+        if (this.sect) this.sect.onKill(p, mon);
       }
       p.dirtyMe = true;
     }
@@ -1096,6 +1100,7 @@ class World {
     const npc = this.nearNpc(p, npcId);
     if (!npc) return this.toast(p, 'Hãy lại gần NPC hơn', 'error');
     this.progressTutorial(p, 'talk', { npc: npcId });
+    if (this.sect) this.sect.onTalk(p, npcId);
     if (this.story.on(p, 'talk', { npc: npcId })) return;   // NPC đang có cảnh cốt truyện
     const out = { id: npc.id, name: npc.name, talk: npc.talk, action: npc.action, sprite: npc.sprite, color: npc.color, enhance: !!npc.enhance };
     if (npc.shop) {
@@ -1107,7 +1112,12 @@ class World {
     if (npc.knbShop) out.knbShop = npc.knbShop;
     if (npc.action === 'escort' || npc.action === 'escortDest') { out.routes = this.escort.routeView(); out.escort = this.escort.meView(p); }
     if (npc.action === 'daihoi') Object.assign(out, this.daihoi.npcView(p));
-    if (npc.action === 'teleport') out.teleports = TELEPORTS.map(t => ({ ...t, name: MAPS[t.map].name, lv: MAPS[t.map].lv, minLv: MAPS[t.map].minLv }));
+    if (npc.action === 'teleport') {
+      out.teleports = TELEPORTS.map(t => ({ ...t, name: MAPS[t.map].name, lv: MAPS[t.map].lv, minLv: MAPS[t.map].minLv }));
+      // môn phái: về phái mình miễn phí, thăm phái khác 300 lượng
+      for (const cls in SECT_MAP) out.teleports.push({ map: SECT_MAP[cls], price: cls === p.c.cls ? 0 : 300, sect: 1, mine: cls === p.c.cls ? 1 : 0, name: MAPS[SECT_MAP[cls]].name, lv: CLASSES[cls].name, minLv: 1 });
+      out.teleports.sort((a, b) => (b.mine || 0) - (a.mine || 0));
+    }
     p.socket.emit('npc', out);
   }
 

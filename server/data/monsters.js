@@ -70,6 +70,8 @@ const MONSTERS = {
   u_minh_quy:   { name: 'U Minh Quỷ',         lv: 60, sprite: 'ghost',    color: '#4a0a6a', aggro: true,  speed: 115, range: 180, ranged: true },
   xich_lang:    { name: 'Xích Lang',          lv: 61, sprite: 'wolf',     color: '#8a1010', aggro: true,  speed: 125, range: 55 },
   diem_la:      { name: 'Diêm La Sứ',         lv: 63, sprite: 'demon',    color: '#5a0000', aggro: true,  speed: 108, range: 75 },
+  // mộc nhân luyện công ở bản đồ môn phái: đứng yên, không đánh trả
+  moc_nhan:      { name: 'Mộc Nhân Luyện Công', lv: 5, sprite: 'bandit', color: '#8a6a3a', aggro: false, speed: 0, range: 0, static: true, art: 'moc_nhan' },
   // ---- vùng cấp cao (60-99) ----
   tien_ho:       { name: 'Côn Lôn Tiên Hồ',    lv: 60, sprite: 'tiger',    color: '#f4f8ff', aggro: true,  speed: 125, range: 60 },
   con_lon_kiem:  { name: 'Côn Lôn Kiếm Tiên',  lv: 63, sprite: 'bandit',   color: '#e8eef8', aggro: true,  speed: 115, range: 70 },

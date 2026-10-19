@@ -177,6 +177,9 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
     if (b.crit) s.crit += b.crit;
     if (b.regen) s.regen += b.regen;
   }
+  // cấp bậc môn phái: +2% công / thủ / sinh lực mỗi bậc
+  const sr = require('../data/sect').sectRank(c);
+  if (sr) { s.atk *= 1 + sr * 0.02; s.def *= 1 + sr * 0.02; s.maxHp *= 1 + sr * 0.02; }
   s.spd = Math.min(s.spd, 320);
   s.crit = Math.min(s.crit, 75);
   for (const k of ['maxHp', 'maxMp', 'atk', 'def']) s[k] = Math.round(s[k]);
