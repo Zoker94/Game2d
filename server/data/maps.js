@@ -23,7 +23,7 @@ const THEMES = {
 
 const MAP_DEFS = {
   tuong_duong: {
-    name: 'Thành Tương Dương', theme: 'town', w: 36, h: 28, seed: 11, safe: true, lv: '1+', town: true,
+    name: 'Thành Tương Dương', theme: 'town', w: 36, h: 28, seed: 11, safe: true, lv: '1+', town: true, organic: true,
     music: 'town',
     portals: [
       { side: 'E', to: 'ngoai_o' },
@@ -399,6 +399,7 @@ function generate(id, def = MAP_DEFS[id]) {
     while ((x !== x1 || y !== y1) && guard++ < 1000) {
       for (let oy = -width; oy <= width; oy++) for (let ox = -width; ox <= width; ox++) {
         const t = get(x + ox, y + oy);
+        if (t === T.HOUSE) continue;   // không xẻ đường xuyên qua công trình
         if (SOLID.has(t) || (ox === 0 && oy === 0)) set(x + ox, y + oy, (Math.abs(ox) + Math.abs(oy) <= width) ? tile : th.base);
       }
       if (x !== x1 && (y === y1 || r() < 0.6)) x += Math.sign(x1 - x); else y += Math.sign(y1 - y);
@@ -412,6 +413,7 @@ function generate(id, def = MAP_DEFS[id]) {
     buildings.push({ x, y, w: bw, h: bh, kind, style, v: buildings.length });
   }
   if (def.sect) layoutSect();
+  else if (def.organic) layoutOrganicTown();
   else if (def.theme === 'town') {
     // Quảng trường đá ở giữa thành
     for (let y = 7; y <= h - 8; y++) for (let x = 7; x <= w - 8; x++) set(x, y, T.FLOOR);
@@ -435,6 +437,75 @@ function generate(id, def = MAP_DEFS[id]) {
       if (get(x, y) !== T.GRASS || busy(x, y)) continue;
       const q = r();
       if (q < 0.34) set(x, y, T.TREE); else if (q < 0.42) set(x, y, T.ROCK);
+    }
+  }
+  // Thành bố cục tự nhiên: quảng trường méo, ngõ ngoằn ngoèo, nhà đặt ngẫu nhiên, cây mọc thành cụm
+  function layoutOrganicTown() {
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) set(x, y, T.GRASS);
+    const pp = def.portals.map(q => portalPos(q.side, w, h, q.at));
+    const near = (x, y, list, d) => list.some(q => Math.abs(q.x - x) <= d && Math.abs(q.y - y) <= d);
+    // quảng trường: elip lệch tâm, mép gợn theo nhiễu
+    const pcx = cx + (r() - 0.5) * 3, pcy = cy + (r() - 0.5) * 2;
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const d = Math.hypot((x - pcx) / 8.2, (y - pcy) / 5.4) + (noise(x * 1.7, y * 1.7) - 0.5) * 0.6;
+      if (d < 1) set(x, y, T.FLOOR);
+    }
+    // đường ra các cổng: uốn lượn hình sin, rộng 2–3 ô
+    for (const q of pp) {
+      const dx = q.x - cx, dy = q.y - cy, L = Math.hypot(dx, dy), nx = -dy / L, ny = dx / L;
+      const amp = 1.5 + r() * 2, waves = 1 + r() * 1.2, ph = r() * Math.PI;
+      for (let i = 0; i <= L * 3; i++) {
+        const t = i / (L * 3), o = Math.sin(t * Math.PI * waves + ph) * amp * Math.sin(t * Math.PI);
+        const x = Math.round(cx + dx * t + nx * o), y = Math.round(cy + dy * t + ny * o);
+        for (const [ox, oy] of [[0, 0], [Math.abs(dx) > Math.abs(dy) ? 0 : 1, Math.abs(dx) > Math.abs(dy) ? 1 : 0]]) if (x + ox > 0 && y + oy > 0 && x + ox < w - 1 && y + oy < h - 1) set(x + ox, y + oy, T.FLOOR);
+      }
+    }
+    // vài ngõ nhỏ ngoằn ngoèo tỏa ra từ quảng trường
+    for (let k = 0; k < 3; k++) {
+      const a = r() * Math.PI * 2, L = 7 + r() * 6;
+      let x = cx, y = cy;
+      const tx = Math.round(cx + Math.cos(a) * L * 1.4), ty = Math.round(cy + Math.sin(a) * L);
+      for (let i = 0; i < 60 && (x !== tx || y !== ty); i++) {
+        if (x > 1 && y > 1 && x < w - 2 && y < h - 2) set(x, y, T.FLOOR);
+        if (x !== tx && (y === ty || r() < 0.55)) x += Math.sign(tx - x); else y += Math.sign(ty - y);
+      }
+    }
+    // hồ sen lệch về một phía, mép không đều
+    for (let tries = 0; tries < 40; tries++) {
+      const qx = 5 + Math.floor(r() * (w - 10)), qy = 4 + Math.floor(r() * (h - 8));
+      if (near(qx, qy, def.npcs, 4) || near(qx, qy, pp, 5) || Math.hypot(qx - cx, qy - cy) < 5) continue;
+      for (let y = -3; y <= 3; y++) for (let x = -4; x <= 4; x++)
+        if ((x / 3.2) ** 2 + (y / 2.2) ** 2 + (r() - 0.5) * 0.5 < 1) set(qx + x, qy + y, T.WATER);
+      break;
+    }
+    // nhà: thử nhiều vị trí ngẫu nhiên, kích cỡ / kiểu khác nhau, không đè lên nhau, NPC, cổng, hồ, quảng trường
+    const kinds = [['house', 3, 2], ['house', 4, 2], ['shop', 3, 2], ['shop', 4, 2], ['tavern', 4, 2], ['house', 3, 2]];
+    let placed = 0;
+    for (let tries = 0; tries < 900 && placed < 12; tries++) {
+      const [kind, bw, bh] = kinds[Math.floor(r() * kinds.length)];
+      const x = 2 + Math.floor(r() * (w - 3 - bw)), y = 2 + Math.floor(r() * (h - 4 - bh));
+      let ok = true;
+      for (let yy = y - 1; yy <= y + bh + 1 && ok; yy++) for (let xx = x - 1; xx <= x + bw && ok; xx++) {
+        const t = get(xx, yy), core = xx >= x && xx < x + bw && yy >= y && yy < y + bh;
+        if (t === T.HOUSE || t === T.WATER || (core && t !== T.GRASS)) ok = false;
+      }
+      if (!ok) continue;
+      for (const n of def.npcs) if (n.x >= x - 2 && n.x <= x + bw + 1 && n.y >= y - 2 && n.y <= y + bh + 1) ok = false;
+      for (const q of pp) if (q.x >= x - 3 && q.x <= x + bw + 2 && q.y >= y - 3 && q.y <= y + bh + 2) ok = false;
+      if (!ok) continue;
+      building(x, y, bw, bh, kind, 'town');
+      set(x + Math.floor(bw / 2), y + bh, T.FLOOR);   // bậc đá trước cửa
+      placed++;
+    }
+    // cây mọc thành cụm (nhiễu) + cây lẻ, đá, hoa; chừa trước cửa nhà và quanh NPC / cổng
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      if (get(x, y) !== T.GRASS || near(x, y, def.npcs, 1) || near(x, y, pp, 2)) continue;
+      if (get(x, y - 1) === T.HOUSE || get(x, y - 2) === T.HOUSE || get(x - 1, y - 2) === T.HOUSE || get(x + 1, y - 2) === T.HOUSE) continue;   // chừa sân trước nhà, cây không che nhà
+      let floorN = 0; for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) if (get(x + ox, y + oy) === T.FLOOR) floorN++;
+      const n = noise(x * 1.3 + 7, y * 1.3 + 3), q = r();
+      if (floorN === 0 && ((n > 0.5 && q < 0.65) || q < 0.1)) set(x, y, T.TREE);
+      else if (floorN === 0 && q < 0.1) set(x, y, T.ROCK);
+      else if (q < 0.16) set(x, y, T.FLOWER);
     }
   }
   // Bản đồ môn phái: chính điện ở trên, quảng trường lát đá, điện hai bên, tháp / đình, nhà đệ tử, bãi luyện công
@@ -488,7 +559,7 @@ function generate(id, def = MAP_DEFS[id]) {
   // Đường đi từ trung tâm tới các cổng
   const portals = def.portals.map(p => {
     const pos = portalPos(p.side, w, h, p.at);
-    carve(cx, cy, pos.x, pos.y, 1, th.path);
+    if (!def.organic) carve(cx, cy, pos.x, pos.y, 1, th.path);   // thành tự nhiên đã có đường uốn lượn riêng
     const target = MAP_DEFS[p.to];
     const back = target.portals.find(q => q.to === id);   // cổng ngược lại ở bản đồ đích
     const arr = back ? arrivalPos(back.side, target.w, target.h, back.at) : arrivalPos(OPP[p.side], target.w, target.h);
