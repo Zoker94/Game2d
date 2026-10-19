@@ -25,9 +25,13 @@
     box.id = 'pl-menu';
     const myG = G.me.guild;
     const canInvite = myG && (myG.role === 'leader' || myG.role === 'elder') && !e.guild;
+    const fid = G.me.friendIds && G.me.friendIds[e.name];
+    const pt = Party.data, inParty = Party.has(e.id);
     const items = [
       ['👤', 'Xem thông tin', () => emit('inspect', { id: e.id })],
-      ['🤝', 'Kết bạn', () => emit('friend', { op: 'add', id: e.id })],
+      fid ? ['💔', 'Hủy kết bạn', () => G.modal(`Hủy kết bằng hữu với ${e.name}?`, [{ t: 'Hủy kết bạn', cls: 'primary', fn: () => emit('friend', { op: 'remove', uid: fid }) }, { t: 'Thôi' }])]
+        : ['🤝', 'Kết bạn', () => emit('friend', { op: 'add', id: e.id })],
+      !inParty && (!pt || pt.leader === pt.you) ? ['👥', 'Mời vào tổ đội', () => Party.invite(e)] : null,
       ['💌', 'Trò chuyện riêng', () => UI.pmTo(e.name)],
       ['🔄', 'Giao dịch', () => emit('trade', { op: 'request', id: e.id })],
       canInvite ? ['🏯', 'Mời vào bang', () => emit('ginvite', { op: 'invite', id: e.id })] : null,
@@ -37,7 +41,7 @@
       ['🚫', blocked(e.name) ? 'Bỏ chặn' : 'Chặn tin nhắn', () => toggleBlock(e.name)]
     ].filter(Boolean);
     const cls = G.data.classes[e.cls];
-    box.innerHTML = `<div class="pm-head"><b>${esc(e.name)}</b><small>${cls ? cls.name : ''} · Cấp ${e.level}${e.guild ? ' · «' + esc(e.guild) + '»' : ''}</small></div>` +
+    box.innerHTML = `<div class="pm-head"><b>${esc(e.name)}</b><small>${cls ? cls.name : ''} · Cấp ${e.level}${e.guild ? ' · «' + esc(e.guild) + '»' : ''}</small>${fid || inParty ? `<small class="pm-tags">${fid ? '<span class="fr">🤝 Bằng hữu</span>' : ''}${inParty ? '<span class="pt">👥 Đồng đội</span>' : ''}</small>` : ''}</div>` +
       items.map((it, i) => `<button data-i="${i}"><span>${it[0]}</span>${it[1]}</button>`).join('');
     $('screen-game').appendChild(box);
     const w = box.offsetWidth || 180, h = box.offsetHeight || 300;

@@ -216,7 +216,8 @@
     const t = title(o.power), pk = pkLevel(o.pk);
     let nameCol = o.self ? '#ffd76a' : relColor(o.power, o.myPower).color;
     if (pk) nameCol = pk === 2 ? '#c00010' : '#ff5a5a';
-    const name = (pk ? '☠ ' : '') + (o.gm ? '[GM] ' : '') + o.name + (o.level ? ' Lv' + o.level : '');
+    else if (o.party) nameCol = '#5dff8a';
+    const name = (pk ? '☠ ' : '') + (o.party ? '👥 ' : '') + (o.gm ? '[GM] ' : '') + o.name + (o.level ? ' Lv' + o.level : '');
     ctx.font = 'bold 12px system-ui, sans-serif';
     const w = ctx.measureText(name).width;
     outlined(ctx, name, x, top - 10, 12, nameCol, '#000', 700);

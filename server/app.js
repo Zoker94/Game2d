@@ -40,6 +40,7 @@ const io = new Server(server, { cors: { origin: false }, pingInterval: 10000, pi
 
 const world = new World(io, db);
 const features = new Features(world, db);
+world.party = new (require('./game/party').Party)(world);
 world.daihoi = new (require('./game/daihoi').DaiHoi)(world, features, db);
 const { Social } = require('./game/social');
 const social = new Social(world, features, db);
@@ -292,6 +293,7 @@ io.on('connection', socket => {
   on('escort', inGame(d => world.escort.action(player, d)));
   on('sell', inGame(d => world.sell(player, d || {})));
   on('attr', inGame(d => world.attrAction(player, d)));
+  on('party', inGame(d => world.party.action(player, d)));
   on('daihoi', inGame(d => {
     if (!d) return;
     if (d.op === 'enter' && world.nearNpc(player, 'dh_su_gia')) world.daihoi.enter(player);

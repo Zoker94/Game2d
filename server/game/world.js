@@ -138,6 +138,7 @@ class World {
     const m = this.maps[p.mapId];
     if (m) { m.players.delete(p); this.io.to('map:' + p.mapId).emit('leave', p.id); }
     this.escort.onLeave(p);
+    if (this.party) this.party.onLeave(p);
     this.duel.onLost(p, `${c.name} đã thoát game`);
     this.players.delete(p.userId);
     this.db.markDirty();
@@ -193,7 +194,7 @@ class World {
       attr: c.attr || {}, attrFree: attrTotal(c.level) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
       skills: c.skills || {}, hotbar: c.hotbar, sp: skillPointsTotal(c.level) - (c.spSpent || 0),
       mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
-      st: this.statusView(p), friends: Object.keys(c.friends || {}).length, pk: c.pk || 0,
+      st: this.statusView(p), friends: Object.keys(c.friends || {}).length, friendIds: this.friendIds(c), pk: c.pk || 0,
       rank: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0
     };
   }
@@ -385,6 +386,13 @@ class World {
   }
 
   // ---------- Chế độ PK: 0 Luyện công, 1 Đeo cờ PK, 2 Đồ sát ----------
+  // tên các bằng hữu (để menu người chơi biết ai đã là bạn)
+  friendIds(c) {
+    const users = this.db.data.users, out = {};
+    for (const uid of Object.keys(c.friends || {})) { const u = users[uid]; if (u && u.character) out[u.character.name] = uid; }
+    return out;
+  }
+
   // Luyện công: không đánh ai. Cờ PK: đánh được người cũng đeo cờ và cướp tiêu.
   // Đồ sát: đánh được tất cả, và ai cũng đánh được kẻ đồ sát. Người dưới cấp 10 được bảo hộ.
   canHarm(a, b) {
@@ -393,6 +401,7 @@ class World {
     const def = this.maps[a.mapId].def;
     if (def.safe) return false;
     if (a.c.guildId && a.c.guildId === b.c.guildId) return false;
+    if (this.party && this.party.same(a, b)) return false;   // cùng tổ đội
     if (def.pvp) return true;
     if (a.c.level < 10 || b.c.level < 10) return false;
     if (b.c.robUntil > Date.now()) return true;      // kẻ cướp tiêu đang bị truy nã: ai cũng đánh được
@@ -756,6 +765,8 @@ class World {
       }
       p.dirtyMe = true;
     }
+    // đồng đội đứng gần cùng hưởng kinh nghiệm
+    if (!mon.boss && killer && killer.c && this.party) this.party.onKill(killer, mon, tpl.exp);
 
     // Rơi đồ
     const owner = killer && killer.c ? killer.userId : null;
@@ -1339,6 +1350,7 @@ class World {
       }
     }
     if (this.features) this.features.tick(now);
+    if (this.party) this.party.tick(now);
   }
 
   regen(p, m, now) {

@@ -297,7 +297,7 @@
     s.on('fx', onFx);
     s.on('dmg', onDmg);
     s.on('gain', d => {
-      if (d.exp) addFloat(G.self.x, G.self.y - 90, `+${d.exp} KN`, '#ffe48a', 13);
+      if (d.exp) addFloat(G.self.x, G.self.y - 90, d.party ? `+${d.exp} KN 👥` : `+${d.exp} KN`, d.party ? '#9effb0' : '#ffe48a', 13);
       if (d.gold) { addFloat(G.self.x + 20, G.self.y - 74, `+${d.gold} 💰`, '#ffd700', 12); GameAudio.sfx('coin', 90); }
     });
     s.on('dead', d => {
@@ -335,6 +335,7 @@
       if (d.id === G.you && (d.k === 'stun' || d.k === 'freeze')) { G.moveTo = null; G.chase = null; }
     });
     Social.bind(s);
+    Party.bind(s);
     s.on('events', d => { G.events = d; UI.onEvents(d); });
     s.on('daily', d => { G.daily = d; UI.updateDaily(); });
     s.on('dropAdd', d => { if (d.om) d.ownUntil = performance.now() + d.om; G.drops.set(d.id, d); });
@@ -1102,7 +1103,7 @@
         if (e.pm && !e.dead && !G.map.pvp) Escort.drawFlag(ctx, e.x, e.y, top, e.dir === 1 || e.dir === 2 ? e.dir : (e.lastH || 2), e.pm, now);
         if (pm) Overhead.drawOver(ctx, e, e.x, e.y, top, pm, now);
         let ptop = top - 6;
-        if (G.settings.names) ptop = Overhead.drawNameplate(ctx, e.x, top, { name: e.name, level: e.level, gm: e.gm, guild: e.guild, power: e.pw, myPower: G.me.stats.power, rank: e.rk, pk: e.k, mc: e.mc });
+        if (G.settings.names) ptop = Overhead.drawNameplate(ctx, e.x, top, { name: e.name, level: e.level, gm: e.gm, guild: e.guild, power: e.pw, myPower: G.me.stats.power, rank: e.rk, pk: e.k, mc: e.mc, party: Party.has(e.id) });
         hpBar(e.x, top - 4, 40, e.hp / e.maxHp, '#4ade80');
         if (e.rb && !e.dead) { ptop -= 14; label(e.x, ptop, '💰 Truy nã · Cướp Tiêu', '#ff5050', 11, true); }
         if (e.bubble) bubbles.push([e, ptop + 4]);
@@ -1408,7 +1409,7 @@
     const pt = (x, y, col, r) => { mctx.fillStyle = col; mctx.fillRect(ox + x / TILE * sc - r / 2, oy + y / TILE * sc - r / 2, r, r); };
     for (const n of m.npcs) pt((n.x + 0.5) * TILE, (n.y + 0.5) * TILE, '#7fffd4', 3);
     for (const e of G.monsters.values()) pt(e.x, e.y, e.boss ? '#ff00ff' : e.event ? '#ffd700' : '#ff4040', e.boss ? 6 : 2);
-    for (const e of G.players.values()) pt(e.x, e.y, e.pm === 2 ? '#ff2020' : e.pm === 1 ? '#ff9a3a' : '#4fa3ff', 3);
+    for (const e of G.players.values()) pt(e.x, e.y, Party.has(e.id) ? '#4dff7a' : e.pm === 2 ? '#ff2020' : e.pm === 1 ? '#ff9a3a' : '#4fa3ff', Party.has(e.id) ? 4 : 3);
     for (const e of G.carts.values()) pt(e.x, e.y, '#ffd23f', 5);
     pt(G.self.x, G.self.y, '#ffffff', 4);
     mctx.strokeStyle = 'rgba(255,255,255,.5)';

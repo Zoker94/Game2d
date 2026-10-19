@@ -41,6 +41,8 @@ class Social {
       const u = this.db.data.users[a.uid];
       if (u && u.character && u.character.friends) delete u.character.friends[p.userId];
       this.db.markDirty();
+      const on = this.w.players.get(a.uid); if (on) on.dirtyMe = true;
+      p.dirtyMe = true;
       this.toast(p, 'Đã xóa bạn', 'info');
       return this.friendList(p);
     }
