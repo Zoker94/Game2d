@@ -748,7 +748,7 @@ class World {
       if (Math.random() < 0.5 * dr) drops.push('stone2');
       if (Math.random() < 0.25 * dr) drops.push('insure');
       if (Math.random() < 0.3 * dr) drops.push('mount_stone');
-      if (Math.random() < 0.04 * dr) drops.push(tier >= 4 ? 'mount_hoa_ky_lan' : 'mount_bach_ho');
+      if (Math.random() < 0.04 * dr) { const pool = tier >= 4 ? ['mount_hoa_ky_lan', 'mount_phuong_hoang'] : ['mount_bach_ho', 'mount_kim_nguu', 'mount_kim_quy']; drops.push(pool[U.randInt(0, pool.length - 1)]); }
       if (tpl.lv >= 20 && Math.random() < 0.1 * dr) drops.push(['book_fire', 'book_water', 'book_ice'][U.randInt(0, 2)]);
       const top = ranking[0] && this.players.get(ranking[0][0]);
       this.features.announce(`👑 Boss ${tpl.name} đã bị tiêu diệt! ${top ? top.c.name + ' gây sát thương cao nhất.' : ''}`);

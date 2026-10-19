@@ -1269,7 +1269,7 @@
       const info = G.data.mounts[mountId];
       const face = dir === 1 || dir === 2 ? dir : (lastH || 2);
       const mf = moving ? Math.floor(now / 110 + seed) % 4 : 0;
-      if (info.rarity === 'legendary' && !dead) {
+      if (info.rarity === 'legendary' && !dead && !MountFX.has(mountId)) {   // thú có hiệu ứng riêng thì bỏ hào quang chung
         ctx.save(); ctx.globalCompositeOperation = 'lighter';
         ctx.save(); ctx.translate(x, y - 6); ctx.scale(1, 0.45); FX.glowDot(ctx, 0, 0, 64, info.mane, 0.4 + Math.sin(now / 200) * 0.1, true); ctx.restore();
         ctx.restore();
@@ -1281,8 +1281,10 @@
       if (mfr) {
         // thú cưỡi vẽ mới + người ngồi đúng yên, không bị cắt chân
         const side = mfr.view === 'side', flip = side && face === 1, [fx, fy] = mfr.foot;
-        ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(x, y - 1, side ? 34 : 16, side ? 6 : 12, 0, 0, Math.PI * 2); ctx.fill();
-        if (moving && mfr.k % 3 === 0 && !dead && Math.random() < 0.5) WorldArt.dust(x + (side ? (flip ? 22 : -22) : 0), y + (mfr.view === 'down' ? -10 : side ? 0 : 10));
+        const flies = MountFX.flies(mountId);   // rồng, phượng bay lơ lửng: bóng mờ nhỏ, không tung bụi
+        ctx.fillStyle = flies ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(x, y - 1, side ? (flies ? 26 : 34) : (flies ? 14 : 16), side ? (flies ? 5 : 6) : (flies ? 9 : 12), 0, 0, Math.PI * 2); ctx.fill();
+        if (!flies && moving && mfr.k % 3 === 0 && !dead && Math.random() < 0.5) WorldArt.dust(x + (side ? (flip ? 22 : -22) : 0), y + (mfr.view === 'down' ? -10 : side ? 0 : 10));
+        if (!dead) MountFX.under(ctx, mountId, x, y, now, mfr.view, moving, seed, flip);
         const layer = sy0 => {
           ctx.save(); ctx.translate(x, y);
           if (flip) ctx.scale(-1, 1);
@@ -1296,6 +1298,7 @@
         const rider = Assets.riderFrame(cls, rdir, rs, rs === 'ride' ? mfr.k : fi, ap);
         ctx.drawImage(rider, Math.round(sx - 48), Math.round(sy - 66));
         if (mfr.fy >= 0) layer(mfr.fy);      // đầu ngựa / chân trước (hoặc mông, đuôi) đè lên người cưỡi
+        if (!dead) MountFX.over(ctx, mountId, x, y, now, mfr.view, moving, seed, flip);
         top = Math.round(sy - 54);
       } else {
       ctx.drawImage(Sprites.mountSprite(mountId, info, mf, face === 1), x - 48, y - 66);

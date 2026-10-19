@@ -109,7 +109,7 @@ def compose(parts):
     img = Image.new('RGBA', (CW, CH), (0, 0, 0, 0))
     for p in parts:
         if p is None: continue
-        f = p.finish() if isinstance(p, Part) else p
+        f = p.finish() if hasattr(p, 'finish') else p
         if f is not None: img.alpha_composite(f)
     # viền ngoài cùng đậm
     a = np.array(img); m = a[..., 3] > 0
@@ -157,8 +157,8 @@ HORSE = {
     'ngua_nau': dict(coat='#8a5530', mane='#2a1810', points='#2a1a12', hoof='#3a3030', muzzle='#4a3024', blanket='#2c5aa0', trim='#e8c060', saddle='#5a3218', blaze=True),
     'bach_ma':  dict(coat='#eceae4', mane='#d0d0dc', points='#e2dfd8', hoof='#8a8278', muzzle='#c8b0a8', blanket='#b02a30', trim='#ffd860', saddle='#6a3a1e', dapple=True),
     'hac_ma':   dict(coat='#2a2630', mane='#b81c1c', points='#1a1820', hoof='#1a1418', muzzle='#3a3238', blanket='#5a1020', trim='#e0b040', saddle='#2a1810', eyeRed=True),
-    'hoa_ky_lan': dict(coat='#e8501a', mane='#ffcc30', points='#8a1a0a', hoof='#3a1408', muzzle='#ff8a40', blanket='#7a0a10', trim='#ffd040', saddle='#4a1a08',
-                       scales='#ffb030', belly='#ffd890', fire=True, dragon='qilin', horn='#ffe080'),
+    'hoa_ky_lan': dict(coat='#d8381a', mane='#ffb020', points='#7a1408', hoof='#c89020', muzzle='#ff8a40', blanket='#5a0a10', trim='#ffd040', saddle='#3a1008',
+                       scales='#ffc040', belly='#ffd890', fire=True, dragon='qilin', horn='#ffe9a0', dhead=True),
     'thanh_long': dict(coat='#1fa07a', mane='#c8fff0', points='#0e5a48', hoof='#0a3028', muzzle='#7ae0c0', blanket='#0a3a5a', trim='#a0f0ff', saddle='#0a2a3a',
                        scales='#7af0c8', belly='#d8ffe8', cloud=True, dragon='long', horn='#f0e0a0'),
 }
@@ -218,10 +218,13 @@ def horse_frame(H, kind, i):
                 (d[0] + uy * 3.0 + ux * 3, d[1] - ux * 3.0 + uy * 3), (d[0] - uy * 3.0 + ux * 3, d[1] + ux * 3.0 + uy * 3)]
         hp = Part('h', None)
         hp.poly(hoof, H['hoof'] if near else dark(H['hoof'], 0.3))
-        if H.get('fire') and kind == 'run':
+        if H.get('fire'):
             fp = Part(None, None, rim=False)
-            for k in range(3):
-                fp.ell(d[0] - 2 - k * 2.5, d[1] + 1 - k * 0.5, 2.4 - k * 0.6, 1.6 - k * 0.3, ['#fff0a0', '#ffb020', '#ff5010'][k])
+            fl = (i + (1 if near else 0) + (2 if fore else 0)) % 3
+            for jt, sz in ((d, 1.0), (b, 0.75)):      # móng + khớp gối / cổ chân
+                for k, col in enumerate(('#ff4a10', '#ff9a20', '#ffe070')):
+                    L = (7.5 - k * 2 + (fl - 1) * 0.8) * sz
+                    fp.poly([(jt[0] - 3.2 * sz + k * 0.8, jt[1] + 1.5), (jt[0] + 2.2 * sz - k * 0.6, jt[1] + 1), (jt[0] - 4 - L * 0.6, jt[1] - L)], col)
             return [pt, hp, fp]
         if H.get('cloud') and kind == 'run':
             cp = Part(None, None, rim=False)
@@ -240,6 +243,12 @@ def horse_frame(H, kind, i):
     tp = Part('h', dark(mane, 0.45))
     if H.get('fire'):
         tp.curve(tpts, 5, 2, '#ff6a10'); tp.curve([(x, y - 1) for x, y in tpts], 3, 1, '#ffd040')
+        tf = Part(None, None, rim=False)
+        for k, pt_ in enumerate(bez(tpts, 6)[1:]):
+            for j, col in enumerate(('#ff4a10', '#ff9a20', '#ffe070')):
+                L = 9 - j * 2.6 + ((i + k) % 3 - 1)
+                tf.poly([(pt_[0] + 2.5, pt_[1] + 1), (pt_[0] - 2.5, pt_[1] + 1.5), (pt_[0] - 4 - j, pt_[1] - L)], col)
+        parts.append(tp); tp = tf
     elif H.get('cloud'):
         tp.curve(tpts, 4, 2, mane)
         e = tpts[-1]; tp.ell(e[0], e[1], 4, 3, light(mane, 0.2)); tp.ell(e[0] + 3, e[1] - 2, 3, 2.4, mane)
@@ -280,6 +289,20 @@ def horse_frame(H, kind, i):
     npart.poly(neck, coat)
     if H.get('belly'): npart.poly([S(throat), S(N(97, 44)), S(chest), S(N(94, 42))], H['belly'])
     parts.append(npart)
+    if H.get('dhead'):   # kỳ lân: bờm lửa dọc cổ + đầu rồng thật
+        from mounts_ext import dragon_head_side, rotp
+        mp = Part(None, None, rim=False)
+        for k, a in enumerate([N(97, 19), N(92, 24), N(87, 30), N(82, 36), N(77, 42)]):
+            a = S(a)
+            for j, col in enumerate(('#ff3a08', '#ff8a18', '#ffd040', '#fff2a0')):
+                L = 14 - j * 3 + ((i + k) % 3 - 1) * 1.5
+                mp.poly([(a[0] + 3.5, a[1] + 1), (a[0] - 3.5, a[1] + 3), (a[0] - 6 - j - (4 if kind == 'run' else 1), a[1] - L)], col)
+        parts.append(mp)
+        DC = dict(coat=coat, belly=H['belly'], mane=H['mane'], horn=H['horn'], eye='#ffe040')
+        parts += dragon_head_side(lambda q: S(N(*rotp(q, 0.42, 0.78, (95, 20)))), DC, p * TAU * 2 + i)
+        parts += draw_leg(legs['hn'], 0, True)
+        parts += draw_leg(legs['fn'], 1, True)
+        return qilin_tack(H, parts, S, B, kind)
     # --- đầu ---
     hp = Part('v', soft)
     if dragon:
@@ -383,6 +406,19 @@ def horse_frame(H, kind, i):
     rp = bez([bit, ((bit[0] + hand[0]) / 2, (bit[1] + hand[1]) / 2 + 6), hand], 6)
     for a, b in zip(rp, rp[1:]): st.ln(a, b, '#2a160a')
     parts.append(st)
+    return compose(parts), (round(seat[0], 1), round(seat[1], 1))
+
+def qilin_tack(H, parts, S, B, kind):
+    seat = S(B(62, 41.5))
+    tk = Part('v', dark(H['blanket'], 0.5))
+    cloth = [S(B(50, 44)), S(B(73, 44)), S(B(75, 59)), S(B(49, 59))]
+    tk.poly(cloth, H['blanket'])
+    tk.mark(lambda s: [s.ln(cloth[2], cloth[3], H['trim'], 2), s.ln(cloth[1], cloth[2], H['trim']), s.ln(cloth[0], cloth[3], H['trim'])])
+    parts.append(tk)
+    sd = Part('v', dark(H['saddle'], 0.55))
+    sd.poly([S(B(52, 38)), S(B(55, 43)), S(B(68, 43)), S(B(72, 37)), S(B(74, 39)), S(B(71, 47)), S(B(53, 47)), S(B(50, 41))], H['saddle'])
+    sd.mark(lambda s: [s.ln(S(B(55, 46)), S(B(69, 46)), light(H['saddle'], 0.3)), s.ell(*S(B(73, 38)), 1.2, 1.2, H['trim'])])
+    parts.append(sd)
     return compose(parts), (round(seat[0], 1), round(seat[1], 1))
 
 # ---------------- hổ trắng ----------------
@@ -703,7 +739,12 @@ def fb_frame(mid, view, kind, i):
                 col = mane if not H.get('fire') else ['#ff5010', '#ff9a20', '#ffe060', '#ff9a20'][k]
                 mp.poly([(c[0] - w_, c[1] - r), (c[0] + w_, c[1] - r), (c[0] + w_ * 0.6 + (k % 2), c[1] + 3), (c[0] - w_ * 0.6, c[1] + 3)], col)
         head = [np_, hp, mp, ep]
-        if dragon and down:
+        if H.get('dhead'):
+            from mounts_ext import dragon_face_front, dragon_head_back
+            C = dict(coat=coat, belly=H['belly'], mane=H['mane'], horn=H['horn'], eye='#ffe040')
+            if down: head = [np_, mp] + dragon_face_front(P(0, fh + 6, uh - 8), C, p * TAU * 2 + i, 0.95)
+            else: head = [np_] + dragon_head_back(P(0, fh - 2, uh), C, p * TAU * 2 + i, 0.8) + [mp]
+        if dragon and down and not H.get('dhead'):
             wp = Part(None, None, rim=False)
             sw2 = math.sin(p * TAU) * 2
             for sx_ in (-1, 1):
@@ -762,17 +803,20 @@ def fb_frame(mid, view, kind, i):
         front = nearL + [tail]
     return compose(back), compose(front), (round(seat[0], 1), round(seat[1], 1))
 
-MOUNTS = ['ngua_nau', 'bach_ma', 'hac_ma', 'bach_ho', 'hoa_ky_lan', 'thanh_long']
+MOUNTS = ['ngua_nau', 'bach_ma', 'hac_ma', 'bach_ho', 'hoa_ky_lan', 'thanh_long', 'phuong_hoang', 'kim_quy', 'kim_nguu']
 
 def sheet(mid):
     """hàng 0: nhìn ngang; 1-2: nhìn xuống (lớp sau / lớp trước người cưỡi); 3-4: nhìn lên (lớp sau / lớp trước)"""
     img = Image.new('RGBA', (CW * len(FRAMES), CH * 5), (0, 0, 0, 0))
     seats = {'side': [], 'down': [], 'up': []}
+    from mounts_ext import EXT   # thú dáng riêng (rồng, phượng, rùa, trâu)
+    ext = EXT.get(mid)
     for c, (kind, i) in enumerate(FRAMES):
-        fr, seat = tiger_frame(TIGER, kind, i) if mid == 'bach_ho' else horse_frame(HORSE[mid], kind, i)
+        if ext: fr, seat = ext[0](kind, i)
+        else: fr, seat = tiger_frame(TIGER, kind, i) if mid == 'bach_ho' else horse_frame(HORSE[mid], kind, i)
         img.alpha_composite(fr, (c * CW, 0)); seats['side'].append(seat)
         for r, view in ((1, 'down'), (3, 'up')):
-            b, f, seat = fb_frame(mid, view, kind, i)
+            b, f, seat = ext[1](view, kind, i) if ext else fb_frame(mid, view, kind, i)
             img.alpha_composite(b, (c * CW, r * CH)); img.alpha_composite(f, (c * CW, (r + 1) * CH))
             seats[view].append(seat)
     return img, seats
