@@ -159,9 +159,10 @@
     if (box) { box.remove(); return; }
     box = document.createElement('div'); box.id = 'pk-menu';
     const cur = G.me.pkMode | 0;
-    box.innerHTML = `<div class="pk-h">Chế độ PK</div>` + PK_MODES.map((m, i) => `<button data-pk="${i}" class="${i === cur ? 'on' : ''}"><b style="color:${m.color}">${m.icon} ${m.name}</b><small>${m.desc}</small></button>`).join('') +
+    box.innerHTML = `<div class="pk-h">Chế độ PK<span class="pk-x" data-close>✕</span></div><div class="pk-opts">` + PK_MODES.map((m, i) => `<button data-pk="${i}" class="${i === cur ? 'on' : ''}"><b style="color:${m.color}">${m.icon} ${m.name}</b><small>${m.desc}</small></button>`).join('') + '</div>' +
       `<div class="pk-f small">Bản đồ an toàn (trong thành) không thể giao chiến. Đổi xuống chế độ thấp hơn cần 10 giây không giao chiến.</div>`;
     $('screen-game').appendChild(box);
+    box.querySelector('[data-close]').onclick = () => box.remove();
     box.querySelectorAll('[data-pk]').forEach(el => el.onclick = () => { emit('pkMode', { mode: +el.dataset.pk }); box.remove(); G.sfx && G.sfx('click'); });
     setTimeout(() => document.addEventListener('pointerdown', function off(ev) { if (!box.contains(ev.target) && ev.target.id !== 'btn-pk') { box.remove(); document.removeEventListener('pointerdown', off, true); } }, true), 0);
   }

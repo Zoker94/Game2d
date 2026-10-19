@@ -542,7 +542,13 @@ body.touch #menu-buttons { max-width: 236px; }
 #pk-menu button.on { border-color: var(--gold); background: rgba(255,215,0,.08); }
 #pk-menu small { color: #b8b0c8; font-size: 11px; }
 #pk-menu .pk-f { color: #9a90aa; }
-body.touch #pk-menu { bottom: 200px; }
+body.touch #pk-menu { top: 50%; bottom: auto; transform: translate(-50%, -50%); width: min(680px, calc(100% - 24px)); max-height: calc(100% - 16px); overflow-y: auto; z-index: 70; }
+body.touch #pk-menu .pk-opts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+body.touch #pk-menu button { padding: 8px; justify-content: flex-start; }
+#pk-menu .pk-opts { display: flex; flex-direction: column; gap: 6px; }
+#pk-menu .pk-h { display: flex; justify-content: center; position: relative; }
+#pk-menu .pk-x { position: absolute; right: 0; top: -2px; background: none; border: 0; color: #ccc; font-size: 16px; padding: 0 6px; cursor: pointer; display: block; }
+@media (max-width: 560px) { body.touch #pk-menu .pk-opts { grid-template-columns: 1fr; } }
 
 /* ---------- Vận tiêu ---------- */
 #escort-hud { position: absolute; top: 74px; left: 50%; transform: translateX(-50%); z-index: 7; background: rgba(20,12,28,.85); border: 1px solid #c8963a; border-radius: 10px; padding: 5px 12px; font-size: 12px; min-width: 230px; max-width: 92vw; cursor: pointer; text-align: center; }
