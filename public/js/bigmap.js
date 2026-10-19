@@ -6,12 +6,13 @@
   let box = null, cv = null, ctx = null, timer = null, layout = null, flash = null;
   function build() {
     box = document.createElement('div'); box.id = 'bigmap'; box.className = 'hidden';
-    box.innerHTML = `<div class="bm-panel"><div class="bm-head"><b id="bm-title"></b><span class="small muted">Chạm vào bản đồ để tự đi tới</span><button class="bm-x" title="Đóng (N / Esc)">✕</button></div>
+    box.innerHTML = `<div class="bm-panel"><div class="bm-head"><b id="bm-title"></b><span class="small muted">Chạm vào bản đồ để tự đi tới</span><button class="btn small" id="bm-world">🌏 Thế giới</button><button class="bm-x" title="Đóng (Esc)">✕</button></div>
       <canvas id="bm-cv"></canvas>
       <div class="bm-legend"><span><i style="background:#fff"></i>Bạn</span><span><i style="background:#4fa3ff"></i>Người chơi</span><span><i style="background:#7fffd4"></i>NPC</span><span><i style="background:#7fd4ff"></i>Cổng</span><span><i style="background:#ff4040"></i>Quái</span><span><i style="background:#ff00ff"></i>Boss</span></div></div>`;
     $('screen-game').appendChild(box);
     cv = $('bm-cv'); ctx = cv.getContext('2d');
     box.querySelector('.bm-x').onclick = close;
+    $('bm-world').onclick = () => { close(); WorldMap.open(); };
     box.addEventListener('pointerdown', e => { if (e.target === box) close(); e.stopPropagation(); });
     cv.addEventListener('pointerdown', onTap);
   }
@@ -101,9 +102,10 @@
   function close() { if (box) box.classList.add('hidden'); clearInterval(timer); timer = null; }
   const isOpen = () => !!(box && !box.classList.contains('hidden'));
   function toggle() { isOpen() ? close() : open(); }
-  $('minimap').addEventListener('click', e => { e.stopPropagation(); toggle(); });
+  // bấm bản đồ nhỏ -> bản đồ thế giới (trong đó có nút xem khu vực này)
+  $('minimap').addEventListener('click', e => { e.stopPropagation(); if (isOpen()) close(); WorldMap.toggle(); });
   $('minimap').style.cursor = 'pointer';
-  $('minimap').title = 'Bấm để mở bản đồ lớn (N)';
+  $('minimap').title = 'Bấm để mở bản đồ thế giới (N)';
   addEventListener('resize', () => { if (isOpen()) { size(); draw(); } });
   window.BigMap = { open, close, toggle, get open_() { return isOpen(); } };
 })();

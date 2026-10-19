@@ -185,7 +185,11 @@ app.get('/api/gamedata', (req, res) => {
     mons.chest = { name: 'Bảo Rương', lv: 1, sprite: 'chest', color: '#ffd700' };
     for (const [id, m] of Object.entries(require('./game/daihoi').DH_MONS)) mons[id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: 'kim', art: m.art };
     const maps = {};
-    for (const id in MAPS) maps[id] = { name: MAPS[id].name, lv: MAPS[id].lv, pvp: MAPS[id].pvp, safe: MAPS[id].safe };
+    for (const id in MAPS) {
+      const m = MAPS[id], boss = Object.values(BOSSES).find(b => b.map === id);
+      maps[id] = { name: m.name, lv: m.lv, pvp: m.pvp, safe: m.safe, theme: m.theme, minLv: m.minLv, tourney: m.tourney,
+        portals: m.portals.map(p => ({ to: p.to, side: p.side })), boss: boss ? boss.name : null };
+    }
     const npcs = {};
     for (const id in NPCS) npcs[id] = { name: NPCS[id].name, sprite: NPCS[id].sprite, color: NPCS[id].color };
     const E = require('./data/enhance');

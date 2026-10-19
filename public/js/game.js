@@ -374,7 +374,7 @@
     for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) { ctx.fillStyle = COL[m.tiles[y * m.w + x]] || '#000'; ctx.fillRect(x * 3, y * 3, 3, 3); }
     m.portals.forEach(p => { ctx.fillStyle = '#7fd4ff'; ctx.fillRect(p.x * 3 - 2, p.y * 3 - 2, 7, 7); });
     minimapBase = cv; G.mapBase = cv;
-    UI.closePanel(); if (window.BigMap) BigMap.close();
+    UI.closePanel(); if (window.BigMap) BigMap.close(); if (window.WorldMap) { WorldMap.close(); WorldMap.onEnterMap(); }
     sfx('portal');
   }
 
@@ -727,8 +727,8 @@
   });
   Input.on('panel', n => UI.togglePanel(n));
   Input.on('tlist', () => Targets.toggle());
-  Input.on('bigmap', () => BigMap.toggle());
-  Input.on('escape', () => { if (BigMap.open_) BigMap.close(); else if (Targets.open_) Targets.close(); else UI.closePanel(); });
+  Input.on('bigmap', () => { BigMap.close(); WorldMap.toggle(); });
+  Input.on('escape', () => { if (WorldMap.open_) WorldMap.close(); else if (BigMap.open_) BigMap.close(); else if (Targets.open_) Targets.close(); else UI.closePanel(); });
   Input.on('chat', () => UI.focusChat());
   Input.on('joymove', () => { G.moveTo = null; G.npcGoal = null; G.chase = null; });
   Input.on('toast', t => UI.toast(t));
@@ -1150,6 +1150,7 @@
     drawGuideArrow(now);
     Escort.drawArrow(ctx, now);
     Story.drawArrow(ctx, now);
+    WorldMap.drawArrow(ctx, now);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     WorldArt.overlay(ctx, canvas.width, canvas.height);
     Weather.draw(ctx, canvas.width, canvas.height, DPR, now, cam, zoom);
