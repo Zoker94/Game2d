@@ -1,0 +1,288 @@
+<meta charset="utf-8">
+<title>Phác Thảo Môn Phái</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+Display:wght@600;800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Bố cục: sân khấu lớn 3 hướng ở trên, hàng chọn môn phái + động tác, dưới là đội hình 9 phái cùng đi bộ.
+   Tông mực tàu (nền đêm xanh đen), điểm nhấn son đỏ của ấn triện. */
+:root {
+  --ink: #12141c;
+  --ink-2: #1b1e29;
+  --line: #2c3142;
+  --paper: #e9e2d0;
+  --muted: #9a9686;
+  --seal: #c8432f;
+  --gold: #d7a84c;
+  --f-display: "Noto Serif Display", "Noto Serif", Georgia, serif;
+  --f-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+html { background: var(--ink); }
+body { background: var(--ink); color: var(--paper); font-family: var(--f-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 28px; }
+header { display: grid; gap: 6px; }
+.eyebrow { font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(30px, 5vw, 48px); line-height: 1.05; margin: 0; text-wrap: balance; }
+h1 .seal { display: inline-block; font-size: .42em; vertical-align: .55em; margin-left: .4em; padding: .18em .36em; border: 2px solid var(--seal); color: var(--seal); border-radius: 4px; transform: rotate(-4deg); font-family: var(--f-body); font-weight: 600; letter-spacing: .06em; }
+.lede { color: var(--muted); max-width: 66ch; margin: 0; }
+h2 { font-family: var(--f-display); font-weight: 600; font-size: 22px; margin: 0; }
+
+.sects { display: flex; flex-wrap: wrap; gap: 8px; }
+.sect { appearance: none; border: 1px solid var(--line); background: var(--ink-2); color: var(--paper); font: 500 14px var(--f-body); padding: 7px 12px 7px 8px; border-radius: 999px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.sect i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; box-shadow: inset 0 0 0 1px rgba(0,0,0,.35); }
+.sect[aria-pressed="true"] { border-color: var(--seal); background: #2a1a1c; }
+.sect:focus-visible, .chip:focus-visible, .tog:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.stage { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--ink-2); }
+.stage-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.stage-head h2 small { font-family: var(--f-body); font-size: 13px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip, .tog { appearance: none; border: 1px solid var(--line); background: transparent; color: var(--paper); font: 500 13px var(--f-body); padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+.tog[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+.canvas-box { overflow-x: auto; }
+canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+#main { margin: 0 auto; }
+.views { display: flex; justify-content: center; gap: 0; font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; padding: 6px 0 2px; }
+.views span { text-align: center; }
+.tools { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; padding: 10px 14px 14px; border-top: 1px solid var(--line); }
+.tools label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+@media (max-width: 760px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 10px; min-width: 0; background: var(--ink-2); }
+.cmp { display: flex; gap: 18px; align-items: flex-end; justify-content: center; flex-wrap: wrap; }
+.cmp figure { margin: 0; display: grid; gap: 4px; justify-items: center; }
+.cmp figcaption { font-size: 12px; color: var(--muted); }
+.spec { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 13px; margin: 0; }
+.spec dt { color: var(--muted); font-family: var(--f-mono); font-size: 12px; }
+.spec dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+.troupe { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
+.member { appearance: none; border: 1px solid var(--line); background: var(--ink-2); border-radius: 10px; padding: 6px 6px 8px; display: grid; justify-items: center; gap: 2px; cursor: pointer; color: var(--paper); font: 500 13px var(--f-body); }
+.member[aria-pressed="true"] { border-color: var(--seal); }
+.member canvas { width: 100%; height: auto; aspect-ratio: 1; max-width: 144px; }
+.note { color: var(--muted); font-size: 13px; margin: 0; max-width: 72ch; }
+ul.notes { margin: 0; padding-left: 18px; color: var(--paper); display: grid; gap: 4px; font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { .sect, .chip { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Võ Lâm Pixel · bản phác thảo · chưa áp dụng vào game</div>
+    <h1>Phác Thảo Môn Phái <span class="seal">Thử nghiệm</span></h1>
+    <p class="lede">Nhân vật vẽ lại theo tỉ lệ người thật (khoảng 6 đầu), mỗi hướng có đủ 7 động tác. Tóc, dải lụa, vạt áo và tua kiếm bay theo quán tính khi đi, chạy và ra đòn. Bấm vào từng phái để xem.</p>
+  </header>
+
+  <div class="sects" id="sects" role="group" aria-label="Chọn môn phái"></div>
+
+  <section class="stage" aria-label="Sân khấu xem hoạt ảnh">
+    <div class="stage-head">
+      <h2 id="stage-title">Võ Đang <small id="stage-sub"></small></h2>
+      <div class="chips" id="anims" role="group" aria-label="Động tác"></div>
+    </div>
+    <div class="canvas-box"><div class="views" id="views"></div><canvas id="main" width="432" height="144"></canvas></div>
+    <div class="tools">
+      <div class="chips" role="group" aria-label="Phóng to">
+        <button class="chip" data-zoom="1" type="button">1×</button>
+        <button class="chip" data-zoom="2" type="button">2×</button>
+        <button class="chip" data-zoom="3" type="button">3×</button>
+      </div>
+      <div class="chips" role="group" aria-label="Nền">
+        <button class="chip" data-ground="grass" type="button">Cỏ</button>
+        <button class="chip" data-ground="stone" type="button">Đá lát</button>
+        <button class="chip" data-ground="plain" type="button">Trơn</button>
+      </div>
+      <button class="tog" id="flip" type="button" aria-pressed="false">Hướng nghiêng: quay trái</button>
+      <button class="tog" id="slow" type="button" aria-pressed="false">Chậm ½</button>
+      <button class="tog" id="pause" type="button" aria-pressed="false">Dừng</button>
+    </div>
+  </section>
+
+  <div class="grid2">
+    <section class="card" aria-label="So sánh với bản đang dùng">
+      <h2>So với bản đang dùng</h2>
+      <div class="cmp">
+        <figure><canvas id="old" width="96" height="96"></canvas><figcaption>Bản cũ (ô 96)</figcaption></figure>
+        <figure><canvas id="new" width="144" height="144"></canvas><figcaption>Bản mới (ô 144)</figcaption></figure>
+      </div>
+      <p class="note">Cùng phóng to 2×, hiện đúng số pixel thật. Khi đưa vào game, nhân vật mới sẽ được thu lại cho cao ngang bản cũ hoặc nhỉnh hơn một chút, tuỳ bạn chọn.</p>
+    </section>
+    <section class="card" aria-label="Thông số">
+      <h2>Thông số bộ hình</h2>
+      <dl class="spec">
+        <dt>Ô hình</dt><dd>144 × 144 px, chân đặt tại (72, 128)</dd>
+        <dt>Hướng</dt><dd>Nhìn xuống, nhìn lên, nghiêng phải (nghiêng trái = lật hình)</dd>
+        <dt>Động tác</dt><dd>Đứng thở 8 · Đi 8 · Chạy 8 · Đánh 8 · Ra chiêu 8 · Trúng đòn 3 · Ngã 6</dd>
+        <dt>Mỗi phái</dt><dd>49 khung × 3 hướng = 147 khung (bản cũ: 19 khung/hướng)</dd>
+        <dt>Cách vẽ</dt><dd>Vẽ gấp 4 lần rồi thu nhỏ, tô khối theo ánh sáng trên-trái, viền theo màu</dd>
+      </dl>
+      <ul class="notes">
+        <li>Vạt áo xẻ hai tà theo chân, bước dài thì tà áo mở ra.</li>
+        <li>Ống tay áo rộng rủ xuống và đung đưa theo cánh tay.</li>
+        <li>Đòn đánh có vung tay lấy đà, chém, theo đà và thu thế, kèm vệt chém.</li>
+        <li>Mỗi phái một kiểu đánh: kiếm, song đao, côn, chùy, phi tiêu, đao cong, chưởng.</li>
+      </ul>
+    </section>
+  </div>
+
+  <section style="display:grid;gap:12px" aria-label="Đội hình 9 phái">
+    <h2>Đội hình 9 phái</h2>
+    <div class="troupe" id="troupe"></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  const SECTS = [
+    ['vodang', 'Võ Đang', '#3d6ad8', 'Đạo bào trắng, búi tóc mão bạc, kiếm thẳng tua xanh'],
+    ['ngamy', 'Nga My', '#e2568c', 'Áo hồng, hai búi tóc, dải lụa buộc tóc'],
+    ['thuyyen', 'Thúy Yên', '#7cb6ff', 'Đuôi ngựa cao, khăn choàng bay, song đao'],
+    ['thieulam', 'Thiếu Lâm', '#f2a634', 'Cà sa chéo vai, chuỗi hạt, thiền trượng'],
+    ['thienvuong', 'Thiên Vương', '#e0302a', 'Giáp hộ tâm, giáp vai, khăn đỏ, đại chùy'],
+    ['duongmon', 'Đường Môn', '#2f9c4a', 'Nón lá, khăn che mặt, phi tiêu'],
+    ['ngudoc', 'Ngũ Độc', '#9ee04e', 'Khăn quấn đầu, mạng che mặt, đao cong'],
+    ['caibang', 'Cái Bang', '#e8892a', 'Áo vá, chân trần, gậy trúc, hồ lô'],
+    ['conlon', 'Côn Lôn', '#a77ad8', 'Mũ đạo sĩ, áo vàng tay tím, bùa chú']
+  ];
+  const ANIMS = [['idle', 'Đứng'], ['walk', 'Đi'], ['run', 'Chạy'], ['attack', 'Đánh'], ['cast', 'Ra chiêu'], ['hurt', 'Trúng đòn'], ['death', 'Ngã']];
+  const VIEWS = ['Nhìn xuống', 'Nhìn lên', 'Nghiêng'];
+  const OLD = { idle: [0, 4, 220], walk: [4, 6, 110], run: [4, 6, 80], attack: [10, 4, 120], cast: [14, 4, 150], hurt: [18, 1, 300], death: [18, 1, 300] };
+  const st = { sect: 'vodang', anim: 'walk', zoom: 2, ground: 'grass', flip: false, slow: false, pause: false };
+  try { const s = JSON.parse(localStorage.getItem('pt_mp') || '{}'); Object.assign(st, s); } catch (e) { }
+  if (!localStorage || window.innerWidth < 520) { try { if (!JSON.parse(localStorage.getItem('pt_mp') || '{}').zoom) st.zoom = 1; } catch (e) { st.zoom = 1; } }
+  const save = () => { try { localStorage.setItem('pt_mp', JSON.stringify({ zoom: st.zoom, ground: st.ground, anim: st.anim })); } catch (e) { } };
+  const $ = id => document.getElementById(id);
+  const sheets = {}, metas = {}, olds = {};
+
+  function load(k) {
+    if (sheets[k]) return sheets[k].ready;
+    const im = new Image(); im.src = k + '.png';
+    const a0 = new Image(); a0.src = 'old/' + k + '_a0.png';
+    const w0 = new Image(); if (k !== 'caibang') w0.src = 'old/' + k + '_w0.png';
+    olds[k] = { a0, w0 };
+    const ready = Promise.all([new Promise(r => { im.onload = r; im.onerror = r; }), fetch(k + '.json').then(r => r.json()).then(j => { metas[k] = j; }).catch(() => { })]);
+    sheets[k] = { im, ready };
+    return ready;
+  }
+
+  // nền: cỏ hoặc đá lát vẽ bằng pixel
+  const grounds = {};
+  function ground(kind) {
+    if (grounds[kind]) return grounds[kind];
+    const c = document.createElement('canvas'); c.width = c.height = 48; const x = c.getContext('2d');
+    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    if (kind === 'grass') {
+      x.fillStyle = '#4c7a3c'; x.fillRect(0, 0, 48, 48);
+      for (let i = 0; i < 140; i++) { x.fillStyle = ['#5b8a45', '#41693a', '#6a9a4e'][i % 3]; x.fillRect(rnd() * 48 | 0, rnd() * 48 | 0, 1, 2); }
+    } else if (kind === 'stone') {
+      x.fillStyle = '#7b7f86'; x.fillRect(0, 0, 48, 48);
+      x.fillStyle = '#5d6168';
+      for (let r = 0; r < 4; r++) { x.fillRect(0, r * 12, 48, 1); for (let k = 0; k < 3; k++) x.fillRect(((k * 16 + (r % 2) * 8) % 48), r * 12, 1, 12); }
+      for (let i = 0; i < 60; i++) { x.fillStyle = rnd() < .5 ? '#868a91' : '#70747b'; x.fillRect(rnd() * 48 | 0, rnd() * 48 | 0, 1, 1); }
+    } else { x.fillStyle = '#3a3f4f'; x.fillRect(0, 0, 48, 48); }
+    return (grounds[kind] = c);
+  }
+  function paintGround(ctx, w, h) {
+    ctx.fillStyle = ctx.createPattern(ground(st.ground), 'repeat'); ctx.fillRect(0, 0, w, h);
+  }
+  function shadow(ctx, x, y) {
+    ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(x, y, 20, 6, 0, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // thời gian mỗi động tác (động tác không lặp: chạy hết rồi giữ khung cuối một lúc)
+  function frameAt(meta, anim, t) {
+    const a = meta.anims[anim]; const total = a.ms.reduce((s, v) => s + v, 0) + (a.loop ? 0 : 700);
+    let u = t % total;
+    for (let i = 0; i < a.n; i++) { if (u < a.ms[i]) return i; u -= a.ms[i]; }
+    return a.n - 1;
+  }
+
+  function drawCell(ctx, k, anim, view, f, dx, dy, flip) {
+    const s = sheets[k], m = metas[k]; if (!s || !m || !s.im.complete) return;
+    const C = m.cell, row = m.anims[anim].row + view;
+    ctx.save();
+    if (flip) { ctx.translate(dx + C, dy); ctx.scale(-1, 1); dx = 0; dy = 0; }
+    ctx.drawImage(s.im, f * C, row * C, C, C, dx, dy, C, C);
+    ctx.restore();
+  }
+
+  // ---------- giao diện ----------
+  const sectsEl = $('sects');
+  SECTS.forEach(([k, n, c]) => {
+    const b = document.createElement('button'); b.className = 'sect'; b.type = 'button'; b.dataset.k = k;
+    b.innerHTML = `<i style="background:${c}"></i>${n}`; b.onclick = () => select(k); sectsEl.appendChild(b);
+  });
+  const animsEl = $('anims');
+  ANIMS.forEach(([k, n]) => {
+    const b = document.createElement('button'); b.className = 'chip'; b.type = 'button'; b.dataset.a = k; b.textContent = n;
+    b.onclick = () => { st.anim = k; t0 = performance.now(); save(); sync(); }; animsEl.appendChild(b);
+  });
+  document.querySelectorAll('[data-zoom]').forEach(b => b.onclick = () => { st.zoom = +b.dataset.zoom; save(); sync(); });
+  document.querySelectorAll('[data-ground]').forEach(b => b.onclick = () => { st.ground = b.dataset.ground; save(); sync(); });
+  $('flip').onclick = () => { st.flip = !st.flip; sync(); };
+  $('slow').onclick = () => { st.slow = !st.slow; sync(); };
+  $('pause').onclick = () => { st.pause = !st.pause; sync(); };
+
+  const troupe = $('troupe'), tcs = {};
+  SECTS.forEach(([k, n]) => {
+    const b = document.createElement('button'); b.className = 'member'; b.type = 'button'; b.dataset.k = k;
+    const c = document.createElement('canvas'); c.width = 144; c.height = 144; tcs[k] = c.getContext('2d');
+    b.appendChild(c); const s = document.createElement('span'); s.textContent = n; b.appendChild(s);
+    b.onclick = () => { select(k); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    troupe.appendChild(b); load(k);
+  });
+
+  function select(k) { st.sect = k; load(k); t0 = performance.now(); sync(); }
+  function sync() {
+    document.querySelectorAll('.sect, .member').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === st.sect));
+    document.querySelectorAll('[data-a]').forEach(b => b.setAttribute('aria-pressed', b.dataset.a === st.anim));
+    document.querySelectorAll('[data-zoom]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.zoom === st.zoom));
+    document.querySelectorAll('[data-ground]').forEach(b => b.setAttribute('aria-pressed', b.dataset.ground === st.ground));
+    $('flip').setAttribute('aria-pressed', st.flip); $('slow').setAttribute('aria-pressed', st.slow); $('pause').setAttribute('aria-pressed', st.pause);
+    const s = SECTS.find(x => x[0] === st.sect);
+    $('stage-title').firstChild.textContent = s[1] + ' ';
+    $('stage-sub').textContent = s[3];
+    const main = $('main'); main.style.width = 432 * st.zoom + 'px'; main.style.height = 144 * st.zoom + 'px';
+    $('views').style.width = 432 * st.zoom + 'px'; $('views').style.margin = '0 auto';
+    $('views').innerHTML = VIEWS.map(v => `<span style="width:${144 * st.zoom}px">${v}</span>`).join('');
+    $('old').style.width = '192px'; $('old').style.height = '192px';
+    $('new').style.width = '288px'; $('new').style.height = '288px';
+  }
+
+  let t0 = performance.now(), pausedAt = 0, last = performance.now(), clock = 0;
+  const mctx = $('main').getContext('2d'), octx = $('old').getContext('2d'), nctx = $('new').getContext('2d');
+  [mctx, octx, nctx].forEach(c => c.imageSmoothingEnabled = false);
+  function tick(now) {
+    const dt = now - last; last = now;
+    if (!st.pause) clock += dt * (st.slow ? 0.5 : 1);
+    const k = st.sect, m = metas[k];
+    paintGround(mctx, 432, 144);
+    if (m) {
+      const f = frameAt(m, st.anim, clock);
+      for (let v = 0; v < 3; v++) { shadow(mctx, v * 144 + 72, 128); drawCell(mctx, k, st.anim, v, f, v * 144, 0, v === 2 && st.flip); }
+      paintGround(nctx, 144, 144); shadow(nctx, 72, 128); drawCell(nctx, k, st.anim, 0, f, 0, 0, false);
+    }
+    // bản cũ
+    paintGround(octx, 96, 96);
+    const o = olds[k];
+    if (o && o.a0.complete && o.a0.naturalWidth) {
+      const [c0, n, ms] = OLD[st.anim]; const col = c0 + Math.floor(clock / ms) % n; const row = st.anim === 'death' ? 3 : 0;
+      shadow(octx, 48, 86);
+      octx.drawImage(o.a0, col * 96, row * 96, 96, 96, 0, 0, 96, 96);
+      if (o.w0.complete && o.w0.naturalWidth && row !== 3) octx.drawImage(o.w0, col * 96, row * 96, 96, 96, 0, 0, 96, 96);
+    }
+    // đội hình: cả 9 phái cùng đi
+    for (const [kk] of SECTS) {
+      const c = tcs[kk], mm = metas[kk]; if (!mm) continue;
+      c.imageSmoothingEnabled = false; paintGround(c, 144, 144); shadow(c, 72, 128);
+      drawCell(c, kk, 'walk', 0, frameAt(mm, 'walk', clock), 0, 0, false);
+    }
+    requestAnimationFrame(tick);
+  }
+  load(st.sect).then(() => { sync(); requestAnimationFrame(tick); });
+  sync();
+})();
+</script>
