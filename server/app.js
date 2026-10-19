@@ -40,6 +40,7 @@ const io = new Server(server, { cors: { origin: false }, pingInterval: 10000, pi
 
 const world = new World(io, db);
 const features = new Features(world, db);
+world.daihoi = new (require('./game/daihoi').DaiHoi)(world, features, db);
 const { Social } = require('./game/social');
 const social = new Social(world, features, db);
 world.start();
@@ -182,6 +183,7 @@ app.get('/api/gamedata', (req, res) => {
     const mons = {};
     for (const m of [...Object.values(MONSTERS), ...Object.values(BOSSES)]) mons[m.id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: m.el };
     mons.chest = { name: 'Bảo Rương', lv: 1, sprite: 'chest', color: '#ffd700' };
+    for (const [id, m] of Object.entries(require('./game/daihoi').DH_MONS)) mons[id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: 'kim', art: m.art };
     const maps = {};
     for (const id in MAPS) maps[id] = { name: MAPS[id].name, lv: MAPS[id].lv, pvp: MAPS[id].pvp, safe: MAPS[id].safe };
     const npcs = {};
@@ -286,6 +288,12 @@ io.on('connection', socket => {
   on('escort', inGame(d => world.escort.action(player, d)));
   on('sell', inGame(d => world.sell(player, d || {})));
   on('attr', inGame(d => world.attrAction(player, d)));
+  on('daihoi', inGame(d => {
+    if (!d) return;
+    if (d.op === 'enter' && world.nearNpc(player, 'dh_su_gia')) world.daihoi.enter(player);
+    else if (d.op === 'leave' && player.mapId === 'dai_hoi') world.daihoi.leave(player);
+    else if (d.op === 'view') world.daihoi.sync(player);
+  }));
   on('sellMany', inGame(d => world.sellMany(player, d && d.uids)));
   on('enhance', inGame(d => world.enhance(player, d || {})));
   on('mount', inGame(d => d && world.mountAction(player, d)));

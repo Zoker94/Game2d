@@ -284,6 +284,9 @@
     s.on('storyScene', d => Story.show(d));
     s.on('giftcodes', d => Gift.onView(d));
     s.on('duelReq', d => Duel.onReq(d));
+    s.on('daihoi', d => DaiHoi.onState(d));
+    s.on('mapFlags', d => DaiHoi.onFlags(d));
+    s.on('daihoiPts', d => DaiHoi.onPts(d));
     s.on('duel', d => Duel.onDuel(d));
     s.on('duelRing', d => Duel.onRing(d));
     s.on('giftResult', d => Gift.onResult(d));
@@ -387,7 +390,7 @@
       }
       let e = G.players.get(p.i);
       if (!e) { e = { x: p.x, y: p.y }; G.players.set(p.i, e); }
-      Object.assign(e, { id: p.i, name: p.n, cls: p.c, tx: p.x, ty: p.y, dir: p.d, moving: p.m, hp: p.h, maxHp: p.H, level: p.l, guild: p.g, dead: p.a, gm: p.v, ap: p.q, st: p.s || 0, el: p.el || '', pw: p.pw || 0, rk: p.rk || 0, k: p.k || 0, pm: p.pm || 0, rb: p.rb || 0, bf: p.bf || null, seen: now });
+      Object.assign(e, { id: p.i, name: p.n, cls: p.c, tx: p.x, ty: p.y, dir: p.d, moving: p.m, hp: p.h, maxHp: p.H, level: p.l, guild: p.g, dead: p.a, gm: p.v, ap: p.q, st: p.s || 0, el: p.el || '', pw: p.pw || 0, rk: p.rk || 0, k: p.k || 0, pm: p.pm || 0, rb: p.rb || 0, mc: p.mc || 0, bf: p.bf || null, seen: now });
       if (p.d === 1 || p.d === 2) e.lastH = p.d;
     }
     for (const id of G.players.keys()) if (!seenP.has(id)) G.players.delete(id);
@@ -1049,6 +1052,7 @@
       ctx.beginPath(); ctx.ellipse(tgt.x, tgt.y + 2, rr, rr * 0.4, 0, 0, Math.PI * 2); ctx.stroke();
     }
 
+    DaiHoi.drawGround(ctx, now);
     Duel.draw(ctx, now);
     drawGhosts(now);
     const frameOf = (moving, seed) => moving ? Math.floor(now / 140 + (seed || 0)) % 4 : 0;
@@ -1097,7 +1101,7 @@
         if (e.pm && !e.dead && !G.map.pvp) Escort.drawFlag(ctx, e.x, e.y, top, e.dir === 1 || e.dir === 2 ? e.dir : (e.lastH || 2), e.pm, now);
         if (pm) Overhead.drawOver(ctx, e, e.x, e.y, top, pm, now);
         let ptop = top - 6;
-        if (G.settings.names) ptop = Overhead.drawNameplate(ctx, e.x, top, { name: e.name, level: e.level, gm: e.gm, guild: e.guild, power: e.pw, myPower: G.me.stats.power, rank: e.rk, pk: e.k });
+        if (G.settings.names) ptop = Overhead.drawNameplate(ctx, e.x, top, { name: e.name, level: e.level, gm: e.gm, guild: e.guild, power: e.pw, myPower: G.me.stats.power, rank: e.rk, pk: e.k, mc: e.mc });
         hpBar(e.x, top - 4, 40, e.hp / e.maxHp, '#4ade80');
         if (e.rb && !e.dead) { ptop -= 14; label(e.x, ptop, '💰 Truy nã · Cướp Tiêu', '#ff5050', 11, true); }
         if (e.bubble) bubbles.push([e, ptop + 4]);
@@ -1115,7 +1119,7 @@
         if (me.pkMode && !me.dead && !G.map.pvp) Escort.drawFlag(ctx, s.x, s.y, top, s.dir === 1 || s.dir === 2 ? s.dir : (s.lastH || 2), me.pkMode, now);
         if (sm) Overhead.drawOver(ctx, s, s.x, s.y, top, sm, now);
         let stop = top - 6;
-        if (G.settings.names) stop = Overhead.drawNameplate(ctx, s.x, top, { self: true, name: me.name, gm: me.admin, guild: me.guild && me.guild.name, power: me.stats.power, rank: me.rank, pk: me.pk });
+        if (G.settings.names) stop = Overhead.drawNameplate(ctx, s.x, top, { self: true, name: me.name, gm: me.admin, guild: me.guild && me.guild.name, power: me.stats.power, rank: me.rank, pk: me.pk, mc: me.minhChu });
         hpBar(s.x, top - 4, 40, me.hp / me.stats.maxHp, '#ff5050');
         if (me.robUntil > Date.now() && !me.dead) { stop -= 14; label(s.x, stop, '💰 Truy nã · Cướp Tiêu', '#ff5050', 11, true); }
         if (s.bubble) bubbles.push([s, stop + 4]);

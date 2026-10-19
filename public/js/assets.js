@@ -171,7 +171,10 @@
   fetch(BASE + 'monsters.json').then(r => r.ok ? r.json() : null).then(j => { MON_META = j; }).catch(() => { });
   const monImgs = {}, monLoading = {};
   const MON_N = { idle: 4, walk: 6, atk: 4, cast: 4, hurt: 1, dead: 1 };
+  // quái sự kiện mượn hình vẽ có sẵn (G.data.monsters[id].art)
+  const artOf = id => (window.G && G.data && G.data.monsters && G.data.monsters[id] && G.data.monsters[id].art) || id;
   function monsterFrame(id, state, i, dir) {
+    id = artOf(id);
     const m = MON_META && MON_META.mon[id];
     if (!m) return null;
     const img = monImgs[id];
@@ -199,8 +202,8 @@
     const c = NPC_META.cell;
     return { img, sx: (i % 4) * c, sy: side ? c : 0, w: c, h: c, fx: NPC_META.foot[0], fy: NPC_META.foot[1] };
   }
-  function monsterReady(id) { return !!(MON_META && MON_META.mon[id]); }
-  function monsterTop(id) { const m = MON_META && MON_META.mon[id]; return m && monImgs[id] ? m.top : 0; }
+  function monsterReady(id) { id = artOf(id); return !!(MON_META && MON_META.mon[id]); }
+  function monsterTop(id) { id = artOf(id); const m = MON_META && MON_META.mon[id]; return m && monImgs[id] ? m.top : 0; }
   // ảnh đại diện (đầu + vai) cho khung avatar / thẻ môn phái
   function avatar(cls, size, ap) {
     size = size || 64;

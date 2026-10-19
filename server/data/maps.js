@@ -46,7 +46,8 @@ const MAP_DEFS = {
       { id: 'ma_phu',     x: 8,  y: 13 },
       { id: 'thu_kho',    x: 8,  y: 17 },
       { id: 'tieu_cuc',   x: 28, y: 13 },
-      { id: 'tang_kinh',  x: 26, y: 18 }
+      { id: 'tang_kinh',  x: 26, y: 18 },
+      { id: 'dh_su_gia',  x: 17, y: 20 }
     ],
     spawns: []
   },
@@ -171,6 +172,12 @@ const MAP_DEFS = {
     npcs: [],
     spawns: [['u_minh_quy', 8], ['xich_lang', 8], ['diem_la', 6], ['diem_la', 5]]
   },
+  dai_hoi: {
+    name: 'Đại Hội Võ Lâm', theme: 'arena', w: 40, h: 30, seed: 91, lv: '20+', safe: true, tourney: true, minLv: 20,
+    portals: [],
+    npcs: [{ id: 'dh_chu_tri', x: 20, y: 5 }],
+    spawns: []
+  },
   chien_truong: {
     name: 'Lôi Đài Hoa Sơn (PK)', theme: 'arena', w: 32, h: 24, seed: 81, lv: '10+', pvp: true, minLv: 10,
     portals: [{ side: 'S', to: 'tuong_duong' }],
@@ -270,6 +277,11 @@ function generate(id) {
   if (def.theme === 'arena') {
     for (let y = 5; y < h - 5; y++) for (let x = 6; x < w - 6; x++) set(x, y, T.FLOOR);
   }
+  if (def.tourney) {   // Đại Hội: sân đá rộng, không chướng ngại, hồ nước bốn góc
+    for (let y = 2; y < h - 2; y++) for (let x = 2; x < w - 2; x++) set(x, y, T.FLOOR);
+    for (const [qx, qy] of [[4, 4], [w - 7, 4], [4, h - 7], [w - 7, h - 7]]) for (let y = 0; y < 3; y++) for (let x = 0; x < 3; x++) set(qx + x, qy + y, T.WATER);
+    for (let x = 3; x < w - 3; x += 4) { set(x, 2, T.FLOWER); set(x, h - 3, T.FLOWER); }
+  }
 
   // Viền bản đồ
   for (let x = 0; x < w; x++) { set(x, 0, th.border); set(x, h - 1, th.border); }
@@ -343,7 +355,7 @@ function generate(id) {
   const bossSpot = farFromPortals.length ? farFromPortals[Math.floor(r() * farFromPortals.length)] : start;
 
   return {
-    id, name: def.name, theme: def.theme, w, h, tiles: g, safe: !!def.safe, pvp: !!def.pvp, minLv: def.minLv || 1, lv: def.lv, tier: def.tier ?? 0,
+    id, name: def.name, theme: def.theme, w, h, tiles: g, safe: !!def.safe, pvp: !!def.pvp, tourney: !!def.tourney, minLv: def.minLv || 1, lv: def.lv, tier: def.tier ?? 0,
     portals, npcs: def.npcs, spawns, walkable,
     boss: { x: bossSpot % w, y: (bossSpot / w) | 0 },
     center: { x: cx, y: cy }

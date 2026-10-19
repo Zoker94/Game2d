@@ -988,6 +988,7 @@
     if (d.action === 'quest') { UI.openPanel('quests', { tab: 'daily' }); return; }
     if (d.action === 'bank') { UI.openPanel('bank'); UI.toast(d.talk); return; }
     if (d.action === 'escort') { Escort.open(d); return; }
+    if (d.action === 'daihoi') { DaiHoi.open(d); return; }
     if (d.action === 'escortDest') { UI.toast(G.me.escort && G.me.escort.id ? 'Đưa xe tiêu tới sát bên Phân Đà để giao tiêu!' : d.talk); return; }
     npcData = d;
     panel = 'npc';

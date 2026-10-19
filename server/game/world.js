@@ -17,6 +17,7 @@ const U = require('./util');
 const { Escort } = require('./escort');
 const { Story } = require('./story');
 const { Duel } = require('./duel');
+const { DaiHoi, DAIHOI_MAP } = require('./daihoi');
 const { ATTRS, attrTotal, attrUsed, attrResetCost } = require('../data/attrs');
 
 const HOTBAR_N = 8;          // số ô gán phím (phím 2..9)
@@ -188,6 +189,7 @@ class World {
       expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null,
+      minhChu: this.daihoi && this.daihoi.isMinhChu(p.userId) ? 1 : 0,
       attr: c.attr || {}, attrFree: attrTotal(c.level) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
       skills: c.skills || {}, hotbar: c.hotbar, sp: skillPointsTotal(c.level) - (c.spSpent || 0),
       mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
@@ -653,6 +655,7 @@ class World {
   }
 
   killPlayer(t, src) {
+    if (this.daihoi) this.daihoi.onPlayerKilled(t, src && src.c ? src : null);
     if (t.duel) this.duel.onLost(t, `${t.c.name} bị kẻ khác hạ gục`);
     t.dead = true; t.c.hp = 0; t.c.deaths = (t.c.deaths || 0) + 1; t.st = {}; t.dots = [];
     if (t.c.riding) { t.c.riding = false; this.recalc(t); }
@@ -721,6 +724,7 @@ class World {
     const tpl = mon.tpl;
     const cfg = this.db.data.config;
 
+    if (mon.event === 'daihoi') { this.daihoi.onMonsterKilled(mon, killer); map.monsters.delete(mon.id); return; }
     if (mon.event) { this.features.onEventMonsterKilled(mon, killer); map.monsters.delete(mon.id); return; }
     if (mon.story) { this.rewardStoryElite(mon, killer); this.story.onEliteKilled(mon, killer); map.monsters.delete(mon.id); return; }
 
@@ -1017,6 +1021,7 @@ class World {
     }
     if (npc.knbShop) out.knbShop = npc.knbShop;
     if (npc.action === 'escort' || npc.action === 'escortDest') { out.routes = this.escort.routeView(); out.escort = this.escort.meView(p); }
+    if (npc.action === 'daihoi') Object.assign(out, this.daihoi.npcView(p));
     if (npc.action === 'teleport') out.teleports = TELEPORTS.map(t => ({ ...t, name: MAPS[t.map].name, lv: MAPS[t.map].lv, minLv: MAPS[t.map].minLv }));
     p.socket.emit('npc', out);
   }
@@ -1446,7 +1451,7 @@ class World {
       ps.push({ i: p.id, n: p.c.name, c: p.c.cls, x: Math.round(p.x), y: Math.round(p.y), d: p.dir, m: p.moving ? 1 : 0,
         h: Math.max(0, Math.round(p.c.hp)), H: p.stats.maxHp, l: p.c.level, g: g ? g.name : '', a: p.dead ? 1 : 0,
         q: this.appearance(p.c), v: p.user.isAdmin ? 1 : 0, s: stMask(p, now),
-        pw: p.stats.power || 0, el: p.stats.el || '', rk: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0, k: p.c.pk || 0, pm: p.c.pkMode | 0, rb: p.c.robUntil > now ? 1 : 0, bf: p.buffs.length ? p.buffs.filter(b => b.until > now && b.aura).map(b => [b.aura, b.color]) : 0 });
+        pw: p.stats.power || 0, el: p.stats.el || '', rk: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0, k: p.c.pk || 0, pm: p.c.pkMode | 0, rb: p.c.robUntil > now ? 1 : 0, mc: this.daihoi && this.daihoi.isMinhChu(p.userId) ? 1 : 0, bf: p.buffs.length ? p.buffs.filter(b => b.until > now && b.aura).map(b => [b.aura, b.color]) : 0 });
     }
     const ms = [];
     for (const mon of m.monsters.values()) {

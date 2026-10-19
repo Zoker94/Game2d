@@ -221,6 +221,21 @@
     const w = ctx.measureText(name).width;
     outlined(ctx, name, x, top - 10, 12, nameCol, '#000', 700);
     if (o.rank) drawBadge(ctx, x - w / 2 - 10, top - 11, o.rank);
+    // Võ Lâm Minh Chủ: danh hiệu riêng vàng rực thay cho danh hiệu lực chiến
+    if (o.mc) {
+      const now = performance.now(), mt = '👑【Võ Lâm Minh Chủ】';
+      ctx.font = '900 11px system-ui, sans-serif';
+      const mw = ctx.measureText(mt).width;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const g = ctx.createLinearGradient(x - mw / 2, 0, x + mw / 2, 0);
+      const sh = (now / 1500) % 1;
+      g.addColorStop(0, 'rgba(255,140,20,.15)'); g.addColorStop(Math.max(0, sh - 0.1), 'rgba(255,180,40,.35)'); g.addColorStop(sh, 'rgba(255,250,200,.85)'); g.addColorStop(Math.min(1, sh + 0.1), 'rgba(255,180,40,.35)'); g.addColorStop(1, 'rgba(255,140,20,.15)');
+      ctx.fillStyle = g; ctx.fillRect(Math.round(x - mw / 2 - 4), top - 30, Math.round(mw + 8), 14); ctx.restore();
+      outlined(ctx, mt, x, top - 23, 11, '#ffe060', '#5a1a00', 900);
+      let yTop = top - 31;
+      if (o.guild) { outlined(ctx, '«' + o.guild + '»', x, top - 37, 10, '#7fb8ff', '#000', 600); yTop = top - 44; }
+      return yTop;
+    }
     // danh hiệu: chữ nhỏ có khung, bậc cao có viền sáng
     const tt = '【' + t.name + '】';
     ctx.font = '700 10px system-ui, sans-serif';

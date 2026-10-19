@@ -1041,3 +1041,26 @@ body.short .dead-box, body.touch .dead-box { padding: 10px 14px; } body.touch .d
 .at-btns { display: flex; gap: 3px; flex: none; }
 .at-btns .btn { min-width: 34px; padding: 4px 7px; }
 body.touch .at-btns .btn { min-width: 38px; padding: 6px 8px; }
+
+/* ---------- Đại Hội Võ Lâm ---------- */
+.dh-hero { display: flex; gap: 12px; align-items: center; padding: 10px; border: 1px solid #c8963a; border-radius: 10px; background: linear-gradient(135deg, rgba(140,30,20,.5), rgba(40,20,10,.6)); margin-bottom: 8px; }
+.dh-hero h3 { margin: 0 0 4px; color: #ffe08a; letter-spacing: 1px; }
+.dh-emb { font-size: 44px; filter: drop-shadow(0 0 10px rgba(255,120,40,.8)); }
+.dh-state { margin-top: 6px; font-weight: 800; color: #c8b090; }
+.dh-state.on { color: #ff8a5a; animation: blink 1.2s infinite; }
+.dh-mc { padding: 8px 10px; margin-bottom: 8px; border-radius: 8px; background: rgba(255,200,60,.1); border: 1px solid rgba(255,200,60,.4); }
+.dh-mc b { color: #ffe060; text-shadow: 0 0 8px rgba(255,180,40,.7); }
+#dh-hud { position: absolute; right: 8px; top: 318px; z-index: 9; width: 230px; padding: 7px 9px; border-radius: 10px; font-size: 12px; pointer-events: none;
+  background: linear-gradient(180deg, rgba(60,14,10,.9), rgba(18,8,8,.9)); border: 1px solid #e0a040; box-shadow: 0 0 0 1px #000, 0 4px 14px rgba(0,0,0,.6), 0 0 12px rgba(255,120,40,.3); }
+#dh-hud .dh-h { font-weight: 800; color: #ffd86a; display: flex; justify-content: space-between; margin-bottom: 4px; }
+#dh-hud .dh-h span { color: #fff; }
+#dh-hud .dh-top div { display: flex; gap: 6px; align-items: center; padding: 1px 0; }
+#dh-hud .dh-top div.me { color: #8af0a8; }
+#dh-hud .dh-top i { font-style: normal; width: 18px; text-align: center; }
+#dh-hud .dh-top b { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#dh-hud .dh-top em { font-style: normal; color: #ff8a3a; font-size: 11px; }
+#dh-hud .dh-top span { font-weight: 800; color: #ffe08a; }
+#dh-hud .dh-me { margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,200,100,.25); color: #e8d8b8; }
+#dh-hud .dh-me b { color: #ffe060; }
+#dh-hud .dh-boss { margin-top: 4px; color: #ff6a5a; font-weight: 700; animation: blink 1s infinite; }
+body.touch #dh-hud { top: 222px; width: 190px; font-size: 11px; padding: 5px 7px; }

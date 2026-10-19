@@ -13,6 +13,7 @@ const EVENT_INFO = {
   huntRace:  { name: 'Đua Top Săn Quái', desc: 'Ai tiêu diệt nhiều quái nhất trong 30 phút sẽ nhận thưởng lớn. Tự động 19:00 và 21:30.', icon: '🏆' },
   treasure:  { name: 'Truy Tìm Bảo Rương', desc: 'Bảo Rương xuất hiện rải rác khắp các bản đồ luyện công. Đánh vỡ rương để nhận quà! Mỗi 2 giờ (giờ chẵn, phút 40).', icon: '💰' },
   quiz:      { name: 'Đố Vui Võ Lâm', desc: 'Câu hỏi xuất hiện ở kênh Thế Giới, người trả lời đúng đầu tiên nhận Nguyên Bảo. Mỗi 15 phút.', icon: '❓' },
+  daiHoi:    { name: 'Đại Hội Võ Lâm', desc: 'Hỗn chiến tranh ngôi Võ Lâm Minh Chủ tại lôi đài Đại Hội (cấp 20+, gặp Sứ Giả Đại Hội ở Tương Dương). Hạ người chơi, Hộ Pháp và Thiên Hạ Đệ Nhất Cao Thủ để ghi điểm. 20:30 Thứ 4, Thứ 7, Chủ Nhật.', icon: '⚔️' },
   lantern:   { name: 'Lễ Hội Hoa Đăng', desc: 'Quái rơi Hoa Đăng, đổi quà tại Lễ Quan. Tự động cả ngày Thứ 7 & Chủ Nhật.', icon: '🏮' }
 };
 
@@ -117,6 +118,7 @@ class Features {
         this.broadcastEvents();
       }
     }
+    if (this.w.daihoi) this.w.daihoi.tick(now);
     if (now - this.lastLb > 30000) { this.lastLb = now; this.computeLeaderboard(); }
   }
 
@@ -135,6 +137,10 @@ class Features {
     if ((h === 19 && mi === 0) || (h === 21 && mi === 30)) this.startEvent('huntRace', 30);
     if (h % 2 === 0 && mi === 40) this.startEvent('treasure', 15);
     if (mi % 15 === 5) this.startEvent('quiz', 1);
+    if (dow === 0 || dow === 3 || dow === 6) {   // Đại Hội Võ Lâm 20:30
+      if (h === 20 && (mi === 20 || mi === 25)) this.announce(`⚔️ Đại Hội Võ Lâm sẽ khai mạc sau ${30 - mi} phút! Gặp Sứ Giả Đại Hội ở Tương Dương để vào lôi đài (cấp 20+).`);
+      if (h === 20 && mi === 30) this.startEvent('daiHoi', 30);
+    }
     if ((dow === 0 || dow === 6) && !this.isActive('lantern')) this.startEvent('lantern', (24 * 60 - mod));
     if (this.lastMinute % 5 === 0) this.broadcastEvents();
   }
@@ -185,6 +191,8 @@ class Features {
     } else if (k === 'huntRace') {
       e.scores = {};
       this.announce(`${info.icon} Sự kiện ${info.name} bắt đầu! ${minutes} phút, top 3 nhận thưởng lớn!`);
+    } else if (k === 'daiHoi') {
+      this.w.daihoi.start(minutes);
     } else if (k === 'treasure') {
       e.chests = 0;
       const tpl = { id: 'chest', name: 'Bảo Rương', sprite: 'chest', color: '#ffd700', lv: 1, hp: 1, atk: 0, def: 0, exp: 0, gold: 0, speed: 0, static: true };
@@ -222,6 +230,8 @@ class Features {
         else this.giveOffline(user.character, rewards[i]);
       });
       this.announce(`🏆 Kết thúc Đua Top Săn Quái! ${top.slice(0, 3).map(([, s], i) => `Top ${i + 1}: ${s.name} (${s.n})`).join(' | ') || 'Không có người tham gia.'}`);
+    } else if (k === 'daiHoi') {
+      this.w.daihoi.end();
     } else if (k === 'treasure') {
       for (const id in this.w.maps) for (const [mid, mon] of this.w.maps[id].monsters) if (mon.event === 'treasure') this.w.maps[id].monsters.delete(mid);
       this.announce(`${info.icon} ${info.name} đã kết thúc.`);
