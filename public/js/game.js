@@ -468,7 +468,7 @@
       G.dodgeCd = { until: now + d.cd, total: d.cd };
     } else if (e) { e.x = d.tx; e.y = d.ty; e.tx = d.tx; e.ty = d.ty; e.dir = dir; }
     const near = Math.hypot(d.x - G.self.x, d.y - G.self.y);
-    if (near < 700) GameAudio.sfx('whoosh', 60);
+    if (near < 700) GameAudio.sfx('whoosh', 60, self ? null : spatial(d.x, d.y));
     FX.emit(10, d.x, d.y - 6, { speed: 60, life: 380, size: 4, color: '#c8e8ff', drag: 3 });
   }
   const ghostCache = {};
@@ -508,12 +508,12 @@
     else if (d.k === 'crit') {
       Overhead.add(x, y, d.v, 'crit');
       FX.emit(14, e.x, e.y - 30, { speed: 170, life: 420, size: 4, color: '#ffb020', drag: 3 });
-      if (near < 600) GameAudio.sfx('crit', 80);
+      if (near < 600) GameAudio.sfx('crit', 80, d.id === G.you ? null : spatial(x, y));
       if (G.settings.shake && (d.id === G.you || near < 260)) shake = Math.max(shake, d.id === G.you ? 6 : 3);
     }
     else if (d.k === 'dot' || d.k === 'poison' || d.k === 'burn' || d.k === 'bleed') Overhead.add(x, y + 8, d.v, d.k);
     else if (d.id === G.you) { Overhead.add(x, y, d.v, 'hurt'); if (G.settings.shake) shake = Math.max(shake, 4); GameAudio.sfx('hurt', 150); }
-    else { Overhead.add(x, y, d.v, 'hit'); if (near < 500) GameAudio.sfx('hit', 70); }
+    else { Overhead.add(x, y, d.v, 'hit'); if (near < 600) GameAudio.sfx('hit', 60, spatial(x, y)); }
     e.hitAt = performance.now();
   }
   function addFloat(x, y, text, color, size, bold) { G.floats.push({ x, y, text, color, size, bold, t0: performance.now() }); if (G.floats.length > 80) G.floats.shift(); }
@@ -523,18 +523,26 @@
   const SFX_ALIAS = { hit: 'hit', level: 'level', portal: 'portal', die: 'die', pick: 'pick', click: 'click' };
   function sfx(kind) { GameAudio.sfx(SFX_ALIAS[kind] || kind); }
   // Âm thanh theo kiểu hiệu ứng võ công
-  const FX_SOUND = { slash: 'swing', slash2: 'swing', palm: 'swing', bite: 'hurt', dart: 'whoosh', dartfan: 'whoosh', bolt: 'magic', beam: 'magic', dash: 'whoosh',
-    dragon: 'roar', hanglong: 'roar', lightning: 'thunder', storm: 'thunder', thunder: 'thunder', ring: 'boom', nova: 'boom', quake: 'boom', meteor: 'boom', pillar: 'boom',
-    buddha: 'boom', lionroar: 'roar', whirl: 'swing', arrowrain: 'whoosh', net: 'whoosh', swords: 'magic', taiji: 'magic', bagua: 'magic', lotus: 'heal', holylotus: 'heal',
-    blades: 'swing', tornado: 'whoosh', poison: 'whoosh', toxic: 'whoosh', swarm: 'whoosh', frost: 'ice', dragonring: 'roar', aura: 'buff', heal: 'heal',
+  const FX_SOUND = { slash: 'swing', slash2: 'slash', palm: 'palm', bite: 'hurt', dart: 'throw', dartfan: 'throw', bolt: 'zap', beam: 'qi', dash: 'whoosh',
+    dragon: 'roar', hanglong: 'roar', lightning: 'lightning', storm: 'thunder', thunder: 'thunder', ring: 'boom', nova: 'boom', quake: 'quake', meteor: 'boom', pillar: 'boom',
+    buddha: 'holy', lionroar: 'lion', whirl: 'slash', arrowrain: 'arrows', net: 'throw', swords: 'magic', taiji: 'magic', bagua: 'magic', lotus: 'heal', holylotus: 'holy',
+    blades: 'slash', tornado: 'wind', poison: 'poison', toxic: 'poison', swarm: 'poison', frost: 'ice', dragonring: 'roar', aura: 'buff', heal: 'heal',
     firedragon: ['roar', 'fire'], waterdragon: ['roar', 'water'], icedragon: ['roar', 'ice'] };
+  // âm theo vị trí: xa thì nhỏ, lệch trái/phải theo hướng
+  function spatial(x, y) {
+    const dx = x - G.self.x, d = Math.hypot(dx, y - G.self.y);
+    return { vol: Math.max(0.15, 1 - d / 800), pan: dx / 520 };
+  }
+  G.spatial = spatial;
   function fxSound(d) {
-    const x = d.x != null ? d.x : 0, y = d.y != null ? d.y : 0;
-    if (d.from !== G.you && Math.hypot(x - G.self.x, y - G.self.y) > 700) return;
+    const x = d.x != null ? d.x : G.self.x, y = d.y != null ? d.y : G.self.y;
+    const mine = d.from === G.you;
+    if (!mine && Math.hypot(x - G.self.x, y - G.self.y) > 750) return;
     const snd = FX_SOUND[d.t];
     if (!snd) return;
-    if (Array.isArray(snd)) { GameAudio.sfx(snd[0], 300); setTimeout(() => GameAudio.sfx(snd[1], 300), 750); }
-    else GameAudio.sfx(snd, d.from === G.you ? 40 : 120);
+    const o = mine ? null : spatial(x, y);
+    if (Array.isArray(snd)) { GameAudio.sfx(snd[0], 300, o); setTimeout(() => GameAudio.sfx(snd[1], 300, o), 750); }
+    else GameAudio.sfx(snd, mine ? 40 : 120, o);
   }
   // Nhạc nền theo khu vực: thành (êm), bãi luyện công (sôi động), có Boss gần (căng thẳng)
   function updateMusic() {

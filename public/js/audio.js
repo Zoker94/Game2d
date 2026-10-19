@@ -1,4 +1,5 @@
-// Âm thanh: hiệu ứng tổng hợp bằng WebAudio + nhạc nền võ lâm (ngũ cung, đàn tranh, sáo trúc, trống).
+// Âm thanh: hiệu ứng thu sẵn (tools/sfx.py -> assets/sfx.mp3, gộp một file, nhiều biến thể; khi chưa tải xong
+// thì dùng âm tổng hợp WebAudio) + nhạc nền võ lâm (ngũ cung, đàn tranh, sáo trúc, trống).
 (function () {
   let ctx = null, master, sfxBus, musicBus, musicWet, sfxWet, reverb, noiseBuf;
   const st = { music: true, sfx: true, musicVol: 0.5, sfxVol: 0.7 };
@@ -11,7 +12,11 @@
     if (!AC) return false;
     ctx = new AC();
     master = ctx.createGain(); master.gain.value = 1; master.connect(ctx.destination);
-    sfxBus = ctx.createGain(); sfxBus.connect(master);
+    // bộ nén chung cho hiệu ứng: nhiều âm chồng nhau vẫn không vỡ tiếng
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -16; comp.knee.value = 10; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.25;
+    comp.connect(master);
+    sfxBus = ctx.createGain(); sfxBus.connect(comp);
     musicBus = ctx.createGain(); musicBus.connect(master);
     // vang (reverb) nhân tạo cho không khí sơn thủy
     reverb = ctx.createConvolver();
@@ -24,6 +29,38 @@
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
     const nd = noiseBuf.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
     applyVol();
+    loadSprite();
+    return true;
+  }
+  // ---------- bộ âm thanh thu sẵn ----------
+  let spr = null, sprBuf = null, sprLoading = false;
+  function loadSprite() {
+    if (sprLoading) return; sprLoading = true;
+    Promise.all([fetch('/assets/sfx.json').then(r => r.json()), fetch('/assets/sfx.mp3').then(r => r.arrayBuffer())])
+      .then(([j, ab]) => new Promise((ok, bad) => ctx.decodeAudioData(ab, ok, bad)).then(buf => { spr = j; sprBuf = buf; }))
+      .catch(() => { sprLoading = false; });
+  }
+  // âm lượng riêng từng âm (cân lại cho to đều) và âm nào được lệch cao độ ngẫu nhiên để đỡ lặp
+  const VOL = { arrow: 1.7, arrows: 2.2, boom: 0.58, bossHorn: 1.08, buff: 1.27, click: 0.82, coin: 1.0, crit: 1.5, die: 0.98, enhFail: 2.2, enhOk: 1.65, fire: 0.82, heal: 0.73, hit: 0.65, holy: 1.19, hurt: 0.71, ice: 2.2, level: 1.33, lightning: 2.2, lion: 0.88, magic: 0.74, mount: 1.72, palm: 0.74, pick: 1.09, poison: 0.89, portal: 0.75, qi: 0.88, quake: 0.77, rare: 0.88, roar: 0.87, slash: 0.78, swing: 1.03, throw: 1.3, thunder: 1.14, water: 1.8, whoosh: 1.13, wind: 0.89, zap: 1.32 };   // tools/sfx.py: cân theo độ to cảm nhận
+  const NO_PITCH = new Set(['level', 'rare', 'heal', 'holy', 'enhOk', 'bossHorn', 'die', 'click']);
+  const voices = [];
+  function playSprite(name, t, o) {
+    const list = spr[name]; if (!list) return false;
+    const [off, dur] = list[Math.floor(Math.random() * list.length)];
+    // giới hạn số âm cùng lúc: bỏ âm cũ nhất cùng tên khi quá 3, tổng tối đa 14
+    const same = voices.filter(v => v.name === name);
+    if (same.length >= 3) { try { same[0].src.stop(); } catch (e) { } }
+    if (voices.length >= 14) { try { voices[0].src.stop(); } catch (e) { } }
+    const src = ctx.createBufferSource(); src.buffer = sprBuf;
+    if (!NO_PITCH.has(name)) src.playbackRate.value = 1 + (Math.random() - 0.5) * 0.09;
+    const g = ctx.createGain(); g.gain.value = (VOL[name] || 1) * (o && o.vol != null ? o.vol : 1);
+    let node = g;
+    if (o && o.pan && ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = Math.max(-0.85, Math.min(0.85, o.pan)); g.connect(p); node = p; }
+    src.connect(g); node.connect(sfxBus);
+    if (o && o.wet) { const w = ctx.createGain(); w.gain.value = o.wet; g.connect(w); w.connect(sfxWet); }
+    const v = { name, src }; voices.push(v);
+    src.onended = () => { const i = voices.indexOf(v); if (i >= 0) voices.splice(i, 1); };
+    src.start(t, off, dur);
     return true;
   }
   function applyVol() {
@@ -81,12 +118,19 @@
     mount: t => { [0, 0.12, 0.24].forEach(d => noise(t + d, 0.05, 0.5, 'lowpass', 800)); osc('sawtooth', 600, 300, t + 0.3, 0.4, 0.12, sfxBus, 0.4); },
     bossHorn: t => { osc('sawtooth', 146, 146, t, 1.6, 0.25, sfxBus, 0.6); osc('sawtooth', 220, 220, t, 1.6, 0.15, sfxBus, 0.6); }
   };
-  function sfx(name, minGap = 40) {
-    if (!st.sfx || !init() || !SFX[name]) return;
+  const FALLBACK = { slash: 'swing', palm: 'hit', zap: 'magic', throw: 'whoosh', arrow: 'whoosh', arrows: 'whoosh', qi: 'magic', lightning: 'thunder', quake: 'boom', lion: 'roar', holy: 'heal', poison: 'whoosh', wind: 'whoosh' };
+  // o: { vol 0..1, pan -1..1 } (âm theo vị trí trên bản đồ)
+  function sfx(name, minGap = 40, o) {
+    if (!st.sfx || !init()) return;
     const now = performance.now();
     if (last[name] && now - last[name] < minGap) return;
     last[name] = now;
-    try { SFX[name](ctx.currentTime + 0.005); } catch (e) { }
+    const t = ctx.currentTime + 0.005;
+    try {
+      if (sprBuf && playSprite(name, t, o)) return;
+      const fb = SFX[name] ? name : FALLBACK[name];
+      if (fb && SFX[fb]) SFX[fb](t);
+    } catch (e) { }
   }
 
   // ---------- nhạc nền võ lâm (tạo theo thời gian thực) ----------
@@ -208,7 +252,7 @@
   }
 
   window.GameAudio = {
-    init, sfx, music, ambience, get state() { return st; },
+    init, sfx, music, ambience, get state() { return st; }, get sprite() { return !!sprBuf; },
     set(k, v) { st[k] = v; save(); applyVol(); if (k === 'music') { if (v && mood) { const m = mood; mood = null; music(m); } else if (!v) { if (timer) { clearInterval(timer); timer = null; } if (ctx) stopDrone(); } } },
     get mood() { return mood; }
   };

@@ -963,3 +963,22 @@ body:not(.touch) #skillbar { left: max(50%, 722px); }
 /* chiêu chưa học / chưa đủ cấp: xám nhẹ + ổ khoá nhỏ */
 .skill.unlearned, .act.sk.unlearned, .skill.locked, .act.locked { filter: grayscale(.85) brightness(.72); }
 .skill.unlearned::before, .act.sk.unlearned::before { content: '🔒'; position: absolute; z-index: 5; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 16px; filter: drop-shadow(0 1px 2px #000); }
+
+/* ---------- ô đồ theo phẩm chất ---------- */
+.slot { overflow: hidden; }
+.slot img.ic { position: relative; z-index: 1; width: 42px; height: 42px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.55)); }
+.equip-grid .slot img.ic { width: 48px; height: 48px; }
+.slot.r-common { background: radial-gradient(circle at 50% 40%, #3e3644 0%, #1a141c 62%, #0e0a10 100%); border-color: #6a5e6a; }
+.slot.r-rare { background: radial-gradient(circle at 50% 40%, #2a5aa0 0%, #12284a 55%, #090f1c 100%); border-color: #4fa3ff; box-shadow: inset 0 0 10px rgba(79,163,255,.35), 0 0 6px rgba(79,163,255,.3); }
+.slot.r-epic { background: radial-gradient(circle at 50% 40%, #6a30a8 0%, #2a1248 55%, #12081e 100%); border-color: #c060ff; box-shadow: inset 0 0 12px rgba(192,96,255,.4), 0 0 8px rgba(192,96,255,.45); }
+.slot.r-legendary { background: radial-gradient(circle at 50% 40%, #a8681a 0%, #4a2a08 55%, #1e1004 100%); border-color: #ffb040; box-shadow: inset 0 0 14px rgba(255,170,60,.45), 0 0 10px rgba(255,155,47,.6); }
+.slot.r-legendary::after, .slot.r-epic::after { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: linear-gradient(115deg, transparent 38%, rgba(255,244,210,.38) 50%, transparent 62%); background-size: 260% 100%; animation: slotShine 3.2s linear infinite; }
+.slot.r-epic::after { background: linear-gradient(115deg, transparent 40%, rgba(230,200,255,.25) 50%, transparent 60%); background-size: 260% 100%; animation-duration: 4.5s; }
+@keyframes slotShine { from { background-position: 160% 0; } to { background-position: -110% 0; } }
+.slot .q { z-index: 3; right: 2px; bottom: 1px; background: rgba(8,4,6,.85); border: 1px solid rgba(255,230,170,.18); border-radius: 5px; padding: 0 3px; line-height: 12px; font-size: 10px; }
+.slot .plus { z-index: 3; left: 2px; top: 1px; background: linear-gradient(#ffe080, #b8741a); color: #2a1404; border-radius: 5px; padding: 0 3px; line-height: 12px; font-size: 9px; text-shadow: none; box-shadow: 0 1px 2px rgba(0,0,0,.6); }
+.slot.sel { outline: 2px solid #fff3c8; outline-offset: -1px; box-shadow: 0 0 12px rgba(255,236,170,.75); }
+.slot.empty-eq img.ph { position: absolute; opacity: .16; filter: grayscale(1) brightness(1.6); z-index: 0; }
+.slot.empty-eq .lbl { z-index: 1; color: #b8a888; text-shadow: 0 1px 0 #000; }
+img.ic { image-rendering: auto; }

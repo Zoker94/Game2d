@@ -11,6 +11,7 @@ SS = 4                 # siêu lấy mẫu
 N = 64                 # cỡ biểu tượng cuối
 R = N * SS
 COLS = 16
+OUT = 96               # cỡ xuất (vẽ ở hệ toạ độ 64, siêu lấy mẫu 256, thu về 96 cho nét)
 
 def hx(c):
     if isinstance(c, tuple): return c[:3]
@@ -90,19 +91,29 @@ class Icon:
         self.rgb = self.rgb * (1 - m[..., None]) + c[None, None, :] * m[..., None]; self.a = np.maximum(self.a, m * (self.a > 0.5))
     def finish(self, glow=None):
         big = np.dstack([self.rgb, self.a * 255]).clip(0, 255).astype(np.uint8)
-        im = Image.fromarray(big, 'RGBA').resize((N, N), Image.LANCZOS)
-        a = np.array(im)
-        al = a[..., 3]
-        # viền ngoài tối 1px
-        m = Image.fromarray((al > 110).astype(np.uint8) * 255)
-        ring = (np.array(m.filter(ImageFilter.MaxFilter(3))) > 0) & (al < 110)
-        out = np.zeros_like(a)
+        im = Image.fromarray(big, 'RGBA').resize((OUT, OUT), Image.LANCZOS)
+        a = np.array(im).astype(np.float32)
+        al = a[..., 3]; m = al / 255
+        # ánh sáng viền phía trên-trái + tối mép dưới-phải: khối nổi hơn
+        rim = np.clip(m - np.roll(np.roll(m, 2, 0), 2, 1), 0, 1) * (m > 0.5)
+        dk = np.clip(m - np.roll(np.roll(m, -2, 0), -2, 1), 0, 1) * (m > 0.5)
+        a[..., :3] = a[..., :3] * (1 - rim[..., None] * 0.28) + 255 * rim[..., None] * 0.28
+        a[..., :3] *= (1 - dk[..., None] * 0.28)
+        im = Image.fromarray(a.clip(0, 255).astype(np.uint8), 'RGBA')
+        # viền ngoài tối
+        mm = Image.fromarray(((al > 110) * 255).astype(np.uint8))
+        ring = (np.array(mm.filter(ImageFilter.MaxFilter(3))) > 0) & (al < 110)
+        out = np.zeros((OUT, OUT, 4), np.uint8)
         if glow:
-            g = Image.fromarray(al).filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.GaussianBlur(3))
-            ga = np.array(g).astype(np.float32) * 0.85
-            out[..., :3] = hx(glow); out[..., 3] = ga.clip(0, 255).astype(np.uint8)
+            g = Image.fromarray(al.astype(np.uint8)).filter(ImageFilter.MaxFilter(7)).filter(ImageFilter.GaussianBlur(4.5))
+            out[..., :3] = hx(glow); out[..., 3] = (np.array(g).astype(np.float32) * 0.9).clip(0, 255).astype(np.uint8)
         o = Image.fromarray(out, 'RGBA')
-        rr = np.zeros_like(a); rr[ring] = (22, 12, 26, 230)
+        # bóng đổ mềm
+        sh = np.array(Image.fromarray(al.astype(np.uint8)).filter(ImageFilter.GaussianBlur(2.4))).astype(np.float32)
+        sh = np.roll(np.roll(sh, 3, 0), 2, 1) * 0.5
+        so = np.zeros((OUT, OUT, 4), np.uint8); so[..., 3] = sh.clip(0, 255).astype(np.uint8)
+        o.alpha_composite(Image.fromarray(so, 'RGBA'))
+        rr = np.zeros((OUT, OUT, 4), np.uint8); rr[ring] = (22, 12, 26, 235)
         o.alpha_composite(Image.fromarray(rr, 'RGBA'))
         o.alpha_composite(im)
         return o
@@ -510,13 +521,14 @@ def build():
     for key, fn in SIMPLE.items():
         ic = Icon(); fn(ic); add(key, ic.finish(SIMPLE_GLOW.get(key)))
     rows = (len(tiles) + COLS - 1) // COLS
-    atlas = Image.new('RGBA', (COLS * N, rows * N), (0, 0, 0, 0))
-    for k, im in enumerate(tiles): atlas.alpha_composite(im, ((k % COLS) * N, (k // COLS) * N))
+    atlas = Image.new('RGBA', (COLS * OUT, rows * OUT), (0, 0, 0, 0))
+    for k, im in enumerate(tiles): atlas.alpha_composite(im, ((k % COLS) * OUT, (k // COLS) * OUT))
     return atlas, index
 
 if __name__ == '__main__':
     root = sys.argv[1] if len(sys.argv) > 1 else 'public/assets'
     atlas, index = build()
-    atlas.save(os.path.join(root, 'icons.png'), optimize=True)
-    with open(os.path.join(root, 'icons.json'), 'w') as f: json.dump({'size': N, 'cols': COLS, 'i': index}, f)
+    # 256 màu (hiển thị thu nhỏ nên không thấy hạt), nhẹ ~5 lần
+    atlas.quantize(256, method=Image.FASTOCTREE, dither=Image.FLOYDSTEINBERG).save(os.path.join(root, 'icons.png'), optimize=True)
+    with open(os.path.join(root, 'icons.json'), 'w') as f: json.dump({'size': OUT, 'cols': COLS, 'i': index}, f)
     print('icons', len(index), atlas.size)

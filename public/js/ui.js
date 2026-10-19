@@ -29,6 +29,13 @@
   }
   function iconHtml(itemId) { const c = iconCanvas(itemId); return `<img src="${c.toDataURL()}" class="ic" width="36" height="36">`; }
   const iconUrlCache = {};
+  // bóng mờ món đồ cho ô trang bị đang trống
+  const phCache = {};
+  function placeholderIcon(slot) {
+    if (slot in phCache) return phCache[slot];
+    const it = Object.values(G.data.items).find(x => x.type === 'equip' && x.slot === slot && x.rarity === 'common');
+    return (phCache[slot] = it ? iconUrl(it.id) : null);
+  }
   function iconUrl(itemId) { const id = resolveId(itemId); return iconUrlCache[id] || (iconUrlCache[id] = iconCanvas(id).toDataURL()); }
   UI.iconUrl = id => iconUrl(id); UI.esc = esc; UI.itemName = (id, plus) => itemName(id, plus);
   UI.itemTip = (e, id, plus, inst) => tip(e, `<b>${itemName(id, plus)}</b>${statsHtml(G.data.items[resolveId(id)], plus)}${elemFxHtml(G.data.items[resolveId(id)], inst)}`);
@@ -438,7 +445,8 @@
       for (const s of slotsOrder) {
         const e = me.equip[s];
         const it = e && G.data.items[e.id];
-        html += `<div class="slot ${it ? 'r-' + it.rarity : ''} ${panelState.sel === 'eq:' + s ? 'sel' : ''}" data-eq="${s}">${it ? `<img src="${iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}` : `<span class="lbl">${G.data.slots[s]}</span>`}</div>`;
+        const ph = !it && placeholderIcon(s);
+        html += `<div class="slot ${it ? 'r-' + it.rarity : 'empty-eq'} ${panelState.sel === 'eq:' + s ? 'sel' : ''}" data-eq="${s}">${it ? `<img src="${iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}` : `${ph ? `<img src="${ph}" class="ic ph" alt="">` : ''}<span class="lbl">${G.data.slots[s]}</span>`}</div>`;
       }
       html += '</div>';
     }
