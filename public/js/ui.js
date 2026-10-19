@@ -394,6 +394,39 @@
   setInterval(placeTracker, 500);
   window.addEventListener('resize', () => setTimeout(placeTracker, 50));
 
+  // điện thoại: cụm nút menu không được đè lên bình thuốc / nút kỹ năng. Đè thì dàn thêm nút mỗi hàng
+  // (ít hàng hơn), vẫn đè thì thu nhỏ nút; màn hình quá thấp thì ẩn bớt thành nút ☰.
+  let menuFitKey = '';
+  function fitMenu() {
+    const mb = $('menu-buttons'), pad = $('action-pad');
+    if (!Input.isTouch || !mb || !pad || !G.inGame || document.body.classList.contains('menu-min')) return;
+    const acts = [...pad.querySelectorAll('.act:not(.pick)')].filter(a => a.offsetParent).map(a => a.getBoundingClientRect());
+    const vis = [...mb.children].filter(b => b.offsetParent);
+    const key = innerWidth + 'x' + innerHeight + ':' + vis.length + ':' + mb.getBoundingClientRect().top + ':' + acts.map(a => (a.left | 0) + ',' + (a.top | 0)).join(';');
+    if (key === menuFitKey) return;
+    menuFitKey = key;
+    const hit = () => {
+      const r = [...mb.children].filter(b => b.offsetParent).map(b => b.getBoundingClientRect());
+      return r.some(b => acts.some(a => b.left < a.right && b.right > a.left && b.top < a.bottom && b.bottom > a.top));
+    };
+    mb.classList.remove('mb-tiny'); mb.style.maxWidth = '';
+    if (!hit()) return;
+    const n = vis.length;
+    for (const tiny of [false, true]) {
+      mb.classList.toggle('mb-tiny', tiny);
+      const b0 = [...mb.children].find(b => b.offsetParent), w = b0 ? b0.offsetWidth + 5 : 43;
+      for (let cols = 6; cols <= n; cols++) {
+        mb.style.maxWidth = (cols * w) + 'px';
+        if (!hit()) return;
+      }
+    }
+    mb.classList.remove('mb-tiny'); mb.style.maxWidth = '';
+    $('btn-menu-min').click();   // vẫn đè: thu gọn (người chơi bấm ☰ để mở lại)
+  }
+  setInterval(fitMenu, 1000);
+  window.addEventListener('resize', () => { menuFitKey = ''; setTimeout(fitMenu, 120); });
+  UI.fitMenu = () => { menuFitKey = ''; fitMenu(); };
+
   UI.frame = function (now) {
     // hồi né chiêu
     const dc = G.dodgeCd, dr = dc && dc.until > now ? (dc.until - now) / dc.total : 0;

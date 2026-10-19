@@ -1268,3 +1268,6 @@ body.trk-min #sect-box > :not(h4) { display: none; }
 #ui-prompt input { width: 100%; box-sizing: border-box; font-size: 16px; padding: 8px 10px; }
 #update-bar { position: fixed; left: 50%; top: 8px; transform: translateX(-50%); z-index: 9999; display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 10px;
   background: linear-gradient(180deg, #3a2a10, #1e1408); border: 1px solid #ffd86a; color: #ffe9b0; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,.6); white-space: nowrap; }
+/* cụm menu điện thoại bị thu nhỏ khi màn hình thấp (UI.fitMenu) */
+body.touch #menu-buttons.mb-tiny { gap: 3px; }
+body.touch #menu-buttons.mb-tiny button, body.touch #menu-buttons.mb-tiny a.zalo-menu { min-width: 32px; padding: 2px 3px; font-size: 12px; border-radius: 7px; }
