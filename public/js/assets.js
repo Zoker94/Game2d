@@ -153,6 +153,14 @@
       foot: [foot[0] * s, foot[1] * s], seat: [seat[0] * s, seat[1] * s]
     };
   }
+  // ----- cây cối / bụi / đá / nấm cho map cỏ (ảnh tools/nature.py): [x, y, w, h, gốc x, gốc y] -----
+  let NATURE = null;
+  Promise.all([load('nature.png'), fetch(BASE + 'nature.json').then(r => r.ok ? r.json() : null).catch(() => null)])
+    .then(([im, j]) => { if (im && j) NATURE = { im, j }; });
+  function nature(name) {
+    const r = NATURE && NATURE.j[name];
+    return r ? { img: NATURE.im, sx: r[0], sy: r[1], w: r[2], h: r[3], ax: r[4], ay: r[5] } : null;
+  }
   // ----- quái vật (ảnh tools/monsters.py) -----
   // 'side': nhìn ngang quay phải (game tự lật), cột đứng4 đi6 đánh4 trúng1 chết1
   // 'rig' : quái hình người 4 hướng như nhân vật (hàng xuống / lên / phải, hàng 3 cột 0 là ngã)
@@ -251,5 +259,5 @@
     return `<i class="sk-img" style="background-image:url('${url}');--skc:${s.color || '#ffd76a'}"></i>`;
   }
 
-  window.Assets = { ready, imgs, has, charFrame, frameCount, SRC, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, MONSTERS, skillIconUrl, skillIconHTML };
+  window.Assets = { ready, imgs, has, nature, charFrame, frameCount, SRC, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, MONSTERS, skillIconUrl, skillIconHTML };
 })();

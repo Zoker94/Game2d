@@ -11,8 +11,8 @@
   const rnd = (a, b) => a + Math.random() * (b - a);
 
   function set(w, th, fresh) {
-    const k = (w && INFO[w.k]) ? w.k : 'clear';
     if (th) theme = th;
+    const k = (w && INFO[w.k]) && theme !== 'cave' ? w.k : 'clear';   // trong hang không mưa / tuyết
     if (fresh) { kind = k; pending = null; level = 0; drops = []; flakes = []; streaks = []; bits = []; splashes = []; lastCam = null; }
     else if (k !== kind) pending = k;
     else pending = null;
