@@ -145,13 +145,14 @@
         <label>Cấp tối thiểu<input id="gc-minlv" type="number" value="0" style="width:80px"></label></div>
         <div class="row" style="margin-top:8px"><label style="flex:1">Ghi chú (hiện trong game)<input id="gc-note" maxlength="80" placeholder="VD: Quà ra mắt máy chủ"></label>
         <label style="flex-direction:row;align-items:center;gap:6px"><input id="gc-pub" type="checkbox"> Công khai trong game (người chơi thấy và bấm nhận)</label></div>
-        <div class="row" style="margin-top:8px"><label style="flex:1">Vật phẩm<select id="gc-item">${itemOptions(items)}</select></label><label>SL<input id="gc-qty" type="number" value="1" style="width:70px"></label><button class="btn" id="gc-add">+ Thêm</button></div>
+        <div class="row" style="margin-top:8px"><label style="flex:1">Vật phẩm${itemSearchHtml('gc-item')}<select id="gc-item">${itemOptions(items)}</select></label><label>SL<input id="gc-qty" type="number" value="1" style="width:70px"></label><button class="btn" id="gc-add">+ Thêm</button></div>
         <div class="items" id="gc-items" style="margin:8px 0"></div><button class="btn primary" id="gc-create">Tạo gift code</button></div>
         <div class="card"><h3>Danh sách</h3><table><tr><th>Mã</th><th>Phần thưởng</th><th>Đã dùng</th><th>Hết hạn</th><th></th></tr>
         ${codes.map(c => `<tr><td><b>${esc(c.code)}</b>${c.pub ? ' <span class="small" style="color:#4ade80">● công khai</span>' : ''}${c.note ? `<div class="small muted">${esc(c.note)}</div>` : ''}${c.minLv ? `<div class="small muted">Cấp ${c.minLv}+</div>` : ''}</td><td class="small">${rewardStr(c.reward, items)}</td><td>${c.used}${c.maxUses ? '/' + c.maxUses : ''}</td><td class="small">${c.exp ? dt(c.exp) : 'Vĩnh viễn'}</td><td><button class="btn small danger" data-del="${esc(c.code)}">Xóa</button></td></tr>`).join('') || '<tr><td colspan="5" class="muted">Chưa có</td></tr>'}</table></div>`;
       const sel = [];
       const draw = () => { $('gc-items').innerHTML = sel.map(([id, q], i) => `<span class="item">${esc(items.find(x => x.id === id).name)} x${q} <a data-rm="${i}" style="cursor:pointer">✕</a></span>`).join(''); $('gc-items').querySelectorAll('[data-rm]').forEach(a => a.onclick = () => { sel.splice(+a.dataset.rm, 1); draw(); }); };
-      $('gc-add').onclick = () => { sel.push([$('gc-item').value, +$('gc-qty').value || 1]); draw(); };
+      bindItemSearch('gc-item', items);
+      $('gc-add').onclick = () => { if (!$('gc-item').value) return; sel.push([$('gc-item').value, +$('gc-qty').value || 1]); draw(); };
       $('gc-create').onclick = async () => {
         const r = await run(() => api('/giftcodes', { code: $('gc-code').value, gold: +$('gc-gold').value, knb: +$('gc-knb').value, exp: +$('gc-exp').value, maxUses: +$('gc-max').value, days: +$('gc-days').value, minLv: +$('gc-minlv').value, note: $('gc-note').value, pub: $('gc-pub').checked, items: sel }));
         if (r) { toast('Đã tạo mã ' + r.code); show('giftcodes'); }
@@ -216,6 +217,23 @@
   async function getMaps() { if (!mapsCache) mapsCache = await api('/maps'); return mapsCache; }
   const RN = { common: 'Thường', rare: 'Hiếm', epic: 'VIP', legendary: 'Truyền Kỳ' };
   function itemOptions(items) { return items.map(i => `<option value="${i.id}">${esc(i.name)} [${RN[i.rarity]}] Lv${i.lv}</option>`).join(''); }
+  // ô tìm vật phẩm phía trên danh sách chọn: gõ không dấu được, tìm theo tên, mã, độ hiếm, cấp ("lv40")
+  const fold = t => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
+  function itemSearchHtml(selId) { return `<input id="${selId}-q" type="search" placeholder="🔍 Tìm vật phẩm (VD: kiem than, ngoc boi, lv40, hiem)…" autocomplete="off" style="margin-bottom:4px"><span class="small muted" id="${selId}-n"></span>`; }
+  function bindItemSearch(selId, items) {
+    const q = $(selId + '-q'), sel = $(selId), n = $(selId + '-n');
+    if (!q || !sel) return;
+    // mỗi từ gõ vào phải khớp đầu một từ của vật phẩm; khớp trọn từ được xếp lên trước ("than" → Thần trước Thanh)
+    const keys = new Map(items.map(i => [i.id, fold(`${i.name} ${i.id.replace(/_/g, ' ')} ${i.id} ${RN[i.rarity]} lv${i.lv}`).split(/\s+/)]));
+    const score = (toks, words) => { let sc = 0; for (const w of words) { if (toks.includes(w)) sc += 2; else if (toks.some(t => t.startsWith(w))) sc += 1; else return -1; } return sc; };
+    q.oninput = () => {
+      const words = fold(q.value).split(/\s+/).filter(Boolean);
+      const list = !words.length ? items : items.map((i, k) => [i, score(keys.get(i.id), words), k]).filter(x => x[1] >= 0).sort((a, b) => b[1] - a[1] || a[2] - b[2]).map(x => x[0]);
+      sel.innerHTML = list.length ? itemOptions(list) : '<option value="">— Không tìm thấy —</option>';
+      n.textContent = words.length ? `${list.length} kết quả` : '';
+    };
+    q.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); sel.focus(); } };
+  }
   function rewardStr(r, items) {
     const p = [];
     if (r.gold) p.push(fmt(r.gold) + ' lượng'); if (r.knb) p.push(r.knb + ' KNB'); if (r.exp) p.push(fmt(r.exp) + ' KN');
@@ -235,7 +253,7 @@
         <label>Ngân lượng<input id="e-gold" type="number" value="${c.gold}" style="width:120px"></label><label>Nguyên bảo<input id="e-knb" type="number" value="${c.knb}" style="width:100px"></label>
         <label>+ Kinh nghiệm<input id="e-exp" type="number" value="0" style="width:110px"></label><button class="btn primary" id="e-save">Lưu</button>${u.online ? '<button class="btn" id="e-heal">Hồi đầy máu</button>' : ''}</div>
         <div class="small muted" style="margin-top:6px">Bản đồ: ${esc(c.map)} · Lực chiến: ${fmt(c.power)} · Quái: ${fmt(c.kills)} · PK: ${fmt(c.pvpKills)} · Boss: ${fmt(c.bossKills)} · Chết: ${fmt(c.deaths)} · Thời gian chơi: ${Math.round((c.playTime || 0) / 60)} phút</div></div>
-      <div class="card"><h3>Tặng vật phẩm</h3><div class="row"><label style="flex:1">Vật phẩm<select id="e-item">${itemOptions(items)}</select></label><label>SL<input id="e-qty" type="number" value="1" style="width:70px"></label><label>Cường hóa<input id="e-plus" type="number" value="0" min="0" max="15" style="width:70px"></label><button class="btn ok" id="e-give">Tặng</button></div></div>
+      <div class="card"><h3>Tặng vật phẩm</h3><div class="row"><label style="flex:1">Vật phẩm${itemSearchHtml('e-item')}<select id="e-item">${itemOptions(items)}</select></label><label>SL<input id="e-qty" type="number" value="1" style="width:70px"></label><label>Cường hóa<input id="e-plus" type="number" value="0" min="0" max="15" style="width:70px"></label><button class="btn ok" id="e-give">Tặng</button></div></div>
       <div class="card"><h3>Trang bị</h3><div class="items">${Object.entries(c.equip).map(([s, e]) => e ? `<span class="item">${itemName(e.id)}${e.plus ? ' +' + e.plus : ''} <a data-rmslot="${s}" style="cursor:pointer" title="Xóa">✕</a></span>` : '').join('') || '<span class="muted">Không</span>'}</div>
         <h3 style="margin-top:10px">Túi đồ (${c.inv.length}/48)</h3><div class="items">${c.inv.map(s => `<span class="item">${itemName(s.id)}${s.plus ? ' +' + s.plus : ''}${s.qty > 1 ? ' x' + s.qty : ''} <a data-rm="${s.uid}" style="cursor:pointer" title="Xóa">✕</a></span>`).join('') || '<span class="muted">Trống</span>'}</div></div>
       <div class="card"><h3>Dịch chuyển</h3><div class="row"><select id="e-map">${maps.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join('')}</select><button class="btn" id="e-tp">Dịch chuyển</button></div></div>` : ''}
@@ -250,7 +268,9 @@
     const on = (bid, fn) => { const b = $(bid); if (b) b.onclick = fn; };
     on('e-save', async () => { await run(() => api(`/users/${id}/update`, { name: $('e-name').value, level: +$('e-level').value, gold: +$('e-gold').value, knb: +$('e-knb').value, addExp: +$('e-exp').value || 0 }), 'Đã lưu'); again(); });
     on('e-heal', () => run(() => api(`/users/${id}/update`, { heal: true }), 'Đã hồi máu'));
-    on('e-give', async () => { await run(() => api(`/users/${id}/give`, { itemId: $('e-item').value, qty: +$('e-qty').value, plus: +$('e-plus').value }), 'Đã tặng'); again(); });
+    bindItemSearch('e-item', items);
+    on('e-give', async () => {
+      if (!$('e-item').value) return toast('Chưa chọn vật phẩm'); await run(() => api(`/users/${id}/give`, { itemId: $('e-item').value, qty: +$('e-qty').value, plus: +$('e-plus').value }), 'Đã tặng'); again(); });
     on('e-tp', () => run(() => api(`/users/${id}/teleport`, { map: $('e-map').value }), 'Đã dịch chuyển'));
     on('e-ban', async () => { if (confirm('Khóa tài khoản này?')) { await run(() => api(`/users/${id}/ban`, { banned: true, reason: $('e-reason').value }), 'Đã khóa'); again(); } });
     on('e-unban', async () => { await run(() => api(`/users/${id}/ban`, { banned: false }), 'Đã mở khóa'); again(); });
