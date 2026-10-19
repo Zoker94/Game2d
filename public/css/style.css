@@ -1011,3 +1011,19 @@ body.touch #menu-buttons a.zalo-menu span { display: none; }
 .dead-opt.poor i { color: #ff8a7a; }
 @media (max-width: 520px) { .dead-opts { grid-template-columns: 1fr; } }
 body.short .dead-box, body.touch .dead-box { padding: 10px 14px; } body.touch .dead-opts { margin: 8px 0 6px; }
+
+/* ---------- Bán nhanh ---------- */
+.qs-box { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; margin-bottom: 8px; border: 1px solid #8a6424; border-radius: 10px; background: linear-gradient(180deg, rgba(60,40,18,.6), rgba(20,13,12,.7)); }
+.qs-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.qs-row > b { color: #ffd86a; margin-right: auto; }
+.qs-mode { display: flex; border: 1px solid #6a4a22; border-radius: 8px; overflow: hidden; }
+.qs-mode button { background: #1e140f; color: #c8b08a; border: 0; padding: 4px 10px; font-size: 12px; cursor: pointer; }
+.qs-mode button.on { background: linear-gradient(#9a2c1a, #5e140c); color: #fff0c0; }
+.qs-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 12px; border: 1px solid #4e3622; background: rgba(0,0,0,.35); font-size: 12px; font-weight: 700; cursor: pointer; user-select: none; }
+.qs-chip input { display: none; }
+.qs-chip.on { border-color: #e8b84a; background: rgba(232,184,74,.16); box-shadow: 0 0 6px rgba(232,184,74,.3); }
+.qs-chip:not(.on) { opacity: .6; }
+.qs-go { align-self: flex-start; font-size: 14px; padding: 7px 16px; }
+.qs-box a { color: #ffd86a; }
+.slot.marked { outline: 2px solid #4ade80; outline-offset: -2px; }
+.slot.marked::before { content: '✔'; position: absolute; z-index: 4; right: 1px; top: 0; font-size: 12px; font-weight: 900; color: #fff; background: #1e9a3a; border-radius: 0 6px 0 6px; padding: 0 3px; line-height: 14px; }

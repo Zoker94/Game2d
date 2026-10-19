@@ -455,7 +455,7 @@
     for (const s of inv) {
       const it = G.data.items[s.id];
       const cant = it.lv > me.level;
-      html += `<div class="slot r-${it.rarity} ${cant ? 'cant' : ''} ${panelState.sel === s.uid ? 'sel' : ''}" data-uid="${s.uid}"><img src="${iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}</div>`;
+      html += `<div class="slot r-${it.rarity} ${cant ? 'cant' : ''} ${panelState.sel === s.uid ? 'sel' : ''} ${opts.mark && opts.mark.has(s.uid) ? 'marked' : ''}" data-uid="${s.uid}"><img src="${iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}</div>`;
     }
     for (let i = me.inv.length; i < 48 && !opts.filter; i++) html += '<div class="slot" style="opacity:.35"></div>';
     html += '</div></div>';
@@ -986,7 +986,7 @@
           <button class="btn small ${tab === 'knb' ? 'primary' : 'green'}" data-buy="${x.id}">${x.knb ? x.knb + ' 💎' : fmt(x.price) + ' 💰'}</button></div>`;
       }).join('') + '</div>';
     } else if (tab === 'sell') {
-      html += '<div class="small muted">Chọn vật phẩm để bán (30% giá gốc)</div>' + invGrid(body, { noEquip: true }) + itemActions({ shop: true });
+      html += quickSellHtml() + invGrid(body, { noEquip: true, mark: sellMark }) + (sellMulti ? '' : itemActions({ shop: true }));
     } else if (tab === 'enhance') {
       html += '<div class="small muted">Chọn trang bị (kể cả đang mặc) để cường hóa, tối đa +15. Từ +10 trở lên nếu thất bại mà không có Bảo Hiểm Phù sẽ rớt về +1. Huyền Tinh Thạch: ' + G.me.inv.filter(x => x.id === 'stone').reduce((s, x) => s + x.qty, 0) + '</div>' +
         invGrid(body, { filter: s => G.data.items[s.id].type === 'equip' }) + itemActions({ enhance: true });
@@ -1002,7 +1002,56 @@
     });
     body.querySelectorAll('[data-tp]').forEach(b => b.onclick = () => emit('teleport', { map: b.dataset.tp }));
     if (tab === 'sell' || tab === 'enhance') bindInv(body, { shop: tab === 'sell', enhance: tab === 'enhance' });
+    if (tab === 'sell') bindQuickSell(body);
   }
+  // ---------- Bán nhanh: lọc theo phẩm chất hoặc chọn nhiều món rồi bán một lần ----------
+  const sellMark = new Set();
+  let sellMulti = false;
+  const QS_KEY = 'vl_quicksell';
+  let qs = { common: true, rare: false, epic: false, legendary: false, keepPlus: true, mats: false };
+  try { Object.assign(qs, JSON.parse(localStorage.getItem(QS_KEY) || '{}')); } catch (e) { }
+  const sellPrice = s => { const it = G.data.items[s.id]; return Math.floor((it.price || 0) * 0.3 * (1 + (s.plus || 0) * 0.2)) * s.qty; };
+  // món khớp bộ lọc: trang bị theo phẩm chất (+ tuỳ chọn giữ đồ đã cường hoá), nguyên liệu rác nếu bật
+  function quickList() {
+    return G.me.inv.filter(s => {
+      const it = G.data.items[s.id];
+      if (!it || !it.price) return false;
+      if (it.type === 'equip') return qs[it.rarity] && !(qs.keepPlus && s.plus > 0);
+      return qs.mats && it.type === 'material' && it.rarity === 'common';
+    });
+  }
+  function quickSellHtml() {
+    const list = sellMulti ? G.me.inv.filter(s => sellMark.has(s.uid)) : quickList();
+    const total = list.reduce((a, s) => a + sellPrice(s), 0), n = list.length;
+    const chip = (k, label, cls) => `<label class="qs-chip ${cls} ${qs[k] ? 'on' : ''}"><input type="checkbox" data-qs="${k}" ${qs[k] ? 'checked' : ''}>${label}</label>`;
+    return `<div class="qs-box">
+      <div class="qs-row"><b>⚡ Bán nhanh</b>
+        <div class="qs-mode"><button class="${sellMulti ? '' : 'on'}" data-qsm="0">Theo bộ lọc</button><button class="${sellMulti ? 'on' : ''}" data-qsm="1">Chọn nhiều</button></div></div>
+      ${sellMulti ? `<div class="small muted">Chạm vào từng món trong túi để đánh dấu ✔, rồi bấm bán. <a href="#" data-qsall>Chọn hết trang bị</a> · <a href="#" data-qsnone>Bỏ chọn</a></div>`
+        : `<div class="qs-row qs-chips">Trang bị: ${chip('common', 'Thường', 'r-common-t')}${chip('rare', 'Hiếm', 'r-rare-t')}${chip('epic', 'VIP', 'r-epic-t')}${chip('legendary', 'Truyền Kỳ', 'r-legendary-t')}</div>
+      <div class="qs-row qs-chips">${chip('keepPlus', '🔒 Giữ đồ đã cường hóa', '')}${chip('mats', 'Nguyên liệu thường', '')}</div>`}
+      <button class="btn green qs-go" id="qs-go" ${n ? '' : 'disabled'}>💰 Bán ${n} món · ${fmt(total)} lượng</button>
+      <div class="small muted">Giá bán 30% giá gốc. Đồ đang mặc không bị bán.</div></div>`;
+  }
+  function bindQuickSell(body) {
+    body.querySelectorAll('[data-qs]').forEach(el => el.onchange = () => { qs[el.dataset.qs] = el.checked; try { localStorage.setItem(QS_KEY, JSON.stringify(qs)); } catch (e) { } UI.refreshPanel(); });
+    body.querySelectorAll('[data-qsm]').forEach(b => b.onclick = () => { sellMulti = b.dataset.qsm === '1'; sellMark.clear(); panelState.sel = null; UI.refreshPanel(); });
+    const all = body.querySelector('[data-qsall]'); if (all) all.onclick = e => { e.preventDefault(); G.me.inv.forEach(s => { if (G.data.items[s.id].type === 'equip') sellMark.add(s.uid); }); UI.refreshPanel(); };
+    const none = body.querySelector('[data-qsnone]'); if (none) none.onclick = e => { e.preventDefault(); sellMark.clear(); UI.refreshPanel(); };
+    if (sellMulti) body.querySelectorAll('.inv-grid [data-uid]').forEach(el => el.onclick = () => {
+      const u = el.dataset.uid; sellMark.has(u) ? sellMark.delete(u) : sellMark.add(u); G.sfx('click'); UI.refreshPanel();
+    });
+    const go = $('qs-go');
+    if (go) go.onclick = () => {
+      const list = sellMulti ? G.me.inv.filter(s => sellMark.has(s.uid)) : quickList();
+      if (!list.length) return;
+      const rare = list.filter(s => ['epic', 'legendary'].includes(G.data.items[s.id].rarity) || s.plus > 0).length;
+      const doSell = () => { emit('sellMany', { uids: list.map(s => s.uid) }); sellMark.clear(); };
+      if (rare) G.modal(`Trong ${list.length} món sắp bán có ${rare} món VIP / Truyền Kỳ / đã cường hóa. Vẫn bán?`, [{ t: 'Bán hết', cls: 'primary', fn: doSell }, { t: 'Hủy' }]);
+      else doSell();
+    };
+  }
+
   // ---------- Cài đặt tự động: nhặt đồ, bơm máu ----------
   UI.registerPanel('auto', '🤖 Cài Đặt Tự Động', body => {
     const c = G.autoCfgGet(), me = G.me;

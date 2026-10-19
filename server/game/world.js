@@ -1101,6 +1101,27 @@ class World {
     p.dirtyMe = true; this.db.markDirty();
   }
 
+  // bán nhiều món một lần (bán nhanh)
+  sellMany(p, uids) {
+    if (!Array.isArray(uids) || !uids.length) return;
+    if (!MAPS[p.mapId].npcs.some(n => NPCS[n.id].shop && this.nearNpc(p, n.id))) return this.toast(p, 'Hãy đứng gần một NPC cửa hàng để bán', 'error');
+    const c = p.c; let gold = 0, n = 0;
+    for (const uid of new Set(uids.slice(0, 200))) {
+      const st = c.inv.find(x => x.uid === uid);
+      if (!st) continue;
+      const it = ITEMS[st.id];
+      if (!it || !it.price) continue;
+      gold += Math.floor(it.price * 0.3 * (1 + (st.plus || 0) * 0.2)) * st.qty;
+      n += st.qty;
+      U.removeByUid(c, uid, st.qty);
+    }
+    if (!n) return;
+    c.gold += gold;
+    this.toast(p, `💰 Bán nhanh ${n} vật phẩm được ${gold.toLocaleString('vi-VN')} lượng`, 'reward');
+    p.socket.emit('sold', { n, gold });
+    p.dirtyMe = true; this.db.markDirty();
+  }
+
   enhance(p, { uid, npc: npcId, insure }) {
     const npc = this.nearNpc(p, npcId || 'tho_ren');
     if (!npc || !npc.enhance) return this.toast(p, 'Hãy đến gặp Thợ Rèn để cường hóa', 'error');

@@ -285,6 +285,7 @@ io.on('connection', socket => {
   on('pkMode', inGame(d => world.setPkMode(player, d && d.mode)));
   on('escort', inGame(d => world.escort.action(player, d)));
   on('sell', inGame(d => world.sell(player, d || {})));
+  on('sellMany', inGame(d => world.sellMany(player, d && d.uids)));
   on('enhance', inGame(d => world.enhance(player, d || {})));
   on('mount', inGame(d => d && world.mountAction(player, d)));
   on('dragon', inGame(d => d && world.selectDragon(player, d.el)));

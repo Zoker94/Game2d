@@ -342,6 +342,7 @@
     s.on('lb', d => UI.onLeaderboard(d));
     s.on('eventPanel', d => UI.onEventPanel(d));
     s.on('wheelResult', d => UI.onWheel(d));
+    s.on('sold', () => GameAudio.sfx('coin', 0));
     s.on('enhanceResult', d => { UI.onEnhance(d); GameAudio.sfx(d.result === 'ok' ? 'enhOk' : 'enhFail'); });
     s.on('online', d => UI.onOnline(d));
     s.on('adminToken', d => (G._adminWin && !G._adminWin.closed) ? (G._adminWin.location.href = '/admin/?t=' + d.token, G._adminWin = null) : G.modal('🛡️ Trang quản trị đã sẵn sàng (phiên 12 giờ).', [
