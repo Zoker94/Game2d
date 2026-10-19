@@ -146,6 +146,11 @@ class World {
     if (!x || !y || isSolidAt(map, x, y)) { x = (map.center.x + 0.5) * TILE; y = (map.center.y + 1.5) * TILE; }
     if (c.hp <= 0) { c.hp = Math.round(p.stats.maxHp * 0.3); c.map = 'tuong_duong'; const t = MAPS.tuong_duong; x = (t.center.x + 0.5) * TILE; y = (t.center.y + 2.5) * TILE; }
     this.enterMap(p, c.map, x, y);
+    // bản thử nghiệm thú cưng rồng: gửi thẳng vào túi chủ server một lần
+    if (require('../owner').isOwner(user) && !c.petGift) {
+      c.petGift = 1;
+      setTimeout(() => { if (this.players.get(user.id) === p) { this.giveItem(p, 'pet_hong_long', 1); this.toast(p, '🐉 Đã gửi Hồng Long Ấu Thú (thú cưng thử nghiệm) vào túi đồ. Vào túi → Sử dụng để triệu hồi.', 'reward'); this.db.markDirty(); } }, 2500);
+    }
     const st = this.db.data.stats;
     st.peakOnline = Math.max(st.peakOnline || 0, this.players.size);
     return p;
@@ -357,6 +362,31 @@ class World {
         return;
       }
     }
+  }
+
+  // thú cưng rồng: khi chủ đang đánh quái (trong 3 giây gần nhất), cứ 4 giây lao tới phun lửa vào mục tiêu
+  petTick(p, now) {
+    if (p.dead || !p.c.pet || now < (p.petNext || 0) || now - (p.lastHitMon || 0) > 3000) return;
+    if (!U.countItem(p.c, 'pet_' + p.c.pet)) { p.c.pet = null; p.dirtyMe = true; return; }
+    const m = this.maps[p.mapId];
+    if (!m) return;
+    let t = p.target && m.monsters.get(p.target);
+    if (!t || t.dead || U.dist(t, p) > 320) {   // mục tiêu đã chết: chọn quái gần nhất đang đánh chủ / đang bị chủ đánh
+      t = null; let bd = 300;
+      for (const mon of m.monsters.values()) {
+        if (mon.dead || (mon.target !== p.userId && !mon.dmgBy.has(p.userId))) continue;
+        const d = U.dist(mon, p); if (d < bd) { bd = d; t = mon; }
+      }
+    }
+    if (!t) return;
+    p.petNext = now + 4000;
+    this.fx(p.mapId, { t: 'petfire', id: p.id, to: t.id, x: t.x, y: t.y });
+    setTimeout(() => {   // lửa chạm đất sau ~0,45 giây (khớp hoạt ảnh phun lửa)
+      if (t.dead || p.mapId !== t.mapId) return;
+      const { dmg, crit } = this.calcDamage(p.stats.atk * 0.35, p.stats.crit, t.tpl.def, 1, 0.3);
+      this.applyDamage(t, Math.round(dmg), p, crit ? 'crit' : 'burn');
+      if (!t.dead) this.applyStatus(t, 'burn', 3000, p);
+    }, 450);
   }
 
   // thành gần nhất mà người chơi đủ cấp vào (đi theo cổng), phó bản thì về thành nơi đã vào
@@ -696,6 +726,7 @@ class World {
   }
 
   applyDamage(t, dmg, src, kind, ek = 0) {
+    if (src && src.c && t && !t.c && !t.cart) src.lastHitMon = Date.now();   // thú cưng biết chủ đang giao chiến
     if (t.dead) return;
     if (t.c && src && t.dodgeUntil > Date.now()) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return; }   // đang lướt né
     // phòng thủ từ trang bị (chỉ với đòn đánh trực tiếp, không áp cho độc/bỏng)
@@ -986,6 +1017,11 @@ class World {
       this.features.questProgress(p, 'potion', 1);
     }
     if (e.town) { this.startRecall(p); return; }   // niệm phép, xong mới trừ phù
+    if (e.pet) {   // thú cưng: triệu hồi / thu hồi, không mất vật phẩm
+      c.pet = c.pet === e.pet ? null : e.pet;
+      this.toast(p, c.pet ? `🐉 Đã triệu hồi ${it.name}` : `Đã thu hồi ${it.name}`, c.pet ? 'reward' : 'info');
+      p.dirtyMe = true; return;
+    }
     if (e.expBuff) { c.expBuffUntil = Math.max(Date.now(), c.expBuffUntil || 0) + e.expBuff; this.toast(p, 'Nhân đôi kinh nghiệm 30 phút!', 'reward'); }
     if (e.wheel) { c.wheel.extra = (c.wheel.extra || 0) + 1; this.toast(p, 'Nhận thêm 1 lượt Vòng Quay', 'reward'); }
     if (e.learn) {
@@ -1437,6 +1473,7 @@ class World {
     if (this.features) this.features.tick(now);
     if (this.party) this.party.tick(now);
     if (this.dungeon && sec) this.dungeon.tick(now);
+    if (this.tickN % 5 === 0) for (const p of this.players.values()) if (p.c.pet) this.petTick(p, now);
   }
 
   regen(p, m, now) {
@@ -1575,7 +1612,8 @@ class World {
     return [w ? w.tier : -1, w ? RARITY_IDX[w.rarity] : 0, w ? e.weapon.plus || 0 : 0,
       a ? a.tier : -1, a ? RARITY_IDX[a.rarity] : 0, a ? e.armor.plus || 0 : 0,
       h ? h.tier : -1, c.riding && c.mount ? c.mount : '', h ? RARITY_IDX[h.rarity] : 0,
-      c.riding && c.mount && c.mounts && c.mounts[c.mount] ? c.mounts[c.mount].lv || 1 : 0];   // cấp thú cưỡi: hiệu ứng mạnh dần
+      c.riding && c.mount && c.mounts && c.mounts[c.mount] ? c.mounts[c.mount].lv || 1 : 0,   // cấp thú cưỡi: hiệu ứng mạnh dần
+      c.pet && U.countItem(c, 'pet_' + c.pet) ? c.pet : ''];   // thú cưng đang theo
   }
 
   fx(mapId, data) { this.io.to('map:' + mapId).emit('fx', data); }

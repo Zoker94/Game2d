@@ -339,6 +339,7 @@
     Travel.bind(s);
     Dungeon.bind(s);
     SectUI.bind(s);
+    Pet.bind(s);
     s.on('events', d => { G.events = d; UI.onEvents(d); });
     s.on('daily', d => { G.daily = d; UI.updateDaily(); });
     s.on('dropAdd', d => { if (d.om) d.ownUntil = performance.now() + d.om; G.drops.set(d.id, d); });
@@ -1085,6 +1086,7 @@
     list.push({ y: s.y, k: 'self' });
     const bubbles = [];
     WorldArt.visibleDecos(cam, vw, vh, list);
+    Pet.collect(list, now);
     const nearPl = [s, ...G.players.values()];
     list.sort((a, b) => a.y - b.y);
 
@@ -1101,6 +1103,7 @@
     drawGhosts(now);
     const frameOf = (moving, seed) => moving ? Math.floor(now / 140 + (seed || 0)) % 4 : 0;
     for (const it of list) {
+      if (it.k === 'pet') { Pet.draw(ctx, it, now); continue; }
       if (it.k === 'tall') {
         WorldArt.drawTall(ctx, it.t, it.tx, it.ty, now);
       } else if (it.k === 'deco') {
