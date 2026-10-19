@@ -317,6 +317,7 @@ io.on('connection', socket => {
   on('inspect', inGame(d => d && social.inspect(player, d.id)));
   on('friend', inGame(d => d && social.friend(player, d)));
   on('trade', inGame(d => d && social.trade(player, d)));
+  on('duel', inGame(d => world.duel.action(player, d)));
   on('ginvite', inGame(d => d && social.guildInvite(player, d)));
 
   socket.on('disconnect', () => { if (player) { social.leave(player); world.removePlayer(player); } });

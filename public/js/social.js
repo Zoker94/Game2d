@@ -32,6 +32,7 @@
       ['🔄', 'Giao dịch', () => emit('trade', { op: 'request', id: e.id })],
       canInvite ? ['🏯', 'Mời vào bang', () => emit('ginvite', { op: 'invite', id: e.id })] : null,
       ['🚶', G.follow === e.id ? 'Thôi đi theo' : 'Đi theo', () => { G.follow = G.follow === e.id ? null : e.id; UI.toast(G.follow ? `Đang đi theo ${e.name}` : 'Đã thôi đi theo', 'info'); }],
+      !Duel.active && !(G.map && G.map.pvp) ? ['🥋', 'Thách đấu', () => Duel.request(e)] : null,
       G.map && G.map.pvp ? ['⚔️', 'Tấn công', () => { G.target = e.id; G.chase = { id: e.id, skill: 0 }; }] : null,
       ['🚫', blocked(e.name) ? 'Bỏ chặn' : 'Chặn tin nhắn', () => toggleBlock(e.name)]
     ].filter(Boolean);
@@ -58,7 +59,7 @@
       <div class="small" style="color:${Overhead.title(d.power).color};font-weight:700">【${Overhead.title(d.power).name}】${d.rank ? ` · <span style="color:#ffd84a">#${d.rank} lực chiến</span>` : ''}</div>
       <div class="insp-power">⚡ Lực chiến <b>${d.power.toLocaleString('vi-VN')}</b> <span class="small" style="color:${Overhead.relColor(d.power, G.me.stats.power).color}">(${Overhead.relColor(d.power, G.me.stats.power).tip})</span></div>
       ${d.pk >= 3 ? `<div class="small" style="color:#ff4a4a">☠ Sát khí ${d.pk}</div>` : ''}
-      <div class="small muted">📍 ${esc(d.map)} · 💀 Quái ${d.kills} · ⚔️ PK ${d.pvpKills}</div></div>
+      <div class="small muted">📍 ${esc(d.map)} · 💀 Quái ${d.kills} · ⚔️ PK ${d.pvpKills} · 🥋 Tỷ võ ${d.duelWin || 0} thắng / ${d.duelLose || 0} thua</div></div>
       <div class="insp-right"><div class="insp-stats">
         <div>❤️ Sinh lực <b>${s.maxHp}</b></div><div>💧 Nội lực <b>${s.maxMp}</b></div>
         <div>⚔️ Tấn công <b>${s.atk}</b></div><div>🛡️ Phòng thủ <b>${s.def}</b></div>

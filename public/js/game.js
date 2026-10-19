@@ -283,6 +283,9 @@
     s.on('leave', id => G.players.delete(id));
     s.on('storyScene', d => Story.show(d));
     s.on('giftcodes', d => Gift.onView(d));
+    s.on('duelReq', d => Duel.onReq(d));
+    s.on('duel', d => Duel.onDuel(d));
+    s.on('duelRing', d => Duel.onRing(d));
     s.on('giftResult', d => Gift.onResult(d));
     s.on('me', d => { if (G.me && d.riding !== G.me.riding) GameAudio.sfx('mount'); G.me = d; UI.updateHud(); $('dead-overlay').classList.toggle('hidden', !d.dead); });
     s.on('pos', d => { G.self.x = d.x; G.self.y = d.y; G.moveTo = null; });
@@ -341,7 +344,7 @@
   let minimapBase = null;
   function onInit(d) {
     G.you = d.you; G.map = d.map; G.solid = new Set(d.solid);
-    G.self.x = d.x; G.self.y = d.y; G.moveTo = null; G.npcGoal = null; G.target = null;
+    G.self.x = d.x; G.self.y = d.y; G.moveTo = null; G.npcGoal = null; G.target = null; Duel.clearRings();
     G.players.clear(); G.monsters.clear(); G.drops.clear(); G.carts.clear(); G.fx = []; G.corpses = [];
     WorldArt.setMap(d.map); G._camSnap = true;
     d.drops.forEach(x => { if (x.om) x.ownUntil = performance.now() + x.om; G.drops.set(x.id, x); });
@@ -555,7 +558,7 @@
     const now = performance.now();
     if (G.pending[i] && now - G.pending[i] < 300) return;
     if (i === 0 || (sk.type !== 'buff' && sk.type !== 'heal')) {
-      if (G.map.safe) { if (i > 0 || !G._safeWarn || now - G._safeWarn > 3000) { UI.toast('Không thể giao chiến trong thành', 'error'); G._safeWarn = now; } return; }
+      if (G.map.safe && !Duel.fighting()) { if (i > 0 || !G._safeWarn || now - G._safeWarn > 3000) { UI.toast('Không thể giao chiến trong thành', 'error'); G._safeWarn = now; } return; }
       const t = validTarget() || pickTarget(Math.max(sk.range || 0, G.data.classes[G.me.cls].range) + 40);
       if (!t && (sk.type === 'single' || sk.type === 'dot')) {
         // không có mục tiêu: chạy tới quái gần nhất trong 350px
@@ -992,6 +995,7 @@
       ctx.beginPath(); ctx.ellipse(tgt.x, tgt.y + 2, rr, rr * 0.4, 0, 0, Math.PI * 2); ctx.stroke();
     }
 
+    Duel.draw(ctx, now);
     drawGhosts(now);
     const frameOf = (moving, seed) => moving ? Math.floor(now / 140 + (seed || 0)) % 4 : 0;
     for (const it of list) {

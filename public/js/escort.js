@@ -13,7 +13,9 @@
   // ---------- luật PK phía client (giống server, để chọn mục tiêu) ----------
   function canHarm(e) {
     const me = G.me;
-    if (!me || !e || e.dead || !G.map || G.map.safe) return false;
+    if (!me || !e || e.dead || !G.map) return false;
+    if (window.Duel && Duel.isFoe(e)) return true;   // đang tỷ võ với nhau
+    if (G.map.safe) return false;
     if (me.guild && e.guild && e.guild === me.guild.name) return false;
     if (G.map.pvp) return true;
     if (me.level < 10 || e.level < 10) return false;

@@ -16,6 +16,7 @@ const { ENHANCE_MAX, ENHANCE_SAFE, ENHANCE_RATE, enhanceCost } = require('../dat
 const U = require('./util');
 const { Escort } = require('./escort');
 const { Story } = require('./story');
+const { Duel } = require('./duel');
 
 const HOTBAR_N = 8;          // số ô gán phím (phím 2..9)
 const DODGE_DIST = 170, DODGE_CD = 5000;   // né chiêu: quãng lướt, thời gian hồi
@@ -54,6 +55,7 @@ class World {
     this.features = null;       // gắn sau (bang hội, sự kiện,...)
     this.escort = new Escort(this);
     this.story = new Story(this);
+    this.duel = new Duel(this);
     for (const id in MAPS) {
       this.maps[id] = { def: MAPS[id], players: new Set(), monsters: new Map(), drops: new Map() };
       this.spawnMap(id);
@@ -134,12 +136,14 @@ class World {
     const m = this.maps[p.mapId];
     if (m) { m.players.delete(p); this.io.to('map:' + p.mapId).emit('leave', p.id); }
     this.escort.onLeave(p);
+    this.duel.onLost(p, `${c.name} đã thoát game`);
     this.players.delete(p.userId);
     this.db.markDirty();
   }
 
   enterMap(p, mapId, x, y, viaPortal = false) {
     const prev = p.mapId ? { mapId: p.mapId, x: p.x, y: p.y } : null;
+    if (p.duel && p.duel.mapId !== mapId) this.duel.onLost(p, `${p.c.name} đã rời bản đồ`);
     const old = this.maps[p.mapId];
     if (old) { old.players.delete(p); p.socket.leave('map:' + p.mapId); this.io.to('map:' + p.mapId).emit('leave', p.id); }
     const m = this.maps[mapId];
@@ -156,6 +160,7 @@ class World {
     });
     p.dirtyMe = true;
     this.escort.onEnterMap(p, prev, viaPortal);
+    for (const r of this.duel.ringsOn(mapId)) p.socket.emit('duelRing', r);
     this.progressTutorial(p, 'map', { map: mapId });
     this.story.on(p, 'map', { map: mapId });
   }
@@ -379,6 +384,7 @@ class World {
   // Đồ sát: đánh được tất cả, và ai cũng đánh được kẻ đồ sát. Người dưới cấp 10 được bảo hộ.
   canHarm(a, b) {
     if (!b || a === b || !b.c || b.dead || a.dead || a.mapId !== b.mapId) return false;
+    if (this.duel.fighting(a, b)) return true;         // đang thách đấu với nhau: đánh được ở mọi nơi
     const def = this.maps[a.mapId].def;
     if (def.safe) return false;
     if (a.c.guildId && a.c.guildId === b.c.guildId) return false;
@@ -453,7 +459,7 @@ class World {
         o.dirtyMe = true;
       }
     } else {
-      if (map.def.safe) return this.toast(p, 'Không thể giao chiến trong thành', 'error');
+      if (map.def.safe && !(p.duel && p.duel.state === 'fight')) return this.toast(p, 'Không thể giao chiến trong thành', 'error');
       const range = sk.range || cl.range;
       const t = this.findTarget(p, Math.max(range, sk.type === 'aoe' ? sk.radius : 0), targetId);
       if (!t && (sk.type === 'single' || sk.type === 'dot' || sk.type === 'dash')) {
@@ -625,6 +631,7 @@ class World {
     if (t.dead) return;
     this.io.to('map:' + (t.mapId)).emit('dmg', ek ? { id: t.id, v: dmg, k: kind, e: ek } : { id: t.id, v: dmg, k: kind });
     if (t.c) { // người chơi
+      if (this.duel.onDamage(t, dmg, src)) return;   // đòn kết liễu trong trận thách đấu: dừng ở 1 máu
       t.c.hp -= dmg; t.lastCombat = Date.now(); t.dirtyMe = true;
       if (t.c.hp <= 0) this.killPlayer(t, src);
     } else if (t.cart) {   // xe tiêu
@@ -643,6 +650,7 @@ class World {
   }
 
   killPlayer(t, src) {
+    if (t.duel) this.duel.onLost(t, `${t.c.name} bị kẻ khác hạ gục`);
     t.dead = true; t.c.hp = 0; t.c.deaths = (t.c.deaths || 0) + 1; t.st = {}; t.dots = [];
     if (t.c.riding) { t.c.riding = false; this.recalc(t); }
     const map = this.maps[t.mapId];
@@ -1233,6 +1241,7 @@ class World {
     const sec = this.tickN % 20 === 0;
     if (sec) { this.rollWeather(now); this.story.tick(); }
     this.escort.tick(now, TICK);
+    if (this.tickN % 5 === 0) this.duel.tick(now);
     for (const id in this.maps) {
       const m = this.maps[id];
       if (m.players.size === 0 && !sec) continue; // bản đồ trống: cập nhật thưa
@@ -1259,8 +1268,9 @@ class World {
     if (p.dead) return;
     const s = p.stats, c = p.c;
     const inCombat = now - p.lastCombat < 6000;
-    const hpR = m.def.safe ? 0.06 : inCombat ? 0.004 : 0.02;
-    const mpR = m.def.safe ? 0.06 : inCombat ? 0.01 : 0.03;
+    const safe = m.def.safe && !p.duel;   // đang thách đấu trong thành: hồi như ngoài thành
+    const hpR = safe ? 0.06 : inCombat ? 0.004 : 0.02;
+    const mpR = safe ? 0.06 : inCombat ? 0.01 : 0.03;
     const oh = c.hp, om = c.mp;
     c.hp = Math.min(s.maxHp, c.hp + Math.ceil(s.maxHp * (hpR + s.regen)));
     c.mp = Math.min(s.maxMp, c.mp + Math.ceil(s.maxMp * mpR));
