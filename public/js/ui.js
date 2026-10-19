@@ -781,6 +781,7 @@
     setTimeout(() => { const b = $('set-auto'); if (b) b.onclick = () => UI.openPanel('auto'); }, 0);
     const pad = navigator.getGamepads && [...navigator.getGamepads()].find(p => p && p.connected);
     body.innerHTML = `
+      <div class="card"><h4>💬 Cộng đồng</h4><p class="small">Tham gia nhóm Zalo để nhận gift code, tin sự kiện và giao lưu với các đại hiệp khác.</p><a class="zalo-btn" href="https://zalo.me/g/fkxw5crl6ksc0jotbzgp" target="_blank" rel="noopener">💬 Tham gia nhóm Zalo</a></div>
       <div class="card"><h4>🤖 Tự động</h4><button class="btn small primary" id="set-auto">⚙️ Cài đặt tự động (nhặt đồ, bơm máu...)</button></div>
       <div class="card"><h4>Hiển thị & âm thanh</h4>
         <label><input type="checkbox" data-set="names" ${s.names ? 'checked' : ''}> Hiện tên nhân vật/quái</label><br>
