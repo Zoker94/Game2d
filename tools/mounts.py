@@ -154,9 +154,9 @@ def hind_angles(q, kind):
 
 # ---------------- ngựa (và kỳ lân / long mã dựa trên thân ngựa) ----------------
 HORSE = {
-    'ngua_nau': dict(coat='#8a5530', mane='#2a1810', points='#2a1a12', hoof='#3a3030', muzzle='#4a3024', blanket='#2c5aa0', trim='#e8c060', saddle='#5a3218', blaze=True),
-    'bach_ma':  dict(coat='#eceae4', mane='#d0d0dc', points='#e2dfd8', hoof='#8a8278', muzzle='#c8b0a8', blanket='#b02a30', trim='#ffd860', saddle='#6a3a1e', dapple=True),
-    'hac_ma':   dict(coat='#2a2630', mane='#b81c1c', points='#1a1820', hoof='#1a1418', muzzle='#3a3238', blanket='#5a1020', trim='#e0b040', saddle='#2a1810', eyeRed=True),
+    'ngua_nau': dict(coat='#8a5530', mane='#2a1810', points='#2a1a12', hoof='#3a3030', muzzle='#4a3024', blanket='#2c5aa0', trim='#e8c060', saddle='#5a3218', blaze=True, armor='#8a6a40'),
+    'bach_ma':  dict(coat='#eceae4', mane='#d0d0dc', points='#e2dfd8', hoof='#8a8278', muzzle='#c8b0a8', blanket='#b02a30', trim='#ffd860', saddle='#6a3a1e', dapple=True, armor='#d8b050'),
+    'hac_ma':   dict(coat='#2a2630', mane='#b81c1c', points='#1a1820', hoof='#1a1418', muzzle='#3a3238', blanket='#5a1020', trim='#e0b040', saddle='#2a1810', eyeRed=True, armor='#4a4652', spike=True),
     'hoa_ky_lan': dict(coat='#d8381a', mane='#ffb020', points='#7a1408', hoof='#c89020', muzzle='#ff8a40', blanket='#5a0a10', trim='#ffd040', saddle='#3a1008',
                        scales='#ffc040', belly='#ffd890', fire=True, dragon='qilin', horn='#ffe9a0', dhead=True),
     'thanh_long': dict(coat='#1fa07a', mane='#c8fff0', points='#0e5a48', hoof='#0a3028', muzzle='#7ae0c0', blanket='#0a3a5a', trim='#a0f0ff', saddle='#0a2a3a',
@@ -176,7 +176,7 @@ def horse_frame(H, kind, i):
     withers, back, croup, tailr = B(80, 41), B(62, 46), B(42, 43), B(33, 46)
     chest, brisket, belly1, belly2 = B(92, 56), B(86, 66), B(72, 69), B(50, 67)
     stifle_b, buttock = B(37, 62), B(30, 52)
-    neck_ang = (math.sin(p * TAU + 1.0) * 0.12 if kind == 'run' else (0.03 if i else 0)) + (-0.12 if kind == 'run' else 0)
+    neck_ang = (math.sin(p * TAU + 1.0) * 0.12 if kind == 'run' else (-0.05 if i else -0.08)) + (-0.12 if kind == 'run' else 0)
     nb = B(86, 46)                       # gốc cổ
     def N(x, y): return rot(B(x, y), nb, neck_ang)
     poll, throat, crest = N(99, 21), N(101, 34), N(90, 30)
@@ -261,7 +261,8 @@ def horse_frame(H, kind, i):
     body = [S(x) for x in (withers, B(73, 44), back, B(52, 45), croup, tailr, buttock, B(31, 58), stifle_b, B(44, 66), belly2, belly1, brisket, B(90, 63), chest, B(90, 49))]
     bp.poly(body, coat)
     bp.ell(*S(B(39, 53)), 10, 10, coat)         # mông tròn
-    bp.ell(*S(B(84, 56)), 8, 9, coat)           # vai ngực
+    bp.ell(*S(B(84, 56)), 9.5, 10, coat)        # vai ngực vạm vỡ
+    bp.ell(*S(B(78, 50)), 7, 6, coat)           # u vai
     if H.get('belly'):
         bp.poly([S(B(48, 63)), S(B(72, 65)), S(brisket), S(belly1), S(belly2)], H['belly'])
     def body_marks(s):
@@ -317,16 +318,22 @@ def horse_frame(H, kind, i):
         hp.ell(*S(N(101, 31)), 5.5, 6, coat)          # má
     def head_marks(s):
         e = S(N(103, 27))
-        s.ell(e[0], e[1], 1.6, 1.4, '#ff3020' if H.get('eyeRed') or dragon else '#1a1010')
-        s.rect(e[0] - 1, e[1] - 1, e[0] - 1, e[1] - 1, '#ffffff')
-        s.ln((e[0] - 2, e[1] - 2.2), (e[0] + 2, e[1] - 2), dark(coat, 0.35))   # mày
+        # mắt dữ: hốc mắt tối, con ngươi nhỏ, mày gồ xếch xuống phía mõm
+        s.poly([S(N(100.5, 26.5)), S(N(103.5, 25.6)), S(N(106, 27.4)), S(N(103, 28.8))], '#120a0a')
+        red = H.get('eyeRed') or dragon
+        s.rect(e[0], e[1], e[0] + 1, e[1], '#ff3020' if red else '#e0a020')
+        if red: s.rect(e[0] + 2, e[1], e[0] + 2, e[1], '#ff6040')
+        s.rect(e[0] + 1, e[1], e[0] + 1, e[1], '#ffe080' if red else '#fff0c0')
+        for a, b in ((S(N(99.5, 24.6)), S(N(106.5, 26.2))), (S(N(99.5, 25.4)), S(N(106, 26.8)))):
+            s.ln(a, b, dark(coat, 0.5))   # mày gồ
+        s.ln(S(N(100, 23.8)), S(N(105, 24.8)), light(coat, 0.25))
         if dragon:
             ns = S(N(116, 35)); s.rect(ns[0], ns[1], ns[0] + 1, ns[1], '#1a0a0a')
             mo = [S(N(108, 41)), S(N(118, 40))]; s.ln(mo[0], mo[1], '#3a0a0a')
             for k in range(3):    # răng nanh
                 t = S(N(111 + k * 2.5, 41)); s.rect(t[0], t[1], t[0], t[1] + 1, '#ffffff')
         else:
-            ns = S(N(115, 35)); s.ell(ns[0], ns[1], 1.1, 0.9, dark(H['muzzle'], 0.55))
+            ns = S(N(115, 35)); s.ell(ns[0], ns[1], 1.7, 1.3, dark(H['muzzle'], 0.6)); s.ln((ns[0] - 2.5, ns[1] - 2), (ns[0] + 1, ns[1] - 2.2), dark(H['muzzle'], 0.35))   # mũi phập phồng
             mo = S(N(112, 40)); s.ln(mo, (mo[0] + 3, mo[1] - 0.5), dark(H['muzzle'], 0.5))
             if H.get('blaze'):
                 bl = [S(N(101, 22)), S(N(104, 22)), S(N(113, 33)), S(N(111, 34))]
@@ -337,8 +344,9 @@ def horse_frame(H, kind, i):
     parts.append(hp)
     # tai / sừng
     ep = Part('h', dark(coat, 0.5))
-    ear_t = S(N(96, 12))
-    ep.poly([S(N(95, 23)), ear_t, S(N(100, 21))], coat)
+    ear_t = S(N(98, 9))
+    ep.poly([S(N(94.5, 23)), S(N(95, 15)), ear_t, S(N(100.5, 21))], coat)
+    ep.mark(lambda s: s.ln(S(N(97, 20)), S(N(97.6, 13)), dark(coat, 0.45)))
     if dragon == 'long':
         hc = H['horn']
         for (bx, by), tip, br in (((98, 20), (88, 6), (92, 10)), ((101, 20), (95, 4), (98, 9))):
@@ -348,6 +356,21 @@ def horse_frame(H, kind, i):
         a, b = S(N(101, 21)), S(N(104, 8)); ep.cap(a, b, 3.2, H['horn'], 1.2)
         ep.mark(lambda s: [s.ln(S(N(101.5, 18 - k * 3)), S(N(103.5, 18 - k * 3)), dark(H['horn'], 0.3)) for k in range(3)])
     parts.append(ep)
+    if H.get('armor') and not dragon:
+        ar = Part('v', dark(H['armor'], 0.55))
+        plate = [S(N(101, 20.5)), S(N(105, 22)), S(N(113.5, 30)), S(N(112, 32)), S(N(105.5, 25.6)), S(N(101.5, 23.6))]
+        ar.poly(plate, H['armor'])
+        def armk(s):
+            s.ln(plate[0], plate[2], light(H['armor'], 0.45))
+            for k in range(3):
+                r_ = S(N(105 + k * 2.6, 23.6 + k * 2.3)); s.rect(r_[0], r_[1], r_[0], r_[1], H['trim'])
+        ar.mark(armk)
+        parts.append(ar)
+        if H.get('spike'):
+            sp = Part('h', '#141016')
+            b0, b1, tip = S(N(102.5, 21)), S(N(105.5, 22.5)), S(N(109, 12))
+            sp.poly([b0, b1, tip], '#9a96a4')
+            parts.append(sp)
     if dragon:   # râu rồng
         wp = Part(None, None, rim=False)
         sw = math.sin(p * TAU) * 2
@@ -366,7 +389,8 @@ def horse_frame(H, kind, i):
                 L = 9 - j * 2.5
                 mp.poly([(a[0] + 3, a[1] - 1), (a[0] - 3, a[1] + 2), (a[0] + drift - 3 - j, a[1] - L + wave)], col)
         else:
-            mp.poly([(a[0] + 3, a[1] - 2), (a[0] - 2.5, a[1] + 3), (a[0] + drift - 2 + wave, a[1] + 7 + k * 0.6), (a[0] + drift + 1, a[1] + 2)], mane)
+            mp.poly([(a[0] + 3.5, a[1] - 3), (a[0] - 3.5, a[1] + 3), (a[0] + drift - 5 + wave, a[1] + 10 + k * 0.8), (a[0] + drift + 1, a[1] + 2)], mane)
+            mp.poly([(a[0] + 2.5, a[1] - 3.5), (a[0] - 2, a[1] - 0.5), (a[0] + drift - 7 + wave, a[1] - 2.5 - (k % 2) * 1.5)], mane)
     fl = S(N(100, 19))
     mp.poly([(fl[0] - 2, fl[1]), (fl[0] + 2, fl[1] - 1), (fl[0] + 5, fl[1] + 6)], mane if not H.get('fire') else '#ffb020')   # chỏm bờm trán
     if H.get('plume'):
@@ -393,7 +417,10 @@ def horse_frame(H, kind, i):
     gir = [S(B(73, 45)), S(B(76, 66))]; st.ln(gir[0], gir[1], '#3a2414', 2)                 # đai bụng
     br = bez([S(B(82, 47)), S(B(92, 55)), S(B(88, 60))], 5)                                     # đai ngực
     for a, b in zip(br, br[1:]): st.ln(a, b, '#4a2c18', 2)
-    st.ell(*S(B(91, 54)), 1.5, 1.5, H['trim'])
+    md = S(B(91, 54)); st.ell(md[0], md[1], 2.2, 2.2, H['trim']); st.rect(md[0], md[1], md[0], md[1], '#c01818')
+    tsw = math.sin(p * TAU + 1.5) * 1.5 if kind == 'run' else 0
+    st.poly([(md[0] - 1.5, md[1] + 2), (md[0] + 1.5, md[1] + 2), (md[0] + 2 - tsw, md[1] + 9), (md[0] - 2 - tsw, md[1] + 9)], '#c01818')   # tua đỏ
+    st.ln((md[0] - 1 - tsw, md[1] + 8), (md[0] + 1 - tsw, md[1] + 8), '#ff5a3a')
     # dây cương: đầu ngựa -> tay người cưỡi
     if not dragon:
         for a, b in ((N(97, 22), N(108, 39)), (N(103, 25), N(112, 32)), (N(100, 31), N(112, 38))):
@@ -422,7 +449,7 @@ def qilin_tack(H, parts, S, B, kind):
     return compose(parts), (round(seat[0], 1), round(seat[1], 1))
 
 # ---------------- hổ trắng ----------------
-TIGER = dict(coat='#f2f0ea', stripe='#24202a', belly='#ffffff', nose='#e88a9a', eye='#4ab0ff', blanket='#3a3a6a', trim='#ffd860', saddle='#5a3a20')
+TIGER = dict(coat='#f2f0ea', stripe='#24202a', belly='#ffffff', nose='#c86a7a', eye='#ffc828', blanket='#3a3a6a', trim='#ffd860', saddle='#5a3a20')
 
 def tiger_frame(T, kind, i):
     p = i / 6 if kind == 'run' else 0
@@ -478,7 +505,7 @@ def tiger_frame(T, kind, i):
     bp = Part('v', soft)
     body = [S(B(80, 43, 1)), S(B(60, 45)), S(B(40, 42)), S(B(30, 47)), S(B(28, 56)), S(B(36, 66)), S(B(56, 67)), S(B(78, 68, 1)), S(B(90, 64, 1)), S(B(94, 54, 1)), S(B(90, 45, 1))]
     bp.poly(body, coat)
-    bp.ell(*S(B(38, 54)), 11, 11, coat); bp.ell(*S(B(84, 55, 1)), 10, 11, coat)
+    bp.ell(*S(B(38, 54)), 11, 11, coat); bp.ell(*S(B(84, 54, 1)), 12, 12.5, coat)   # vai hổ vạm vỡ
     bp.poly([S(B(44, 64)), S(B(80, 65, 1)), S(B(78, 68, 1)), S(B(56, 67))], T['belly'])
     def bmk(s):
         # vằn hổ: các vệt thuôn cong, so le dài ngắn
@@ -495,20 +522,37 @@ def tiger_frame(T, kind, i):
     # đầu hổ
     hc = S(B(100, 46, 1)); bobh = math.sin(p * TAU + 2) * 1.2 if kind == 'run' else 0
     hc = (hc[0], hc[1] + bobh)
+    rf = Part('h', soft)   # bờm má xù quanh đầu
+    for k in range(6):
+        a_ = 1.0 + k * 0.42
+        bx, by = hc[0] - 2 + math.cos(a_) * 9, hc[1] + 1 + math.sin(a_) * 9
+        ox, oy = math.cos(a_ + 0.35) * 7, math.sin(a_ + 0.35) * 7
+        rf.poly([(bx - math.sin(a_) * 3, by + math.cos(a_) * 3), (bx + math.sin(a_) * 3, by - math.cos(a_) * 3), (bx + ox, by + oy)], T['belly'] if k < 3 else coat)
+    rf.mark(lambda s: [s.ln((hc[0] - 10 - k * 2, hc[1] - 2 + k * 4), (hc[0] - 6 - k * 2, hc[1] - 1 + k * 4), T['stripe']) for k in range(2)])
+    parts.append(rf)
     hp = Part('v', soft)
-    hp.ell(hc[0], hc[1], 11, 10, coat)
-    hp.ell(hc[0] + 9, hc[1] + 3, 6, 5, coat)       # mõm
-    hp.ell(hc[0] - 4, hc[1] + 6, 7, 5, T['belly'])  # má râu
+    hp.ell(hc[0], hc[1], 12, 10.5, coat)
+    hp.ell(hc[0] + 9, hc[1] + 3, 6.5, 5.5, coat)   # mõm
+    hp.ell(hc[0] - 4, hc[1] + 6, 7.5, 5.5, T['belly'])  # má râu
     hp.poly([(hc[0] - 9, hc[1] - 5), (hc[0] - 6, hc[1] - 15), (hc[0] - 1, hc[1] - 8)], coat)   # tai
     def hmk(s):
         s.poly([(hc[0] - 7, hc[1] - 8), (hc[0] - 5.5, hc[1] - 12), (hc[0] - 3, hc[1] - 8)], '#e8a0a8')
-        e = (hc[0] + 4, hc[1] - 3); s.ell(e[0], e[1], 2, 1.5, T['eye']); s.rect(e[0], e[1] - 1, e[0], e[1] + 1, '#101018'); s.rect(e[0] - 1, e[1] - 1, e[0] - 1, e[1] - 1, '#ffffff')
-        s.ln((e[0] - 3, e[1] - 3), (e[0] + 3, e[1] - 2.5), T['stripe'])
+        e = (hc[0] + 4, hc[1] - 3)
+        s.poly([(e[0] - 3, e[1] - 1), (e[0] + 1, e[1] - 1.5), (e[0] + 3.5, e[1] + 1), (e[0] - 1, e[1] + 1.5)], '#141018')   # viền mắt xếch
+        s.poly([(e[0] - 2, e[1] - 0.5), (e[0] + 1, e[1] - 0.8), (e[0] + 2.5, e[1] + 0.8), (e[0] - 1, e[1] + 0.8)], T['eye'])
+        s.rect(e[0], e[1] - 1, e[0], e[1] + 1, '#101018')
+        s.ln((e[0] - 4, e[1] - 4), (e[0] + 3, e[1] - 1.5), T['stripe'], 2)   # mày nhíu xếch
+        s.ln((e[0] - 1, e[1] - 6), (e[0] + 2, e[1] - 3), T['stripe'])
+        s.ln((hc[0] + 9, hc[1] - 2), (hc[0] + 12, hc[1] - 3), T['stripe'])   # nếp nhăn sống mũi
+        s.ln((hc[0] + 9, hc[1] - 0.5), (hc[0] + 12, hc[1] - 1.5), T['stripe'])
         n = (hc[0] + 14, hc[1] + 1); s.poly([(n[0] - 2, n[1] - 1), (n[0] + 1, n[1] - 1), (n[0], n[1] + 1.5)], T['nose'])
         s.ln((n[0], n[1] + 2), (n[0] - 3, n[1] + 5), T['stripe'])
         for k in range(3): s.ln((hc[0] - 8 + k * 3, hc[1] - 9 + k), (hc[0] - 6 + k * 3, hc[1] - 4 + k), T['stripe'])   # vằn trán 王
         for k in range(2): s.ln((hc[0] - 10, hc[1] + k * 3), (hc[0] - 5, hc[1] + 1 + k * 3), T['stripe'])
-        if kind == 'run' and i in (2, 3): s.poly([(n[0] - 6, n[1] + 4), (n[0] + 1, n[1] + 4), (n[0] - 3, n[1] + 7)], '#7a1a2a')   # gầm
+        roar = kind == 'run' and i in (2, 3)
+        mh = 4 if roar else 2   # luôn nhe nanh, gầm khi phóng
+        s.poly([(n[0] - 7, n[1] + 3.5), (n[0] + 1, n[1] + 3.5), (n[0] - 1, n[1] + 3.5 + mh), (n[0] - 6, n[1] + 3.5 + mh * 0.7)], '#5a0a1a')
+        for fx_ in (n[0] - 1, n[0] - 5): s.poly([(fx_ - 1, n[1] + 3.5), (fx_ + 1, n[1] + 3.5), (fx_, n[1] + 6.5)], '#ffffff')   # nanh
     hp.mark(hmk); parts.append(hp)
     parts += draw_leg(legs['hn'], 0, True) + draw_leg(legs['fn'], 1, True)
     seat = S(B(62, 41))
@@ -665,13 +709,15 @@ def fb_frame(mid, view, kind, i):
             def tm(d):
                 for sx_ in (-1, 1):
                     d.ell(hc[0] + sx_ * 9, hc[1] - 8, 1.6, 2, '#e8a0a8')
-                    e = (hc[0] + sx_ * 4.5, hc[1] - 2); d.ell(e[0], e[1], 2.2, 1.6, H['eye']); d.rect(e[0], e[1] - 1, e[0], e[1] + 1, '#101018')
+                    e = (hc[0] + sx_ * 4.5, hc[1] - 2); d.ell(e[0], e[1], 2.2, 1.4, '#141018'); d.ell(e[0], e[1], 1.6, 1, H['eye']); d.rect(e[0], e[1] - 1, e[0], e[1] + 1, '#101018')
+                    d.ln((hc[0] + sx_ * 1.5, hc[1] - 3), (hc[0] + sx_ * 7.5, hc[1] - 5.5), H['stripe'], 2)   # mày nhíu
                     d.ln((hc[0] + sx_ * 10, hc[1] - 1), (hc[0] + sx_ * 7, hc[1]), H['stripe']); d.ln((hc[0] + sx_ * 10, hc[1] + 2), (hc[0] + sx_ * 7, hc[1] + 2.5), H['stripe'])
                 d.ell(hc[0] - 3, hc[1] + 4.5, 3.5, 3, H['belly']); d.ell(hc[0] + 3, hc[1] + 4.5, 3.5, 3, H['belly'])
                 d.poly([(hc[0] - 2, hc[1] + 1.5), (hc[0] + 2, hc[1] + 1.5), (hc[0], hc[1] + 3.5)], H['nose'])
                 for k in range(3): d.ln((hc[0] - 3, hc[1] - 8 + k * 2), (hc[0] + 3, hc[1] - 8 + k * 2), H['stripe'])   # 王
                 d.ln((hc[0], hc[1] - 8), (hc[0], hc[1] - 4), H['stripe'])
-                if kind == 'run' and i in (2, 3): d.ell(hc[0], hc[1] + 7, 2.2, 1.6, '#7a1a2a')
+                d.ell(hc[0], hc[1] + 7, 2.6, 1.6 if not (kind == 'run' and i in (2, 3)) else 2.4, '#5a0a1a')
+                for sx_ in (-1, 1): d.poly([(hc[0] + sx_ * 2.5 - 0.8, hc[1] + 6), (hc[0] + sx_ * 2.5 + 0.8, hc[1] + 6), (hc[0] + sx_ * 2.5, hc[1] + 9)], '#ffffff')   # nanh
             hp.mark(tm)
         else:
             hp.ell(hc[0], hc[1], 10, 9, coat)
@@ -699,8 +745,13 @@ def fb_frame(mid, view, kind, i):
                 for sx_ in (-1, 1):
                     e = (top[0] + sx_ * 6.5, top[1] + 2)
                     d.rect(e[0] - (1 if sx_ > 0 else 0), e[1] - 1, e[0] + (0 if sx_ > 0 else 1), e[1] + 1, '#ff3020' if (H.get('eyeRed') or dragon) else '#1a1010')
+                    d.ln((e[0] - sx_ * 3, e[1] - 0.5), (e[0] + sx_ * 0.5, e[1] - 3), dark(coat, 0.5), 1)   # mày xếch
                     n = (mz[0] + sx_ * 2, mz[1] + 1); d.rect(n[0], n[1], n[0], n[1] + 1, dark(H['muzzle'], 0.6))
-                if H.get('blaze'):
+                if H.get('armor'):
+                    d.poly([(top[0] - 3.5, top[1] - 3), (top[0] + 3.5, top[1] - 3), (mz[0] + 2, mz[1] - 4), (mz[0] - 2, mz[1] - 4)], H['armor'])
+                    d.ln((top[0], top[1] - 3), (mz[0], mz[1] - 4), light(H['armor'], 0.45))
+                    if H.get('spike'): d.poly([(top[0] - 1.5, top[1] - 3), (top[0] + 1.5, top[1] - 3), (top[0], top[1] - 9)], '#9a96a4')
+                elif H.get('blaze'):
                     d.poly([(top[0] - 1, top[1] - 3), (top[0] + 1, top[1] - 3), (mz[0] + 1.5, mz[1] - 2), (mz[0] - 1.5, mz[1] - 2)], '#f4ece0')
                 if dragon:
                     d.ln((mz[0] - 4, mz[1] + 2), (mz[0] + 4, mz[1] + 2), '#3a0a0a')

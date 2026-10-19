@@ -345,7 +345,7 @@ def long_fb(view, kind, i):
 # =====================================================================
 # PHƯỢNG HOÀNG – chim lửa bay lượn, đuôi dài có mắt lông
 # =====================================================================
-PHX = dict(body='#d42a24', belly='#ffb43a', wing='#e8401c', prim='#ff9a20', tip='#ffe27a', crest='#ffcf40', beak='#ffd060', eye='#ffffff',
+PHX = dict(body='#d42a24', belly='#ffb43a', wing='#e8401c', prim='#ff9a20', tip='#ffe27a', crest='#ffcf40', beak='#ffd060', eye='#ffe040',
            eyespot='#2ad0c0', tail1='#ff5a1a', tail2='#ffb020', blanket='#5a0a2a', trim='#ffd860', saddle='#3a0a18')
 
 def feather_fan(part, root, ang, n, length, spread, w0, cols, curl=0.25):
@@ -428,10 +428,11 @@ def phx_side(kind, i):
     parts.append(cr)
     hd = Part('v', dark(C['body'], 0.5))
     hd.ell(89, 41 + bob, 6, 5, C['body'])
-    hd.mark(lambda d: [d.ell(90, 40 + bob, 1.8, 1.5, C['eye']), d.rect(91, 40 + bob, 91, 40 + bob, '#1a0404'), d.ln((86, 38 + bob), (92, 37.5 + bob), C['crest'])])
+    hd.mark(lambda d: [d.poly([(86, 39 + bob), (93, 39.5 + bob), (91, 41.5 + bob), (87, 41 + bob)], '#3a0408'), d.ell(90.5, 40.3 + bob, 1.4, 0.9, C['eye']), d.rect(91, 40 + bob, 91, 40 + bob, '#1a0404'),
+                       d.ln((85, 37 + bob), (93, 39 + bob), C['crest'], 2)])   # mắt ưng xếch, mày vàng
     parts.append(hd)
     bk = Part('h', dark(C['beak'], 0.5))
-    bk.poly([(93, 39 + bob), (101, 41 + bob), (99, 44.5 + bob), (94, 44 + bob)], C['beak'])
+    bk.poly([(93, 39 + bob), (100, 40 + bob), (103, 42.5 + bob), (101, 46 + bob), (99, 43.5 + bob), (94, 44 + bob)], C['beak'])   # mỏ quặp
     bk.mark(lambda d: [d.ln((94, 42.5 + bob), (99, 42.5 + bob), dark(C['beak'], 0.45))])
     parts.append(bk)
     parts += wing_side(C, sh, th, False)
@@ -536,8 +537,9 @@ def quy_side(kind, i):
     hd = Part('v', dark(C['skin'], 0.5))
     hx0, hy0 = 108, 75 - bob + nb
     hd.ell(hx0, hy0, 9, 6.5, C['skin'])
-    hd.poly([(hx0 + 4, hy0 - 4), (hx0 + 12, hy0 - 1), (hx0 + 11, hy0 + 3), (hx0 + 4, hy0 + 4)], C['skin'])
-    hd.mark(lambda d: [d.ell(hx0 + 2, hy0 - 2.5, 1.8, 1.5, C['eye']), d.rect(hx0 + 2, hy0 - 3, hx0 + 2, hy0 - 2, '#1a0404'), d.ln((hx0 + 3, hy0 + 2), (hx0 + 11, hy0 + 1.5), C['skin2']),
+    hd.poly([(hx0 + 4, hy0 - 4), (hx0 + 12, hy0 - 2), (hx0 + 15, hy0 + 1), (hx0 + 12, hy0 + 5), (hx0 + 11, hy0 + 2.5), (hx0 + 4, hy0 + 4)], C['skin'])   # mỏ quặp
+    hd.mark(lambda d: [d.ell(hx0 + 2, hy0 - 2.5, 2, 1.3, '#1a0404'), d.ell(hx0 + 2.4, hy0 - 2.5, 1.2, 0.8, C['eye']), d.ln((hx0 + 3, hy0 + 2), (hx0 + 12, hy0 + 2), C['skin2']),
+                       d.ln((hx0 - 2, hy0 - 6), (hx0 + 5, hy0 - 3.5), C['skin2'], 2), d.poly([(hx0 + 12, hy0 + 2), (hx0 + 14.5, hy0 + 1.5), (hx0 + 12, hy0 + 4.5)], '#d8c890'),
                        d.ell(hx0 - 2, hy0 - 5, 2.2, 1.2, C['shell'])])
     parts += [nk, hd]
     # mai
@@ -553,7 +555,12 @@ def quy_side(kind, i):
             d.ell(cx, cy - bob - 1, r * 0.35, r * 0.25, light(C['shell'], 0.35))
         d.ell(62, 62 - bob, 2, 1.6, C['gem'])
     sh.mark(scutes)
-    parts += [rimp, sh]
+    spk = Part('h', dark(C['shell2'], 0.5))   # gai nhọn quanh mai
+    for deg in (190, 212, 234, 306, 328, 350):
+        a_ = math.radians(deg); ca, sa = math.cos(a_), math.sin(a_)
+        bx, by = 62 + ca * 29, 82 - bob + sa * 24
+        spk.poly([(bx - sa * 3.5, by + ca * 3.5), (bx + sa * 3.5, by - ca * 3.5), (bx + ca * 8, by + sa * 8)], C['rim'])
+    parts += [rimp, spk, sh]
     sx, sy = 62, 56 - bob
     tk = Part('v', dark(C['blanket'], 0.5))
     tk.poly([(sx - 11, sy + 2), (sx + 11, sy + 2), (sx + 13, sy + 9), (sx - 13, sy + 9)], C['blanket'])
@@ -590,6 +597,11 @@ def quy_fb(view, kind, i):
             d.ell(c[0] + dx, c[1] + dy - 1, r * 0.35, r * 0.25, light(C['shell'], 0.35))
         d.ell(c[0], c[1] - 6, 2, 1.6, C['gem'])
     sh.mark(scutes)
+    spk = Part('h', dark(C['shell2'], 0.5))
+    for deg in (160, 185, 210, 330, 355, 20):
+        a_ = math.radians(deg); ca, sa = math.cos(a_), math.sin(a_)
+        bx, by = c[0] + ca * 25, c[1] + sa * 19
+        spk.poly([(bx - sa * 3.2, by + ca * 3.2), (bx + sa * 3.2, by - ca * 3.2), (bx + ca * 7, by + sa * 7)], C['rim'])
     sc = (c[0], c[1] - 19)
     tk = Part('v', dark(C['blanket'], 0.5))
     tk.poly([(sc[0] - 12, sc[1] + 2), (sc[0] + 12, sc[1] + 2), (sc[0] + 13, sc[1] + 10), (sc[0] - 13, sc[1] + 10)], C['blanket'])
@@ -601,16 +613,17 @@ def quy_fb(view, kind, i):
         hc = P(0, 24, 18 + bob + nb)
         hd = Part('v', dark(C['skin'], 0.5))
         hd.ell(hc[0], hc[1], 8, 7, C['skin']); hd.ell(hc[0], hc[1] + 5, 6, 4, C['skin'])
-        hd.mark(lambda d: [d.ell(hc[0] + sx_ * 4.5, hc[1] - 1, 1.6, 1.4, C['eye']) for sx_ in (-1, 1)] + [d.ln((hc[0] - 4, hc[1] + 6), (hc[0] + 4, hc[1] + 6), C['skin2']), d.ell(hc[0], hc[1] - 5, 2.4, 1.2, C['shell'])])
-        return compose(rear_legs + [rimp, sh, tk, sd]), compose(front_legs + [hd]), (round(seat[0], 1), round(seat[1], 1))
+        hd.mark(lambda d: [d.ell(hc[0] + sx_ * 4.5, hc[1] - 1, 1.6, 1.1, C['eye']) for sx_ in (-1, 1)] + [d.ln((hc[0] + sx_ * 1.5, hc[1] - 3), (hc[0] + sx_ * 7, hc[1] - 4.5), C['skin2'], 2) for sx_ in (-1, 1)]
+                  + [d.poly([(hc[0] - 2, hc[1] + 7), (hc[0] + 2, hc[1] + 7), (hc[0], hc[1] + 10)], '#d8c890')] + [d.ln((hc[0] - 4, hc[1] + 6), (hc[0] + 4, hc[1] + 6), C['skin2']), d.ell(hc[0], hc[1] - 5, 2.4, 1.2, C['shell'])])
+        return compose(rear_legs + [rimp, spk, sh, tk, sd]), compose(front_legs + [hd]), (round(seat[0], 1), round(seat[1], 1))
     tl = Part('h', dark(C['skin'], 0.5)); t0 = P(0, -26, 14 + bob); tl.poly([(t0[0] - 3, t0[1]), (t0[0] + 3, t0[1]), (t0[0], t0[1] + 7)], C['skin'])
     hd = Part('v', dark(C['skin'], 0.5)); hc = P(0, 26, 22 + bob); hd.ell(hc[0], hc[1], 6, 5, C['skin'])
-    return compose(front_legs + [hd, rimp, sh, tk, sd]), compose(rear_legs + [tl]), (round(seat[0], 1), round(seat[1], 1))
+    return compose(front_legs + [hd, rimp, spk, sh, tk, sd]), compose(rear_legs + [tl]), (round(seat[0], 1), round(seat[1], 1))
 
 # =====================================================================
 # KIM NGƯU – trâu vàng sừng cong, vòng mũi
 # =====================================================================
-NGUU = dict(coat='#e8b030', coat2='#8a5a10', horn='#fff4d8', hoof='#5a3a14', muzzle='#d8a060', ring='#ffe070', eye='#2a1404', tuft='#7a4a10',
+NGUU = dict(coat='#e8b030', coat2='#8a5a10', horn='#fff4d8', hoof='#5a3a14', muzzle='#d8a060', ring='#ffe070', eye='#e01810', tuft='#7a4a10',
             blanket='#1a3a8a', trim='#ffd860', saddle='#3a2410')
 
 def nguu_side(kind, i):
@@ -666,15 +679,18 @@ def nguu_side(kind, i):
     hp_ = [B(96, 58 + nod), B(104, 58 + nod), B(110, 64 + nod), B(114, 72 + nod), B(113, 77 + nod), B(104, 78 + nod), B(98, 72 + nod)]
     hd.poly(hp_, C['coat'])
     hd.ell(*B(111, 75 + nod), 4.5, 4, C['muzzle'])
-    hd.mark(lambda s: [s.ell(*B(104, 64 + nod), 1.6, 1.4, C['eye']), s.ln(B(102, 62 + nod), B(106, 62 + nod), dark(C['coat'], 0.4)),
+    hd.mark(lambda s: [s.ell(*B(104, 64.5 + nod), 2, 1.3, '#1a0804'), s.ell(*B(104.5, 64.5 + nod), 1.1, 0.8, C['eye']), s.rect(*B(105, 64 + nod), *B(105, 64 + nod), '#ffc060'),
+                       s.ln(B(100.5, 61 + nod), B(107, 63.5 + nod), dark(C['coat'], 0.55), 2),   # mày gồ hằm hằm
+                       s.ln(B(108, 69 + nod), B(112, 70 + nod), dark(C['coat'], 0.35)),
                        s.rect(*B(113, 73 + nod), *B(113, 73 + nod), '#2a1404'),
                        s.d.arc([round(B(110, 75 + nod)[0] - 2), round(B(110, 75 + nod)[1]), round(B(110, 75 + nod)[0] + 3), round(B(110, 75 + nod)[1] + 5)], 0, 360, fill=hx(C['ring']))])
     parts.append(hd)
     ear = Part('h', dark(C['coat'], 0.5)); ear.poly([B(98, 60 + nod), B(91, 58 + nod), B(97, 64 + nod)], C['coat'])
     parts.append(ear)
     hn = Part('h', dark(C['horn'], 0.55))
-    hn.curve([B(100, 58 + nod), B(104, 50 + nod), B(112, 46 + nod), B(116, 50 + nod)], 4.2, 1.4, C['horn'], 10)
-    hn.curve([B(97, 58 + nod), B(98, 50 + nod), B(104, 44 + nod), B(109, 44 + nod)], 3.6, 1.2, dark(C['horn'], 0.2), 10)
+    hn.curve([B(97, 58 + nod), B(99, 48 + nod), B(106, 41 + nod), B(115, 39 + nod)], 4.4, 0.8, dark(C['horn'], 0.2), 12)
+    hn.curve([B(100, 58 + nod), B(105, 49 + nod), B(114, 44 + nod), B(123, 44 + nod)], 5, 0.8, C['horn'], 12)   # sừng dài nhọn chĩa tới
+    hn.mark(lambda s: [s.ln(B(101 + k * 3.2, 55 - k * 3 + nod), B(103 + k * 3.2, 56.5 - k * 3 + nod), dark(C['horn'], 0.35)) for k in range(3)])
     parts.append(hn)
     parts += draw_leg(legs['hn'], 0, True) + draw_leg(legs['fn'], 1, True)
     seat = B(62, 50.5)
@@ -731,11 +747,12 @@ def nguu_fb(view, kind, i):
         hd.ell(hc[0], hc[1], 10, 8, C['coat'])
         hd.poly([(hc[0] - 8, hc[1]), (hc[0] + 8, hc[1]), (hc[0] + 6, hc[1] + 12), (hc[0] - 6, hc[1] + 12)], C['coat'])
         hd.ell(hc[0], hc[1] + 12, 6.5, 4, C['muzzle'])
-        hd.mark(lambda d: [d.ell(hc[0] + sx_ * 5.5, hc[1] - 1, 1.6, 1.4, C['eye']) for sx_ in (-1, 1)] + [d.rect(hc[0] + sx_ * 2.5, hc[1] + 12, hc[0] + sx_ * 2.5, hc[1] + 13, '#2a1404') for sx_ in (-1, 1)]
+        hd.mark(lambda d: [d.ell(hc[0] + sx_ * 5.5, hc[1] - 1, 1.8, 1.2, '#1a0804') for sx_ in (-1, 1)] + [d.ell(hc[0] + sx_ * 5.5, hc[1] - 1, 1, 0.8, C['eye']) for sx_ in (-1, 1)]
+                  + [d.ln((hc[0] + sx_ * 2, hc[1] - 2.5), (hc[0] + sx_ * 8, hc[1] - 4.5), dark(C['coat'], 0.55), 2) for sx_ in (-1, 1)] + [d.rect(hc[0] + sx_ * 2.5, hc[1] + 12, hc[0] + sx_ * 2.5, hc[1] + 13, '#2a1404') for sx_ in (-1, 1)]
                   + [d.d.arc([round(hc[0] - 3), round(hc[1] + 12), round(hc[0] + 3), round(hc[1] + 18)], 0, 360, fill=hx(C['ring']))])
         hn = Part('h', dark(C['horn'], 0.55))
         for sx_ in (-1, 1):
-            hn.curve([(hc[0] + sx_ * 6, hc[1] - 5), (hc[0] + sx_ * 16, hc[1] - 6), (hc[0] + sx_ * 20, hc[1] - 14), (hc[0] + sx_ * 17, hc[1] - 20)], 4.4, 1.4, C['horn'], 10)
+            hn.curve([(hc[0] + sx_ * 6, hc[1] - 5), (hc[0] + sx_ * 18, hc[1] - 7), (hc[0] + sx_ * 24, hc[1] - 15), (hc[0] + sx_ * 21, hc[1] - 24)], 5, 0.8, C['horn'], 12)
         ear = Part('h', dark(C['coat'], 0.5))
         for sx_ in (-1, 1): ear.poly([(hc[0] + sx_ * 8, hc[1] - 2), (hc[0] + sx_ * 16, hc[1]), (hc[0] + sx_ * 9, hc[1] + 3)], C['coat'])
         return compose(far_legs + [body, tk, sd]), compose(near_legs + [ear, hd, hn]), (round(seat[0], 1), round(seat[1], 1))
@@ -743,7 +760,7 @@ def nguu_fb(view, kind, i):
     hd = Part('v', dark(C['coat'], 0.55)); hd.ell(hc[0], hc[1], 9, 8, C['coat'])
     hn = Part('h', dark(C['horn'], 0.55))
     for sx_ in (-1, 1):
-        hn.curve([(hc[0] + sx_ * 5, hc[1] - 4), (hc[0] + sx_ * 15, hc[1] - 5), (hc[0] + sx_ * 19, hc[1] - 13), (hc[0] + sx_ * 16, hc[1] - 19)], 4.2, 1.4, C['horn'], 10)
+        hn.curve([(hc[0] + sx_ * 5, hc[1] - 4), (hc[0] + sx_ * 17, hc[1] - 6), (hc[0] + sx_ * 23, hc[1] - 14), (hc[0] + sx_ * 20, hc[1] - 23)], 4.8, 0.8, C['horn'], 12)
     sw = math.sin(p * TAU) * 3 if run else 0
     tp = Part('h', dark(C['coat'], 0.5))
     t0 = P(0, -30, 46 + bob); tpts = [t0, (t0[0] + sw * 0.4, t0[1] + 8), (t0[0] + sw, t0[1] + 18), (t0[0] + sw, t0[1] + 26)]

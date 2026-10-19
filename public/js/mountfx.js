@@ -70,9 +70,9 @@
   }
   function bolt(ctx, x0, y0, x1, y1, n, jit, s, col, w, branch) {
     const pts = boltPath(x0, y0, x1, y1, n, jit, s);
-    strokePath(ctx, pts, col, w * 4.5, 0.3);
-    strokePath(ctx, pts, col, w * 1.8, 0.8);
-    strokePath(ctx, pts, '#ffffff', Math.max(1, w * 0.7), 1);
+    strokePath(ctx, pts, col, w * 3, 0.18);
+    strokePath(ctx, pts, col, w * 1.4, 0.65);
+    strokePath(ctx, pts, '#ffffff', Math.max(1, w * 0.6), 0.9);
     if (branch) {   // nhánh rẽ
       const k = 1 + Math.floor(rnd(s + 3.3) * (pts.length - 2)), [bx, by] = pts[k];
       const ang = Math.atan2(y1 - y0, x1 - x0) + (rnd(s + 5.1) < 0.5 ? -0.8 : 0.8), bl = Math.hypot(x1 - x0, y1 - y0) * 0.35;
@@ -91,50 +91,52 @@
     if (layer === 'under') {
       // hào quang điện dưới thân, nhấp nháy
       const fl = 0.5 + 0.5 * Math.sin(now / 70 + seed) * Math.sin(now / 23);
-      groundGlow(ctx, x, y, (side ? 46 : 32) + T * 8, T >= 4 ? '#b48cff' : '#5ad8ff', 0.1 + T * 0.05 + fl * 0.06 * T);
+      groundGlow(ctx, x, y, (side ? 40 : 28) + T * 4, T >= 4 ? '#b48cff' : '#5ad8ff', 0.06 + T * 0.025 + fl * 0.03 * T);
       // sét đánh xuống đất: chớp sáng mặt đất
       if (T >= 3) {
-        const per = T >= 4 ? 1500 : 2600, ph = (now + seed * 311) % per;
-        if (ph < 240) groundGlow(ctx, x + (rnd(Math.floor((now + seed * 311) / per) + seed) - 0.5) * 70, y + 2, 70, '#e8f8ff', 0.75 * (1 - ph / 240));
+        const per = T >= 4 ? 4200 : 6500, ph = (now + seed * 311) % per;
+        if (ph < 200) groundGlow(ctx, x + (rnd(Math.floor((now + seed * 311) / per) + seed) - 0.5) * 90, y + 2, 50, '#e8f8ff', 0.35 * (1 - ph / 200));
       }
       ctx.restore(); return;
     }
     // 1) tia nhỏ bò trên thân
-    const per = [0, 900, 560, 420, 300][T], dur = 170, n = T >= 3 ? 3 : 2;
+    const per = [0, 2200, 1700, 1400, 1100][T], dur = 110, n = T >= 3 ? 2 : 1;
+    AM = 0.6;
     for (let k = 0; k < n; k++) {
       const off = k * per / n + seed * 97, slot = Math.floor((now + off) / per), ph = (now + off) % per;
       if (ph > dur) continue;
       const s = slot * 13.7 + k * 3.1 + seed, flick = Math.floor(now / 45);
       const [ax, ay] = bodyPt(x, y, side, s), [bx, by] = bodyPt(x, y, side, s + 4.4);
       const col = cols[Math.floor(rnd(s + 2) * cols.length)];
-      bolt(ctx, ax, ay, bx, by, 6, 9 + T * 2, s + flick * 0.37, col, 1 + T * 0.25, T >= 2);
+      bolt(ctx, ax, ay, bx, by, 5, 6 + T, s + flick * 0.37, col, 0.8 + T * 0.1, T >= 3);
     }
+    AM = 1;
     // 2) cầu sét bay quanh (bậc 4), nối nhau bằng tia
     if (T >= 4) {
       const orbs = [];
       for (let k = 0; k < 3; k++) {
         const a = now / 650 + k * TAU / 3 + seed;
-        orbs.push([x + Math.cos(a) * (side ? 52 : 34), y - 40 + Math.sin(a) * (side ? 12 : 18) - Math.sin(now / 300 + k) * 6]);
+        orbs.push([x + Math.cos(a) * (side ? 64 : 42), y - 44 + Math.sin(a) * (side ? 14 : 20) - Math.sin(now / 300 + k) * 6]);
       }
       const flick = Math.floor(now / 60);
       for (let k = 0; k < 3; k++) {
         const [ox, oy] = orbs[k], [px, py] = orbs[(k + 1) % 3];
-        if (rnd(flick + k * 5 + seed) < 0.55) bolt(ctx, ox, oy, px, py, 7, 10, flick * 1.3 + k, cols[k], 1.3, false);
+        if (rnd(flick + k * 5 + seed) < 0.12) { AM = 0.5; bolt(ctx, ox, oy, px, py, 6, 8, flick * 1.3 + k, cols[k], 0.9, false); AM = 1; }
       }
       for (let k = 0; k < 3; k++) {
         const [ox, oy] = orbs[k];
-        const g = ctx.createRadialGradient(ox, oy, 0, ox, oy, 11);
-        g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.35, rgba(cols[k], 0.85)); g.addColorStop(1, rgba(cols[k], 0));
-        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(ox, oy, 11, 0, TAU); ctx.fill();
+        const g = ctx.createRadialGradient(ox, oy, 0, ox, oy, 6);
+        g.addColorStop(0, 'rgba(255,255,255,0.9)'); g.addColorStop(0.4, rgba(cols[k], 0.6)); g.addColorStop(1, rgba(cols[k], 0));
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(ox, oy, 6, 0, TAU); ctx.fill();
       }
     }
     // 3) sét từ trời đánh xuống bên cạnh (bậc 3+)
     if (T >= 3) {
-      const per2 = T >= 4 ? 1500 : 2600, ph = (now + seed * 311) % per2, slot = Math.floor((now + seed * 311) / per2);
-      if (ph < 240) {
-        const s = slot + seed, tx = x + (rnd(s) - 0.5) * 70, a = 1 - ph / 240, flick = Math.floor(now / 40);
+      const per2 = T >= 4 ? 4200 : 6500, ph = (now + seed * 311) % per2, slot = Math.floor((now + seed * 311) / per2);
+      if (ph < 200) {
+        const s = slot + seed, sd = rnd(s) < 0.5 ? -1 : 1, tx = x + sd * (side ? 58 : 40) + (rnd(s + 2) - 0.5) * 20, a = 0.8 * (1 - ph / 200), flick = Math.floor(now / 40);
         AM = a;
-        bolt(ctx, tx + (rnd(s + 1) - 0.5) * 40, y - 190, tx, y + 2, 10, 18, s * 3 + flick * 0.21, T >= 4 ? '#ffe066' : '#c49aff', T >= 4 ? 2.4 : 1.9, true);
+        bolt(ctx, tx + (rnd(s + 1) - 0.5) * 30, y - 170, tx, y + 2, 9, 14, s * 3 + flick * 0.21, T >= 4 ? '#ffe066' : '#c49aff', T >= 4 ? 1.6 : 1.3, false);
         AM = 1;
       }
     }
@@ -213,6 +215,10 @@
     const S = stageOf(lv), R = rankOf(id), T = THEME[id];
     if (!T || !S) return;
     const rr = side ? 44 : 30;
+    if (id === 'thanh_long') {   // rồng phải nhìn rõ: chỉ giữ ánh nền nhẹ + cột sáng mờ ở cấp tối đa
+      if (S >= 4) pillar(ctx, x, y, now + seed * 90, T.c, side ? 26 : 20, 0.14);
+      return;
+    }
     if (S >= 1) groundGlow(ctx, x, y, rr + 6 * S, T.c, 0.06 + 0.035 * S * (1 + R * 0.4));
     if (S >= 3 || (S >= 2 && R >= 1)) rune(ctx, x, y, rr + (S >= 3 ? 8 : 2), T.c, T.c2, now * (moving ? 1.6 : 1) + seed * 50, R >= 2, 0.22 + 0.08 * (S - 1) + 0.05 * R);
     if (S >= 3 && R >= 1) pulse(ctx, x, y, now, R >= 3 ? 1800 : 2600, rr + 34, T.c, 0.35 + 0.12 * R, seed);
@@ -229,7 +235,7 @@
     if (!T || !S) return;
     const key = id + seed + 'a', back = side ? (flip ? 1 : -1) : 0;
     // hạt sáng bay lên: nhiều hơn theo cấp và độ hiếm
-    const motesMs = Math.max(45, 520 / (S + R * 0.8));
+    const motesMs = Math.max(45, 520 / (S + R * 0.8)) * (id === 'thanh_long' ? 4 : 1);
     if (every(key + 'm', motesMs, now)) FX.emit(1, x + (Math.random() - 0.5) * (side ? 70 : 40), y - 6 - Math.random() * 40, { speed: 5, vy: -22 - S * 4, life: 900 + R * 150, size: 2 + R * 0.4, color: Math.random() < 0.65 ? T.c : T.c2 });
     // vệt khi chạy
     if (moving && T.trail && (S >= 2 || (S >= 1 && R >= 1)) && every(key + 't', Math.max(30, 140 - S * 20 - R * 15), now)) {
@@ -250,7 +256,7 @@
       if (id === 'kim_quy') hexShield(ctx, x, y, now, side, T.c, 0.5 + 0.15 * (S - 3));
       if (id === 'hac_ma') fireRing(ctx, x, y - 2, now, side ? 32 : 18, side ? 8 : 12, 'over', 10, 0.55, PAL.blood);
     }
-    if (S >= 4 && R >= 2 && every(key + 'p', 90, now)) FX.emit(1, x + (Math.random() - 0.5) * 30, y - Math.random() * 110, { speed: 3, vy: -40, life: 700, size: 2.2, color: '#ffffff' });
+    if (S >= 4 && R >= 2 && id !== 'thanh_long' && every(key + 'p', 90, now)) FX.emit(1, x + (Math.random() - 0.5) * 30, y - Math.random() * 110, { speed: 3, vy: -40, life: 700, size: 2.2, color: '#ffffff' });
   }
   // tên các mốc hiệu ứng (bảng thú cưỡi)
   function tiers(id) {
@@ -275,7 +281,7 @@
       groundGlow(ctx, x, y, 46, '#ff8a2a', 0.35);
       if ((lv || 1) >= 40) fireRing(ctx, x, y - 30, now * 1.3, side ? 30 : 22, side ? 8 : 10, 'under', 12, 0.6 + ((lv || 1) - 40) / 25, FIRE);
     } else if (id === 'thanh_long') {
-      groundGlow(ctx, x, y, 50, '#7af0e0', 0.22);
+      groundGlow(ctx, x, y, 44, '#7af0e0', 0.12);
       dragonLightning(ctx, x, y, now, side, seed, lv || 1, 'under');
     } else if (id === 'kim_quy' || id === 'kim_nguu') {
       groundGlow(ctx, x, y, 40, '#ffd040', 0.18 + Math.sin(now / 300 + seed) * 0.05);
@@ -291,10 +297,10 @@
       if (every(key, moving ? 40 : 90, now)) FX.emit(1, x + (Math.random() - 0.5) * (side ? 60 : 30), y - 10 - Math.random() * 30, { speed: 12, vy: -70, life: 700, size: 3.2, color: Math.random() < 0.5 ? '#ffb030' : '#ff5a10', drag: 1 });
     } else if (id === 'thanh_long') {
       // mây cuộn sau đuôi (thấp, dưới thân rồng)
-      if (every(key, moving ? 80 : 220, now)) FX.emit(1, x + back * (side ? 38 : 0) + (Math.random() - 0.5) * (side ? 24 : 34), y - 4 - Math.random() * 6, { speed: 6, vy: -4, life: 1100, size: 4.5, color: Math.random() < 0.6 ? '#d8f4ff' : '#8ae0f0', drag: 1.5 });
+      if (every(key, moving ? 170 : 480, now)) FX.emit(1, x + back * (side ? 40 : 0) + (Math.random() - 0.5) * (side ? 24 : 34), y - 2 - Math.random() * 4, { speed: 6, vy: -3, life: 900, size: 3.5, color: Math.random() < 0.6 ? '#d8f4ff' : '#8ae0f0', drag: 1.5 });
       dragonLightning(ctx, x, y, now, side, seed, lv || 1, 'over');
       const T = tierOf(lv || 1);   // tia lửa điện bắn ra, nhiều hơn khi cấp cao
-      if (T >= 2 && every(key + 'z', [0, 0, 260, 160, 90][T], now)) { const [px, py] = bodyPt(x, y, side, now); FX.emit(1, px, py, { speed: 60, life: 260, size: 2, color: T >= 4 && Math.random() < 0.4 ? '#ffe066' : '#c8f8ff', drag: 3 }); }
+      if (T >= 2 && every(key + 'z', [0, 0, 700, 500, 320][T], now)) { const [px, py] = bodyPt(x, y, side, now); FX.emit(1, px, py, { speed: 60, life: 260, size: 2, color: T >= 4 && Math.random() < 0.4 ? '#ffe066' : '#c8f8ff', drag: 3 }); }
     } else if (id === 'phuong_hoang') {
       if ((lv || 1) >= 40) fireRing(ctx, x, y - 30, now * 1.3, side ? 30 : 22, side ? 8 : 10, 'over', 12, 0.6 + ((lv || 1) - 40) / 25, FIRE);
       if (every(key, moving ? 45 : 110, now)) FX.emit(1, x + back * (side ? 34 : 0) + (Math.random() - 0.5) * 40, y - 40 - Math.random() * 20, { speed: 20, vy: 30, life: 800, size: 3, color: ['#ffe070', '#ff9a20', '#ff4a1a'][Math.floor(Math.random() * 3)], drag: 1 });
