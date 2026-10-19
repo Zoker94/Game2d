@@ -23,7 +23,7 @@ const THEMES = {
 
 const MAP_DEFS = {
   tuong_duong: {
-    name: 'Thành Tương Dương', theme: 'town', w: 36, h: 28, seed: 11, safe: true, lv: '1+',
+    name: 'Thành Tương Dương', theme: 'town', w: 36, h: 28, seed: 11, safe: true, lv: '1+', town: true,
     music: 'town',
     portals: [
       { side: 'E', to: 'ngoai_o' },
@@ -47,7 +47,8 @@ const MAP_DEFS = {
       { id: 'thu_kho',    x: 8,  y: 17 },
       { id: 'tieu_cuc',   x: 28, y: 13 },
       { id: 'tang_kinh',  x: 26, y: 18 },
-      { id: 'dh_su_gia',  x: 17, y: 20 }
+      { id: 'dh_su_gia',  x: 17, y: 20 },
+      { id: 'pho_ban',    x: 26, y: 15 }
     ],
     spawns: []
   },
@@ -55,7 +56,7 @@ const MAP_DEFS = {
   ngoai_o: {
     name: 'Ngoại Ô Tương Dương', theme: 'plains', w: 48, h: 36, seed: 21, lv: '1-10', tier: 0,
     portals: [{ side: 'W', to: 'tuong_duong' }, { side: 'E', to: 'son_dao' }],
-    npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }],
+    npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }, { id: 'xa_phu', x: 5, y: 19 }],
     spawns: [['tho_rung', 10], ['tho_rung', 8], ['soi_xam', 8], ['soi_xam', 6], ['ma_tac', 7], ['ma_tac', 6]]
   },
   ben_do: {
@@ -91,7 +92,7 @@ const MAP_DEFS = {
   truc_lam: {
     name: 'Rừng Trúc Thanh Thành', theme: 'bamboo', w: 48, h: 36, seed: 31, lv: '10-20', tier: 1,
     portals: [{ side: 'W', to: 'son_dao' }, { side: 'E', to: 'vuc_sau' }, { side: 'N', to: 'dong_gau', at: 0.65 }],
-    npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }],
+    npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }, { id: 'xa_phu', x: 6, y: 19 }],
     spawns: [['ran_truc', 9], ['ran_truc', 7], ['gau_den', 7], ['gau_den', 6], ['son_tac', 8], ['son_tac', 7]]
   },
   dong_gau: {
@@ -108,8 +109,8 @@ const MAP_DEFS = {
   },
   hoa_son: {
     name: 'Hoa Sơn Tuyệt Đỉnh', theme: 'mountain', w: 48, h: 36, seed: 41, lv: '20-30', tier: 2,
-    portals: [{ side: 'W', to: 'vuc_sau' }, { side: 'E', to: 'co_dao' }, { side: 'N', to: 'kiem_trung', at: 0.35 }],
-    npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }],
+    portals: [{ side: 'W', to: 'vuc_sau' }, { side: 'E', to: 'co_dao' }, { side: 'N', to: 'kiem_trung', at: 0.35 }, { side: 'S', to: 'thanh_do', at: 0.55 }],
+    npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }, { id: 'xa_phu', x: 6, y: 19 }],
     spawns: [['ho_trang', 8], ['ho_trang', 7], ['kiem_khach', 8], ['kiem_khach', 7], ['khi_dot', 8], ['khi_dot', 7]]
   },
   kiem_trung: {
@@ -126,8 +127,8 @@ const MAP_DEFS = {
   },
   sa_mac: {
     name: 'Sa Mạc Tây Vực', theme: 'desert', w: 48, h: 36, seed: 51, lv: '30-40', tier: 3,
-    portals: [{ side: 'W', to: 'co_dao' }, { side: 'E', to: 'thien_son_khau' }, { side: 'S', to: 'lau_lan', at: 0.6 }],
-    npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }],
+    portals: [{ side: 'W', to: 'co_dao' }, { side: 'E', to: 'thien_son_khau' }, { side: 'S', to: 'lau_lan', at: 0.6 }, { side: 'N', to: 'lan_chau', at: 0.45 }],
+    npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }, { id: 'xa_phu', x: 6, y: 19 }],
     spawns: [['bo_cap', 8], ['bo_cap', 7], ['xac_uop', 8], ['xac_uop', 7], ['lang_nhan', 8], ['lang_nhan', 7]]
   },
   lau_lan: {
@@ -145,7 +146,7 @@ const MAP_DEFS = {
   bang_cung: {
     name: 'Băng Cung Thiên Sơn', theme: 'snow', w: 48, h: 36, seed: 61, lv: '40-50', tier: 4,
     portals: [{ side: 'W', to: 'thien_son_khau' }, { side: 'E', to: 'hac_phong_coc' }, { side: 'N', to: 'bang_dong', at: 0.35 }],
-    npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }],
+    npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }, { id: 'xa_phu', x: 6, y: 19 }],
     spawns: [['tuyet_quai', 8], ['tuyet_quai', 7], ['bang_lang', 8], ['bang_lang', 7], ['bang_nu', 7], ['bang_nu', 6]]
   },
   bang_dong: {
@@ -163,14 +164,100 @@ const MAP_DEFS = {
   ma_giao: {
     name: 'Ma Giáo Cấm Địa', theme: 'demon', w: 48, h: 36, seed: 71, lv: '50+', tier: 5,
     portals: [{ side: 'W', to: 'hac_phong_coc' }, { side: 'E', to: 'u_minh' }],
-    npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }],
+    npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }, { id: 'xa_phu', x: 6, y: 19 }],
     spawns: [['ma_binh', 9], ['ma_binh', 8], ['hoa_quy', 8], ['hoa_quy', 7], ['u_linh', 7], ['u_linh', 6]]
   },
   u_minh: {
-    name: 'U Minh Điện', theme: 'demon', w: 40, h: 30, seed: 73, lv: '58+', tier: 6, minLv: 50,
-    portals: [{ side: 'W', to: 'ma_giao' }],
+    name: 'U Minh Điện', theme: 'demon', w: 40, h: 30, seed: 73, lv: '55-62', tier: 6, minLv: 50,
+    portals: [{ side: 'W', to: 'ma_giao' }, { side: 'E', to: 'long_mon' }],
     npcs: [],
     spawns: [['u_minh_quy', 8], ['xich_lang', 8], ['diem_la', 6], ['diem_la', 5]]
+  },
+  // ---- Thành mới: mỗi vùng một thành để tiếp tế, xe ngựa, phó bản ----
+  thanh_do: {
+    name: 'Thành Đô Phủ', theme: 'town', w: 36, h: 28, seed: 111, safe: true, lv: '20+', town: true, music: 'town',
+    portals: [{ side: 'N', to: 'hoa_son' }],
+    npcs: [
+      { id: 'thanh_chu_thanh_do', x: 17, y: 8 },
+      { id: 'tho_ren',    x: 12, y: 13 },
+      { id: 'hieu_may',   x: 12, y: 16 },
+      { id: 'kim_hoan',   x: 15, y: 18 },
+      { id: 'duoc_diem',  x: 20, y: 18 },
+      { id: 'tap_hoa',    x: 23, y: 16 },
+      { id: 'xa_phu',     x: 20, y: 11 },
+      { id: 'ma_phu',     x: 8,  y: 13 },
+      { id: 'thu_kho',    x: 8,  y: 17 },
+      { id: 'pho_ban',    x: 26, y: 13 },
+      { id: 'su_gia',     x: 15, y: 11 }
+    ],
+    spawns: []
+  },
+  lan_chau: {
+    name: 'Lan Châu Thành', theme: 'town', w: 36, h: 28, seed: 113, safe: true, lv: '30+', town: true, music: 'town',
+    portals: [{ side: 'S', to: 'sa_mac' }],
+    npcs: [
+      { id: 'thanh_chu_lan_chau', x: 17, y: 8 },
+      { id: 'tho_ren',    x: 12, y: 13 },
+      { id: 'hieu_may',   x: 12, y: 16 },
+      { id: 'kim_hoan',   x: 15, y: 18 },
+      { id: 'duoc_diem',  x: 20, y: 18 },
+      { id: 'tap_hoa',    x: 23, y: 16 },
+      { id: 'xa_phu',     x: 20, y: 11 },
+      { id: 'ma_phu',     x: 8,  y: 13 },
+      { id: 'thu_kho',    x: 8,  y: 17 },
+      { id: 'pho_ban',    x: 26, y: 13 },
+      { id: 'su_gia',     x: 15, y: 11 }
+    ],
+    spawns: []
+  },
+  long_mon: {
+    name: 'Long Môn Trấn', theme: 'town', w: 36, h: 28, seed: 117, safe: true, lv: '55+', town: true, music: 'town', minLv: 50,
+    portals: [{ side: 'W', to: 'u_minh' }, { side: 'E', to: 'con_lon' }],
+    npcs: [
+      { id: 'thanh_chu_long_mon', x: 17, y: 8 },
+      { id: 'tho_ren',    x: 12, y: 13 },
+      { id: 'hieu_may',   x: 12, y: 16 },
+      { id: 'kim_hoan',   x: 15, y: 18 },
+      { id: 'duoc_diem',  x: 20, y: 18 },
+      { id: 'tap_hoa',    x: 23, y: 16 },
+      { id: 'xa_phu',     x: 20, y: 11 },
+      { id: 'ma_phu',     x: 8,  y: 13 },
+      { id: 'thu_kho',    x: 8,  y: 17 },
+      { id: 'pho_ban',    x: 26, y: 13 },
+      { id: 'su_gia',     x: 15, y: 11 }
+    ],
+    spawns: []
+  },
+  // ---- Vùng cấp cao (60-99) sau Long Môn Trấn ----
+  con_lon: {
+    name: 'Côn Lôn Tiên Cảnh', theme: 'mountain', w: 48, h: 36, seed: 121, lv: '60-68', tier: 6, minLv: 55,
+    portals: [{ side: 'W', to: 'long_mon' }, { side: 'E', to: 'vo_luong' }, { side: 'N', to: 'thien_tri', at: 0.35 }],
+    npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }, { id: 'xa_phu', x: 6, y: 19 }],
+    spawns: [['tien_ho', 9], ['tien_ho', 7], ['con_lon_kiem', 8], ['con_lon_kiem', 7], ['linh_vien', 7], ['linh_vien', 6]]
+  },
+  thien_tri: {
+    name: 'Thiên Trì Huyền Băng', theme: 'snow', w: 40, h: 30, seed: 123, lv: '66-74', tier: 7, minLv: 60,
+    portals: [{ side: 'S', to: 'con_lon', at: 0.6 }],
+    npcs: [],
+    spawns: [['bang_giao', 8], ['han_bang_quai', 8], ['han_bang_quai', 6], ['tuyet_nu', 6]]
+  },
+  vo_luong: {
+    name: 'Vô Lượng Sơn Cốc', theme: 'bamboo', w: 48, h: 36, seed: 127, lv: '72-80', tier: 7, minLv: 65,
+    portals: [{ side: 'W', to: 'con_lon' }, { side: 'E', to: 'huyet_ma' }],
+    npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }, { id: 'xa_phu', x: 6, y: 19 }],
+    spawns: [['doc_mang', 9], ['doc_mang', 7], ['xich_ho', 8], ['xich_ho', 7], ['vo_luong_kiem', 7], ['vo_luong_kiem', 6]]
+  },
+  huyet_ma: {
+    name: 'Huyết Ma Uyên', theme: 'demon', w: 48, h: 36, seed: 131, lv: '80-90', tier: 8, minLv: 75,
+    portals: [{ side: 'W', to: 'vo_luong' }, { side: 'E', to: 'doan_hon' }],
+    npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }, { id: 'xa_phu', x: 6, y: 19 }],
+    spawns: [['huyet_lang', 9], ['huyet_lang', 7], ['huyet_ma_binh', 8], ['huyet_ma_binh', 7], ['huyet_sat', 7], ['huyet_sat', 6]]
+  },
+  doan_hon: {
+    name: 'Đoạn Hồn Nhai', theme: 'tomb', w: 44, h: 32, seed: 137, lv: '88-99', tier: 8, minLv: 85,
+    portals: [{ side: 'W', to: 'huyet_ma' }],
+    npcs: [],
+    spawns: [['doan_hon_thi', 8], ['quy_vuong', 8], ['quy_vuong', 6], ['thien_ma_ve', 7]]
   },
   dai_hoi: {
     name: 'Đại Hội Võ Lâm', theme: 'arena', w: 40, h: 30, seed: 91, lv: '20+', safe: true, tourney: true, minLv: 20,
@@ -220,8 +307,7 @@ function arrivalPos(side, w, h, at) {
 }
 const OPP = { E: 'W', W: 'E', N: 'S', S: 'N' };
 
-function generate(id) {
-  const def = MAP_DEFS[id];
+function generate(id, def = MAP_DEFS[id]) {
   const th = THEMES[def.theme];
   const { w, h } = def;
   const r = rng(def.seed);
@@ -283,6 +369,12 @@ function generate(id) {
     for (let x = 3; x < w - 3; x += 4) { set(x, 2, T.FLOWER); set(x, h - 3, T.FLOWER); }
   }
 
+  if (def.corridor) {   // phó bản: hành lang rộng xuyên từ điểm vào tới chỗ boss, lượn nhẹ cho đỡ đơn điệu
+    for (let x = 2; x < w - 2; x++) {
+      const yc = cy + Math.round(Math.sin(x / 5) * 2);
+      for (let y = yc - 3; y <= yc + 3; y++) if (SOLID.has(get(x, y))) set(x, y, Math.abs(y - yc) <= 1 ? th.path : th.base);
+    }
+  }
   // Viền bản đồ
   for (let x = 0; x < w; x++) { set(x, 0, th.border); set(x, h - 1, th.border); }
   for (let y = 0; y < h; y++) { set(0, y, th.border); set(w - 1, y, th.border); }
@@ -355,7 +447,7 @@ function generate(id) {
   const bossSpot = farFromPortals.length ? farFromPortals[Math.floor(r() * farFromPortals.length)] : start;
 
   return {
-    id, name: def.name, theme: def.theme, w, h, tiles: g, safe: !!def.safe, pvp: !!def.pvp, tourney: !!def.tourney, minLv: def.minLv || 1, lv: def.lv, tier: def.tier ?? 0,
+    id, name: def.name, theme: def.theme, w, h, tiles: g, safe: !!def.safe, pvp: !!def.pvp, tourney: !!def.tourney, minLv: def.minLv || 1, lv: def.lv, tier: def.tier ?? 0, town: !!def.town,
     portals, npcs: def.npcs, spawns, walkable,
     boss: { x: bossSpot % w, y: (bossSpot / w) | 0 },
     center: { x: cx, y: cy }
@@ -364,6 +456,19 @@ function generate(id) {
 
 const MAPS = {};
 for (const id in MAP_DEFS) MAPS[id] = generate(id);
+// thành gần nhất (theo số cổng phải đi) của mỗi bản đồ: Phù về làng, hồi sinh về thành
+for (const id in MAPS) {
+  const seen = new Set([id]), q = [id];
+  let home = null;
+  while (q.length && !home) {
+    const cur = q.shift();
+    if (MAPS[cur].town) { home = cur; break; }
+    for (const p of MAPS[cur].portals) if (!seen.has(p.to)) { seen.add(p.to); q.push(p.to); }
+  }
+  MAPS[id].home = home || 'tuong_duong';
+}
+// bản đồ phó bản: sinh riêng cho mỗi lượt vào, không có cổng
+function generateInstance(id, def) { const m = generate(id, Object.assign({ portals: [], npcs: [], spawns: [], corridor: true }, def)); m.home = def.home || 'tuong_duong'; m.instance = true; return m; }
 
 function isSolidAt(map, px, py) {
   const tx = Math.floor(px / TILE), ty = Math.floor(py / TILE);
@@ -371,4 +476,4 @@ function isSolidAt(map, px, py) {
   return SOLID.has(map.tiles[ty * map.w + tx]);
 }
 
-module.exports = { MAPS, MAP_DEFS, TILE, T, SOLID: [...SOLID], isSolidAt };
+module.exports = { MAPS, MAP_DEFS, TILE, T, SOLID: [...SOLID], isSolidAt, generateInstance };

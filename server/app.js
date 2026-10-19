@@ -41,6 +41,7 @@ const io = new Server(server, { cors: { origin: false }, pingInterval: 10000, pi
 const world = new World(io, db);
 const features = new Features(world, db);
 world.party = new (require('./game/party').Party)(world);
+world.dungeon = new (require('./game/dungeon').Dungeon)(world);
 world.daihoi = new (require('./game/daihoi').DaiHoi)(world, features, db);
 const { Social } = require('./game/social');
 const social = new Social(world, features, db);
@@ -182,13 +183,14 @@ let gamedataCache = null;
 app.get('/api/gamedata', (req, res) => {
   if (!gamedataCache) {
     const mons = {};
-    for (const m of [...Object.values(MONSTERS), ...Object.values(BOSSES)]) mons[m.id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: m.el };
+    for (const m of [...Object.values(MONSTERS), ...Object.values(BOSSES)]) mons[m.id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: m.el, art: m.art };
     mons.chest = { name: 'Bảo Rương', lv: 1, sprite: 'chest', color: '#ffd700' };
     for (const [id, m] of Object.entries(require('./game/daihoi').DH_MONS)) mons[id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: 'kim', art: m.art };
     const maps = {};
     for (const id in MAPS) {
+      if (MAPS[id].instance) continue;   // bản đồ phó bản tạm thời
       const m = MAPS[id], boss = Object.values(BOSSES).find(b => b.map === id);
-      maps[id] = { name: m.name, lv: m.lv, pvp: m.pvp, safe: m.safe, theme: m.theme, minLv: m.minLv, tourney: m.tourney,
+      maps[id] = { name: m.name, lv: m.lv, pvp: m.pvp, safe: m.safe, theme: m.theme, minLv: m.minLv, tourney: m.tourney, town: m.town,
         portals: m.portals.map(p => ({ to: p.to, side: p.side })), boss: boss ? boss.name : null };
     }
     const npcs = {};
@@ -294,6 +296,8 @@ io.on('connection', socket => {
   on('sell', inGame(d => world.sell(player, d || {})));
   on('attr', inGame(d => world.attrAction(player, d)));
   on('party', inGame(d => world.party.action(player, d)));
+  on('recall', inGame(() => world.startRecall(player)));
+  on('dungeon', inGame(d => world.dungeon.action(player, d)));
   on('daihoi', inGame(d => {
     if (!d) return;
     if (d.op === 'enter' && world.nearNpc(player, 'dh_su_gia')) world.daihoi.enter(player);

@@ -58,6 +58,14 @@ const NPCS = {
     talk: 'Sự kiện giang hồ liên miên, quà tặng hấp dẫn! Điểm danh, vòng quay, gift code đều ở đây.' },
   su_gia: { name: 'Sứ Giả Nhiệm Vụ', sprite: 'official', color: '#1e90ff', action: 'quest',
     talk: 'Mỗi ngày đều có nhiệm vụ mới, hoàn thành để nhận thưởng hậu hĩnh.' },
+  pho_ban: { name: 'Phó Bản Sứ Giả', sprite: 'guard', color: '#6a2a8a', action: 'dungeon',
+    talk: 'Mật địa hiểm nguy, kỳ trân dị bảo! Lập tổ đội cùng vào sẽ dễ vượt ải hơn: đồng đội được tăng sức mạnh, quái không mạnh lên tương ứng.' },
+  thanh_chu_thanh_do: { name: 'Thành Chủ Thành Đô', sprite: 'official', color: '#2a6aa0', action: 'talk',
+    talk: 'Thành Đô là cửa ngõ đất Thục. Trước khi lên Hoa Sơn hay vào phó bản, hãy tiếp tế đầy đủ. Xa phu ta có xe đi khắp nơi.' },
+  thanh_chu_lan_chau: { name: 'Thành Chủ Lan Châu', sprite: 'rich', color: '#a0702a', action: 'talk',
+    talk: 'Lan Châu nằm giữa đường tơ lụa. Sa mạc Tây Vực và Băng Cung Thiên Sơn đều không xa, cẩn thận quái tinh anh!' },
+  thanh_chu_long_mon: { name: 'Trấn Trưởng Long Môn', sprite: 'elder', color: '#8a1a1a', action: 'talk',
+    talk: 'Qua khỏi Long Môn là đất của cao thủ: Côn Lôn, Vô Lượng, Huyết Ma Uyên, Đoạn Hồn Nhai. Chỉ người từ cấp 55 mới nên bước tiếp.' },
   thuong_nhan: { name: 'Thương Nhân Lưu Động', sprite: 'merchant', color: '#cd853f', action: 'shop', field: true,
     talk: 'Đường xa vất vả, mua chút thuốc đi đường nào!',
     shop: ['hp1', 'hp2', 'hp3', 'hp4', 'hp6', 'mp1', 'mp2', 'mp3', 'mp4', 'mp6', 'scroll_town', 'stone', 'mount_food'] }
@@ -68,15 +76,21 @@ for (const id in NPCS) {
   (NPCS[id].shop || []).forEach(i => { if (!ITEMS[i]) throw new Error('Missing item ' + i); });
 }
 
-// Bảng giá xe ngựa
+// Bảng giá xe ngựa: các thành trước (town: hiện nhóm Thành trấn), rồi bãi luyện công theo cấp
 const TELEPORTS = [
-  { map: 'tuong_duong', price: 0 },
+  { map: 'tuong_duong', price: 0, town: 1 },
+  { map: 'thanh_do', price: 600, town: 1 },
+  { map: 'lan_chau', price: 1200, town: 1 },
+  { map: 'long_mon', price: 5000, town: 1 },
   { map: 'ngoai_o', price: 50 },
   { map: 'truc_lam', price: 300 },
   { map: 'hoa_son', price: 800 },
   { map: 'sa_mac', price: 1500 },
   { map: 'bang_cung', price: 3000 },
   { map: 'ma_giao', price: 6000 },
+  { map: 'con_lon', price: 7000 },
+  { map: 'vo_luong', price: 9000 },
+  { map: 'huyet_ma', price: 12000 },
   { map: 'chien_truong', price: 100 }
 ];
 

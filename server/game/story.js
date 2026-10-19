@@ -149,7 +149,7 @@ class Story {
       if (!isSolidAt(map, x, y)) pos = { x, y };
     }
     pos = pos || { x: p.x + 60, y: p.y };
-    const mon = this.w.spawnMonster(p.mapId, tpl, { x: pos.x / TILE, y: pos.y / TILE, r: 0 }, { pos });
+    const mon = this.w.spawnMonster(p.mapId, tpl, { x: pos.x / TILE, y: pos.y / TILE, r: 0 }, { pos, noElite: true });
     mon.story = p.userId; mon.boss = true; mon.target = p.userId; mon.maxHp = tpl.hp; mon.hp = tpl.hp;
     p.storyElite = mon; this.elites.add(mon);
     this.w.fx(p.mapId, { t: 'aura', x: pos.x, y: pos.y, color: '#ff3030' });

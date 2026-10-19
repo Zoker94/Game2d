@@ -95,7 +95,7 @@ const CONSUMABLES = [
   { id: 'mp4', name: 'Tử Kim Linh Chi', desc: 'Hồi 2500 nội lực', effect: { mp: 2500 }, price: 600, lv: 50, icon: 'potion_b4' },
   { id: 'mp5', name: 'Thái Thanh Ngọc Lộ', desc: 'Hồi 6000 nội lực', effect: { mp: 6000 }, price: 1500, lv: 70, icon: 'potion_b5' },
   { id: 'mp6', name: 'Tẩy Tủy Linh Đan', desc: 'Hồi 25% nội lực tối đa (hợp người nhiều nội lực)', effect: { mpPct: 25 }, price: 900, lv: 40, icon: 'potion_b6' },
-  { id: 'scroll_town', name: 'Hồi Thành Phù', desc: 'Dịch chuyển về Tương Dương', effect: { town: 1 }, price: 50, icon: 'scroll' },
+  { id: 'scroll_town', name: 'Hồi Thành Phù', desc: 'Niệm phép 3 giây rồi về thành gần nhất (bị đánh hoặc di chuyển sẽ hủy). Nút 🏠 cạnh bản đồ mini.', effect: { town: 1 }, price: 50, icon: 'scroll' },
   { id: 'exp_x2', name: 'Song Bội Kinh Nghiệm', desc: 'Nhân đôi kinh nghiệm trong 30 phút', effect: { expBuff: 30 * 60000 }, price: 2000, icon: 'book' },
   { id: 'stone', name: 'Huyền Tinh Thạch', desc: 'Nguyên liệu cường hóa trang bị +1 đến +10', price: 300, icon: 'stone', material: true },
   { id: 'stone2', name: 'Thiên Tinh Thạch', desc: 'Nguyên liệu quý để cường hóa +11 đến +15. Rơi từ Boss, quái cấp cao, sự kiện.', price: 8000, icon: 'stone2', material: true },

@@ -46,7 +46,7 @@
     while (q.length) {
       const id = q.shift();
       if (id === to) break;
-      for (const p of maps[id].portals || []) if (!(p.to in prev)) { prev[p.to] = { id, side: p.side }; q.push(p.to); }
+      for (const p of (maps[id] && maps[id].portals) || []) if (!(p.to in prev)) { prev[p.to] = { id, side: p.side }; q.push(p.to); }
     }
     if (!(to in prev)) return null;
     const out = [];

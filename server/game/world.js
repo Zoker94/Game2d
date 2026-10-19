@@ -30,6 +30,19 @@ const LEASH_R = 650;
 
 let entSeq = 1;
 
+// Quái tinh anh: bản mạnh hơn của quái thường (giữ nguyên id để máy khách dùng chung hình / tên)
+const ELITE = { hp: 6, atk: 1.45, def: 1.25, exp: 6, gold: 5 };
+const eliteCache = new Map();
+function eliteOf(tpl) {
+  let e = eliteCache.get(tpl.id);
+  if (!e) {
+    e = Object.assign({}, tpl, { elite: true, hp: Math.round(tpl.hp * ELITE.hp), atk: Math.round(tpl.atk * ELITE.atk), def: Math.round(tpl.def * ELITE.def),
+      exp: Math.round(tpl.exp * ELITE.exp), gold: Math.round(tpl.gold * ELITE.gold), speed: Math.round(tpl.speed * 1.06), respawn: 25000 });
+    eliteCache.set(tpl.id, e);
+  }
+  return e;
+}
+
 // Thời tiết: trọng số theo chủ đề bản đồ
 const WEATHER_NAME = { clear: 'Trời quang', rain: 'Mưa', storm: 'Bão giông', wind: 'Gió lớn', snow: 'Tuyết rơi', blizzard: 'Bão tuyết', sun: 'Nắng gắt' };
 const WEATHER_TABLE = {
@@ -80,8 +93,16 @@ class World {
     return { x: (cx + 0.5) * TILE, y: (cy + 0.5) * TILE };
   }
 
+  // tỉ lệ thành tinh anh khi sinh / hồi sinh ở bãi quái thường
+  rollElite(m, tpl) {
+    if (tpl.boss || tpl.pb || m.def.safe || m.def.instance) return tpl;
+    return Math.random() < (m.def.tier >= 1 ? 0.035 : 0.015) ? eliteOf(tpl) : tpl;
+  }
   spawnMonster(mapId, tpl, sp, opts = {}) {
     const m = this.maps[mapId];
+    const base = tpl;
+    if (opts.elite) tpl = eliteOf(tpl);
+    else if (sp && !opts.event && !opts.noElite) tpl = this.rollElite(m, tpl);
     const pos = opts.pos || this.randomSpotNear(m.def, sp.x + 0.5, sp.y + 0.5, sp.r);
     const mon = {
       id: 'm' + (entSeq++), tpl, mapId, sp,
@@ -89,7 +110,7 @@ class World {
       hp: tpl.hp, maxHp: tpl.hp, dir: 0, moving: false,
       target: null, nextAtk: 0, wander: null, nextWander: Date.now() + U.rand(500, 4000),
       dead: false, respawnAt: 0, dmgBy: new Map(), dots: [], boss: !!tpl.boss, nextAoe: 0,
-      event: opts.event || null
+      event: opts.event || null, base
     };
     m.monsters.set(mon.id, mon);
     return mon;
@@ -118,7 +139,7 @@ class World {
     c.spSpent = c.spSpent || 0;
     U.migrateItems(c);
     this.recalc(p);
-    if (!MAPS[c.map]) c.map = 'tuong_duong';
+    if (!MAPS[c.map]) c.map = (c.pbReturn && MAPS[c.pbReturn]) ? c.pbReturn : 'tuong_duong';   // phó bản cũ đã đóng
     const map = MAPS[c.map];
     let x = c.x, y = c.y;
     if (!x || !y || isSolidAt(map, x, y)) { x = (map.center.x + 0.5) * TILE; y = (map.center.y + 1.5) * TILE; }
@@ -133,6 +154,7 @@ class World {
     if (!this.players.has(p.userId) || this.players.get(p.userId) !== p) return;
     const c = p.c;
     c.x = p.x; c.y = p.y; c.map = p.mapId;
+    if (MAPS[p.mapId] && MAPS[p.mapId].instance) { c.map = c.pbReturn || 'tuong_duong'; c.x = c.y = 0; if (this.dungeon) this.dungeon.onQuit(p); }   // thoát game trong phó bản
     c.playTime = (c.playTime || 0) + Math.round((Date.now() - p.joinAt) / 1000);
     p.user.lastSeen = Date.now();
     const m = this.maps[p.mapId];
@@ -149,6 +171,8 @@ class World {
     if (p.duel && p.duel.mapId !== mapId) this.duel.onLost(p, `${p.c.name} đã rời bản đồ`);
     const old = this.maps[p.mapId];
     if (old) { old.players.delete(p); p.socket.leave('map:' + p.mapId); this.io.to('map:' + p.mapId).emit('leave', p.id); }
+    if (old && old.def.instance && p.mapId !== mapId && this.dungeon) this.dungeon.onExit(p, p.mapId);
+    if (p.recall) this.cancelRecall(p);
     const m = this.maps[mapId];
     p.mapId = mapId; p.x = x; p.y = y; p.c.map = mapId; p.target = null; p.lastMove = Date.now();
     m.players.add(p);
@@ -311,6 +335,7 @@ class World {
       p.socket.emit('pos', { x: p.x, y: p.y });
       return;
     }
+    if (p.recall && Math.hypot(x - p.recall.x, y - p.recall.y) > 24) this.cancelRecall(p, 'Bạn đã di chuyển');
     p.x = x; p.y = y;
     p.dir = (data.d | 0) & 3;
     p.moving = !!data.m;
@@ -330,6 +355,44 @@ class World {
         return;
       }
     }
+  }
+
+  // thành gần nhất mà người chơi đủ cấp vào (đi theo cổng), phó bản thì về thành nơi đã vào
+  homeOf(p) {
+    const start = MAPS[p.mapId];
+    if (!start) return 'tuong_duong';
+    if (start.instance) return start.home;
+    const seen = new Set([p.mapId]), q = [p.mapId];
+    while (q.length) {
+      const cur = q.shift(), m = MAPS[cur];
+      if (m.town && p.c.level >= (m.minLv || 1)) return cur;
+      for (const pt of m.portals) if (!seen.has(pt.to)) { seen.add(pt.to); q.push(pt.to); }
+    }
+    return 'tuong_duong';
+  }
+  // Hồi Thành Phù: niệm 3 giây (bị đánh / di chuyển là hủy) rồi về thành gần nhất
+  startRecall(p) {
+    if (p.dead || p.recall) return;
+    const s = p.c.inv.find(x => x.id === 'scroll_town');
+    if (!s) return this.toast(p, 'Bạn không có Hồi Thành Phù (mua ở Tạp Hóa hoặc Thương Nhân Lưu Động)', 'error');
+    const home = this.homeOf(p), ms = MAPS[p.mapId].safe ? 1000 : 3000;
+    p.recall = { until: Date.now() + ms, x: p.x, y: p.y, to: home };
+    p.socket.emit('recall', { ms, to: MAPS[home].name });
+    this.fx(p.mapId, { t: 'recall', id: p.id, x: p.x, y: p.y, ms });
+  }
+  cancelRecall(p, why) {
+    if (!p.recall) return;
+    p.recall = null;
+    p.socket.emit('recall', { cancel: 1, why });
+  }
+  finishRecall(p) {
+    const r = p.recall; p.recall = null;
+    if (!r || p.dead) return;
+    if (!U.removeItemById(p.c, 'scroll_town', 1)) return this.toast(p, 'Hồi Thành Phù đã hết', 'error');
+    p.socket.emit('recall', { done: 1 });
+    if (this.dungeon && MAPS[p.mapId].instance) this.dungeon.leave(p, true);
+    else this.teleport(p, r.to);
+    p.dirtyMe = true;
   }
 
   teleport(p, mapId) {
@@ -647,6 +710,7 @@ class World {
     if (t.c) { // người chơi
       if (this.duel.onDamage(t, dmg, src)) return;   // đòn kết liễu trong trận thách đấu: dừng ở 1 máu
       t.c.hp -= dmg; t.lastCombat = Date.now(); t.dirtyMe = true;
+      if (t.recall) this.cancelRecall(t, 'Bị tấn công');
       if (t.c.hp <= 0) this.killPlayer(t, src);
     } else if (t.cart) {   // xe tiêu
       t.hp -= dmg;
@@ -720,9 +784,10 @@ class World {
     p.c.mp = Math.round(p.stats.maxMp * 0.1);
     p.weakUntil = now + 45000;   // trọng thương: hồi máu chậm trong 45 giây
     p.socket.emit('revived', { here: false, weak: 45000 });
-    const t = MAPS.tuong_duong;
+    if (this.dungeon && this.dungeon.onRespawn(p)) return;   // trong phó bản: đứng dậy ở điểm vào
+    const home = this.homeOf(p), t = MAPS[home];
     const s = this.randomSpotNear(t, t.center.x + 0.5, t.center.y + 2.5, 1);
-    this.enterMap(p, 'tuong_duong', s.x, s.y);
+    this.enterMap(p, home, s.x, s.y);
   }
 
   killMonster(mon, killer) {
@@ -767,6 +832,7 @@ class World {
     }
     // đồng đội đứng gần cùng hưởng kinh nghiệm
     if (!mon.boss && killer && killer.c && this.party) this.party.onKill(killer, mon, tpl.exp);
+    if (mon.inst && this.dungeon) this.dungeon.onKill(mon);
 
     // Rơi đồ
     const owner = killer && killer.c ? killer.userId : null;
@@ -799,6 +865,14 @@ class World {
       map.monsters.delete(mon.id);
     } else {
       const r = Math.random;
+      if (tpl.elite) {   // tinh anh: chắc chắn 1 trang bị (hiếm trở lên) + đá cường hóa
+        const x = r();
+        drops.push(equipId(rslot(), tier, x < 0.03 * dr ? 'legendary' : x < 0.25 * dr ? 'epic' : 'rare'), 'stone', 'stone');
+        if (r() < 0.15 * dr) drops.push('stone2');
+        if (r() < 0.25) drops.push('mount_food');
+        if (r() < 0.08 * dr) drops.push('lucky_chest');
+        if (killer && killer.c) this.toast(killer, `⭐ Hạ quái tinh anh ${tpl.name}!`, 'reward');
+      }
       if (r() < 0.10) drops.push(tier >= 6 ? (r() < 0.5 ? 'hp4' : 'mp4') : tier >= 4 ? (r() < 0.5 ? 'hp3' : 'mp3') : tier >= 2 ? (r() < 0.5 ? 'hp2' : 'mp2') : (r() < 0.5 ? 'hp1' : 'mp1'));
       if (r() < 0.03 * dr) drops.push('stone');
       if (r() < 0.04 * dr) drops.push(equipId(rslot(), tier, 'common'));
@@ -907,7 +981,7 @@ class World {
       this.io.to('map:' + p.mapId).emit('dmg', { id: p.id, v: hv || mv, k: hv ? 'heal' : 'mana' });
       this.features.questProgress(p, 'potion', 1);
     }
-    if (e.town) { U.removeByUid(c, uid, 1); this.teleport(p, 'tuong_duong'); p.dirtyMe = true; return; }
+    if (e.town) { this.startRecall(p); return; }   // niệm phép, xong mới trừ phù
     if (e.expBuff) { c.expBuffUntil = Math.max(Date.now(), c.expBuffUntil || 0) + e.expBuff; this.toast(p, 'Nhân đôi kinh nghiệm 30 phút!', 'reward'); }
     if (e.wheel) { c.wheel.extra = (c.wheel.extra || 0) + 1; this.toast(p, 'Nhận thêm 1 lượt Vòng Quay', 'reward'); }
     if (e.learn) {
@@ -1337,6 +1411,7 @@ class World {
       for (const mon of m.monsters.values()) this.updateMonster(mon, m, now, m.players.size === 0 ? 1000 : TICK);
       for (const dr of m.drops.values()) if (dr.expire < now) { m.drops.delete(dr.id); this.io.to('map:' + id).emit('dropDel', dr.id); }
       for (const p of m.players) {
+        if (p.recall && now >= p.recall.until) { this.finishRecall(p); break; }   // đổi bản đồ: dừng duyệt danh sách cũ
         if (p.dots && p.dots.length && !p.dead) this.tickDots(p, now);
         this.tryPickup(p, m);
         if (sec) this.regen(p, m, now);
@@ -1351,6 +1426,7 @@ class World {
     }
     if (this.features) this.features.tick(now);
     if (this.party) this.party.tick(now);
+    if (this.dungeon && sec) this.dungeon.tick(now);
   }
 
   regen(p, m, now) {
@@ -1370,9 +1446,10 @@ class World {
 
   updateMonster(mon, m, now, dt) {
     if (mon.dead) {
-      if (mon.robber) { m.monsters.delete(mon.id); return; }
+      if (mon.robber || mon.inst) { m.monsters.delete(mon.id); return; }   // quái phó bản không hồi sinh
       if (!mon.boss && !mon.event && now >= mon.respawnAt) {
         const pos = this.randomSpotNear(m.def, mon.sp.x + 0.5, mon.sp.y + 0.5, mon.sp.r);
+        if (mon.base && !mon.story) { mon.tpl = this.rollElite(m, mon.base); mon.maxHp = mon.tpl.hp; }   // hồi sinh: tung lại tỉ lệ tinh anh
         Object.assign(mon, { dead: false, hp: mon.maxHp, x: pos.x, y: pos.y, hx: pos.x, hy: pos.y, target: null, dmgBy: new Map(), dots: [], st: {} });
       }
       return;
@@ -1413,6 +1490,14 @@ class World {
         this.applyDamage(target, dmg, mon, crit ? 'crit' : 'hurt', mek);
         const ms = MON_STATUS[tpl.sprite];
         if (ms && !target.dead && Math.random() < ms[2] * (mon.boss ? 1.5 : 1)) this.applyStatus(target, ms[0], ms[1], mon);
+      }
+      if (tpl.elite && !mon.boss && now >= mon.nextAoe) {   // tinh anh: chấn địa nhỏ mỗi 7 giây
+        mon.nextAoe = now + 7000;
+        this.fx(mon.mapId, { t: 'ring', x: mon.x, y: mon.y, tx: mon.x, ty: mon.y, r: 120, color: '#ffb020' });
+        for (const p of m.players) if (!p.dead && U.dist(p, mon) < 120) {
+          const { dmg } = this.calcDamage(tpl.atk, 0, p.stats.def, 1.1, 0.4);
+          this.applyDamage(p, dmg, mon, 'hurt');
+        }
       }
       if (mon.boss && now >= mon.nextAoe) {
         mon.nextAoe = now + 6000;
@@ -1468,7 +1553,7 @@ class World {
     const ms = [];
     for (const mon of m.monsters.values()) {
       if (mon.dead) continue;
-      ms.push({ i: mon.id, t: mon.tpl.id, x: Math.round(mon.x), y: Math.round(mon.y), d: mon.dir, m: mon.moving ? 1 : 0, h: Math.max(0, Math.round(mon.hp)), H: mon.maxHp, b: mon.boss ? 1 : 0, e: mon.event ? 1 : 0, f: mon.frozenUntil > now ? 1 : 0, s: stMask(mon, now) });
+      ms.push({ i: mon.id, t: mon.tpl.id, x: Math.round(mon.x), y: Math.round(mon.y), d: mon.dir, m: mon.moving ? 1 : 0, h: Math.max(0, Math.round(mon.hp)), H: mon.maxHp, b: mon.boss ? 1 : 0, el: mon.tpl.elite ? 1 : mon.tpl.pbBoss ? 2 : 0, e: mon.event ? 1 : 0, f: mon.frozenUntil > now ? 1 : 0, s: stMask(mon, now) });
     }
     const cs = m.carts && m.carts.size ? this.escort.snapshot(m.def.id) : null;
     this.io.to('map:' + m.def.id).emit('snap', cs ? { p: ps, m: ms, c: cs } : { p: ps, m: ms });

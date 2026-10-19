@@ -336,6 +336,8 @@
     });
     Social.bind(s);
     Party.bind(s);
+    Travel.bind(s);
+    Dungeon.bind(s);
     s.on('events', d => { G.events = d; UI.onEvents(d); });
     s.on('daily', d => { G.daily = d; UI.updateDaily(); });
     s.on('dropAdd', d => { if (d.om) d.ownUntil = performance.now() + d.om; G.drops.set(d.id, d); });
@@ -400,7 +402,7 @@
       seenM.add(m.i);
       let e = G.monsters.get(m.i);
       if (!e) { e = { x: m.x, y: m.y, born: now }; G.monsters.set(m.i, e); }
-      Object.assign(e, { id: m.i, type: m.t, tx: m.x, ty: m.y, dir: m.d, moving: m.m, hp: m.h, maxHp: m.H, boss: m.b, event: m.e, frozen: m.f, st: m.s || 0 });
+      Object.assign(e, { id: m.i, type: m.t, tx: m.x, ty: m.y, dir: m.d, moving: m.m, hp: m.h, maxHp: m.H, boss: m.b, elite: m.el || 0, event: m.e, frozen: m.f, st: m.s || 0 });
       if (m.d === 1 || m.d === 2) e.face = m.d;
     }
     for (const id of G.monsters.keys()) if (!seenM.has(id)) { G.monsters.delete(id); if (G.target === id) G.target = null; }
@@ -1191,6 +1193,7 @@
     Escort.drawArrow(ctx, now);
     Story.drawArrow(ctx, now);
     WorldMap.drawArrow(ctx, now);
+    Dungeon.drawArrow(ctx, now);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     WorldArt.overlay(ctx, canvas.width, canvas.height, gfx.lowFx || Input.isTouch);
     Weather.draw(ctx, canvas.width, canvas.height, DPR, now, cam, zoom, gfx.fx);
@@ -1227,7 +1230,12 @@
         ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, -mf.top / 2, mf.top, 0, Math.PI * 2); ctx.fill();
       }
       ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(0, 0, half, Math.max(4, half * 0.28), 0, 0, Math.PI * 2); ctx.fill();
+      if (e.elite) {
+        eliteAura(half, mf.top, now, e.elite === 2);
+        if (Math.random() < 0.12) FX.emit(1, e.x + (Math.random() - 0.5) * half * 2, e.y - Math.random() * mf.top, { speed: 5, vy: -30, life: 800, size: 2.4, color: e.elite === 2 ? '#ff6040' : Math.random() < 0.5 ? '#ffc040' : '#c890ff' });
+      }
       if (e.born && now - e.born < 300) ctx.globalAlpha = (now - e.born) / 300;
+      if (e.elite === 1) ctx.scale(1.2, 1.2);   // tinh anh to hơn
       if (flip) ctx.scale(-1, 1);
       ctx.drawImage(mf.img, mf.sx, mf.sy, mf.w, mf.h, -mf.fx, -mf.fy, mf.w, mf.h);
       if (hit) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.55; ctx.drawImage(mf.img, mf.sx, mf.sy, mf.w, mf.h, -mf.fx, -mf.fy, mf.w, mf.h); }
@@ -1240,7 +1248,7 @@
         ctx.beginPath(); ctx.moveTo(-bw / 3, -bh * 0.8); ctx.lineTo(-bw / 8, -bh * 0.6); ctx.moveTo(bw / 6, -bh * 0.9); ctx.lineTo(bw / 3, -bh * 0.75); ctx.stroke();
       }
       ctx.restore();
-      monsterLabel(e, info, -mf.top - 8);
+      monsterLabel(e, info, -mf.top * (e.elite === 1 ? 1.2 : 1) - 8);
       return;
     }
     const frame = e.moving ? Math.floor(now / 160 + e.x / 70) % 4 : Math.floor(now / 500) % 2;
@@ -1280,8 +1288,31 @@
     ctx.drawImage(mf.img, mf.sx, mf.sy, mf.w, mf.h, -mf.fx, -mf.fy, mf.w, mf.h);
     ctx.restore();
   }
+  // hào quang quái tinh anh (vàng tím) / boss phó bản (đỏ): vòng trận đồ xoay dưới chân + quầng sáng
+  function eliteAura(half, top, now, boss) {
+    const r = half + 10, c1 = boss ? '255,60,40' : '255,190,60', c2 = boss ? '255,120,60' : '200,120,255';
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(0, -top / 2, 4, 0, -top / 2, top * 0.9);
+    g.addColorStop(0, `rgba(${c1},${0.22 + Math.sin(now / 260) * 0.06})`); g.addColorStop(1, `rgba(${c1},0)`);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, -top / 2, top * 0.9, 0, Math.PI * 2); ctx.fill();
+    ctx.scale(1, 0.38); ctx.rotate(now / 900);
+    ctx.lineWidth = 2.5; ctx.strokeStyle = `rgba(${c1},0.8)`; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = `rgba(${c2},0.7)`; ctx.lineWidth = 2;
+    for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; ctx.beginPath(); ctx.arc(0, 0, r - 5, a, a + 0.6); ctx.stroke(); }
+    ctx.restore();
+  }
   function monsterLabel(e, info, top) {
     if (e.event) { label(e.x, e.y + top - 6, info.name, '#ffd700', 12, true); return; }
+    if (e.elite === 1) {   // luôn hiện tên tinh anh
+      label(e.x, e.y + top - 6, `⭐ Tinh Anh · ${info.name} Lv${info.lv}`, '#ffc040', 12, true);
+      hpBar(e.x, e.y + top, 60, e.hp / e.maxHp, '#ffa020');
+      return;
+    }
+    if (e.elite === 2) {   // boss phó bản
+      label(e.x, e.y + top - 6, `👹 ${info.name} Lv${info.lv}`, '#ff5040', 14, true);
+      hpBar(e.x, e.y + top, 90, e.hp / e.maxHp, '#ff3030');
+      return;
+    }
     const lvDiff = G.me ? info.lv - G.me.level : 0;
     const col = e.boss ? '#ff4040' : lvDiff > 5 ? '#ff7070' : lvDiff < -8 ? '#9a9a9a' : '#ffe9a8';
     if (G.settings.names || e.boss || G.target === e.id) label(e.x, e.y + top - 6, `${e.boss ? '👑 ' : ''}${info.name} Lv${info.lv}`, col, e.boss ? 14 : 11, true);

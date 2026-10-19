@@ -1113,6 +1113,21 @@ BEAST = {
     'boss_soi': ('wolf', {'collar': 1, 'scar': 1, 'eye': '#ff3020', 'saddle': '#2a2a30'}, 1.7),
     'boss_truc': ('snake', {'hood': '#ffe080', 'horns': '#f0e0a0', 'eye': '#ffe040'}, 1.9),
     'boss_samac': ('scorpion', {'crown': '#ffd040', 'bulb': '#ff6020'}, 2.2),
+    # vùng cấp cao 60-99
+    'tien_ho': ('cat', {'eye': '#7ae0ff', 'stripe': '#a8c8e8'}),
+    'linh_vien': ('monkey', {'vest': '#3a5a8a', 'face': '#f4d8b8'}, 1.45),
+    'bang_giao': ('snake', {'pattern': '#4a90c0', 'eye': '#e8ffff', 'hood': '#e8ffff', 'horns': '#f0f8ff'}, 1.35),
+    'han_bang_quai': ('yeti', {'crystals': 1, 'eye': '#80e0ff'}, 1.12),
+    'doc_mang': ('snake', {'pattern': '#0a3a10', 'eye': '#ffe040', 'hood': '#80ff40'}, 1.35),
+    'xich_ho': ('cat', {'stripe': '#3a0a00', 'eye': '#ffd040', 'belly': '#ffb080'}),
+    'huyet_lang': ('wolf', {'eye': '#ff2020', 'embers': 1, 'saddle': '#3a0008', 'scar': 1}),
+    'huyet_sat': ('demon', {'weapon': 'trident', 'eye': '#ff3030'}, 1.15),
+    'doan_hon_thi': ('jiangshi', {'variant': 'soldier', 'eye': '#a0ff60'}, 1.3),
+    'quy_vuong': ('wraith', {'variant': 'chain', 'eye': '#40ffd0', 'flame': '#40ffb0', 'aura': '#104a3a'}, 1.3),
+    # boss phó bản / vùng cao (vẽ cỡ lớn)
+    'pb2_boss': ('jiangshi', {'variant': 'soldier', 'eye': '#ff4040'}, 1.9),
+    'pb3_boss': ('demon', {'variant': 'judge', 'weapon': 'blade', 'eye': '#ff2020', 'robe': '#3a0008'}, 1.8),
+    'boss_huyet': ('demon', {'variant': 'blade', 'weapon': 'chain', 'eye': '#ff2020', 'robe': '#2a0008'}, 1.9),
 }
 
 def B_(color, weapon, style, **kw):
@@ -1142,6 +1157,13 @@ HUMAN = {
     'tieu_tac1': (B_('#3a1a1a', 'saber', 'straw', mask='#1a0a0a'), 0, 0, 0, None),
     'tieu_tac2': (B_('#5a0a2a', 'saber', 'warrior', mask='#2a0614', trim='#e0a040'), 1, 0, 1, '#8a8090'),
     'tieu_tac3': (B_('#1a0a3a', 'sword', 'ponytail', mask='#0a0418', trim='#8060e0', glow='#a080ff'), 2, 2, 2, '#4a4a60'),
+    'con_lon_kiem': (B_('#e8eef8', 'sword', 'taoist', sleeve='wide', hem=6, trim='#8ab0e0', hair='#d8d8e0', beard=True, glow='#a0d8ff'), 0, 0, 2, None),
+    'tuyet_nu': (B_('#e0f4ff', 'daggers', 'buns', body='slim', female=True, robe2='#a0d8ff', trim='#ffffff', hem=5, sleeve='wide', hair='#d8ecff', glow='#a0e8ff'), 0, 0, 2, None),
+    'vo_luong_kiem': (B_('#2a4a3a', 'sword', 'ponytail', trim='#8ac0a0', mask='#14241c'), 1, 0, 2, '#8ab0a0'),
+    'huyet_ma_binh': (B_('#5a0010', 'saber', 'warrior', body='heavy', trim='#ff3030', glow='#ff4040', wcol='#ff8080'), 3, 2, 2, '#7a2a2a'),
+    'thien_ma_ve': (B_('#1a0a14', 'staff', 'warrior', body='heavy', trim='#c040ff', glow='#c060ff', wcol='#d0a0ff'), 3, 3, 2, '#4a3a5a'),
+    'pb1_boss': (B_('#101820', 'hammer', 'warrior', body='heavy', beard=True, trim='#e0b040', glow='#ffb040'), 2, 2, 2, '#8a8a96'),
+    'boss_conlon': (B_('#e8eef8', 'sword', 'taoist', robe2='#c0d0e8', trim='#4a7ad0', belt='#4a7ad0', hair='#f0f0f8', beard=True, sleeve='wide', hem=6, wcol='#ffffff', glow='#a0d8ff'), 0, 0, 2, None),
     # boss người
     'boss_hoason': (B_('#3a3a46', 'sword', 'taoist', robe2='#1a1a22', trim='#c8c8d8', belt='#c8c8d8', pants='#22222a', hair='#e8e8f0', beard=True,
                        sleeve='wide', hem=6, wcol='#ffffff', glow='#c0e0ff'), 0, 0, 2, None),
@@ -1182,7 +1204,7 @@ def human_sheet(mid):
                 c += 1
     sheet.alpha_composite(rig.dead_frame(mid, armor), (0, 3 * W))
     sheet = metal(sheet, met)
-    if mid.startswith('boss_'):
+    if mid.startswith('boss_') or mid.endswith('_boss'):
         sheet = sheet.resize((int(sheet.width * BOSS_SCALE), int(sheet.height * BOSS_SCALE)), Image.NEAREST)
         cell = int(W * BOSS_SCALE)
         return sheet, dict(k='rig', w=cell, h=cell, fx=int(rig.AX * BOSS_SCALE), fy=int(rig.AY * BOSS_SCALE))
@@ -1191,7 +1213,7 @@ def human_sheet(mid):
 def beast_sheet(mid):
     spec = BEAST[mid]
     fn, ex = spec[0], spec[1]
-    boss = mid.startswith('boss_')
+    boss = mid.startswith('boss_') or mid.endswith('_boss')
     s = spec[2] if len(spec) > 2 else SIZE[fn]
     w, h = (192, 160) if boss else (112, 96)
     if not boss and s > 1.3: w, h = 128, 104

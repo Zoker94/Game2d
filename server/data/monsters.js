@@ -70,6 +70,35 @@ const MONSTERS = {
   u_minh_quy:   { name: 'U Minh Quỷ',         lv: 60, sprite: 'ghost',    color: '#4a0a6a', aggro: true,  speed: 115, range: 180, ranged: true },
   xich_lang:    { name: 'Xích Lang',          lv: 61, sprite: 'wolf',     color: '#8a1010', aggro: true,  speed: 125, range: 55 },
   diem_la:      { name: 'Diêm La Sứ',         lv: 63, sprite: 'demon',    color: '#5a0000', aggro: true,  speed: 108, range: 75 },
+  // ---- vùng cấp cao (60-99) ----
+  tien_ho:       { name: 'Côn Lôn Tiên Hồ',    lv: 60, sprite: 'tiger',    color: '#f4f8ff', aggro: true,  speed: 125, range: 60 },
+  con_lon_kiem:  { name: 'Côn Lôn Kiếm Tiên',  lv: 63, sprite: 'bandit',   color: '#e8eef8', aggro: true,  speed: 115, range: 70 },
+  linh_vien:     { name: 'Thông Tý Linh Viên', lv: 66, sprite: 'monkey',   color: '#c8b8a0', aggro: true,  speed: 125, range: 60 },
+  bang_giao:     { name: 'Thiên Trì Băng Giao', lv: 67, sprite: 'snake',   color: '#bfe8ff', aggro: true,  speed: 100, range: 65 },
+  han_bang_quai: { name: 'Hàn Băng Cự Nhân',   lv: 70, sprite: 'yeti',     color: '#d0f0ff', aggro: true,  speed: 90,  range: 70 },
+  tuyet_nu:      { name: 'Tuyết Sơn Thánh Nữ', lv: 73, sprite: 'bandit',   color: '#e0f4ff', aggro: true,  speed: 115, range: 200, ranged: true },
+  doc_mang:      { name: 'Vô Lượng Độc Mãng',  lv: 73, sprite: 'snake',    color: '#2a8a3a', aggro: true,  speed: 100, range: 65 },
+  xich_ho:       { name: 'Xích Diễm Hổ',       lv: 76, sprite: 'tiger',    color: '#e05a20', aggro: true,  speed: 130, range: 60 },
+  vo_luong_kiem: { name: 'Vô Lượng Kiếm Khách', lv: 79, sprite: 'bandit',  color: '#2a4a3a', aggro: true,  speed: 120, range: 70 },
+  huyet_lang:    { name: 'Huyết Lang',         lv: 81, sprite: 'wolf',     color: '#a01818', aggro: true,  speed: 135, range: 55 },
+  huyet_ma_binh: { name: 'Huyết Ma Vệ',        lv: 84, sprite: 'bandit',   color: '#5a0010', aggro: true,  speed: 115, range: 70 },
+  huyet_sat:     { name: 'Huyết Sát Ma',       lv: 88, sprite: 'demon',    color: '#8a0010', aggro: true,  speed: 112, range: 80 },
+  doan_hon_thi:  { name: 'Đoạn Hồn Thi Vương', lv: 90, sprite: 'ghost',    color: '#6a6a50', aggro: true,  speed: 95,  range: 70 },
+  quy_vuong:     { name: 'Quỷ Ảnh Vương',      lv: 94, sprite: 'ghost',    color: '#3a1a5a', aggro: true,  speed: 125, range: 190, ranged: true },
+  thien_ma_ve:   { name: 'Thiên Ma Hộ Vệ',     lv: 97, sprite: 'bandit',   color: '#1a0a14', aggro: true,  speed: 120, range: 75 },
+  // ---- quái phó bản (chỉ có trong phó bản; art: dùng hình của quái khác) ----
+  pb1_lau_la:    { name: 'Hắc Phong Lâu La',   lv: 20, sprite: 'bandit',   color: '#202a3a', aggro: true,  speed: 105, range: 60, art: 'hac_phong_tac', pb: 1 },
+  pb1_dao_thu:   { name: 'Hắc Phong Đao Thủ',  lv: 22, sprite: 'bandit',   color: '#4a2a1a', aggro: true,  speed: 105, range: 65, art: 'dao_khach', pb: 1 },
+  pb1_ho_phap:   { name: 'Trại Hộ Pháp',       lv: 24, sprite: 'bandit',   color: '#6a1a1a', aggro: true,  speed: 100, range: 70, art: 'dau_muc', pb: 1, hpK: 3 },
+  pb2_thi_binh:  { name: 'Huyền Cung Thi Binh', lv: 40, sprite: 'ghost',   color: '#3a6a3a', aggro: true,  speed: 90,  range: 60, art: 'vong_binh', pb: 1 },
+  pb2_oan_hon:   { name: 'Huyền Cung Oán Hồn', lv: 42, sprite: 'ghost',    color: '#8a8aff', aggro: true,  speed: 115, range: 170, ranged: true, art: 'u_hon', pb: 1 },
+  pb2_mo_tuong:  { name: 'Mộ Thất Tướng Quân', lv: 44, sprite: 'demon',    color: '#4a6a2a', aggro: true,  speed: 95,  range: 75, art: 'mo_thu', pb: 1, hpK: 3 },
+  pb3_ma_ve:     { name: 'Huyết Ma Cung Vệ',   lv: 66, sprite: 'bandit',   color: '#5a0010', aggro: true,  speed: 115, range: 70, art: 'huyet_ma_binh', pb: 1 },
+  pb3_ma_lang:   { name: 'Huyết Ma Thần Lang', lv: 68, sprite: 'wolf',     color: '#a01818', aggro: true,  speed: 135, range: 55, art: 'huyet_lang', pb: 1 },
+  pb3_ho_phap:   { name: 'Huyết Ma Hộ Pháp',   lv: 70, sprite: 'demon',    color: '#8a0010', aggro: true,  speed: 108, range: 80, art: 'huyet_sat', pb: 1, hpK: 3 },
+  pb1_boss:      { name: 'Hắc Phong Trại Chủ', lv: 26, sprite: 'bandit',   color: '#101820', aggro: true,  speed: 110, range: 80, pb: 1, pbBoss: 1 },
+  pb2_boss:      { name: 'Huyền Cung Thi Vương', lv: 46, sprite: 'ghost',  color: '#4a5a30', aggro: true,  speed: 95,  range: 85, pb: 1, pbBoss: 1 },
+  pb3_boss:      { name: 'Huyết Ma Cung Chủ',  lv: 72, sprite: 'demon',    color: '#600010', aggro: true,  speed: 110, range: 95, pb: 1, pbBoss: 1 },
   // Cướp tiêu tặc: chỉ xuất hiện khi phục kích xe tiêu
   tieu_tac1:    { name: 'Cướp Tiêu Tặc',      lv: 18, sprite: 'bandit',   color: '#3a1a1a', aggro: true,  speed: 115, range: 60 },
   tieu_tac2:    { name: 'Cướp Tiêu Đầu Lĩnh', lv: 33, sprite: 'bandit',   color: '#5a0a2a', aggro: true,  speed: 120, range: 65 },
@@ -83,6 +112,8 @@ for (const id in MONSTERS) {
   m.el = m.el || MON_EL[m.sprite] || 'tho';
   Object.assign(m, stats(m.lv));
   m.respawn = 8000;
+  if (m.hpK) m.hp = Math.round(m.hp * m.hpK);   // quái đầu lĩnh trong phó bản
+  if (m.pbBoss) { m.hp *= 18; m.atk = Math.round(m.atk * 1.5); m.def = Math.round(m.def * 1.25); m.exp *= 25; m.gold *= 30; }
 }
 
 // Boss săn theo giờ. schedule: danh sách phút trong ngày (giờ VN) xuất hiện
@@ -93,7 +124,9 @@ const BOSSES = {
   boss_hoason:{ name: 'Độc Cô Cầu Bại',   lv: 30, sprite: 'bandit',   color: '#111',  map: 'hoa_son',  every: 60,  offset: 20, speed: 120, range: 90 },
   boss_samac: { name: 'Sa Mạc Hạt Hoàng', lv: 40, sprite: 'scorpion', color: '#8b4513', map: 'sa_mac', every: 120, offset: 30, speed: 100, range: 90 },
   boss_bang:  { name: 'Băng Cung Cung Chủ', lv: 50, sprite: 'yeti',   color: '#b0e0ff', map: 'bang_cung', every: 120, offset: 50, speed: 100, range: 100 },
-  boss_ma:    { name: 'Thiên Ma Giáo Chủ', lv: 62, sprite: 'demon',   color: '#8b0000', map: 'ma_giao',  every: 180, offset: 0, speed: 110, range: 110 }
+  boss_ma:    { name: 'Thiên Ma Giáo Chủ', lv: 62, sprite: 'demon',   color: '#8b0000', map: 'ma_giao',  every: 180, offset: 0, speed: 110, range: 110 },
+  boss_conlon: { name: 'Côn Lôn Chưởng Môn', lv: 75, sprite: 'bandit', color: '#e8eef8', map: 'con_lon',  every: 120, offset: 40, speed: 120, range: 110 },
+  boss_huyet:  { name: 'Huyết Ma Lão Tổ',   lv: 92, sprite: 'demon',    color: '#600010', map: 'huyet_ma', every: 180, offset: 90, speed: 112, range: 120 }
 };
 for (const id in BOSSES) {
   const b = BOSSES[id];

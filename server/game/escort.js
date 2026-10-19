@@ -315,7 +315,7 @@ class Escort {
       const a = Math.random() * Math.PI * 2;
       let pos = { x: cart.x + Math.cos(a) * 170, y: cart.y + Math.sin(a) * 170 };
       if (isSolidAt(MAPS[cart.mapId], pos.x, pos.y)) pos = { x: cart.x + 30, y: cart.y };
-      const mon = w.spawnMonster(cart.mapId, tpl, { x: pos.x / TILE, y: pos.y / TILE, r: 0 }, { pos });
+      const mon = w.spawnMonster(cart.mapId, tpl, { x: pos.x / TILE, y: pos.y / TILE, r: 0 }, { pos, noElite: true });
       mon.robber = cart.id;
       mon.target = cart.owner;
       mon.hx = cart.x; mon.hy = cart.y;

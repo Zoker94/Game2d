@@ -15,8 +15,10 @@ const TUTORIAL = [
 ];
 
 // Mẫu nhiệm vụ hàng ngày
+// chỉ giao quái có ở bãi luyện công (không giao quái phó bản / cướp tiêu)
+const FIELD_MONS = new Set(Object.values(require('./maps').MAP_DEFS).flatMap(d => (d.spawns || []).map(s => s[0])));
 function monstersForLevel(lv) {
-  return Object.values(MONSTERS).filter(m => m.lv <= lv + 3 && m.lv >= lv - 10).map(m => m.id);
+  return Object.values(MONSTERS).filter(m => FIELD_MONS.has(m.id) && m.lv <= lv + 3 && m.lv >= lv - 10).map(m => m.id);
 }
 
 function makeDaily(lv, rand = Math.random) {
