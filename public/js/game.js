@@ -1438,8 +1438,6 @@
       const breathe = moving || dead ? 0 : (Math.floor(now / 650 + seed) % 2);
       if (moving && fr % 4 === 1 && !dead && Math.random() < 0.5) WorldArt.dust(x, y);
       if (art) {
-        const tier = Overhead.title(ent && ent.pw).tier;
-        if (!dead && tier >= 3 && dir !== 3) Overhead.drawWings(ctx, x, y, tier, dir, now);
         const wr = ap[1] || 0;   // phẩm chất vũ khí: 1 Hiếm (xanh), 2 VIP (tím), 3 Truyền Kỳ (cam)
         if (!dead && wr >= 1 && ap[0] >= 0) {
           const g = Assets.weaponGlow(cls, dir, state, fi, ['', '#4fa3ff', '#c060ff', '#ff9b2f'][wr], ap);
@@ -1452,7 +1450,6 @@
         }
         if (!dead && ent && ent.k) Overhead.drawPkAura(ctx, x, y, ent.k, now);
         ctx.drawImage(Assets.charFrame(cls, dir, state, fi, ap), x - 48, y - 86, 96, 96);
-        if (!dead && tier >= 3 && dir === 3) Overhead.drawWings(ctx, x, y, tier, dir, now);
         top = y - 72;
       } else {
         ctx.drawImage(Sprites.playerSprite(cls, colors, dir, fr, atk, ap), x - 32, y - 58 + breathe);

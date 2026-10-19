@@ -280,31 +280,6 @@
     if (o.guild) { outlined(ctx, '«' + o.guild + '»', x, top - 36, 10, '#7fb8ff', '#000', 600); yTop = top - 43; }
     return yTop;
   }
-  // cánh sau lưng theo bậc danh hiệu (3: cánh linh khí, 4: cánh phượng vàng, 5: cánh lửa + Thái Cực)
-  const WING = { 3: ['#8fd8ff', '#3a7aff'], 4: ['#fff2a0', '#ffae2a'], 5: ['#ffe0a0', '#ff3a1a'] };
-  function drawWings(ctx, x, y, tier, dir, now) {
-    if (tier < 3) return;
-    const [c1, c2] = WING[tier];
-    const flap = Math.sin(now / 260) * 0.18;
-    const sy = y - 33, side = dir === 1 || dir === 2;   // gắn giữa lưng
-    ctx.save();
-    if (tier >= 5 && window.FX && FX.sprite) FX.sprite(ctx, 'taiji', 0, x, sy - 2, { frame: Math.floor(now / 110), color: '#ffd76a', scale: 0.8, alpha: 0.5 });
-    ctx.globalCompositeOperation = 'lighter';
-    for (const s of side ? [dir === 2 ? -1 : 1] : [-1, 1]) {
-      ctx.save(); ctx.translate(x + (side ? s * 4 : s * 5), sy); ctx.scale(s * (side ? 0.75 : 1), 1); ctx.rotate(0.05 - flap);
-      const n = tier >= 4 ? 6 : 5;
-      for (let i = 0; i < n; i++) {
-        const a = -0.75 + i * 0.3, len = 34 - i * 3 + (tier - 3) * 5;
-        const g = ctx.createLinearGradient(0, 0, Math.cos(a) * len, Math.sin(a) * len);
-        g.addColorStop(0, Sprites.hexA(c1, 0.75)); g.addColorStop(1, Sprites.hexA(c2, 0.05));
-        ctx.fillStyle = g;
-        ctx.beginPath(); ctx.ellipse(Math.cos(a) * len / 2, Math.sin(a) * len / 2, len / 2, 3.8 + (tier - 3), a, 0, TAU); ctx.fill();
-      }
-      ctx.restore();
-    }
-    if (tier >= 5 && Math.random() < 0.25 && window.FX) FX.emit(1, x + (Math.random() - 0.5) * 50, sy + (Math.random() - 0.5) * 20, { speed: 10, vy: -40, life: 700, size: 3, color: '#ff8a3a' });
-    ctx.restore();
-  }
   // sát khí: khói đen quanh người
   function drawPkAura(ctx, x, y, pk, now) {
     if (pkLevel(pk) < 2) return;
@@ -360,5 +335,5 @@
       FX.emit(1, x + (Math.random() - 0.5) * 30, y - 4, { speed: 6, vy: -45, life: 700, size: 2, color: cols[Math.floor(Math.random() * cols.length)] });
   }
 
-  window.Overhead = { cachedText, ST, mask, drawUnder, drawOver, add, drawFloats, drawBubble, TITLES, title, relColor, pkLevel, drawBadge, drawNameplate, drawWings, drawPkAura, drawEnhance };
+  window.Overhead = { cachedText, ST, mask, drawUnder, drawOver, add, drawFloats, drawBubble, TITLES, title, relColor, pkLevel, drawBadge, drawNameplate, drawPkAura, drawEnhance };
 })();
