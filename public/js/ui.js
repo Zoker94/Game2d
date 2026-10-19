@@ -252,6 +252,7 @@
     updateTutorial();
     const sk = JSON.stringify(me.story);
     if (sk !== UI._storyKey) { UI._storyKey = sk; if (panel === 'quests' && panelState.tab === 'story') UI.refreshPanel(true); }
+    { const b = document.querySelector('#menu-buttons [data-panel="character"]'); if (b) { let d = b.querySelector('.dot'); if (!d) { d = document.createElement('i'); d.className = 'dot'; b.appendChild(d); } d.classList.toggle('hidden', !(me.attrFree > 0)); } }
     if (panel === 'inventory' || panel === 'character' || panel === 'mount' || panel === 'skills' || panel === 'bank' || panel === 'escort' || (panel === 'npc' && npcData)) UI.refreshPanel(true);
   };
   function setBar(el, v, max) {
@@ -565,6 +566,7 @@
         <div>Tốc độ <b>${Math.round(st.spd)}</b></div><div>Kinh nghiệm <b>${fmt(me.exp)}/${fmt(me.expNext)}</b></div><div>Tầm đánh <b>${cl.range}</b></div>
         <div>Quái đã diệt <b>${fmt(me.kills)}</b></div><div>Hạ người chơi <b>${fmt(me.pvpKills)}</b></div><div>Boss đã đánh <b>${fmt(me.bossKills)}</b></div>
       </div>
+      ${attrPanel(me)}
       ${elemPanel(st)}
       <h4 style="color:#ffd76a">Võ công</h4>
       <div class="list">${cl.skills.map((s, i) => `<div class="li ${me.level >= s.lv ? 'done' : ''}"><div class="grow"><b>${i + 1}. ${esc(s.name)}</b> ${me.level < s.lv ? `<span class="warn small">(Mở ở cấp ${s.lv})</span>` : ''}<div class="sub">${skillDesc(s)} · ${s.mp} MP · Hồi ${s.cd / 1000}s</div></div></div>`).join('')}</div>
@@ -575,9 +577,38 @@
           ${has ? (on ? '' : `<button class="btn small green" data-dragon="${el}">Dùng</button>`) : '<span class="small muted">Chưa học<br>(Bí kíp: Boss, Kỳ Trân Các, Hoa Đăng)</span>'}</div>`;
       }).join('')}</div>`;
     body.querySelectorAll('[data-dragon]').forEach(b => b.onclick = () => emit('dragon', { el: b.dataset.dragon }));
+    bindAttr(body);
     const c = $('char-cv').getContext('2d'); c.imageSmoothingEnabled = false;
     if (Assets.has(me.cls)) { c.drawImage(Assets.charFrame(me.cls, 0, 'idle', 0, me.ap), 0, 0); setTimeout(() => { if ($('char-cv')) { c.clearRect(0, 0, 96, 96); c.drawImage(Assets.charFrame(me.cls, 0, 'idle', 0, me.ap), 0, 0); } }, 600); }
     else c.drawImage(Sprites.playerSprite(me.cls, cl.colors, 0, 0), 0, 0);
+  }
+
+  // ---------- Điểm tiềm năng: phân điểm tạm rồi bấm Xác nhận ----------
+  let attrPend = {};
+  const pendSum = () => Object.values(attrPend).reduce((a, b) => a + b, 0);
+  function attrPanel(me) {
+    const A = G.data.attrs; if (!A) return '';
+    const free = (me.attrFree || 0) - pendSum();
+    const rows = Object.entries(A).map(([k, a]) => {
+      const cur = (me.attr && me.attr[k]) | 0, pd = attrPend[k] | 0;
+      return `<div class="at-row"><div class="at-ic">${a.icon}</div><div class="at-main"><b>${a.name}</b> <span class="at-val">${cur}${pd ? ` <i>+${pd}</i>` : ''}</span><div class="sub">Mỗi điểm: ${a.desc}</div></div>
+        <div class="at-btns"><button class="btn small" data-at="${k}" data-n="-1" ${pd ? '' : 'disabled'}>−</button><button class="btn small" data-at="${k}" data-n="1" ${free > 0 ? '' : 'disabled'}>+1</button><button class="btn small" data-at="${k}" data-n="5" ${free > 0 ? '' : 'disabled'}>+5</button><button class="btn small" data-at="${k}" data-n="999" ${free > 0 ? '' : 'disabled'}>Hết</button></div></div>`;
+    }).join('');
+    return `<div class="card at-box"><h4>⭐ Điểm tiềm năng <span class="at-free ${free > 0 ? 'on' : ''}">Còn ${free} điểm</span></h4>
+      <div class="small muted">Mỗi lần lên cấp nhận ${5} điểm. Phân điểm rồi bấm Xác nhận.</div>${rows}
+      <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn green" id="at-ok" ${pendSum() ? '' : 'disabled'}>✔ Xác nhận (${pendSum()} điểm)</button>
+      <button class="btn small" id="at-cancel" ${pendSum() ? '' : 'disabled'}>Hủy</button>
+      <button class="btn small" id="at-reset">♻ Tẩy điểm ${me.attrReset ? '(' + fmt(me.attrReset) + ' 💰)' : '(miễn phí dưới cấp 30)'}</button></div></div>`;
+  }
+  function bindAttr(body) {
+    body.querySelectorAll('[data-at]').forEach(b => b.onclick = () => {
+      const k = b.dataset.at, n = +b.dataset.n, free = (G.me.attrFree || 0) - pendSum();
+      attrPend[k] = Math.max(0, (attrPend[k] | 0) + (n > 0 ? Math.min(n, free) : n));
+      G.sfx('click'); UI.refreshPanel();
+    });
+    const ok = $('at-ok'); if (ok) ok.onclick = () => { emit('attr', { op: 'add', pts: attrPend }); attrPend = {}; };
+    const cc = $('at-cancel'); if (cc) cc.onclick = () => { attrPend = {}; UI.refreshPanel(); };
+    const rs = $('at-reset'); if (rs) rs.onclick = () => G.modal(`Tẩy toàn bộ điểm tiềm năng để phân lại?${G.me.attrReset ? ' Tốn ' + fmt(G.me.attrReset) + ' lượng.' : ''}`, [{ t: 'Tẩy điểm', cls: 'primary', fn: () => { attrPend = {}; emit('attr', { op: 'reset' }); } }, { t: 'Hủy' }]);
   }
 
   // ---------- Nhiệm vụ ----------

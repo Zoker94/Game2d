@@ -3,6 +3,7 @@ const { scaleSkill } = require('../data/skillbooks');
 const { ITEMS } = require('../data/items');
 const { mountStats } = require('../data/mounts');
 const { rollAffixes, elementBonus, CAP } = require('../data/affixes');
+const { ATTRS } = require('../data/attrs');
 
 // Hệ số chỉ số theo cấp cường hóa: +1..+10 mỗi cấp 12%, +11..+15 mỗi cấp 25%
 const plusMult = plus => 1 + Math.min(plus, 10) * 0.12 + Math.max(0, plus - 10) * 0.25;
@@ -117,6 +118,15 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
     regen: 0
   };
   const fx = {}, elCount = {};
+  // điểm tiềm năng
+  for (const k in ATTRS) {
+    const n = (c.attr && c.attr[k]) | 0;
+    if (!n) continue;
+    for (const [sk, v] of Object.entries(ATTRS[k].per)) {
+      if (sk === 'hp') s.maxHp += v * n; else if (sk === 'mp') s.maxMp += v * n;
+      else if (sk === 'dodge') fx.dodge = (fx.dodge || 0) + v * n; else s[sk] += v * n;
+    }
+  }
   const addStat = (k, v) => { if (k === 'hp') s.maxHp += v; else if (k === 'mp') s.maxMp += v; else s[k] += v; };
   for (const slot in c.equip) {
     const e = c.equip[slot];

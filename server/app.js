@@ -192,7 +192,7 @@ app.get('/api/gamedata', (req, res) => {
     for (let l = 1; l <= M.MOUNT_MAX; l++) mountExp[l] = M.mountExpNext(l);
     gamedataCache = { enhance: { max: E.ENHANCE_MAX, safe: E.ENHANCE_SAFE, rate: E.ENHANCE_RATE, cost: Array.from({ length: 15 }, (_, p) => [0, 1, 2, 3, 4, 5, 6].map(t => E.enhanceCost(p, t))) },
       skillMax: require('./data/skillbooks').SKILL_MAX,
-      dragons: require('./data/dragons').DRAGONS, mounts: M.MOUNTS, mountMax: M.MOUNT_MAX, mountExp, classes: CLASSES, story: require('./data/story'), items: ITEMS, rarity: RARITY, slots: Object.fromEntries(Object.entries(SLOTS).map(([k, v]) => [k, v.name])), monsters: mons, maps, npcs,
+      dragons: require('./data/dragons').DRAGONS, mounts: M.MOUNTS, mountMax: M.MOUNT_MAX, mountExp, classes: CLASSES, story: require('./data/story'), attrs: require('./data/attrs').ATTRS, items: ITEMS, rarity: RARITY, slots: Object.fromEntries(Object.entries(SLOTS).map(([k, v]) => [k, v.name])), monsters: mons, maps, npcs,
       elements: require('./data/affixes').ELEMENTS, affixes: Object.fromEntries(Object.entries(require('./data/affixes').AFFIX).map(([k, a]) => [k, { name: a.name, text: a.text }])), khac: require('./data/affixes').KHAC };
   }
   res.json(gamedataCache);
@@ -285,6 +285,7 @@ io.on('connection', socket => {
   on('pkMode', inGame(d => world.setPkMode(player, d && d.mode)));
   on('escort', inGame(d => world.escort.action(player, d)));
   on('sell', inGame(d => world.sell(player, d || {})));
+  on('attr', inGame(d => world.attrAction(player, d)));
   on('sellMany', inGame(d => world.sellMany(player, d && d.uids)));
   on('enhance', inGame(d => world.enhance(player, d || {})));
   on('mount', inGame(d => d && world.mountAction(player, d)));

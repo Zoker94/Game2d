@@ -17,6 +17,7 @@ const U = require('./util');
 const { Escort } = require('./escort');
 const { Story } = require('./story');
 const { Duel } = require('./duel');
+const { ATTRS, attrTotal, attrUsed, attrResetCost } = require('../data/attrs');
 
 const HOTBAR_N = 8;          // số ô gán phím (phím 2..9)
 const DODGE_DIST = 170, DODGE_CD = 5000;   // né chiêu: quãng lướt, thời gian hồi
@@ -187,6 +188,7 @@ class World {
       expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null,
+      attr: c.attr || {}, attrFree: attrTotal(c.level) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
       skills: c.skills || {}, hotbar: c.hotbar, sp: skillPointsTotal(c.level) - (c.spSpent || 0),
       mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
       st: this.statusView(p), friends: Object.keys(c.friends || {}).length, pk: c.pk || 0,
@@ -279,6 +281,7 @@ class World {
       c.hp = p.stats.maxHp; c.mp = p.stats.maxMp;
       this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y });
       this.toast(p, `Thăng cấp ${c.level}!`, 'level');
+      this.toast(p, `⭐ Có ${attrTotal(c.level) - attrUsed(c.attr)} điểm tiềm năng chưa cộng (bảng Nhân vật – phím C)`, 'reward');
       const unlocked = CLASSES[c.cls].skills.filter(s => s.lv === c.level);
       for (const s of unlocked) this.toast(p, `Lĩnh ngộ võ công mới: ${s.name}`, 'reward');
       if (c.level % 10 === 0) this.features.announce(`⚔️ ${c.name} (${CLASSES[c.cls].name}) đã đạt cấp ${c.level}!`);
@@ -1099,6 +1102,30 @@ class World {
     c.gold += price;
     this.toast(p, `Bán ${it.name} x${qty} được ${price} lượng`, 'reward');
     p.dirtyMe = true; this.db.markDirty();
+  }
+
+  // cộng / tẩy điểm tiềm năng
+  attrAction(p, d) {
+    if (!d) return;
+    const c = p.c; c.attr = c.attr || {};
+    if (d.op === 'add') {
+      const pts = d.pts && typeof d.pts === 'object' ? d.pts : { [d.k]: d.n };
+      let free = attrTotal(c.level) - attrUsed(c.attr), used = 0;
+      for (const k in pts) {
+        if (!ATTRS[k]) continue;
+        const n = Math.max(0, Math.min(free, pts[k] | 0));
+        if (!n) continue;
+        c.attr[k] = (c.attr[k] | 0) + n; free -= n; used += n;
+      }
+      if (!used) return this.toast(p, 'Không còn điểm tiềm năng', 'error');
+    } else if (d.op === 'reset') {
+      if (!attrUsed(c.attr)) return;
+      const cost = attrResetCost(c.level);
+      if (c.gold < cost) return this.toast(p, `Cần ${cost.toLocaleString('vi-VN')} lượng để tẩy điểm`, 'error');
+      c.gold -= cost; c.attr = {};
+      this.toast(p, cost ? `Đã tẩy điểm tiềm năng (−${cost.toLocaleString('vi-VN')} lượng)` : 'Đã tẩy điểm tiềm năng (miễn phí dưới cấp 30)', 'reward');
+    } else return;
+    this.recalc(p); p.dirtyMe = true; this.db.markDirty();
   }
 
   // bán nhiều món một lần (bán nhanh)
