@@ -298,10 +298,20 @@
       if (d.gold) { addFloat(G.self.x + 20, G.self.y - 74, `+${d.gold} 💰`, '#ffd700', 12); GameAudio.sfx('coin', 90); }
     });
     s.on('dead', d => {
-      $('dead-msg').textContent = `Bạn đã bị ${d.by} đánh trọng thương.${d.lost ? ' Mất ' + d.lost + ' kinh nghiệm.' : ''}`;
+      $('dead-msg').textContent = `${d.by && d.by !== '?' ? `Bạn đã bị ${d.by} đánh trọng thương.` : 'Bạn đã bị trọng thương.'}${d.lost ? ' Mất ' + d.lost + ' kinh nghiệm.' : ''}`;
+      const c = d.cost || { gold: 0, knb: 0 }, me = G.me || {};
+      $('revive-gold').textContent = `${c.gold.toLocaleString('vi-VN')} 💰`;
+      $('revive-here').classList.toggle('poor', (me.gold || 0) < c.gold);
+      $('revive-knb').textContent = `Hoặc hồi sinh tại chỗ bằng ${c.knb} 💎 Nguyên Bảo`;
+      $('revive-knb').classList.toggle('hidden', (me.gold || 0) >= c.gold);
       $('dead-overlay').classList.remove('hidden');
       G.auto && setAuto(false);
       sfx('die');
+    });
+    s.on('revived', d => {
+      $('dead-overlay').classList.add('hidden');
+      if (d.here) GameAudio.sfx('heal');
+      else UI.toast('🩸 Trọng thương: sinh lực hồi phục chậm trong 45 giây', 'error');
     });
     s.on('cd', d => { const sk = mySkills()[d.idx]; if (sk) { G.cds[sk.id] = G.cds[d.idx] = { until: performance.now() + d.until, total: d.until, id: sk.id }; } G.pending[d.idx] = 0; });
     s.on('toast', d => UI.toast(d.text, d.type));
@@ -338,7 +348,9 @@
       { t: 'Mở Admin Panel', cls: 'primary', fn: () => { const w = window.open('/admin/#t=' + d.token, '_blank'); if (!w) location.href = '/admin/#t=' + d.token; } },
       { t: 'Đóng' }]));
   }
-  $('respawn-btn').onclick = () => { G.socket.emit('respawn'); $('dead-overlay').classList.add('hidden'); };
+  $('respawn-btn').onclick = () => G.socket.emit('respawn', { mode: 'town' });
+  $('revive-here').onclick = () => G.socket.emit('respawn', { mode: 'here' });
+  $('revive-knb').onclick = () => G.socket.emit('respawn', { mode: 'here_knb' });
 
   // ================== Dữ liệu thế giới ==================
   let minimapBase = null;

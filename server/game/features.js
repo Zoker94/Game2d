@@ -420,7 +420,7 @@ class Features {
     const findPlayer = name => [...w.players.values()].find(o => o.c.name.toLowerCase() === String(name || '').toLowerCase());
     switch (c) {
       case 'help': case 'lenh':
-        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: 'Lệnh admin: /admin (mở trang quản trị) · /tb <nội dung> · /tp <bản đồ> · /level <cấp> · /gold <số> · /knb <số> · /give <mã vật phẩm> [số lượng] [+cường hóa] · /heal · /boss <mã boss> · /event <mã sự kiện> [phút] · /kick <tên> · /goto <tên> · /keo <tên> · /online · /thoitiet <clear|rain|storm|wind|snow|blizzard|sun> [phút] · /cottruyen <chương> [bước] | reset' });
+        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: 'Lệnh admin: /admin (mở trang quản trị) · /tb <nội dung> · /tp <bản đồ> · /level <cấp> · /gold <số> · /knb <số> · /give <mã vật phẩm> [số lượng] [+cường hóa] · /heal · /boss <mã boss> · /event <mã sự kiện> [phút] · /kick <tên> · /goto <tên> · /keo <tên> · /online · /thoitiet <clear|rain|storm|wind|snow|blizzard|sun> [phút] · /cottruyen <chương> [bước] | reset · /tusat' });
         break;
       case 'tb': case 'thongbao': {
         const msg = args.join(' ');
@@ -453,6 +453,7 @@ class Features {
       }
       case 'goto': { const o = findPlayer(args.join(' ')); if (!o) return err('Người chơi không online'); w.enterMap(p, o.mapId, o.x + 40, o.y); break; }
       case 'keo': { const o = findPlayer(args.join(' ')); if (!o) return err('Người chơi không online'); w.enterMap(o, p.mapId, p.x + 40, p.y); ok('Đã kéo ' + o.c.name + ' tới chỗ bạn'); break; }
+      case 'tusat': { if (!p.dead) { p.c.hp = 0; w.killPlayer(p, null); } break; }   // tự hạ gục (thử màn hình hồi sinh)
       case 'cottruyen': case 'story': {   // /cottruyen <chương 1-7> [bước 1-n] · /cottruyen reset
         const st = w.story.state(p.c);
         if (args[0] === 'reset') Object.assign(st, { ch: 0, st: 0, n: 0, seen: false, done: false });

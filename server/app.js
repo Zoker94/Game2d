@@ -263,7 +263,7 @@ io.on('connection', socket => {
 
   on('move', inGame(d => world.handleMove(player, d)));
   on('skill', inGame(d => world.useSkill(player, d && d.idx, d && d.target)));
-  on('respawn', inGame(() => world.respawn(player)));
+  on('respawn', inGame(d => world.respawn(player, d && d.mode)));
   on('dodge', inGame(d => world.dodge(player, d)));
   on('story', inGame(d => world.story.action(player, d)));
   on('pickup', inGame(d => world.pickupItem(player, d && typeof d.id === 'string' ? d.id : null)));

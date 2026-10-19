@@ -659,7 +659,7 @@ class World {
       lost = Math.floor(t.c.exp * 0.05);
       t.c.exp -= lost;
     }
-    t.socket.emit('dead', { by: src ? (src.c ? src.c.name : src.tpl.name) : '?', lost });
+    t.socket.emit('dead', { by: src ? (src.c ? src.c.name : src.tpl.name) : '?', lost, cost: this.reviveCost(t) });
     this.fx(t.mapId, { t: 'death', id: t.id, x: t.x, y: t.y });
     if (src && src.c) {
       src.c.pvpKills = (src.c.pvpKills || 0) + 1;
@@ -675,11 +675,30 @@ class World {
     for (const mon of map.monsters.values()) if (mon.target === t.userId) mon.target = null;
   }
 
-  respawn(p) {
+  // giá hồi sinh tại chỗ: theo cấp (lượng), không đủ lượng thì dùng Nguyên Bảo
+  reviveCost(p) { return { gold: 200 + p.c.level * p.c.level * 6, knb: 5 + Math.floor(p.c.level / 20) * 5 }; }
+  // hồi sinh: mode 'here' = trả tiền hồi sinh tại chỗ (đầy máu, bảo hộ 3 giây); mặc định về thành với 10% máu, hồi từ từ
+  respawn(p, mode) {
     if (!p.dead) return;
+    const now = Date.now();
+    if (mode === 'here' || mode === 'here_knb') {
+      const cost = this.reviveCost(p), useKnb = mode === 'here_knb';
+      if (useKnb ? p.c.knb < cost.knb : p.c.gold < cost.gold) return this.toast(p, useKnb ? `Cần ${cost.knb} Nguyên Bảo để hồi sinh tại chỗ` : `Cần ${cost.gold.toLocaleString('vi-VN')} lượng để hồi sinh tại chỗ`, 'error');
+      if (useKnb) p.c.knb -= cost.knb; else p.c.gold -= cost.gold;
+      p.dead = false; p.weakUntil = 0;
+      p.c.hp = p.stats.maxHp; p.c.mp = p.stats.maxMp;
+      p.dodgeUntil = now + 3000;   // bảo hộ ngắn để kịp đứng dậy
+      p.lastCombat = 0;
+      this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y, small: true });
+      this.toast(p, `✨ Hồi sinh tại chỗ (−${useKnb ? cost.knb + ' Nguyên Bảo' : cost.gold.toLocaleString('vi-VN') + ' lượng'})`, 'reward');
+      p.dirtyMe = true; p.socket.emit('revived', { here: true });
+      return;
+    }
     p.dead = false;
-    p.c.hp = Math.round(p.stats.maxHp * 0.5);
-    p.c.mp = Math.round(p.stats.maxMp * 0.5);
+    p.c.hp = Math.max(1, Math.round(p.stats.maxHp * 0.1));
+    p.c.mp = Math.round(p.stats.maxMp * 0.1);
+    p.weakUntil = now + 45000;   // trọng thương: hồi máu chậm trong 45 giây
+    p.socket.emit('revived', { here: false, weak: 45000 });
     const t = MAPS.tuong_duong;
     const s = this.randomSpotNear(t, t.center.x + 0.5, t.center.y + 2.5, 1);
     this.enterMap(p, 'tuong_duong', s.x, s.y);
@@ -1269,8 +1288,9 @@ class World {
     const s = p.stats, c = p.c;
     const inCombat = now - p.lastCombat < 6000;
     const safe = m.def.safe && !p.duel;   // đang thách đấu trong thành: hồi như ngoài thành
-    const hpR = safe ? 0.06 : inCombat ? 0.004 : 0.02;
-    const mpR = safe ? 0.06 : inCombat ? 0.01 : 0.03;
+    const weak = p.weakUntil > now;      // vừa về thành sau khi tử trận: hồi chậm
+    const hpR = weak ? 0.008 : safe ? 0.06 : inCombat ? 0.004 : 0.02;
+    const mpR = weak ? 0.01 : safe ? 0.06 : inCombat ? 0.01 : 0.03;
     const oh = c.hp, om = c.mp;
     c.hp = Math.min(s.maxHp, c.hp + Math.ceil(s.maxHp * (hpR + s.regen)));
     c.mp = Math.min(s.maxMp, c.mp + Math.ceil(s.maxMp * mpR));

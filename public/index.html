@@ -196,7 +196,12 @@
     <div id="toasts"></div>
     <div id="announce"></div>
     <div id="panel" class="hidden"><div class="panel-box"><div class="panel-head"><h3 id="panel-title"></h3><button id="panel-close">✕</button></div><div id="panel-body"></div></div></div>
-    <div id="dead-overlay" class="hidden"><div class="dead-box"><h2>Trọng thương!</h2><p id="dead-msg"></p><button class="btn primary big" id="respawn-btn">Hồi sinh tại thành</button></div></div>
+    <div id="dead-overlay" class="hidden"><div class="dead-box"><h2>☠ Trọng thương!</h2><p id="dead-msg"></p>
+      <div class="dead-opts">
+        <button class="dead-opt" id="respawn-btn"><b>🏯 Về thành</b><small>Hồi sinh ở Tương Dương với 10% sinh lực, hồi phục chậm trong 45 giây</small><i>Miễn phí</i></button>
+        <button class="dead-opt here" id="revive-here"><b>✨ Hồi sinh tại chỗ</b><small>Đầy sinh lực và nội lực, bảo hộ 3 giây</small><i id="revive-gold"></i></button>
+      </div>
+      <button class="btn small" id="revive-knb"></button></div></div>
     <div id="tooltip" class="hidden"></div>
   </section>
 
