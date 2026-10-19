@@ -363,7 +363,7 @@
     if (!t) { f.classList.add('hidden'); return; }
     f.classList.remove('hidden');
     let name;
-    if (t.type) { const info = G.data.monsters[t.type] || {}; const E = info.el && G.data.elements[info.el]; name = `${t.boss ? '👑 ' : ''}${info.name} (Cấp ${info.lv})${E ? ' · Hệ ' + E.name : ''}`; }
+    if (t.type) { const info = G.data.monsters[t.type] || {}; const E = info.el && G.data.elements[info.el]; name = info.name ? `${t.boss ? '👑 ' : ''}${info.name} (Cấp ${info.lv})${E ? ' · Hệ ' + E.name : ''}` : '...'; }
     else name = `${t.name} (Cấp ${t.level})`;
     f.classList.toggle('boss', !!t.boss);
     const n = f.querySelector('.t-name');

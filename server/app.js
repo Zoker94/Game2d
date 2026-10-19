@@ -206,7 +206,7 @@ app.get('/api/gamedata', (req, res) => {
       dragons: require('./data/dragons').DRAGONS, mounts: M.MOUNTS, mountMax: M.MOUNT_MAX, mountExp, classes: CLASSES, story: require('./data/story'), attrs: require('./data/attrs').ATTRS, items: ITEMS, rarity: RARITY, slots: Object.fromEntries(Object.entries(SLOTS).map(([k, v]) => [k, v.name])), monsters: mons, maps, npcs,
       elements: require('./data/affixes').ELEMENTS, affixes: Object.fromEntries(Object.entries(require('./data/affixes').AFFIX).map(([k, a]) => [k, { name: a.name, text: a.text }])), khac: require('./data/affixes').KHAC };
   }
-  res.json(gamedataCache);
+  res.set('Cache-Control', 'no-cache').json(gamedataCache);
 });
 
 app.get('/api/leaderboard', (req, res) => {

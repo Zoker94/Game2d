@@ -32,6 +32,15 @@
     return j;
   }
 
+  // tải lại dữ liệu game (máy chủ vừa cập nhật thêm quái / vật phẩm / bản đồ mà trang chưa tải lại)
+  let dataRefreshAt = 0;
+  G.refreshData = async function (force) {
+    const now = Date.now();
+    if (!force && now - dataRefreshAt < 15000) return;
+    dataRefreshAt = now;
+    try { const d = await api('/api/gamedata?t=' + now); if (d && d.monsters) G.data = d; } catch (e) { }
+  };
+
   // ================== Màn hình tải ==================
   const TIPS = [
     'Mẹo: Nhấn nút 🤖 Tự động để nhân vật tự đánh quái quanh khu vực.',
@@ -273,6 +282,7 @@
     s.io.on('reconnect', () => { loading(false); });
     s.on('hello', d => {
       // máy chủ đã cập nhật bản mới trong lúc đang chơi: mời tải lại trang
+      if (d.build && window.BUILD && d.build !== window.BUILD) G.refreshData(true);
       if (d.build && window.BUILD && d.build !== window.BUILD && !G._askedReload) {
         G._askedReload = true;
         const bar = document.createElement('div'); bar.id = 'update-bar';
@@ -410,6 +420,7 @@
     }
     for (const id of G.players.keys()) if (!seenP.has(id)) G.players.delete(id);
     const seenM = new Set();
+    if (d.m && d.m.some(m => !G.data.monsters[m.t])) G.refreshData();   // gặp loại quái lạ: dữ liệu cũ
     for (const m of d.m) {
       seenM.add(m.i);
       let e = G.monsters.get(m.i);
@@ -1320,18 +1331,18 @@
   function monsterLabel(e, info, top) {
     if (e.event) { label(e.x, e.y + top - 6, info.name, '#ffd700', 12, true); return; }
     if (e.elite === 1) {   // luôn hiện tên tinh anh
-      label(e.x, e.y + top - 6, `⭐ Tinh Anh · ${info.name} Lv${info.lv}`, '#ffc040', 12, true);
+      label(e.x, e.y + top - 6, `⭐ Tinh Anh · ${info.name}${info.lv ? ' Lv' + info.lv : ''}`, '#ffc040', 12, true);
       hpBar(e.x, e.y + top, 60, e.hp / e.maxHp, '#ffa020');
       return;
     }
     if (e.elite === 2) {   // boss phó bản
-      label(e.x, e.y + top - 6, `👹 ${info.name} Lv${info.lv}`, '#ff5040', 14, true);
+      label(e.x, e.y + top - 6, `👹 ${info.name}${info.lv ? ' Lv' + info.lv : ''}`, '#ff5040', 14, true);
       hpBar(e.x, e.y + top, 90, e.hp / e.maxHp, '#ff3030');
       return;
     }
     const lvDiff = G.me ? info.lv - G.me.level : 0;
     const col = e.boss ? '#ff4040' : lvDiff > 5 ? '#ff7070' : lvDiff < -8 ? '#9a9a9a' : '#ffe9a8';
-    if (G.settings.names || e.boss || G.target === e.id) label(e.x, e.y + top - 6, `${e.boss ? '👑 ' : ''}${info.name} Lv${info.lv}`, col, e.boss ? 14 : 11, true);
+    if (G.settings.names || e.boss || G.target === e.id) label(e.x, e.y + top - 6, `${e.boss ? '👑 ' : ''}${info.name}${info.lv ? ' Lv' + info.lv : ''}`, col, e.boss ? 14 : 11, true);
     hpBar(e.x, e.y + top, e.boss ? 90 : 40, e.hp / e.maxHp, e.boss ? '#ff3030' : '#e5484d');
   }
 
