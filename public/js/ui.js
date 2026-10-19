@@ -360,6 +360,8 @@
 
   UI.updateTarget = function (t) {
     const f = $('target-frame');
+    // quái thường đã có thanh máu trên đầu: không hiện khung lớn che màn hình (chỉ boss, tinh anh, người, xe tiêu)
+    if (t && t.type && !t.boss && !t.elite && !G.settings.tframe) t = null;
     if (!t) { f.classList.add('hidden'); return; }
     f.classList.remove('hidden');
     let name;
@@ -958,7 +960,8 @@
         <label><input type="checkbox" data-set="names" ${s.names ? 'checked' : ''}> Hiện tên nhân vật/quái</label><br>
         <label><input type="checkbox" id="au-music" ${GameAudio.state.music ? 'checked' : ''}> 🎵 Nhạc nền võ lâm</label> <input type="range" id="au-mvol" min="0" max="1" step="0.05" value="${GameAudio.state.musicVol}" style="width:110px;vertical-align:middle"><br>
         <label><input type="checkbox" id="au-sfx" ${GameAudio.state.sfx ? 'checked' : ''}> 🔊 Âm thanh hiệu ứng</label> <input type="range" id="au-svol" min="0" max="1" step="0.05" value="${GameAudio.state.sfxVol}" style="width:110px;vertical-align:middle"><br>
-        <label><input type="checkbox" data-set="shake" ${s.shake ? 'checked' : ''}> Rung màn hình khi bị đánh</label>
+        <label><input type="checkbox" data-set="shake" ${s.shake ? 'checked' : ''}> Rung màn hình khi bị đánh</label><br>
+        <label><input type="checkbox" data-set="tframe" ${s.tframe ? 'checked' : ''}> Hiện khung máu cả quái thường (mặc định chỉ boss, tinh anh, người chơi)</label>
         <div class="row gfx-row" style="justify-content:flex-start;margin-top:6px;align-items:center">🖥️ Đồ họa
           ${[['auto', 'Tự động'], ['high', 'Cao'], ['medium', 'Vừa'], ['low', 'Thấp (mượt nhất)']].map(([k, n]) => `<button class="btn small ${(s.gfx || 'auto') === k ? 'primary' : ''}" data-gfx="${k}">${n}</button>`).join('')}
           <span class="small muted">Độ nét hiện tại: ${Math.round(G.gfx.scale * 100)}%${G.gfx.lowFx ? ' · tiết kiệm hiệu ứng' : ''}</span></div>

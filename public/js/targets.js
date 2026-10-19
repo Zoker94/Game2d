@@ -150,6 +150,10 @@
   function toggle() { isOpen() ? close() : open(); }
 
   const b = $('btn-tlist'); if (b) b.addEventListener('click', e => { e.stopPropagation(); toggle(); });
-  const f = $('target-frame'); if (f) f.addEventListener('click', e => { e.stopPropagation(); open(); });
+  const f = $('target-frame'); if (f) f.addEventListener('click', e => {
+    e.stopPropagation();
+    if (e.target.closest('.t-x')) { G.target = null; G.chase = null; close(); return; }   // ✕: bỏ chọn, khung tắt ngay
+    open();
+  });
   window.Targets = { open, close, toggle, get open_() { return isOpen(); } };
 })();
