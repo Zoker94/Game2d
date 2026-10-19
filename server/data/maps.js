@@ -416,11 +416,26 @@ function generate(id, def = MAP_DEFS[id]) {
     // Quảng trường đá ở giữa thành
     for (let y = 7; y <= h - 8; y++) for (let x = 7; x <= w - 8; x++) set(x, y, T.FLOOR);
     for (let y = 9; y <= h - 10; y++) for (let x = 9; x <= w - 10; x++) set(x, y, (x + y) % 7 === 0 ? T.FLOWER : T.FLOOR);
+    // cây cảnh trong quảng trường: mỗi bồn hoa thứ hai trồng một cây (trừ quanh hồ sen ở giữa)
+    for (let y = 9; y <= h - 10; y++) for (let x = 9; x <= w - 10; x++)
+      if ((x + y) % 14 === 0 && (Math.abs(x - cx) > 4 || Math.abs(y - cy) > 3)) set(x, y, T.TREE);
+    // bồn cây: thảm cỏ 3x3, cây ở giữa, đặt ở 4 góc và giữa các cạnh quảng trường
+    for (const [bx, by] of [[10, 10], [w - 11, 10], [10, h - 11], [w - 11, h - 11], [cx - 6, 10], [cx + 5, 10], [cx - 6, h - 11], [cx + 5, h - 11]]) {
+      for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) set(bx + ox, by + oy, T.GRASS);
+      set(bx, by, T.TREE);
+    }
     // Nhà cửa quanh thành: mỗi căn là một công trình (máy khách vẽ nguyên căn), kiểu nhà khác nhau theo vị trí
     const houses = [[3, 3, 'house'], [9, 3, 'shop'], [22, 3, 'shop'], [28, 3, 'house'], [3, 21, 'house'], [9, 22, 'shop'], [22, 22, 'tavern'], [28, 21, 'house'], [3, 12, 'tavern'], [30, 16, 'house']];
     for (const [hx, hy, kind] of houses) building(hx, hy, 3, 2, kind, 'town');
     // Hồ sen
     for (let y = -1; y <= 1; y++) for (let x = -2; x <= 2; x++) set(cx + x + 0, cy + y + 1, T.WATER);
+    // cây xanh, đá cảnh trên các bãi cỏ quanh thành (không sát nhà, quảng trường, hồ để giữ lối đi)
+    const busy = (x, y) => { for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) { const t = get(x + ox, y + oy); if (t === T.HOUSE || t === T.FLOOR || t === T.WATER || t === T.TREE || t === T.ROCK) return true; } return false; };
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      if (get(x, y) !== T.GRASS || busy(x, y)) continue;
+      const q = r();
+      if (q < 0.34) set(x, y, T.TREE); else if (q < 0.42) set(x, y, T.ROCK);
+    }
   }
   // Bản đồ môn phái: chính điện ở trên, quảng trường lát đá, điện hai bên, tháp / đình, nhà đệ tử, bãi luyện công
   function layoutSect() {

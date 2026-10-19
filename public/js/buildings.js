@@ -6,7 +6,8 @@
 (function () {
   const S = 2;
   const STY = {
-    town: { wall: '#e2d2b0', wall2: '#b8a27c', beam: '#5a3a22', pillar: '#8a2a1a', roofs: ['#4f5866', '#7e3424', '#3e5e4e', '#5a4a6a'], ridge: '#262a32', trim: '#c8a040', plinth: '#8a8478', door: '#6a3a1e', lantern: '#e83a2a' },
+    // thành thị: mái ngói xanh ngọc, vách gỗ ván, cửa sổ song giấy, nền đá xếp khối
+    town: { wall: '#a67646', wall2: '#7a5030', beam: '#3a2414', pillar: '#5a3820', roofs: ['#3e7a72', '#46707c', '#3a6c5c', '#4e7a6a'], ridge: '#1c3432', trim: '#d0a050', plinth: '#8e8a82', door: '#5a3418', lantern: '#e83a2a', wood: 1, paper: '#eadcb4' },
     thieulam: { wall: '#e8c060', wall2: '#c0943a', beam: '#6a1a10', pillar: '#a82010', roofs: ['#dca62a'], ridge: '#a8740e', trim: '#3a7a4a', plinth: '#a09a8c', door: '#8a1a10', lantern: '#ffb020', orn: 'pearl', lions: 1 },
     vodang: { wall: '#ecebe4', wall2: '#c4c2b8', beam: '#2a2a3a', pillar: '#3a2a24', roofs: ['#3e4c6c'], ridge: '#1a2234', trim: '#4a72e0', plinth: '#8e8e96', door: '#3a2a24', lantern: '#f0f0ff', orn: 'taiji' },
     ngamy: { wall: '#f4f0f0', wall2: '#d6c8cc', beam: '#8a3a52', pillar: '#c04a6a', roofs: ['#4e9086'], ridge: '#2a4a48', trim: '#ff8ab0', plinth: '#a8a2a6', door: '#a03a5a', lantern: '#ff8ab0', orn: 'lotus' },
@@ -55,7 +56,15 @@
       p(xa - 2, yb - hgt, xb - xa + 4, hgt, col);
       p(xa - 2, yb - hgt, xb - xa + 4, 1, shade(col, 1.25));
       p(xa - 2, yb - 1, xb - xa + 4, 1, shade(col, 0.65));
-      for (let x = xa; x < xb; x += 8) p(x, yb - hgt + 1, 1, hgt - 2, shade(col, 0.8));
+      if (st.wood) {   // đá xếp khối so le, mỗi viên một sắc
+        for (let row = 0; row * 3 < hgt - 1; row++) {
+          const y = yb - hgt + 1 + row * 3, off = row % 2 ? 3 : 0;
+          for (let x = xa - 2 - off; x < xb + 2; x += 6) {
+            const cx = Math.max(xa - 2, x), cw = Math.min(xb + 2, x + 6) - cx;
+            p(cx, y, cw - 1, 2, shade(col, 0.9 + hash(x, y) * 0.25)); p(cx, y, cw - 1, 1, shade(col, 1.18));
+          }
+        }
+      } else for (let x = xa; x < xb; x += 8) p(x, yb - hgt + 1, 1, hgt - 2, shade(col, 0.8));
       if (steps) {
         const sw = Math.min(18, (xb - xa) * 0.3), sx = (xa + xb) / 2 - sw / 2;
         for (let i = 0; i < 3; i++) { p(sx - i * 2, yb - hgt + i * 2 + 1, sw + i * 4, 2, shade(col, 1.15 - i * 0.08)); p(sx - i * 2, yb - hgt + i * 2 + 2, sw + i * 4, 1, shade(col, 0.75)); }
@@ -65,6 +74,10 @@
       const bays = Math.max(1, Math.round((xb - xa) / (opts.bay || 15)));
       const bw = (xb - xa) / bays;
       p(xa, yt, xb - xa, yb - yt, st.wall);
+      if (st.wood) {   // vách ván gỗ: vân ngang, mắt gỗ, mép ván sáng
+        for (let y = yt + 4; y < yb - 3; y += 3) { p(xa, y, xb - xa, 1, shade(st.wall, 0.78)); p(xa, y + 1, xb - xa, 1, shade(st.wall, 1.08)); }
+        for (let i = 0; i < (xb - xa) / 5; i++) { const kx = xa + hash(i, yt) * (xb - xa), ky = yt + 5 + hash(yt, i) * (yb - yt - 9); p(kx, ky, 2, 1, shade(st.wall, 0.7)); }
+      }
       p(xa, yb - 3, xb - xa, 3, st.wall2);                                     // chân tường
       for (let i = 0; i < bays; i++) {
         const bx = xa + i * bw, mid = i === Math.floor(bays / 2);
@@ -82,9 +95,13 @@
         } else if (!opts.blank) {     // cửa sổ song gỗ
           const ww = Math.min(bw - 5, 10), wh = Math.min((yb - yt) * 0.45, 9), wx = bx + (bw - ww) / 2, wy = yt + (yb - yt) * 0.22;
           p(wx - 1, wy - 1, ww + 2, wh + 2, st.beam);
-          p(wx, wy, ww, wh, opts.lattice ? shade(st.wall2, 0.75) : '#2a1e18');
-          if (opts.lattice) { for (let xx = wx + 1; xx < wx + ww; xx += 2) p(xx, wy, 1, wh, shade(st.trim, 0.9)); for (let yy = wy + 1; yy < wy + wh; yy += 2) p(wx, yy, ww, 1, shade(st.trim, 0.9)); }
-          else { p(wx + ww / 2, wy, 1, wh, st.beam); p(wx, wy + wh / 2, ww, 1, st.beam); p(wx + 1, wy + 1, 2, 1, '#ffd890'); }
+          p(wx, wy, ww, wh, st.paper ? st.paper : opts.lattice ? shade(st.wall2, 0.75) : '#2a1e18');
+          if (st.paper) {   // song giấy: lưới gỗ mảnh trên giấy dó, ánh đèn ấm
+            for (let xx = wx + 2; xx < wx + ww; xx += 3) p(xx, wy, 1, wh, st.beam);
+            for (let yy = wy + 2; yy < wy + wh; yy += 3) p(wx, yy, ww, 1, st.beam);
+            p(wx, wy + wh - 1, ww, 1, shade(st.paper, 0.8));
+          } else if (opts.lattice) { for (let xx = wx + 1; xx < wx + ww; xx += 2) p(xx, wy, 1, wh, shade(st.trim, 0.9)); for (let yy = wy + 1; yy < wy + wh; yy += 2) p(wx, yy, ww, 1, shade(st.trim, 0.9)); }
+          else if (!st.paper) { p(wx + ww / 2, wy, 1, wh, st.beam); p(wx, wy + wh / 2, ww, 1, st.beam); p(wx + 1, wy + 1, 2, 1, '#ffd890'); }
         }
       }
       // cột
@@ -190,6 +207,16 @@
       p(x + 3, yb - hgt + 4, 3, 3, st.trim);
       for (let i = 0; i < 4; i++) p(x + 1 + i * 2, yb - hgt + 1 + hgt * 0.5, 1, 2, col);
     }
+    function pot(x, yb, big) {   // chậu cây cảnh / bonsai trước cửa
+      p(x - 3, yb - 4, 7, 4, '#8a4a2a'); p(x - 3, yb - 4, 7, 1, '#b86a3a'); p(x - 2, yb - 1, 5, 1, '#5a2a14');
+      const r = big ? 5 : 4, cy = yb - 7 - (big ? 3 : 0);
+      if (big) { p(x, yb - 9, 1, 5, '#5a3a1e'); p(x - 1, yb - 7, 1, 2, '#5a3a1e'); }
+      for (let yy = -r; yy <= r; yy++) for (let xx = -r - 1; xx <= r + 1; xx++) {
+        if ((xx * xx) / ((r + 1) * (r + 1)) + (yy * yy) / (r * r * 0.55) > 1) continue;
+        p(x + xx, cy + yy * 0.6, 1, 1, yy < -r / 3 ? '#7cc35c' : yy < r / 3 ? '#4a9a3a' : '#2e6a2a');
+      }
+    }
+    function barrel(x, yb) { p(x - 3, yb - 7, 7, 7, '#7a4a24'); p(x - 3, yb - 7, 7, 1, '#a86a34'); p(x - 3, yb - 5, 7, 1, '#3a2a1a'); p(x - 3, yb - 2, 7, 1, '#3a2a1a'); p(x - 2, yb - 7, 1, 7, '#9a6030'); }
     function lion(x, yb) { const c2 = st.plinth; p(x, yb - 9, 6, 9, shade(c2, 1.05)); p(x + 1, yb - 12, 5, 4, shade(c2, 1.2)); p(x + 2, yb - 11, 1, 1, '#2a2a2a'); p(x - 1, yb - 2, 8, 2, shade(c2, 0.75)); }
 
     // ---------- từng loại công trình ----------
@@ -267,6 +294,7 @@
         roof(x0 + 5, x1 - 5, ut - 26, ut + 3, { over: 7, hip: 0.35, curl: 5 });
         p(x1 + 1, yt - 22, 1, 24, '#4a3020'); p(x1 + 2, yt - 21, 7, 11, '#f0e8d0'); p(x1 + 3, yt - 18, 5, 5, '#c02020');   // cờ rượu
         lantern(x0 + 6, yt + 4); lantern(x1 - 7, yt + 4);
+        if (st.wood) { pot(PAD + W / 2 - 13, ground - 1, true); pot(PAD + W / 2 + 13, ground - 1, true); barrel(x0 + 6, ground - 1); barrel(x0 + 13, ground - 1); }
       } else {   // nhà / tiệm / điện phụ
         const wh = kind === 'side' ? 28 : 24, yt = yb - wh;
         wall(x0 + 2, x1 - 2, yt, yb, { bay: kind === 'side' ? 15 : 14, timber: kind !== 'side' && b.style === 'town', lattice: kind === 'side' });
@@ -279,6 +307,7 @@
         if (kind === 'side') plaque(PAD + W / 2 - 8, yt - 2, 16);
         roof(x0 + 2, x1 - 2, yt - (kind === 'side' ? 32 : 27), yt + 4, { over: 6, hip: kind === 'side' ? 0.38 : 0.14, curl: kind === 'side' ? 6 : 3, ornament: kind === 'side' || b.style !== 'town' });
         if (kind === 'side' || b.v % 2 === 0) { lantern(x0 + 5, yt + 5); lantern(x1 - 6, yt + 5); }
+        if (st.wood) { pot(PAD + W / 2 - 13, ground - 1, b.v % 2 === 0); pot(PAD + W / 2 + 13, ground - 1, b.v % 2 === 1); if (W > 70) barrel(x1 - 6, ground - 1); }
         if (st.banner && kind === 'side') banner(x1 + 1, ground - 2, 38);
       }
     }
