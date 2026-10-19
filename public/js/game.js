@@ -641,13 +641,12 @@
     G.auto = on;
     const b = $('btn-auto');
     b.classList.toggle('on', on);
-    b.textContent = on ? '🤖 Tự động: BẬT' : '🤖 Tự động: TẮT';
+    b.title = on ? 'Tắt tự động đánh (R)' : 'Bật tự động đánh (R)';
     if (on && G.map && G.map.safe) UI.toast('Hãy ra bãi luyện công để dùng tự động đánh', 'error');
     G.autoHome = on ? { x: G.self.x, y: G.self.y } : null;
   }
   G.setAuto = setAuto;
   $('btn-auto').onclick = () => setAuto(!G.auto);
-  $('btn-auto-cfg').onclick = () => UI.openPanel('auto');
   setTimeout(() => setAuto(false), 0);
 
   Input.on('skill', i => { G.moveTo = null; useSkill(i); });

@@ -145,15 +145,15 @@
   // ---------- nút chọn chế độ PK ----------
   function pkButton() {
     let b = $('btn-pk');
-    const wrap = $('auto-wrap');
+    const wrap = $('quick-btns');
     if (!b && wrap) {
-      b = document.createElement('button'); b.id = 'btn-pk'; b.className = 'pill';
+      b = document.createElement('button'); b.id = 'btn-pk'; b.className = 'qb';
       wrap.insertBefore(b, wrap.firstChild);
       b.onclick = ev => { ev.stopPropagation(); pkMenu(); };
     }
     if (!b || !G.me) return;
     const m = PK_MODES[G.me.pkMode | 0];
-    const html = `${m.icon}<span class="hide-touch"> ${m.name}</span>`;
+    const html = `<i>${m.icon}</i><span>${m.name}</span>`;
     if (b.innerHTML !== html) { b.innerHTML = html; b.style.color = m.color; b.title = 'Chế độ PK: ' + m.name + ' (phím P)'; b.classList.toggle('pk-on', (G.me.pkMode | 0) > 0); }
   }
   function pkMenu() {
@@ -166,7 +166,7 @@
     $('screen-game').appendChild(box);
     box.querySelector('[data-close]').onclick = () => box.remove();
     box.querySelectorAll('[data-pk]').forEach(el => el.onclick = () => { emit('pkMode', { mode: +el.dataset.pk }); box.remove(); G.sfx && G.sfx('click'); });
-    setTimeout(() => document.addEventListener('pointerdown', function off(ev) { if (!box.contains(ev.target) && ev.target.id !== 'btn-pk') { box.remove(); document.removeEventListener('pointerdown', off, true); } }, true), 0);
+    setTimeout(() => document.addEventListener('pointerdown', function off(ev) { if (!box.contains(ev.target) && !ev.target.closest('#btn-pk')) { box.remove(); document.removeEventListener('pointerdown', off, true); } }, true), 0);
   }
   document.addEventListener('keydown', ev => {
     if (ev.code !== 'KeyP' || !G.inGame || /INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) return;

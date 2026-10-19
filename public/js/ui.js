@@ -127,7 +127,7 @@
       chatFilter = b.dataset.ch; renderChat();
       if (b.dataset.ch !== 'all' && b.dataset.ch !== 'pm') { $('chat-ch').value = b.dataset.ch; $('chat-to').classList.add('hidden'); }
     });
-    $('btn-music').onclick = () => { GameAudio.set('music', !GameAudio.state.music); UI.updateMusicBtn(); };
+    const bm = $('btn-music'); if (bm) bm.onclick = () => { GameAudio.set('music', !GameAudio.state.music); UI.updateMusicBtn(); };
     UI.updateMusicBtn();
     $('chat-toggle').onclick = e => { e.stopPropagation(); $('chat').classList.toggle('collapsed'); $('chat-toggle').textContent = $('chat').classList.contains('collapsed') ? '▴' : '▾'; };
     if (Input.isTouch) $('chat').classList.add('collapsed'), $('chat-toggle').textContent = '▴';

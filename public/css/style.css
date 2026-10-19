@@ -743,3 +743,22 @@ body.touch .tl-foot { display: none; }
 body.touch #duel-hud { top: 104px; font-size: 12px; }
 body.touch #duel-banner { font-size: 44px; }
 body.touch #duel-banner.go { font-size: 38px; }
+
+/* ---------- Nút nhanh cạnh bản đồ nhỏ (PK / Mục tiêu / Tự động) ---------- */
+#map-row { display: flex; gap: 5px; align-items: flex-start; pointer-events: none; }
+#map-row > * { pointer-events: auto; }
+#quick-btns { display: flex; flex-direction: column; gap: 4px; }
+.qb { width: 64px; height: 35px; padding: 1px 2px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.05; position: relative; }
+.qb i { font-style: normal; font-size: 15px; }
+.qb span { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.qb:hover { border-color: var(--gold); }
+#btn-auto.on { background: #1f5a2a; border-color: #8fdc8f; color: #eaffea; box-shadow: 0 0 8px rgba(120,230,120,.55); animation: qbPulse 1.6s ease-in-out infinite; }
+@keyframes qbPulse { 50% { box-shadow: 0 0 14px rgba(120,230,120,.85); } }
+#btn-tlist.on { border-color: #ff6a5a; box-shadow: 0 0 8px rgba(255,90,70,.5); }
+#btn-pk.pk-on { border-color: #ff6a3a; box-shadow: 0 0 8px rgba(255,80,40,.5); }
+body.touch #minimap { width: 128px; height: 98px; }
+body.touch .qb { width: 54px; height: 30px; border-radius: 7px; }
+body.touch .qb i { font-size: 13px; }
+body.touch .qb span { font-size: 8px; }
+#btn-auto.on::after { content: 'BẬT'; position: absolute; top: -5px; right: -4px; font-size: 8px; font-weight: 800; background: #2ec04a; color: #fff; border-radius: 6px; padding: 0 3px; line-height: 12px; }

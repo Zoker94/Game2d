@@ -123,7 +123,13 @@
       </div>
 
       <div id="hud-right">
-        <canvas id="minimap" width="150" height="112"></canvas>
+        <div id="map-row">
+          <div id="quick-btns">
+            <button id="btn-tlist" class="qb" title="Chọn mục tiêu (V)"><i>🎯</i><span>Mục tiêu</span></button>
+            <button id="btn-auto" class="qb" title="Tự động đánh (R)"><i>🤖</i><span>Tự động</span></button>
+          </div>
+          <canvas id="minimap" width="150" height="112"></canvas>
+        </div>
         <div id="menu-buttons">
           <button data-panel="inventory" title="Túi đồ (I)">🎒<span>Túi</span></button>
           <button data-panel="character" title="Nhân vật (C)">🧍<span>Nhân vật</span></button>
@@ -182,9 +188,7 @@
           <button class="act dodge" id="btn-dodge" title="Né chiêu (Shift / Q)"><span class="dg-ic">💨</span><div class="cdo"></div><div class="cdt"></div></button>
         </div>
       </div>
-      <div id="auto-wrap"><button id="btn-tlist" class="pill" title="Chọn mục tiêu (V)">🎯 Mục tiêu<span class="hide-touch"> (V)</span></button><button id="btn-auto" class="pill">🤖 Tự động: TẮT</button><button id="btn-auto-cfg" class="pill" title="Cài đặt tự động: nhặt đồ, bơm máu...">⚙️ Cài đặt<span class="hide-touch"> auto</span></button></div>
       <button id="btn-chat-mobile" class="pill">💬</button>
-      <button id="btn-music" class="pill" title="Bật/tắt nhạc nền">🎵</button>
     </div>
 
     <div id="toasts"></div>
