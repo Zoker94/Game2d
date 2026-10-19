@@ -9,18 +9,6 @@
   const CLASSES = ['thieulam', 'ngudoc', 'thienvuong', 'caibang', 'vodang', 'ngamy', 'thuyyen', 'conlon', 'duongmon'];
   const CELL = 96, FOOT_X = 48, FOOT_Y = 86;
   const ANIM = { idle: [0, 4], walk: [4, 6], atk: [10, 4], cast: [14, 4], hurt: [18, 1], ride: [19, 2] };
-  // Biểu tượng võ công theo thứ tự 6 chiêu của mỗi môn phái
-  const SKILL_ICON = {
-    vodang:     ['vodang_i2', 'vodang_i1', 'vd_taiji2', 'vodang_i3', 'cl_swords', 'vodang_i0'],
-    thieulam:   ['vodang_i1', 'thieulam_i0', 'thieulam_i2', 'thieulam_i3', 'vd_med', 'vd_aura'],
-    thienvuong: ['thienvuong_i0', 'thienvuong_i3', 'thienvuong_i2', 'thienvuong_i1', 'tv_spear', 'tv_thunder'],
-    duongmon:   ['duongmon_i0', 'duongmon_i1', 'duongmon_i3', 'dm_glow', 'duongmon_i2', 'dm_bow'],
-    ngudoc:     ['ngudoc_i3', 'ngudoc_i0', 'ngudoc_i2', 'nd_aura1', 'ngudoc_i1', 'nd_aura2'],
-    ngamy:      ['conlon_i3', 'thuyyen_i1', 'ty_sword', 'thuyyen_i0', 'ty_dance', 'thuyyen_i1'],
-    thuyyen:    ['conlon_i3', 'thuyyen_i2', 'ty_moon', 'thuyyen_i0', 'ty_slash', 'thuyyen_i3'],
-    conlon:     ['conlon_i0', 'conlon_i3', 'cl_swords', 'conlon_i1', 'conlon_i2', 'tv_thunder'],
-    caibang:    ['caibang_i0', 'caibang_i2', 'caibang_i1', 'caibang_i3', 'cb_spear', 'vodang_i3']
-  };
   // Quái / boss: thêm tên quái (id trong server/data/monsters.js) vào đây khi có ảnh
   // public/assets/monsters/<id>.png (ảnh nền trong suốt, chân nhân vật ở đáy ảnh).
   const MONSTERS = [];
@@ -260,33 +248,9 @@
   };
 
   // HTML biểu tượng kỹ năng cho nút bấm / bảng võ công
+  // ảnh vẽ bằng tools/skillicons.py: public/assets/skills/<mã chiêu>.png (Long Ấn: dr_fire / dr_water / dr_ice)
   function skillIconUrl(cls, s) {
-    if (!s) return null;
-    if (s.idx === 6) {
-      const d = G.data && G.data.dragons && Object.values(G.data.dragons).find(x => x.id === s.id);
-      const book = (d && d.book) || 'book_fire';
-      const k = 'dragon:' + book;
-      if (!cache[k]) cache[k] = Sprites.itemIcon(book, 3).toDataURL();
-      return cache[k];
-    }
-    if (s.idx === 7 || s.idx === 8) {   // buff chủ động / nội công: vẽ biểu tượng ấn ký
-      const k = 'skx:' + s.id;
-      if (!cache[k]) {
-        const [c, x] = mk(64, 64); x.imageSmoothingEnabled = true;
-        const g = x.createRadialGradient(26, 24, 4, 32, 32, 32);
-        g.addColorStop(0, '#ffffff'); g.addColorStop(0.35, s.color || '#ffd76a'); g.addColorStop(1, '#1a1024');
-        x.fillStyle = g; x.beginPath(); x.arc(32, 32, 30, 0, Math.PI * 2); x.fill();
-        x.strokeStyle = s.idx === 8 ? '#ffe9a8' : '#ffffff'; x.lineWidth = 3; x.beginPath(); x.arc(32, 32, 27, 0, Math.PI * 2); x.stroke();
-        if (s.idx === 8) { x.setLineDash([4, 4]); x.beginPath(); x.arc(32, 32, 21, 0, Math.PI * 2); x.stroke(); x.setLineDash([]); }
-        x.font = 'bold 30px serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
-        x.lineWidth = 4; x.strokeStyle = '#1a1024'; const ch = s.idx === 8 ? '心' : '護';
-        x.strokeText(ch, 32, 34); x.fillStyle = '#fffbe8'; x.fillText(ch, 32, 34);
-        cache[k] = c.toDataURL();
-      }
-      return cache[k];
-    }
-    const n = SKILL_ICON[cls] && SKILL_ICON[cls][s.idx];
-    return n ? BASE + 'icons/' + n + '.png' : null;
+    return s && s.id ? BASE + 'skills/' + s.id + '.png' : null;
   }
   function skillIconHTML(cls, s) {
     const url = skillIconUrl(cls, s);
@@ -294,5 +258,5 @@
     return `<i class="sk-img" style="background-image:url('${url}');--skc:${s.color || '#ffd76a'}"></i>`;
   }
 
-  window.Assets = { ready, imgs, has, charFrame, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, SKILL_ICON, MONSTERS, skillIconUrl, skillIconHTML };
+  window.Assets = { ready, imgs, has, charFrame, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, MONSTERS, skillIconUrl, skillIconHTML };
 })();

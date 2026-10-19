@@ -169,7 +169,7 @@
     {   // nút né chiêu
       const d = document.createElement('div');
       d.className = 'skill dodge-sk'; d.id = 'dodge-sk';
-      d.innerHTML = `<span class="key">⇧/Q</span><span class="dg-ic">💨</span><div class="cdo"></div><div class="cdt"></div>`;
+      d.innerHTML = `<i class="sk-img" style="background-image:url('/assets/skills/ui_dodge.png')"></i><span class="key">⇧/Q</span><div class="cdo"></div><div class="cdt"></div>`;
       d.onclick = () => Input.emit('dodge');
       d.onmouseenter = e => tip(e, '<b>Né chiêu (lướt)</b><br>Lướt nhanh theo hướng đang đi, né mọi đòn đánh trong 0,4 giây và để lại bóng mờ.<br>Phím Shift hoặc Q · Hồi 5 giây');
       d.onmouseleave = hideTip;
@@ -178,8 +178,7 @@
     for (const k of ['hp', 'mp']) {
       const d = document.createElement('div');
       d.className = 'skill'; d.id = 'pot-' + k;
-      d.innerHTML = `<span class="key">${k === 'hp' ? 'Z' : 'X'}</span>${k === 'hp' ? '❤️' : '💧'}<span class="cnt"></span>`;
-      d.style.fontSize = '22px';
+      d.innerHTML = `<i class="ico-pot"></i><span class="key">${k === 'hp' ? 'Z' : 'X'}</span><span class="cnt"></span>`;
       d.onclick = () => emit('quickUse', { kind: k });
       bar.appendChild(d);
     }
@@ -231,11 +230,18 @@
     });
     const cnt = k => me.inv.filter(x => x.id.startsWith(k)).reduce((s, x) => s + x.qty, 0);
     const hpc = cnt('hp'), mpc = cnt('mp');
-    const ph = $('pot-hp'), pm = $('pot-mp');
-    if (ph) ph.querySelector('.cnt').textContent = hpc;
-    if (pm) pm.querySelector('.cnt').textContent = mpc;
-    $('btn-hp').innerHTML = `❤️<span class="cnt">${hpc}</span>`;
-    $('btn-mp').innerHTML = `💧<span class="cnt">${mpc}</span>`;
+    // biểu tượng bình thuốc tốt nhất đang có
+    const best = k => me.inv.filter(x => /^(hp|mp)\d$/.test(x.id) && x.id.startsWith(k)).map(x => x.id).sort().pop() || k + '1';
+    for (const k of ['hp', 'mp']) {
+      const url = iconUrl(best(k)), n = k === 'hp' ? hpc : mpc;
+      for (const el of [$('pot-' + k), $('btn-' + k)]) {
+        if (!el) continue;
+        if (!el.querySelector('.ico-pot')) el.innerHTML = '<i class="ico-pot"></i><span class="cnt"></span>';
+        const ic = el.querySelector('.ico-pot');
+        if (ic._u !== url) { ic.style.backgroundImage = `url('${url}')`; ic._u = url; }
+        el.querySelector('.cnt').textContent = n;
+      }
+    }
     updateTutorial();
     const sk = JSON.stringify(me.story);
     if (sk !== UI._storyKey) { UI._storyKey = sk; if (panel === 'quests' && panelState.tab === 'story') UI.refreshPanel(true); }
