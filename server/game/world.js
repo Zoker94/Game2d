@@ -72,6 +72,7 @@ class World {
     this.escort = new Escort(this);
     this.story = new Story(this);
     this.duel = new Duel(this);
+    this.bossAI = new (require('./bossai').BossAI)(this);
     for (const id in MAPS) {
       this.maps[id] = { def: MAPS[id], players: new Set(), monsters: new Map(), drops: new Map() };
       this.spawnMap(id);
@@ -1502,6 +1503,7 @@ class World {
       return;
     }
     if (mon.tpl.static) return;
+    if (mon.pending && mon.pending.length) this.bossAI.resolve(mon, m, now);   // chiêu boss đến lúc nổ (kể cả khi boss bị khống chế)
     // Độc / bỏng / chảy máu
     this.tickDots(mon, now);
     if (mon.dead) return;
@@ -1524,6 +1526,10 @@ class World {
     }
     const spd = (tpl.speed || 90) * (dt / 1000) * (slowed ? 0.45 : 1);
     mon.moving = false;
+    if ((mon.boss || tpl.pbBoss) && this.bossAI.update(mon, m, target, now)) {   // đang vận công chiêu: đứng yên quay về mục tiêu
+      if (target) { const dx = target.x - mon.x; mon.dir = Math.abs(dx) > Math.abs(target.y - mon.y) ? (dx > 0 ? 2 : 1) : (target.y > mon.y ? 0 : 3); }
+      return;
+    }
     if (target) {
       const d = U.dist(target, mon);
       const range = tpl.range || 60;
@@ -1544,15 +1550,6 @@ class World {
         for (const p of m.players) if (!p.dead && U.dist(p, mon) < 120) {
           const { dmg } = this.calcDamage(tpl.atk, 0, p.stats.def, 1.1, 0.4);
           this.applyDamage(p, dmg, mon, 'hurt');
-        }
-      }
-      if (mon.boss && now >= mon.nextAoe) {
-        mon.nextAoe = now + 6000;
-        this.fx(mon.mapId, { t: 'ring', x: mon.x, y: mon.y, tx: mon.x, ty: mon.y, r: 170, color: '#ff2020' });
-        for (const p of m.players) if (!p.dead && U.dist(p, mon) < 170) {
-          const { dmg } = this.calcDamage(tpl.atk, 0, p.stats.def, 1.3, 0.5);
-          this.applyDamage(p, dmg, mon, 'hurt');
-          if (!p.dead) this.applyStatus(p, 'stun', 900, mon);
         }
       }
       const dx = target.x - mon.x;

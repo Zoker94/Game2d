@@ -340,6 +340,7 @@
     Dungeon.bind(s);
     SectUI.bind(s);
     Pet.bind(s);
+    BossFX.bind(s);
     s.on('events', d => { G.events = d; UI.onEvents(d); });
     s.on('daily', d => { G.daily = d; UI.updateDaily(); });
     s.on('dropAdd', d => { if (d.om) d.ownUntil = performance.now() + d.om; G.drops.set(d.id, d); });
@@ -448,6 +449,7 @@
   // tuyệt kỹ Long Ấn: rung màn 2 nhịp (gồng chiêu rồi nổ), lớp sáng theo hệ, tên chiêu chạy ngang màn hình
   const ULTI = { firedragon: 'fire', waterdragon: 'water', icedragon: 'ice' };
   const rumbles = [];
+  G.rumble = (amp, ms) => { if (G.settings.shake) { const t = performance.now(); rumbles.push({ t0: t, t1: t + ms, amp }); } };   // rung màn (chiêu boss...)
   function ulti(d) {
     const el = ULTI[d.t], dr = G.data.dragons[el] || {}, self = d.from === G.you;
     const cx = d.tx != null ? d.tx : d.x, cy = d.ty != null ? d.ty : d.y;
@@ -1099,6 +1101,7 @@
     }
 
     DaiHoi.drawGround(ctx, now);
+    BossFX.drawGround(ctx, now);
     Duel.draw(ctx, now);
     drawGhosts(now);
     const frameOf = (moving, seed) => moving ? Math.floor(now / 140 + (seed || 0)) % 4 : 0;
