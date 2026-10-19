@@ -240,6 +240,7 @@ function sendHtml(res, file) {
 }
 app.get(['/', '/index.html'], (req, res) => sendHtml(res, 'index.html'));
 app.get(['/admin', '/admin/', '/admin/index.html'], (req, res) => sendHtml(res, 'admin/index.html'));
+app.get(['/arena', '/arena/', '/arena/index.html'], (req, res) => sendHtml(res, 'arena/index.html'));
 app.use(express.static(PUBLIC_DIR, {
   extensions: ['html'], cacheControl: false,
   setHeaders: (res) => res.set('Cache-Control', res.req && res.req.query && res.req.query.v ? 'public, max-age=31536000, immutable' : 'no-cache')

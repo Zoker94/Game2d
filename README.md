@@ -27,6 +27,20 @@ Webgame 2D pixel art 64px thể loại **giang hồ võ lâm – cày cấp đá
 | Điều khiển | Bàn phím + chuột, **joystick ảo** trên mobile, **tay cầm (Gamepad)**, chế độ 🤖 tự động đánh |
 | Admin panel | `/admin` – thống kê, quản lý người chơi (sửa cấp/vàng, tặng đồ, khóa, cấm chat, kick, dịch chuyển, GM, xóa), sự kiện & boss, thông báo, bang hội, gift code, cấu hình tỉ lệ, bảo trì, nhật ký chat & hệ thống |
 
+## 🎮 Poké Arena Pixel (`/arena/`)
+
+Mini-game độc lập chủ đề đấu trường Pokémon, góc nhìn từ trên xuống, khung dọc 9:16 như video Shorts. Không cần đăng nhập. Mở `http://localhost:3000/arena/`.
+
+- **6 đấu 6 thời gian thực**: Pokémon tự chạy, né, ra chiêu; gục thì huấn luyện viên ném bóng con tiếp theo. HUD có tên, hệ, vật phẩm, thanh máu, 6 bóng và đồng hồ.
+- **12 Pokémon** vẽ pixel bằng code: đội RED (Pikachu, Venusaur, Charizard, Blastoise, Snorlax, Lapras) và GOLD (Typhlosion, Feraligatr, Meganium, Ampharos, Tyranitar, Espeon).
+- **Cơ chế**: chỉ số gốc thật, công thức sát thương kiểu Pokémon (STAB, khắc hệ, chí mạng), vật phẩm (Light Ball, Leftovers, Charcoal...), trạng thái tê liệt/bỏng/đóng băng/trúng độc/ngủ.
+- **6 kiểu chiêu**: bắn đạn, tia gồng, vòng nổ có cảnh báo, sóng quanh mình, lao cận chiến, hồi máu. Chiêu nào cũng né được. Mặt sân lưu lại vết cháy, vết nứt.
+- **3 đấu trường**: Mt. Silver (tuyết rơi), Đồng cỏ, Núi lửa.
+- **Chế độ**: *Xem đấu* (AI vs AI, tua x1/x2/x4) và *Tự chơi* (WASD/joystick di chuyển, J K L ; hoặc 1–4 dùng chiêu, bấm bóng trên HUD để đổi Pokémon, nút AUTO).
+- Mã nguồn: `public/arena/` (`data.js` dữ liệu/cân bằng, `sprites.js` vẽ sprite, `game.js` engine + AI + HUD).
+
+> Pokémon là thương hiệu của Nintendo/Game Freak/The Pokémon Company. Dự án fan làm để học, không dùng cho mục đích thương mại.
+
 ## Chạy game
 
 Yêu cầu Node.js 18+.

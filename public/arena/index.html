@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#101018">
+<title>Poké Arena Pixel</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' fill='%23e83030'/><rect x='1' y='8' width='14' height='7' fill='%23f0f0f0'/><circle cx='8' cy='8' r='7' fill='none' stroke='%23202020' stroke-width='1.5'/><rect x='1' y='7.3' width='14' height='1.4' fill='%23202020'/><circle cx='8' cy='8' r='2.2' fill='%23f0f0f0' stroke='%23202020'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/arena/arena.css">
+</head>
+<body>
+<div id="stage">
+  <!-- HUD trên cùng: 2 bảng thông tin như video -->
+  <header id="hud">
+    <div class="side left" id="hud-a">
+      <div class="row1">
+        <canvas class="portrait" width="34" height="34"></canvas>
+        <div class="info">
+          <div class="name">—</div>
+          <div class="chips"></div>
+          <div class="hpbar"><i></i><b>0</b></div>
+        </div>
+      </div>
+      <div class="row2">
+        <canvas class="trainer" width="20" height="20"></canvas>
+        <div class="balls"></div>
+      </div>
+    </div>
+    <div class="side right" id="hud-b">
+      <div class="row1">
+        <div class="info">
+          <div class="name">—</div>
+          <div class="chips"></div>
+          <div class="hpbar"><i></i><b>0</b></div>
+        </div>
+        <canvas class="portrait" width="34" height="34"></canvas>
+      </div>
+      <div class="row2">
+        <div class="balls"></div>
+        <canvas class="trainer" width="20" height="20"></canvas>
+      </div>
+    </div>
+    <div id="timer">0:00</div>
+  </header>
+
+  <main id="field">
+    <canvas id="cv" width="240" height="372"></canvas>
+    <div id="banner"></div>
+    <div id="topbtns">
+      <button id="btn-speed" class="mini">x1</button>
+      <button id="btn-pause" class="mini">II</button>
+      <button id="btn-menu" class="mini">☰</button>
+    </div>
+
+    <!-- Điều khiển (chế độ tự chơi) -->
+    <div id="controls" class="hidden">
+      <div id="stick"><i></i></div>
+      <div id="moves"></div>
+      <button id="btn-auto" class="mini">AUTO</button>
+    </div>
+  </main>
+
+  <!-- MENU -->
+  <section id="scr-menu" class="screen show">
+    <div class="panel">
+      <h1>POKÉ<span>ARENA</span></h1>
+      <p class="sub">Đấu trường pixel · 6 đấu 6 · thời gian thực</p>
+      <canvas id="menu-art" width="120" height="40"></canvas>
+      <div class="field-pick">
+        <span>Đấu trường:</span>
+        <button data-map="snow" class="on">Mt. Silver</button>
+        <button data-map="grass">Đồng cỏ</button>
+        <button data-map="volcano">Núi lửa</button>
+      </div>
+      <button class="btn big" id="go-play">▶ TỰ CHƠI</button>
+      <button class="btn" id="go-watch">👁 XEM ĐẤU: RED vs GOLD</button>
+      <button class="btn" id="go-team">✦ CHỌN ĐỘI HÌNH</button>
+      <p class="help">PC: WASD/mũi tên di chuyển · J K L ; (hoặc 1-4) dùng chiêu · bấm bóng trên HUD để đổi Pokémon<br>Điện thoại: joystick trái · 4 nút chiêu phải</p>
+    </div>
+  </section>
+
+  <!-- CHỌN ĐỘI -->
+  <section id="scr-team" class="screen">
+    <div class="panel wide">
+      <h2>CHỌN 6 POKÉMON</h2>
+      <div id="team-pick"></div>
+      <div id="roster"></div>
+      <div id="dex"></div>
+      <div class="actions">
+        <button class="btn" id="team-random">🎲 Ngẫu nhiên</button>
+        <button class="btn" id="team-back">← Quay lại</button>
+        <button class="btn big" id="team-go">▶ VÀO TRẬN</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- KẾT QUẢ -->
+  <section id="scr-end" class="screen">
+    <div class="panel">
+      <h2 id="end-title">CHIẾN THẮNG!</h2>
+      <p id="end-sub"></p>
+      <div id="end-stats"></div>
+      <button class="btn big" id="end-again">↻ ĐẤU LẠI</button>
+      <button class="btn" id="end-menu">☰ MENU</button>
+    </div>
+  </section>
+</div>
+
+<script src="/arena/data.js"></script>
+<script src="/arena/sprites.js"></script>
+<script src="/arena/game.js"></script>
+</body>
+</html>
