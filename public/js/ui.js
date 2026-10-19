@@ -73,26 +73,90 @@
     return o;
   }
   const powerOf = o => (o.atk || 0) * 3 + (o.def || 0) * 2 + (o.hp || 0) / 4 + (o.mp || 0) / 8 + (o.crit || 0) * 12;
-  function compareHtml(s) {
+  // dòng tóm tắt trong khung chi tiết (bảng so sánh đầy đủ hiện ở khung nổi khi rê chuột / bấm giữ)
+  function compareMini(s) {
     const it = G.data.items[s.id];
     if (!it || it.type !== 'equip' || s.equipped) return '';
     const cur = G.me.equip[it.slot], cit = cur && G.data.items[cur.id];
+    const dp = Math.round(powerOf(itemTotals(it, s)) - powerOf(itemTotals(cit, cur)));
+    return `<div class="cmp-mini">⚖️ ${cit ? 'So với đồ đang mặc' : 'Ô ' + G.data.slots[it.slot] + ' đang trống'}: Lực chiến <b class="${dp > 0 ? 'up' : dp < 0 ? 'down' : ''}">${dp > 0 ? '▲ +' : dp < 0 ? '▼ ' : ''}${dp || '='}</b>
+      <span class="muted">· ${Input.isTouch ? 'bấm giữ' : 'rê chuột vào'} ô đồ để so sánh</span></div>`;
+  }
+  // khung so sánh nổi: món đang trỏ cạnh món đang mặc cùng ô
+  function cmpCard(s) {
+    const it = G.data.items[s.id];
+    if (!it) return '';
+    const fmtv = (k, v) => k === 'crit' ? Math.round(v * 10) / 10 + '%' : Math.round(v);
+    const col = (inst, item, label) => {
+      const t = itemTotals(item, inst);
+      const el = inst && inst.el && G.data.elements[inst.el];
+      return `<div class="cp-col"><div class="cp-lbl">${label}</div><div class="cp-name"><img src="${iconUrl(inst.id)}" width="26" height="26">${itemName(inst.id, inst.plus)}</div>
+        <div class="cp-sub">Cấp ${item.lv || 1}${el ? ` · <span style="color:${el.color}">Hệ ${el.name}</span>` : ''}</div>
+        ${Object.entries(t).map(([k, v]) => `<div class="cp-st"><span>${STAT_NAME[k]}</span><b>${fmtv(k, v)}</b></div>`).join('')}
+        ${(inst.fx || []).map(([k, v]) => `<div class="cp-fx">✦ ${fxText(k, v)}</div>`).join('')}</div>`;
+    };
+    if (it.type !== 'equip') return `<div class="cp-one"><div class="cp-name"><img src="${iconUrl(s.id)}" width="26" height="26">${itemName(s.id, s.plus)}</div>${statsHtml(it, s.plus)}${it.desc ? `<div class="small muted">${esc(it.desc)}</div>` : ''}</div>`;
+    const cur = !s.equipped && G.me.equip[it.slot], cit = cur && G.data.items[cur.id];
+    if (!cit) return `<div class="cp-cols">${col(s, it, s.equipped ? 'Đang mặc' : `Ô ${G.data.slots[it.slot]} đang trống`)}</div>`;
     const a = itemTotals(cit, cur), b = itemTotals(it, s);
     const keys = [...new Set([...Object.keys(a), ...Object.keys(b)])];
-    const fmtv = (k, v) => k === 'crit' ? Math.round(v * 10) / 10 + '%' : Math.round(v);
-    const rows = keys.map(k => {
+    const diffs = keys.map(k => {
       const d = (b[k] || 0) - (a[k] || 0), dd = k === 'crit' ? Math.round(d * 10) / 10 : Math.round(d);
-      return `<tr><td>${STAT_NAME[k]}</td><td>${fmtv(k, a[k] || 0)}</td><td>${fmtv(k, b[k] || 0)}</td><td class="${dd > 0 ? 'up' : dd < 0 ? 'down' : ''}">${dd > 0 ? '▲ +' : dd < 0 ? '▼ ' : ''}${dd || '='}${dd && k === 'crit' ? '%' : ''}</td></tr>`;
-    }).join('');
+      return dd ? `<span class="${dd > 0 ? 'up' : 'down'}">${STAT_NAME[k]} ${dd > 0 ? '▲+' : '▼'}${dd}${k === 'crit' ? '%' : ''}</span>` : '';
+    }).filter(Boolean).join('');
     const dp = Math.round(powerOf(b) - powerOf(a));
-    const fxList = inst => (inst && inst.fx || []).map(([k, v]) => `<div>✦ ${fxText(k, v)}</div>`).join('') || '<div class="muted">Không có hiệu ứng</div>';
-    const elName = inst => inst && inst.el ? `<span style="color:${G.data.elements[inst.el].color}">Hệ ${G.data.elements[inst.el].name}</span>` : '<span class="muted">—</span>';
-    return `<div class="cmp-box"><div class="cmp-title">⚖️ So sánh với đồ đang mặc ${cit ? '' : '<span class="muted small">(ô ' + G.data.slots[it.slot] + ' đang trống)</span>'}</div>
-      <table class="cmp"><tr><th></th><th>Đang mặc${cit ? `<br>${itemName(cur.id, cur.plus)}` : ''}</th><th>Đang chọn<br>${itemName(s.id, s.plus)}</th><th>Chênh lệch</th></tr>
-      <tr><td>Ngũ hành</td><td>${elName(cur)}</td><td>${elName(s)}</td><td></td></tr>${rows}
-      <tr class="cmp-pw"><td>Lực chiến</td><td colspan="2"></td><td class="${dp > 0 ? 'up' : dp < 0 ? 'down' : ''}">${dp > 0 ? '▲ +' : dp < 0 ? '▼ ' : ''}${dp || '='}</td></tr></table>
-      <div class="cmp-fx"><div><div class="small muted">Hiệu ứng đang mặc</div>${fxList(cur)}</div><div><div class="small muted">Hiệu ứng đang chọn</div>${fxList(s)}</div></div></div>`;
+    return `<div class="cp-cols">${col(cur, cit, 'Đang mặc')}<div class="cp-vs">VS</div>${col(s, it, 'Món này')}</div>
+      <div class="cp-diff">${diffs || '<span class="muted">Chỉ số như nhau</span>'}</div>
+      <div class="cp-pw ${dp > 0 ? 'up' : dp < 0 ? 'down' : ''}">Lực chiến ${dp > 0 ? '▲ +' : dp < 0 ? '▼ ' : ''}${dp || '= không đổi'}</div>`;
   }
+  function showCmp(el, s) {
+    let pop = $('cmp-pop');
+    if (!pop) { pop = document.createElement('div'); pop.id = 'cmp-pop'; $('screen-game').appendChild(pop); }
+    pop.innerHTML = cmpCard(s);
+    pop.classList.remove('hidden');
+    const r = el.getBoundingClientRect(), a = Input.toLocal(r.left, r.top), b = Input.toLocal(r.right, r.bottom), sz = Input.size();
+    const w = pop.offsetWidth, h = pop.offsetHeight;
+    let x = b.x + 8, y = a.y - 10;
+    if (x + w > sz.w - 6) x = a.x - w - 8;        // không đủ chỗ bên phải thì hiện bên trái
+    if (x < 6) { x = Math.max(6, Math.min(sz.w - w - 6, (a.x + b.x) / 2 - w / 2)); y = a.y - h - 10; if (y < 6) y = b.y + 10; }
+    pop.style.left = Math.round(x) + 'px'; pop.style.top = Math.round(Math.max(6, Math.min(sz.h - h - 6, y))) + 'px';
+  }
+  function hideCmp() { const p = $('cmp-pop'); if (p) p.classList.add('hidden'); }
+  UI.hideCmp = hideCmp;
+  function slotItem(el) {
+    const me = G.me;
+    if (el.dataset.eq) { const e = me.equip[el.dataset.eq]; return e ? Object.assign({ equipped: true, slot: el.dataset.eq }, e) : null; }
+    const s = me.inv.find(x => x.uid === el.dataset.uid);
+    return s ? Object.assign({ equipped: false }, s) : null;
+  }
+  // rê chuột (PC) hoặc bấm giữ (điện thoại) vào ô đồ để hiện khung so sánh.
+  // Túi đồ vẽ lại liên tục (máu, nội lực đổi) nên nhớ ô đang xem theo mã và hiện lại sau mỗi lần vẽ.
+  let lpFired = 0, lpUpAt = 0, cmpKey = null, lpTimer = null;
+  const keyOf = el => el.dataset.uid ? 'u:' + el.dataset.uid : 'e:' + el.dataset.eq;
+  const elOf = k => k && document.querySelector(k[0] === 'u' ? `#panel-body [data-uid="${k.slice(2)}"]` : `#panel-body [data-eq="${k.slice(2)}"]`);
+  function showKey(k) { const el = elOf(k), it = el && slotItem(el); if (it) showCmp(el, it); else hideCmp(); }
+  function bindCmp(el) {
+    el.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') { cmpKey = keyOf(el); showKey(cmpKey); } });
+    el.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && cmpKey === keyOf(el)) { cmpKey = null; hideCmp(); } });
+    el.addEventListener('pointerdown', e => {
+      if (e.pointerType === 'mouse') return;
+      const k = keyOf(el);
+      clearTimeout(lpTimer);
+      lpTimer = setTimeout(() => { cmpKey = k; lpFired = Date.now(); showKey(k); if (navigator.vibrate) try { navigator.vibrate(15); } catch (er) {} }, 380);
+    });
+    el.addEventListener('contextmenu', e => e.preventDefault());
+  }
+  // nhấc tay ở bất kỳ đâu: tắt khung (ô có thể đã bị vẽ lại nên không nghe trên ô)
+  const lpEnd = e => { if (e.pointerType === 'mouse') return; clearTimeout(lpTimer); if (lpFired) lpUpAt = Date.now(); if (cmpKey && lpFired) { cmpKey = null; setTimeout(hideCmp, 60); } };
+  document.addEventListener('pointerup', lpEnd, true); document.addEventListener('pointercancel', lpEnd, true);
+  // chuột rời khỏi ô (kể cả ô vừa được vẽ lại, không nhận pointerleave)
+  document.addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse' || !cmpKey) return;
+    const el = e.target.closest && e.target.closest('[data-uid],[data-eq]');
+    if (!el || keyOf(el) !== cmpKey) { cmpKey = null; hideCmp(); }
+  }, true);
+  function restoreCmp() { if (cmpKey) showKey(cmpKey); else hideCmp(); }
+
   function itemDesc(id, plus, inst) {
     const it = G.data.items[resolveId(id)];
     const rar = G.data.rarity[it.rarity];
@@ -430,7 +494,7 @@
     UI.refreshPanel();
     G.sfx('click');
   };
-  UI.closePanel = function () { panel = null; npcData = null; $('panel').classList.add('hidden'); hideTip(); };
+  UI.closePanel = function () { panel = null; npcData = null; $('panel').classList.add('hidden'); hideTip(); cmpKey = null; hideCmp(); };
   UI.refreshPanel = function (soft) {
     if (!panel || !G.me) return;
     const body = $('panel-body');
@@ -491,7 +555,7 @@
   }
   function itemActions(ctx = {}) {
     const s = selectedItem();
-    if (!s) return '<div class="item-detail muted small">Chọn một vật phẩm để xem chi tiết. Chạm 2 lần để dùng/trang bị nhanh.</div>';
+    if (!s) return `<div class="item-detail muted small">Chọn một vật phẩm để xem chi tiết. Chạm 2 lần để dùng/trang bị nhanh. ${Input.isTouch ? 'Bấm giữ' : 'Rê chuột vào'} trang bị để so sánh nhanh.</div>`;
     const it = G.data.items[s.id];
     let btns = '';
     if (s.equipped) btns += `<button class="btn small" data-act="unequip">Tháo</button>`;
@@ -502,7 +566,7 @@
     let extra = '';
     if (ctx.enhance && it.type === 'equip') extra = enhanceBox(s, it);
     if (!s.equipped) btns += `<button class="btn small" data-act="discard">Vứt bỏ</button>`;
-    return `<div class="item-detail">${itemDesc(s.id, s.plus, s)}${compareHtml(s)}${s.qty > 1 ? `<div class="small">Số lượng: ${s.qty}</div>` : ''}<div class="row" style="justify-content:flex-start;margin-top:6px">${btns}</div>${extra}</div>`;
+    return `<div class="item-detail">${itemDesc(s.id, s.plus, s)}${compareMini(s)}${s.qty > 1 ? `<div class="small">Số lượng: ${s.qty}</div>` : ''}<div class="row" style="justify-content:flex-start;margin-top:6px">${btns}</div>${extra}</div>`;
   }
   let lastTap = { id: null, t: 0 };
   function enhanceBox(s, it) {
@@ -529,7 +593,11 @@
   function bindInv(body, ctx = {}) {
     const ins = body.querySelector('#enh-insure');
     if (ins) ins.onchange = () => { panelState.insure = ins.checked; UI.refreshPanel(); };
+    body.querySelectorAll('[data-uid],[data-eq]').forEach(el => bindCmp(el));
+    restoreCmp();
     body.querySelectorAll('[data-uid],[data-eq]').forEach(el => el.onclick = () => {
+      if (lpFired && Date.now() - lpUpAt < 600) { lpFired = 0; return; }   // vừa bấm giữ để xem: nhấc tay không tính là chạm
+      lpFired = 0;
       const id = el.dataset.uid || ('eq:' + el.dataset.eq);
       const now = Date.now();
       if (lastTap.id === id && now - lastTap.t < 350) {
@@ -970,6 +1038,7 @@
       const isBreak = o.lv % 10 === 0 && o.lv < G.data.mountMax && o.exp >= need;
       html += `<div class="card"><h4>${esc(m.name)} · Cấp ${o.lv}/${G.data.mountMax} ${'★'.repeat(Math.floor(o.lv / 10))}</h4>
         <div class="stat-grid"><div>Tốc độ khi cưỡi <b>+${Math.round(st.speed * 100)}%</b></div>${Object.entries(st).filter(([k]) => k !== 'speed').map(([k, v]) => `<div>${STAT_NAME[k]} <b>+${v}</b></div>`).join('')}</div>
+        ${sel === 'thanh_long' ? `<div class="mfx-tiers">⚡ Lôi điện: ${[[1, 'Tia điện'], [10, 'Lôi quang'], [25, 'Thiên lôi giáng'], [40, 'Cửu thiên lôi cầu']].map(([l, n]) => `<span class="${o.lv >= l ? 'on' : ''}">${n}<small>Cấp ${l}</small></span>`).join('')}</div>` : ''}
         <div class="small" style="margin-top:6px">Kinh nghiệm: ${o.exp}/${need}</div><div class="progress"><i style="width:${Math.min(100, o.exp / need * 100)}%"></i></div>
         <div class="row" style="justify-content:flex-start;margin-top:8px">
           ${sel !== me.mount ? `<button class="btn small" data-mop="select">Chọn làm thú cưỡi</button>` : `<button class="btn small ${me.riding ? '' : 'green'}" data-mop="ride">${me.riding ? 'Xuống thú (T)' : 'Cưỡi ngay (T)'}</button>`}

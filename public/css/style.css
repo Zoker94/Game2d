@@ -1140,3 +1140,33 @@ body.touch .wm-node { transform: none; }
 #party-frame .pf-b.mp i { background: linear-gradient(90deg, #2050c0, #4fa3ff); }
 body.touch #party-frame { font-size: 11px; padding: 4px 5px; }
 body.touch #party-frame .pf-n small { display: none; }
+
+/* ---------- Khung so sánh trang bị (rê chuột / bấm giữ) ---------- */
+.cmp-mini { margin-top: 6px; font-size: 12px; padding: 4px 8px; border-radius: 7px; background: rgba(255,255,255,.04); border: 1px solid var(--line); }
+.cmp-mini b.up { color: #4ade80; } .cmp-mini b.down { color: #ff6a6a; }
+.inv-grid .slot, .equip-grid .slot { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+#cmp-pop { position: absolute; z-index: 45; pointer-events: none; max-width: min(430px, calc(100% - 12px)); padding: 8px 9px; font-size: 12px;
+  background: linear-gradient(180deg, rgba(36,23,20,.98), rgba(16,10,11,.98)); border: 1px solid var(--gline, #b8893a); border-radius: 10px;
+  box-shadow: 0 0 0 1px #000, 0 8px 24px rgba(0,0,0,.7); animation: cmpIn .12s ease-out; }
+#cmp-pop.hidden { display: none; }
+@keyframes cmpIn { from { opacity: 0; transform: translateY(4px) scale(.97); } to { opacity: 1; transform: none; } }
+#cmp-pop .cp-cols { display: flex; gap: 6px; align-items: stretch; }
+#cmp-pop .cp-col { flex: 1 1 0; min-width: 150px; padding: 5px 7px; border-radius: 8px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); }
+#cmp-pop .cp-col + .cp-vs + .cp-col { border-color: rgba(255,215,106,.45); background: rgba(255,215,106,.06); }
+#cmp-pop .cp-vs { align-self: center; font-weight: 900; color: #ffd76a; font-size: 11px; text-shadow: 0 1px 0 #000; }
+#cmp-pop .cp-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 2px; }
+#cmp-pop .cp-name { display: flex; align-items: center; gap: 5px; font-weight: 700; line-height: 1.15; }
+#cmp-pop .cp-name img { image-rendering: pixelated; flex: none; }
+#cmp-pop .cp-sub { font-size: 10px; color: var(--muted); margin: 2px 0 3px; }
+#cmp-pop .cp-st { display: flex; justify-content: space-between; gap: 8px; border-top: 1px solid rgba(255,255,255,.06); padding: 1px 0; }
+#cmp-pop .cp-st span { color: var(--muted); }
+#cmp-pop .cp-fx { font-size: 11px; color: #c9a8ff; margin-top: 2px; }
+#cmp-pop .cp-diff { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-top: 6px; font-weight: 700; font-size: 11px; }
+#cmp-pop .cp-diff .up, #cmp-pop .cp-pw.up { color: #4ade80; } #cmp-pop .cp-diff .down, #cmp-pop .cp-pw.down { color: #ff6a6a; }
+#cmp-pop .cp-pw { margin-top: 5px; text-align: center; font-weight: 900; font-size: 13px; padding: 3px; border-radius: 6px; background: rgba(0,0,0,.3); }
+#cmp-pop .cp-one { min-width: 160px; }
+body.touch #cmp-pop .cp-col { min-width: 130px; }
+.mfx-tiers { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 6px; font-size: 12px; color: #9ef6ff; }
+.mfx-tiers span { padding: 2px 7px; border-radius: 8px; border: 1px solid rgba(255,255,255,.12); color: var(--muted); background: rgba(0,0,0,.25); font-size: 11px; }
+.mfx-tiers span small { margin-left: 4px; opacity: .7; }
+.mfx-tiers span.on { color: #e8fcff; border-color: rgba(120,230,255,.6); background: rgba(80,200,255,.14); box-shadow: 0 0 6px rgba(120,230,255,.35); }
