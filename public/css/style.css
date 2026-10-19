@@ -762,3 +762,25 @@ body.touch .qb { width: 54px; height: 30px; border-radius: 7px; }
 body.touch .qb i { font-size: 13px; }
 body.touch .qb span { font-size: 8px; }
 #btn-auto.on::after { content: 'BẬT'; position: absolute; top: -5px; right: -4px; font-size: 8px; font-weight: 800; background: #2ec04a; color: #fff; border-radius: 6px; padding: 0 3px; line-height: 12px; }
+
+/* ---------- Tuyệt kỹ Long Ấn ---------- */
+#ulti-ov { position: absolute; inset: 0; pointer-events: none; z-index: 35; opacity: 0; --uc: #ff5a1a; --ul: #ffd060; }
+#ulti-ov.el-water { --uc: #2fa8ff; --ul: #c8f0ff; }
+#ulti-ov.el-ice { --uc: #8fe0ff; --ul: #ffffff; }
+#ulti-ov.play { animation: uoDim 2.1s ease-out forwards; }
+#ulti-ov::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,.55) 75%, color-mix(in srgb, var(--uc) 55%, transparent) 100%); }
+#ulti-ov::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at center, var(--ul), var(--uc) 45%, transparent 75%); opacity: 0; mix-blend-mode: screen; }
+#ulti-ov.play::after { animation: uoFlash 2.1s ease-out forwards; }
+@keyframes uoDim { 0% { opacity: 0; } 12% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes uoFlash { 0%, 38% { opacity: 0; } 42% { opacity: .75; } 60% { opacity: .15; } 100% { opacity: 0; } }
+#ulti-ov .uo-name { display: none; position: absolute; left: 0; right: 0; top: 24%; text-align: center; }
+#ulti-ov.self .uo-name { display: block; }
+#ulti-ov .uo-name b { display: block; font-size: 46px; font-weight: 900; letter-spacing: 4px; color: var(--ul); white-space: nowrap;
+  text-shadow: 0 0 18px var(--uc), 0 0 36px var(--uc), 0 4px 0 rgba(0,0,0,.7); }
+#ulti-ov .uo-name small { display: block; margin-top: 4px; font-size: 13px; font-weight: 700; letter-spacing: 6px; color: #fff; text-shadow: 0 0 8px var(--uc), 0 1px 2px #000; }
+#ulti-ov.self.play .uo-name { animation: uoName 2s cubic-bezier(.2,.9,.3,1) forwards; }
+@keyframes uoName { 0% { transform: translateX(60%) skewX(-20deg); opacity: 0; } 15% { transform: translateX(0) skewX(-8deg); opacity: 1; } 75% { transform: translateX(-4%) skewX(-8deg); opacity: 1; } 100% { transform: translateX(-60%) skewX(-20deg); opacity: 0; } }
+body.touch #ulti-ov .uo-name b { font-size: 30px; letter-spacing: 2px; }
+body.touch #ulti-ov .uo-name small { font-size: 11px; letter-spacing: 4px; }
+.skill.dragon::after, .act.sk.dragon::after { content: 'ULTI'; position: absolute; top: 1px; left: 50%; transform: translateX(-50%); font-size: 8px; font-weight: 900; letter-spacing: 1px;
+  padding: 0 4px; line-height: 11px; border-radius: 5px; background: linear-gradient(90deg, #ff3a1a, #ffb020); color: #fff; box-shadow: 0 0 6px rgba(255,120,40,.8); pointer-events: none; z-index: 3; }

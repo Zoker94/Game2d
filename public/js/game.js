@@ -420,8 +420,41 @@
     const f = Object.assign({ t0: now, dur: FX_DUR[d.t] || 300 }, d);
     G.fx.push(f);
     FxSpawn(f);
+    if (ULTI[d.t]) ulti(d);
     if (d.t === 'levelup' && !d.small) sfx('level');
     else fxSound(d);
+  }
+  // tuyệt kỹ Long Ấn: rung màn 2 nhịp (gồng chiêu rồi nổ), lớp sáng theo hệ, tên chiêu chạy ngang màn hình
+  const ULTI = { firedragon: 'fire', waterdragon: 'water', icedragon: 'ice' };
+  const rumbles = [];
+  function ulti(d) {
+    const el = ULTI[d.t], dr = G.data.dragons[el] || {}, self = d.from === G.you;
+    const cx = d.tx != null ? d.tx : d.x, cy = d.ty != null ? d.ty : d.y;
+    const near = Math.hypot(cx - G.self.x, cy - G.self.y);
+    if (!self && near > 900) return;
+    const k = self ? 1 : Math.max(0.3, 1 - near / 900), t = performance.now(), hit = dr.hitDelay || 850;
+    if (G.settings.shake) {
+      rumbles.push({ t0: t, t1: t + hit, amp: 5 * k, grow: true });         // gồng chiêu: rung tăng dần
+      rumbles.push({ t0: t + hit, t1: t + hit + 900, amp: 20 * k });         // rồng giáng xuống: rung mạnh rồi tắt dần
+    }
+    setTimeout(() => { GameAudio.sfx('thunder', 0); if (navigator.vibrate && self && G.settings.shake) try { navigator.vibrate([60, 40, 120]); } catch (e) { } }, hit);
+    let ov = $('ulti-ov');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'ulti-ov'; ov.innerHTML = '<div class="uo-name"><b></b><small>TUYỆT KỸ · LONG ẤN</small></div>'; $('screen-game').appendChild(ov); }
+    ov.className = 'el-' + el + (self ? ' self' : '');
+    ov.querySelector('b').textContent = '🐉 ' + (dr.name || '').toUpperCase();
+    void ov.offsetWidth; ov.classList.add('play');
+    clearTimeout(ov._t); ov._t = setTimeout(() => ov.classList.remove('play'), 2200);
+  }
+  function rumbleAmp(now) {
+    let a = 0;
+    for (let i = rumbles.length - 1; i >= 0; i--) {
+      const r = rumbles[i];
+      if (now > r.t1) { rumbles.splice(i, 1); continue; }
+      if (now < r.t0) continue;
+      const p = (now - r.t0) / (r.t1 - r.t0);
+      a = Math.max(a, r.amp * (r.grow ? p : (1 - p) * (1 - p)));
+    }
+    return a;
   }
   // lướt né: để lại 5 bóng mờ dọc đường lướt
   function onDodge(d, now) {
@@ -936,6 +969,7 @@
     if (G._camSnap) { cam.x = tx; cam.y = ty; G._camSnap = false; }
     else { const k = Math.min(1, fdt * 9); cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k; }
     let sx = 0, sy = 0;
+    if (rumbles.length) shake = Math.max(shake, rumbleAmp(performance.now()));
     if (shake > 0) { sx = (Math.random() - 0.5) * shake; sy = (Math.random() - 0.5) * shake; shake *= 0.85; if (shake < 0.5) shake = 0; }
     const sc = zoom * DPR;
     ctx.setTransform(sc, 0, 0, sc, Math.round((-cam.x + sx) * sc), Math.round((-cam.y + sy) * sc));
