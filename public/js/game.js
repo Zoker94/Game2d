@@ -272,6 +272,15 @@
     });
     s.io.on('reconnect', () => { loading(false); });
     s.on('hello', d => {
+      // máy chủ đã cập nhật bản mới trong lúc đang chơi: mời tải lại trang
+      if (d.build && window.BUILD && d.build !== window.BUILD && !G._askedReload) {
+        G._askedReload = true;
+        const bar = document.createElement('div'); bar.id = 'update-bar';
+        bar.innerHTML = '🎉 Võ Lâm Pixel vừa có bản cập nhật mới! <button class="btn small primary">Tải lại ngay</button><button class="btn small" data-x>✕</button>';
+        bar.querySelector('.primary').onclick = () => location.reload();
+        bar.querySelector('[data-x]').onclick = () => bar.remove();
+        document.body.appendChild(bar);
+      }
       G.user = d.user;
       if (G.inGame) { if (d.user.hasChar) s.emit('enter'); return; }
       if (!d.user.hasChar) showCreate(); else showEnter();

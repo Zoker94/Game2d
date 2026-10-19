@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const express = require('express');
@@ -215,7 +216,34 @@ app.get('/api/leaderboard', (req, res) => {
 
 adminRoutes(app, { db, world, features, io, rateLimited });
 
-app.use(express.static(path.join(__dirname, '..', 'public'), { maxAge: '1h', extensions: ['html'] }));
+// ---------------- File tĩnh + đánh số phiên bản (không cần xóa cache khi cập nhật) ----------------
+// BUILD đổi mỗi lần mã nguồn đổi: trang HTML luôn tải mới và gắn ?v=BUILD vào mọi file JS/CSS,
+// file có ?v được lưu lâu (immutable); file khác (hình, json) trình duyệt luôn hỏi lại (ETag → 304 nếu không đổi).
+const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+const BUILD = (() => {
+  if (process.env.RENDER_GIT_COMMIT) return process.env.RENDER_GIT_COMMIT.slice(0, 10);
+  const h = require('crypto').createHash('sha1');
+  const walk = d => { for (const f of fs.readdirSync(d).sort()) { const fp = path.join(d, f), st = fs.statSync(fp); if (st.isDirectory()) walk(fp); else h.update(fp + st.size + ':' + st.mtimeMs); } };
+  try { walk(PUBLIC_DIR); } catch (e) { h.update(String(Date.now())); }
+  return h.digest('hex').slice(0, 10);
+})();
+const htmlCache = {};
+function sendHtml(res, file) {
+  let html = htmlCache[file];
+  if (!html) {
+    html = fs.readFileSync(path.join(PUBLIC_DIR, file), 'utf8')
+      .replace(/(src|href)="(\/[^"?#]+\.(?:js|css))"/g, `$1="$2?v=${BUILD}"`)
+      .replace('<head>', `<head><script>window.BUILD=${JSON.stringify(BUILD)}</script>`);
+    htmlCache[file] = html;
+  }
+  res.set('Cache-Control', 'no-cache').type('html').send(html);
+}
+app.get(['/', '/index.html'], (req, res) => sendHtml(res, 'index.html'));
+app.get(['/admin', '/admin/', '/admin/index.html'], (req, res) => sendHtml(res, 'admin/index.html'));
+app.use(express.static(PUBLIC_DIR, {
+  extensions: ['html'], cacheControl: false,
+  setHeaders: (res) => res.set('Cache-Control', res.req && res.req.query && res.req.query.v ? 'public, max-age=31536000, immutable' : 'no-cache')
+}));
 
 // ---------------- Socket.IO ----------------
 io.use((socket, next) => {
@@ -233,7 +261,7 @@ io.on('connection', socket => {
   const user = socket.user;
   let player = null;
 
-  const hello = () => socket.emit('hello', { user: publicUser(user), motd: db.data.config.motd });
+  const hello = () => socket.emit('hello', { user: publicUser(user), motd: db.data.config.motd, build: BUILD });
   hello();
 
   const on = (ev, fn) => socket.on(ev, (...args) => {
