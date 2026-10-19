@@ -667,7 +667,8 @@
     G.dodgeCd = { until: now + 600, total: 5000, pending: true };   // chờ máy chủ xác nhận
   });
   Input.on('panel', n => UI.togglePanel(n));
-  Input.on('escape', () => UI.closePanel());
+  Input.on('tlist', () => Targets.toggle());
+  Input.on('escape', () => { if (Targets.open_) Targets.close(); else UI.closePanel(); });
   Input.on('chat', () => UI.focusChat());
   Input.on('joymove', () => { G.moveTo = null; G.npcGoal = null; G.chase = null; });
   Input.on('toast', t => UI.toast(t));
