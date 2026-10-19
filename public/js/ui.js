@@ -1038,7 +1038,7 @@
       const isBreak = o.lv % 10 === 0 && o.lv < G.data.mountMax && o.exp >= need;
       html += `<div class="card"><h4>${esc(m.name)} · Cấp ${o.lv}/${G.data.mountMax} ${'★'.repeat(Math.floor(o.lv / 10))}</h4>
         <div class="stat-grid"><div>Tốc độ khi cưỡi <b>+${Math.round(st.speed * 100)}%</b></div>${Object.entries(st).filter(([k]) => k !== 'speed').map(([k, v]) => `<div>${STAT_NAME[k]} <b>+${v}</b></div>`).join('')}</div>
-        ${sel === 'thanh_long' ? `<div class="mfx-tiers">⚡ Lôi điện: ${[[1, 'Tia điện'], [10, 'Lôi quang'], [25, 'Thiên lôi giáng'], [40, 'Cửu thiên lôi cầu']].map(([l, n]) => `<span class="${o.lv >= l ? 'on' : ''}">${n}<small>Cấp ${l}</small></span>`).join('')}</div>` : ''}
+        ${(t => t ? `<div class="mfx-tiers">${t.title}: ${t.list.map(([l, n]) => `<span class="${o.lv >= l ? 'on' : ''}">${n}<small>Cấp ${l}</small></span>`).join('')}</div>` : '')(MountFX.tiers(sel))}
         <div class="small" style="margin-top:6px">Kinh nghiệm: ${o.exp}/${need}</div><div class="progress"><i style="width:${Math.min(100, o.exp / need * 100)}%"></i></div>
         <div class="row" style="justify-content:flex-start;margin-top:8px">
           ${sel !== me.mount ? `<button class="btn small" data-mop="select">Chọn làm thú cưỡi</button>` : `<button class="btn small ${me.riding ? '' : 'green'}" data-mop="ride">${me.riding ? 'Xuống thú (T)' : 'Cưỡi ngay (T)'}</button>`}
