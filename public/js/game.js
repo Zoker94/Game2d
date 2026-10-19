@@ -373,8 +373,8 @@
     const COL = { 0: '#4f8f33', 1: '#a07a45', 2: '#2d6fb5', 3: '#1f5a22', 4: '#666', 5: '#d9b876', 6: '#e8eef4', 7: '#888', 8: '#3a2c25', 9: '#3a7a2a', 10: '#5a9e3a', 11: '#3a2a35', 12: '#d13a0a', 13: '#bfe3f5', 14: '#2e8b57', 15: '#8b1a1a', 16: '#1f5e3a', 17: '#2a1a14' };
     for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) { ctx.fillStyle = COL[m.tiles[y * m.w + x]] || '#000'; ctx.fillRect(x * 3, y * 3, 3, 3); }
     m.portals.forEach(p => { ctx.fillStyle = '#7fd4ff'; ctx.fillRect(p.x * 3 - 2, p.y * 3 - 2, 7, 7); });
-    minimapBase = cv;
-    UI.closePanel();
+    minimapBase = cv; G.mapBase = cv;
+    UI.closePanel(); if (window.BigMap) BigMap.close();
     sfx('portal');
   }
 
@@ -727,7 +727,8 @@
   });
   Input.on('panel', n => UI.togglePanel(n));
   Input.on('tlist', () => Targets.toggle());
-  Input.on('escape', () => { if (Targets.open_) Targets.close(); else UI.closePanel(); });
+  Input.on('bigmap', () => BigMap.toggle());
+  Input.on('escape', () => { if (BigMap.open_) BigMap.close(); else if (Targets.open_) Targets.close(); else UI.closePanel(); });
   Input.on('chat', () => UI.focusChat());
   Input.on('joymove', () => { G.moveTo = null; G.npcGoal = null; G.chase = null; });
   Input.on('toast', t => UI.toast(t));

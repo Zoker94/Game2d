@@ -1064,3 +1064,17 @@ body.touch .at-btns .btn { min-width: 38px; padding: 6px 8px; }
 #dh-hud .dh-me b { color: #ffe060; }
 #dh-hud .dh-boss { margin-top: 4px; color: #ff6a5a; font-weight: 700; animation: blink 1s infinite; }
 body.touch #dh-hud { top: 222px; width: 190px; font-size: 11px; padding: 5px 7px; }
+
+/* ---------- Bản đồ lớn ---------- */
+#bigmap { position: absolute; inset: 0; z-index: 45; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; }
+#bigmap.hidden { display: none; }
+.bm-panel { padding: 8px 10px 10px; border-radius: 12px; border: 1px solid var(--gline); background: linear-gradient(180deg, #2a1b17, #150e0f);
+  box-shadow: 0 0 0 1px #000, 0 0 0 3px #2c1a0c, 0 0 0 4px #7a5420, 0 16px 50px rgba(0,0,0,.75); max-width: calc(100vw - 16px); }
+.bm-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.bm-head b { color: #ffe08a; font-size: 15px; }
+.bm-head .bm-x { margin-left: auto; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--g2); background: radial-gradient(circle at 35% 30%, #e05a40, #8a1a10 60%, #4a0806); color: #fff; cursor: pointer; font-weight: 900; }
+#bm-cv { display: block; border: 2px solid var(--g2); border-radius: 6px; cursor: crosshair; image-rendering: pixelated; }
+.bm-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; font-size: 11px; color: #c8b898; }
+.bm-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; border: 1px solid #000; vertical-align: -1px; }
+body.touch .bm-head .small { display: none; }
+body.touch .bm-legend { display: none; }
