@@ -1,4 +1,4 @@
-# Thú cưỡi dáng riêng (không dùng khung ngựa): Thanh Long (rồng uốn lượn không chân), Phượng Hoàng (chim bay),
+# Thú cưỡi dáng riêng (không dùng khung ngựa): Thanh Long (rồng uốn lượn, 4 chân ngắn có vuốt), Phượng Hoàng (chim bay),
 # Kim Quy (rùa vàng), Kim Ngưu (trâu vàng). Cùng quy ước với tools/mounts.py:
 #   side(kind, i) -> (ảnh, điểm yên)            : nhìn ngang quay phải, mặt đất GY
 #   fb(view, kind, i) -> (lớp sau, lớp trước, yên) : nhìn xuống ('down') / nhìn lên ('up'), mặt đất FB_GY
@@ -148,6 +148,23 @@ def long_spine(kind, i, n=46):
         pts.append((x, y)); rad.append(8.6 * (1 - s) ** 0.85 + 1.4)
     return pts, rad, ph
 
+def dragon_leg(C, base, ang, near, k=1.0):
+    """chân rồng ngắn: đùi to, cẳng ngắn, bàn 4 vuốt xòe. ang: góc cẳng so với phương thẳng đứng (dương = chĩa về trước)"""
+    col = C['coat'] if near else dark(C['coat'], 0.3)
+    lg = Part('v', dark(C['coat'], 0.55))
+    knee = (base[0] + math.sin(ang * 0.4) * 3 * k, base[1] + 6.5 * k)
+    foot = (knee[0] + math.sin(ang) * 6 * k, knee[1] + math.cos(ang) * 5 * k)
+    lg.cap(base, knee, 6.2 * k, col, 4.6 * k)
+    lg.cap(knee, foot, 4.4 * k, col, 3.4 * k)
+    lg.ell(knee[0] - 1.2 * k, knee[1], 2.4 * k, 1.4 * k, C['mane'] if near else dark(C['mane'], 0.3))   # túm lông khuỷu
+    cl = C['horn'] if near else dark(C['horn'], 0.25)
+    fa = ang + math.pi / 2
+    for j in range(4):   # vuốt cong xòe ra trước
+        a = fa - 0.9 + j * 0.5
+        tip = (foot[0] + math.sin(a) * 3.6 * k, foot[1] - math.cos(a) * 3.6 * k + 1.5 * k)
+        lg.cap(foot, tip, 1.8 * k, cl, 0.8 * k)
+    return lg
+
 def long_side(kind, i):
     C = LONG
     pts, rad, ph = long_spine(kind, i)
@@ -171,6 +188,17 @@ def long_side(kind, i):
         tip = (base0[0] + 3.5 + nx * 2, base0[1] - 3.2 - r * 0.35)
         fins.poly([(base0[0] - 2.5, base0[1] + 1), tip, (base0[0] + 2.8, base0[1] + 1.5)], C['fin'])
     parts.append(fins)
+    # 4 chân ngắn: chân trước sau cổ, chân sau giữa thân; khi bay chân khua như bơi trong mây
+    run = kind == 'run'
+    legs = []
+    for kk, ph0, fore in ((6, 0.0, True), (22, 2.2, False)):
+        (x, y), r = pts[kk], rad[kk]
+        sw = math.sin(ph + ph0) * (0.55 if run else 0.18)
+        base_a = 0.7 if fore else -0.35
+        legs.append(((x + 2.5, y + r * 0.35), base_a + sw, False, r))           # chân phía xa
+        legs.append(((x - 1.5, y + r * 0.45), base_a - sw * 0.9 + 0.15, True, r))   # chân phía gần
+    for b, a, nr, r in legs:
+        if not nr: parts.append(dragon_leg(C, b, a, False, 0.85 + r / 40))
     # chóp đuôi như ngọn lửa
     tl = Part('h', dark(C['fin'], 0.5))
     tx, ty = pts[-1]
@@ -194,6 +222,8 @@ def long_side(kind, i):
                 s.d.arc([round(c[0] - 2), round(c[1] - 1.6), round(c[0] + 2), round(c[1] + 1.6)], 20, 160, fill=hx(dark(C['coat'], 0.35)))
     body.mark(bm)
     parts.append(body)
+    for b, a, nr, r in legs:
+        if nr: parts.append(dragon_leg(C, b, a, True, 0.9 + r / 40))
     # yên nhỏ (đệm gấm)
     sk = 9
     sx, sy = pts[sk]; r = rad[sk]
@@ -267,13 +297,32 @@ def long_fb(view, kind, i):
     tw = math.sin(ph + 1) * 2
     for k, dx in enumerate((-6, 0, 6)):
         tl.curve([tc, (tc[0] + dx * 0.6 + tw, tc[1] - 4), (tc[0] + dx + tw, tc[1] - 8 + abs(dx) * 0.3)], 3 - abs(dx) * 0.2, 0.8, C['fin'], 5)
+    # chân: 2 đôi chìa ra hai bên thân (đôi trước gần đầu, đôi sau giữa thân)
+    def leg_pair(s0, ph0):
+        z = min(secs, key=lambda q: abs(q[0] - s0))
+        _, x, f, u, r = z
+        out = []
+        sw = math.sin(ph + ph0) * (2.2 if kind == 'run' else 0.7)
+        for side in (-1, 1):
+            b = P(x + side * r * 0.75, f, u - r * 0.25)
+            c = P(x + side * (r + 3.5), f + sw * side, u - r - 3)
+            lg = Part('v', dark(C['coat'], 0.55))
+            lg.cap(b, c, 5.6, C['coat'], 4.2)
+            lg.ell(c[0], c[1] + 1, 3, 1.8, C['coat'])
+            for j in range(4):
+                tx = c[0] + (j - 1.5) * 1.7
+                lg.cap((tx, c[1] + 1.5), (tx + (j - 1.5) * 0.6, c[1] + 4.2), 1.5, C['horn'], 0.7)
+            out.append(lg)
+        return out
+    foreL, hindL = leg_pair(0.12, 0.0), leg_pair(0.45, 2.2)
     if down:
-        back += [tl] + body_part(secs)
+        back += [tl] + hindL + body_part(secs)
+        front += foreL
     else:
         far = [z for z in secs if z[0] <= seat_s + 0.08]
         nr = [z for z in secs if z[0] > seat_s + 0.08]
-        back += body_part(far)
-        front += [tl] + body_part(nr)
+        back += foreL + body_part(far)
+        front += [tl] + hindL + body_part(nr)
     # yên
     ss = min(secs, key=lambda z: abs(z[0] - seat_s))
     sc = P(ss[1], ss[2], ss[3] + ss[4])

@@ -69,7 +69,7 @@ input:focus, select:focus { border-color: var(--gold); }
 
 #hud-status { position: absolute; left: 8px; top: 8px; display: flex; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px 5px 5px; width: 250px; }
 .avatar { position: relative; width: 52px; height: 52px; border: 2px solid var(--gold2); border-radius: 50%; overflow: hidden; background: #3a2a50; flex: none; }
-.avatar canvas { width: 64px; height: 64px; margin: -4px 0 0 -8px; image-rendering: pixelated; }
+.avatar canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
 #hud-level { position: absolute; bottom: -1px; right: -1px; background: var(--gold2); color: #1a1008; font-weight: 900; font-size: 11px; border-radius: 6px; padding: 0 4px; }
 .bars { flex: 1; min-width: 0; }
 .name-line { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -266,7 +266,6 @@ body.touch .act.sk { font-size: 9px; }
 body.touch #btn-chat-mobile { display: none; }
 body.touch #hud-status { width: 210px; padding: 3px 6px 3px 3px; }
 body.touch .avatar { width: 42px; height: 42px; }
-body.touch .avatar canvas { margin: -9px 0 0 -11px; }
 body.touch #minimap { width: 110px; height: 82px; }
 body.touch #menu-buttons button { min-width: 38px; padding: 3px 4px; font-size: 14px; }
 body.touch #menu-buttons button span { display: none; }

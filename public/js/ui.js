@@ -227,7 +227,7 @@
       UI._avatarCls = avKey;
       const c = $('hud-avatar').getContext('2d'); c.imageSmoothingEnabled = false;
       c.clearRect(0, 0, 64, 64);
-      if (Assets.has(me.cls)) c.drawImage(Assets.avatar(me.cls, 52, me.ap), 8, 4);
+      if (Assets.has(me.cls)) c.drawImage(Assets.avatar(me.cls, 64, me.ap), 0, 0);
       else c.drawImage(Sprites.playerSprite(me.cls, G.data.classes[me.cls].colors, 0, 0), 0, 0);
     }
     // khóa kỹ năng
@@ -305,6 +305,18 @@
     }
     setBar(f.querySelector('.bar'), t.hp, t.maxHp);
   };
+
+  // khung nhiệm vụ / tổ đội luôn nằm ngay dưới khung nhân vật (khung nhân vật cao thấp tùy màn hình)
+  let trTop = -1;
+  function placeTracker() {
+    const tr = $('tracker'), hs = $('hud-status'), par = tr && tr.offsetParent;
+    if (!hs || !par) return;
+    const pr = par.getBoundingClientRect(), sc = pr.height / (par.offsetHeight || 1) || 1;
+    const top = Math.round((hs.getBoundingClientRect().bottom - pr.top) / sc + 6);
+    if (top !== trTop) { trTop = top; tr.style.top = top + 'px'; }
+  }
+  setInterval(placeTracker, 500);
+  window.addEventListener('resize', () => setTimeout(placeTracker, 50));
 
   UI.frame = function (now) {
     // hồi né chiêu

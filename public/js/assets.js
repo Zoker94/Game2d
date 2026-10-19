@@ -204,12 +204,12 @@
   }
   function monsterReady(id) { id = artOf(id); return !!(MON_META && MON_META.mon[id]); }
   function monsterTop(id) { id = artOf(id); const m = MON_META && MON_META.mon[id]; return m && monImgs[id] ? m.top : 0; }
-  // ảnh đại diện (đầu + vai) cho khung avatar / thẻ môn phái
+  // ảnh đại diện lấy khuôn mặt làm tâm (mũ cao như nón lá, mũ giáp bị cắt bớt phần chóp)
   function avatar(cls, size, ap) {
     size = size || 64;
     const f = charFrame(cls, 0, 'idle', 0, ap);
     const [c, x] = mk(size, size);
-    x.drawImage(f, 48 - 17, 18, 34, 34, 0, 0, size, size);
+    x.drawImage(f, 48 - 15, 24, 30, 30, 0, 0, size, size);
     return c;
   }
 
