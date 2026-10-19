@@ -22,6 +22,7 @@ INK = (22, 13, 30)
 SH_HUE = (44, 26, 72)
 LI_HUE = (255, 244, 214)
 VIEWS = ['down', 'up', 'right']
+GAME_SCALE = 0.68       # vẽ trong game với tỉ lệ này: cao ~72px, cân với NPC / quái hiện có (ô 64)
 
 
 # ================= màu =================
@@ -32,6 +33,8 @@ def mix(a, b, t):
     a, b = hx(a), hx(b); return tuple(int(round(a[i] + (b[i] - a[i]) * t)) for i in range(3))
 def dark(c, t=0.3): return mix(c, SH_HUE, t)
 def light(c, t=0.3): return mix(c, LI_HUE, t)
+def ramp_n(c):   # thang xám trung tính cho kim loại (để game tô màu phẩm chất)
+    return np.array([mix(c, '#18181c', .62), mix(c, '#18181c', .34), hx(c), mix(c, '#ffffff', .32), mix(c, '#ffffff', .75)], np.float32)
 def ramp(c):
     return np.array([mix(c, SH_HUE, .6), mix(c, SH_HUE, .33), hx(c), mix(c, LI_HUE, .3), mix(c, LI_HUE, .7)], np.float32)
 
@@ -75,10 +78,10 @@ def circ(c, r, n=16): return [(c[0] + math.cos(i / n * TAU) * r, c[1] + math.sin
 
 # ================= bộ phận =================
 class Part:
-    def __init__(self, depth, col, sig=2.4, spec=0.0, ol=3, shade=True):
+    def __init__(self, depth, col, sig=2.4, spec=0.0, ol=3, shade=True, tag='body', neutral=False):
         self.depth, self.col, self.sig, self.spec, self.ol, self.shade = depth, col, sig, spec, ol, shade
         self.ops, self.marks = [], []
-        self.rot = None
+        self.rot = None; self.tag = tag; self.neutral = neutral; self._r = 0
     def poly(self, pts, fill=255):
         self.ops.append(('p', [(float(p[0]), float(p[1])) for p in pts], fill)); return self
     def erase(self, pts): return self.poly(pts, 0)
@@ -143,6 +146,10 @@ class Dr:
 
 
 def render_part(pt):
+    if pt._r != 0: return pt._r
+    pt._r = _render_part(pt); return pt._r
+
+def _render_part(pt):
     apply_rot(pt)
     xs, ys = [], []
     for k, d, f in pt.ops:
@@ -168,7 +175,7 @@ def render_part(pt):
                 cx, cy = T(p); d.ellipse([cx - w / 2, cy - w / 2, cx + w / 2, cy + w / 2], fill=255)
     M = np.array(m) > 127
     if not M.any(): return None
-    rp = ramp(pt.col)
+    rp = ramp_n(pt.col) if pt.neutral else ramp(pt.col)
     if pt.shade:
         sg = pt.sig * S
         hgt = gaussian_filter(M.astype(np.float32), sg, mode='constant')
@@ -194,19 +201,23 @@ def render_part(pt):
         arr = np.array(img)
     if pt.ol:
         inner = M & ~binary_erosion(M, iterations=pt.ol)
-        arr[inner, :3] = mix(pt.col, INK, 0.7)
+        arr[inner, :3] = mix(pt.col, '#16161a' if pt.neutral else INK, 0.7)
     arr[~M, 3] = 0
     return (x0 * S, y0 * S, arr, M)
 
 
-def composite(parts):
-    C = np.zeros((CELL * S, CELL * S, 4), np.float32)
+def composite(parts, want=False):
+    """ghép các bộ phận theo chiều sâu; want=True trả thêm bộ đệm độ sâu Z và mặt nạ kim loại"""
+    N = CELL * S
+    C = np.zeros((N, N, 4), np.float32)
+    Z = np.full((N, N), -1e9, np.float32) if want else None
+    O = np.zeros((N, N), bool) if want else None
     for pt in sorted(parts, key=lambda p: p.depth):
         r = render_part(pt)
         if r is None: continue
         ox, oy, arr, M = r
         h, w = M.shape
-        X0, Y0, X1, Y1 = max(0, ox), max(0, oy), min(CELL * S, ox + w), min(CELL * S, oy + h)
+        X0, Y0, X1, Y1 = max(0, ox), max(0, oy), min(N, ox + w), min(N, oy + h)
         if X0 >= X1 or Y0 >= Y1: continue
         sl = (slice(Y0 - oy, Y1 - oy), slice(X0 - ox, X1 - ox))
         Mc, Ac = M[sl], arr[sl]
@@ -216,7 +227,40 @@ def composite(parts):
         shc = sh[sl] & (reg[..., 3] > 0)
         reg[shc, :3] = reg[shc, :3] * 0.74 + np.array(SH_HUE, np.float32) * 0.26
         reg[Mc, :3] = Ac[Mc, :3]; reg[Mc, 3] = 1.0
-    return C
+        if want:
+            Z[Y0:Y1, X0:X1][Mc] = pt.depth
+            O[Y0:Y1, X0:X1][Mc] = pt.tag in ('metal', 'hmetal')
+    return (C, Z, O) if want else C
+
+
+def layer(parts, Z, metal_tags=('hmetal',)):
+    """bộ phận rời (vũ khí, mũ): chỉ giữ chỗ nằm trước thân (so với bộ đệm Z), trả thêm mặt nạ kim loại"""
+    N = CELL * S
+    C = np.zeros((N, N, 4), np.float32); O = np.zeros((N, N), bool); ZL = np.full((N, N), -1e9, np.float32)
+    for pt in sorted(parts, key=lambda p: p.depth):
+        r = render_part(pt)
+        if r is None: continue
+        ox, oy, arr, M = r
+        h, w = M.shape
+        X0, Y0, X1, Y1 = max(0, ox), max(0, oy), min(N, ox + w), min(N, oy + h)
+        if X0 >= X1 or Y0 >= Y1: continue
+        sl = (slice(Y0 - oy, Y1 - oy), slice(X0 - ox, X1 - ox))
+        vis = M[sl] & (pt.depth > Z[Y0:Y1, X0:X1])
+        reg = C[Y0:Y1, X0:X1]
+        reg[vis, :3] = arr[sl][vis, :3]; reg[vis, 3] = 1.0
+        O[Y0:Y1, X0:X1][vis] = pt.tag in metal_tags
+    return C, O
+
+
+def masked_down(C, O):
+    """lớp kim loại: lấy các điểm ảnh mà phần lớn là kim loại, không viền"""
+    a = C[..., 3] * O
+    pm = (C[..., :3] * a[..., None]).reshape(CELL, S, CELL, S, 3).mean((1, 3))
+    A = a.reshape(CELL, S, CELL, S).mean((1, 3))
+    out = np.zeros((CELL, CELL, 4), np.float32)
+    on = A >= 0.5
+    out[on, :3] = pm[on] / A[on][:, None]; out[on, 3] = 255
+    return out
 
 
 def downsample(C, soft=False):
@@ -290,33 +334,42 @@ for _b in BODY.values():
 LOOKS = {
     'vodang': dict(name='Võ Đang', body='normal', skin='#f3c9a4', robe='#eef2f8', robe2='#bccbe6', trim='#2f4f9a', belt='#2f4f9a',
                    pants='#4a5574', shoe='#24232f', hair='#1e1a26', hairstyle='topknot', longhair=True, length='long', sleeve='wide',
-                   weapon='sword', blade='#dfe8f4', hilt='#3a2a20', guard='#c9a24a', tassel='#3d6ad8', glow='#8fc8ff', emblem='taiji', sash=True),
+                   weapon='sword', blade='#dfe8f4', hilt='#3a2a20', guard='#c9a24a', tassel='#3d6ad8', glow='#8fc8ff', emblem='taiji', sash=True,
+                   inner=True, motif='cloud', pendant='#3d6ad8', bootcuff='#eef2f8', cape='#2f4f9a'),
     'ngamy': dict(name='Nga My', body='slim', skin='#f7d0b2', robe='#fbeaf0', robe2='#f2b0c8', trim='#d6457e', belt='#d6457e',
                   pants='#f0b8cc', shoe='#8a2f58', hair='#2a1a24', hairstyle='buns', longhair=True, frontlocks=True, length='long',
                   sleeve='wide', weapon='sword', blade='#f2f0fa', guard='#e8b8d0', hilt='#7a2a50', tassel='#ff7ab0', glow='#ff8cc6',
-                  sash=True, hairribbon='#ff6aa6'),
+                  sash=True, hairribbon='#ff6aa6',
+                   inner=True, motif='plum', pendant='#ff6aa6', cape='#d6457e'),
     'thuyyen': dict(name='Thúy Yên', body='slim', skin='#f7d0b2', robe='#3e70c8', robe2='#a8d2ff', trim='#e4f2ff', belt='#1d3572',
                     pants='#25407a', shoe='#16203c', hair='#141a34', hairstyle='ponytail', length='long', sleeve='tight',
-                    weapon='daggers', blade='#e2f0ff', guard='#9ac8f0', hilt='#1d3572', glow='#7cdcff', shawl='#d4ebff', bracer='#1d3572'),
+                    weapon='daggers', blade='#e2f0ff', guard='#9ac8f0', hilt='#1d3572', glow='#7cdcff', shawl='#d4ebff', bracer='#1d3572',
+                   inner=True, motif='wave', pendant='#7cdcff', cape='#1d3572'),
     'thieulam': dict(name='Thiếu Lâm', body='normal', skin='#e9b98f', robe='#efa132', robe2='#d27a20', trim='#8a3a18', belt='#8a3a18',
                      pants='#f1e0b4', shoe='#4a2c20', hair=None, hairstyle='bald', length='mid', sleeve='wide', weapon='staff',
-                     wood='#8a5a2c', metal='#e0b040', glow='#ffd84a', kasaya='#b23a1c', beads=True, wraps=True),
+                     wood='#8a5a2c', metal='#e0b040', glow='#ffd84a', kasaya='#b23a1c', beads=True, wraps=True,
+                   motif='grid', cape='#b23a1c'),
     'thienvuong': dict(name='Thiên Vương', body='heavy', skin='#e6b48a', robe='#c42a22', robe2='#7a1814', trim='#f0bc4a', belt='#3a2418',
                        pants='#3a2a2e', shoe='#2a1a16', hair='#2a1a12', hairstyle='warrior', beard='full', length='mid', sleeve='tight',
-                       weapon='hammer', wood='#4a2e1c', metal='#e8b448', steel='#a9b4c6', glow='#ff7030', armor=True, headband='#e0302a'),
+                       weapon='hammer', wood='#4a2e1c', metal='#e8b448', steel='#a9b4c6', glow='#ff7030', armor=True, headband='#e0302a',
+                   motif='dots', cape='#7a1814'),
     'duongmon': dict(name='Đường Môn', body='normal', skin='#efc4a0', robe='#2f6e3c', robe2='#1b3a24', trim='#121a16', belt='#5a4128',
                      pants='#1d2a20', shoe='#141814', hair='#121216', hairstyle='hat', mask='#18241c', length='mid', sleeve='tight',
-                     weapon='knife', blade='#e6efe8', hilt='#2a2a2a', guard='#8a8a80', glow='#a8ff7c', bracer='#5a4128', straw='#a08a52', pouches=True),
+                     weapon='knife', blade='#e6efe8', hilt='#2a2a2a', guard='#8a8a80', glow='#a8ff7c', bracer='#5a4128', straw='#a08a52', pouches=True,
+                   bandolier=True, cape='#1b3a24'),
     'ngudoc': dict(name='Ngũ Độc', body='normal', skin='#e9bf98', robe='#5c2484', robe2='#2c1444', trim='#9ee04e', belt='#2c1444',
                    pants='#361852', shoe='#1c1424', hair='#18121e', hairstyle='turban', veil='#43195e', silver='#d4dce6', length='mid',
-                   sleeve='tight', weapon='saber', blade='#c8e8c0', hilt='#2c1444', guard='#d4dce6', glow='#90ff4c', braid=True),
+                   sleeve='tight', weapon='saber', blade='#c8e8c0', hilt='#2c1444', guard='#d4dce6', glow='#90ff4c', braid=True,
+                   motif='coin', sleeveband=True, cape='#2c1444'),
     'caibang': dict(name='Cái Bang', body='heavy', skin='#dca67a', robe='#c9bea9', robe2='#8a7a66', trim='#7a5e44', belt='#6a4a30',
                     pants='#9a6436', shoe='#8a6a3a', hair='#3a2618', hairstyle='messy', length='short', sleeve='short', weapon='palm',
-                    glow='#ffc84a', scarf='#e8892a', gourd='#c87a2a', stick='#6aa040', patches=True, barefoot=True, beard='stubble'),
+                    glow='#ffc84a', scarf='#e8892a', gourd='#c87a2a', stick='#6aa040', patches=True, barefoot=True, beard='stubble',
+                   rope=True, cape='#8a6a3a'),
     'conlon': dict(name='Côn Lôn', body='normal', skin='#f0c6a0', robe='#f2c24e', robe2='#5b2e80', trim='#5b2e80', belt='#5b2e80',
                    pants='#4a2a5a', shoe='#24142c', hair='#1e1426', hairstyle='official', longhair=True, length='long', sleeve='wide',
                    sleevecol='#5b2e80', weapon='sword', blade='#efe2a8', guard='#5b2e80', hilt='#3a1e4a', tassel='#e8402a', glow='#d8a4ff',
-                   emblem='bagua', talisman=True, mustache=True),
+                   emblem='bagua', talisman=True, mustache=True,
+                   inner=True, motif='trigram', pendant='#f2c24e', cape='#5b2e80'),
 }
 
 
@@ -615,6 +668,10 @@ def chains_for(L, B):
             C.append(dict(name='hat' + k, anchor=('head', (s * 2.0, -6.2, 6.5)), n=4, seg=5.0, rest=(s * 0.2, -0.5, -1), frame='head', stiff=0.03, damp=2.5, side=-1, w=(2.2, 1.6), col=L['robe2'], kind='ribbon'))
     if L['hairstyle'] == 'messy':
         C.append(dict(name='tail', anchor=('head', (0, -6.2, 1.5)), n=2, seg=4.2, rest=(0, -0.6, -1), frame='head', stiff=0.06, damp=3.0, side=-1, w=(4.4, 2.2), col=hc, kind='hair'))
+    if L.get('pendant'):
+        C.append(dict(name='pend', anchor=('torso', (B['waist'][0] * 0.55 + 1, B['waist'][1] + 1.6, 7)), n=3, seg=3.4, rest=(0, 0.1, -1), frame='torso', stiff=0.05, damp=3.0, side=1, w=(1, 1), col=L.get('cord', '#d8b860'), col2=L['pendant'], kind='pendant'))
+    for k, s_ in (('R', 1), ('L', -1)):   # áo choàng (chỉ hiện ở thần giáp)
+        C.append(dict(name='cape' + k, anchor=('torso', (s_ * (B['sw'] - 3.2), -B['chest'][1] - 1.5, B['torso'] - 3)), n=6, seg=6.4, rest=(s_ * 0.12, -0.35, -1), frame='torso', stiff=0.03, damp=2.4, side=-1, w=(9, 12), col=L.get('cape', L['robe2']), kind='cape', need='cape'))
     if L.get('tassel'):
         C.append(dict(name='tassel', anchor=('wpn', 'R', -5.6), n=3, seg=3.2, rest=(0, 0, -1), frame='world', stiff=0.02, damp=2.5, side=0, w=(2.4, 1.2), col=L['tassel'], kind='tassel'))
     return C
@@ -708,16 +765,49 @@ def loft(part, pr, origin, R, secs, n=18):
     for r0, r1 in zip(rings, rings[1:]): part.poly(hull(r0 + r1))
     return part
 
-def build_frame(L, B, J, CH, view, anim, t, posefn, P):
+LEATHER = '#6e4a2c'
+STEEL = '#b6bcc6'       # kim loại xám trung tính: game tô theo phẩm chất
+GOLD = '#f0c25a'
+MOTIF_C = {'cloud': '#cfe0ff', 'plum': '#ff9ac0', 'wave': '#e8f6ff', 'coin': '#dfe6ee', 'trigram': '#fff4d0', 'grid': '#6a2410'}
+
+
+def hem_marks(motif, col):
+    """hoa văn thêu trên dải viền vạt áo"""
+    lc = light(col, 0.5)
+    mc = MOTIF_C.get(motif, lc)
+    def f(d, hx_, hy, r):
+        x0, x1 = int(round(hx_ - r + 1)), int(round(hx_ + r - 1))
+        y = int(round(hy))
+        for x in range(x0, x1 + 1):
+            if motif == 'cloud':
+                if x % 4 == 0: d.px(x, y, mc); d.px(x + 1, y - 1, mc)
+                elif x % 4 == 2: d.px(x, y, mc)
+            elif motif == 'wave':
+                d.px(x, y - (1 if x % 3 == 0 else 0), mc)
+            elif motif == 'coin':
+                if x % 3 == 0: d.px(x, y, mc)
+            elif motif == 'trigram':
+                if x % 5 in (0, 1, 3): d.px(x, y, mc)
+            else:
+                if x % 2 == 0: d.px(x, y, lc)
+    return f
+
+
+def build_parts(L, B, J, CH, view, P, gear):
+    """trả về (các bộ phận thân, các bộ phận vũ khí, các bộ phận mũ); gear = {'a': cấp áo, 'w': cấp vũ khí, 'h': cấp mũ}"""
     pr = mkproj(view); cam = nrm(CAM[view])
-    parts = []; fxo, fxu = Fx(), Fx()
+    parts = []
     Rt = J['Rt']
     def facing(v, th=0.1): return np.dot(nrm(v), cam) > th
     front = facing(Rt @ V(0, 1, 0), 0.05)
+    back = view == 'up'
     D = lambda v: pr(v)[2]
+    T3 = lambda *q: J['pelvis'] + Rt @ V(*q)
     tdp = D(J['chest'])
     wc, wr = B['waist'], B['hipr']
-    robe = L['robe']
+    robe = L['robe']; trim = L['trim']; r2 = L['robe2']
+    tier = gear.get('a', 0)
+    motif = L.get('motif')
     # ---------- chân ----------
     legdp = {}
     for k in 'RL':
@@ -729,26 +819,33 @@ def build_frame(L, B, J, CH, view, anim, t, posefn, P):
         if L.get('barefoot'):    # quần xắn ống, chân trần
             mid = kn + (an - kn) * 0.45
             pl = Part(dp, L['pants'], sig=2.3, spec=0.05).cap(pr(hp), pr(kn), r0, r0 * 0.9).cap(pr(kn), pr(mid), r1 * 1.05, r1)
+            mi = pr(mid)
+            pl.mark(lambda d, mi=mi: (d.line([(mi[0] - 3.4, mi[1] - 1.2), (mi[0] + 3.4, mi[1] - 0.6)], 0, 0.7), d.line([(mi[0] - 3.2, mi[1] - 2.6), (mi[0] + 3.2, mi[1] - 2.0)], 3, 0.6)))
             parts.append(Part(dp - 0.01, L['skin'], sig=1.8, spec=0.05).cap(pr(mid), pr(an), r1 * 0.78, r1 * 0.62))
+        k2, a2 = pr(kn), pr(an)
         if L.get('wraps'):
-            a2, k2 = pr(an), pr(kn)
             def wr_(d, a2=a2, k2=k2):
                 for i in range(1, 6):
                     u = 0.12 + i * 0.13; x = k2[0] + (a2[0] - k2[0]) * u; y = k2[1] + (a2[1] - k2[1]) * u
                     d.line([(x - 3, y - 0.8), (x + 3, y + 0.8)], 1, 0.6)
             pl.mark(wr_)
+        else:   # nếp nhăn quần ở gối và cổ chân
+            pl.mark(lambda d, k2=k2, a2=a2: (d.line([(k2[0] - 2.4, k2[1] - 1), (k2[0] + 1.6, k2[1] + 0.6)], 1, 0.6),
+                                            d.line([(a2[0] - 2, a2[1] - 4), (a2[0] + 1.4, a2[1] - 3.2)], 1, 0.6)))
         parts.append(pl)
-        sh = Part(dp + 0.05, L['skin'] if L.get('barefoot') else L['shoe'], sig=1.4, spec=0.2)
+        sh = Part(dp + 0.05, L['skin'] if L.get('barefoot') else L['shoe'], sig=1.4, spec=0.22)
         h_, to = pr(J['heel' + k]), pr(J['toe' + k])
-        if not L.get('barefoot'): sh.cap(pr(an + V(0, 0, 3.5)), pr(an), r1 * 0.72, r1 * 0.7)
+        if not L.get('barefoot'): sh.cap(pr(an + V(0, 0, 4.0)), pr(an), r1 * 0.74, r1 * 0.7)
         sh.cap(h_, to, 2.1, 1.7).cap(pr(an), h_, 2.3, 2.0)
         if L.get('barefoot'):
             sc = L['shoe']
-            sh.mark(lambda d, h_=h_, to=to, sc=sc: d.line([h_, to], sc, 0.8))
+            sh.mark(lambda d, h_=h_, to=to, sc=sc: (d.line([h_, to], sc, 0.8), d.line([(to[0] - 1, to[1] - 2.4), (to[0] - 2.6, to[1] + 0.2)], sc, 0.6)))
         else:
-            sh.mark(lambda d, h_=h_, to=to: d.line([(h_[0], h_[1] + 1.4), (to[0], to[1] + 1.2)], 3, 0.7))
+            cuff = pr(an + V(0, 0, 3.4)); bc = L.get('bootcuff', trim)
+            sh.mark(lambda d, h_=h_, to=to: d.line([(h_[0], h_[1] + 1.4), (to[0], to[1] + 1.2)], 4, 0.7))
+            sh.mark(lambda d, c=cuff, r=r1 * 0.74, bc=bc: (d.line([(c[0] - r, c[1]), (c[0] + r, c[1])], bc, 1.1), d.line([(c[0] - r, c[1] + 0.9), (c[0] + r, c[1] + 0.9)], 0, 0.5)))
         parts.append(sh)
-    # ---------- vạt áo (2 vạt theo 2 chân, đi thì xẻ tà) ----------
+    # ---------- vạt áo (2 vạt theo 2 chân, đi thì xẻ tà; áo dài có lớp áo trong) ----------
     hem_off = V(0, 0, 0)
     if CH.get('hem') is not None:
         hp_ = CH['hem']; anc = anchor_of(J, ('torso', (0, 0, 9)))
@@ -757,45 +854,68 @@ def build_frame(L, B, J, CH, view, anim, t, posefn, P):
         n_ = np.linalg.norm(e)
         if n_ > 7: e = e / n_ * 7
         hem_off = e
-    frac = {'long': 0.86, 'mid': 0.42, 'short': None}[L['length']]
+    frac0 = {'long': 0.88, 'mid': 0.42, 'short': None}[L['length']]
+    inner = L.get('inner') and frac0 is not None
     panel_dp = []
-    for k in 'RL':
+    wst = [pr(T3(math.cos(a) * (wc[0] + 1.6), math.sin(a) * (wc[1] + 1.4), 8)) for a in np.linspace(0, TAU, 16, endpoint=False)]
+    hipr_ = [pr(T3(math.cos(a) * (wr[0] + 1.6), math.sin(a) * (wr[1] + 1.6), 0)) for a in np.linspace(0, TAU, 16, endpoint=False)]
+    def panel(k, drop, col, dpp, frac, spec=0.06):
         hp, kn, an = J['hp' + k], J['kn' + k], J['an' + k]
-        wst = [pr(J['pelvis'] + Rt @ V(math.cos(a) * (wc[0] + 1.6), math.sin(a) * (wc[1] + 1.4), 8)) for a in np.linspace(0, TAU, 16, endpoint=False)]
-        hipr_ = [pr(J['pelvis'] + Rt @ V(math.cos(a) * (wr[0] + 1.6), math.sin(a) * (wr[1] + 1.6), 0)) for a in np.linspace(0, TAU, 16, endpoint=False)]
+        pt = Part(dpp, col, sig=3.6, spec=spec)
+        if frac is None:
+            th = hp + (kn - hp) * 0.38 + hem_off * 0.6 + V(0, 0, drop)
+            pt.poly(hull(wst + hipr_ + [pr(p) for p in ring3(th, B['leg'][0] + 2.6)]))
+            return pt, th, B['leg'][0] + 2.6
+        knr = [pr(p) for p in ring3(kn + hem_off * 0.45, B['leg'][0] + 2.2)]
+        hc = kn + (an - kn) * frac + hem_off + V(0, 0, drop)
+        rr = 5.0 + 1.8 * frac
+        hm = [pr(p) for p in ring3(hc, rr, 4.4 + 1.2 * frac)]
+        pt.poly(hull(wst + hipr_ + knr)); pt.poly(hull(knr + hm))
+        return pt, hc, rr
+    def center_panel(drop, col, z, frac):
+        stride = abs((J['Rp'].T @ (J['anR'] - J['anL']))[1])
+        rr = max(0.0, 5.5 - stride * 0.42)
+        if rr <= 0.6: return None
+        mk_ = (J['knR'] + J['knL']) / 2 + hem_off * 0.45
+        mh = (J['anR'] + J['anL']) / 2 + (J['knR'] + J['knL'] - J['anR'] - J['anL']) / 2 * (1 - frac) + hem_off
+        cp_ = Part(min(legdp.values()) + 0.6 + z, col, sig=3.6, spec=0.06)
+        cp_.poly(hull(hipr_ + [pr(p) for p in ring3(mk_, rr + 1.5)] + [pr(p) for p in ring3(mh + V(0, 0, drop), rr + 1.2)]))
+        return cp_
+    fo = frac0 - 0.17 if inner else frac0          # vạt áo ngoài ngắn hơn để lộ áo trong
+    for k in 'RL':
         dp = legdp[k] + 0.6; panel_dp.append(dp)
-        def panel(drop, col, dpp):
-            pt = Part(dpp, col, sig=3.6, spec=0.06)
-            if frac is None:
-                th = hp + (kn - hp) * 0.38 + hem_off * 0.6 + V(0, 0, drop)
-                pt.poly(hull(wst + hipr_ + [pr(p) for p in ring3(th, B['leg'][0] + 2.6)]))
-                return pt, th
-            knr = [pr(p) for p in ring3(kn + hem_off * 0.45, B['leg'][0] + 2.2)]
-            hc = kn + (an - kn) * frac + hem_off + V(0, 0, drop)
-            hm = [pr(p) for p in ring3(hc, 5.0 + 1.8 * frac, 4.4 + 1.2 * frac)]
-            pt.poly(hull(wst + hipr_ + knr)); pt.poly(hull(knr + hm))
-            return pt, hc
-        tp, _ = panel(0, L['trim'], dp - 0.01)
-        if k == 'R' and frac is not None:   # phần vải giữa hai chân, hẹp dần khi bước dài
-            stride = abs((J['Rp'].T @ (J['anR'] - J['anL']))[1])
-            rr = max(0.0, 5.5 - stride * 0.42)
-            if rr > 0.6:
-                mk_ = (J['knR'] + J['knL']) / 2 + hem_off * 0.45; mh = (J['anR'] + J['anL']) / 2 + (J['knR'] + J['knL'] - J['anR'] - J['anL']) / 2 * (1 - frac) + hem_off
-                for dd, col, z in ((0, L['trim'], -0.02), (1.7, robe, -0.01)):
-                    cp_ = Part(min(legdp.values()) + 0.6 + z, col, sig=3.6, spec=0.06)
-                    cp_.poly(hull(hipr_ + [pr(p) for p in ring3(mk_, rr + 1.5)] + [pr(p) for p in ring3(mh + V(0, 0, dd), rr + 1.2)]))
-                    parts.append(cp_)
-        rp, hc = panel(1.7, robe, dp)
-        k2 = pr(kn); h2 = pr(hc); w2 = pr(J['pelvis'] + Rt @ V(0, wc[1], 6))
-        def folds(d, k2=k2, h2=h2, w2=w2):
+        if inner:
+            ip, ihc, irr = panel(k, 0, r2, dp - 0.03, frac0)
+            ip.mark(lambda d, c=pr(ihc), r=irr, c2=dark(r2, 0.35): [d.px(x, c[1] - 0.5, c2) for x in range(int(c[0] - r + 1), int(c[0] + r))])
+            parts.append(ip)
+        tp, thc, trr = panel(k, 0, trim, dp - 0.01, fo)
+        tp.mark(lambda d, c=pr(thc), r=trr, f=hem_marks(motif, trim): f(d, c[0], c[1] - 0.6, r))
+        rp, hc, _ = panel(k, 2.4, robe, dp, fo)
+        kk = pr(J['kn' + k]); h2 = pr(hc); w2 = pr(T3(0, wc[1], 6))
+        def folds(d, k2=kk, h2=h2, w2=w2):
             for o in (-2.2, 1.8):
                 d.line([(w2[0] + o * 0.6 + (k2[0] - w2[0]) * 0.3, w2[1] + (k2[1] - w2[1]) * 0.3), (k2[0] + o, k2[1]), (h2[0] + o * 1.5, h2[1])], 1, 0.7)
+            d.line([(k2[0] - 0.4, k2[1] + 1), (h2[0] - 0.2, h2[1] - 1)], 3, 0.5)
         rp.mark(folds)
+        # mép vạt áo trước chạy dọc xuống (vạt trái đè vạt phải)
+        if front and k == ('R' if view == 'down' else 'L') and frac0 is not None and view != 'right':
+            e0 = pr(T3(wc[0] * 0.5, wc[1] + 1.6, 7)); e1 = pr(hc + J['Rp'] @ V(-2.6, 4.2, 0.4))
+            rp.mark(lambda d, e0=e0, e1=e1, tc_=trim: (d.line([e0[:2], e1[:2]], tc_, 1.4), d.line([(e0[0] + 1, e0[1]), (e1[0] + 1, e1[1])], 3, 0.5)))
+        if motif == 'plum' and not back:
+            pc = pr(J['hp' + k] + (J['kn' + k] - J['hp' + k]) * 0.8 + J['Rp'] @ V(0, 4, 0))
+            rp.mark(lambda d, pc=pc: flower(d, pc[0], pc[1]))
         if L.get('patches') and k == 'R':
-            pc = pr(hp + (kn - hp) * 0.7)
+            pc = pr(J['hp' + k] + (J['kn' + k] - J['hp' + k]) * 0.7)
             rp.mark(lambda d, pc=pc: (d.poly([(pc[0] - 2.5, pc[1] - 2), (pc[0] + 2, pc[1] - 2.4), (pc[0] + 2.4, pc[1] + 2), (pc[0] - 2, pc[1] + 2.4)], '#9a8b70'),
                                       d.line([(pc[0] - 2.5, pc[1] - 2), (pc[0] + 2, pc[1] - 2.4)], 0, 0.5)))
         parts += [tp, rp]
+    if frac0 is not None:
+        if inner:
+            cp = center_panel(0, r2, -0.04, frac0)
+            if cp: parts.append(cp)
+        for dd, col, z in ((0, trim, -0.02), (2.4, robe, -0.01)):
+            cp = center_panel(dd, col, z, fo)
+            if cp: parts.append(cp)
     # ---------- thân ----------
     fem = B['fem']
     secs = [(0, wr[0] + 1, wr[1] + 0.8, 0), (9, wc[0] + 1, wc[1] + 1, 0), (14, (wc[0] + B['chest'][0]) / 2 + 1, (wc[1] + B['chest'][1]) / 2 + 1, 0.2 if fem else 0),
@@ -803,97 +923,127 @@ def build_frame(L, B, J, CH, view, anim, t, posefn, P):
             (B['torso'] - 0.3, 4.2, 3.6, 0.2)]
     tc = Part(tdp, robe, sig=4.2, spec=0.06)
     loft(tc, pr, J['pelvis'], Rt, secs)
-    # cổ áo giao lĩnh (vạt trái đè vạt phải), dải viền
+    # nếp áo dưới nách, đường may vai
+    if view != 'right':
+        sg = 1 if front else -1
+        fl = [(pr(T3(x * B['chest'][0], sg * (B['chest'][1] + 0.6), 17))[:2], pr(T3(x * (B['chest'][0] - 3), sg * (B['chest'][1] + 1), 13))[:2]) for x in (-1, 1)]
+        tc.mark(lambda d, fl=fl: [d.line(list(f), 1, 0.6) for f in fl])
+    else:
+        a_, b_ = pr(T3(0, B['chest'][1] * 0.3, B['torso'] - 3)), pr(T3(0, 0, 11))
+        tc.mark(lambda d, a_=a_, b_=b_: d.line([a_[:2], b_[:2]], 1, 0.5))
+    # cổ áo giao lĩnh nhiều lớp (áo lót trắng, áo trong, viền thêu)
     if front:
-        lp = [pr(J['pelvis'] + Rt @ V(*q)) for q in ((-3.2, 2.6, B['torso'] - 0.6), (-1.5, B['chest'][1] + 1.2, 21), (3, B['chest'][1] + 1.0, 15), (wc[0] + 0.6, wc[1] + 1.0, 9.5))]
-        lp2 = [pr(J['pelvis'] + Rt @ V(*q)) for q in ((3.2, 2.6, B['torso'] - 0.6), (0.5, B['chest'][1] + 1.3, 22.5))]
-        vv = [pr(J['pelvis'] + Rt @ V(*q)) for q in ((-3, 3.0, B['torso'] - 0.5), (3, 3.0, B['torso'] - 0.5), (0, B['chest'][1] + 1.3, 22))]
-        trim, r2 = L['trim'], L['robe2']
-        def collar(d, lp=lp, lp2=lp2, vv=vv, trim=trim, r2=r2):
+        lp = [pr(T3(*q)) for q in ((-3.2, 2.6, B['torso'] - 0.6), (-1.5, B['chest'][1] + 1.2, 21), (3, B['chest'][1] + 1.0, 15), (wc[0] + 0.6, wc[1] + 1.0, 9.5))]
+        lp2 = [pr(T3(*q)) for q in ((3.2, 2.6, B['torso'] - 0.6), (0.5, B['chest'][1] + 1.3, 22.5))]
+        vv = [pr(T3(*q)) for q in ((-3, 3.0, B['torso'] - 0.5), (3, 3.0, B['torso'] - 0.5), (0, B['chest'][1] + 1.3, 22))]
+        def collar(d, lp=lp, lp2=lp2, vv=vv):
             d.poly(vv, r2)
-            d.line(lp2, trim, 1.6); d.line(lp, trim, 2.0)
-            d.line([(p[0] + 1.2, p[1] + 0.6) for p in lp[1:]], 1, 0.6)
+            d.line([(p[0] - 0.9, p[1] - 0.3) for p in lp2], '#f4efe4', 0.9)
+            d.line([(p[0] - 1.0, p[1] - 0.5) for p in lp[:2]], '#f4efe4', 0.9)
+            d.line(lp2, trim, 1.6); d.line(lp, trim, 2.2)
+            d.line([(p[0] + 1.3, p[1] + 0.6) for p in lp[1:]], 1, 0.6)
+            ec = light(trim, 0.55)
+            for (x0, y0), (x1, y1) in zip([q[:2] for q in lp], [q[:2] for q in lp[1:]]):
+                for u in (0.25, 0.75):
+                    d.px(x0 + (x1 - x0) * u, y0 + (y1 - y0) * u, ec)
         tc.mark(collar)
     else:
-        nk = [pr(J['pelvis'] + Rt @ V(math.cos(a) * 4.2, math.sin(a) * 3.8, B['torso'] - 0.8)) for a in np.linspace(0, TAU, 12, endpoint=False)]
-        tc.mark(lambda d, nk=nk, c=L['trim']: d.line(nk[2:11], c, 1.6))
-        if L.get('emblem') and view == 'up':
-            ec = pr(J['pelvis'] + Rt @ V(0, -wc[1] - 1.6, 19))
+        nk = [pr(T3(math.cos(a) * 4.2, math.sin(a) * 3.8, B['torso'] - 0.8)) for a in np.linspace(0, TAU, 12, endpoint=False)]
+        tc.mark(lambda d, nk=nk: (d.line(nk[2:11], trim, 1.6), d.line([(p[0], p[1] + 1) for p in nk[3:10]], '#f4efe4', 0.6)))
+        if back:
+            a_, b_ = pr(T3(0, -B['chest'][1] - 1, B['torso'] - 2)), pr(T3(0, -wc[1] - 1, 10))
+            tc.mark(lambda d, a_=a_, b_=b_: d.line([a_[:2], b_[:2]], 1, 0.5))
+        if L.get('emblem') and back:
+            ec = pr(T3(0, -wc[1] - 1.6, 19))
             if L['emblem'] == 'taiji':
                 tc.mark(lambda d, ec=ec: (d.ell(ec, 3.6, 3.6, '#20202c'), d.ell(ec, 3.0, 3.0, '#f4f4f8'), d.poly([(ec[0], ec[1] - 3), (ec[0] + 3, ec[1]), (ec[0], ec[1] + 3)], '#20202c'),
                                           d.ell((ec[0], ec[1] - 1.5), 1.5, 1.5, '#f4f4f8'), d.ell((ec[0], ec[1] + 1.5), 1.5, 1.5, '#20202c'),
                                           d.px(ec[0], ec[1] - 2, '#20202c'), d.px(ec[0], ec[1] + 1, '#f4f4f8')))
             else:
                 oc = [(ec[0] + math.cos(a) * 4.2, ec[1] + math.sin(a) * 4.2) for a in np.linspace(0, TAU, 9)[:-1] + math.pi / 8]
-                tc.mark(lambda d, ec=ec, oc=oc, c=L['robe2']: (d.line(oc + [oc[0]], c, 0.8), d.ell(ec, 2.0, 2.0, c), d.ell(ec, 1.0, 1.0, '#f2c24e')))
+                tc.mark(lambda d, ec=ec, oc=oc: (d.line(oc + [oc[0]], r2, 0.8), d.ell(ec, 2.0, 2.0, r2), d.ell(ec, 1.0, 1.0, '#f2c24e')))
+    if motif == 'plum' and not back:
+        for q in ((5, 18), (-6, 12)):
+            pc = pr(T3(q[0], B['chest'][1] + 1.1, q[1]))
+            if view == 'right' and q[0] < 0: continue
+            tc.mark(lambda d, pc=pc: flower(d, pc[0], pc[1]))
     if L.get('patches'):
-        pc = pr(J['pelvis'] + Rt @ V(-4, (wc[1] + 1.2) * (1 if view != 'up' else -1), 16))
+        pc = pr(T3(-4, (wc[1] + 1.2) * (1 if not back else -1), 16))
         tc.mark(lambda d, pc=pc: (d.poly([(pc[0] - 3, pc[1] - 2.5), (pc[0] + 2.6, pc[1] - 3), (pc[0] + 3, pc[1] + 2.6), (pc[0] - 2.4, pc[1] + 3)], '#a89a7c'),
-                                  d.line([(pc[0] - 3, pc[1] - 2.5), (pc[0] + 2.6, pc[1] - 3), (pc[0] + 3, pc[1] + 2.6)], 0, 0.5)))
+                                  d.line([(pc[0] - 3, pc[1] - 2.5), (pc[0] + 2.6, pc[1] - 3), (pc[0] + 3, pc[1] + 2.6)], 0, 0.5),
+                                  [d.px(pc[0] - 2 + i * 1.6, pc[1] - 2.8, '#5a4a38') for i in range(3)]))
     parts.append(tc)
-    # áo cà sa (Thiếu Lâm): dải chéo từ vai trái xuống hông phải
+    # áo cà sa (Thiếu Lâm): dải chéo từ vai trái xuống hông phải, may ghép từng ô
     if L.get('kasaya'):
-        sgn = 1 if view != 'up' else -1
-        pts_ = [pr(J['pelvis'] + Rt @ V(x, sgn * (f_ + 0.8), z)) for x, f_, z in ((-B['sw'] - 0.5, 2, B['torso'] - 2.5), (-4, B['chest'][1] + 0.6, 21), (3, B['chest'][1] + 0.4, 13), (wc[0] + 1.4, wc[1] + 0.8, 5))]
+        sgn = 1 if not back else -1
+        pts_ = [pr(T3(x, sgn * (f_ + 0.8), z)) for x, f_, z in ((-B['sw'] - 0.5, 2, B['torso'] - 2.5), (-4, B['chest'][1] + 0.6, 21), (3, B['chest'][1] + 0.4, 13), (wc[0] + 1.4, wc[1] + 0.8, 5))]
         kp = Part(tdp + 0.32, L['kasaya'], sig=1.8, spec=0.05, ol=2).line(pts_, 6.0)
-        kp.mark(lambda d, p=pts_: d.line([(q[0] + 1.5, q[1] + 1) for q in p], 1, 0.6))
+        def grid(d, p=pts_):
+            d.line([(q[0] + 1.5, q[1] + 1) for q in p], 1, 0.6)
+            for (x0, y0), (x1, y1) in zip([q[:2] for q in p], [q[:2] for q in p[1:]]):
+                for u in (0.33, 0.66):
+                    x, y = x0 + (x1 - x0) * u, y0 + (y1 - y0) * u; nx, ny = -(y1 - y0), x1 - x0; ln = math.hypot(nx, ny) or 1
+                    d.line([(x + nx / ln * 3, y + ny / ln * 3), (x - nx / ln * 3, y - ny / ln * 3)], 0, 0.5)
+        kp.mark(grid)
+        if front:
+            rg = pts_[0]
+            kp.mark(lambda d, rg=pr(T3(-B['sw'] + 2.2, B['chest'][1] * 0.6 + 1, B['torso'] - 4)): (d.ell(rg[:2], 1.6, 1.6, GOLD), d.ell(rg[:2], 0.7, 0.7, L['kasaya'])))
         parts.append(kp)
-    # giáp (Thiên Vương): áo giáp ôm thân, viền vàng, hộ tâm kính; váy giáp vảy cá trước hai đùi
-    if L.get('armor'):
+    # bao phi tiêu đeo chéo ngực (Đường Môn)
+    if L.get('bandolier'):
+        sgn = 1 if not back else -1
+        bpts = [pr(T3(x, sgn * f_, z)) for x, f_, z in ((B['sw'] - 1, sgn * 0 + 2.6, B['torso'] - 2.5), (2, B['chest'][1] + 1.3, 19), (-5, B['chest'][1] + 0.9, 12), (-wc[0] - 1, wc[1] * 0.4, 8))]
+        bp_ = Part(tdp + 0.4, '#3a2a1c', sig=1.2, spec=0.2, ol=2).line(bpts, 2.6)
+        if not back:
+            def darts(d, p=bpts):
+                for (x0, y0), (x1, y1) in zip([q[:2] for q in p[:2]], [q[:2] for q in p[1:3]]):
+                    for u in (0.2, 0.5, 0.8):
+                        x, y = x0 + (x1 - x0) * u, y0 + (y1 - y0) * u
+                        d.px(x, y - 1, '#dfe6e4'); d.px(x, y, '#9aa4a8')
+            bp_.mark(darts)
+        parts.append(bp_)
+    # giáp riêng Thiên Vương (chỉ ở cấp áo vải; cấp cao hơn dùng giáp theo cấp)
+    if L.get('armor') and tier == 0:
         ap = Part(tdp + 0.35, L['steel'], sig=2.6, spec=0.85)
         loft(ap, pr, J['pelvis'], Rt, [(11, wc[0] + 1.9, wc[1] + 1.9, 0), (19, B['chest'][0] + 1.8, B['chest'][1] + 1.8, 0.3), (B['torso'] - 4.5, B['sw'] - 0.2, B['chest'][1] * 0.8 + 1.6, 0)])
         g = L['metal']
-        top = [pr(J['pelvis'] + Rt @ V(math.cos(a) * (B['sw'] - 0.2), math.sin(a) * (B['chest'][1] * 0.8 + 1.6), B['torso'] - 4.5)) for a in np.linspace(0, TAU, 20, endpoint=False)]
-        bot = [pr(J['pelvis'] + Rt @ V(math.cos(a) * (wc[0] + 1.9), math.sin(a) * (wc[1] + 1.9), 11)) for a in np.linspace(0, TAU, 20, endpoint=False)]
-        vis = lambda r: [p[:2] for p in r if p[2] - tdp > -1.5]
-        def arm_(d, top=top, bot=bot, g=g):
-            for r in (top, bot):
-                v = sorted(vis(r), key=lambda p: p[0])
-                if len(v) > 1: d.line(v, g, 1.2)
-            for i in range(3):
-                z = 13.5 + i * 2.6
-                rr = [pr(J['pelvis'] + Rt @ V(math.cos(a) * (wc[0] + 2.2 + i * 0.6), math.sin(a) * (wc[1] + 2.2 + i * 0.4), z)) for a in np.linspace(0, TAU, 20, endpoint=False)]
-                v = sorted(vis(rr), key=lambda p: p[0])
-                if len(v) > 1: d.line(v, 1, 0.6)
-        ap.mark(arm_)
+        ap.mark(armor_rings(J, pr, Rt, B, wc, tdp, g, 1.2))
         if front:
-            cc = pr(J['pelvis'] + Rt @ V(0, B['chest'][1] + 2.6, 19.5))
+            cc = pr(T3(0, B['chest'][1] + 2.6, 19.5))
             ap.mark(lambda d, cc=cc, g=g: (d.ell(cc, 3.6, 3.6, g), d.ell(cc, 2.4, 2.4, '#fff3c0'), d.ell((cc[0] + 0.7, cc[1] + 0.7), 1.5, 1.5, light(g, 0.2)), d.px(cc[0] - 1, cc[1] - 1, '#ffffff')))
         parts.append(ap)
         for k in 'RL':
-            hp, kn = J['hp' + k], J['kn' + k]
-            fwd = J['Rp'] @ V(0, 1, 0) * (1 if view != 'up' else -1)
-            q0, q1 = pr(hp + fwd * 6 + V(0, 0, 4)), pr(kn + fwd * 5 + (hp - kn) * 0.4)
-            tp = Part(max(panel_dp) + 0.15, L['steel'], sig=1.8, spec=0.8, ol=2).line([q0, q1], 7.5)
-            def scales(d, q0=q0, q1=q1, g=g):
-                for i in range(4):
-                    u = (i + 0.6) / 4.4; x = q0[0] + (q1[0] - q0[0]) * u; y = q0[1] + (q1[1] - q0[1]) * u
-                    d.line([(x - 3.6, y - 0.6), (x, y + 0.8), (x + 3.6, y - 0.6)], 1, 0.6)
-                d.line([(q1[0] - 3.6, q1[1] + 2.6), (q1[0] + 3.6, q1[1] + 2.6)], g, 1.0)
-            tp.mark(scales)
-            parts.append(tp)
+            parts.append(tasset(J, pr, k, view, max(panel_dp) + 0.15, L['steel'], g, 'body'))
     # đai lưng
     bdp = max(tdp, max(panel_dp)) + 0.2
     bt = Part(bdp, L['belt'], sig=1.6, spec=0.15, ol=2)
     loft(bt, pr, J['pelvis'], Rt, [(6.8, wc[0] + 1.9, wc[1] + 1.8, 0), (10.6, wc[0] + 1.8, wc[1] + 1.7, 0)])
-    if L.get('armor'):
-        bc = pr(J['pelvis'] + Rt @ V(0, wc[1] + 2.4, 8.6))
-        if front: bt.mark(lambda d, bc=bc, g=L['metal']: (d.ell(bc, 2.8, 2.2, g), d.px(bc[0] - 1, bc[1] - 0.5, '#5a3010'), d.px(bc[0] + 1, bc[1] - 0.5, '#5a3010')))
+    brng = [pr(T3(math.cos(a) * (wc[0] + 2.0), math.sin(a) * (wc[1] + 1.9), 8.7)) for a in np.linspace(0, TAU, 20, endpoint=False)]
+    bvis = sorted([p[:2] for p in brng if p[2] - tdp > -1], key=lambda p: p[0])
+    if L.get('rope'):
+        bt.mark(lambda d, v=bvis: [d.line([(x - 0.8, y - 1.2), (x + 0.8, y + 1.2)], 1, 0.6) for x, y in v[::1]])
+    elif len(bvis) > 1:
+        bt.mark(lambda d, v=bvis, c=light(L['belt'], 0.35): d.line(v, c, 0.5))
+    if L.get('armor') and tier == 0:
+        bc = pr(T3(0, wc[1] + 2.4, 8.6))
+        if front: bt.mark(lambda d, bc=bc, g=L['metal']: (d.ell(bc, 2.8, 2.2, g), d.px(bc[0] - 1, bc[1] - 0.5, '#5a3010'), d.px(bc[0] + 1, bc[1] - 0.5, '#5a3010'), d.px(bc[0], bc[1] + 1, '#5a3010')))
     parts.append(bt)
     if front and L.get('sash'):
-        kc = pr(J['pelvis'] + Rt @ V(-1.5, wc[1] + 2.2, 8.8))
-        parts.append(Part(bdp + 0.05, L['belt'], sig=1.0, spec=0.2, ol=2).ell(kc, 2.0, 1.6))
+        kc = pr(T3(-1.5, wc[1] + 2.2, 8.8))
+        parts.append(Part(bdp + 0.05, L['belt'], sig=1.0, spec=0.2, ol=2).ell(kc, 2.2, 1.7).ell((kc[0] - 2.2, kc[1] + 0.4), 1.6, 1.1).ell((kc[0] + 2.2, kc[1] + 0.4), 1.6, 1.1))
     if L.get('pouches'):
         for x in (-6.5, 6.5):
-            pc3 = J['pelvis'] + Rt @ V(x, wc[1] * 0.6, 6.5)
-            parts.append(Part(D(pc3) + bdp * 0 + 0.25 + (tdp if abs(D(pc3) - tdp) < 3 else 0) * 0, L['belt'], sig=1.0, spec=0.15, ol=2).poly(hull(circ(pr(pc3), 2.2) + circ(pr(pc3 + V(0, 0, -3)), 2.0))))
+            pc3 = T3(x, wc[1] * 0.6, 6.5)
+            pp = Part(D(pc3) + 0.25, L['belt'], sig=1.0, spec=0.15, ol=2).poly(hull(circ(pr(pc3), 2.2) + circ(pr(pc3 + V(0, 0, -3)), 2.0)))
+            pp.mark(lambda d, c=pr(pc3): (d.line([(c[0] - 2, c[1] - 0.4), (c[0] + 2, c[1] - 0.4)], 0, 0.6), d.px(c[0], c[1] + 0.4, '#c8b070')))
+            parts.append(pp)
     if L.get('gourd'):
-        g0 = J['pelvis'] + Rt @ V(wr[0] + 0.8, 1.5, 2.5)
+        g0 = T3(wr[0] + 0.8, 1.5, 2.5)
         gp = Part(D(g0) + 0.7, L['gourd'], sig=1.4, spec=0.45, ol=2).ell(pr(g0 + V(0, 0, -4.5)), 3.4, 3.6).ell(pr(g0), 2.3, 2.4)
-        gp.mark(lambda d, a=pr(g0): d.line([(a[0] - 2, a[1] - 0.2), (a[0] + 2, a[1] + 0.2)], '#7a3a18', 0.7))
+        gp.mark(lambda d, a=pr(g0): (d.line([(a[0] - 2, a[1] - 0.2), (a[0] + 2, a[1] + 0.2)], '#7a3a18', 0.7), d.line([(a[0], a[1] - 2.4), (a[0] + 0.6, a[1] - 4.2)], '#d0302a', 0.8)))
         parts.append(gp)
     if L.get('stick'):
-        s0, s1 = J['pelvis'] + Rt @ V(-8, -7.5, -6), J['pelvis'] + Rt @ V(8, -7.5, 38)
+        s0, s1 = T3(-8, -7.5, -6), T3(8, -7.5, 38)
         sp = Part((D(s0) + D(s1)) / 2, L['stick'], sig=0.9, spec=0.4, ol=2).cap(pr(s0), pr(s1), 1.4)
         a_, b_ = pr(s0), pr(s1)
         sp.mark(lambda d, a=a_, b=b_: [d.px(a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, 0) for u in (0.2, 0.4, 0.6, 0.8)])
@@ -904,16 +1054,20 @@ def build_frame(L, B, J, CH, view, anim, t, posefn, P):
         nb = 16 if L.get('beads') else 22
         for i in range(nb):
             a = i / nb * TAU
-            q = J['pelvis'] + Rt @ V(math.cos(a) * 6.2, math.sin(a) * (B['chest'][1] + 1.2) * (1 if math.sin(a) > 0 else 0.5), B['torso'] - 2.5 - (1 + math.sin(a)) * (6 if L.get('beads') else 3.5))
+            q = T3(math.cos(a) * 6.2, math.sin(a) * (B['chest'][1] + 1.2) * (1 if math.sin(a) > 0 else 0.5), B['torso'] - 2.5 - (1 + math.sin(a)) * (6 if L.get('beads') else 3.5))
             if np.dot(Rt @ V(0, math.sin(a), 0), cam) > -0.05 or view == 'right':
                 bp.ell(pr(q)[:2], 1.25 if L.get('beads') else 0.75)
+        if L.get('beads') and front:
+            q = pr(T3(0, B['chest'][1] + 1.6, B['torso'] - 15))
+            bp.ell(q[:2], 1.8)
         if bp.ops: parts.append(bp)
     if L.get('scarf'):
         parts.append(loft(Part(tdp + 0.5, L['scarf'], sig=1.4, spec=0.1, ol=2), pr, J['pelvis'], Rt, [(B['torso'] - 3.4, 4.6, 4.0, 0.5), (B['torso'] - 0.8, 4.2, 3.7, 0.3)]))
     # ---------- tay ----------
+    arm_dp = {}
     for k, side in (('R', 1), ('L', -1)):
         sh, el, ha, palm = J['sh' + k], J['el' + k], J['ha' + k], J['palm' + k]
-        adp = (D(sh) + D(el) + D(ha)) / 3 + 1.2
+        adp = (D(sh) + D(el) + D(ha)) / 3 + 1.2; arm_dp[k] = adp
         S_, E_, H_ = pr(sh), pr(el), pr(ha)
         scol = L.get('sleevecol', robe)
         if L.get('kasaya') and k == 'L': scol = L['kasaya']
@@ -923,29 +1077,48 @@ def build_frame(L, B, J, CH, view, anim, t, posefn, P):
             dpt = pr(drp[-1]) if drp is not None else pr(ha + V(0, 0, -5))
             ap = Part(adp, scol, sig=2.6, spec=0.08)
             ap.blob([(S_, a0 - 0.2), (E_, a0 + 0.6)]).blob([(E_, a0 + 0.7), (H_, a0 + 2.2), (dpt, 2.4)])
-            ap.mark(lambda d, E_=E_, H_=H_, dpt=dpt: d.line([(E_[0] + 1, E_[1] + 1.5), ((H_[0] + dpt[0]) / 2, (H_[1] + dpt[1]) / 2 + 1)], 1, 0.7))
+            ap.mark(lambda d, E_=E_, H_=H_, dpt=dpt: (d.line([(E_[0] + 1, E_[1] + 1.5), ((H_[0] + dpt[0]) / 2, (H_[1] + dpt[1]) / 2 + 1)], 1, 0.7),
+                                                     d.line([(E_[0] - 1.2, E_[1] + 0.6), (H_[0] - 0.8, H_[1] - 0.6)], 3, 0.5)))
+            if motif == 'cloud':
+                mc = pr(el + (ha - el) * 0.7 + V(0, 0, -2.5))
+                ap.mark(lambda d, c=mc: [d.px(c[0] + x, c[1] + y, MOTIF_C['cloud']) for x, y in ((-1, 0), (0, -1), (1, -1), (2, 0), (0, 1))])
+            if motif == 'trigram':
+                mc = pr(el + (ha - el) * 0.6 + V(0, 0, -2))
+                ap.mark(lambda d, c=mc: [d.line([(c[0] - 1.6, c[1] + i * 1.2), (c[0] + 1.6, c[1] + i * 1.2)], '#f2c24e', 0.5) for i in range(3)])
             parts.append(ap)
-            parts.append(Part(adp + 0.05, L['trim'], sig=1.0, ol=2).line([pr(ha + J['fa' + k] * 0.3 + V(0, 0, 3)), pr(ha + V(0, 0, -2)), dpt], 1.6))
+            # miệng tay áo: lót màu áo trong + viền thêu
+            parts.append(Part(adp + 0.04, r2, sig=1.0, ol=2).ell(((H_[0] + dpt[0]) / 2, (H_[1] + dpt[1]) / 2 + 0.6), 2.6, 1.6))
+            cl = [pr(ha + J['fa' + k] * 0.3 + V(0, 0, 3)), pr(ha + V(0, 0, -2)), dpt]
+            cp = Part(adp + 0.05, trim, sig=1.0, ol=2).line(cl, 1.8)
+            cp.mark(lambda d, cl=cl, c=light(trim, 0.5): [d.px(p[0], p[1], c) for p in cl[:2]])
+            parts.append(cp)
         elif L['sleeve'] == 'tight':
             ap = Part(adp, scol, sig=2.2, spec=0.08).cap(S_, E_, a0, a0 * 0.86).cap(E_, H_, a1, a1 * 0.8)
+            ap.mark(lambda d, E_=E_: d.line([(E_[0] - 1.6, E_[1] - 0.8), (E_[0] + 1.4, E_[1] + 0.6)], 1, 0.6))
             parts.append(ap)
+            if L.get('sleeveband'):     # dải thêu nhiều màu (Ngũ Độc)
+                m0, m1 = el + (sh - el) * 0.25, el + (ha - el) * 0.18
+                bb = Part(adp + 0.03, L['trim'], sig=1.0, ol=2).cap(pr(m0), pr(m1), a0 * 0.95, a1 * 0.95)
+                bb.mark(lambda d, a=pr(m0), b=pr(m1): [d.px(a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, c) for u, c in ((0.2, '#e8402a'), (0.5, '#f2c24e'), (0.8, '#3a8ad8'))])
+                parts.append(bb)
             if L.get('bracer'):
                 m_ = el + (ha - el) * 0.45
-                parts.append(Part(adp + 0.05, L['bracer'], sig=1.2, spec=0.25, ol=2).cap(pr(m_), H_, a1 * 0.95, a1 * 0.88))
+                bp_ = Part(adp + 0.05, L['bracer'], sig=1.2, spec=0.25, ol=2).cap(pr(m_), H_, a1 * 0.95, a1 * 0.88)
+                bp_.mark(lambda d, a=pr(m_), b=H_: [d.line([(a[0] + (b[0] - a[0]) * u - 2.2, a[1] + (b[1] - a[1]) * u - 0.4), (a[0] + (b[0] - a[0]) * u + 2.2, a[1] + (b[1] - a[1]) * u + 0.4)], 0, 0.5) for u in (0.3, 0.65)])
+                parts.append(bp_)
             else:
-                parts.append(Part(adp + 0.05, L['trim'], sig=1.0, ol=2).cap(pr(ha - J['fa' + k] * 1.6), H_, a1 * 0.9, a1 * 0.86))
+                parts.append(Part(adp + 0.05, trim, sig=1.0, ol=2).cap(pr(ha - J['fa' + k] * 1.6), H_, a1 * 0.9, a1 * 0.86))
         else:   # tay áo ngắn (Cái Bang)
             m_ = sh + (el - sh) * 0.62
             parts.append(Part(adp - 0.01, L['skin'], sig=2.0, spec=0.05).cap(pr(m_), E_, a0 * 0.8, a1 * 0.92).cap(E_, H_, a1 * 0.9, a1 * 0.78))
-            parts.append(Part(adp, scol, sig=2.2, spec=0.05).cap(S_, pr(m_), a0 + 0.6, a0 + 0.3))
+            sp = Part(adp, scol, sig=2.2, spec=0.05).cap(S_, pr(m_), a0 + 0.6, a0 + 0.3)
+            mm = pr(m_)
+            sp.mark(lambda d, mm=mm: [d.px(mm[0] + x, mm[1] + 0.6 + (x % 2), 1) for x in range(-3, 4)])
+            if k == 'L': sp.mark(lambda d, c=pr(sh + (el - sh) * 0.35): d.poly([(c[0] - 2, c[1] - 1.6), (c[0] + 2, c[1] - 1.8), (c[0] + 2, c[1] + 1.6), (c[0] - 2, c[1] + 1.8)], '#9a8b70'))
+            parts.append(sp)
             parts.append(Part(adp + 0.02, '#d8ccb4', sig=1.0, ol=2).cap(pr(ha - J['fa' + k] * 3), H_, a1 * 0.84, a1 * 0.8))
-        if L.get('armor'):
-            out_ = Rt @ V(side * 2.2, 0, 1.2)
-            c1, c2, c3 = pr(sh + out_ * 0.6 + V(0, 0, 1)), pr(sh + out_ * 1.2 + V(0, 0, -2.4)), pr(sh + out_ * 1.6 + V(0, 0, -5.4))
-            pa = Part(adp + 0.15, L['metal'], sig=1.8, spec=0.85, ol=2).ell(c1[:2], 5.4, 3.4).ell(c2[:2], 5.0, 3.0).ell(c3[:2], 4.4, 2.6)
-            pa.mark(lambda d, c2=c2, c3=c3: (d.line([(c2[0] - 4.6, c2[1] - 1.6), (c2[0], c2[1] - 2.6), (c2[0] + 4.6, c2[1] - 1.6)], 1, 0.7),
-                                           d.line([(c3[0] - 4.0, c3[1] - 1.4), (c3[0], c3[1] - 2.3), (c3[0] + 4.0, c3[1] - 1.4)], 1, 0.7)))
-            parts.append(pa)
+        if L.get('armor') and tier == 0:
+            parts.append(pauldron(J, pr, Rt, k, side, adp + 0.15, L['metal'], 'body', False))
         op = P.get('open' + k, 0) > 0.5
         hp_ = Part(adp + 0.1, L['skin'], sig=1.0, spec=0.05, ol=2)
         Pm = pr(palm)
@@ -954,59 +1127,229 @@ def build_frame(L, B, J, CH, view, anim, t, posefn, P):
             hp_.cap(Pm, tip, 2.2, 1.6)
         else:
             hp_.ell(Pm[:2], 2.3, 2.2)
+            hp_.mark(lambda d, Pm=Pm: d.px(Pm[0] - 0.5, Pm[1] + 0.5, 1))
         parts.append(hp_)
-    # ---------- vũ khí ----------
-    weapon_parts(L, J, pr, parts, CH)
-    # ---------- đầu, tóc ----------
-    head_parts(L, B, J, pr, view, parts, CH, P)
+    # ---------- giáp theo cấp ----------
+    if tier: parts += armor_tier(L, B, J, pr, view, tier, front, tdp, panel_dp, legdp, arm_dp, CH)
+    # ---------- đầu, tóc, mũ ----------
+    helm = []
+    head_parts(L, B, J, pr, view, parts, CH, P, gear.get('h', 0), helm)
     # ---------- tóc / dải lụa mô phỏng ----------
+    wparts = []
     for nm, pts3 in CH.items():
         d0 = next((d for d in CHAINS_CACHE[L['name']] if d['name'] == nm), None)
         if d0 is None or 'kind' not in d0 or pts3 is None: continue
+        if d0.get('need') == 'cape' and tier < 3: continue
         p2 = [pr(q) for q in pts3]
         dp = sum(p[2] for p in p2) / len(p2) + 0.2
         if d0['kind'] == 'hair' and d0['name'] in ('lockR', 'lockL'): dp = D(J['head']) + 2.6 if view != 'up' else D(J['head']) - 4
         if d0['kind'] == 'tassel': dp = D(J['palmR']) - 0.1
-        pt = Part(dp, d0['col'], sig=1.2 if d0['kind'] != 'hair' else 1.6, spec=0.5 if d0['kind'] in ('hair', 'braid') else 0.22, ol=2)
-        pt.ribbon([p[:2] for p in p2], *d0['w'])
+        if d0['kind'] == 'cape': dp = min(dp, tdp - 0.5) if not back else max(dp, tdp + 1.5)
+        pt = Part(dp, d0['col'], sig=1.2 if d0['kind'] != 'hair' else 1.6, spec=0.5 if d0['kind'] in ('hair', 'braid') else 0.22, ol=2,
+                  tag='weapon' if d0['kind'] == 'tassel' else 'body')
+        pp = [p[:2] for p in p2]
+        if d0['kind'] == 'pendant':
+            pt.ribbon(pp[:2], 0.9, 0.9)
+            parts.append(Part(dp + 0.01, '#6ac8a0', sig=0.8, spec=0.8, ol=2).ell(pp[1], 1.9, 1.9).mark(lambda d, c=pp[1]: (d.ell(c, 0.7, 0.7, 1), d.px(c[0] - 1, c[1] - 1, '#ffffff'))))
+            parts.append(Part(dp, d0.get('col2', '#e8402a'), sig=0.8, spec=0.2, ol=2).ribbon(pp[1:], 1.6, 2.4))
+            parts.append(pt)
+            continue
+        pt.ribbon(pp, *d0['w'])
         if d0['kind'] in ('hair', 'braid'):
-            pp = [p[:2] for p in p2]
             if d0['kind'] == 'braid':
                 pt.mark(lambda d, pp=pp: [d.line([(pp[i][0] - 1.6, pp[i][1] - 0.6), (pp[i][0] + 1.6, pp[i][1] + 0.6)], 1, 0.6) for i in range(1, len(pp))])
             else:
-                pt.mark(lambda d, pp=pp: d.line([(x + 1.2, y) for x, y in pp[:-1]], 1, 0.6))
+                pt.mark(lambda d, pp=pp: (d.line([(x + 1.2, y) for x, y in pp[:-1]], 1, 0.6), d.line([(x - 1.4, y + 0.5) for x, y in pp[1:-1]], 3, 0.5)))
+        if d0['kind'] == 'cape':
+            pt.mark(lambda d, pp=pp, g=GOLD: d.line([(x + 3.2, y) for x, y in pp], g, 0.7))
         if d0['kind'] == 'tassel':
             pt.ell(p2[0][:2], 1.4)
+            wparts.append(pt); continue
         parts.append(pt)
-    # ---------- hiệu ứng ----------
-    effects(L, B, J, pr, view, anim, t, posefn, fxo, fxu, P)
-    C = composite(parts)
-    spr = downsample(C)
-    out = spr
-    if fxu.used: out = over(fxu.out(), out)
-    if fxo.used: out = over(out, fxo.out())
-    return Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), 'RGBA')
+    return parts, wparts, helm
 
 
-def weapon_parts(L, J, pr, parts, CH):
+def flower(d, x, y):
+    x, y = int(round(x)), int(round(y))
+    for dx, dy in ((0, -1), (-1, 0), (1, 0), (0, 1)): d.px(x + dx, y + dy, '#ff9ac0')
+    d.px(x, y, '#ffe070')
+
+
+def armor_rings(J, pr, Rt, B, wc, tdp, g, w):
+    T3 = lambda *q: J['pelvis'] + Rt @ V(*q)
+    top = [pr(T3(math.cos(a) * (B['sw'] - 0.2), math.sin(a) * (B['chest'][1] * 0.8 + 1.6), B['torso'] - 4.5)) for a in np.linspace(0, TAU, 20, endpoint=False)]
+    bot = [pr(T3(math.cos(a) * (wc[0] + 1.9), math.sin(a) * (wc[1] + 1.9), 11)) for a in np.linspace(0, TAU, 20, endpoint=False)]
+    vis = lambda r: sorted([p[:2] for p in r if p[2] - tdp > -1.5], key=lambda p: p[0])
+    mids = []
+    for i in range(3):
+        z = 13.5 + i * 2.6
+        mids.append(vis([pr(T3(math.cos(a) * (wc[0] + 2.2 + i * 0.6), math.sin(a) * (wc[1] + 2.2 + i * 0.4), z)) for a in np.linspace(0, TAU, 20, endpoint=False)]))
+    vt, vb = vis(top), vis(bot)
+    def f(d):
+        for v in (vt, vb):
+            if len(v) > 1: d.line(v, g, w)
+        for v in mids:
+            if len(v) > 1: d.line(v, 1, 0.6)
+    return f
+
+
+def tasset(J, pr, k, view, depth, col, g, tag, neutral=False, w=7.5):
+    """váy giáp: tấm hình thang từ hông xuống giữa đùi, ghép nhiều hàng lá"""
+    hp, kn = J['hp' + k], J['kn' + k]
+    fwd = J['Rp'] @ V(0, 1, 0) * (1 if view != 'up' else -1)
+    q0, q1 = pr(hp + fwd * 6.2 + V(0, 0, 5)), pr(hp + (kn - hp) * 0.58 + fwd * 5.4)
+    dx, dy = q1[0] - q0[0], q1[1] - q0[1]; ln = math.hypot(dx, dy) or 1
+    nx, ny = -dy / ln, dx / ln
+    t0, t1 = w * 0.42, w * 0.56
+    quad = [(q0[0] + nx * t0, q0[1] + ny * t0), (q0[0] - nx * t0, q0[1] - ny * t0), (q1[0] - nx * t1 + dx / ln, q1[1] - ny * t1 + dy / ln), (q1[0] + dx / ln * 2, q1[1] + dy / ln * 2), (q1[0] + nx * t1 + dx / ln, q1[1] + ny * t1 + dy / ln)]
+    tp = Part(depth, col, sig=1.6, spec=0.8, ol=2, tag=tag, neutral=neutral).poly(quad)
+    def scales(d):
+        for i in range(1, 4):
+            u = i / 4; x = q0[0] + dx * u; y = q0[1] + dy * u; hw = t0 + (t1 - t0) * u
+            d.line([(x + nx * hw, y + ny * hw), (x - nx * hw, y - ny * hw)], 1, 0.6)
+            for j in (-1, 0, 1): d.px(x + nx * hw * j * 0.55, y + ny * hw * j * 0.55 - 1, 4)
+        if g: d.line([quad[2], quad[3], quad[4]], g, 0.9)
+    tp.mark(scales)
+    return tp
+
+
+def pauldron(J, pr, Rt, k, side, depth, col, tag, neutral, big=1.0):
+    sh = J['sh' + k]
+    out_ = Rt @ V(side * 2.2, 0, 1.2)
+    c1, c2, c3 = pr(sh + out_ * 0.6 + V(0, 0, 1)), pr(sh + out_ * 1.2 + V(0, 0, -2.4)), pr(sh + out_ * 1.6 + V(0, 0, -5.4))
+    pa = Part(depth, col, sig=1.4, spec=0.85, ol=2, tag=tag, neutral=neutral).ell(c1[:2], 5.2 * big, 2.7 * big).ell(c2[:2], 5.0 * big, 2.5 * big).ell(c3[:2], 4.5 * big, 2.3 * big)
+    pa.mark(lambda d, c2=c2, c3=c3: (d.line([(c2[0] - 4.6 * big, c2[1] - 1.6), (c2[0], c2[1] - 2.6), (c2[0] + 4.6 * big, c2[1] - 1.6)], 1, 0.7),
+                                   d.line([(c3[0] - 4.0 * big, c3[1] - 1.4), (c3[0], c3[1] - 2.3), (c3[0] + 4.0 * big, c3[1] - 1.4)], 1, 0.7)))
+    return pa
+
+
+def armor_tier(L, B, J, pr, view, tier, front, tdp, panel_dp, legdp, arm_dp, CH):
+    """áo giáp theo cấp: 1 giáp da, 2 giáp sắt, 3 thần giáp. Phần kim loại gắn tag 'metal' (xám, game tô màu)"""
+    out = []
+    Rt = J['Rt']; T3 = lambda *q: J['pelvis'] + Rt @ V(*q)
+    D = lambda v: pr(v)[2]
+    wc = B['waist']; back = view == 'up'; sgn = -1 if back else 1
+    a1r = B['arm'][1]; r1 = B['leg'][1]
+    glow = L['glow']
+    vest_secs = [(9.5, wc[0] + 2.3, wc[1] + 2.2, 0), (19, B['chest'][0] + 2.1, B['chest'][1] + 2.0, 0.3), (B['torso'] - 4.2, B['sw'] - 0.6, B['chest'][1] * 0.8 + 1.8, 0)]
+    if tier == 1:
+        v = Part(tdp + 0.36, LEATHER, sig=2.8, spec=0.25)
+        loft(v, pr, J['pelvis'], Rt, vest_secs)
+        if front:
+            v.erase([pr(T3(-4.2, B['chest'][1] + 3, B['torso'] - 3.6))[:2], pr(T3(4.2, B['chest'][1] + 3, B['torso'] - 3.6))[:2], pr(T3(0, B['chest'][1] + 3, 15))[:2]])
+        rows = []
+        for z in (13, 17.5):
+            r = [pr(T3(math.cos(a) * (wc[0] + 2.6 + (z - 13) * 0.25), math.sin(a) * (wc[1] + 2.5 + (z - 13) * 0.15), z)) for a in np.linspace(0, TAU, 20, endpoint=False)]
+            rows.append(sorted([p[:2] for p in r if p[2] - tdp > -1.5], key=lambda p: p[0]))
+        v.mark(lambda d, rows=rows: [[d.px(x, y, light(LEATHER, 0.35)) for i, (x, y) in enumerate(rw) if i % 2 == 0] for rw in rows])
+        out.append(v)
+        st = Part(tdp + 0.37, STEEL, sig=0.7, spec=0.9, ol=2, tag='metal', neutral=True)
+        for x, z in ((-6, 21), (6, 21), (-6.5, 12), (6.5, 12)):
+            q = T3(x, sgn * (B['chest'][1] + 2.4 - abs(x) * 0.08), z)
+            st.ell(pr(q)[:2], 1.1)
+        out.append(st)
+        for k, side in (('R', 1), ('L', -1)):
+            el, ha, sh = J['el' + k], J['ha' + k], J['sh' + k]
+            m_ = el + (ha - el) * 0.35
+            out.append(Part(arm_dp[k] + 0.06, LEATHER, sig=1.2, spec=0.3, ol=2).cap(pr(m_)[:2], pr(ha)[:2], a1r * 1.1, a1r))
+            out.append(Part(arm_dp[k] + 0.07, STEEL, sig=0.8, spec=0.9, ol=2, tag='metal', neutral=True).cap(pr(el + (ha - el) * 0.82)[:2], pr(ha)[:2], a1r * 1.15, a1r * 1.1))
+            c = pr(sh + Rt @ V(side * 1.8, 0, 1))
+            sp = Part(arm_dp[k] + 0.08, LEATHER, sig=1.4, spec=0.3, ol=2).ell(c[:2], 4.6, 3.2)
+            sp.mark(lambda d, c=c: d.line([(c[0] - 3.6, c[1] + 0.6), (c[0] + 3.6, c[1] + 0.6)], 3, 0.5))
+            out.append(sp)
+            kn, an = J['kn' + k], J['an' + k]
+            out.append(Part(legdp[k] + 0.09, LEATHER, sig=1.4, spec=0.3, ol=2).cap(pr(kn + (an - kn) * 0.2)[:2], pr(kn + (an - kn) * 0.8)[:2], r1 * 1.05, r1 * 0.9))
+            out.append(Part(legdp[k] + 0.1, STEEL, sig=0.8, spec=0.9, ol=2, tag='metal', neutral=True).ell(pr(kn + J['Rp'] @ V(0, 2.5 * sgn, 0))[:2], 2.6, 2.2))
+        bc = pr(T3(0, sgn * (wc[1] + 2.6), 8.6))
+        if not back: out.append(Part(max(panel_dp) + 0.5, STEEL, sig=0.8, spec=0.9, ol=2, tag='metal', neutral=True).ell(bc[:2], 2.4, 1.9))
+        return out
+    # cấp 2, 3: giáp sắt lá ghép
+    cu = Part(tdp + 0.38, STEEL, sig=2.6, spec=0.85, tag='metal', neutral=True)
+    loft(cu, pr, J['pelvis'], Rt, vest_secs)
+    rows = []
+    for i in range(5):
+        z = 11 + i * 2.6
+        r = [pr(T3(math.cos(a) * (wc[0] + 2.5 + i * 0.55), math.sin(a) * (wc[1] + 2.4 + i * 0.4), z)) for a in np.linspace(0, TAU, 22, endpoint=False)]
+        rows.append(sorted([p[:2] for p in r if p[2] - tdp > -1.5], key=lambda p: p[0]))
+    def lam(d, rows=rows):
+        for j, rw in enumerate(rows):
+            if len(rw) > 1: d.line(rw, 1, 0.6)
+            for i, (x, y) in enumerate(rw):
+                if (i + j) % 2 == 0: d.px(x, y - 1, 1)
+    cu.mark(lam)
+    out.append(cu)
+    if tier == 3:   # viền vàng + hộ tâm kính ngọc theo màu phái
+        gt = Part(tdp + 0.39, GOLD, sig=0.6, spec=0.9, ol=0)
+        for z, rx, rf in ((B['torso'] - 4.2, B['sw'] - 0.6, B['chest'][1] * 0.8 + 1.8), (9.5, wc[0] + 2.3, wc[1] + 2.2)):
+            r = [pr(T3(math.cos(a) * (rx + 0.2), math.sin(a) * (rf + 0.2), z)) for a in np.linspace(0, TAU, 24, endpoint=False)]
+            vv = sorted([p[:2] for p in r if p[2] - tdp > -1.5], key=lambda p: p[0])
+            if len(vv) > 1: gt.line(vv, 1.2)
+        if front or back:
+            cc = pr(T3(0, sgn * (B['chest'][1] + 2.8), 19))
+            gt.ell(cc[:2], 3.8, 3.8)
+            out.append(gt)
+            out.append(Part(tdp + 0.4, glow, sig=0.8, spec=0.9, ol=2).ell(cc[:2], 2.4, 2.4).mark(lambda d, cc=cc: (d.px(cc[0] - 1, cc[1] - 1, '#ffffff'), d.px(cc[0], cc[1] - 1, light(glow, 0.6)))))
+        elif gt.ops: out.append(gt)
+    big = 1.0 if tier == 2 else 1.18
+    for k, side in (('R', 1), ('L', -1)):
+        pa = pauldron(J, pr, Rt, k, side, arm_dp[k] + 0.15, STEEL, 'metal', True, big)
+        out.append(pa)
+        if tier == 3:
+            sh = J['sh' + k]
+            c0 = pr(sh + Rt @ V(side * 3.2, 0, 3.4)); c1 = pr(sh + Rt @ V(side * 7.5, 0, 9))
+            out.append(Part(arm_dp[k] + 0.14, STEEL, sig=1.0, spec=0.9, ol=2, tag='metal', neutral=True).poly([(c0[0] - 2.4, c0[1] + 1.4), (c1[0], c1[1]), (c0[0] + 2.4, c0[1] + 1.4)]))
+            out.append(Part(arm_dp[k] + 0.16, GOLD, sig=0.6, spec=0.9, ol=0).line([pr(sh + Rt @ V(side * 1.6, 0, 2.2))[:2], pr(sh + Rt @ V(side * 4.4, 0, -1.6))[:2]], 0.9))
+        el, ha = J['el' + k], J['ha' + k]
+        br = Part(arm_dp[k] + 0.07, STEEL, sig=1.0, spec=0.9, ol=2, tag='metal', neutral=True).cap(pr(el + (ha - el) * 0.3)[:2], pr(ha)[:2], a1r * 1.15, a1r * 1.05)
+        br.mark(lambda d, a=pr(el + (ha - el) * 0.55), b=pr(ha): d.line([(a[0] - 2.4, a[1]), (a[0] + 2.4, a[1])], 1, 0.6))
+        out.append(br)
+        out.append(tasset(J, pr, k, view, max(panel_dp) + 0.15, STEEL, GOLD if tier == 3 else None, 'metal', True, 7.5 if tier == 2 else 8.5))
+        kn, an = J['kn' + k], J['an' + k]
+        out.append(Part(legdp[k] + 0.09, STEEL, sig=1.2, spec=0.9, ol=2, tag='metal', neutral=True).cap(pr(kn + (an - kn) * 0.15)[:2], pr(kn + (an - kn) * 0.78)[:2], r1 * 1.06, r1 * 0.9))
+    bc = pr(T3(0, sgn * (wc[1] + 2.8), 8.6))
+    if not back:
+        out.append(Part(max(panel_dp) + 0.5, STEEL, sig=1.0, spec=0.9, ol=2, tag='metal', neutral=True).ell(bc[:2], 3.2, 2.5))
+        if tier == 3: out.append(Part(max(panel_dp) + 0.51, glow, sig=0.6, spec=0.9, ol=2).ell(bc[:2], 1.2, 1.1))
+    return out
+
+
+WSCALE2 = (1.0, 1.12, 1.25)     # độ dài binh khí theo cấp: thường / tinh luyện / thần binh
+
+def weapon_parts(L, J, pr, CH, wt=0):
+    """binh khí theo cấp (tag 'weapon'), trả về danh sách bộ phận"""
+    out = []
     w = L['weapon']
     D = lambda v: pr(v)[2]
+    sc = WSCALE2[wt]; glow = L['glow']
+    WP = lambda *a, **k: Part(*a, tag='weapon', **k)
     def blade(k, ln, wid, col, guard=True, curve=0.0, hilt=4.8):
+        ln *= sc; wid *= (1 + 0.12 * wt)
         g, d = J['palm' + k], J['wd' + k]
         hdp = (D(J['sh' + k]) + D(J['el' + k]) + D(J['ha' + k])) / 3 + 1.2 + 0.1
         pom, grd, tip = g - d * hilt, g + d * 2.4, g + d * (2.4 + ln)
         A, Bq, Cq = pr(pom), pr(grd), pr(tip)
-        parts.append(Part(hdp - 0.05, L.get('hilt', '#3a2a20'), sig=0.8, spec=0.3, ol=2).cap(A[:2], Bq[:2], 1.25, 1.1).ell(A[:2], 1.5))
+        hp = WP(hdp - 0.05, L.get('hilt', '#3a2a20'), sig=0.8, spec=0.3, ol=2).cap(A[:2], Bq[:2], 1.25, 1.1)
+        hp.mark(lambda d_, A=A, Bq=Bq: [d_.px(A[0] + (Bq[0] - A[0]) * u, A[1] + (Bq[1] - A[1]) * u, 3) for u in (0.3, 0.6)])
+        out.append(hp)
+        out.append(WP(hdp - 0.04, GOLD if wt else L.get('guard', '#c9a24a'), sig=0.6, spec=0.8, ol=2).ell(A[:2], 1.5 + 0.3 * wt))
+        if wt: out.append(WP(hdp - 0.03, '#e8302a' if wt == 1 else glow, sig=0.5, spec=0.9, ol=0).ell(A[:2], 0.8))
         vx, vy = Cq[0] - Bq[0], Cq[1] - Bq[1]; ln2 = math.hypot(vx, vy)
         ux, uy = (vx / ln2, vy / ln2) if ln2 > 0.01 else (0, -1); nx, ny = -uy, ux
         if guard:
-            gp = Part(D(grd) + 0.15, L.get('guard', '#c9a24a'), sig=0.8, spec=0.7, ol=2)
-            gp.poly([(Bq[0] + nx * 3.4 - ux * 0.6, Bq[1] + ny * 3.4 - uy * 0.6), (Bq[0] + ux * 1.2, Bq[1] + uy * 1.2),
-                     (Bq[0] - nx * 3.4 - ux * 0.6, Bq[1] - ny * 3.4 - uy * 0.6), (Bq[0] - ux * 1.4, Bq[1] - uy * 1.4)])
-            parts.append(gp)
+            gw = 3.4 + 0.9 * wt
+            gp = WP(D(grd) + 0.15, GOLD if wt else L.get('guard', '#c9a24a'), sig=0.8, spec=0.8, ol=2)
+            pts = [(Bq[0] + nx * gw - ux * 0.6, Bq[1] + ny * gw - uy * 0.6), (Bq[0] + ux * 1.2, Bq[1] + uy * 1.2),
+                   (Bq[0] - nx * gw - ux * 0.6, Bq[1] - ny * gw - uy * 0.6), (Bq[0] - ux * 1.4, Bq[1] - uy * 1.4)]
+            if wt == 2:   # chắn tay hình cánh
+                pts = [(Bq[0] + nx * gw + ux * 1.6, Bq[1] + ny * gw + uy * 1.6), (Bq[0] + nx * 1.2 + ux * 0.4, Bq[1] + ny * 1.2 + uy * 0.4), (Bq[0] + ux * 1.6, Bq[1] + uy * 1.6),
+                       (Bq[0] - nx * 1.2 + ux * 0.4, Bq[1] - ny * 1.2 + uy * 0.4), (Bq[0] - nx * gw + ux * 1.6, Bq[1] - ny * gw + uy * 1.6), (Bq[0] - nx * 2.2 - ux * 1.4, Bq[1] - ny * 2.2 - uy * 1.4),
+                       (Bq[0] + nx * 2.2 - ux * 1.4, Bq[1] + ny * 2.2 - uy * 1.4)]
+            gp.poly(pts)
+            if wt: gp.mark(lambda d_, Bq=Bq, c=('#e8302a' if wt == 1 else glow): d_.ell(Bq[:2], 0.9, 0.9, c))
+            out.append(gp)
         if ln2 < 2.5: return
         bdp = (D(grd) + D(tip)) / 2 + 0.1
-        bp = Part(bdp, col, sig=0.9, spec=0.95, ol=2)
+        bp = WP(bdp, col, sig=0.9, spec=0.95, ol=2)
         if curve:
             back, edge = [], []
             for i in range(9):
@@ -1016,14 +1359,19 @@ def weapon_parts(L, J, pr, parts, CH):
                 back.append((cx + nx * ww * 0.35, cy + ny * ww * 0.35)); edge.append((cx - nx * ww * 0.65, cy - ny * ww * 0.65))
             tipp = (Cq[0] + nx * curve * 1.2 + ux * 1.5, Cq[1] + ny * curve * 1.2 + uy * 1.5)
             bp.poly(back + [tipp] + edge[::-1])
-            bp.mark(lambda d, back=back: d.line(back[1:-1], 4, 0.6))
+            bp.mark(lambda d_, back=back: d_.line(back[1:-1], 4, 0.6))
+            if wt: bp.mark(lambda d_, back=back: [d_.px(x, y, 0) for x, y in back[2:-2:2]])
+            if wt == 2: bp.mark(lambda d_, e=edge: d_.line(e[2:], light(glow, 0.5), 0.6))
         else:
             hw = wid / 2
             pts = [(Bq[0] + nx * hw, Bq[1] + ny * hw), (Cq[0] - ux * 2.6 + nx * hw * 0.85, Cq[1] - uy * 2.6 + ny * hw * 0.85), (Cq[0], Cq[1]),
                    (Cq[0] - ux * 2.6 - nx * hw * 0.85, Cq[1] - uy * 2.6 - ny * hw * 0.85), (Bq[0] - nx * hw, Bq[1] - ny * hw)]
             bp.poly(pts)
-            bp.mark(lambda d, B_=Bq, C_=Cq, ux=ux, uy=uy, nx=nx, ny=ny: d.line([(B_[0] + ux * 1.5 - nx * 0.4, B_[1] + uy * 1.5 - ny * 0.4), (C_[0] - ux * 3 - nx * 0.4, C_[1] - uy * 3 - ny * 0.4)], 1, 0.5))
-        parts.append(bp)
+            ridge = [(Bq[0] + ux * 1.5 - nx * 0.4, Bq[1] + uy * 1.5 - ny * 0.4), (Cq[0] - ux * 3 - nx * 0.4, Cq[1] - uy * 3 - ny * 0.4)]
+            bp.mark(lambda d_, r=ridge: d_.line(r, 1, 0.5))
+            if wt == 1: bp.mark(lambda d_, B_=Bq, ux=ux, uy=uy: d_.line([(B_[0] + ux * 1.8, B_[1] + uy * 1.8), (B_[0] + ux * 7, B_[1] + uy * 7)], GOLD, 0.5))
+            if wt == 2: bp.mark(lambda d_, p=pts: (d_.line([p[0], p[1]], light(glow, 0.55), 0.6), d_.line([p[4], p[3]], light(glow, 0.55), 0.6)))
+        out.append(bp)
     if w == 'sword': blade('R', 27, 2.6, L['blade'])
     elif w == 'daggers':
         blade('R', 11, 2.4, L['blade'], hilt=3.4); blade('L', 11, 2.4, L['blade'], hilt=3.4)
@@ -1031,39 +1379,175 @@ def weapon_parts(L, J, pr, parts, CH):
     elif w == 'saber': blade('R', 23, 3.0, L['blade'], curve=2.6)
     elif w == 'staff':
         g, d = J['palmR'], J['wdR']
-        e0, e1 = g - d * 38, g + d * 44
+        e0, e1 = g - d * 38 * sc, g + d * 44 * sc
         dp = (D(e0) + D(e1)) / 2 + 0.1
         hdp = (D(J['shR']) + D(J['elR']) + D(J['haR'])) / 3 + 1.2
         if abs(dp - hdp) < 6: dp = hdp - 0.05
-        sp = Part(dp, L['wood'], sig=0.9, spec=0.3, ol=2).cap(pr(e0)[:2], pr(e1)[:2], 1.5)
-        parts.append(sp)
-        cp = Part(dp + 0.02, L['metal'], sig=0.8, spec=0.85, ol=2).cap(pr(e1)[:2], pr(e1 - d * 5)[:2], 1.9).cap(pr(e0)[:2], pr(e0 + d * 4)[:2], 1.8)
-        parts.append(cp)
-        rc = pr(e1 + d * 2.5)
-        parts.append(Part(dp + 0.03, L['metal'], sig=0.7, spec=0.85, ol=0).ell(rc[:2], 3.6, 3.0).ell(rc[:2], 2.4, 1.9, fill=0))
+        sp = WP(dp, L['wood'] if wt < 2 else '#5a2a18', sig=0.9, spec=0.35, ol=2).cap(pr(e0)[:2], pr(e1)[:2], 1.5 + 0.15 * wt)
+        bands = [0.35, 0.65] if wt else []
+        sp.mark(lambda d_, a=pr(e0), b=pr(e1), bands=bands: [d_.line([(a[0] + (b[0] - a[0]) * u - 1.6, a[1] + (b[1] - a[1]) * u), (a[0] + (b[0] - a[0]) * u + 1.6, a[1] + (b[1] - a[1]) * u)], GOLD, 0.8) for u in bands])
+        out.append(sp)
+        cl = 5 + 2 * wt
+        out.append(WP(dp + 0.02, L['metal'], sig=0.8, spec=0.85, ol=2).cap(pr(e1)[:2], pr(e1 - d * cl)[:2], 1.9 + 0.3 * wt).cap(pr(e0)[:2], pr(e0 + d * (cl - 1))[:2], 1.8 + 0.3 * wt))
+        rc = pr(e1 + d * (2.5 + wt))
+        rg = WP(dp + 0.03, L['metal'], sig=0.7, spec=0.85, ol=0).ell(rc[:2], 3.6 + 0.6 * wt, 3.0 + 0.5 * wt).ell(rc[:2], 2.4 + 0.5 * wt, 1.9 + 0.4 * wt, fill=0)
+        out.append(rg)
+        for i in range([0, 2, 4][wt]):   # vòng thiếc treo trên đầu trượng
+            a = (i / max(1, [0, 2, 4][wt]) - 0.5) * 2.4
+            q = (rc[0] + math.sin(a) * (3.6 + 0.6 * wt), rc[1] + math.cos(a) * 2.4 + 1)
+            out.append(WP(dp + 0.04, L['metal'], sig=0.5, spec=0.9, ol=0).ell(q, 1.3, 1.3).ell(q, 0.6, 0.6, fill=0))
+        if wt == 2: out.append(WP(dp + 0.05, glow, sig=0.5, spec=0.9, ol=0).ell(rc[:2], 1.2, 1.2))
     elif w == 'hammer':
         g, d = J['palmR'], J['wdR']
         hdp = (D(J['shR']) + D(J['elR']) + D(J['haR'])) / 3 + 1.2
-        s0, s1, hc = g - d * 6, g + d * 22, g + d * 27.5
+        s0, s1, hc = g - d * 6, g + d * 22 * sc, g + d * (27.5 * sc + wt)
         dp = (D(s0) + D(hc)) / 2 + 0.1
-        parts.append(Part(min(dp, hdp - 0.05) if abs(dp - hdp) < 5 else dp, L['wood'], sig=0.9, spec=0.3, ol=2).cap(pr(s0)[:2], pr(s1)[:2], 1.4))
-        H_ = pr(hc); T_ = pr(hc + d * 6.5)
-        hp = Part(D(hc) + 0.2, L['metal'], sig=2.0, spec=0.9, ol=2).ell(H_[:2], 5.8, 5.6).poly([(T_[0], T_[1]), (H_[0] - 1.6, H_[1] - 1), (H_[0] + 1.6, H_[1] - 1)])
-        a_ = pr(hc - d * 5.5); b_ = pr(hc + d * 5.5)
-        hp.mark(lambda d_, a=a_, b=b_, H=H_: [d_.line([(a[0] + o, a[1]), (H[0] + o * 1.6, H[1]), (b[0] + o, b[1])], 1, 0.6) for o in (-2.6, 0, 2.6)])
-        parts.append(hp)
-        parts.append(Part(D(s1) + 0.1, L['metal'], sig=0.8, spec=0.85, ol=2).ell(pr(s1)[:2], 2.4, 2.0))
+        out.append(WP(min(dp, hdp - 0.05) if abs(dp - hdp) < 5 else dp, L['wood'], sig=0.9, spec=0.3, ol=2).cap(pr(s0)[:2], pr(s1)[:2], 1.4))
+        R_ = 5.8 + 0.9 * wt
+        H_ = pr(hc); T_ = pr(hc + d * (R_ + 1 + 1.5 * wt))
+        hp = WP(D(hc) + 0.2, L['metal'], sig=2.0, spec=0.9, ol=2).ell(H_[:2], R_, R_ * 0.96).poly([(T_[0], T_[1]), (H_[0] - 1.6, H_[1] - 1), (H_[0] + 1.6, H_[1] - 1)])
+        if wt:   # gai quanh đầu chùy
+            for i in range(6):
+                a = i / 6 * TAU + 0.3
+                bx, by = H_[0] + math.cos(a) * R_, H_[1] + math.sin(a) * R_ * 0.96
+                hp.poly([(bx + math.cos(a) * (2 + wt), by + math.sin(a) * (2 + wt)), (bx - math.sin(a) * 1.3, by + math.cos(a) * 1.3), (bx + math.sin(a) * 1.3, by - math.cos(a) * 1.3)])
+        a_ = pr(hc - d * (R_ - 0.3)); b_ = pr(hc + d * (R_ - 0.3))
+        rib = light(glow, 0.3) if wt == 2 else 1
+        hp.mark(lambda d_, a=a_, b=b_, H=H_, rib=rib: [d_.line([(a[0] + o, a[1]), (H[0] + o * 1.6, H[1]), (b[0] + o, b[1])], rib, 0.6) for o in (-2.6, 0, 2.6)])
+        out.append(hp)
+        out.append(WP(D(s1) + 0.1, L['metal'], sig=0.8, spec=0.85, ol=2).ell(pr(s1)[:2], 2.4 + 0.3 * wt, 2.0 + 0.3 * wt))
+    return out
 
 
-def head_parts(L, B, J, pr, view, parts, CH, P):
+def helmet_parts(L, B, J, pr, view, ht, cx, cy, hd, helm):
+    """mũ theo cấp: 1 khăn/vòng trán, 2 mão kim loại, 3 mão cánh (phượng quan với phái nữ). Kim loại gắn tag 'hmetal'"""
+    st = L['hairstyle']; fem = B['fem']; glow = L['glow']
+    side = view == 'right'
+    HP = lambda dz, col, tag='helm', **k: Part(hd + dz, col, tag=tag, **k)
+    HM = lambda dz, **k: Part(hd + dz, STEEL, tag='hmetal', neutral=True, sig=k.pop('sig', 1.0), spec=0.9, ol=k.pop('ol', 2), **k)
+    sx = 0.62 if side else 1.0; ox = -1.5 if side else 0
+    def X(dx): return cx + ox + dx * sx
+    def crown(base, w, h, dz=0.5):
+        p = HM(dz)
+        p.poly([(X(-w), base), (X(w), base), (X(w * 0.85), base - h * 0.72), (X(w * 0.4), base - h * 0.5), (X(0), base - h), (X(-w * 0.4), base - h * 0.5), (X(-w * 0.85), base - h * 0.72)])
+        p.mark(lambda d: (d.line([(X(-w + 0.6), base - 1), (X(w - 0.6), base - 1)], 1, 0.6), d.px(X(0), base - h * 0.55, 4)))
+        return p
+    def band(col, y0=-4.6, y1=-2.8, tag='helm', neutral=False):
+        p = Part(hd + 0.35, col, tag=tag, neutral=neutral, sig=0.8, spec=0.5 if neutral else 0.25, ol=2)
+        if view == 'down': p.poly([(cx - 7.2, cy + y0), (cx + 7.2, cy + y0), (cx + 7.1, cy + y1), (cx - 7.1, cy + y1)])
+        elif side: p.poly([(cx - 8.4, cy + y0 + 0.6), (cx + 5.2, cy + y0 - 0.2), (cx + 5.3, cy + y1 - 0.2), (cx - 8.3, cy + y1 + 0.6)])
+        else: p.poly([(cx - 7.2, cy + y0 + 0.6), (cx + 7.2, cy + y0 + 0.6), (cx + 7.1, cy + y1 + 0.6), (cx - 7.1, cy + y1 + 0.6)])
+        return p
+    if st == 'hat':
+        hc3 = J['head']; Rh = J['Rh']
+        base_c = hc3 + Rh @ V(0, 0.6, 4.2); D = lambda v: pr(v)[2]
+        def ring(z, r):
+            pts = [pr(base_c + Rh @ V(math.cos(a) * r, math.sin(a) * r, z)) for a in np.linspace(0, TAU, 24, endpoint=False)]
+            cz = D(base_c + Rh @ V(0, 0, z))
+            return sorted([p[:2] for p in pts if p[2] - cz > -1.5], key=lambda p: p[0])
+        p = HM(1.0, sig=0.6)
+        r_ = ring(3.4, 8.2)
+        if len(r_) > 1: p.line(r_, 1.5)
+        if ht >= 2:
+            br = ring(0, 13.6)
+            if len(br) > 1: p.line(br, 1.2)
+            tp = pr(hc3 + Rh @ V(0, 0.6, 12.5)); p.poly([(tp[0] - 1.2, tp[1] + 0.5), (tp[0] + 1.2, tp[1] + 0.5), (tp[0], tp[1] - 3.5 - ht)])
+        helm.append(p)
+        if ht == 3:
+            vl = HP(1.1, '#1a1a22', sig=0.6, ol=0)
+            for x, y in ring(0, 13.4)[1:-1:2]: vl.line([(x, y + 0.5), (x + 0.3, y + 7.5)], 0.7)
+            helm.append(vl)
+            g = pr(base_c + Rh @ V(0, 8.2, 3.4)); helm.append(HP(1.2, glow, sig=0.5, spec=0.9, ol=2).ell(g[:2], 1.3, 1.3))
+        return
+    if st == 'turban':
+        if ht == 1:
+            p = HM(0.6, sig=0.5, ol=0)
+            for x in range(-6, 7, 2):
+                if side and x < -2: continue
+                p.ell((X(x), cy - 2.0 + abs(x) * 0.05), 0.8)
+            p.ell((X(0), cy - 0.6), 1.1)
+            helm.append(p); return
+        helm.append(band(STEEL, -5.2, -3.0, 'hmetal', True))
+        if ht == 2:
+            helm.append(HM(0.6).poly([(X(-2.4), cy - 4.6), (X(2.4), cy - 4.6), (X(1.6), cy - 11), (X(0), cy - 12.4), (X(-1.6), cy - 11)]))
+            if not view == 'up': helm.append(HP(0.7, glow, sig=0.5, spec=0.9, ol=2).ell((X(0), cy - 7.4), 1.2, 1.2))
+            return
+        # sừng bạc kiểu H'Mông
+        hr = HM(0.6, sig=1.2)
+        for s in ((-1, 1) if not side else (-1,)):
+            pts = [(X(s * 2), cy - 6.5), (X(s * 7.5), cy - 9), (X(s * 12.5), cy - 15), (X(s * 13), cy - 19.5), (X(s * 10.5), cy - 15.5), (X(s * 6.5), cy - 11.5), (X(s * 1.5), cy - 9.5)]
+            hr.poly(pts)
+        hr.mark(lambda d: [d.px(X(x), cy - 3.4, '#ffffff') for x in range(-6, 7, 3)])
+        helm.append(hr)
+        drops = HM(0.65, sig=0.4, ol=0)
+        for x in (-6, -3, 3, 6):
+            if side and x < 0: continue
+            drops.line([(X(x), cy - 3), (X(x), cy + 0.5)], 0.5).ell((X(x), cy + 1), 0.7)
+        helm.append(drops)
+        return
+    if st == 'bald':
+        helm.append(band(STEEL, -4.4, -3.0, 'hmetal', True))
+        if ht >= 2:   # mão ngũ Phật: 5 cánh sen trước trán
+            p = HM(0.55)
+            n = 5 if not side else 3
+            for i in range(n):
+                x = (i - (n - 1) / 2) * 2.8
+                h = 5.5 + (2.5 if i == (n - 1) // 2 else 0) + (2 if ht == 3 else 0)
+                p.poly([(X(x - 1.5), cy - 4.2), (X(x + 1.5), cy - 4.2), (X(x + 1.1), cy - 4.2 - h * 0.7), (X(x), cy - 4.2 - h), (X(x - 1.1), cy - 4.2 - h * 0.7)])
+            if view != 'up': p.mark(lambda d: d.ell((X(0), cy - 7.5), 0.9, 0.9, glow))
+            helm.append(p)
+        if ht == 3 and view != 'right':
+            helm.append(HP(-6, GOLD, sig=0.5, spec=0.9, ol=0).ell((cx, cy - 2), 10.5, 10.5).ell((cx, cy - 2), 9.4, 9.4, fill=0))
+        return
+    base = cy - 13.6 if st == 'official' else cy - 6.4
+    if ht == 1:
+        if st == 'official':
+            helm.append(band(STEEL, -8.6, -7.0, 'hmetal', True))
+        else:
+            helm.append(band(L['trim'], -4.6, -2.9))
+            if view != 'up': helm.append(HM(0.45, sig=0.5).ell((X(0) if not side else cx + 4.6, cy - 3.75), 1.6, 1.3))
+        return
+    w, h = (4.6, 5.2) if ht == 2 else (5.2, 6.6)
+    helm.append(crown(base, w, h))
+    if ht == 2:
+        helm.append(HP(0.6, GOLD, sig=0.5, spec=0.9, ol=0).line([(X(-w - 2.6), base - 2.2), (X(w + 2.6), base - 1.8)], 0.9))
+        return
+    if view != 'up': helm.append(HP(0.7, glow, sig=0.5, spec=0.9, ol=2).ell((X(0), base - 2.6), 1.3, 1.3))
+    wg = HM(0.45, sig=1.0)   # cánh hai bên mão
+    for s in ((-1, 1) if not side else (1,)):
+        wg.poly([(X(s * w * 0.8), base - 1), (X(s * (w + 5.5)), base - 5.5), (X(s * (w + 6.5)), base - 9), (X(s * (w + 3)), base - 5.4), (X(s * w * 0.6), base - 3.4)])
+    wg.mark(lambda d: [d.line([(X(s * (w + 1)), base - 2.6), (X(s * (w + 5)), base - 6.4)], 1, 0.5) for s in (-1, 1)])
+    helm.append(wg)
+    if fem:   # chuỗi hạt rủ hai bên phượng quan
+        bd = HP(0.4, '#f4e0a0', sig=0.4, spec=0.8, ol=0)
+        for s in ((-1, 1) if not side else (1,)):
+            for j in range(3):
+                x = X(s * (w + 1 + j * 1.6))
+                bd.line([(x, base - 1), (x, base + 4 + j * 1.2)], 0.4).ell((x, base + 4.6 + j * 1.2), 0.7)
+        helm.append(bd)
+    else:         # lông trĩ cắm sau mão
+        pl = HP(-0.2, '#e8c070', sig=0.6, spec=0.4, ol=2)
+        for s in ((-1, 1) if view != 'right' else (-1,)):
+            pts = [(X(s * 1.5) + (s * 0 if view != 'right' else -2), base - h + 1)]
+            for i in range(1, 7):
+                u = i / 6
+                if view == 'right': pts.append((X(-1.5) - u * 16, base - h - 4 - math.sin(u * 2.4) * 10))
+                else: pts.append((X(s * (1.5 + u * 9)), base - h - 2 - u * 16 + u * u * 6))
+            pl.ribbon(pts, 2.2, 1.0)
+            pl.mark(lambda d, pts=pts: [d.px(x, y, 0) for x, y in pts[1::2]])
+        helm.append(pl)
+
+
+def head_parts(L, B, J, pr, view, parts, CH, P, ht=0, helm=None):
     n0 = len(parts)
-    _head_parts(L, B, J, pr, view, parts, CH, P)
+    helm = [] if helm is None else helm
+    _head_parts(L, B, J, pr, view, parts, CH, P, ht, helm)
     up = pr(J['head'] + J['Rh'] @ V(0, 0, 6)); hc = pr(J['head'])
     ang = math.atan2(up[0] - hc[0], -(up[1] - hc[1]))
     if abs(ang) > 0.3:
-        for pt in parts[n0 + 1:]: pt.rot = (int(round(hc[0])), int(round(hc[1])), ang)
+        for pt in parts[n0 + 1:] + helm: pt.rot = (int(round(hc[0])), int(round(hc[1])), ang)
 
-def _head_parts(L, B, J, pr, view, parts, CH, P):
+def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
     hc3 = J['head']; h = pr(hc3)
     cx, cy = int(round(h[0])), int(round(h[1])); dp = h[2]
     skin, hair = L['skin'], L.get('hair') or '#202020'
@@ -1264,6 +1748,7 @@ def _head_parts(L, B, J, pr, view, parts, CH, P):
         topc = ((q[2][0] + q[3][0]) / 2, (q[2][1] + q[3][1]) / 2 - 1.4)
         parts.append(acc('#f2c24e', 0.6, 0.9, 0.5).ell(topc, 1.6, 1.4))
         if view == 'down': parts.append(acc('#e8402a', 0.4, 0.5, 0.5, 0).ell((cx, cy - 9.6), 1.0, 1.0))
+    if htier: helmet_parts(L, B, J, pr, view, htier, cx, cy, hd + 1.0, helm)
 
 
 def effects(L, B, J, pr, view, anim, t, posefn, fxo, fxu, P):
@@ -1356,28 +1841,71 @@ def effects(L, B, J, pr, view, anim, t, posefn, fxo, fxu, P):
 
 CHAINS_CACHE = {}
 
+LAYERS = ['a0', 'a1', 'a2', 'a3', 'am1', 'am2', 'am3', 'w0', 'w1', 'w2', 'h1', 'h2', 'h3', 'hm1', 'hm2', 'hm3', 'fxu', 'fxo']
+
+def render_layers(L, B, J, CH, view, anim, t, posefn, P):
+    """1 khung -> mọi lớp: thân theo 4 cấp áo, kim loại (xám), vũ khí 3 cấp, mũ 3 cấp, hiệu ứng"""
+    out = {}
+    pr = mkproj(view)
+    Z0 = None; tassel = []
+    for a in range(4):
+        parts, wp, _ = build_parts(L, B, J, CH, view, P, {'a': a})
+        C, Z, O = composite(parts, want=True)
+        out['a%d' % a] = downsample(C)
+        if a: out['am%d' % a] = masked_down(C, O)
+        else: Z0, tassel = Z, wp
+    for w in range(3):
+        if L['weapon'] == 'palm': out['w%d' % w] = None; continue
+        C, _ = layer(tassel + weapon_parts(L, J, pr, CH, w), Z0)
+        out['w%d' % w] = downsample(C)
+    for h in (1, 2, 3):
+        helm = []
+        head_parts(L, B, J, pr, view, [], CH, P, h, helm)
+        C, O = layer(helm, Z0)
+        out['h%d' % h] = downsample(C); out['hm%d' % h] = masked_down(C, O)
+    fxo, fxu = Fx(), Fx()
+    effects(L, B, J, pr, view, anim, t, posefn, fxo, fxu, P)
+    out['fxo'] = fxo.out() if fxo.used else None
+    out['fxu'] = fxu.out() if fxu.used else None
+    return out
+
+
+def save_sheet(rows, path):
+    sheet = np.zeros((len(rows) * CELL, 8 * CELL, 4), np.uint8)
+    for r, row in enumerate(rows):
+        for c, im in enumerate(row):
+            if im is not None: sheet[r * CELL:(r + 1) * CELL, c * CELL:(c + 1) * CELL] = np.clip(im, 0, 255).astype(np.uint8)
+    if not sheet[..., 3].any(): return False
+    img = Image.fromarray(sheet, 'RGBA')
+    img.quantize(256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE).save(path, optimize=True)
+    return True
+
+
+CHAINS_CACHE = {}
+
 def render_sect(key, outdir):
     L = LOOKS[key]; B = BODY[L['body']]
     defs = chains_for(L, B); CHAINS_CACHE[L['name']] = defs
-    rows, meta = [], {'cell': CELL, 'foot': [FX, FY], 'views': VIEWS, 'anims': {}, 'name': L['name']}
+    rows = {k: [] for k in LAYERS}
+    meta = {'cell': CELL, 'foot': [FX, FY], 'gameScale': GAME_SCALE, 'views': VIEWS, 'anims': {}, 'name': L['name'], 'layers': []}
+    nrow = 0
     for name, n, dur, loop in ANIMS:
         f = anim_pose(L, B, name)
         ts = [i / n for i in range(n)] if loop else FRAME_T[name]
         times = [t * dur for t in ts]
         ms = [round((times[i + 1] - times[i]) * 1000) if i + 1 < len(times) else round((dur - times[i]) * 1000 if loop else 220) for i in range(len(times))]
-        meta['anims'][name] = {'row': len(rows), 'n': n, 'ms': [max(40, m) for m in ms], 'loop': loop}
+        meta['anims'][name] = {'row': nrow, 'n': n, 'ms': [max(40, m) for m in ms], 'loop': loop}
         speed = {'walk': 100.0, 'run': 270.0}.get(name, 0.0)
         for view in VIEWS:
             Ps = [f(t) for t in ts]
             for P in Ps: P['fallmode'] = 'back' if view == 'right' else 'side'
             Js = [solve(B, P) for P in Ps]
             CH = simulate(defs, Js, times, speed, loop, dur)
-            row = [build_frame(L, B, J, {nm: CH[nm][i] for nm in CH}, view, name, ts[i], f, Ps[i]) for i, J in enumerate(Js)]
-            rows.append(row)
-    sheet = Image.new('RGBA', (8 * CELL, len(rows) * CELL), (0, 0, 0, 0))
-    for r, row in enumerate(rows):
-        for c, im in enumerate(row): sheet.paste(im, (c * CELL, r * CELL))
-    sheet.save(os.path.join(outdir, key + '.png'), optimize=True)
+            frames = [render_layers(L, B, J, {nm: CH[nm][i] for nm in CH}, view, name, ts[i], f, Ps[i]) for i, J in enumerate(Js)]
+            for k in LAYERS: rows[k].append([fr[k] for fr in frames])
+            nrow += 1
+    for k in LAYERS:
+        if save_sheet(rows[k], os.path.join(outdir, '%s_%s.png' % (key, k))): meta['layers'].append(k)
     with open(os.path.join(outdir, key + '.json'), 'w') as fp: json.dump(meta, fp, ensure_ascii=False)
     return key
 

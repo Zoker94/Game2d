@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+Display:wght@600;800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-/* Bố cục: sân khấu lớn 3 hướng ở trên, hàng chọn môn phái + động tác, dưới là đội hình 9 phái cùng đi bộ.
+/* Bố cục: sân khấu 3 hướng + bảng chọn trang bị ở trên, cảnh "trong game" để so tỉ lệ, dưới là đội hình 9 phái.
    Tông mực tàu (nền đêm xanh đen), điểm nhấn son đỏ của ấn triện. */
 :root {
   --ink: #12141c;
@@ -21,59 +21,61 @@
 }
 html { background: var(--ink); }
 body { background: var(--ink); color: var(--paper); font-family: var(--f-body); font-size: 15px; line-height: 1.55; }
-.wrap { max-width: 1180px; margin: 0 auto; padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 28px; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 24px; }
 header { display: grid; gap: 6px; }
 .eyebrow { font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
 h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(30px, 5vw, 48px); line-height: 1.05; margin: 0; text-wrap: balance; }
 h1 .seal { display: inline-block; font-size: .42em; vertical-align: .55em; margin-left: .4em; padding: .18em .36em; border: 2px solid var(--seal); color: var(--seal); border-radius: 4px; transform: rotate(-4deg); font-family: var(--f-body); font-weight: 600; letter-spacing: .06em; }
-.lede { color: var(--muted); max-width: 66ch; margin: 0; }
+.lede { color: var(--muted); max-width: 70ch; margin: 0; }
 h2 { font-family: var(--f-display); font-weight: 600; font-size: 22px; margin: 0; }
+h3 { font-size: 12px; font-family: var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 600; }
 
 .sects { display: flex; flex-wrap: wrap; gap: 8px; }
 .sect { appearance: none; border: 1px solid var(--line); background: var(--ink-2); color: var(--paper); font: 500 14px var(--f-body); padding: 7px 12px 7px 8px; border-radius: 999px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
 .sect i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; box-shadow: inset 0 0 0 1px rgba(0,0,0,.35); }
 .sect[aria-pressed="true"] { border-color: var(--seal); background: #2a1a1c; }
-.sect:focus-visible, .chip:focus-visible, .tog:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
 .stage { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--ink-2); }
 .stage-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
 .stage-head h2 small { font-family: var(--f-body); font-size: 13px; color: var(--muted); font-weight: 400; margin-left: 8px; }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .chip, .tog { appearance: none; border: 1px solid var(--line); background: transparent; color: var(--paper); font: 500 13px var(--f-body); padding: 5px 10px; border-radius: 6px; cursor: pointer; }
 .chip[aria-pressed="true"] { background: var(--paper); color: var(--ink); border-color: var(--paper); }
 .tog[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+.sw { appearance: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; padding: 0; }
+.sw[aria-pressed="true"] { border-color: var(--paper); box-shadow: 0 0 0 2px var(--ink-2), 0 0 0 4px var(--paper); }
 .canvas-box { overflow-x: auto; }
 canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
 #main { margin: 0 auto; }
-.views { display: flex; justify-content: center; gap: 0; font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; padding: 6px 0 2px; }
+.views { display: flex; justify-content: center; font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; padding: 6px 0 2px; margin: 0 auto; }
 .views span { text-align: center; }
+.gear { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; padding: 12px 14px; border-top: 1px solid var(--line); }
+@media (max-width: 760px) { .gear { grid-template-columns: minmax(0, 1fr); } }
+.gear > div { display: grid; gap: 8px; align-content: start; min-width: 0; }
 .tools { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; padding: 10px 14px 14px; border-top: 1px solid var(--line); }
-.tools label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
 
-.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
-@media (max-width: 760px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
-.card { border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 10px; min-width: 0; background: var(--ink-2); }
-.cmp { display: flex; gap: 18px; align-items: flex-end; justify-content: center; flex-wrap: wrap; }
-.cmp figure { margin: 0; display: grid; gap: 4px; justify-items: center; }
-.cmp figcaption { font-size: 12px; color: var(--muted); }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; }
+@media (max-width: 860px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 10px; min-width: 0; background: var(--ink-2); align-content: start; }
+#scene { width: 100%; max-width: 640px; height: auto; aspect-ratio: 640 / 300; image-rendering: auto; border-radius: 6px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); }
 .spec { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 13px; margin: 0; }
 .spec dt { color: var(--muted); font-family: var(--f-mono); font-size: 12px; }
 .spec dd { margin: 0; font-variant-numeric: tabular-nums; }
-
 .troupe { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
 .member { appearance: none; border: 1px solid var(--line); background: var(--ink-2); border-radius: 10px; padding: 6px 6px 8px; display: grid; justify-items: center; gap: 2px; cursor: pointer; color: var(--paper); font: 500 13px var(--f-body); }
 .member[aria-pressed="true"] { border-color: var(--seal); }
 .member canvas { width: 100%; height: auto; aspect-ratio: 1; max-width: 144px; }
 .note { color: var(--muted); font-size: 13px; margin: 0; max-width: 72ch; }
-ul.notes { margin: 0; padding-left: 18px; color: var(--paper); display: grid; gap: 4px; font-size: 14px; }
-@media (prefers-reduced-motion: reduce) { .sect, .chip { transition: none; } }
+ul.notes { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
 </style>
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">Võ Lâm Pixel · bản phác thảo · chưa áp dụng vào game</div>
+    <div class="eyebrow">Võ Lâm Pixel · bản phác thảo lần 2 · chưa áp dụng vào game</div>
     <h1>Phác Thảo Môn Phái <span class="seal">Thử nghiệm</span></h1>
-    <p class="lede">Nhân vật vẽ lại theo tỉ lệ người thật (khoảng 6 đầu), mỗi hướng có đủ 7 động tác. Tóc, dải lụa, vạt áo và tua kiếm bay theo quán tính khi đi, chạy và ra đòn. Bấm vào từng phái để xem.</p>
+    <p class="lede">Lần này áo có thêm lớp áo trong, viền thêu, ngọc bội, hoa văn riêng từng phái. Có đủ các lớp trang bị như trong game: 4 kiểu áo, 3 cấp mũ, 3 cấp vũ khí, phần kim loại đổi màu theo phẩm chất. Kéo xuống phần "Trong game" để xem tỉ lệ cạnh NPC và quái.</p>
   </header>
 
   <div class="sects" id="sects" role="group" aria-label="Chọn môn phái"></div>
@@ -84,6 +86,11 @@ ul.notes { margin: 0; padding-left: 18px; color: var(--paper); display: grid; ga
       <div class="chips" id="anims" role="group" aria-label="Động tác"></div>
     </div>
     <div class="canvas-box"><div class="views" id="views"></div><canvas id="main" width="432" height="144"></canvas></div>
+    <div class="gear">
+      <div><h3>Áo</h3><div class="chips" id="g-a"></div><div class="chips" id="r-a" aria-label="Phẩm chất áo"></div></div>
+      <div><h3>Mũ</h3><div class="chips" id="g-h"></div><div class="chips" id="r-h" aria-label="Phẩm chất mũ"></div></div>
+      <div><h3>Vũ khí</h3><div class="chips" id="g-w"></div><p class="note" id="w-note"></p></div>
+    </div>
     <div class="tools">
       <div class="chips" role="group" aria-label="Phóng to">
         <button class="chip" data-zoom="1" type="button">1×</button>
@@ -102,34 +109,34 @@ ul.notes { margin: 0; padding-left: 18px; color: var(--paper); display: grid; ga
   </section>
 
   <div class="grid2">
-    <section class="card" aria-label="So sánh với bản đang dùng">
-      <h2>So với bản đang dùng</h2>
-      <div class="cmp">
-        <figure><canvas id="old" width="96" height="96"></canvas><figcaption>Bản cũ (ô 96)</figcaption></figure>
-        <figure><canvas id="new" width="144" height="144"></canvas><figcaption>Bản mới (ô 144)</figcaption></figure>
-      </div>
-      <p class="note">Cùng phóng to 2×, hiện đúng số pixel thật. Khi đưa vào game, nhân vật mới sẽ được thu lại cho cao ngang bản cũ hoặc nhỉnh hơn một chút, tuỳ bạn chọn.</p>
+    <section class="card" aria-label="Tỉ lệ trong game">
+      <h2>Trong game</h2>
+      <canvas id="scene" width="1280" height="600"></canvas>
+      <div class="legend"><span>Ô gạch = 1 ô bản đồ (64)</span><span>Trái → phải: NPC, nhân vật cũ, nhân vật mới, quái</span></div>
+      <p class="note">Nhân vật mới được vẽ trong game ở tỉ lệ 0,68, cao khoảng 72 điểm ảnh, nhỉnh hơn nhân vật cũ (65) vì dáng người thật đầu nhỏ hơn. Màn hình điện thoại có mật độ điểm ảnh cao nên vẫn giữ được chi tiết.</p>
     </section>
     <section class="card" aria-label="Thông số">
       <h2>Thông số bộ hình</h2>
       <dl class="spec">
-        <dt>Ô hình</dt><dd>144 × 144 px, chân đặt tại (72, 128)</dd>
-        <dt>Hướng</dt><dd>Nhìn xuống, nhìn lên, nghiêng phải (nghiêng trái = lật hình)</dd>
-        <dt>Động tác</dt><dd>Đứng thở 8 · Đi 8 · Chạy 8 · Đánh 8 · Ra chiêu 8 · Trúng đòn 3 · Ngã 6</dd>
-        <dt>Mỗi phái</dt><dd>49 khung × 3 hướng = 147 khung (bản cũ: 19 khung/hướng)</dd>
-        <dt>Cách vẽ</dt><dd>Vẽ gấp 4 lần rồi thu nhỏ, tô khối theo ánh sáng trên-trái, viền theo màu</dd>
+        <dt>Ô hình</dt><dd>144 × 144, chân tại (72, 128), vẽ trong game ×0,68</dd>
+        <dt>Hướng</dt><dd>Nhìn xuống, nhìn lên, nghiêng phải (trái = lật)</dd>
+        <dt>Động tác</dt><dd>Đứng 8 · Đi 8 · Chạy 8 · Đánh 8 · Ra chiêu 8 · Trúng đòn 3 · Ngã 6</dd>
+        <dt>Lớp áo</dt><dd>Vải · Giáp da · Giáp sắt · Thần giáp (có áo choàng)</dd>
+        <dt>Lớp mũ</dt><dd>Khăn / vòng trán · Mão kim loại · Mão cánh (phượng quan cho phái nữ)</dd>
+        <dt>Vũ khí</dt><dd>Thường · Tinh luyện (dài hơn, chắn vàng) · Thần binh (dài nhất, lưỡi phát sáng)</dd>
+        <dt>Màu phẩm</dt><dd>Phần kim loại vẽ xám, game tô theo Thường / Hiếm / VIP / Truyền Kỳ</dd>
       </dl>
       <ul class="notes">
-        <li>Vạt áo xẻ hai tà theo chân, bước dài thì tà áo mở ra.</li>
-        <li>Ống tay áo rộng rủ xuống và đung đưa theo cánh tay.</li>
-        <li>Đòn đánh có vung tay lấy đà, chém, theo đà và thu thế, kèm vệt chém.</li>
-        <li>Mỗi phái một kiểu đánh: kiếm, song đao, côn, chùy, phi tiêu, đao cong, chưởng.</li>
+        <li>Vũ khí và mũ là lớp rời nhưng đã tính sẵn chỗ bị tay, thân che.</li>
+        <li>Áo dài có hai lớp: vạt ngoài viền thêu, vạt trong lộ ra bên dưới.</li>
+        <li>Hoa văn: mây (Võ Đang), hoa mai (Nga My), sóng (Thúy Yên), bát quái (Côn Lôn), đồng bạc (Ngũ Độc), cà sa ghép ô (Thiếu Lâm), bao phi tiêu (Đường Môn), dây thừng và miếng vá (Cái Bang).</li>
       </ul>
     </section>
   </div>
 
   <section style="display:grid;gap:12px" aria-label="Đội hình 9 phái">
     <h2>Đội hình 9 phái</h2>
+    <p class="note">Cùng mặc trang bị đang chọn ở trên.</p>
     <div class="troupe" id="troupe"></div>
   </section>
 </div>
@@ -137,152 +144,194 @@ ul.notes { margin: 0; padding-left: 18px; color: var(--paper); display: grid; ga
 <script>
 (function () {
   const SECTS = [
-    ['vodang', 'Võ Đang', '#3d6ad8', 'Đạo bào trắng, búi tóc mão bạc, kiếm thẳng tua xanh'],
-    ['ngamy', 'Nga My', '#e2568c', 'Áo hồng, hai búi tóc, dải lụa buộc tóc'],
-    ['thuyyen', 'Thúy Yên', '#7cb6ff', 'Đuôi ngựa cao, khăn choàng bay, song đao'],
-    ['thieulam', 'Thiếu Lâm', '#f2a634', 'Cà sa chéo vai, chuỗi hạt, thiền trượng'],
+    ['vodang', 'Võ Đang', '#3d6ad8', 'Đạo bào trắng hai lớp, thêu mây, búi tóc mão bạc, kiếm tua xanh'],
+    ['ngamy', 'Nga My', '#e2568c', 'Áo hồng thêu hoa mai, hai búi tóc, dải lụa, ngọc bội'],
+    ['thuyyen', 'Thúy Yên', '#7cb6ff', 'Áo lam viền sóng, đuôi ngựa, khăn choàng bay, song đao'],
+    ['thieulam', 'Thiếu Lâm', '#f2a634', 'Cà sa ghép ô, chuỗi hạt, xà cạp, thiền trượng'],
     ['thienvuong', 'Thiên Vương', '#e0302a', 'Giáp hộ tâm, giáp vai, khăn đỏ, đại chùy'],
-    ['duongmon', 'Đường Môn', '#2f9c4a', 'Nón lá, khăn che mặt, phi tiêu'],
-    ['ngudoc', 'Ngũ Độc', '#9ee04e', 'Khăn quấn đầu, mạng che mặt, đao cong'],
-    ['caibang', 'Cái Bang', '#e8892a', 'Áo vá, chân trần, gậy trúc, hồ lô'],
-    ['conlon', 'Côn Lôn', '#a77ad8', 'Mũ đạo sĩ, áo vàng tay tím, bùa chú']
+    ['duongmon', 'Đường Môn', '#2f9c4a', 'Nón lá, khăn che mặt, bao phi tiêu chéo ngực'],
+    ['ngudoc', 'Ngũ Độc', '#9ee04e', 'Khăn quấn đầu, mạng che mặt, dải thêu tay áo, đao cong'],
+    ['caibang', 'Cái Bang', '#e8892a', 'Áo vá, đai dây thừng, chân trần, gậy trúc, hồ lô'],
+    ['conlon', 'Côn Lôn', '#a77ad8', 'Mũ đạo sĩ, áo vàng tay tím, quẻ bát quái, bùa chú']
   ];
   const ANIMS = [['idle', 'Đứng'], ['walk', 'Đi'], ['run', 'Chạy'], ['attack', 'Đánh'], ['cast', 'Ra chiêu'], ['hurt', 'Trúng đòn'], ['death', 'Ngã']];
   const VIEWS = ['Nhìn xuống', 'Nhìn lên', 'Nghiêng'];
-  const OLD = { idle: [0, 4, 220], walk: [4, 6, 110], run: [4, 6, 80], attack: [10, 4, 120], cast: [14, 4, 150], hurt: [18, 1, 300], death: [18, 1, 300] };
-  const st = { sect: 'vodang', anim: 'walk', zoom: 2, ground: 'grass', flip: false, slow: false, pause: false };
-  try { const s = JSON.parse(localStorage.getItem('pt_mp') || '{}'); Object.assign(st, s); } catch (e) { }
-  if (!localStorage || window.innerWidth < 520) { try { if (!JSON.parse(localStorage.getItem('pt_mp') || '{}').zoom) st.zoom = 1; } catch (e) { st.zoom = 1; } }
-  const save = () => { try { localStorage.setItem('pt_mp', JSON.stringify({ zoom: st.zoom, ground: st.ground, anim: st.anim })); } catch (e) { } };
+  const ARMOR = ['Vải', 'Giáp da', 'Giáp sắt', 'Thần giáp'];
+  const HELM = ['Không', 'Khăn', 'Mão', 'Mão cánh'];
+  const WPN = ['Thường', 'Tinh luyện', 'Thần binh'];
+  const RAR = [['Thường', '#a8b0bc'], ['Hiếm', '#4fa3ff'], ['VIP', '#b060ff'], ['Truyền Kỳ', '#ffb02a']];
+  const st = { sect: 'vodang', anim: 'walk', zoom: 2, ground: 'grass', flip: false, slow: false, pause: false, a: 0, ar: 1, h: 0, hr: 3, w: 0 };
+  try { Object.assign(st, JSON.parse(localStorage.getItem('pt_mp2') || '{}')); } catch (e) { }
+  try { if (window.innerWidth < 520 && !localStorage.getItem('pt_mp2')) st.zoom = 1; } catch (e) { if (window.innerWidth < 520) st.zoom = 1; }
+  const save = () => { try { const { zoom, ground, anim, a, ar, h, hr, w } = st; localStorage.setItem('pt_mp2', JSON.stringify({ zoom, ground, anim, a, ar, h, hr, w })); } catch (e) { } };
   const $ = id => document.getElementById(id);
-  const sheets = {}, metas = {}, olds = {};
+  const data = {};   // phái -> { meta, img: {lớp: Image} }
 
   function load(k) {
-    if (sheets[k]) return sheets[k].ready;
-    const im = new Image(); im.src = k + '.png';
-    const a0 = new Image(); a0.src = 'old/' + k + '_a0.png';
-    const w0 = new Image(); if (k !== 'caibang') w0.src = 'old/' + k + '_w0.png';
-    olds[k] = { a0, w0 };
-    const ready = Promise.all([new Promise(r => { im.onload = r; im.onerror = r; }), fetch(k + '.json').then(r => r.json()).then(j => { metas[k] = j; }).catch(() => { })]);
-    sheets[k] = { im, ready };
-    return ready;
+    if (data[k]) return data[k].ready;
+    const d = data[k] = { meta: null, img: {} };
+    d.ready = fetch(k + '.json').then(r => r.json()).then(m => {
+      d.meta = m;
+      return Promise.all(m.layers.map(l => new Promise(res => { const im = new Image(); im.onload = im.onerror = res; im.src = k + '_' + l + '.png'; d.img[l] = im; })));
+    }).catch(() => { });
+    return d.ready;
+  }
+  const extra = {};
+  function loadImg(key, src) { if (!extra[key]) { const im = new Image(); im.src = src; extra[key] = im; } return extra[key]; }
+
+  // tô màu phẩm chất lên lớp kim loại xám (giữ sáng tối)
+  const tcv = document.createElement('canvas'); tcv.width = tcv.height = 144; const tc = tcv.getContext('2d');
+  function tinted(im, sx, sy, color) {
+    tc.globalCompositeOperation = 'source-over'; tc.clearRect(0, 0, 144, 144);
+    tc.drawImage(im, sx, sy, 144, 144, 0, 0, 144, 144);
+    tc.globalCompositeOperation = 'color'; tc.fillStyle = color; tc.fillRect(0, 0, 144, 144);
+    tc.globalCompositeOperation = 'destination-in'; tc.drawImage(im, sx, sy, 144, 144, 0, 0, 144, 144);
+    tc.globalCompositeOperation = 'source-over';
+    return tcv;
   }
 
-  // nền: cỏ hoặc đá lát vẽ bằng pixel
+  // nền
   const grounds = {};
   function ground(kind) {
     if (grounds[kind]) return grounds[kind];
-    const c = document.createElement('canvas'); c.width = c.height = 48; const x = c.getContext('2d');
+    const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
     let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
     if (kind === 'grass') {
-      x.fillStyle = '#4c7a3c'; x.fillRect(0, 0, 48, 48);
-      for (let i = 0; i < 140; i++) { x.fillStyle = ['#5b8a45', '#41693a', '#6a9a4e'][i % 3]; x.fillRect(rnd() * 48 | 0, rnd() * 48 | 0, 1, 2); }
+      x.fillStyle = '#4c7a3c'; x.fillRect(0, 0, 64, 64);
+      for (let i = 0; i < 240; i++) { x.fillStyle = ['#5b8a45', '#41693a', '#6a9a4e'][i % 3]; x.fillRect(rnd() * 64 | 0, rnd() * 64 | 0, 1, 2); }
     } else if (kind === 'stone') {
-      x.fillStyle = '#7b7f86'; x.fillRect(0, 0, 48, 48);
-      x.fillStyle = '#5d6168';
-      for (let r = 0; r < 4; r++) { x.fillRect(0, r * 12, 48, 1); for (let k = 0; k < 3; k++) x.fillRect(((k * 16 + (r % 2) * 8) % 48), r * 12, 1, 12); }
-      for (let i = 0; i < 60; i++) { x.fillStyle = rnd() < .5 ? '#868a91' : '#70747b'; x.fillRect(rnd() * 48 | 0, rnd() * 48 | 0, 1, 1); }
-    } else { x.fillStyle = '#3a3f4f'; x.fillRect(0, 0, 48, 48); }
+      x.fillStyle = '#7b7f86'; x.fillRect(0, 0, 64, 64);
+      x.fillStyle = '#5d6168'; x.fillRect(0, 0, 64, 1); x.fillRect(0, 32, 64, 1); x.fillRect(0, 0, 1, 32); x.fillRect(32, 32, 1, 32);
+      for (let i = 0; i < 90; i++) { x.fillStyle = rnd() < .5 ? '#868a91' : '#70747b'; x.fillRect(rnd() * 64 | 0, rnd() * 64 | 0, 1, 1); }
+    } else { x.fillStyle = '#3a3f4f'; x.fillRect(0, 0, 64, 64); }
     return (grounds[kind] = c);
   }
-  function paintGround(ctx, w, h) {
-    ctx.fillStyle = ctx.createPattern(ground(st.ground), 'repeat'); ctx.fillRect(0, 0, w, h);
-  }
-  function shadow(ctx, x, y) {
-    ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(x, y, 20, 6, 0, 0, Math.PI * 2); ctx.fill();
-  }
+  function paintGround(ctx, w, h, kind) { ctx.fillStyle = ctx.createPattern(ground(kind || st.ground), 'repeat'); ctx.fillRect(0, 0, w, h); }
+  function shadow(ctx, x, y, r) { ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(x, y, r || 20, (r || 20) * 0.3, 0, 0, Math.PI * 2); ctx.fill(); }
 
-  // thời gian mỗi động tác (động tác không lặp: chạy hết rồi giữ khung cuối một lúc)
   function frameAt(meta, anim, t) {
     const a = meta.anims[anim]; const total = a.ms.reduce((s, v) => s + v, 0) + (a.loop ? 0 : 700);
     let u = t % total;
     for (let i = 0; i < a.n; i++) { if (u < a.ms[i]) return i; u -= a.ms[i]; }
     return a.n - 1;
   }
-
-  function drawCell(ctx, k, anim, view, f, dx, dy, flip) {
-    const s = sheets[k], m = metas[k]; if (!s || !m || !s.im.complete) return;
-    const C = m.cell, row = m.anims[anim].row + view;
-    ctx.save();
-    if (flip) { ctx.translate(dx + C, dy); ctx.scale(-1, 1); dx = 0; dy = 0; }
-    ctx.drawImage(s.im, f * C, row * C, C, C, dx, dy, C, C);
+  // ghép đủ lớp của 1 khung: hiệu ứng dưới, thân, kim loại, vũ khí, mũ, kim loại mũ, hiệu ứng trên
+  function drawChar(ctx, k, anim, view, f, dx, dy, flip, s) {
+    const d = data[k]; if (!d || !d.meta) return;
+    s = s || 1;
+    const C = d.meta.cell, row = d.meta.anims[anim].row + view, sx = f * C, sy = row * C;
+    const L = d.img, put = (im) => { if (im && im.complete && im.naturalWidth) ctx.drawImage(im, sx, sy, C, C, 0, 0, C, C); };
+    const putT = (im, col) => { if (im && im.complete && im.naturalWidth) ctx.drawImage(tinted(im, sx, sy, col), 0, 0); };
+    ctx.save(); ctx.translate(dx, dy); ctx.scale(s, s);
+    if (flip) { ctx.translate(C, 0); ctx.scale(-1, 1); }
+    put(L.fxu); put(L['a' + st.a]);
+    if (st.a && st.ar) putT(L['am' + st.a], RAR[st.ar][1]);
+    put(L['w' + st.w]);
+    if (st.h) { put(L['h' + st.h]); if (st.hr) putT(L['hm' + st.h], RAR[st.hr][1]); }
+    put(L.fxo);
     ctx.restore();
   }
 
   // ---------- giao diện ----------
-  const sectsEl = $('sects');
+  function chipRow(el, names, key) {
+    names.forEach((n, i) => { const b = document.createElement('button'); b.className = 'chip'; b.type = 'button'; b.textContent = n; b.dataset[key] = i; b.onclick = () => { st[key] = i; save(); sync(); }; el.appendChild(b); });
+  }
+  function swRow(el, key) {
+    RAR.forEach(([n, c], i) => { const b = document.createElement('button'); b.className = 'sw'; b.type = 'button'; b.title = n; b.setAttribute('aria-label', n); b.style.background = c; b.dataset[key] = i; b.onclick = () => { st[key] = i; save(); sync(); }; el.appendChild(b); });
+  }
+  chipRow($('g-a'), ARMOR, 'a'); chipRow($('g-h'), HELM, 'h'); chipRow($('g-w'), WPN, 'w');
+  swRow($('r-a'), 'ar'); swRow($('r-h'), 'hr');
   SECTS.forEach(([k, n, c]) => {
     const b = document.createElement('button'); b.className = 'sect'; b.type = 'button'; b.dataset.k = k;
-    b.innerHTML = `<i style="background:${c}"></i>${n}`; b.onclick = () => select(k); sectsEl.appendChild(b);
+    b.innerHTML = `<i style="background:${c}"></i>${n}`; b.onclick = () => select(k); $('sects').appendChild(b);
   });
-  const animsEl = $('anims');
   ANIMS.forEach(([k, n]) => {
-    const b = document.createElement('button'); b.className = 'chip'; b.type = 'button'; b.dataset.a = k; b.textContent = n;
-    b.onclick = () => { st.anim = k; t0 = performance.now(); save(); sync(); }; animsEl.appendChild(b);
+    const b = document.createElement('button'); b.className = 'chip'; b.type = 'button'; b.dataset.an = k; b.textContent = n;
+    b.onclick = () => { st.anim = k; clock = 0; save(); sync(); }; $('anims').appendChild(b);
   });
   document.querySelectorAll('[data-zoom]').forEach(b => b.onclick = () => { st.zoom = +b.dataset.zoom; save(); sync(); });
   document.querySelectorAll('[data-ground]').forEach(b => b.onclick = () => { st.ground = b.dataset.ground; save(); sync(); });
   $('flip').onclick = () => { st.flip = !st.flip; sync(); };
   $('slow').onclick = () => { st.slow = !st.slow; sync(); };
   $('pause').onclick = () => { st.pause = !st.pause; sync(); };
-
-  const troupe = $('troupe'), tcs = {};
+  const tcs = {};
   SECTS.forEach(([k, n]) => {
     const b = document.createElement('button'); b.className = 'member'; b.type = 'button'; b.dataset.k = k;
     const c = document.createElement('canvas'); c.width = 144; c.height = 144; tcs[k] = c.getContext('2d');
     b.appendChild(c); const s = document.createElement('span'); s.textContent = n; b.appendChild(s);
     b.onclick = () => { select(k); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-    troupe.appendChild(b); load(k);
+    $('troupe').appendChild(b); load(k);
   });
-
-  function select(k) { st.sect = k; load(k); t0 = performance.now(); sync(); }
+  function select(k) { st.sect = k; load(k); clock = 0; sync(); }
   function sync() {
-    document.querySelectorAll('.sect, .member').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === st.sect));
-    document.querySelectorAll('[data-a]').forEach(b => b.setAttribute('aria-pressed', b.dataset.a === st.anim));
-    document.querySelectorAll('[data-zoom]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.zoom === st.zoom));
-    document.querySelectorAll('[data-ground]').forEach(b => b.setAttribute('aria-pressed', b.dataset.ground === st.ground));
+    const pressed = (sel, fn) => document.querySelectorAll(sel).forEach(b => b.setAttribute('aria-pressed', fn(b)));
+    pressed('.sect, .member', b => b.dataset.k === st.sect);
+    pressed('[data-an]', b => b.dataset.an === st.anim);
+    pressed('[data-zoom]', b => +b.dataset.zoom === st.zoom);
+    pressed('[data-ground]', b => b.dataset.ground === st.ground);
+    ['a', 'h', 'w', 'ar', 'hr'].forEach(k => pressed(`[data-${k}]`, b => +b.dataset[k] === st[k]));
     $('flip').setAttribute('aria-pressed', st.flip); $('slow').setAttribute('aria-pressed', st.slow); $('pause').setAttribute('aria-pressed', st.pause);
+    $('r-a').style.opacity = st.a ? 1 : .35; $('r-h').style.opacity = st.h ? 1 : .35;
     const s = SECTS.find(x => x[0] === st.sect);
     $('stage-title').firstChild.textContent = s[1] + ' ';
     $('stage-sub').textContent = s[3];
+    $('w-note').textContent = st.sect === 'caibang' ? 'Cái Bang dùng chưởng, không cầm vũ khí.' : '';
     const main = $('main'); main.style.width = 432 * st.zoom + 'px'; main.style.height = 144 * st.zoom + 'px';
-    $('views').style.width = 432 * st.zoom + 'px'; $('views').style.margin = '0 auto';
+    $('views').style.width = 432 * st.zoom + 'px';
     $('views').innerHTML = VIEWS.map(v => `<span style="width:${144 * st.zoom}px">${v}</span>`).join('');
-    $('old').style.width = '192px'; $('old').style.height = '192px';
-    $('new').style.width = '288px'; $('new').style.height = '288px';
   }
 
-  let t0 = performance.now(), pausedAt = 0, last = performance.now(), clock = 0;
-  const mctx = $('main').getContext('2d'), octx = $('old').getContext('2d'), nctx = $('new').getContext('2d');
-  [mctx, octx, nctx].forEach(c => c.imageSmoothingEnabled = false);
+  // cảnh trong game: phóng như game trên điện thoại (mật độ ×2, zoom 1,25), hình được làm mịn như canvas game
+  const npc = loadImg('npc', 'ref/duoc_diem.png'), mon = loadImg('mon', 'ref/soi_xam.png');
+  const oldA = k => loadImg('oa' + k, 'old/' + k + '_a0.png'), oldW = k => loadImg('ow' + k, 'old/' + k + '_w0.png');
+  const sctx = $('scene').getContext('2d');
+  function drawScene() {
+    const SC = 2.5;
+    sctx.setTransform(1, 0, 0, 1, 0, 0);
+    sctx.save(); sctx.scale(SC, SC);
+    sctx.imageSmoothingEnabled = false;
+    paintGround(sctx, 1280 / SC, 600 / SC, 'stone');
+    sctx.imageSmoothingEnabled = true;
+    const fy = 200, t = clock;
+    const ok = im => im.complete && im.naturalWidth;
+    if (ok(npc)) { shadow(sctx, 70, fy, 13); sctx.drawImage(npc, (Math.floor(t / 220) % 4) * 96, 0, 96, 96, 70 - 48, fy - 86, 96, 96); }
+    const k = st.sect, oa = oldA(k), ow = oldW(k);
+    if (ok(oa)) {
+      const col = 4 + Math.floor(t / 110) % 6;
+      shadow(sctx, 170, fy, 13); sctx.drawImage(oa, col * 96, 0, 96, 96, 170 - 48, fy - 86, 96, 96);
+      if (ok(ow)) sctx.drawImage(ow, col * 96, 0, 96, 96, 170 - 48, fy - 86, 96, 96);
+    }
+    const d = data[k];
+    if (d && d.meta) {
+      const s = d.meta.gameScale, f = frameAt(d.meta, 'walk', t);
+      shadow(sctx, 280, fy, 14);
+      drawChar(sctx, k, 'walk', 0, f, 280 - 72 * s, fy - 128 * s, false, s);
+    }
+    if (ok(mon)) { shadow(sctx, 400, fy, 30); sctx.save(); sctx.translate(400, 0); sctx.scale(-1, 1); sctx.drawImage(mon, (4 + Math.floor(t / 120) % 6) * 112, 0, 112, 96, -56, fy - 90, 112, 96); sctx.restore(); }
+    sctx.restore();
+  }
+
+  let last = performance.now(), clock = 0;
+  const mctx = $('main').getContext('2d');
   function tick(now) {
-    const dt = now - last; last = now;
+    const dt = Math.min(100, now - last); last = now;
     if (!st.pause) clock += dt * (st.slow ? 0.5 : 1);
-    const k = st.sect, m = metas[k];
+    const k = st.sect, d = data[k];
+    mctx.imageSmoothingEnabled = false;
     paintGround(mctx, 432, 144);
-    if (m) {
-      const f = frameAt(m, st.anim, clock);
-      for (let v = 0; v < 3; v++) { shadow(mctx, v * 144 + 72, 128); drawCell(mctx, k, st.anim, v, f, v * 144, 0, v === 2 && st.flip); }
-      paintGround(nctx, 144, 144); shadow(nctx, 72, 128); drawCell(nctx, k, st.anim, 0, f, 0, 0, false);
+    if (d && d.meta) {
+      const f = frameAt(d.meta, st.anim, clock);
+      for (let v = 0; v < 3; v++) { shadow(mctx, v * 144 + 72, 128); drawChar(mctx, k, st.anim, v, f, v * 144, 0, v === 2 && st.flip); }
     }
-    // bản cũ
-    paintGround(octx, 96, 96);
-    const o = olds[k];
-    if (o && o.a0.complete && o.a0.naturalWidth) {
-      const [c0, n, ms] = OLD[st.anim]; const col = c0 + Math.floor(clock / ms) % n; const row = st.anim === 'death' ? 3 : 0;
-      shadow(octx, 48, 86);
-      octx.drawImage(o.a0, col * 96, row * 96, 96, 96, 0, 0, 96, 96);
-      if (o.w0.complete && o.w0.naturalWidth && row !== 3) octx.drawImage(o.w0, col * 96, row * 96, 96, 96, 0, 0, 96, 96);
-    }
-    // đội hình: cả 9 phái cùng đi
+    drawScene();
     for (const [kk] of SECTS) {
-      const c = tcs[kk], mm = metas[kk]; if (!mm) continue;
+      const c = tcs[kk], dd = data[kk]; if (!dd || !dd.meta) continue;
       c.imageSmoothingEnabled = false; paintGround(c, 144, 144); shadow(c, 72, 128);
-      drawCell(c, kk, 'walk', 0, frameAt(mm, 'walk', clock), 0, 0, false);
+      drawChar(c, kk, 'walk', 0, frameAt(dd.meta, 'walk', clock), 0, 0, false);
     }
     requestAnimationFrame(tick);
   }
-  load(st.sect).then(() => { sync(); requestAnimationFrame(tick); });
   sync();
+  load(st.sect).then(() => requestAnimationFrame(tick));
 })();
 </script>
