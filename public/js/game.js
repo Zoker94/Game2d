@@ -1203,6 +1203,7 @@
     }
     for (const [e, top] of bubbles) if (!Overhead.drawBubble(ctx, e.x, top, e.bubble, now)) e.bubble = null;
 
+    BossArt.drawOver(ctx, now);   // chiêu boss: nổ, gai đá / băng, sét, lốc xoáy đè lên nhân vật
     WorldArt.ambient(now, cam, vw, vh, fdt);
     WorldArt.drawAmbient(ctx, now);
     drawFx(now);

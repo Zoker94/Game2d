@@ -71,6 +71,7 @@
     }
   }
   function drawGround(ctx, now) {
+    if (window.BossArt) BossArt.drawGround(ctx, now);   // vết cháy, vết nứt, đầm độc... nằm dưới vùng cảnh báo
     ctx.save();
     // vùng cảnh báo
     for (let i = warns.length - 1; i >= 0; i--) {
@@ -99,7 +100,7 @@
       const b = blasts[i], age = (now - b.t0) / 450;
       if (age >= 1) { blasts.splice(i, 1); continue; }
       const s = b.s, a = 1 - age;
-      ctx.globalAlpha = a * 0.75; ctx.fillStyle = b.color; path(ctx, s, 1); ctx.fill('evenodd');
+      ctx.globalAlpha = a * 0.3; ctx.fillStyle = b.color; path(ctx, s, 1); ctx.fill('evenodd');   // loé nhẹ: hình ảnh chính do BossArt vẽ
       ctx.globalAlpha = a; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3 * a + 1; path(ctx, s, 1 + age * 0.08); ctx.stroke();
       if (b.vfx === 'thunder' && s.k === 'circle' && age < 0.5) {   // sét giáng từ trời
         ctx.globalAlpha = 1 - age * 2; ctx.strokeStyle = '#fffbe0'; ctx.lineWidth = 3;
@@ -122,7 +123,7 @@
     ctx.restore();
   }
   function bind(s) {
-    s.on('fx', d => { if (d.t === 'bcast') onCast(d); else if (d.t === 'bhit') onHit(d); else if (d.t === 'benrage') onEnrage(d); });
+    s.on('fx', d => { if (d.t === 'bcast') { onCast(d); if (window.BossArt) BossArt.onCast(d); } else if (d.t === 'bhit') { onHit(d); if (window.BossArt) BossArt.onHit(d); } else if (d.t === 'benrage') onEnrage(d); });
   }
   window.BossFX = { bind, drawGround };
 })();
