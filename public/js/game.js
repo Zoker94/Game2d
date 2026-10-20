@@ -380,6 +380,8 @@
     s.on('wheelResult', d => UI.onWheel(d));
     s.on('sold', () => GameAudio.sfx('coin', 0));
     s.on('enhanceResult', d => { UI.onEnhance(d); GameAudio.sfx(d.result === 'ok' ? 'enhOk' : 'enhFail'); });
+    s.on('castLock', d => { G.castLockUntil = performance.now() + (d.ms || 0); });
+    s.on('gemResult', d => { UI.onGem(d); GameAudio.sfx(d.ok ? 'enhOk' : 'enhFail'); });
     s.on('online', d => UI.onOnline(d));
     s.on('adminToken', d => (G._adminWin && !G._adminWin.closed) ? (G._adminWin.location.href = '/admin/?t=' + d.token, G._adminWin = null) : G.modal('🛡️ Trang quản trị đã sẵn sàng (phiên 12 giờ).', [
       { t: 'Mở Admin Panel', cls: 'primary', fn: () => { const w = window.open('/admin/#t=' + d.token, '_blank'); if (!w) location.href = '/admin/#t=' + d.token; } },
@@ -929,7 +931,8 @@
       else if (Math.hypot(dr.x - s.x, dr.y - s.y) < 44 && !dr.gold) { G.socket.emit('pickup', { id: pg }); G._pickT = now; if (G.pickGoal === pg) { G.pickGoal = null; G.moveTo = null; v = { x: 0, y: 0 }; } }
     }
     if (manual) G.pickGoal = null;
-    const moving = Math.hypot(v.x, v.y) > 0.01;
+    const casting = G.castLockUntil && performance.now() < G.castLockUntil;   // đánh xa: đứng yên lúc vận chiêu
+    const moving = !casting && Math.hypot(v.x, v.y) > 0.01;
     if (moving) {
       const spd = (G.me.stats.spd || 150) * dt * (myMask & 16 ? 0.55 : 1);
       const nx = s.x + v.x * spd, ny = s.y + v.y * spd;

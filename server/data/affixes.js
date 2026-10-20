@@ -26,7 +26,7 @@ function elementBonus(el, t) {
 // k: mã hiệu ứng; base + step * bậc = giá trị (%), st: hiệu ứng trạng thái gây ra khi đánh trúng
 const AFFIX = {
   freeze:    { name: 'Băng Phong',    base: 4,   step: 0.5,  st: ['freeze', 2000], text: '{v}% đóng băng đối phương 2 giây' },
-  stun:      { name: 'Chấn Hồn',      base: 4,   step: 0.5,  st: ['stun', 1200],   text: '{v}% làm choáng đối phương 1,2 giây' },
+  stun:      { name: 'Chấn Hồn',      base: 4,   step: 0.5,  st: ['stun', 3000],   text: '{v}% làm choáng đối phương 3 giây' },
   poison:    { name: 'Vạn Độc',       base: 8,   step: 1,    st: ['poison', 4000], text: '{v}% gây trúng độc 4 giây' },
   burn:      { name: 'Liệt Hỏa',      base: 8,   step: 1,    st: ['burn', 3000],   text: '{v}% thiêu đốt 3 giây' },
   bleed:     { name: 'Phá Huyết',     base: 8,   step: 1,    st: ['bleed', 3000],  text: '{v}% gây chảy máu 3 giây' },

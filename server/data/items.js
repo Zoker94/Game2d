@@ -144,6 +144,9 @@ for (const m of Object.values(MOUNTS)) {
 }
 ITEMS.event_token.type = 'material';
 
+// Đá khảm 5 loại × 5 cấp (data/gems.js)
+for (const g of require('./gems').gemItems()) ITEMS[g.id] = g;
+
 function equipId(slot, t, rarity) { return `${slot}_${t}_${rarity}`; }
 
 module.exports = { ITEMS, RARITY, SLOTS, TIERS, equipId, CLASS_WEAPON };

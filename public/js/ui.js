@@ -62,6 +62,23 @@
       h += `<div class="st" style="color:${E.color}">◆ Hệ ${E.name}: ${Object.entries(b).map(([k, v]) => `${STAT_NAME[k]} +${v}${k === 'crit' ? '%' : ''}`).join(', ')}</div>`;
     }
     for (const [k, v] of inst.fx || []) h += `<div class="st fx-line">✦ ${fxText(k, v)}</div>`;
+    h += gemLinesHtml(it, inst);
+    return h;
+  }
+  // lỗ khảm của món đồ: đá đã khảm (chỉ số + dòng hiệu ứng) hoặc lỗ trống
+  function socketCount(it) { const C = G.data.gems; return C && it && it.type === 'equip' ? (C.sockets[it.rarity] || 1) : 0; }
+  function gemStatText(g) { return Object.entries(g.gemStats || {}).map(([k, v]) => `${STAT_NAME[k]} +${v}${k === 'crit' ? '%' : ''}`).join(', '); }
+  function gemLinesHtml(it, inst) {
+    const n = socketCount(it);
+    if (!n) return '';
+    let h = '';
+    for (let i = 0; i < n; i++) {
+      const gid = inst && inst.gems && inst.gems[i], g = gid && G.data.items[gid];
+      if (!g) { h += `<div class="st gem-line empty">◇ Lỗ khảm trống</div>`; continue; }
+      const col = G.data.gems.types[g.gem.type].color;
+      h += `<div class="st gem-line" style="color:${col}"><img src="${iconUrl(gid)}" width="16" height="16"> ${esc(G.data.gems.types[g.gem.type].name)} cấp ${g.gem.lv}: ${gemStatText(g)}</div>`;
+      if (g.gemFx) h += `<div class="st fx-line gem-fx">✦ ${fxText(g.gemFx[0], g.gemFx[1])}</div>`;
+    }
     return h;
   }
   // tổng chỉ số của 1 món (gồm cường hóa + ngũ hành) để so sánh
@@ -70,6 +87,7 @@
     if (!it) return o;
     for (const [k, v] of Object.entries(it.stats || {})) o[k] = (o[k] || 0) + ((k === 'crit' || k === 'spd') ? v : v * plusMult((inst && inst.plus) || 0));
     if (inst && inst.el) for (const [k, v] of Object.entries(elemBonus(inst.el, it.tier))) o[k] = (o[k] || 0) + v;
+    for (const gid of (inst && inst.gems) || []) { const g = gid && G.data.items[gid]; if (g) for (const [k, v] of Object.entries(g.gemStats || {})) o[k] = (o[k] || 0) + v; }
     return o;
   }
   const powerOf = o => (o.atk || 0) * 3 + (o.def || 0) * 2 + (o.hp || 0) / 4 + (o.mp || 0) / 8 + (o.crit || 0) * 12;
@@ -575,6 +593,12 @@
   }
 
   // ---------- Túi đồ ----------
+  // vòng sáng xoay quanh ô đồ theo cấp cường hóa: +5 xanh, +8 tím, +11 vàng kim, +14 cầu vồng
+  function plusRing(plus) {
+    const t = plus >= 14 ? 4 : plus >= 11 ? 3 : plus >= 8 ? 2 : plus >= 5 ? 1 : 0;
+    return t ? `<span class="pfx-aura pfx-aura-${t}"></span><span class="pfx pfx-${t}"></span>${t >= 3 ? `<span class="pfx-glow pfx-glow-${t}"></span>` : ''}${t >= 4 ? '<span class="pfx-spark">✦</span><span class="pfx-spark s2">✦</span>' : ''}` : '';
+  }
+  UI.plusRing = plusRing;
   function invGrid(body, opts = {}) {
     const me = G.me;
     const slotsOrder = ['helmet', 'amulet', 'weapon', 'armor', 'ring', 'boots'];
@@ -585,7 +609,7 @@
         const e = me.equip[s];
         const it = e && G.data.items[e.id];
         const ph = !it && placeholderIcon(s);
-        html += `<div class="slot ${it ? 'r-' + it.rarity : 'empty-eq'} ${panelState.sel === 'eq:' + s ? 'sel' : ''}" data-eq="${s}">${it ? `<img src="${iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}` : `${ph ? `<img src="${ph}" class="ic ph" alt="">` : ''}<span class="lbl">${G.data.slots[s]}</span>`}</div>`;
+        html += `<div class="slot ${it ? 'r-' + it.rarity : 'empty-eq'} ${panelState.sel === 'eq:' + s ? 'sel' : ''}" data-eq="${s}">${it ? `${plusRing(e.plus | 0)}<img src="${iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}` : `${ph ? `<img src="${ph}" class="ic ph" alt="">` : ''}<span class="lbl">${G.data.slots[s]}</span>`}</div>`;
       }
       html += '</div>';
     }
@@ -594,7 +618,7 @@
     for (const s of inv) {
       const it = G.data.items[s.id];
       const cant = it.lv > me.level;
-      html += `<div class="slot r-${it.rarity} ${cant ? 'cant' : ''} ${panelState.sel === s.uid ? 'sel' : ''} ${opts.mark && opts.mark.has(s.uid) ? 'marked' : ''}" data-uid="${s.uid}"><img src="${iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}</div>`;
+      html += `<div class="slot r-${it.rarity} ${cant ? 'cant' : ''} ${panelState.sel === s.uid ? 'sel' : ''} ${opts.mark && opts.mark.has(s.uid) ? 'marked' : ''}" data-uid="${s.uid}">${plusRing(s.plus | 0)}<img src="${iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}</div>`;
     }
     for (let i = me.inv.length; i < 48 && !opts.filter; i++) html += '<div class="slot" style="opacity:.35"></div>';
     html += '</div></div>';
@@ -603,7 +627,7 @@
   function selectedItem() {
     const me = G.me, sel = panelState.sel;
     if (!sel) return null;
-    if (sel.startsWith('eq:')) { const slot = sel.slice(3); const e = me.equip[slot]; return e ? { equipped: true, slot, uid: e.uid, id: e.id, plus: e.plus, qty: 1, el: e.el, fx: e.fx } : null; }
+    if (sel.startsWith('eq:')) { const slot = sel.slice(3); const e = me.equip[slot]; return e ? { equipped: true, slot, uid: e.uid, id: e.id, plus: e.plus, qty: 1, el: e.el, fx: e.fx, gems: e.gems } : null; }
     const s = me.inv.find(x => x.uid === sel);
     return s ? Object.assign({ equipped: false }, s) : null;
   }
@@ -658,6 +682,55 @@
       ${panelState.enhRes ? `<div class="enh-res ${panelState.enhRes}">${{ ok: '✨ THÀNH CÔNG!', fail: '💢 Thất bại', insured: '🛡️ Thất bại – Bảo hiểm đã giữ cấp', drop: '💥 Thất bại – rớt về +1' }[panelState.enhRes]}</div>` : ''}
     </div>`;
   }
+  // ---------- Khảm đá ----------
+  const gemStacks = () => G.me.inv.filter(x => G.data.items[x.id] && G.data.items[x.id].gem)
+    .sort((a, b) => { const A = G.data.items[a.id].gem, B = G.data.items[b.id].gem; return A.type < B.type ? -1 : A.type > B.type ? 1 : A.lv - B.lv; });
+  function gemTutHtml() {
+    const st = G.me.gemTut | 0;
+    if (st >= 3) return '';
+    if (st === 0) return `<div class="gem-tut"><b>📖 Thuật khảm đá</b><div class="small">${G.me.level < 15 ? 'Đạt cấp 15 rồi nói chuyện với Thợ Rèn Vương để được chỉ dạy cách khảm đá và nhận đá tặng.' : 'Nói chuyện lại với Thợ Rèn Vương để được chỉ dạy và nhận đá tặng.'}</div></div>`;
+    const steps = [['Nhận đá từ Thợ Rèn', true], ['Khảm 1 viên đá vào trang bị (tab 💎 Khảm đá)', st >= 2], ['Luyện 3 viên Hồng Ngọc cấp 1 thành cấp 2 (tab 🔥 Luyện đá)', st >= 3]];
+    return `<div class="gem-tut"><b>📖 Hướng dẫn khảm đá của Thợ Rèn</b>${steps.map(([t, ok]) => `<div class="small ${ok ? 'ok' : ''}">${ok ? '✔' : '➤'} ${t}</div>`).join('')}</div>`;
+  }
+  function gemSocketBox() {
+    const s = selectedItem();
+    if (!s) return '<div class="item-detail muted small">Chọn một trang bị để xem lỗ khảm.</div>';
+    const it = G.data.items[s.id];
+    if (!it || it.type !== 'equip') return '';
+    const C = G.data.gems, n = socketCount(it), me = G.me;
+    const has = new Set((s.gems || []).filter(Boolean).map(g => G.data.items[g].gem.type));
+    let rows = '';
+    for (let i = 0; i < n; i++) {
+      const gid = s.gems && s.gems[i], g = gid && G.data.items[gid];
+      if (g) {
+        const cost = C.unsocketCost[g.gem.lv - 1];
+        rows += `<div class="sock full" style="border-color:${C.types[g.gem.type].color}"><img src="${iconUrl(gid)}" width="32" height="32"><div class="grow"><b style="color:${C.types[g.gem.type].color}">${esc(g.name)}</b><div class="small">${gemStatText(g)}${g.gemFx ? ' · ✦ ' + fxText(g.gemFx[0], g.gemFx[1]) : ''}</div></div>
+          <button class="btn small" data-gem-unsock="${i}" ${me.gold >= cost ? '' : 'disabled'}>Tháo (${fmt(cost)} 💰)</button></div>`;
+      } else rows += `<div class="sock empty"><div class="sock-hole">◇</div><div class="grow small muted">Lỗ khảm trống</div></div>`;
+    }
+    const free = (s.gems || []).filter(Boolean).length < n;
+    const stacks = gemStacks().filter(x => !has.has(G.data.items[x.id].gem.type));
+    const pick = free ? (stacks.length ? `<div class="small" style="margin-top:6px">Chọn đá để khảm vào lỗ trống:</div><div class="gem-pick">${stacks.map(x => {
+      const g = G.data.items[x.id], cost = C.socketCost[g.gem.lv - 1];
+      return `<button class="gem-btn" data-gem-sock="${x.id}" ${me.gold >= cost ? '' : 'disabled'} title="${esc(g.name)} – ${gemStatText(g)}"><img src="${iconUrl(x.id)}" width="30" height="30"><span>x${x.qty}</span><i>${fmt(cost)}💰</i></button>`;
+    }).join('')}</div>` : '<div class="small muted" style="margin-top:6px">Không có đá phù hợp trong túi. Đá rơi từ quái (nhiều nhất ở Bảo Thạch Khoáng Động, Huyền Tinh Mật Cảnh) và Boss.</div>') : '<div class="small muted" style="margin-top:6px">Đã khảm đầy. Tháo bớt đá nếu muốn đổi viên khác.</div>';
+    return `<div class="item-detail">${itemDesc(s.id, s.plus, s)}<div class="sock-list">${rows}</div>${pick}</div>`;
+  }
+  function gemUpgradeHtml() {
+    const C = G.data.gems, stacks = gemStacks(), me = G.me;
+    if (!stacks.length) return '<p class="small muted">Chưa có viên đá khảm nào. Đá rơi từ quái khắp nơi, nhiều nhất ở Bảo Thạch Khoáng Động (cấp 25+) và Huyền Tinh Mật Cảnh (cấp 55+).</p>';
+    return `<div class="small muted">Luyện ${C.upgrade.need} viên cùng loại, cùng cấp thành 1 viên cấp cao hơn. Thất bại sẽ vỡ mất 1 viên.</div><div class="list">` + stacks.map(x => {
+      const g = G.data.items[x.id], L = g.gem.lv;
+      if (L >= C.max) return `<div class="li"><img src="${iconUrl(x.id)}" class="ic" width="36" height="36"><div class="grow">${itemName(x.id)} <span class="small">x${x.qty}</span><div class="sub">${gemStatText(g)} · Cấp tối đa</div></div></div>`;
+      const rate = Math.round(C.upgrade.rate[L - 1] * 100), gold = C.upgrade.gold[L - 1], can = Math.min(Math.floor(x.qty / C.upgrade.need), Math.floor(me.gold / gold));
+      const nx = G.data.items[x.id.replace(/_\d$/, '_' + (L + 1))];
+      return `<div class="li"><img src="${iconUrl(x.id)}" class="ic" width="36" height="36"><div class="grow">${itemName(x.id)} <span class="small">x${x.qty}</span>
+        <div class="sub">→ ${esc(nx.name)} (${gemStatText(nx)}) · Tỉ lệ <b style="color:${rate >= 80 ? '#4ade80' : rate >= 55 ? '#ffd76a' : '#ff8050'}">${rate}%</b> · ${fmt(gold)} 💰/lần</div></div>
+        <button class="btn small primary" data-gem-up="${x.id}" data-n="1" ${can >= 1 ? '' : 'disabled'}>Luyện</button>${can > 1 ? `<button class="btn small" data-gem-up="${x.id}" data-n="${can}">Luyện hết (${can})</button>` : ''}</div>`;
+    }).join('') + '</div>';
+  }
+  UI.onGem = function () { UI.refreshPanel(); };
+
   UI.onEnhance = function (d) { panelState.enhRes = d.result; UI.refreshPanel(); setTimeout(() => { panelState.enhRes = null; }, 2500); };
 
   function bindInv(body, ctx = {}) {
@@ -1169,7 +1242,7 @@
     const tl = [];
     if (d.shop) tl.push(['buy', '🛒 Mua'], ['sell', '💰 Bán']);
     if (d.knbShop) tl.push(['knb', '💎 Kỳ Trân'], ['sell', '💰 Bán']);
-    if (d.enhance) tl.push(['enhance', '🔨 Cường hóa']);
+    if (d.enhance) tl.push(['enhance', '🔨 Cường hóa'], ['gem', '💎 Khảm đá'], ['gemup', '🔥 Luyện đá']);
     if (tl.length) html += tabs(tl, tab);
     if (tab === 'buy' || tab === 'knb') {
       const list = tab === 'buy' ? d.shop.map(x => ({ id: x.id, price: x.price })) : d.knbShop.map(x => ({ id: x.id, knb: x.knb }));
@@ -1186,6 +1259,11 @@
     } else if (tab === 'enhance') {
       html += '<div class="small muted">Chọn trang bị (kể cả đang mặc) để cường hóa, tối đa +15. Từ +10 trở lên nếu thất bại mà không có Bảo Hiểm Phù sẽ rớt về +1. Huyền Tinh Thạch: ' + G.me.inv.filter(x => x.id === 'stone').reduce((s, x) => s + x.qty, 0) + '</div>' +
         invGrid(body, { filter: s => G.data.items[s.id].type === 'equip' }) + itemActions({ enhance: true });
+    } else if (tab === 'gem') {
+      html += gemTutHtml() + '<div class="small muted">Chọn trang bị (kể cả đang mặc) để khảm đá. Đồ Thường / Hiếm 1 lỗ, VIP 2 lỗ, Truyền Kỳ 3 lỗ. Mỗi món chỉ khảm 1 viên mỗi loại.</div>' +
+        invGrid(body, { filter: s => G.data.items[s.id].type === 'equip' }) + gemSocketBox();
+    } else if (tab === 'gemup') {
+      html += gemTutHtml() + gemUpgradeHtml();
     } else if (d.teleports) {
       // nhóm: thành trấn rồi bãi luyện công; chưa đủ cấp thì mờ đi
       const row = t => { const lock = G.me.level < (t.minLv || 1); return `<div class="li ${lock ? 'locked' : ''}"><div class="grow"><b>${t.town ? '🏯 ' : ''}${esc(t.name)}</b><div class="sub">${t.sect ? esc(t.lv) + (t.mine ? ' · Bổn phái' : '') : 'Cấp ' + t.lv}${t.minLv > 1 ? ` · <span class="${lock ? 'warn' : ''}">Yêu cầu cấp ${t.minLv}</span>` : ''}</div></div><button class="btn small green" data-tp="${t.map}" ${G.map.id === t.map || lock ? 'disabled' : ''}>${t.price ? fmt(t.price) + ' 💰' : 'Miễn phí'}</button></div>`; };
@@ -1201,7 +1279,10 @@
       emit('buy', { npc: d.id, id: b.dataset.buy, qty: q ? +q.value : 1, knb: tab === 'knb' });
     });
     body.querySelectorAll('[data-tp]').forEach(b => b.onclick = () => emit('teleport', { map: b.dataset.tp }));
-    if (tab === 'sell' || tab === 'enhance') bindInv(body, { shop: tab === 'sell', enhance: tab === 'enhance' });
+    if (tab === 'sell' || tab === 'enhance' || tab === 'gem') bindInv(body, { shop: tab === 'sell', enhance: tab === 'enhance' });
+    body.querySelectorAll('[data-gem-sock]').forEach(b => b.onclick = () => { const s = selectedItem(); if (s) emit('gem', { op: 'socket', uid: s.uid, gem: b.dataset.gemSock, npc: d.id }); });
+    body.querySelectorAll('[data-gem-unsock]').forEach(b => b.onclick = () => { const s = selectedItem(); if (s) emit('gem', { op: 'unsocket', uid: s.uid, idx: +b.dataset.gemUnsock, npc: d.id }); });
+    body.querySelectorAll('[data-gem-up]').forEach(b => b.onclick = () => emit('gem', { op: 'upgrade', gem: b.dataset.gemUp, n: +b.dataset.n || 1, npc: d.id }));
     if (tab === 'sell') bindQuickSell(body);
   }
   // ---------- Bán nhanh: lọc theo phẩm chất hoặc chọn nhiều món rồi bán một lần ----------

@@ -11,7 +11,7 @@ const NPCS = {
   truong_lao: { name: 'Trưởng Lão Tân Thủ', sprite: 'elder', color: '#ddd', action: 'tutorial',
     talk: 'Hài tử, giang hồ hiểm ác. Hãy làm theo chỉ dẫn của lão phu để sớm thành danh!' },
   tho_ren: { name: 'Thợ Rèn Vương', sprite: 'smith', color: '#a0522d', action: 'shop', enhance: true,
-    talk: 'Binh khí tốt nhất Tương Dương đây! Ta cũng có thể cường hóa trang bị cho ngươi.',
+    talk: 'Binh khí tốt nhất Tương Dương đây! Ta còn cường hóa trang bị, khảm và luyện đá khảm cho ngươi.',
     shop: equipOf(['weapon']) },
   hieu_may: { name: 'Hiệu May Lưu Thị', sprite: 'lady', color: '#db7093', action: 'shop',
     talk: 'Y phục đẹp, giáp trụ bền, khách quan xem thử đi.',
@@ -115,6 +115,8 @@ const TELEPORTS = [
   { map: 'con_lon', price: 7000 },
   { map: 'vo_luong', price: 9000 },
   { map: 'huyet_ma', price: 12000 },
+  { map: 'bao_thach_dong', price: 2500 },
+  { map: 'huyen_tinh_canh', price: 10000 },
   { map: 'chien_truong', price: 100 }
 ];
 

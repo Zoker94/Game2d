@@ -504,6 +504,40 @@ def elem_emblem(col, kind):
             for a in range(3): ic.paint(ic.m_line([(36 + math.cos(a * 1.047) * 6, 42 + math.sin(a * 1.047) * 6), (36 - math.cos(a * 1.047) * 6, 42 - math.sin(a * 1.047) * 6)], 1.4), '#ffffff', None, edge=0, shine=0)
     return f
 
+# đá khảm: 5 loại × 5 cấp — cấp càng cao viên càng to, nhiều mặt cắt, lấp lánh và tỏa sáng
+GEM_COL = {'ruby': ('#ff8a94', '#8a0618'), 'emerald': ('#9affc0', '#0a6a30'), 'sapphire': ('#a8d8ff', '#0a3a9a'),
+           'topaz': ('#fff0a0', '#b06a06'), 'amethyst': ('#ecc0ff', '#5a1a9a')}
+def gem_icon(ic, kind, L):
+    c1, c2 = GEM_COL[kind]
+    r = 13 + L * 3.2
+    cx, cy = 32, 33
+    if L == 1:   # đá thô: khối méo, ít mặt
+        pts = [(cx - r * 0.9, cy + r * 0.2), (cx - r * 0.5, cy - r * 0.8), (cx + r * 0.4, cy - r * 0.9), (cx + r * 0.95, cy - r * 0.1), (cx + r * 0.6, cy + r * 0.8), (cx - r * 0.3, cy + r * 0.85)]
+        ic.paint(ic.m_poly(pts), c1, c2, ang=-50, edge=0.5, shine=0.25)
+        ic.paint(ic.m_poly([pts[1], pts[2], (cx + r * 0.1, cy - r * 0.1), (cx - r * 0.5, cy)]), light(c1, 0.3), c1, edge=0.15, shine=0, alpha=0.8)
+        ic.spec([(cx - r * 0.45, cy - r * 0.45), (cx - r * 0.1, cy - r * 0.7)], 1.6, 0.8)
+        return
+    n = 6 if L < 4 else 8
+    if L == 5:   # thần phẩm: nạm khung vàng có chấu
+        r = 25
+        bez = [(cx + math.cos(i / 16 * math.tau) * (r + (6 if i % 2 == 0 else 3.5)), cy + math.sin(i / 16 * math.tau) * (r + (6 if i % 2 == 0 else 3.5))) for i in range(16)]
+        ic.paint(ic.m_poly(bez), '#fff2a8', '#9a6208', ang=-50, edge=0.5, shine=0.35)
+    # viên cắt giác: vành ngoài + mặt bàn + các mặt tam giác sáng tối xen kẽ
+    outer = [(cx + math.cos(i / n * math.tau - math.pi / 2) * r, cy + math.sin(i / n * math.tau - math.pi / 2) * r * (0.92 if L < 3 else 1)) for i in range(n)]
+    ic.paint(ic.m_poly(outer), c1, c2, ang=-50, edge=0.55, shine=0.2)
+    tr = r * (0.5 if L < 3 else 0.46)
+    table = [(cx + math.cos(i / n * math.tau - math.pi / 2) * tr, cy + math.sin(i / n * math.tau - math.pi / 2) * tr) for i in range(n)]
+    for i in range(n):
+        a, b, c, d = outer[i], outer[(i + 1) % n], table[(i + 1) % n], table[i]
+        lit = (i % 2 == 0) ^ (i >= n // 2)
+        ic.paint(ic.m_poly([a, b, c, d]), light(c1, 0.25) if lit else c1, c1 if lit else dark(c2, 0.1), ang=-50, edge=0.12, shine=0, alpha=0.75)
+    ic.paint(ic.m_poly(table), light(c1, 0.45), c1, ang=-50, edge=0.15, shine=0.3)
+    ic.spec([(cx - tr * 0.6, cy - tr * 0.2), (cx - tr * 0.1, cy - tr * 0.75)], 1.8, 0.9)
+    if L >= 3:   # lấp lánh
+        for (x, y, k) in ((cx + r * 0.75, cy - r * 0.75, 1.0), (cx - r * 0.85, cy + r * 0.55, 0.7))[:L - 2]:
+            s_ = 3 + L * 0.8 * k
+            ic.paint(ic.m_poly([(x, y - s_), (x + s_ * 0.25, y - s_ * 0.25), (x + s_, y), (x + s_ * 0.25, y + s_ * 0.25), (x, y + s_), (x - s_ * 0.25, y + s_ * 0.25), (x - s_, y), (x - s_ * 0.25, y - s_ * 0.25)]), '#ffffff', light(c1, 0.5), edge=0, shine=0)
+
 SIMPLE = {
     'scroll': scroll, 'vm_scroll': vm_scroll,
     'vm_book': lambda ic: book(ic, ('#b01818', '#3a0606'), '岳'),
@@ -529,6 +563,9 @@ def build():
         ic = Icon(); potion(ic, key); add(key, ic.finish(SIMPLE_GLOW.get(key)))
     for key, fn in SIMPLE.items():
         ic = Icon(); fn(ic); add(key, ic.finish(SIMPLE_GLOW.get(key)))
+    for kind in GEM_COL:
+        for L in range(1, 6):
+            ic = Icon(); gem_icon(ic, kind, L); add(f'gem:{kind}:{L}', ic.finish(GEM_COL[kind][0] if L >= 4 else None))
     rows = (len(tiles) + COLS - 1) // COLS
     atlas = Image.new('RGBA', (COLS * OUT, rows * OUT), (0, 0, 0, 0))
     for k, im in enumerate(tiles): atlas.alpha_composite(im, ((k % COLS) * OUT, (k // COLS) * OUT))

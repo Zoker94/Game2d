@@ -37,6 +37,9 @@ HUMAN = {
     'kiem_khach': (mk(body='slim', robe='#202030', robe2='#101018', trim='#8080a0', hairstyle='ponytail', mask='#101018', weapon='sword', length='long'), 0, 0, 1, None),
     'dao_khach': (mk(robe='#4a2a1a', robe2='#2a160c', trim='#c89040', hairstyle='warrior', headband='#c89040', beard='stubble', bracer='#3a2414'), 1, 0, 1, '#9a9aa6'),
     'kiem_no': (mk(robe='#3a3a5a', robe2='#22223a', trim='#8a90a8', hairstyle='topknot', mask='#1a1a2a', weapon='sword', sleeve='wide', length='long'), 1, 1, 1, '#8a90a8'),
+    # quái khoáng động (đá khảm)
+    'khoang_tac': (mk(body='heavy', robe='#5a4a3a', robe2='#3a2c20', trim='#a08050', hairstyle='warrior', headband='#c8a050', beard='stubble', skin='#c8946a', weapon='hammer', sleeve='short', length='short', rope=True), 1, 0, 0, '#7a7a80'),
+    'khoang_ma': (mk(body='heavy', robe='#1a1426', robe2='#3a2a5a', trim='#a060ff', hairstyle='messy', hair='#2a1a3a', skin='#6a5a8a', horns='#c0a0ff', eyecol='#c080ff', eyewhite='#e0c0ff', weapon='hammer', glow='#a060ff', sleeve='short', length='short'), 2, 0, 2, '#4a3a6a'),
     'dau_muc': (mk(body='heavy', robe='#6a1a1a', robe2='#3a0a0a', trim='#e0b040', hairstyle='warrior', headband='#e0b040', beard='full', weapon='hammer'), 2, 1, 1, '#8a8a96'),
     'ma_binh': (mk(robe='#4b0000', robe2='#2a0000', trim='#c03030', hairstyle='warrior', weapon='spear', glow='#ff4040'), 2, 2, 1, '#5a5a6a'),
     'hac_y_ma': (mk(robe='#1a0a1a', robe2='#0a040a', trim='#a040c0', hairstyle='ponytail', mask='#0a0a0a', weapon='sword', glow='#c060ff', length='long'), 2, 0, 2, '#4a4a5a'),

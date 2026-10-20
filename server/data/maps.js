@@ -327,6 +327,19 @@ const MAP_DEFS = {
     npcs: [{ id: 'dh_chu_tri', x: 20, y: 5 }],
     spawns: []
   },
+  // ---- khoáng động: bãi luyện đá khảm (đá rơi nhiều hơn hẳn nơi khác). Đi bằng Xa Phu. ----
+  bao_thach_dong: {
+    name: 'Bảo Thạch Khoáng Động', theme: 'cave', w: 40, h: 32, seed: 91, lv: '25-35', tier: 3, minLv: 25, gemMine: 1,
+    portals: [{ side: 'E', to: 'huyen_tinh_canh', at: 0.6 }],
+    npcs: [{ id: 'xa_phu', x: 6, y: 16 }],
+    spawns: [['khoang_tac', 9], ['tinh_hat', 8], ['nham_xa', 8], ['khoang_tac', 6]]
+  },
+  huyen_tinh_canh: {
+    name: 'Huyền Tinh Mật Cảnh', theme: 'cave', w: 42, h: 34, seed: 93, lv: '55-70', tier: 5, minLv: 55, gemMine: 2,
+    portals: [{ side: 'W', to: 'bao_thach_dong', at: 0.6 }],
+    npcs: [{ id: 'xa_phu', x: 36, y: 17 }],
+    spawns: [['khoang_ma', 9], ['huyen_hat', 8], ['hong_mang', 8], ['khoang_ma', 6]]
+  },
   chien_truong: {
     name: 'Lôi Đài Hoa Sơn (PK)', theme: 'arena', w: 32, h: 24, seed: 81, lv: '10+', pvp: true, minLv: 10,
     portals: [{ side: 'S', to: 'tuong_duong' }],

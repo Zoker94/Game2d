@@ -22,7 +22,7 @@ class Social {
     if (!o) return this.toast(p, 'Người chơi không còn ở gần', 'error');
     const c = o.c, s = o.stats, g = c.guildId && this.db.data.guilds[c.guildId];
     const equip = {};
-    for (const [slot, it] of Object.entries(c.equip || {})) if (it) equip[slot] = { id: it.id, plus: it.plus || 0, el: it.el, fx: it.fx };
+    for (const [slot, it] of Object.entries(c.equip || {})) if (it) equip[slot] = { id: it.id, plus: it.plus || 0, el: it.el, fx: it.fx, gems: it.gems };
     const power = s.power || Math.round(s.atk * 3 + s.def * 2 + s.maxHp / 4 + s.crit * 12);
     p.socket.emit('inspect', {
       id: o.id, name: c.name, cls: c.cls, level: c.level, guild: g ? g.name : '', role: g ? g.members[o.userId] : '',
@@ -181,7 +181,7 @@ class Social {
     const side = who => {
       const o = t.offer.get(who);
       return { name: who.c.name, gold: o.gold, lock: t.lock.has(who), ok: t.ok.has(who),
-        items: o.items.map(x => { const s = who.c.inv.find(i => i.uid === x.uid); return s ? { uid: s.uid, id: s.id, qty: x.qty, plus: s.plus || 0, el: s.el, fx: s.fx } : null; }).filter(Boolean) };
+        items: o.items.map(x => { const s = who.c.inv.find(i => i.uid === x.uid); return s ? { uid: s.uid, id: s.id, qty: x.qty, plus: s.plus || 0, el: s.el, fx: s.fx, gems: s.gems } : null; }).filter(Boolean) };
     };
     return { me: side(me), them: side(other) };
   }
@@ -198,7 +198,7 @@ class Social {
     const need = o => o.items.length;
     const frees = (p, give) => U.freeSlots(p.c) + give.items.filter(x => { const s = p.c.inv.find(i => i.uid === x.uid); return s && s.qty === x.qty; }).length;
     if (frees(a, oa) < need(ob) || frees(b, ob) < need(oa)) return this.tradeEnd(t, 'Giao dịch thất bại: túi đồ không đủ chỗ');
-    const take = (p, o) => o.items.map(x => { const s = p.c.inv.find(i => i.uid === x.uid); const r = { id: s.id, qty: x.qty, plus: s.plus || 0, extra: s.el ? { el: s.el, fx: s.fx } : null }; U.removeByUid(p.c, x.uid, x.qty); return r; });
+    const take = (p, o) => o.items.map(x => { const s = p.c.inv.find(i => i.uid === x.uid); const r = { id: s.id, qty: x.qty, plus: s.plus || 0, extra: s.el ? Object.assign({ el: s.el, fx: s.fx }, s.gems ? { gems: s.gems.slice() } : {}) : null }; U.removeByUid(p.c, x.uid, x.qty); return r; });
     const ga = take(a, oa), gb = take(b, ob);
     a.c.gold -= oa.gold; b.c.gold -= ob.gold;
     a.c.gold += ob.gold; b.c.gold += oa.gold;

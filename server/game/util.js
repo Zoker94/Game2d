@@ -4,6 +4,7 @@ const { ITEMS } = require('../data/items');
 const { mountStats } = require('../data/mounts');
 const { rollAffixes, elementBonus, CAP } = require('../data/affixes');
 const { ATTRS } = require('../data/attrs');
+const { gemBonus } = require('../data/gems');
 
 // Hệ số chỉ số theo cấp cường hóa: +1..+10 mỗi cấp 12%, +11..+15 mỗi cấp 25%
 const plusMult = plus => 1 + Math.min(plus, 10) * 0.12 + Math.max(0, plus - 10) * 0.25;
@@ -137,6 +138,13 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
     // ngũ hành: mỗi món cộng chỉ số theo hệ
     if (e.el) { elCount[e.el] = (elCount[e.el] || 0) + 1; const eb = elementBonus(e.el, it.tier); for (const k in eb) addStat(k, eb[k]); }
     for (const [k, v] of e.fx || []) fx[k] = (fx[k] || 0) + v;
+    // đá khảm: cộng chỉ số, đá cấp 4-5 thêm dòng hiệu ứng
+    for (const gid of e.gems || []) {
+      const gb = gid && gemBonus(gid);
+      if (!gb) continue;
+      for (const k in gb.stats) addStat(k, gb.stats[k]);
+      if (gb.fx) fx[gb.fx[0]] = (fx[gb.fx[0]] || 0) + gb.fx[1];
+    }
   }
   // bộ ngũ hành: 3 món cùng hệ +6%, 5 món +12% chỉ số chính của hệ đó
   let setEl = null, setN = 0;

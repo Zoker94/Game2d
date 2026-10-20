@@ -32,7 +32,7 @@
     // bản đồ không có cổng (Đại Hội Võ Lâm): đặt cạnh Tương Dương, nối nét đứt
     const extra = [];
     for (const id in maps) if (!pos[id] && !maps[id].sect) {   // bản đồ môn phái đi bằng Xa Phu, không vẽ trên bản đồ thế giới
-      for (const [x, y] of [[-1, 1], [-1, -1], [0, 2], [-2, 0]]) if (!used.has(x + ',' + y)) { put(id, x, y); extra.push([id, 'tuong_duong']); break; }
+      for (const [x, y] of [[-1, 1], [-1, -1], [0, 2], [-2, 0], [-2, 1], [-2, -1], [-1, 2], [1, 2], [0, -2], [-3, 0], [-3, 1]]) if (!used.has(x + ',' + y)) { put(id, x, y); extra.push([id, 'tuong_duong']); break; }
     }
     const xs = Object.values(pos).map(p => p[0]), ys = Object.values(pos).map(p => p[1]);
     const minX = Math.min(...xs), minY = Math.min(...ys);

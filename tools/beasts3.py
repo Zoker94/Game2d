@@ -593,6 +593,11 @@ SPECIES.update({
     'bang_giao': dict(kind='snake', col='#8ac0e8', belly='#f0fbff', pattern='#4a90c0', eye='#e8ffff', hood='#d8f0ff', horns='#f0f8ff', w=12, head=6.4, k=1.35),
     'doc_mang': dict(kind='snake', col='#2a6a20', belly='#c8f080', pattern='#0a3a10', eye='#ffe040', hood='#80ff40', w=12, head=6.4, k=1.35),
     'boss_truc': dict(kind='snake', col='#0a9a62', belly='#d8ffd0', pattern='#04583a', eye='#ffe040', hood='#ffe080', horns='#f0e0a0', w=12, head=6.6, k=1.6),
+    # quái khoáng động (đá khảm)
+    'tinh_hat': dict(kind='scorpion', col='#7a4ab0', bulb='#e0a0ff', eye='#ffd0ff', crown='#d8b0ff', k=1.05),
+    'huyen_hat': dict(kind='scorpion', col='#2a6aa8', bulb='#a0f0ff', eye='#c0ffff', crown='#a8e8ff', k=1.2),
+    'nham_xa': dict(kind='snake', col='#5a5450', belly='#c8b8a0', pattern='#ff7a20', eye='#ffb040', w=11, head=5.8, k=1.05),
+    'hong_mang': dict(kind='snake', col='#a01828', belly='#ffd0c8', pattern='#ff6070', eye='#fff060', hood='#ffb0b8', w=12, head=6.4, k=1.3),
     'bo_cap': dict(kind='scorpion', col='#9c6838', k=1.0),
     'kim_hat': dict(kind='scorpion', col='#d0a030', bulb='#ffe060', k=1.05),
     'doc_hat': dict(kind='scorpion', col='#4a6a2a', bulb='#80ff40', eye='#80ff40', k=1.05),

@@ -90,6 +90,13 @@ const MONSTERS = {
   doan_hon_thi:  { name: 'Đoạn Hồn Thi Vương', lv: 90, sprite: 'ghost',    color: '#6a6a50', aggro: true,  speed: 95,  range: 70 },
   quy_vuong:     { name: 'Quỷ Ảnh Vương',      lv: 94, sprite: 'ghost',    color: '#3a1a5a', aggro: true,  speed: 125, range: 190, ranged: true },
   thien_ma_ve:   { name: 'Thiên Ma Hộ Vệ',     lv: 97, sprite: 'bandit',   color: '#1a0a14', aggro: true,  speed: 120, range: 75 },
+  // ---- quái khoáng động (rơi nhiều đá khảm) ----
+  khoang_tac:    { name: 'Khoáng Tặc',          lv: 26, sprite: 'bandit',   color: '#5a4a3a', aggro: true,  speed: 100, range: 65 },
+  tinh_hat:      { name: 'Tinh Thạch Hạt',      lv: 29, sprite: 'scorpion', color: '#7a4ab0', aggro: true,  speed: 95,  range: 60 },
+  nham_xa:       { name: 'Nham Thạch Xà',       lv: 33, sprite: 'snake',    color: '#5a5450', aggro: true,  speed: 95,  range: 60 },
+  khoang_ma:     { name: 'Khoáng Động Ma Nhân', lv: 57, sprite: 'demon',    color: '#3a2a5a', aggro: true,  speed: 110, range: 70 },
+  huyen_hat:     { name: 'Huyền Tinh Hạt',      lv: 61, sprite: 'scorpion', color: '#2a6aa8', aggro: true,  speed: 100, range: 65 },
+  hong_mang:     { name: 'Hồng Ngọc Mãng',      lv: 66, sprite: 'snake',    color: '#a01828', aggro: true,  speed: 100, range: 70 },
   // ---- quái phó bản (chỉ có trong phó bản; art: dùng hình của quái khác) ----
   pb1_lau_la:    { name: 'Hắc Phong Lâu La',   lv: 20, sprite: 'bandit',   color: '#202a3a', aggro: true,  speed: 105, range: 60, art: 'hac_phong_tac', pb: 1 },
   pb1_dao_thu:   { name: 'Hắc Phong Đao Thủ',  lv: 22, sprite: 'bandit',   color: '#4a2a1a', aggro: true,  speed: 105, range: 65, art: 'dao_khach', pb: 1 },

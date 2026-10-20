@@ -244,6 +244,33 @@
     }
     ctx.restore();
   }
+  // tên 7 màu: dải cầu vồng trôi qua chữ + ánh sáng lướt + sao lấp lánh quanh tên
+  const RAINBOW = ['#ff3b3b', '#ff9a1f', '#ffe83a', '#3be35a', '#3ab8ff', '#4a5aff', '#c34aff'];
+  function rainbowName(ctx, text, x, y, w) {
+    const now = performance.now(), sh = (now / 1600) % 1;
+    ctx.save();
+    ctx.font = '800 12px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round'; ctx.lineWidth = 3.4; ctx.strokeStyle = '#120818'; ctx.strokeText(text, x, y);
+    const g = ctx.createLinearGradient(x - w / 2, 0, x + w / 2, 0);
+    for (let i = 0; i <= 14; i++) g.addColorStop(i / 14, RAINBOW[Math.floor(i / 2 + sh * 7) % 7]);
+    ctx.fillStyle = g; ctx.fillText(text, x, y);
+    // vệt sáng trắng lướt qua chữ
+    ctx.globalCompositeOperation = 'source-atop';
+    const lx = x - w / 2 - 20 + ((now / 1100) % 1.6) / 1.6 * (w + 40);
+    const lg = ctx.createLinearGradient(lx - 10, 0, lx + 10, 0);
+    lg.addColorStop(0, 'rgba(255,255,255,0)'); lg.addColorStop(0.5, 'rgba(255,255,255,.85)'); lg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = lg; ctx.fillText(text, x, y);
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 6; i++) {   // sao lấp lánh
+      const ph = (now / 900 + i * 0.37) % 1, a = Math.sin(ph * Math.PI);
+      const sx = x - w / 2 + ((i * 0.618 + Math.floor(now / 900 + i * 0.37) * 0.29) % 1) * w, sy = y + (i % 2 ? -8 : 7);
+      ctx.globalAlpha = a; ctx.fillStyle = RAINBOW[(i + Math.floor(now / 400)) % 7];
+      const r = 1.2 + a * 2.2;
+      ctx.beginPath(); ctx.moveTo(sx, sy - r * 1.8); ctx.lineTo(sx + r * 0.45, sy - r * 0.45); ctx.lineTo(sx + r * 1.8, sy); ctx.lineTo(sx + r * 0.45, sy + r * 0.45);
+      ctx.lineTo(sx, sy + r * 1.8); ctx.lineTo(sx - r * 0.45, sy + r * 0.45); ctx.lineTo(sx - r * 1.8, sy); ctx.lineTo(sx - r * 0.45, sy - r * 0.45); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
   // tên + danh hiệu + bang + huy hiệu, trả về y trên cùng (để đặt bong bóng chat)
   function drawNameplate(ctx, x, top, o) {
     const t = title(o.power), pk = pkLevel(o.pk);
@@ -252,7 +279,8 @@
     else if (o.party) nameCol = '#5dff8a';
     const name = (pk ? '☠ ' : '') + (o.party ? '👥 ' : '') + (o.gm ? '[GM] ' : '') + o.name + (o.level ? ' Lv' + o.level : '');
     const w = textW('bold 12px system-ui, sans-serif', name);
-    outlined(ctx, name, x, top - 10, 12, nameCol, '#000', 700);
+    if (o.gm) rainbowName(ctx, name, x, top - 10, w);   // quản trị viên: tên 7 sắc cầu vồng lấp lánh
+    else outlined(ctx, name, x, top - 10, 12, nameCol, '#000', 700);
     if (o.rank) drawBadge(ctx, x - w / 2 - 10, top - 11, o.rank);
     // Võ Lâm Minh Chủ: danh hiệu riêng vàng rực thay cho danh hiệu lực chiến
     if (o.mc) {

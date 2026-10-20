@@ -14,6 +14,7 @@ const { KHAC, AFFIX, PROC_KEYS } = require('../data/affixes');
 // ngũ hành tương khắc: khắc +20% sát thương, bị khắc -15%
 function elemMult(ae, de) { if (!ae || !de) return [1, 0]; if (KHAC[ae] === de) return [1.2, 1]; if (KHAC[de] === ae) return [0.85, -1]; return [1, 0]; }
 const { ENHANCE_MAX, ENHANCE_SAFE, ENHANCE_RATE, enhanceCost } = require('../data/enhance');
+const { rollGemDrop, gemId, GEM_KEYS } = require('../data/gems');
 const U = require('./util');
 const { Escort } = require('./escort');
 const { Story } = require('./story');
@@ -74,6 +75,7 @@ class World {
     this.features = null;       // gắn sau (bang hội, sự kiện,...)
     this.escort = new Escort(this);
     this.story = new Story(this);
+    this.gems = new (require('./gems').Gems)(this);
     this.duel = new Duel(this);
     this.bossAI = new (require('./bossai').BossAI)(this);
     for (const id in MAPS) {
@@ -220,7 +222,7 @@ class World {
       name: c.name, cls: c.cls, level: c.level, exp: c.exp, expNext: U.expNext(c.level),
       gold: c.gold, knb: c.knb, hp: c.hp, mp: c.mp, stats: p.stats,
       inv: c.inv, equip: c.equip, kills: c.kills, pvpKills: c.pvpKills, bossKills: c.bossKills,
-      tutorial: this.tutorialView(c), guild: g ? { id: g.id, name: g.name, role: g.members[p.userId] } : null,
+      tutorial: this.tutorialView(c), gemTut: c.gemTut | 0, guild: g ? { id: g.id, name: g.name, role: g.members[p.userId] } : null,
       expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null,
@@ -356,6 +358,7 @@ class World {
     p.lastMove = now;
     const map = MAPS[p.mapId];
     if (isCC(p, now)) { p.moving = false; p.socket.emit('pos', { x: p.x, y: p.y }); return; }
+    if (now < (p.castLock || 0) - 80) { p.moving = false; p.socket.emit('pos', { x: p.x, y: p.y }); return; }   // đánh xa: đứng yên lúc vận chiêu
     const maxD = p.stats.spd * (dt / 1000) * 1.5 + 24;
     const d = Math.hypot(x - p.x, y - p.y);
     if (d > maxD || isSolidAt(map, x, y)) {
@@ -617,6 +620,10 @@ class World {
         return this.toast(p, 'Không có mục tiêu trong tầm', 'error');
       }
       if (t) { this.faceTo(p, t); p.target = t.id; }
+      if (isRanged(p.c.cls) && sk.type !== 'dash') {   // chống thả diều: đánh xa phải đứng yên vận chiêu
+        const lock = idx === 0 ? CAST_LOCK.basic : CAST_LOCK.skill;
+        p.castLock = now + lock; p.socket.emit('castLock', { ms: lock });
+      }
       const enemies = this.enemiesOf(p);
       let hits = [];
       let fxd = { t: sk.fx, from: p.id, x: p.x, y: p.y, color: sk.color, dir: p.dir };
@@ -714,12 +721,16 @@ class World {
     if (!t || t.dead || t.cart || !ST_BITS[kind]) return;
     if (t.c && t.dodgeUntil > Date.now()) return;
     const now = Date.now();
+    const fromPlayer = !!(src && src.c);
+    if (kind === 'stun' && t.c && now < (t.stunImmune || 0)) return;    // vừa hết choáng: kháng choáng một lúc (chống khoá choáng liên tục)
     if (t.boss && (kind === 'stun' || kind === 'freeze')) ms *= 0.35;   // boss kháng khống chế
-    if (t.c && (kind === 'stun' || kind === 'freeze')) ms *= 0.6;        // người chơi bị khống chế ngắn hơn
+    if (t.c && (kind === 'freeze' || (kind === 'stun' && !fromPlayer))) ms *= 0.6;   // quái / boss khống chế người chơi ngắn hơn
     if (t.c && t.stats.fx && t.stats.fx.ccres && (kind === 'stun' || kind === 'freeze' || kind === 'slow')) ms *= 1 - t.stats.fx.ccres / 100;
     if (ms < 150) return;
     t.st = t.st || {};
+    if (kind === 'stun' && t.c && t.st.stun > now) return;               // đang choáng: không cộng dồn thời gian
     t.st[kind] = Math.max(t.st[kind] || 0, now + ms);
+    if (kind === 'stun' && t.c) t.stunImmune = now + ms + STUN_IMMUNE;
     if (kind === 'freeze') t.frozenUntil = t.st.freeze;
     if (DOT_KINDS.has(kind)) {
       const base = src ? (src.stats ? src.stats.atk : (src.tpl ? src.tpl.atk : 10)) : 10;
@@ -769,6 +780,7 @@ class World {
     if (src && src.c && t && !t.c && !t.cart) src.lastHitMon = Date.now();   // thú cưng biết chủ đang giao chiến
     if (t.dead) return;
     if (t.c && src && t.dodgeUntil > Date.now()) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return; }   // đang lướt né
+    if (t.c && src && src.c && isRanged(src.c.cls) && !isRanged(t.c.cls)) dmg = Math.max(1, Math.round(dmg * MELEE_GUARD));   // cận chiến: hộ thể trước đòn đánh xa
     // phòng thủ từ trang bị (chỉ với đòn đánh trực tiếp, không áp cho độc/bỏng)
     if (t.c && src && (kind === 'hit' || kind === 'crit' || kind === 'hurt')) {
       const fx = t.stats.fx || {};
@@ -953,6 +965,8 @@ class World {
       if (Math.random() < 0.5 * dr) drops.push('stone2');
       if (Math.random() < 0.25 * dr) drops.push('insure');
       if (Math.random() < 0.3 * dr) drops.push('mount_stone');
+      // boss: 2-4 viên đá khảm cấp 2-3 (boss thế giới cấp 3-4)
+      for (let i = 0, k = U.randInt(2, 4) + (tpl.world ? 6 : 0); i < k; i++) drops.push(gemId(GEM_KEYS[U.randInt(0, GEM_KEYS.length - 1)], tpl.world ? (Math.random() < 0.25 ? 4 : 3) : (Math.random() < 0.3 ? 3 : 2)));
       if (Math.random() < 0.04 * dr) { const pool = tier >= 4 ? ['mount_hoa_ky_lan', 'mount_phuong_hoang'] : ['mount_bach_ho', 'mount_kim_nguu', 'mount_kim_quy']; drops.push(pool[U.randInt(0, pool.length - 1)]); }
       if (tpl.lv >= 20 && Math.random() < 0.1 * dr) drops.push(['book_fire', 'book_water', 'book_ice'][U.randInt(0, 2)]);
       const top = ranking[0] && this.players.get(ranking[0][0]);
@@ -978,6 +992,8 @@ class World {
       if (r() < 0.003 * dr) drops.push('lucky_chest');
       if (r() < 0.02 * dr) drops.push('mount_food');
       if (tpl.lv >= 25 && r() < 0.002 * dr * (1 + tier)) drops.push('stone2');
+      const gem = rollGemDrop(map.def.gemMine | 0, tpl.lv, r);   // đá khảm: nhiều ở khoáng động
+      if (gem) drops.push(gem);
       if (tpl.lv >= 30 && r() < 0.0015 * dr) drops.push('insure');
       if (tpl.lv >= 20 && r() < 0.001 * dr) drops.push('mount_stone');
       if (this.features.isActive('lantern') && r() < 0.3) drops.push('event_token');
@@ -1224,8 +1240,8 @@ class World {
     if (it.cls && it.cls !== c.cls) return this.toast(p, `${it.name} là vũ khí của ${CLASSES[it.cls].name}, không dùng được`, 'error');
     c.inv.splice(i, 1);
     const prev = c.equip[it.slot];
-    c.equip[it.slot] = { uid: s.uid, id: s.id, plus: s.plus || 0, el: s.el, fx: s.fx };
-    if (prev) c.inv.push({ uid: prev.uid, id: prev.id, qty: 1, plus: prev.plus || 0, el: prev.el, fx: prev.fx });
+    c.equip[it.slot] = { uid: s.uid, id: s.id, plus: s.plus || 0, el: s.el, fx: s.fx, gems: s.gems };
+    if (prev) c.inv.push({ uid: prev.uid, id: prev.id, qty: 1, plus: prev.plus || 0, el: prev.el, fx: prev.fx, gems: prev.gems });
     this.recalc(p);
     if (it.slot === 'weapon') { this.progressTutorial(p, 'equip'); this.story.on(p, 'equip'); }
     this.db.markDirty();
@@ -1235,7 +1251,7 @@ class World {
     if (!e) return;
     if (U.freeSlots(c) < 1) return this.toast(p, 'Túi đồ đầy', 'error');
     delete c.equip[slot];
-    c.inv.push({ uid: e.uid, id: e.id, qty: 1, plus: e.plus || 0, el: e.el, fx: e.fx });
+    c.inv.push({ uid: e.uid, id: e.id, qty: 1, plus: e.plus || 0, el: e.el, fx: e.fx, gems: e.gems });
     this.recalc(p);
   }
   discard(p, uid) {
@@ -1256,6 +1272,7 @@ class World {
     if (!npc) return this.toast(p, 'Hãy lại gần NPC hơn', 'error');
     this.progressTutorial(p, 'talk', { npc: npcId });
     if (this.sect) this.sect.onTalk(p, npcId);
+    this.gems.onTalk(p, npcId);
     if (this.story.on(p, 'talk', { npc: npcId })) return;   // NPC đang có cảnh cốt truyện
     const out = { id: npc.id, name: npc.name, talk: npc.talk, action: npc.action, sprite: npc.sprite, color: npc.color, enhance: !!npc.enhance };
     if (npc.shop) {
@@ -1754,17 +1771,25 @@ class World {
 
 // ---------- Hiệu ứng khống chế / sát thương theo thời gian ----------
 // võ công -> [kiểu, thời gian (ms), tỉ lệ]
+// Choáng từ võ công người chơi kéo dài 3-8 giây (sau khi hết choáng được kháng choáng STUN_IMMUNE).
+// Cận chiến: đánh thường có 50% làm chậm đối phương để không bị thả diều.
 const SKILL_STATUS = {
-  tl1: ['stun', 1000, 0.35], tl2: ['stun', 800, 0.3], tl5: ['stun', 1500, 1],
-  tv1: ['stun', 900, 0.3], tv2: ['bleed', 3000, 0.5], tv4: ['burn', 3000, 1], tv5: ['stun', 1200, 0.7],
+  tl0: ['slow', 1500, 0.5], tv0: ['slow', 1500, 0.5], ty0: ['slow', 1500, 0.5], cb0: ['slow', 1500, 0.5],
+  tl1: ['stun', 3000, 0.35], tl2: ['stun', 3000, 0.3], tl4: ['stun', 3000, 1], tl5: ['stun', 6000, 1],
+  tv1: ['stun', 3000, 0.3], tv2: ['bleed', 3000, 0.5], tv4: ['burn', 3000, 1], tv5: ['stun', 5000, 0.7],
   dm1: ['bleed', 3000, 0.4], dm2: ['slow', 2500, 1], dm4: ['bleed', 4000, 1], dm5: ['slow', 2000, 0.6],
   nd0: ['poison', 3000, 0.35], nd1: ['poison', 5000, 1], nd2: ['poison', 3000, 1], nd4: ['poison', 4000, 1], nd5: ['poison', 5000, 1],
   nm2: ['slow', 1500, 0.4], nm4: ['slow', 2000, 0.6],
   ty1: ['slow', 1500, 0.5], ty2: ['slow', 2000, 1], ty4: ['bleed', 3000, 0.6], ty5: ['freeze', 2000, 1],
-  cb1: ['stun', 800, 0.3], cb2: ['slow', 2000, 0.5], cb5: ['stun', 1500, 1],
-  vd1: ['slow', 1500, 0.4], vd2: ['slow', 2000, 1], vd5: ['stun', 1200, 0.7],
-  cl0: ['stun', 500, 0.15], cl1: ['stun', 800, 0.35], cl2: ['burn', 3000, 0.6], cl4: ['slow', 2500, 1], cl5: ['stun', 1500, 0.8]
+  cb1: ['stun', 3000, 0.3], cb2: ['slow', 2000, 0.5], cb4: ['stun', 3000, 1], cb5: ['stun', 8000, 1],
+  vd1: ['slow', 1500, 0.4], vd2: ['slow', 2000, 1], vd5: ['stun', 4000, 0.5],
+  cl1: ['stun', 3000, 0.25], cl2: ['burn', 3000, 0.6], cl4: ['slow', 2500, 1], cl5: ['stun', 5000, 0.6]
 };
+// ---------- Cân bằng cận chiến / đánh xa ----------
+const isRanged = cls => (CLASSES[cls] && CLASSES[cls].range || 0) >= 200;
+const CAST_LOCK = { basic: 260, skill: 450 };   // đánh xa đứng yên vận chiêu (ms)
+const MELEE_GUARD = 0.85;                       // cận chiến nhận 85% sát thương từ người chơi đánh xa
+const STUN_IMMUNE = 3000;                       // kháng choáng sau khi hết choáng (ms)
 const FX_STATUS = { firedragon: ['burn', 4000, 1] };
 // quái gây hiệu ứng khi đánh trúng
 const MON_STATUS = { snake: ['poison', 4000, 0.25], scorpion: ['poison', 4000, 0.3], yeti: ['slow', 2000, 0.3], demon: ['burn', 3000, 0.25], bear: ['stun', 700, 0.12], tiger: ['bleed', 3000, 0.2], ghost: ['slow', 1500, 0.2] };
