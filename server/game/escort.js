@@ -102,8 +102,8 @@ class Escort {
     }
   }
   start(p, tier) {
+    if (!Object.prototype.hasOwnProperty.call(ROUTES, tier)) return;
     const r = ROUTES[tier], c = p.c, w = this.w;
-    if (!r) return;
     if (!w.nearNpc(p, 'tieu_cuc')) return w.toast(p, 'Hãy gặp Tổng Tiêu Đầu Long Môn Tiêu Cục', 'error');
     if (this.carts.has(p.userId)) return w.toast(p, 'Bạn đang áp tiêu rồi', 'error');
     if (c.level < r.lv) return w.toast(p, `${r.name} yêu cầu cấp ${r.lv}`, 'error');

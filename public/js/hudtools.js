@@ -15,7 +15,10 @@
     Promise.resolve(r).then(() => { if (document.body.classList.contains('touch') && screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); })
       .catch(() => UI.toast('Trình duyệt không cho phép toàn màn hình', 'error'));
   }
-  function fsIcon(b) { const on = fsOn(); b.innerHTML = on ? '<i>🗗</i>' : '<i>⛶</i>'; b.title = on ? 'Thoát toàn màn hình (F11)' : 'Toàn màn hình (F11)'; }
+  // biểu tượng vẽ bằng SVG (ký tự ⛶ không có trong phông chữ nhiều điện thoại -> hiện ô vuông)
+  const SVG_IN = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>';
+  const SVG_OUT = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5"/></svg>';
+  function fsIcon(b) { const on = fsOn(); b.innerHTML = `<i>${on ? SVG_OUT : SVG_IN}</i><span>${on ? 'Thu nhỏ' : 'Toàn màn'}</span>`; b.title = on ? 'Thoát toàn màn hình (F11)' : 'Toàn màn hình (F11)'; }
 
   // ---------- dịch chuyển nhanh (quản trị) ----------
   let tab = 'map', online = null, q = '';
@@ -68,7 +71,7 @@
     if (pk.parentNode !== row) row.appendChild(pk);
     if (fsOk && !$('btn-fs')) { const b = document.createElement('button'); b.id = 'btn-fs'; b.className = 'qb sq'; b.onclick = e => { e.stopPropagation(); toggleFs(); }; fsIcon(b); row.insertBefore(b, pk); }
     let tp = $('btn-tp');
-    if (G.me.owner && !tp) { tp = document.createElement('button'); tp.id = 'btn-tp'; tp.className = 'qb sq'; tp.title = 'Dịch chuyển nhanh (quản trị) – phím G'; tp.innerHTML = '<i>🧭</i>'; tp.onclick = e => { e.stopPropagation(); openTp(); }; row.insertBefore(tp, row.firstChild); }
+    if (G.me.owner && !tp) { tp = document.createElement('button'); tp.id = 'btn-tp'; tp.className = 'qb sq'; tp.title = 'Dịch chuyển nhanh (quản trị) – phím G'; tp.innerHTML = '<i>🧭</i><span>Bay</span>'; tp.onclick = e => { e.stopPropagation(); openTp(); }; row.insertBefore(tp, row.firstChild); }
     else if (!G.me.owner && tp) tp.remove();
   }
   setInterval(ensure, 500);

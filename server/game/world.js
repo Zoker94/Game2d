@@ -366,14 +366,18 @@ class World {
     if (isCC(p, now)) { p.moving = false; p.socket.emit('pos', { x: p.x, y: p.y }); return; }
     // đánh xa: đứng yên lúc vận chiêu. Gói di chuyển gửi trước khi máy khách biết bị khoá (độ trễ mạng) chỉ bỏ qua, không kéo giật về
     if (now < (p.castLock || 0) - 80) { p.moving = false; if (Math.hypot(x - p.x, y - p.y) > 90) p.socket.emit('pos', { x: p.x, y: p.y }); return; }
-    const maxD = p.stats.spd * (dt / 1000) * 1.5 + 24;
+    // quãng được phép tích luỹ theo thời gian thật (tối đa ~1 giây), mỗi gói tiêu bớt: gửi dồn dập nhiều gói không đi nhanh hơn được
+    const cap = p.stats.spd * 1.5 + 24;
+    const allow = Math.min(cap, (p.mvAllow ?? cap) + p.stats.spd * 1.5 * dt / 1000);
     const d = Math.hypot(x - p.x, y - p.y);
-    if (d > maxD || isSolidAt(map, x, y)) {
+    p.mvAllow = allow;
+    if (d > allow || isSolidAt(map, x, y)) {
       p.socket.emit('pos', { x: p.x, y: p.y });
       return;
     }
     if (p.recall && Math.hypot(x - p.recall.x, y - p.recall.y) > 24) this.cancelRecall(p, 'Bạn đã di chuyển');
     if (d > 0.5) this.wake(p, now);
+    p.mvAllow = allow - d;
     p.x = x; p.y = y;
     p.dir = (data.d | 0) & 3;
     p.moving = !!data.m;
@@ -1291,8 +1295,8 @@ class World {
     this.db.markDirty();
   }
   unequip(p, slot) {
-    const c = p.c, e = c.equip[slot];
-    if (!e) return;
+    const c = p.c, e = Object.prototype.hasOwnProperty.call(c.equip, slot) ? c.equip[slot] : null;
+    if (!e || !e.id) return;
     if (U.freeSlots(c) < 1) return this.toast(p, 'Túi đồ đầy', 'error');
     delete c.equip[slot];
     c.inv.push({ uid: e.uid, id: e.id, qty: 1, plus: e.plus || 0, el: e.el, fx: e.fx, gems: e.gems });
@@ -1525,7 +1529,7 @@ class World {
       c.hotbar = bar;
     } else if (a.op === 'branch') {
       const to = a.to;
-      if (!cl.branches[to] || to === branchOf(c)) return;
+      if (to !== 'noi' && to !== 'ngoai' || to === branchOf(c)) return;
       if (c.level >= BRANCH_FREE_LV) {
         if (!U.countItem(c, 'tay_tuy_kinh')) return this.toast(p, `Từ cấp ${BRANCH_FREE_LV} đổi hệ cần 1 Tẩy Tủy Kinh (bán ở Tàng Kinh Các / Kỳ Trân Các)`, 'error');
         U.removeItemById(c, 'tay_tuy_kinh', 1);
@@ -1570,7 +1574,7 @@ class World {
   }
 
   selectDragon(p, el) {
-    if (!p.c.dragons || !p.c.dragons[el]) return;
+    if (!p.c.dragons || !Object.prototype.hasOwnProperty.call(p.c.dragons, el) || !DRAGONS[el]) return;
     p.c.dragon = el;
     p.dirtyMe = true;
     this.toast(p, `Đã chọn Long Ấn: ${DRAGONS[el].name}`, 'reward');
@@ -1587,7 +1591,7 @@ class World {
       c.riding = !c.riding;
       this.fx(p.mapId, { t: 'death', id: p.id, x: p.x, y: p.y, small: true });
     } else if (a.op === 'select') {
-      if (!c.mounts[a.id]) return;
+      if (!Object.prototype.hasOwnProperty.call(c.mounts, a.id) || !MOUNTS[a.id]) return;
       c.mount = a.id;
     } else if (a.op === 'feed') {
       const m = c.mounts[a.id];
@@ -1625,7 +1629,8 @@ class World {
 
   // ---------- Vòng lặp ----------
   start() {
-    this.timer = setInterval(() => this.tick(), TICK);
+    // lỗi trong một nhịp chỉ ghi log, không làm sập cả máy chủ
+    this.timer = setInterval(() => { try { this.tick(); } catch (e) { console.error('[tick]', e); } }, TICK);
   }
 
   // ---------- thời tiết theo bản đồ ----------

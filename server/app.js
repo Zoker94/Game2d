@@ -280,6 +280,15 @@ io.use((socket, next) => {
 
 const NAME_RE = /^[\p{L}\p{N}_]{3,14}$/u;
 
+// gói tin có chuỗi hoặc khoá trùng tên thuộc tính của Object.prototype: tra bảng ITEMS[x], ROUTES[x]… sẽ ra hàm / prototype
+const PROTO_NAMES = new Set(Object.getOwnPropertyNames(Object.prototype));
+function protoKey(v, depth) {
+  if (typeof v === 'string') return PROTO_NAMES.has(v);
+  if (!v || typeof v !== 'object' || depth > 4) return false;
+  if (Array.isArray(v)) { for (let i = 0; i < v.length && i < 300; i++) if (protoKey(v[i], depth + 1)) return true; return false; }
+  for (const k of Object.keys(v)) if (PROTO_NAMES.has(k) || protoKey(v[k], depth + 1)) return true;
+  return false;
+}
 io.on('connection', socket => {
   const user = socket.user;
   let player = null;
@@ -288,7 +297,9 @@ io.on('connection', socket => {
   hello();
 
   const on = (ev, fn) => socket.on(ev, (...args) => {
+    if (args.some(a => protoKey(a, 0))) return;   // chặn khoá kiểu "__proto__", "constructor"… (làm hỏng dữ liệu / sập máy chủ)
     try { fn(...args); } catch (e) { console.error(`[socket ${ev}]`, e); }
+    if (player && player.c && !Number.isFinite(player.c.gold)) { console.error(`[socket ${ev}] vàng không hợp lệ, đặt lại 0`); player.c.gold = 0; }
   });
   const inGame = fn => (...args) => { if (player && world.players.get(user.id) === player) fn(...args); };
 

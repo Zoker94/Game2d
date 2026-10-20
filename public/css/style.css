@@ -1586,3 +1586,14 @@ body.touch #tp-box { top: 8px; right: auto; left: 50%; transform: translateX(-50
 #tp-box .tp-it b { display: block; font-size: 12.5px; } #tp-box .tp-it small, #tp-box .tp-pl small { display: block; color: #a89a80; font-size: 11px; }
 #tp-box .tp-pl { grid-column: 1 / -1; display: flex; align-items: center; gap: 4px; padding: 4px 6px; border-bottom: 1px solid rgba(255,255,255,.08); }
 #tp-box .tp-pl > div { flex: 1; min-width: 0; }
+.qb i svg { display: block; margin: 0 auto; }
+.qb.sq span { display: none; }
+/* điện thoại: các nút nhanh xếp lưới 2 cột sát bản đồ nhỏ, cao bằng bản đồ */
+body.touch #quick-btns { display: grid; grid-template-columns: repeat(2, 46px); grid-auto-rows: 30px; gap: 3px; align-content: start; }
+body.touch #qb-row { display: contents; }
+body.touch #quick-btns .qb, body.touch #quick-btns .qb.sq { width: 46px !important; height: 30px !important; padding: 0 1px; border-width: 2px; border-radius: 7px; }
+body.touch #quick-btns .qb.sq span { display: block; }
+body.touch #quick-btns .qb i { font-size: 12px; line-height: 1; }
+body.touch #quick-btns .qb i svg { width: 13px; height: 13px; }
+body.touch #quick-btns .qb span { font-size: 7.5px; line-height: 1.1; }
+body.touch #map-row { gap: 3px; }

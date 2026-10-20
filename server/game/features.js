@@ -570,7 +570,7 @@ class Features {
       }
       case 'apply': {
         if (g) return err('Bạn đã có bang hội');
-        const tg = gs[a.id];
+        const tg = Object.prototype.hasOwnProperty.call(gs, a.id) ? gs[a.id] : null;
         if (!tg) return err('Bang hội không tồn tại');
         tg.requests = tg.requests || [];
         if (tg.requests.includes(p.userId)) return err('Đã gửi đơn, chờ duyệt');
@@ -582,6 +582,7 @@ class Features {
       }
       case 'accept': case 'reject': {
         if (!isMgr) return err('Không đủ quyền');
+        if (!(g.requests || []).includes(a.uid)) return err('Không có đơn xin vào bang của người này');   // chỉ duyệt người đã nộp đơn
         g.requests = (g.requests || []).filter(x => x !== a.uid);
         const u = users[a.uid];
         if (a.op === 'reject' || !u || !u.character) break;

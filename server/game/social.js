@@ -5,6 +5,9 @@ const { MAPS } = require('../data/maps');
 
 const REQ_TTL = 60000;
 
+// dấu vân tay của món đồ: đổi cường hoá, đá khảm, dòng thuộc tính thì giao dịch bị huỷ
+const itemSig = s => [s.plus || 0, (s.gems || []).join(','), s.el || '', JSON.stringify(s.fx || [])].join('|');
+
 class Social {
   constructor(world, features, db) {
     this.w = world; this.f = features; this.db = db;
@@ -157,7 +160,7 @@ class Social {
           const s = p.c.inv.find(i => i.uid === x.uid);
           const qty = Math.max(1, Math.min(s ? s.qty : 0, x.qty | 0 || 1));
           if (s && ITEMS[s.id] && ITEMS[s.id].noTrade) { this.toast(p, `${ITEMS[s.id].name} không thể giao dịch`, 'error'); continue; }
-          if (s && !items.some(i => i.uid === s.uid)) items.push({ uid: s.uid, qty });
+          if (s && !items.some(i => i.uid === s.uid)) items.push({ uid: s.uid, qty, id: s.id, sig: itemSig(s) });   // sig: chặn đổi cường hoá / đá khảm sau khi đã đưa ra
         }
         const gold = Math.max(0, Math.min(p.c.gold, Math.floor(+a.gold || 0)));
         T.offer.set(p, { items, gold });
@@ -193,7 +196,7 @@ class Social {
     const { a, b } = t;
     if (!this.w.players.has(a.userId) || !this.w.players.has(b.userId) || a.mapId !== b.mapId) return this.tradeEnd(t, 'Giao dịch bị hủy (một bên đã rời đi)');
     const oa = t.offer.get(a), ob = t.offer.get(b);
-    const valid = (p, o) => p.c.gold >= o.gold && o.items.every(x => { const s = p.c.inv.find(i => i.uid === x.uid); return s && s.qty >= x.qty; });
+    const valid = (p, o) => Number.isFinite(p.c.gold) && p.c.gold >= o.gold && o.items.every(x => { const s = p.c.inv.find(i => i.uid === x.uid); return s && s.qty >= x.qty && s.id === x.id && itemSig(s) === x.sig; });
     if (!valid(a, oa) || !valid(b, ob)) return this.tradeEnd(t, 'Giao dịch thất bại: vật phẩm đã thay đổi');
     const need = o => o.items.length;
     const frees = (p, give) => U.freeSlots(p.c) + give.items.filter(x => { const s = p.c.inv.find(i => i.uid === x.uid); return s && s.qty === x.qty; }).length;

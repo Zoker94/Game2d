@@ -4,6 +4,15 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Sửa nhiều lỗi bảo mật nghiêm trọng: gói tin giả có thể làm sập máy chủ, biến ngân lượng thành lỗi rồi mua bán miễn phí, làm hỏng túi đồ / hệ võ công, hoặc ép người khác vào bang. Bang chủ giờ chỉ duyệt được người đã nộp đơn.',
+      'Chặn hack tốc độ di chuyển (gửi dồn dập gói di chuyển).',
+      'Giao dịch: nếu món đồ bị đổi cường hoá / đá khảm sau khi đã đưa lên bàn, giao dịch tự huỷ – không còn bị lừa nhận đồ khác với lúc khoá.',
+      'Điện thoại: các nút nhanh (Bay, Toàn màn hình, chế độ PK, Mục tiêu, Tự động, Về thành) xếp gọn 2 cột sát bản đồ nhỏ; biểu tượng toàn màn hình không còn hiện ô vuông.'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Làm lại tốc độ lên cấp: kinh nghiệm cần để lên cấp tăng rất mạnh, nhất là từ cấp 30 trở lên (cấp 60 ≈ 5.000 con quái mỗi cấp, cấp 90 ≈ 14.600 con). Leo từ 1 lên 99 nay mất vài trăm giờ cày, không còn 1 ngày là xong.',
       'Đánh quái cao hơn mình quá 6 cấp nhận rất ít kinh nghiệm (chặn kéo cấp bằng tổ đội cấp cao).',
       'Giảm kinh nghiệm từ phó bản, áp tiêu, nhiệm vụ môn phái, cốt truyện và ngồi thiền cho phù hợp. Nhiệm vụ ngày nay thưởng kinh nghiệm theo % cấp nên vẫn đáng làm ở cấp cao.'
