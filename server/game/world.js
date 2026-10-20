@@ -21,6 +21,7 @@ const { Escort } = require('./escort');
 const { Story } = require('./story');
 const { Duel } = require('./duel');
 const { DaiHoi, DAIHOI_MAP } = require('./daihoi');
+const { isOwner } = require('../owner');
 const { ATTRS, attrTotal, attrUsed, attrResetCost } = require('../data/attrs');
 const { SECT_MAP } = require('../data/sect');
 
@@ -228,7 +229,7 @@ class World {
       inv: c.inv, equip: c.equip, kills: c.kills, pvpKills: c.pvpKills, bossKills: c.bossKills,
       tutorial: this.tutorialView(c), gemTut: c.gemTut | 0, guild: g ? { id: g.id, name: g.name, role: g.members[p.userId] } : null,
       expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
-      quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, dead: p.dead,
+      quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, owner: isOwner(p.user) ? 1 : 0, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null,
       minhChu: this.daihoi && this.daihoi.isMinhChu(p.userId) ? 1 : 0,
       attr: c.attr || {}, attrFree: attrTotal(c.level) - attrUsed(c.attr), attrReset: attrResetCost(c.level),

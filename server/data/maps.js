@@ -659,7 +659,7 @@ function generate(id, def = MAP_DEFS[id]) {
   const bossSpot = farFromPortals.length ? farFromPortals[Math.floor(r() * farFromPortals.length)] : start;
 
   return {
-    id, name: def.name, theme: def.theme, w, h, tiles: g, safe: !!def.safe, pvp: !!def.pvp, tourney: !!def.tourney, minLv: def.minLv || 1, lv: def.lv, tier: def.tier ?? 0, town: !!def.town,
+    id, name: def.name, theme: def.theme, w, h, tiles: g, safe: !!def.safe, pvp: !!def.pvp, tourney: !!def.tourney, duelArena: !!def.duelArena, minLv: def.minLv || 1, lv: def.lv, tier: def.tier ?? 0, town: !!def.town,
     portals, npcs: def.npcs, spawns, walkable, buildings, props, sect: def.sect || null, noPk: !!def.noPk,
     boss: def.temple ? { x: cx, y: cy - 4 } : { x: bossSpot % w, y: (bossSpot / w) | 0 },   // miếu: Boss đứng giữa sân
     center: { x: cx, y: cy }

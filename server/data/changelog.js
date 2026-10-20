@@ -4,6 +4,14 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Nút ⛶ Toàn màn hình cạnh nút chế độ PK (hoặc phím F11); trên điện thoại vào toàn màn hình sẽ khoá màn hình ngang.',
+      'Chủ server: nút 🧭 Dịch chuyển nhanh (phím G) – chọn bản đồ để bay tới ngay, hoặc tab Người chơi để Đến chỗ / Kéo về một người chơi đang online, có ô tìm tên.',
+      'Sửa lỗi Lôi Đài Tỷ Võ: thoát game khi đang ở lôi đài nay vào lại sẽ về Tương Dương; không thể gửi thách đấu từ trong lôi đài.'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Tỷ võ / PK trên điện thoại thoáng hơn: thanh tỷ võ thu gọn thành viên nhỏ ở mép dưới (chỉ còn giờ và nút Xin thua), khung mục tiêu nhỏ lại, khung chat thu gọn ẩn đi, thông báo chuyển xuống mép dưới – giữa màn hình không còn bảng nào che đối thủ. Chế độ gọn bật suốt trận tỷ võ, kể cả lúc đếm ngược.'
     ]
   },
