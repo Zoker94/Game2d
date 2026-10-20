@@ -22,7 +22,7 @@
         size: (o.size || 4) * (0.6 + R() * 0.8), color: o.color || '#fff', drag: o.drag || 0
       });
     }
-    const cap = q < 1 ? 450 : 900;
+    const cap = q < 1 || lean ? 160 : 320;   // giới hạn hạt sáng (PK đông người rất dễ vượt)
     if (parts.length > cap) parts.splice(0, parts.length - cap);
   }
   function glowDot(ctx, x, y, r, color, a = 1, soft) {
@@ -32,7 +32,8 @@
   }
   function glowPath(ctx, draw, color, w, a = 1) {
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    const passes = [[w * 3.2, 0.16, color], [w * 1.7, 0.35, color], [w * 0.9, 0.8, color], [Math.max(1, w * 0.35), 0.9, '#ffffff']];
+    // 2 lớp (quầng màu + lõi trắng) thay cho 4 lớp: nhìn gần như nhau mà nhẹ gấp đôi
+    const passes = [[w * 2.2, 0.3, color], [Math.max(1, w * 0.45), 0.9, '#ffffff']];
     for (const [lw, al, c] of passes) { ctx.globalAlpha = al * a; ctx.strokeStyle = c; ctx.lineWidth = lw; ctx.beginPath(); draw(); ctx.stroke(); }
   }
   function ground(ctx, x, y, r, color, a) {
@@ -60,16 +61,33 @@
   const TAU = Math.PI * 2;
   function poly(ctx, pts) { pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); }
   function flat(ctx, x, y, fn) { ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.45); fn(); ctx.restore(); }
+  // vòng phù văn: vẽ sẵn thành ảnh (theo màu, bán kính làm tròn 10px, số nan) rồi chỉ xoay + ép dẹt + chép mỗi khung
+  const runeCache = new Map();
+  function runeSprite(r, c, spokes) {
+    const rr = Math.max(10, Math.round(r / 10) * 10), k = c + rr + ':' + spokes;
+    let cv = runeCache.get(k);
+    if (cv) return cv;
+    const S = rr * 2 + 24;
+    cv = document.createElement('canvas'); cv.width = cv.height = S;
+    const g = cv.getContext('2d'); g.translate(S / 2, S / 2); g.globalCompositeOperation = 'lighter';
+    glowPath(g, () => g.arc(0, 0, rr, 0, TAU), c, 3, 1);
+    glowPath(g, () => g.arc(0, 0, rr * 0.78, 0, TAU), c, 2, 0.8);
+    for (let i = 0; i < spokes; i++) {
+      const an = i / spokes * TAU;
+      glowPath(g, () => { g.moveTo(Math.cos(an) * rr * 0.78, Math.sin(an) * rr * 0.78); g.lineTo(Math.cos(an) * rr, Math.sin(an) * rr); }, c, 2, 1);
+      glowPath(g, () => g.arc(Math.cos(an + 0.4) * rr * 0.89, Math.sin(an + 0.4) * rr * 0.89, rr * 0.05, 0, TAU), c, 1.5, 1);
+    }
+    cv._r = rr;
+    if (runeCache.size > 60) runeCache.clear();
+    runeCache.set(k, cv);
+    return cv;
+  }
   function runeCircle(ctx, x, y, r, c, a, rot, spokes = 8) {
+    if (a <= 0.01) return;
+    const cv = runeSprite(r, c, spokes), k = r / cv._r;
     flat(ctx, x, y, () => {
-      ctx.rotate(rot);
-      glowPath(ctx, () => ctx.arc(0, 0, r, 0, TAU), c, 3, a);
-      glowPath(ctx, () => ctx.arc(0, 0, r * 0.78, 0, TAU), c, 2, a * 0.8);
-      for (let i = 0; i < spokes; i++) {
-        const an = i / spokes * TAU;
-        glowPath(ctx, () => { ctx.moveTo(Math.cos(an) * r * 0.78, Math.sin(an) * r * 0.78); ctx.lineTo(Math.cos(an) * r, Math.sin(an) * r); }, c, 2, a);
-        glowPath(ctx, () => ctx.arc(Math.cos(an + 0.4) * r * 0.89, Math.sin(an + 0.4) * r * 0.89, r * 0.05, 0, TAU), c, 1.5, a);
-      }
+      ctx.rotate(rot); ctx.globalAlpha = Math.min(1, a);
+      ctx.drawImage(cv, -cv.width / 2 * k, -cv.height / 2 * k, cv.width * k, cv.height * k);
     });
   }
   function setFlash(f, c, delay, dur) { if (f.from === window.G.you) flash = { color: c, t0: performance.now() + delay, dur }; }
@@ -645,7 +663,7 @@
     const a = Math.atan2(ey - by, ex - bx), now = performance.now();
     const cls = src && (src.cls || (src === window.G.self && window.G.me ? window.G.me.cls : null));
     const M = MOTIF[cls] || { proj: 'qi', aoe: null, hit: 'burst' };
-    if (sigOnly) { if (M.aoe) aoeMotif(ctx, M.aoe, p, tx, ty, r, c); return; }
+    if (sigOnly) { if (M.aoe && !lean) aoeMotif(ctx, M.aoe, p, tx, ty, r, c); return; }   // máy yếu / đang nặng: bỏ hình nền môn phái phía sau chiêu
     if (MELEE.has(f.t)) {
       if (f.t !== 'palm' || cls !== 'caibang')
         fxSprite(ctx, 'slash', p * 1.3, ex, ey, { rot: a, color: f.t === 'bite' ? '#ff5050' : c, scale: f.t === 'bite' ? 0.8 : f.t === 'dash' ? 1.6 : 1.15, alpha: 1.2 - p });
@@ -1625,8 +1643,18 @@
     G.fx = G.fx.filter(f => now - f.t0 < f.dur);
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
+    // giới hạn hiệu ứng vẽ cùng lúc: chiêu của mình / đánh vào mình luôn vẽ đủ; chiêu người khác chỉ vẽ đủ khi chưa đông,
+    // còn lại vẽ gọn (đốm sáng nhỏ tại điểm trúng) để PK đông người không giật
+    // tự điều chỉnh: thời gian vẽ hiệu ứng trung bình các khung trước quá cao -> vẽ gọn hơn (máy khỏe vẫn vẽ đủ)
+    const heavy = fxCost > 6, veryHeavy = fxCost > 10;
+    const tStart = performance.now();
+    let others = 0;
+    const FULL_OTHERS = veryHeavy ? 0 : (heavy || (G.gfx && G.gfx.lowFx)) ? 2 : 5;
+    lean = heavy || !!(G.gfx && G.gfx.lowFx);
+    for (let i = G.fx.length - 1; i >= 0; i--) { const f = G.fx[i]; f._lite = false; if (f.from !== G.you && f.to !== G.you && (SIG[f.t] || f.t !== 'levelup') && ++others > FULL_OTHERS) f._lite = true; }
     for (const f of G.fx) {
       const p = Math.max(0, (now - f.t0) / f.dur);
+      if (f._lite) { const q = pos(f); glowDot(ctx, q.tx, q.ty - 28, 26, f.color || '#fff', (1 - p) * 0.55); continue; }
       const { sx, sy, tx, ty, src } = pos(f);
       const c = f.color || '#fff', r = f.r || 140;
       const bx = sx, by = sy - 28, ex = tx, ey = ty - 28;
@@ -1888,10 +1916,13 @@
       if (q.drag) { const k = Math.max(0, 1 - q.drag * dt); q.vx *= k; q.vy *= k; }
       q.vy += q.ay * dt; q.x += q.vx * dt; q.y += q.vy * dt;
       const a = 1 - age / q.life;
-      glowDot(ctx, q.x, q.y, q.size * 3, q.color, a);
+      if (q.size < 2.6) { ctx.globalAlpha = a; ctx.fillStyle = q.color; ctx.fillRect(q.x - 1, q.y - 1, 2, 2); }   // hạt nhỏ: chấm vuông, khỏi vẽ quầng
+      else glowDot(ctx, q.x, q.y, q.size * 3, q.color, a);
     }
     ctx.restore();
+    fxCost = fxCost * 0.9 + (performance.now() - tStart) * 0.1;
   }
+  let fxCost = 0, lean = false;   // thời gian vẽ hiệu ứng (ms, trung bình trượt); lean: bỏ lớp hình nền môn phái
 
   window.FX = {
     init(fn) { entityById = fn; },

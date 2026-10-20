@@ -6,7 +6,8 @@ const CHANGELOG = [
     items: [
       'Cân bằng PK: đánh nhau với người chơi ngang cấp, ngang đồ nay kéo dài khoảng 1-2 phút thay vì chết sau 1 chiêu (sát thương giữa người chơi giảm mạnh, đánh quái không đổi).',
       'Khi đang giao tranh với người chơi: hồi máu từ chiêu, hút máu và hồi phục còn 25%; bình máu hồi chiêu 10 giây, mỗi bình hồi tối đa 6% máu. Bình nội lực không bị ảnh hưởng.',
-      'Giao tranh kéo dài quá 60 giây: sát thương hai bên tăng dần (+35% mỗi 10 giây) để trận đấu luôn có kết quả.'
+      'Giao tranh kéo dài quá 60 giây: sát thương hai bên tăng dần (+35% mỗi 10 giây) để trận đấu luôn có kết quả.',
+      'PK trong thành mượt hơn: hiệu ứng chiêu vẽ nhẹ hơn (vòng phù văn vẽ sẵn, vệt sáng 2 lớp, ít hạt sáng), chiêu của người ngoài cuộc vẽ gọn khi đông người, máy chậm tự giảm hiệu ứng; bớt hoa / bụi cây trong thành.'
     ]
   },
   {

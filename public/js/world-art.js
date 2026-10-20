@@ -305,7 +305,7 @@
       let kind = null, sway = false, nat = null, glowC = null;
       const pick = (arr, k) => arr[Math.floor(hash(tx, ty, k) * arr.length)];
       if (t === T.GRASS || t === T.FLOWER) {
-        const fl = t === T.FLOWER ? 0.25 : theme === 'town' ? 0.12 : 0;   // thành: nhiều hoa, bụi, đá cảnh hơn
+        const fl = t === T.FLOWER ? 0.2 : theme === 'town' ? 0.03 : 0;   // thành: thêm chút hoa, bụi (ít để PK trong thành không giật)
         if (r < 0.07) { kind = 'tuft'; sway = true; nat = pick(['tuft0', 'tuft1', 'tuft2', 'tuft0', 'fern0'], 106); }
         else if (r < 0.155 + fl) { kind = 'tuft'; sway = true; nat = pick(theme === 'town' ? ['flower_pink', 'flower_white', 'flower_yellow', 'tuft_flower'] : ['flower_yellow', 'flower_white', 'flower_pink', 'flower_lav', 'tuft_flower'], 107); }
         else if (r < 0.19 + fl) { kind = 'bush'; nat = pick(theme === 'mountain' ? ['bush0', 'bush_berry', 'bush_small', 'bush1'] : ['bush0', 'bush1', 'bush_pink', 'bush_white', 'bush_berry', 'bush_small'], 108); }
