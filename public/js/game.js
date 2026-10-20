@@ -268,6 +268,21 @@
     loading(true, 'Đang kết nối...');
     GameAudio.init();
     const s = G.socket = io({ auth: { token: G.token }, transports: ['websocket', 'polling'] });
+    function showUpdateGate(news) {
+      if (document.getElementById('update-gate')) return;
+      s.close();   // ngắt khỏi máy chủ: bản cũ không được chơi tiếp
+      G.inGame = false; loading(false);
+      const items = news && news.items && news.items.length
+        ? `<div class="ug-news"><div class="ug-sub">Nội dung cập nhật${news.date ? ' ' + UI.esc(news.date) : ''}:</div><ul>${news.items.map(t => `<li>${UI.esc(t)}</li>`).join('')}</ul></div>` : '';
+      const g = document.createElement('div'); g.id = 'update-gate';
+      g.innerHTML = `<div class="ug-box"><div class="ug-icon">🎉</div><h2>Võ Lâm Pixel đã có phiên bản mới!</h2>
+        <p>Máy chủ vừa cập nhật. Vui lòng tải lại trang để tiếp tục chơi.</p>${items}
+        <button class="btn primary ug-btn">🔄 Tải lại để chơi tiếp</button></div>`;
+      g.querySelector('.ug-btn').onclick = () => location.reload();
+      // chặn mọi thao tác bàn phím phía sau, Enter / Space = tải lại
+      document.addEventListener('keydown', e => { e.stopImmediatePropagation(); e.preventDefault(); if (e.code === 'Enter' || e.code === 'Space') location.reload(); }, true);
+      document.body.appendChild(g);
+    }
     s.on('connect', () => loading(false));
     s.on('connect_error', err => {
       loading(false);
@@ -282,16 +297,8 @@
     });
     s.io.on('reconnect', () => { loading(false); });
     s.on('hello', d => {
-      // máy chủ đã cập nhật bản mới trong lúc đang chơi: mời tải lại trang
-      if (d.build && window.BUILD && d.build !== window.BUILD) G.refreshData(true);
-      if (d.build && window.BUILD && d.build !== window.BUILD && !G._askedReload) {
-        G._askedReload = true;
-        const bar = document.createElement('div'); bar.id = 'update-bar';
-        bar.innerHTML = '🎉 Võ Lâm Pixel vừa có bản cập nhật mới! <button class="btn small primary">Tải lại ngay</button><button class="btn small" data-x>✕</button>';
-        bar.querySelector('.primary').onclick = () => location.reload();
-        bar.querySelector('[data-x]').onclick = () => bar.remove();
-        document.body.appendChild(bar);
-      }
+      // máy chủ đã cập nhật bản mới: chặn chơi tiếp, bắt buộc tải lại trang để nhận bản mới
+      if (d.build && window.BUILD && d.build !== window.BUILD) { showUpdateGate(d.news); return; }
       G.user = d.user;
       if (G.inGame) { if (d.user.hasChar) s.emit('enter'); return; }
       if (!d.user.hasChar) showCreate(); else showEnter();
@@ -1148,7 +1155,7 @@
         } else ctx.drawImage(Sprites.npcSprite(n.sprite, n.color, 0), nx - 32, ny - 44);
         label(nx, ntop, n.name, '#7fffd4', 12, true);
         const tut = G.me && G.me.tutorial;
-        if (tut && !tut.done && ((tut.type === 'talk' && tut.npc === n.id) || (tut.type === 'buy' && n.action === 'shop') || (tut.type === 'daily' && n.id === 'su_gia'))) {
+        if (Story.wantsNpc(n.id) || (tut && !tut.done && ((tut.type === 'talk' && tut.npc === n.id) || (tut.type === 'buy' && n.action === 'shop') || (tut.type === 'daily' && n.id === 'su_gia')))) {
           const by = Math.sin(now / 200) * 4;
           label(nx, ntop - 22 + by, '❗', '#ffd700', 22);
         }

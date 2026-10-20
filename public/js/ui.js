@@ -772,8 +772,10 @@
     return p.join(', ');
   }
   function renderQuests(body) {
-    const tab = panelState.tab || (G.me.tutorial.done ? 'daily' : 'tutorial');
-    let html = tabs([['story', '📜 Cốt truyện'], ['tutorial', '📖 Tân thủ'], ['daily', '📅 Hàng ngày']], tab);
+    // hướng dẫn tân thủ nằm trong chương 1 cốt truyện; tab Tân thủ chỉ còn khi máy chủ vẫn dùng hướng dẫn riêng
+    const oldTut = !G.me.tutorial.done;
+    const tab = panelState.tab || (G.me.story && !G.me.story.done ? 'story' : oldTut ? 'tutorial' : 'daily');
+    let html = tabs([['story', '📜 Cốt truyện'], ...(oldTut ? [['tutorial', '📖 Tân thủ']] : []), ['daily', '📅 Hàng ngày']], tab);
     if (tab === 'story') {
       body.innerHTML = html + Story.renderTab();
       bindTabs(body); Story.bindTab(body);
@@ -1141,6 +1143,7 @@
   // ---------- NPC ----------
   UI.openNpc = function (d) {
     if (d.action === 'tutorial' && !G.me.tutorial.done) { UI.openPanel('quests', { tab: 'tutorial' }); return; }
+    if (d.action === 'tutorial' && G.me.story && !G.me.story.done) { UI.openPanel('quests', { tab: 'story' }); return; }
     if (d.action === 'guild') { UI.openPanel('guild'); return; }
     if (d.action === 'event') { UI.openPanel('events', { tab: 'checkin' }); UI.toast(d.talk); return; }
     if (d.action === 'quest') { UI.openPanel('quests', { tab: 'daily' }); return; }

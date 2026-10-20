@@ -320,6 +320,7 @@ class Features {
       q.claimed = true;
       this.w.giveReward(p, q.reward, 'Nhiệm vụ ngày');
       this.w.progressTutorial(p, 'daily');
+      this.w.story.on(p, 'daily');
     }
     p.socket.emit('daily', this.dailyView(p));
   }

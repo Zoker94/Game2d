@@ -217,14 +217,16 @@ app.get('/api/leaderboard', (req, res) => {
 adminRoutes(app, { db, world, features, io, rateLimited });
 
 // ---------------- File tĩnh + đánh số phiên bản (không cần xóa cache khi cập nhật) ----------------
-// BUILD đổi mỗi lần mã nguồn đổi: trang HTML luôn tải mới và gắn ?v=BUILD vào mọi file JS/CSS,
+// BUILD đổi mỗi lần mã nguồn đổi (cả giao diện lẫn máy chủ): trang HTML luôn tải mới và gắn ?v=BUILD vào mọi file JS/CSS,
+// người chơi đang mở bản cũ sẽ bị chặn bằng bảng "Phiên bản mới" cho tới khi tải lại trang.
 // file có ?v được lưu lâu (immutable); file khác (hình, json) trình duyệt luôn hỏi lại (ETag → 304 nếu không đổi).
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+const { CHANGELOG } = require('./data/changelog');
 const BUILD = (() => {
   if (process.env.RENDER_GIT_COMMIT) return process.env.RENDER_GIT_COMMIT.slice(0, 10);
   const h = require('crypto').createHash('sha1');
   const walk = d => { for (const f of fs.readdirSync(d).sort()) { const fp = path.join(d, f), st = fs.statSync(fp); if (st.isDirectory()) walk(fp); else h.update(fp + st.size + ':' + st.mtimeMs); } };
-  try { walk(PUBLIC_DIR); } catch (e) { h.update(String(Date.now())); }
+  try { walk(PUBLIC_DIR); walk(__dirname); } catch (e) { h.update(String(Date.now())); }
   return h.digest('hex').slice(0, 10);
 })();
 const htmlCache = {};
@@ -261,7 +263,7 @@ io.on('connection', socket => {
   const user = socket.user;
   let player = null;
 
-  const hello = () => socket.emit('hello', { user: publicUser(user), motd: db.data.config.motd, build: BUILD });
+  const hello = () => socket.emit('hello', { user: publicUser(user), motd: db.data.config.motd, build: BUILD, news: CHANGELOG[0] || null });
   hello();
 
   const on = (ev, fn) => socket.on(ev, (...args) => {

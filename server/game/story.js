@@ -1,11 +1,13 @@
 // Cốt truyện chính: theo dõi tiến độ từng người, phát hội thoại, sinh boss cốt truyện riêng.
 const U = require('./util');
-const { PROLOGUE, CHAPTERS } = require('../data/story');
+const { PROLOGUE, CHAPTERS, CH1_V1_MAP } = require('../data/story');
 const { MAPS, TILE, isSolidAt } = require('../data/maps');
 const { MONSTERS, BOSSES } = require('../data/monsters');
 const { NPCS } = require('../data/npcs');
 const { ITEMS } = require('../data/items');
 
+// bước hướng dẫn cần tới NPC nào
+const STEP_NPC = { buy: 'duoc_diem', daily: 'su_gia' };
 // NPC nằm ở bản đồ nào (để chỉ đường)
 const NPC_MAP = {};
 for (const [mid, m] of Object.entries(MAPS)) for (const n of m.npcs) if (!NPC_MAP[n.id]) NPC_MAP[n.id] = mid;
@@ -14,8 +16,13 @@ class Story {
   constructor(world) { this.w = world; this.elites = new Set(); }
 
   state(c) {
-    if (!c.story) c.story = { ch: 0, st: 0, n: 0, seen: false, done: false };
-    return c.story;
+    if (!c.story) c.story = { ch: 0, st: 0, n: 0, seen: false, done: false, v: 2 };
+    const s = c.story;
+    if (!s.v) {   // tiến độ trước khi gộp hướng dẫn tân thủ vào chương 1
+      if (!s.done && s.ch === 0) s.st = CH1_V1_MAP[s.st] != null ? CH1_V1_MAP[s.st] : s.st;
+      s.v = 2;
+    }
+    return s;
   }
   step(c) {
     const s = this.state(c);
@@ -26,6 +33,7 @@ class Story {
   targetMap(step) {
     if (!step) return null;
     if (step.type === 'talk') return step.map || NPC_MAP[step.npc] || 'tuong_duong';
+    if (step.type === 'buy' || step.type === 'daily') return NPC_MAP[STEP_NPC[step.type]] || 'tuong_duong';
     if (step.type === 'map' || step.type === 'elite') return step.map;
     if (step.type === 'kill') {   // bản đồ có loại quái này
       for (const [mid, m] of Object.entries(MAPS)) if ((m.spawns || []).some(sp => step.mons.includes(sp.mon))) return mid;
@@ -40,7 +48,7 @@ class Story {
     const have = step.type === 'level' ? c.level : s.n;
     return {
       ch: s.ch, st: s.st, steps: CHAPTERS[s.ch].steps.length, total: CHAPTERS.length, chName: CHAPTERS[s.ch].name,
-      type: step.type, text: step.text, have: Math.min(have, need), need, npc: step.npc || null,
+      type: step.type, text: step.text, hint: step.hint || null, tut: !!step.tut, have: Math.min(have, need), need, npc: step.npc || STEP_NPC[step.type] || null,
       map: tm, mapName: tm ? MAPS[tm].name : null, next: tm && tm !== p.mapId ? this.w.escort.nextMap(p.mapId, tm) : null,
       eid: p.storyElite && !p.storyElite.dead ? p.storyElite.id : null, seen: !!s.seen
     };
@@ -77,19 +85,25 @@ class Story {
       return false;
     }
     if (type === 'level') { if (c.level >= step.n) this.advance(p); return false; }
+    if (type === 'equip' || type === 'skill' || type === 'buy' || type === 'daily') { this.advance(p); return false; }
     return false;
   }
   // bước kế có thể đã đạt sẵn (đang đứng ở bản đồ yêu cầu / đủ cấp)
   check(p) {
     const step = this.step(p.c);
     if (!step) return;
-    if (step.type === 'level' && p.c.level >= step.n) this.advance(p);
+    const t = p.c.tutorial;
+    if (step.tut && t && (t.done || t.step > step.tut)) { this.advance(p, true); return; }   // đã học ở hướng dẫn tân thủ kiểu cũ
+    if (step.type === 'equip' && p.c.equip.weapon) this.advance(p);
+    else if (step.type === 'level' && p.c.level >= step.n) this.advance(p);
     else if (step.type === 'map' && p.mapId === step.map) this.advance(p);
   }
-  advance(p) {
+  advance(p, skip) {
     const c = p.c, s = this.state(c), ch = CHAPTERS[s.ch], step = ch.steps[s.st];
-    if (step.done) this.scene(p, step.done, ch.name);
-    this.reward(p, step.reward, `Cốt truyện – ${ch.name}`);
+    if (!skip) {   // skip: bỏ qua bước hướng dẫn đã làm trước đây (không thoại, không thưởng)
+      if (step.done) this.scene(p, step.done, ch.name);
+      this.reward(p, step.reward, `Cốt truyện – ${ch.name}`);
+    }
     s.st++; s.n = 0;
     if (p.storyElite) { this.removeElite(p); }
     if (s.st >= ch.steps.length) {
@@ -100,7 +114,7 @@ class Story {
       p.socket.emit('storyScene', { title: `Chương ${s.ch + 1}: ${nc.name}`, lines: [['n', nc.desc]], kind: 'chapter' });
     }
     const nx = this.step(c);
-    if (nx && nx.intro) this.scene(p, nx.intro, CHAPTERS[s.ch].name);
+    if (nx && nx.intro && !(nx.tut && c.tutorial && (c.tutorial.done || c.tutorial.step > nx.tut))) this.scene(p, nx.intro, CHAPTERS[s.ch].name);
     p.dirtyMe = true;
     this.w.db.markDirty();
     setTimeout(() => this.check(p), 50);
@@ -111,7 +125,7 @@ class Story {
     if (r.expPct) out.exp = Math.round(U.expNext(p.c.level) * r.expPct * 0.25);
     if (r.gold) out.gold = r.gold;
     if (r.knb) out.knb = r.knb;
-    if (r.items) out.items = r.items.filter(([id]) => ITEMS[id]);
+    if (r.items) out.items = r.items.filter(([id]) => id === '@book1' || ITEMS[id]);   // @book1: sách kỹ năng 2 của môn phái
     this.w.giveReward(p, out, src);
   }
 

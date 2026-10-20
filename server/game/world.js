@@ -29,6 +29,7 @@ const SNAP_EVERY = 2;       // gửi trạng thái 10 lần/giây
 const PICKUP_R = 56;
 const AGGRO_R = 200;
 const LEASH_R = 650;
+const MERGED_TUTORIAL = true;   // hướng dẫn tân thủ nằm trong chương 1 cốt truyện
 const BOSS_REGEN_DELAY = 30000;   // boss hồi máu sau 30 giây không bị người chơi gây sát thương
 
 let entSeq = 1;
@@ -234,6 +235,8 @@ class World {
   }
 
   tutorialView(c) {
+    // hướng dẫn tân thủ đã gộp vào chương 1 cốt truyện (data/story.js): khung hướng dẫn riêng không còn hiện
+    if (MERGED_TUTORIAL) return { done: true };
     const t = c.tutorial;
     if (t.done || t.step >= TUTORIAL.length) return { done: true };
     const s = TUTORIAL[t.step];
@@ -257,6 +260,7 @@ class World {
     if (t.progress < (s.n || 1)) { t.progress++; p.dirtyMe = true; }
   }
   claimTutorial(p) {
+    if (MERGED_TUTORIAL) return;
     const c = p.c, t = c.tutorial;
     if (t.done || t.step >= TUTORIAL.length) return;
     const s = TUTORIAL[t.step];
@@ -684,7 +688,7 @@ class World {
     p.c.mp -= sk.mp;
     p.cds[sk.id] = now + sk.cd;
     p.socket.emit('cd', { idx, until: sk.cd });
-    if (idx >= 1) this.progressTutorial(p, 'skill');
+    if (idx >= 1) { this.progressTutorial(p, 'skill'); this.story.on(p, 'skill'); }
     p.dirtyMe = true;
   }
 
@@ -1223,7 +1227,7 @@ class World {
     c.equip[it.slot] = { uid: s.uid, id: s.id, plus: s.plus || 0, el: s.el, fx: s.fx };
     if (prev) c.inv.push({ uid: prev.uid, id: prev.id, qty: 1, plus: prev.plus || 0, el: prev.el, fx: prev.fx });
     this.recalc(p);
-    if (it.slot === 'weapon') this.progressTutorial(p, 'equip');
+    if (it.slot === 'weapon') { this.progressTutorial(p, 'equip'); this.story.on(p, 'equip'); }
     this.db.markDirty();
   }
   unequip(p, slot) {
@@ -1345,6 +1349,7 @@ class World {
     }
     this.toast(p, `Đã mua ${it.name} x${qty}`, 'reward');
     this.progressTutorial(p, 'buy');
+    this.story.on(p, 'buy');
     p.dirtyMe = true; this.db.markDirty();
   }
 

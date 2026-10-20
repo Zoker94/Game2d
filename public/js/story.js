@@ -114,7 +114,8 @@
     }
     const prog = st.need > 1 ? ` <b>${st.have}/${st.need}</b>` : '';
     const where = st.map && G.map && st.map !== G.map.id && st.type !== 'level' ? `<div class="small muted">📍 ${UI.esc(st.mapName)}</div>` : '';
-    const html = `<h4>📜 Chương ${st.ch + 1}: ${UI.esc(st.chName)} <span class="small muted">(${st.st + 1}/${st.steps})</span></h4><div>${UI.esc(fill(st.text))}${prog}</div>${where}`;
+    const hint = st.hint ? `<div class="sb-hint">💡 ${UI.esc(st.hint)}</div>` : '';
+    const html = `<h4>📜 Chương ${st.ch + 1}: ${UI.esc(st.chName)} <span class="small muted">(${st.st + 1}/${st.steps})</span></h4><div>${UI.esc(fill(st.text))}${prog}</div>${where}${hint}`;
     if (box._h !== html) { box.innerHTML = html; box._h = html; }
   }
   // mũi tên dẫn đường cốt truyện
@@ -125,7 +126,7 @@
       const p = m.portals.find(x => x.to === st.next);
       return p ? { x: (p.x + 0.5) * 64, y: (p.y + 0.5) * 64 } : null;
     }
-    if (st.type === 'talk') { const n = m.npcs.find(x => x.id === st.npc); return n ? { x: (n.x + 0.5) * 64, y: (n.y + 0.5) * 64 } : null; }
+    if (st.npc) { const n = m.npcs.find(x => x.id === st.npc); return n ? { x: (n.x + 0.5) * 64, y: (n.y + 0.5) * 64 } : null; }
     if (st.type === 'elite' && st.eid) { const e = G.monsters.get(st.eid); return e ? { x: e.x, y: e.y } : null; }
     return null;
   }
@@ -147,13 +148,19 @@
   function renderTab() {
     const st = G.me.story || {}, S = G.data.story;
     if (!S) return '<p class="muted">Đang tải...</p>';
-    let html = `<div class="card story-intro"><h4>📜 ${UI.esc(S.PROLOGUE.title)}</h4><p class="small">${UI.esc(fill(S.PROLOGUE.lines[2]))}</p><button class="btn small" data-replay="prologue">▶ Xem lại phần mở đầu</button></div><div class="story-chs">`;
+    let html = '';
+    if (!st.done && st.ch === 0) html += `<div class="card small story-tips"><h4>💡 Mẹo cho tân thủ</h4>
+      <div>• Di chuyển: WASD / phím mũi tên (PC), cần gạt ảo (điện thoại).</div>
+      <div>• Đánh: phím 1 / Space, kỹ năng 2-4. Z / X dùng thuốc. Tab đổi mục tiêu. F nói chuyện với NPC.</div>
+      <div>• Nút 🤖 Tự động (R) để tự đánh quái quanh khu vực.</div>
+      <div>• Đi theo mũi tên 📜 để tới nơi cần làm. Đồ tím / cam rơi từ quái mạnh và Boss!</div></div>`;
+    html += `<div class="card story-intro"><h4>📜 ${UI.esc(S.PROLOGUE.title)}</h4><p class="small">${UI.esc(fill(S.PROLOGUE.lines[2]))}</p><button class="btn small" data-replay="prologue">▶ Xem lại phần mở đầu</button></div><div class="story-chs">`;
     S.CHAPTERS.forEach((ch, i) => {
       const done = st.done || i < st.ch, now = !st.done && i === st.ch, locked = !done && !now;
       html += `<div class="story-ch ${done ? 'done' : now ? 'now' : 'locked'}"><div class="sc-head"><b>Chương ${i + 1}: ${UI.esc(ch.name)}</b> <span class="small muted">Cấp ${ch.lv}+</span> ${done ? '<span class="sc-tag ok">✔ Hoàn thành</span>' : now ? '<span class="sc-tag cur">Đang làm</span>' : '<span class="sc-tag">🔒</span>'}</div>
         ${locked ? '' : `<p class="small">${UI.esc(fill(ch.desc))}</p>`}`;
       if (now) {
-        html += '<div class="sc-steps">' + ch.steps.map((s, k) => `<div class="sc-step ${k < st.st ? 'ok' : k === st.st ? 'cur' : ''}">${k < st.st ? '✔' : k === st.st ? '➤' : '○'} ${UI.esc(fill(s.text))}${k === st.st && st.need > 1 ? ` <b>(${st.have}/${st.need})</b>` : ''}</div>`).join('') + '</div>';
+        html += '<div class="sc-steps">' + ch.steps.map((s, k) => `<div class="sc-step ${k < st.st ? 'ok' : k === st.st ? 'cur' : ''}">${k < st.st ? '✔' : k === st.st ? '➤' : '○'} ${UI.esc(fill(s.text))}${k === st.st && st.need > 1 ? ` <b>(${st.have}/${st.need})</b>` : ''}${k === st.st && s.hint ? `<div class="sc-hint">💡 ${UI.esc(s.hint)}</div>` : ''}</div>`).join('') + '</div>';
       }
       if (!locked) html += `<button class="btn small" data-replay="${i}">▶ Xem lại hội thoại</button>`;
       html += '</div>';
@@ -174,5 +181,7 @@
   }
 
   setInterval(() => { if (G.inGame && G.me) tracker(); }, 400);
-  window.Story = { show, drawArrow, renderTab, bindTab, get open() { return !!cur; } };
+  // NPC đang cần gặp theo bước cốt truyện (vẽ dấu ❗)
+  function wantsNpc(id) { const st = G.me && G.me.story; return !!(st && !st.done && st.npc === id); }
+  window.Story = { show, drawArrow, renderTab, bindTab, wantsNpc, get open() { return !!cur; } };
 })();

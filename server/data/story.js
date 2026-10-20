@@ -5,6 +5,7 @@
 // giang hồ – lần theo dấu vết từng tàn quyển.
 //
 // Bước (step): type = talk {npc} | map {map} | kill {mons, n} | elite {map, mon, hp} | level {n}
+//   | equip (mặc vũ khí) | skill (thi triển kỹ năng) | buy (mua đồ ở cửa hàng) | daily (xong 1 nhiệm vụ ngày)
 //   text: mục tiêu hiển thị; intro: hội thoại khi bước bắt đầu; lines: hội thoại khi gặp NPC (talk);
 //   done: hội thoại khi hoàn thành; reward: { expPct (tỉ lệ KN lên cấp), gold, knb, items }
 // Người nói: 'n' dẫn truyện, 'me' nhân vật chính, 'npc:<id>', 'mon:<id>', hoặc tên tuỳ ý.
@@ -24,35 +25,73 @@ const PROLOGUE = {
 
 const CHAPTERS = [
   {
+    // Chương 1 kiêm hướng dẫn tân thủ: mỗi bước dạy một thao tác. tut: N là bước thuần hướng dẫn, ứng với bước N của
+    // hướng dẫn tân thủ kiểu cũ: người chơi cũ đã qua bước đó thì tự bỏ qua. hint: mẹo thao tác hiện dưới mục tiêu.
     name: 'Sơ Nhập Giang Hồ', lv: 1,
-    desc: 'Tới Tương Dương, {name} được Trưởng Lão nhờ dẹp đám Mã Tặc quấy nhiễu ngoài thành – và phát hiện chúng không phải bọn cướp tầm thường.',
+    desc: 'Tới Tương Dương, {name} được Trưởng Lão chỉ dạy những bước đầu hành tẩu giang hồ, rồi lên đường dẹp đám Mã Tặc quấy nhiễu ngoài thành – và phát hiện chúng không phải bọn cướp tầm thường.',
     steps: [
       { type: 'talk', npc: 'truong_lao', text: 'Gặp Trưởng Lão Tân Thủ ở quảng trường Tương Dương',
+        hint: 'Đi theo mũi tên 📜 tới NPC có dấu ❗ rồi chạm vào NPC (PC: bấm chuột hoặc phím F) để nói chuyện.',
         lines: [['npc:truong_lao', 'Hài tử, đường xa vất vả rồi. Lão phu nhìn khí sắc ngươi, hẳn là đệ tử phái {cls}?'],
                 ['me', 'Vãn bối {name}, phụng mệnh sư phụ xuống núi lịch luyện, nghe tin Tương Dương nguy cấp nên tới góp sức.'],
-                ['npc:truong_lao', 'Tốt! Quách đại hiệp giữ thành, nhưng ngoài thành Mã Tặc hoành hành, cướp cả lương thảo tiếp tế. Ngươi ra Ngoại Ô xem xét giúp lão phu.']],
+                ['npc:truong_lao', 'Tốt! Quách đại hiệp giữ thành, nhưng ngoài thành Mã Tặc hoành hành, cướp cả lương thảo tiếp tế.'],
+                ['npc:truong_lao', 'Có điều tay không ra ngoài thành thì chẳng khác gì dâng mạng cho giặc. Mở hành trang ra, cầm lấy thanh Mộc Kiếm sư môn trao cho ngươi đã.']],
         reward: { expPct: 0.5, gold: 300 } },
+      { type: 'equip', tut: 1, text: 'Mở Túi đồ và trang bị Mộc Kiếm',
+        hint: 'Mở Túi đồ (phím I hoặc nút 🎒), chạm vào Mộc Kiếm rồi chọn "Trang bị".',
+        done: [['npc:truong_lao', 'Ra dáng hiệp khách rồi đấy! Giờ hãy qua cổng phía Đông ra Ngoại Ô xem tình hình.']],
+        reward: { items: [['hp1', 10], ['mp1', 10]] } },
       { type: 'map', map: 'ngoai_o', text: 'Đi qua cổng phía Đông tới Ngoại Ô Tương Dương',
-        done: [['n', 'Ngoài thành, khói bếp tắt lạnh, ruộng đồng bỏ hoang. Vết vó ngựa dày đặc dẫn về phía rừng.']], reward: { expPct: 0.3 } },
+        hint: 'Di chuyển bằng phím WASD / mũi tên (điện thoại: cần gạt bên trái). Đi theo mũi tên 📜 tới cổng sáng ở mép bản đồ.',
+        done: [['n', 'Ngoài thành, khói bếp tắt lạnh, ruộng đồng bỏ hoang. Vết vó ngựa dày đặc dẫn về phía rừng.'],
+               ['me', 'Bầy thỏ rừng phá nát cả ruộng… Trước khi đụng độ Mã Tặc, cứ luyện tay với chúng đã.']],
+        reward: { expPct: 0.3 } },
+      { type: 'kill', tut: 3, mons: ['tho_rung'], n: 5, text: 'Luyện tay: hạ 5 Thỏ Rừng',
+        hint: 'Chạm vào quái để chọn, rồi đánh bằng phím 1 / Space (điện thoại: nút kiếm lớn). Nút 🤖 Tự động (phím R) sẽ tự đánh quái gần bạn.',
+        done: [['me', 'Tay chân đã nóng. Giờ tới lượt bọn Mã Tặc!']],
+        reward: { expPct: 0.4, gold: 200 } },
       { type: 'kill', mons: ['ma_tac'], n: 8, text: 'Đánh tan 8 tên Mã Tặc',
+        hint: 'Hết máu thì dùng thuốc: phím Z (máu) / X (nội lực), hoặc nút bình thuốc trên màn hình.',
         done: [['n', 'Trong người tên Mã Tặc cuối cùng có một phong thư dán sáp đen, vẽ hình xoáy gió.'],
                ['me', 'Dấu "Hắc Phong"… Bọn cướp ngựa sao lại thư từ qua lại? Phải mang về cho người biết chuyện xem.']],
         reward: { expPct: 0.6, gold: 400, items: [['hp1', 10]] } },
       { type: 'talk', npc: 'su_gia', text: 'Mang phong thư sáp đen về cho Sứ Giả Nhiệm Vụ ở Tương Dương',
+        hint: 'Mang thư về nhanh: dùng Phù Về Thành trong túi đồ, hoặc nút 🏠 Về thành.',
         lines: [['npc:su_gia', 'Sáp đen xoáy gió… Đây là ám hiệu của Hắc Phong Trại dưới Bến Đò Hán Thủy!'],
                 ['npc:su_gia', 'Thư viết: "Lang Vương đã thuần, đêm trăng tròn thả bầy sói chặn đường tiếp tế." Chúng dùng sói để cắt đứt lương thảo của thành!'],
-                ['npc:su_gia', 'Lang Vương là con sói đầu đàn hung tợn nhất Ngoại Ô. Ngươi hãy rèn luyện thêm, rồi diệt nó trước đêm trăng tròn.']],
-        reward: { expPct: 0.4, gold: 300 } },
-      { type: 'level', n: 8, text: 'Rèn luyện tới cấp 8', reward: { items: [['mp1', 10], ['stone', 2]] } },
+                ['npc:su_gia', 'Lang Vương là con sói đầu đàn hung tợn nhất Ngoại Ô. Muốn diệt nó, võ công của ngươi phải tiến thêm một bậc.'],
+                ['npc:su_gia', 'Đây là bộ giáp vải và một quyển bí kíp võ công bổn môn ta giữ hộ. Hãy lĩnh hội rồi thi triển thử xem.']],
+        reward: { expPct: 0.4, gold: 300, items: [['armor_0_common', 1], ['@book1', 1]] } },
+      { type: 'skill', tut: 5, text: 'Học bí kíp võ công rồi thi triển chiêu thức',
+        hint: 'Mở Túi đồ, chạm vào Sách võ công → "Dùng" để học. Sau đó bấm phím 2 (điện thoại: nút kỹ năng thứ hai) để thi triển.',
+        done: [['npc:su_gia', 'Chiêu thức có uy lực lắm! Nhưng Lang Vương rất hung tợn, ngươi nên ghé Dược Điếm mua ít thuốc trị thương phòng thân.']],
+        reward: { expPct: 0.3 } },
+      { type: 'buy', tut: 6, text: 'Mua thuốc tại Dược Điếm Hồi Xuân ở Tương Dương',
+        hint: 'Tới Dược Điếm (có dấu ❗), chọn món rồi bấm "Mua". Thuốc dùng nhanh bằng phím Z / X.',
+        done: [['n', 'Đêm xuống. Ngoài Ngoại Ô, bầy sói của Lang Vương bắt đầu lảng vảng quanh đường tiếp tế…']],
+        reward: { gold: 500 } },
+      { type: 'kill', mons: ['soi_xam'], n: 10, text: 'Diệt 10 Sói Xám trong bầy của Lang Vương ở Ngoại Ô',
+        hint: 'Bấm vào khung 📜 bên trái để xem toàn bộ chương. Nhặt đồ rơi bằng cách đi qua.',
+        done: [['me', 'Bầy sói đông quá, diệt mãi không hết. Phải tìm thêm người giúp sức.']],
+        reward: { expPct: 0.5, items: [['boots_0_rare', 1]] } },
+      { type: 'daily', tut: 8, text: 'Nhận và hoàn thành 1 nhiệm vụ hàng ngày của Sứ Giả Nhiệm Vụ',
+        hint: 'Mở bảng Nhiệm vụ (nút 📜) → tab "Hàng ngày". Làm xong nhiệm vụ thì bấm "Nhận".',
+        intro: [['npc:su_gia', 'Bá tánh Tương Dương cần người giúp những việc hằng ngày. Ngươi giúp họ, họ sẽ giúp ngươi – lương thực, thuốc men, cả tin tức nữa.']],
+        done: [['npc:su_gia', 'Dân chúng đều nhắc tên {name} rồi đấy. Mỗi ngày bảng việc đều được làm mới, đừng quên ghé qua.']],
+        reward: { gold: 1000, items: [['stone', 3]] } },
+      { type: 'level', n: 8, text: 'Rèn luyện tới cấp 8',
+        hint: 'Đánh quái ở Ngoại Ô để lên cấp. Lên cấp được điểm tiềm năng: mở bảng Nhân vật để cộng.',
+        reward: { items: [['mp1', 10], ['stone', 2]] } },
       { type: 'elite', map: 'ngoai_o', mon: 'boss_soi', hp: 0.12, text: 'Hạ Lang Vương ở Ngoại Ô Tương Dương',
+        hint: 'Lang Vương có vòng cảnh báo đỏ trước khi ra chiêu: chạy ra khỏi vòng để né.',
         intro: [['n', 'Trăng vừa lên. Từ bìa rừng Ngoại Ô vang lên tiếng hú rợn người…'], ['mon:boss_soi', 'Grrrraooo!']],
         done: [['n', 'Lang Vương gục xuống. Trên cổ nó đeo một vòng sắt khắc chữ "Hắc Phong". Bầy sói tan tác bỏ chạy.']],
         reward: { expPct: 0.8, gold: 1000 } },
-      { type: 'talk', npc: 'truong_lao', text: 'Báo tin với Trưởng Lão Tân Thủ',
-        lines: [['npc:truong_lao', 'Giỏi lắm! Đường tiếp tế đã thông. Nhưng chuyện này không đơn giản…'],
-                ['npc:truong_lao', 'Hắc Phong Trại vốn chỉ là bọn thủy tặc. Kẻ đứng sau chúng ắt đang tìm thứ gì đó quanh Tương Dương.'],
+      { type: 'talk', npc: 'truong_lao', text: 'Báo tin với Trưởng Lão Tân Thủ – xuất sư',
+        lines: [['npc:truong_lao', 'Giỏi lắm! Đường tiếp tế đã thông. Từ nay ngươi đã đủ bản lĩnh tự mình hành tẩu giang hồ – coi như xuất sư rồi!'],
+                ['npc:truong_lao', 'Nhưng chuyện này không đơn giản… Hắc Phong Trại vốn chỉ là bọn thủy tặc. Kẻ đứng sau chúng ắt đang tìm thứ gì đó quanh Tương Dương.'],
                 ['npc:truong_lao', 'Ngươi từng nghe tới "Võ Mục Di Thư" chưa? Binh thư của Nhạc Vũ Mục… Lão phu e rằng có kẻ đang săn lùng nó.']],
-        reward: { expPct: 1.0, gold: 2000, items: [['weapon_1_rare', 1], ['lucky_chest', 1]] } }
+        reward: { expPct: 1.0, gold: 2000, knb: 50, items: [['weapon_1_rare', 1], ['lucky_chest', 1]] } }
     ]
   },
   {
@@ -236,4 +275,7 @@ const CHAPTERS = [
   }
 ];
 
-module.exports = { PROLOGUE, CHAPTERS };
+// Chương 1 trước khi gộp hướng dẫn tân thủ có 7 bước: chỉ số cũ -> chỉ số mới (đổi tiến độ người chơi cũ)
+const CH1_V1_MAP = [0, 2, 4, 5, 10, 11, 12];
+
+module.exports = { PROLOGUE, CHAPTERS, CH1_V1_MAP };

@@ -1417,3 +1417,36 @@ table.tbl th { background: linear-gradient(180deg, var(--or2), var(--or1)); colo
 
 .use-multi { display: inline-flex; align-items: center; gap: 3px; }
 .use-multi input { width: 58px; padding: 3px 5px; text-align: center; }
+
+/* mẹo thao tác của bước cốt truyện (chương 1 kiêm hướng dẫn tân thủ) */
+#story-box .sb-hint { margin-top: 3px; padding-top: 3px; border-top: 1px dashed rgba(255,215,106,.3); color: #ffe6a0; font-size: 11px; line-height: 1.35; }
+body.touch #story-box .sb-hint { font-size: 10px; }
+#story-box > div.sb-hint:not(.small) { -webkit-line-clamp: 4; }
+body.touch #story-box > div.sb-hint:not(.small) { -webkit-line-clamp: 3; }
+.sc-step .sc-hint { margin: 2px 0 2px 16px; color: #ffe6a0; font-size: 11px; }
+.story-tips div { margin: 2px 0; }
+
+/* bảng bắt buộc tải lại khi máy chủ có phiên bản mới */
+#update-gate { position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: rgba(6,4,10,.82); backdrop-filter: blur(3px); animation: sdIn2 .25s ease-out; }
+#update-gate .ug-box { width: min(520px, 100%); max-height: calc(100% - 8px); display: flex; flex-direction: column; text-align: center; padding: 22px 22px 20px; border-radius: 14px;
+  background: linear-gradient(180deg, #3c3d44, #26272c); border: 3px solid var(--or2, #e8a040); box-shadow: 0 0 0 2px #000, 0 0 40px rgba(255,180,60,.35), 0 16px 40px rgba(0,0,0,.7); color: #f2ead8; }
+#update-gate .ug-icon { font-size: 46px; line-height: 1; margin-bottom: 6px; }
+#update-gate h2 { margin: 0 0 8px; font-size: 22px; color: #ffd76a; text-shadow: 0 2px 0 #000; }
+#update-gate p { margin: 0 0 12px; font-size: 14px; }
+#update-gate .ug-news { flex: 1 1 auto; min-height: 0; overflow-y: auto; touch-action: pan-y; text-align: left; margin: 0 0 16px; padding: 10px 12px; border-radius: 10px; background: rgba(0,0,0,.3); border: 1px solid rgba(255,215,106,.25); }
+#update-gate .ug-sub { font-weight: 700; color: #ffe6a0; margin-bottom: 4px; font-size: 13px; }
+#update-gate ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.45; }
+#update-gate li { margin: 3px 0; }
+#update-gate .ug-btn { flex: none; align-self: center; font-size: 17px; padding: 12px 26px; min-width: 240px; }
+body.touch #update-gate h2 { font-size: 18px; }
+body.touch #update-gate .ug-box { padding: 16px 14px; }
+@media (max-height: 480px) {
+  #update-gate .ug-icon { display: none; }
+  #update-gate .ug-box { padding: 10px 14px 12px; }
+  #update-gate h2 { font-size: 16px; margin-bottom: 4px; }
+  #update-gate p { font-size: 12px; margin-bottom: 6px; }
+  #update-gate .ug-news { margin-bottom: 8px; padding: 6px 10px; }
+  #update-gate ul, #update-gate .ug-sub { font-size: 11px; }
+  #update-gate .ug-btn { font-size: 14px; padding: 8px 20px; }
+}
