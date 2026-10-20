@@ -954,6 +954,208 @@ def phoenix_long(sp, kind, i):
     m.scale = sp.get('scale', 1.0)
     return m
 
+# ======================= Rồng phương Tây (theo ảnh mẫu): giáp xám, bụng & màng cánh hổ phách =======================
+WD_CELL, WD_FOOT, WD_FOOTFB = (320, 256), (190, 246), (160, 242)
+
+
+def ik2(a, t, l1, l2, bend):
+    """khớp giữa của chi 2 đoạn trong mặt phẳng (f, u); bend=+1 khớp chĩa về trước, -1 về sau"""
+    dx, du = t[0] - a[0], t[1] - a[1]
+    d = max(1e-3, min(l1 + l2 - 1e-3, math.hypot(dx, du)))
+    ang = math.atan2(du, dx)
+    c = (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d)
+    a1 = ang + math.acos(max(-1, min(1, c))) * bend
+    return (a[0] + math.cos(a1) * l1, a[1] + math.sin(a1) * l1)
+
+
+def membrane(m, bones, sag, col, s_side, **o):
+    """màng cánh: lấp đầy giữa các xương ngón bằng các dải nội suy, mép sau võng vào giữa hai ngón"""
+    for bi in range(len(bones) - 1):
+        A, B = bones[bi], bones[bi + 1]
+        n_ = max(3, int(math.dist(A[-1], B[-1]) / 2.6))
+        for k in range(1, n_):
+            tt = k / n_
+            sg = sag * math.sin(math.pi * tt)
+            line = []
+            for j in range(len(A)):
+                p = lerp3(A[j], B[j], tt)
+                if j == len(A) - 1:   # mép sau võng về phía cổ tay
+                    w0 = lerp3(A[0], B[0], tt)
+                    p = lerp3(p, w0, sg)
+                line.append(p)
+            sp_ = math.dist(A[-1], B[-1]) / n_
+            rs = [max(0.9, sp_ * 0.1), max(1.1, sp_ * 0.55), max(1.3, sp_ * 0.8)][:len(line)]
+            while len(rs) < len(line): rs.append(rs[-1])
+            m.chain(line, rs, col=col, **o)
+
+
+def wdragon(sp, kind, i):
+    m = M3(); m.cell, m.foot, m.footfb = WD_CELL, WD_FOOT, WD_FOOTFB
+    G, GD, PL = sp['col'], sp['dark'], sp['plate']
+    TN, TND, MB = sp['belly'], sp['belly_dk'], sp['membrane']
+    HN, HT = sp['horn'], sp['horn_tip']
+    run = kind == 'run'
+    t = (i / 6 if run else i / 2) * TAU
+    bob = (abs(math.sin(t)) * 1.6 if run else math.sin(t) * 0.5)
+    breathe = 0 if run else math.sin(t) * 0.6
+    sc = dict(cs=TN, back=GD, spec=0.45, fur=0)
+    # ---------- khung xương thân ----------
+    pelvis = (-14, 39 + bob * 0.6, 0)
+    chest = (12, 42 + bob + breathe * 0.4, 0)
+    # thân: ngực vạm vỡ, bụng thót, hông to
+    m.ell((chest[0] + 1, chest[1] - 2, 0), 14.5, 14 + breathe * 0.3, 11.5, col=G, grp='body', **sc)
+    m.cap((chest[0] - 6, chest[1] - 3, 0), (pelvis[0] + 6, pelvis[1] - 2, 0), 11.5, 10, col=G, grp='body', **sc)
+    m.ell((pelvis[0], pelvis[1] - 1, 0), 12, 11.5, 10.5, col=G, grp='body', **sc)
+    # sống lưng: hàng gai
+    for j in range(9):
+        q = j / 8
+        b0 = (pelvis[0] + (chest[0] - pelvis[0]) * q, pelvis[1] + 9.5 + (chest[1] - pelvis[1] + 2) * q, 0)
+        m.spike(b0, (b0[0] - 3.5, b0[1] + 4.5 + 1.5 * math.sin(q * math.pi), 0), 1.8, col=HN if j % 2 else HT, grp='mane', spec=0.5, blend=0.3)
+    # ---------- cổ chữ S + đầu ----------
+    sway = math.sin(t + 0.6) * (1.5 if run else 0.8)
+    nk = bez3([(chest[0] + 8, chest[1] + 6, 0), (chest[0] + 20, chest[1] + 15, 0), (chest[0] + 15 + sway * 0.5, chest[1] + 28, 0),
+               (chest[0] + 24 + sway, chest[1] + 38 + bob * 0.5, 0)], 10)
+    nr = [9.6, 9.0, 8.2, 7.4, 6.7, 6.2, 5.9, 5.8, 5.8, 6.0, 6.4]
+    m.chain(nk, nr, col=G, cs=TN, back=GD, grp='neck', spec=0.45)
+    for j in range(1, 10):   # gai cổ màu hổ phách
+        p_ = nk[j]; r = nr[j]
+        m.spike((p_[0] - r * 0.5, p_[1] + r * 0.6, 0), (p_[0] - r * 0.5 - 4.5, p_[1] + r * 0.6 + 3.5, 0), 1.6, col=HT if j % 2 else HN, grp='mane', spec=0.45, blend=0.3)
+    hc = nk[-1]
+    ha = -0.25 + (math.sin(t) * 0.05 if run else 0)
+    ca, sa = math.cos(ha), math.sin(ha)
+    def Hh(x, y, z=0.0): return (hc[0] + 3 + x * ca - y * sa, hc[1] + 2 + x * sa + y * ca, z)
+    HK = dict(grp='head', spec=0.5)
+    m.ell(Hh(0, 0), 7.8, 6.2, 5.6, col=G, back=GD, **HK)                                    # sọ
+    m.ell(Hh(2.5, 3.2), 4.6, 2.4, 4.6, col=GD, **HK)                                       # gờ mày
+    m.cap(Hh(3, 0.8), Hh(15, -1.2), 4.4, 2.4, col=G, back=GD, **HK)                       # mõm
+    m.spike(Hh(13, 0.8), Hh(16.5, 3.5), 1.2, col=HN, grp='head', spec=0.5)                # sừng mũi
+    jaw = 0.25 + (0.5 if run and i % 3 == 1 else 0) + (0.1 * math.sin(t) if not run else 0)
+    ja = -jaw
+    j0 = Hh(1.5, -3.2)
+    j1 = (j0[0] + math.cos(ha + ja) * 12.5, j0[1] + math.sin(ha + ja) * 12.5, 0)
+    m.cap(j0, j1, 3.0, 1.6, col=TN, grp='head', spec=0.35)                                   # hàm dưới hổ phách
+    m.mpoly([Hh(3, -1.6, 4), Hh(14.5, -2.6, 4), (j1[0], j1[1] + 1.0, 4), (j0[0] + 1.5, j0[1] + 0.5, 4)], '#4a0a10', ('side',))   # lòng miệng
+    for k in range(6):   # răng trên / dưới
+        xk = 13.5 - k * 2.0
+        m.mpoly([Hh(xk, -2.2, 4.2), Hh(xk - 0.8, -2.2, 4.2), Hh(xk - 0.4, -3.6, 4.2)], '#f8f2e0', ('side',))
+        bp = lerp3(j0, j1, 0.9 - k * 0.12)
+        m.mpoly([(bp[0], bp[1] + 0.6, 4.2), (bp[0] - 0.8, bp[1] + 0.6, 4.2), (bp[0] - 0.4, bp[1] + 2.0, 4.2)], '#f8f2e0', ('side',))
+    m.mpoly([Hh(4.0, 2.4, 5.2), Hh(7.2, 1.8, 5.2), Hh(6.4, 0.6, 5.2), Hh(3.6, 1.2, 5.2)], sp['eye'], ('side',))   # mắt sáng
+    m.mpoly([Hh(5.4, 2.1, 5.3), Hh(5.9, 2.0, 5.3), Hh(5.7, 0.8, 5.3), Hh(5.2, 0.9, 5.3)], '#140808', ('side',))
+    for s_ in (1, -1): m.mark(Hh(4.5, 1.6, s_ * 4.6), sp['eye'], ('down',))
+    # bờm sừng gai vuốt ngược (xám, chân hổ phách) – đặc trưng ảnh mẫu
+    HORNS = [(-1, 4.5, 10, 0.55, 2.2), (-2.5, 3.0, 12, 0.32, 2.0), (-4, 1.0, 13, 0.12, 1.9), (-4.5, -1.2, 11, -0.05, 1.7),
+             (-4, -3.0, 9, -0.2, 1.5), (-2, 5.6, 8, 0.85, 1.6), (0.5, 5.0, 7, 1.05, 1.3)]
+    for k, (hx_, hy_, ln, up, w) in enumerate(HORNS):
+        for s_ in ((1, -1) if k < 2 else (1,)):
+            b0 = Hh(hx_, hy_, s_ * (2.5 if k < 2 else 1.5))
+            a = math.pi + ha - up + math.sin(t + k) * 0.03
+            mid_ = (b0[0] + math.cos(a + 0.12) * ln * 0.5, b0[1] + math.sin(a + 0.12) * ln * 0.5, b0[2] + s_ * 0.8)
+            tip = (b0[0] + math.cos(a) * ln, b0[1] + math.sin(a) * ln + 1.0, b0[2] + s_ * 1.4)
+            m.chain([b0, mid_, tip], [w, w * 0.6, 0.25], col=HN, grp='horn', spec=0.6, blend=0.25)
+            m.cap(b0, mid_, w * 1.05, w * 0.55, col=HT, grp='horn', spec=0.5, blend=0.2)
+    for k in range(3):   # gai má
+        b0 = Hh(-1 - k * 1.5, -3.5 - k * 0.6, 3.6)
+        m.spike(b0, (b0[0] - 5, b0[1] - 2.2 - k, b0[2]), 1.1, col=HN, grp='horn', spec=0.5)
+    # ---------- đuôi dài uốn lượn ----------
+    tw = math.sin(t * (1 if run else 0.5)) * (4 if run else 2)
+    tpts = []
+    for j in range(20):
+        q = j / 19
+        tpts.append((pelvis[0] - 8 - q * 72, pelvis[1] + 2 - q * 22 + math.sin(q * 5 - t * 0.8) * (2 + q * 5) + q * q * 14, math.sin(q * 3.5 - t * 0.6) * q * 6 + tw * q * 0.5))
+    tr = [8.5 * (1 - q) ** 0.8 + 0.8 for q in (j / 19 for j in range(20))]
+    m.chain(tpts, tr, col=G, grp='tail', **sc)
+    for j in range(1, 18, 2):
+        p_ = tpts[j]; r = tr[j]
+        m.spike((p_[0], p_[1] + r * 0.8, p_[2]), (p_[0] - 3.5, p_[1] + r * 0.8 + 3.0 + r * 0.25, p_[2]), 1.1 + r * 0.12, col=HN if j % 4 == 1 else HT, grp='mane', spec=0.5, blend=0.25)
+    te = tpts[-1]
+    m.spike(te, (te[0] - 7, te[1] + 2.5, te[2]), 2.2, col=HN, grp='tail', spec=0.6)
+    m.spike(te, (te[0] - 5, te[1] - 3, te[2]), 1.8, col=HN, grp='tail', spec=0.6)
+    # ---------- chân (IK) ----------
+    def legs(near):
+        s_ = 7.5 if near else -7.5
+        lay = {} if near else {'layer': 'far'}
+        lc = G if near else dk(G, 0.12)
+        for fore in (True, False):
+            if run:
+                ph = (i / 6 + (0.0 if fore else 0.5) + (0.0 if near else 0.5)) % 1
+            else:
+                ph = None
+            root = (chest[0] + 2, chest[1] - 5, s_) if fore else (pelvis[0], pelvis[1] - 4, s_)
+            base_f = root[0] + (4 if fore else 2)
+            if ph is None: foot = (base_f + (1 if near else -1), 0.0)
+            elif ph < 0.6: foot = (base_f + 9 * (0.5 - ph / 0.6), 0.0)
+            else:
+                tt = (ph - 0.6) / 0.4; foot = (base_f + 9 * (-0.5 + tt), math.sin(tt * math.pi) * 5)
+            if fore:
+                wrist = (foot[0] - 1, foot[1] + 6.5)
+                el = ik2((root[0], root[1]), wrist, 17, 15, -1)
+                m.ell((root[0] - 1, root[1] + 1, s_ * 0.85), 7.5, 8.5, 5, col=PL if near else dk(PL, 0.15), grp='leg', spec=0.75, blend=0.8, **lay)   # giáp vai tròn
+                m.cap((root[0], root[1], s_), (el[0], el[1], s_), 7.0, 5.6, col=lc, cs=TN, back=GD, grp='leg', spec=0.5, **lay)
+                m.cap((el[0], el[1], s_), (wrist[0], wrist[1], s_), 5.2, 3.8, col=lc, cs=TN, back=GD, grp='leg', spec=0.5, **lay)
+                m.cap((wrist[0], wrist[1], s_), (foot[0] + 2, foot[1] + 2, s_), 3.4, 3.0, col=lc, grp='leg', spec=0.5, **lay)
+                pw = (foot[0] + 2.5, foot[1] + 1.6, s_)
+            else:
+                hock = (foot[0] - 4.5, foot[1] + 10)
+                kn = ik2((root[0], root[1]), hock, 16, 15, 1)
+                m.ell((root[0] + 1, root[1] - 4, s_ * 0.8), 10, 13, 6.5, col=lc, cs=TN, back=GD, grp='leg', spec=0.5, rot=0.4, **lay)   # đùi
+                m.cap((root[0], root[1], s_), (kn[0], kn[1], s_), 7.6, 5.8, col=lc, cs=TN, back=GD, grp='leg', spec=0.5, **lay)
+                m.cap((kn[0], kn[1], s_), (hock[0], hock[1], s_), 5.4, 3.6, col=lc, grp='leg', spec=0.5, **lay)
+                m.cap((hock[0], hock[1], s_), (foot[0] + 1.5, foot[1] + 2, s_), 3.2, 2.8, col=lc, grp='leg', spec=0.5, **lay)
+                m.spike((hock[0], hock[1] + 1, s_), (hock[0] - 4, hock[1] + 2.5, s_), 1.3, col=HN, grp='leg', spec=0.5, **lay)   # cựa
+                pw = (foot[0] + 2, foot[1] + 1.6, s_)
+            m.ell(pw, 4.2, 2.2, 3.4, col=lc, grp='paw', spec=0.5, **lay)
+            for kk in (-1, 0, 1):   # vuốt
+                c0 = (pw[0] + 3, pw[1] - 0.2, pw[2] + kk * 1.6)
+                m.spike(c0, (c0[0] + 3.2, c0[1] - 1.8, c0[2]), 1.0, col=sp['claw'], grp='claw', spec=0.7, **lay)
+    legs(False)
+    legs(True)
+    # ---------- cánh dơi: khung xương (cánh tay, cẳng, 4 ngón) + màng ----------
+    flap = (math.sin(t) if run else 0.25 + 0.08 * math.sin(t))   # -1 hạ cánh .. 1 nâng cánh
+    for near in (True, False):
+        s_ = 9 if near else -9
+        lay = {} if near else {'layer': 'far'}
+        sg = 1 if near else -1
+        shd = (chest[0] - 3, chest[1] + 9, sg * 6)
+        # cánh dựng trong mặt phẳng (a: dọc thân, b: hướng toả ra) rồi xoay quanh trục thân theo góc vỗ th
+        th = (0.95 + 0.55 * flap) if run else (1.2 + 0.05 * math.sin(t))
+        rb = (0, math.sin(th), math.cos(th) * sg)
+        W_ = lambda a_, b_: (shd[0] + a_, shd[1] + b_ * rb[1], shd[2] + b_ * rb[2])
+        fold = 0.0 if run else 0.12
+        el = W_(-9, 14)
+        wr = W_(4, 34 - fold * 10)
+        fingers = []
+        for k, (ph, ln) in enumerate([(0.3, 54), (0.95, 74), (1.55, 78), (2.15, 66)]):
+            a = ph + (k - 1.5) * fold * 0.4
+            da, db = -math.sin(a), math.cos(a)    # ph=0: toả thẳng ra, ph=pi/2: chĩa ra sau
+            wa, wb = 4, 34 - fold * 10
+            mid_ = W_(wa + da * ln * 0.5 - db * 1.5, wb + db * ln * 0.5 + 2)
+            tip = W_(wa + da * ln, wb + db * ln)
+            fingers.append([wr, mid_, tip])
+        s_ = sg * 9
+        flank = [wr, lerp3(wr, (pelvis[0] - 2, pelvis[1] + 8, s_ * 0.8), 0.5), (pelvis[0] - 2, pelvis[1] + 8, s_ * 0.8)]
+        mcol = MB if near else dk(MB, 0.18)
+        membrane(m, fingers + [flank], 0.34, mcol, s_, grp='wing', spec=0.15, blend=0.45, zk=0.28, fur=0, **lay)
+        bc = GD if near else dk(GD, 0.1)
+        m.cap(shd, el, 4.2, 3.4, col=G, grp='wing', spec=0.5, blend=0.5, **lay)        # cánh tay
+        m.cap(el, wr, 3.0, 2.4, col=G, grp='wing', spec=0.5, blend=0.4, **lay)         # cẳng cánh
+        m.spike(wr, (wr[0] + 2.5, wr[1] + 4.5, wr[2]), 1.4, col=HN, grp='wing', spec=0.6, **lay)   # vuốt cổ cánh
+        for f_ in fingers:
+            m.chain(f_, [2.0, 1.3, 0.5], col=bc, grp='wing', spec=0.45, blend=0.25, **lay)
+    # ---------- hoa văn vảy giáp ----------
+    m.vpat.append(('*', ['body', 'neck', 'tail', 'leg', 'head'], lambda U, V, ny: (np.sin(U * 0.78 + V * 0.6) * np.sin(U * 0.78 - V * 0.6) > 0.55) & (ny < 0.2), (GD, 0.45)))
+    m.vpat.append(('*', ['body', 'neck', 'tail', 'leg'], lambda U, V, ny: (np.abs(np.sin(U * 0.78 + V * 0.6) * np.sin(U * 0.78 - V * 0.6)) < 0.05) & (ny < 0.05), (PL, 0.4)))
+    m.vpat.append(('side', ['body', 'neck', 'tail'], lambda U, V, ny: (ny > 0.32) & (np.sin(U * 1.1 + V * 0.4) > 0.78), (TND, 0.65)))   # vảy bụng khía ngang
+    # ---------- yên ----------
+    sf = chest[0] - 6
+    m.cloth.append((sf, chest[1] + 11, 7.5, 10.0, sp['blanket'], sp['trim'], None, ['body']))
+    m.cap((sf + 5, chest[1] + 13.5, 0), (sf - 5, chest[1] + 13.5, 0), 2.8, 2.8, col=sp['leather'], grp='tack', spec=0.4, blend=0.3)
+    m.ell((sf + 5.6, chest[1] + 15.4, 0), 1.2, 2.0, 2.4, col=dk(sp['leather'], 0.15), grp='tack', blend=0.25, spec=0.5)
+    m.ell((sf - 5.6, chest[1] + 15.8, 0), 1.5, 2.4, 3.0, col=dk(sp['leather'], 0.15), grp='tack', blend=0.25, spec=0.5)
+    m.seat = (sf, chest[1] + 15, 0)
+    m.scale = sp.get('scale', 1.6)
+    return m
+
 
 SPECIES = {
     'ngua_nau': dict(HORSE, blaze='#f4ece0', col='#8c5a30', belly='#b07c4c', back='#5e3a1c', mane='#22140c', sock='#3a2418', hoof='#241a16', blanket='#2a4aa0'),
@@ -979,10 +1181,13 @@ SPECIES = {
                        br=10.5, fly=16, blanket='#0a3a5a', trim='#ffd860', leather='#3a2010', eye='#ffd020', scale=1.3, cell=(256, 176), foot=(178, 168), footfb=(128, 166)),
     'phuong_hoang': dict(kind='phoenix_long', col='#ff4a1c', belly='#ffc848', back='#d62a10', mane='#ffe24a', beak='#ffc030', eyespot='#30d0c0',
                          fly=10, blanket='#6a0a2a', trim='#ffe060', leather='#4a1a10', scale=1.25, cell=(256, 176), foot=(168, 168), footfb=(128, 166)),
+    'hac_long': dict(kind='wdragon', col='#4c535c', dark='#262a30', plate='#8a96a4', belly='#d08a3e', belly_dk='#8a5420', membrane='#b4783a',
+                     horn='#3c4148', horn_tip='#d89a50', claw='#e8dcc0', eye='#ffb020', blanket='#3a1a10', trim='#d8a040', leather='#2a1a10', scale=1.45,
+                     cell=(320, 256), foot=(190, 246), footfb=(160, 242)),
     'kim_quy': dict(kind='turtle', col='#e0b030', back='#a87810', skin='#5aa868', belly='#e8d898', spike='#f8f0c0', blanket='#8a1020', leather='#5a2a10',
                     eye='#d02010', scale=1.36),
 }
-FN = {'quad': quadruped, 'dragon': dragon, 'bird': bird, 'turtle': turtle, 'dragon_long': dragon_long, 'phoenix_long': phoenix_long}
+FN = {'quad': quadruped, 'dragon': dragon, 'bird': bird, 'turtle': turtle, 'dragon_long': dragon_long, 'phoenix_long': phoenix_long, 'wdragon': wdragon}
 
 
 def render(mid, out):
