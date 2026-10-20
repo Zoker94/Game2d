@@ -7,9 +7,9 @@ const { MONSTERS } = require('../data/monsters');
 const { ITEMS, equipId } = require('../data/items');
 
 const ROUTES = {
-  dong: { name: 'Tiêu Đồng', lv: 15, dest: 'thuy_trai', deposit: 2000,  gold: 7000,  exp: 0.18, hp: 2600,  def: 30,  time: 12, robber: 'tieu_tac1', color: '#c87a3a' },
-  bac:  { name: 'Tiêu Bạc',  lv: 30, dest: 'dong_gau',  deposit: 8000,  gold: 26000, exp: 0.28, hp: 8000,  def: 70,  time: 15, robber: 'tieu_tac2', color: '#d8dce8' },
-  vang: { name: 'Tiêu Vàng', lv: 45, dest: 'kiem_trung', deposit: 25000, gold: 85000, exp: 0.4,  hp: 20000, def: 120, time: 20, robber: 'tieu_tac3', color: '#ffd23f', knb: 20 }
+  dong: { name: 'Tiêu Đồng', lv: 15, dest: 'thuy_trai', deposit: 2000,  gold: 7000,  exp: 0.05, hp: 2600,  def: 30,  time: 12, robber: 'tieu_tac1', color: '#c87a3a' },
+  bac:  { name: 'Tiêu Bạc',  lv: 30, dest: 'dong_gau',  deposit: 8000,  gold: 26000, exp: 0.07, hp: 8000,  def: 70,  time: 15, robber: 'tieu_tac2', color: '#d8dce8' },
+  vang: { name: 'Tiêu Vàng', lv: 45, dest: 'kiem_trung', deposit: 25000, gold: 85000, exp: 0.1,   hp: 20000, def: 120, time: 20, robber: 'tieu_tac3', color: '#ffd23f', knb: 20 }
 };
 const DAILY = 3;
 const START = 'tuong_duong';

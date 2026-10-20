@@ -4,6 +4,14 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Làm lại tốc độ lên cấp: kinh nghiệm cần để lên cấp tăng rất mạnh, nhất là từ cấp 30 trở lên (cấp 60 ≈ 5.000 con quái mỗi cấp, cấp 90 ≈ 14.600 con). Leo từ 1 lên 99 nay mất vài trăm giờ cày, không còn 1 ngày là xong.',
+      'Đánh quái cao hơn mình quá 6 cấp nhận rất ít kinh nghiệm (chặn kéo cấp bằng tổ đội cấp cao).',
+      'Giảm kinh nghiệm từ phó bản, áp tiêu, nhiệm vụ môn phái, cốt truyện và ngồi thiền cho phù hợp. Nhiệm vụ ngày nay thưởng kinh nghiệm theo % cấp nên vẫn đáng làm ở cấp cao.'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Nút ⛶ Toàn màn hình cạnh nút chế độ PK (hoặc phím F11); trên điện thoại vào toàn màn hình sẽ khoá màn hình ngang.',
       'Chủ server: nút 🧭 Dịch chuyển nhanh (phím G) – chọn bản đồ để bay tới ngay, hoặc tab Người chơi để Đến chỗ / Kéo về một người chơi đang online, có ô tìm tên.',
       'Sửa lỗi Lôi Đài Tỷ Võ: thoát game khi đang ở lôi đài nay vào lại sẽ về Tương Dương; không thể gửi thách đấu từ trong lôi đài.'

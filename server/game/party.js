@@ -3,6 +3,7 @@
 //   (thêm 10% cho mỗi người trong đội), được tính tiến độ nhiệm vụ diệt quái và cốt truyện.
 // - Không đánh nhau được, chiêu hồi máu có tác dụng lên đồng đội.
 const U = require('./util');
+const { levelGapK } = U;
 const MAX = 6, RANGE = 900, REQ_TTL = 30000;
 let seq = 1;
 
@@ -106,8 +107,7 @@ class Party {
     const bonus = 0.5 + 0.1 * near.length;
     for (const q of near) {
       let exp = baseExp * bonus;
-      const diff = q.c.level - mon.tpl.lv;
-      if (diff > 8) exp *= Math.max(0.1, 1 - (diff - 8) * 0.12);
+      exp *= levelGapK(q.c.level, mon.tpl.lv);
       const g = this.w.gainExp(q, exp);
       q.socket.emit('gain', { exp: g, gold: 0, x: mon.x, y: mon.y, party: 1 });
       this.w.features.questProgress(q, 'kill', 1, mon.tpl.id);

@@ -49,7 +49,7 @@ class Sect {
   reward(p, q, nth) {
     const L = p.c.level;
     const pts = { kill: 10, elite: 15, letter: 12, dungeon: 30 }[q.type] || 10;
-    const r = { exp: Math.round(U.expNext(L) * 0.05 + 200), gold: Math.round(L * L * 2 + 300), pts, items: [] };
+    const r = { exp: Math.round(U.expNext(L) * 0.012 + 200), gold: Math.round(L * L * 2 + 300), pts, items: [] };
     if (nth % SECT_DAILY === 0) { r.exp *= 3; r.gold *= 2; r.pts += 30; r.items.push(['lucky_chest', 1], [L >= 25 ? 'stone2' : 'stone', L >= 25 ? 1 : 3]); }   // nhiệm vụ thứ 10
     return r;
   }

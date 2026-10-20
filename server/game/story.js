@@ -122,7 +122,7 @@ class Story {
   reward(p, r, src) {
     if (!r) return;
     const out = {};
-    if (r.expPct) out.exp = Math.round(U.expNext(p.c.level) * r.expPct * 0.25);
+    if (r.expPct) out.exp = Math.round(U.expNext(p.c.level) * r.expPct * 0.12);
     if (r.gold) out.gold = r.gold;
     if (r.knb) out.knb = r.knb;
     if (r.items) out.items = r.items.filter(([id]) => id === '@book1' || ITEMS[id]);   // @book1: sách kỹ năng 2 của môn phái

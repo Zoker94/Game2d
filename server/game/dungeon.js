@@ -28,7 +28,7 @@ for (const id in DUNGEONS) {
   d.id = id;
   for (const w of d.waves) for (const [m] of w) if (!MONSTERS[m]) throw new Error('Thiếu quái phó bản ' + m);
   if (!MONSTERS[d.boss]) throw new Error('Thiếu boss phó bản ' + d.boss);
-  d.exp = Math.round(U.expNext(d.rLv) * 0.6);
+  d.exp = Math.round(U.expNext(d.rLv) * 0.25);
   d.gold = d.rLv * d.rLv * 8;
 }
 const BUFF_ID = 'pb_dongtam';

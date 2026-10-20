@@ -17,6 +17,7 @@ function elemMult(ae, de) { if (!ae || !de) return [1, 0]; if (KHAC[ae] === de) 
 const { ENHANCE_MAX, ENHANCE_SAFE, ENHANCE_RATE, enhanceCost } = require('../data/enhance');
 const { rollGemDrop, gemId, GEM_KEYS } = require('../data/gems');
 const U = require('./util');
+const { levelGapK } = U;
 const { Escort } = require('./escort');
 const { Story } = require('./story');
 const { Duel } = require('./duel');
@@ -923,8 +924,7 @@ class World {
       const share = mon.boss ? Math.max(0.05, dmg / total) : (p === killer ? 1 : 0);
       if (share <= 0) continue;
       let exp = tpl.exp * share;
-      const diff = p.c.level - tpl.lv;
-      if (diff > 8) exp *= Math.max(0.1, 1 - (diff - 8) * 0.12);
+      exp *= levelGapK(p.c.level, tpl.lv);
       const gained = this.gainExp(p, exp);
       const gold = Math.round(tpl.gold * U.rand(0.7, 1.3) * (cfg.goldRate || 1) * (mon.boss ? share : 1));
       if (mon.boss) { p.c.gold += gold; this.features.questProgress(p, 'gold', gold); }
@@ -1894,7 +1894,7 @@ const STUN_IMMUNE = 3000;
 // PvP: sát thương người chơi lên người chơi, hồi máu khi đang giao tranh, bình máu (hồi chiêu, tối đa % máu mỗi bình)
 const PVP_DMG = 0.0205, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;
 const MED_AFTER = 30000;                        // đứng yên trong thành bao lâu thì ngồi thiền (ms)
-const MED_EXP = 0.0005;                         // mỗi 5 giây ngồi thiền: 0,05% kinh nghiệm cấp hiện tại                       // kháng choáng sau khi hết choáng (ms)
+const MED_EXP = 0.00001;                        // mỗi 5 giây ngồi thiền: 0,001% kinh nghiệm cấp hiện tại (≈0,7%/giờ)                       // kháng choáng sau khi hết choáng (ms)
 const FX_STATUS = { firedragon: ['burn', 4000, 1] };
 // quái gây hiệu ứng khi đánh trúng
 const MON_STATUS = { snake: ['poison', 4000, 0.25], scorpion: ['poison', 4000, 0.3], yeti: ['slow', 2000, 0.3], demon: ['burn', 3000, 0.25], bear: ['stun', 700, 0.12], tiger: ['bleed', 3000, 0.2], ghost: ['slow', 1500, 0.2] };

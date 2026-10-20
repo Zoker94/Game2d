@@ -12,7 +12,21 @@ const plusMult = plus => 1 + Math.min(plus, 10) * 0.12 + Math.max(0, plus - 10) 
 const MAX_LEVEL = 99;
 const INV_SIZE = 48;
 
-const expNext = L => Math.round((50 * Math.pow(L, 1.8) + 50) * (1 + L / 60));   // cấp cao cày lâu hơn
+// kinh nghiệm lên cấp = KN một con quái cùng cấp × số quái cần hạ. Số quái tăng mạnh sau cấp 30 vì cấp cao
+// quái đông, chiêu diện rộng hạ rất nhanh (đo mô phỏng: ~200 con/giờ ở cấp 15-45, 1.500-3.700 con/giờ từ cấp 60).
+// Mỗi cấp: cấp 10 ≈ 110 con, 30 ≈ 580, 60 ≈ 5.000, 90 ≈ 14.600; cả chặng 1→99 ≈ 500 nghìn con
+// (≈ 430 giờ với đồ thường, ≈ 180 giờ với đồ đỉnh).
+const monExpAt = L => (8 + L * L * 0.9) * (1 + L / 100);   // trùng công thức KN quái trong data/monsters.js
+const killsAt = L => Math.max(10, 7 * Math.pow(L, 1.3) * (L < 15 ? 0.4 + 0.6 * L / 15 : 1) * (1 + Math.max(0, L - 30) / 12));
+const expNext = L => Math.round(monExpAt(L) * killsAt(L));
+// hệ số KN theo chênh cấp: đánh quái thấp hơn mình quá 8 cấp giảm dần; quái cao hơn mình quá 6 cấp cũng giảm mạnh
+// (chặn "kéo cấp": nhân vật cấp thấp đứng cạnh tổ đội cấp cao ăn KN quái cấp cao)
+function levelGapK(pl, ml) {
+  const d = pl - ml;
+  if (d > 8) return Math.max(0.1, 1 - (d - 8) * 0.12);
+  if (d < -6) return Math.max(0.02, 1 + (d + 6) * 0.1);
+  return 1;
+}
 const vnDate = () => new Date(Date.now() + 7 * 3600e3);
 const vnDay = () => vnDate().toISOString().slice(0, 10);
 const vnMinuteOfDay = () => { const d = vnDate(); return d.getUTCHours() * 60 + d.getUTCMinutes(); };
@@ -209,6 +223,6 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
 }
 
 module.exports = {
-  MAX_LEVEL, INV_SIZE, expNext, vnDate, vnDay, vnMinuteOfDay, rand, randInt, dist, clamp, newUid,
+  MAX_LEVEL, INV_SIZE, expNext, levelGapK, vnDate, vnDay, vnMinuteOfDay, rand, randInt, dist, clamp, newUid,
   plusMult, newCharacter, addItem, resolveItem, migrateItems, freeSlots, countItem, removeItemById, removeByUid, calcStats, isStack
 };

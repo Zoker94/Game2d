@@ -26,10 +26,12 @@ function makeDaily(lv, rand = Math.random) {
   const mons = monstersForLevel(lv);
   const pick = arr => arr[Math.floor(rand() * arr.length)];
   const scale = 1 + lv * 0.25;
+  // KN nhiệm vụ ngày theo tỉ lệ KN lên cấp (nếu để số cố định sẽ gần như vô nghĩa ở cấp cao)
+  const lvExp = require('../game/util').expNext(lv), xp = (k, base) => Math.max(Math.round(base * scale * scale), Math.round(lvExp * k));
   const m1 = pick(mons.length ? mons : ['tho_rung']);
-  list.push({ id: 'd_kill1', type: 'kill', mon: m1, n: 20, text: `Tiêu diệt 20 ${MONSTERS[m1].name}`, reward: { exp: Math.round(300 * scale * scale), gold: Math.round(200 * scale) } });
-  list.push({ id: 'd_killany', type: 'killAny', n: 60, text: 'Tiêu diệt 60 quái vật bất kỳ', reward: { exp: Math.round(500 * scale * scale), gold: Math.round(300 * scale) } });
-  list.push({ id: 'd_gold', type: 'gold', n: Math.round(500 * scale), text: `Nhặt được ${Math.round(500 * scale)} lượng từ quái`, reward: { items: [['stone', 2]], exp: Math.round(200 * scale * scale) } });
+  list.push({ id: 'd_kill1', type: 'kill', mon: m1, n: 20, text: `Tiêu diệt 20 ${MONSTERS[m1].name}`, reward: { exp: xp(0.02, 300), gold: Math.round(200 * scale) } });
+  list.push({ id: 'd_killany', type: 'killAny', n: 60, text: 'Tiêu diệt 60 quái vật bất kỳ', reward: { exp: xp(0.03, 500), gold: Math.round(300 * scale) } });
+  list.push({ id: 'd_gold', type: 'gold', n: Math.round(500 * scale), text: `Nhặt được ${Math.round(500 * scale)} lượng từ quái`, reward: { items: [['stone', 2]], exp: xp(0.015, 200) } });
   list.push({ id: 'd_wheel', type: 'wheel', n: 1, text: 'Quay Vòng Quay May Mắn 1 lần', reward: { gold: Math.round(150 * scale) } });
   const extras = [
     { id: 'd_boss', type: 'boss', n: 1, text: 'Tham gia tiêu diệt 1 Boss thế giới', reward: { knb: 10, items: [['lucky_chest', 1]] } },
