@@ -309,7 +309,7 @@
     s.on('duelRing', d => Duel.onRing(d));
     s.on('giftResult', d => Gift.onResult(d));
     s.on('me', d => { if (G.me && d.riding !== G.me.riding) GameAudio.sfx('mount'); G.me = d; if (d.pvp) G.pvpUntil = performance.now() + 8000; UI.updateHud(); $('dead-overlay').classList.toggle('hidden', !d.dead); });
-    s.on('pos', d => { G.self.x = d.x; G.self.y = d.y; G.moveTo = null; });
+    s.on('pos', d => { const far = Math.hypot(d.x - G.self.x, d.y - G.self.y) > 64; G.self.x = d.x; G.self.y = d.y; if (far || d.dash) G.moveTo = null; });   // lệch ít: giữ đích đang đi tới
     s.on('weather', w => Weather.set(w));
     s.on('cartGone', id => { G.carts.delete(id); if (G.target === id) G.target = null; });
     s.on('fx', onFx);
@@ -1515,7 +1515,8 @@
     const mountId = ap[7];
     const plus = Math.max(ap[2] || 0, ap[5] || 0);
     const gcol = Sprites.enhanceGlow(plus);
-    x = Math.round(x); y = Math.round(y - lift);
+    // làm tròn theo điểm ảnh thật của màn hình (camera cũng làm tròn như vậy): nhân vật không rung 1px khi chạy
+    const pk = zoom * DPR; x = Math.round(x * pk) / pk; y = Math.round((y - lift) * pk) / pk;
     if (dead) ctx.globalAlpha = art ? 0.9 : 0.4;
     if (gcol && !dead) Overhead.drawEnhance(ctx, x, y, plus, gcol, now, seed, !!mountId, 'under');
     let top;
@@ -1648,7 +1649,7 @@
   }
 
   function loop(now) {
-    const dt = Math.min(0.05, (now - last) / 1000);
+    const dt = Math.min(0.1, (now - last) / 1000);   // khung chậm vẫn đi đúng quãng (trước giới hạn 0,05 làm nhân vật như bị hãm lại)
     gfxTick(now - last, now);
     last = now;
     try { update(dt); draw(now); UI.frame(now); } catch (e) { console.error(e); }

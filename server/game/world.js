@@ -362,7 +362,8 @@ class World {
     p.lastMove = now;
     const map = MAPS[p.mapId];
     if (isCC(p, now)) { p.moving = false; p.socket.emit('pos', { x: p.x, y: p.y }); return; }
-    if (now < (p.castLock || 0) - 80) { p.moving = false; p.socket.emit('pos', { x: p.x, y: p.y }); return; }   // đánh xa: đứng yên lúc vận chiêu
+    // đánh xa: đứng yên lúc vận chiêu. Gói di chuyển gửi trước khi máy khách biết bị khoá (độ trễ mạng) chỉ bỏ qua, không kéo giật về
+    if (now < (p.castLock || 0) - 80) { p.moving = false; if (Math.hypot(x - p.x, y - p.y) > 90) p.socket.emit('pos', { x: p.x, y: p.y }); return; }
     const maxD = p.stats.spd * (dt / 1000) * 1.5 + 24;
     const d = Math.hypot(x - p.x, y - p.y);
     if (d > maxD || isSolidAt(map, x, y)) {

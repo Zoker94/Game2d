@@ -72,13 +72,35 @@
     return soft.has(tj) ? tj : te;
   }
 
-  function renderChunk(cx, cy) {
+  // Mảng nền dựng theo từng phần (job): mỗi khung chỉ làm vài hàng trong ngân sách thời gian để không khựng khi di chuyển.
+  function chunkJob(cx, cy) {
     const c = document.createElement('canvas'); c.width = CPX; c.height = CPX;
     const g = c.getContext('2d');
-    const img = g.createImageData(CPX, CPX), d = img.data;
+    const img = g.createImageData(CPX, CPX);
     const ox = cx * CB - 3, oy = cy * CB - 3, W2 = CB + 6;
-    const types = new Int8Array(W2 * W2);
-    for (let y = 0; y < W2; y++) for (let x = 0; x < W2; x++) types[y * W2 + x] = blockType(ox + x, oy + y);
+    return { cx, cy, c, g, img, d: img.data, ox, oy, W2, types: new Int8Array(W2 * W2), phase: 0, row: 0 };
+  }
+  function renderChunk(cx, cy) { const j = chunkJob(cx, cy); stepJob(j, Infinity); return j.c; }
+  // chạy job tới khi xong (true) hoặc hết giờ (false)
+  function stepJob(j, deadline) {
+    const { types, W2, ox, oy } = j;
+    while (j.phase === 0) {
+      if (performance.now() > deadline) return false;
+      for (let k = 0; k < 4 && j.row < W2; k++, j.row++) { const y = j.row; for (let x = 0; x < W2; x++) types[y * W2 + x] = blockType(ox + x, oy + y); }
+      if (j.row >= W2) { j.phase = 1; j.row = 0; }
+    }
+    while (j.phase === 1) {
+      if (performance.now() > deadline) return false;
+      for (let k = 0; k < 4 && j.row < CB; k++, j.row++) chunkRow(j, j.row);
+      if (j.row >= CB) j.phase = 2;
+    }
+    j.g.putImageData(j.img, 0, 0);
+    decorateChunk(j.g, j.cx, j.cy);
+    j.img = j.d = j.types = null;
+    return true;
+  }
+  function chunkRow(j, y) {
+    const { cx, cy, d, types, W2 } = j;
     const tAt = (x, y) => types[(y + 3) * W2 + (x + 3)];
     const put = (x, y, col) => {
       for (let yy = 0; yy < BS; yy++) for (let xx = 0; xx < BS; xx++) {
@@ -87,7 +109,7 @@
       }
     };
     const shadeC = (col, k) => [Math.max(0, Math.min(255, col[0] * k)), Math.max(0, Math.min(255, col[1] * k)), Math.max(0, Math.min(255, col[2] * k))];
-    for (let y = 0; y < CB; y++) for (let x = 0; x < CB; x++) {
+    for (let x = 0; x < CB; x++) {
       const bx = cx * CB + x, by = cy * CB + y;
       const t = tAt(x, y), up = tAt(x, y - 1), dn = tAt(x, y + 1), up2 = tAt(x, y - 2);
       const n = fbm(bx * 0.05, by * 0.05, 1), r = hash(bx, by, 5);
@@ -203,9 +225,6 @@
       else if (theme === 'cave' && t !== T.WALL && (up2 === T.WALL || tAt(x, y - 3) === T.WALL)) col = shadeC(col, 0.72);
       put(x, y, col);
     }
-    g.putImageData(img, 0, 0);
-    decorateChunk(g, cx, cy);
-    return c;
   }
 
   // chi tiết tĩnh: khóm cỏ, hoa, sỏi, vết nứt
@@ -473,28 +492,56 @@
     theme = THEME_OF[m.id] || ALIAS[m.theme] || m.theme || 'plains';
     flora = m.theme === 'river' || m.theme === 'ruins' ? m.theme : theme;
     icy = theme === 'cave' && (/bang|ice|tuyet/.test(m.id) || m.weather === 'snow');
-    chunks = new Map(); amb.length = 0;
+    chunks = new Map(); jobs = new Map(); amb.length = 0;
     buildDecos(); indexDecos();
   }
   // dựng sẵn các mảng nền quanh một điểm (màn hình chờ chuyển bản đồ) để vào map không phải dựng dần
   function prebuild(cx0, cy0, vw, vh) {
     const c0 = Math.max(0, Math.floor((cx0 - vw) / CPX)), r0 = Math.max(0, Math.floor((cy0 - vh) / CPX));
     const c1 = Math.min(Math.ceil(map.w / CH) - 1, Math.floor((cx0 + vw) / CPX)), r1 = Math.min(Math.ceil(map.h / CH) - 1, Math.floor((cy0 + vh) / CPX));
-    for (let cy = r0; cy <= r1; cy++) for (let cx = c0; cx <= c1; cx++) { const key = cx + ',' + cy; if (!chunks.has(key)) chunks.set(key, renderChunk(cx, cy)); }
+    for (let cy = r0; cy <= r1; cy++) for (let cx = c0; cx <= c1; cx++) { const key = cx + ',' + cy; if (!chunks.has(key)) putChunk(key, renderChunk(cx, cy)); }
+    // dựng sẵn hình công trình quanh điểm vào map
+    if (window.Buildings) for (const b of map.buildings || []) if (Math.abs((b.x + b.w / 2) * TILE - cx0) < vw * 1.5 && Math.abs((b.y + b.h / 2) * TILE - cy0) < vh * 1.5) Buildings.sprite(b);
+  }
+  const FALLBACK = { town: '#6a645e', plains: '#3e7b2b', bamboo: '#3e7b2b', mountain: '#7c5833', desert: '#d8b574', snow: '#e3ecf6', demon: '#3c2a37', arena: '#7c5833', cave: '#2c2938' };
+  const CHUNK_MAX = 48;
+  let jobs = new Map();
+  function putChunk(key, c) { chunks.set(key, c); while (chunks.size > CHUNK_MAX) chunks.delete(chunks.keys().next().value); }
+  // làm tiếp các job trong ngân sách thời gian: mảng đang thấy mà chưa có trước, rồi tới vòng quanh màn hình (dựng trước khi đi tới)
+  function pump(order, deadline) {
+    for (const [cx, cy] of order) {
+      const key = cx + ',' + cy;
+      if (chunks.has(key)) continue;
+      let j = jobs.get(key);
+      if (!j) { j = chunkJob(cx, cy); jobs.set(key, j); }
+      if (!stepJob(j, deadline)) return;
+      jobs.delete(key); putChunk(key, j.c);
+    }
   }
   function drawGround(ctx, cam, vw, vh, now) {
+    const nC = Math.ceil(map.w / CH) - 1, nR = Math.ceil(map.h / CH) - 1;
     const c0 = Math.max(0, Math.floor(cam.x / CPX)), r0 = Math.max(0, Math.floor(cam.y / CPX));
-    const c1 = Math.min(Math.ceil(map.w / CH) - 1, Math.floor((cam.x + vw) / CPX)), r1 = Math.min(Math.ceil(map.h / CH) - 1, Math.floor((cam.y + vh) / CPX));
-    let built = 0;
+    const c1 = Math.min(nC, Math.floor((cam.x + vw) / CPX)), r1 = Math.min(nR, Math.floor((cam.y + vh) / CPX));
+    const missing = [];
     for (let cy = r0; cy <= r1; cy++) for (let cx = c0; cx <= c1; cx++) {
       const key = cx + ',' + cy;
-      let c = chunks.get(key);
-      if (!c) {
-        if (built >= 1) { ctx.fillStyle = '#3a722b'; ctx.fillRect(cx * CPX, cy * CPX, CPX, CPX); continue; } // mỗi khung dựng tối đa 1 mảng nền, tránh giật
-        c = renderChunk(cx, cy); chunks.set(key, c); built++;
-        if (chunks.size > 28) chunks.delete(chunks.keys().next().value);
-      } else { chunks.delete(key); chunks.set(key, c); }
+      const c = chunks.get(key);
+      if (!c) { missing.push([cx, cy]); continue; }
+      chunks.delete(key); chunks.set(key, c);
       ctx.drawImage(c, cx * CPX, cy * CPX);
+    }
+    const t0 = performance.now();
+    if (missing.length) {
+      pump(missing, t0 + 10);
+      ctx.fillStyle = FALLBACK[theme] || FALLBACK.plains;
+      for (const [cx, cy] of missing) { const c = chunks.get(cx + ',' + cy); if (c) ctx.drawImage(c, cx * CPX, cy * CPX); else ctx.fillRect(cx * CPX, cy * CPX, CPX, CPX); }
+    } else {
+      // vòng ngoài 1 mảng quanh màn hình, gần tâm trước
+      const mx = cam.x + vw / 2, my = cam.y + vh / 2, ring = [];
+      for (let cy = Math.max(0, r0 - 1); cy <= Math.min(nR, r1 + 1); cy++) for (let cx = Math.max(0, c0 - 1); cx <= Math.min(nC, c1 + 1); cx++)
+        if (!chunks.has(cx + ',' + cy)) ring.push([cx, cy, Math.hypot((cx + 0.5) * CPX - mx, (cy + 0.5) * CPX - my)]);
+      if (ring.length) { ring.sort((a, b) => a[2] - b[2]); pump(ring, t0 + 3); }
+      if (jobs.size > 8) for (const k of [...jobs.keys()].slice(0, jobs.size - 8)) jobs.delete(k);
     }
     // gợn nước & dung nham động
     const x0 = Math.max(0, Math.floor(cam.x / TILE)), y0 = Math.max(0, Math.floor(cam.y / TILE));
