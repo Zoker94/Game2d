@@ -23,7 +23,7 @@
     if (!f) return '';
     const c = document.createElement('canvas'); c.width = c.height = 32;
     const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
-    const top = Math.max(24, f.top + 4), sw = Math.min(f.w, top + 12), sh = Math.min(f.h, top + 4);
+    const top = Math.max(24, f.top + 4), sw = Math.min(f.w, Math.max(top + 12, f.half * 2 + 10)), sh = Math.min(f.h, top + 4);
     const sx = f.sx + Math.max(0, f.fx - sw / 2), sy = f.sy + Math.max(0, f.fy - sh + 2);
     const sc = Math.min(32 / sw, 32 / sh);
     x.drawImage(f.img, sx, sy, sw, sh, (32 - sw * sc) / 2, 32 - sh * sc, sw * sc, sh * sc);
@@ -67,18 +67,36 @@
     const q = box.querySelector('.tl-q');
     q.oninput = () => { query = q.value.trim().toLowerCase(); lastSig = ''; render(); };
     q.onkeydown = e => { e.stopPropagation(); if (e.key === 'Escape') { close(); } if (e.key === 'Enter') { const r = box.querySelector('.tl-row'); if (r) pick(r.dataset.k, r.dataset.id, false); q.blur(); } };
-    // chọn ngay khi nhấn xuống: danh sách tự làm mới liên tục nên không đợi click
+    // chuột: chọn ngay khi nhấn xuống (danh sách tự làm mới liên tục nên không đợi click)
+    // cảm ứng: chỉ chọn khi nhấc tay mà không vuốt, để còn cuộn được danh sách
+    let press = null;
+    const act0 = (ev, t) => {
+      if (t.closest('[data-x]')) { close(); return true; }
+      const tb = t.closest('[data-tab]');
+      if (tb) { tab = tb.dataset.tab; lastSig = ''; scrollAt = 0; render(); return true; }
+      return false;
+    };
     box.addEventListener('pointerdown', ev => {
       ev.stopPropagation();
       const t = ev.target;
-      if (t.closest('[data-x]')) { close(); return; }
-      const tb = t.closest('[data-tab]');
-      if (tb) { tab = tb.dataset.tab; lastSig = ''; render(); return; }
+      if (act0(ev, t)) return;
       const row = t.closest('.tl-row');
       if (!row) return;
       const act = t.closest('[data-act]');
-      pick(row.dataset.k, row.dataset.id, act ? act.dataset.act : false, ev);
+      if (ev.pointerType === 'mouse') { pick(row.dataset.k, row.dataset.id, act ? act.dataset.act : false, ev); return; }
+      press = { k: row.dataset.k, id: row.dataset.id, act: act ? act.dataset.act : false, x: ev.clientX, y: ev.clientY };
     });
+    box.addEventListener('pointerup', ev => {
+      const p = press; press = null;
+      if (!p || Math.hypot(ev.clientX - p.x, ev.clientY - p.y) > 10) return;
+      pick(p.k, p.id, p.act, ev);
+    });
+    box.addEventListener('pointercancel', () => { press = null; });
+    // đang cuộn thì tạm ngừng vẽ lại để cuộn không bị giật
+    const lst = box.querySelector('.tl-list');
+    lst.addEventListener('scroll', () => { scrollAt = Date.now(); }, { passive: true });
+    lst.addEventListener('touchstart', () => { scrollAt = Date.now() + 1e9; }, { passive: true });
+    lst.addEventListener('touchend', () => { scrollAt = Date.now(); }, { passive: true });
     box.addEventListener('wheel', ev => ev.stopPropagation(), { passive: true });
   }
 
@@ -97,17 +115,19 @@
       const e = G.players.get(id);
       if (e) Social.menu(e, ev.clientX, ev.clientY);
     }
-    lastSig = ''; render();
+    lastSig = ''; scrollAt = 0; render();
   }
 
+  let scrollAt = 0;
   function render() {
     if (!box) return;
+    if (Date.now() - scrollAt < 500) return;
     const all = collect();
     const cnt = { all: all.length, pl: 0, mon: 0, npc: 0 };
     for (const x of all) cnt[x.k]++;
     const tabsHtml = [['all', 'Tất cả'], ['pl', '👤 Người'], ['mon', '👹 Quái'], ['npc', '🧙 NPC']]
       .map(([k, n]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${n} <i>${cnt[k]}</i></button>`).join('');
-    const list = all.filter(x => (tab === 'all' || x.k === tab) && (!query || x.name.toLowerCase().includes(query))).slice(0, 60);
+    const list = all.filter(x => (tab === 'all' || x.k === tab) && (!query || x.name.toLowerCase().includes(query))).slice(0, 120);
     // chỉ vẽ lại khi có thay đổi đáng kể (tránh nhấp nháy)
     const sig = tab + '|' + query + '|' + G.target + '|' + list.map(x => `${x.id}:${Math.round(x.d / 32)}:${x.hp | 0}:${x.hostile ? 1 : 0}`).join(',');
     if (sig === lastSig) return;

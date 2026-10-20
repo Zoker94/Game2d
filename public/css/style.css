@@ -698,7 +698,8 @@ body.touch .gc-hero { padding: 8px; }
 .tl-tabs button.on { background: rgba(255,215,106,.18); border-color: var(--gold); color: #ffe8a8; }
 .tl-tabs i { font-style: normal; opacity: .7; font-size: 10px; }
 .tl-q { width: 100%; box-sizing: border-box; margin-bottom: 6px; padding: 6px 8px; font-size: 13px; }
-.tl-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; overscroll-behavior: contain; }
+.tl-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+.tl-row { flex: none; }
 .tl-row { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 6px; background: rgba(255,255,255,.04); border: 1px solid transparent; cursor: pointer; user-select: none; }
 .tl-row:hover { background: rgba(255,255,255,.09); }
 .tl-row.sel { border-color: #ff4040; background: rgba(255,60,60,.16); box-shadow: inset 3px 0 0 #ff4040; }
