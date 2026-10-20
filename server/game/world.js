@@ -610,7 +610,7 @@ class World {
       for (const o of map.players) {
         if (o.dead || U.dist(o, p) > sk.radius) continue;
         if (o !== p && this.canHarm(p, o)) continue;
-        const amt = Math.round(o.stats.maxHp * sk.heal + p.stats.atk);
+        const amt = Math.round((o.stats.maxHp * sk.heal + p.stats.atk) * this.healMul(o));
         o.c.hp = Math.min(o.stats.maxHp, o.c.hp + amt);
         this.io.to('map:' + p.mapId).emit('dmg', { id: o.id, v: amt, k: 'heal' });
         o.dirtyMe = true;
@@ -656,7 +656,7 @@ class World {
         for (const o of map.players) {
           if (o.dead || U.dist(o, p) > sk.radius) continue;
           if (o !== p && this.canHarm(p, o)) continue;
-          const amt = Math.round(o.stats.maxHp * sk.healAllies);
+          const amt = Math.round(o.stats.maxHp * sk.healAllies * this.healMul(o));
           o.c.hp = Math.min(o.stats.maxHp, o.c.hp + amt);
           this.io.to('map:' + p.mapId).emit('dmg', { id: o.id, v: amt, k: 'heal' });
           o.dirtyMe = true;
@@ -680,7 +680,7 @@ class World {
           }
         }
         if (sk.healSelf && !p.dead) {
-          const amt = Math.round(p.stats.maxHp * sk.healSelf);
+          const amt = Math.round(p.stats.maxHp * sk.healSelf * this.healMul(p));
           p.c.hp = Math.min(p.stats.maxHp, p.c.hp + amt);
           this.io.to('map:' + p.mapId).emit('dmg', { id: p.id, v: amt, k: 'heal' });
           p.dirtyMe = true;
@@ -769,14 +769,13 @@ class World {
     let { dmg, crit } = this.calcDamage(p.stats.atk * 1.6, p.stats.crit, def, mult, 0.35, 1.75 + (fx.critdmg || 0) / 100);
     const [em, ek] = elemMult(p.stats.el, isPlayer ? t.stats.del : t.tpl.el);
     dmg *= em;
-    if (isPlayer) dmg *= 0.6; // giảm sát thương PK
     dmg = Math.max(1, Math.round(dmg));
     this.applyDamage(t, dmg, p, crit ? 'crit' : 'hit', ek);
     if (t.dead || p.dead) return;
     // hiệu ứng trang bị khi đánh trúng
     for (const k of PROC_KEYS) if (fx[k] && Math.random() * 100 < fx[k]) this.applyStatus(t, AFFIX[k].st[0], AFFIX[k].st[1], p);
     if (fx.lifesteal) {
-      const heal = Math.round(dmg * fx.lifesteal / 100);
+      const heal = Math.round(dmg * fx.lifesteal / 100 * this.healMul(p));
       if (heal > 0 && p.c.hp < p.stats.maxHp) { p.c.hp = Math.min(p.stats.maxHp, p.c.hp + heal); p.dirtyMe = true; if (heal >= 5) this.io.to('map:' + p.mapId).emit('dmg', { id: p.id, v: heal, k: 'heal' }); }
     }
     if (fx.double && Math.random() * 100 < fx.double) {
@@ -789,6 +788,18 @@ class World {
     if (src && src.c && t && !t.c && !t.cart) src.lastHitMon = Date.now();   // thú cưng biết chủ đang giao chiến
     if (t.dead) return;
     if (t.c && src && t.dodgeUntil > Date.now()) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return; }   // đang lướt né
+    if (t.c && src && src.c && t !== src) {   // người chơi đánh người chơi: giảm mạnh để trận đấu kéo dài 1-2 phút
+      const now = Date.now();
+      // giao tranh kéo dài quá 60 giây: sát thương tăng dần (+35% mỗi 10 giây) để trận đấu không kéo dài mãi
+      for (const e of [t, src]) if (now - (e.lastPvp || 0) > PVP_COMBAT) e.pvpSince = now;
+      const long = Math.max(0, now - Math.min(t.pvpSince, src.pvpSince) - PVP_RAMP_AFTER);
+      if (long > 0 && !t.pvpRampTold) { t.pvpRampTold = src.pvpRampTold = true; for (const e of [t, src]) this.toast(e, '⚔️ Giao tranh kéo dài: sát thương hai bên tăng dần!', 'info'); }
+      if (!long) t.pvpRampTold = src.pvpRampTold = false;
+      t.lastPvp = now; src.lastPvp = now;
+      // cấp thấp ít chiêu nên tăng nhẹ, cấp cao nhiều chiêu mạnh nên giảm nhẹ: mọi cấp đều quanh 1,5 phút
+      const lvK = U.clamp(1.35 - (t.c.level + src.c.level) / 2 * 0.0065, 0.7, 1.3);
+      dmg = Math.max(1, Math.round(dmg * PVP_DMG * lvK * (1 + long / 10000 * 0.35)));
+    }
     if (t.c && src && src.c && isRanged(src) && !isRanged(t)) dmg = Math.max(1, Math.round(dmg * MELEE_GUARD));   // cận chiến: hộ thể trước đòn đánh xa
     // phòng thủ từ trang bị (chỉ với đòn đánh trực tiếp, không áp cho độc/bỏng)
     if (t.c && src && (kind === 'hit' || kind === 'crit' || kind === 'hurt')) {
@@ -1129,9 +1140,12 @@ class World {
     if (c.level < (it.lv || 1)) return this.toast(p, `Cần cấp ${it.lv}`, 'error');
     const e = it.effect || {};
     if (e.hp || e.mp || e.hpPct || e.mpPct) {
-      if (p._potCd && p._potCd > Date.now()) return;
-      p._potCd = Date.now() + 500;
-      const hv = (e.hp || 0) + Math.round(p.stats.maxHp * (e.hpPct || 0) / 100);
+      // bình máu và bình nội lực hồi chiêu riêng; đang giao tranh với người chơi: bình máu hồi chiêu dài, hồi ít
+      const isHp = !!(e.hp || e.hpPct), ck = isHp ? '_potCdHp' : '_potCdMp', pvp = isHp && this.inPvp(p);
+      if (p[ck] && p[ck] > Date.now()) { if (pvp && !p._autoUse) this.toast(p, `Đang giao tranh: bình máu hồi chiêu ${Math.ceil((p[ck] - Date.now()) / 1000)} giây`, 'error'); return; }
+      p[ck] = Date.now() + (pvp ? PVP_POT_CD : 500);
+      let hv = (e.hp || 0) + Math.round(p.stats.maxHp * (e.hpPct || 0) / 100);
+      if (pvp) hv = Math.min(hv, Math.round(p.stats.maxHp * PVP_POT_MAX));
       const mv = (e.mp || 0) + Math.round(p.stats.maxMp * (e.mpPct || 0) / 100);
       if (hv) c.hp = Math.min(p.stats.maxHp, c.hp + hv);
       if (mv) c.mp = Math.min(p.stats.maxMp, c.mp + mv);
@@ -1667,6 +1681,10 @@ class World {
     if (this.tickN % 5 === 0) for (const p of this.players.values()) if (p.c.pet) this.petTick(p, now);
   }
 
+  // đang giao tranh với người chơi (8 giây gần nhất): hồi máu từ chiêu / hút máu / hồi phục chỉ còn 25%
+  inPvp(p, now = Date.now()) { return now - (p.lastPvp || 0) < PVP_COMBAT; }
+  healMul(p) { return this.inPvp(p) ? PVP_HEAL : 1; }
+
   // ---------- Ngồi thiền: đứng yên trong thành 30 giây thì tự ngồi thiền (hồi phục nhanh, tích luỹ chút kinh nghiệm) ----------
   wake(p, now) {
     p.stillSince = now;
@@ -1697,7 +1715,7 @@ class World {
     const hpR = weak ? (p.med ? 0.03 : 0.008) : safe ? (p.med ? 0.12 : 0.06) : inCombat ? 0.004 : 0.02;
     const mpR = weak ? (p.med ? 0.03 : 0.01) : safe ? (p.med ? 0.12 : 0.06) : inCombat ? 0.01 : 0.03;
     const oh = c.hp, om = c.mp;
-    c.hp = Math.min(s.maxHp, c.hp + Math.ceil(s.maxHp * (hpR + s.regen)));
+    c.hp = Math.min(s.maxHp, c.hp + Math.ceil(s.maxHp * (hpR + s.regen) * this.healMul(p)));
     c.mp = Math.min(s.maxMp, c.mp + Math.ceil(s.maxMp * mpR));
     if (oh !== c.hp || om !== c.mp) p.dirtyMe = true;
   }
@@ -1867,6 +1885,8 @@ const isRanged = p => classRange(p.c.cls, branchOf(p.c)) >= 200;   // theo hệ 
 const CAST_LOCK = { basic: 260, skill: 450 };   // đánh xa đứng yên vận chiêu (ms)
 const MELEE_GUARD = 0.85;                       // cận chiến nhận 85% sát thương từ người chơi đánh xa
 const STUN_IMMUNE = 3000;
+// PvP: sát thương người chơi lên người chơi, hồi máu khi đang giao tranh, bình máu (hồi chiêu, tối đa % máu mỗi bình)
+const PVP_DMG = 0.0095, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;
 const MED_AFTER = 30000;                        // đứng yên trong thành bao lâu thì ngồi thiền (ms)
 const MED_EXP = 0.0005;                         // mỗi 5 giây ngồi thiền: 0,05% kinh nghiệm cấp hiện tại                       // kháng choáng sau khi hết choáng (ms)
 const FX_STATUS = { firedragon: ['burn', 4000, 1] };

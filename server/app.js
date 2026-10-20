@@ -314,7 +314,8 @@ io.on('connection', socket => {
     const order = [id, ...pref].filter(x => ITEMS[x] && player.c.level >= (ITEMS[x].lv || 1));
     const s = order.map(x => player.c.inv.find(i => i.id === x)).find(Boolean);
     if (!s) return d && d.auto ? socket.emit('noPot', { kind: d.kind === 'mp' ? 'mp' : 'hp' }) : world.toast(player, 'Không còn thuốc!', 'error');
-    world.useItem(player, s.uid);
+    player._autoUse = !!(d && d.auto);   // tự bơm: không báo hồi chiêu mỗi lần thử
+    try { world.useItem(player, s.uid); } finally { player._autoUse = false; }
   }));
   on('equip', inGame(d => world.equip(player, d && d.uid)));
   on('unequip', inGame(d => world.unequip(player, d && d.slot)));

@@ -4,6 +4,14 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Cân bằng PK: đánh nhau với người chơi ngang cấp, ngang đồ nay kéo dài khoảng 1-2 phút thay vì chết sau 1 chiêu (sát thương giữa người chơi giảm mạnh, đánh quái không đổi).',
+      'Khi đang giao tranh với người chơi: hồi máu từ chiêu, hút máu và hồi phục còn 25%; bình máu hồi chiêu 10 giây, mỗi bình hồi tối đa 6% máu. Bình nội lực không bị ảnh hưởng.',
+      'Giao tranh kéo dài quá 60 giây: sát thương hai bên tăng dần (+35% mỗi 10 giây) để trận đấu luôn có kết quả.'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Mỗi môn phái chia hai hệ: Nội công (vận khí, mạnh theo điểm Nội Công, xuyên 20% phòng thủ) và Ngoại công (binh khí, mạnh theo điểm Sức Mạnh). Mỗi hệ có bộ chiêu và nội công bị động riêng – xem bảng Võ Công, mục "Hệ phái". Đổi hệ miễn phí dưới cấp 20, từ cấp 20 cần Tẩy Tủy Kinh; chiêu đã lĩnh ngộ được chuyển sang chiêu tương ứng của hệ mới.',
       'Vật phẩm mới: Tẩy Tủy Kinh (tẩy điểm võ học) và Tẩy Tiềm Năng Đan (tẩy điểm tiềm năng miễn phí) – bán ở Tàng Kinh Các và Kỳ Trân Các.',
       'Ngồi thiền: đứng yên trong thành 30 giây sẽ tự ngồi thiền – hồi phục nhanh gấp đôi và mỗi 5 giây lĩnh ngộ thêm kinh nghiệm.',
