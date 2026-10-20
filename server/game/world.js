@@ -273,6 +273,19 @@ class World {
   // ---------- Phần thưởng / kinh nghiệm ----------
   giveReward(p, r, source) {
     if (!r) return;
+    const B = p._batch;
+    if (B) {   // đang dùng hàng loạt: cộng dồn, báo một lần ở cuối
+      if (r.exp) { this.gainExp(p, r.exp, true); B.exp += r.exp; }
+      if (r.gold) { p.c.gold += r.gold; B.gold += r.gold; }
+      if (r.knb) { p.c.knb += r.knb; B.knb += r.knb; }
+      for (let [id, qty] of (r.items || [])) {
+        if (id === '@book1') id = 'sk_' + CLASSES[p.c.cls].skills[1].id;
+        this.giveItem(p, id, qty);
+        B.items.set(id, (B.items.get(id) || 0) + qty);
+      }
+      p.dirtyMe = true; this.db.markDirty();
+      return;
+    }
     const parts = [];
     if (r.exp) { this.gainExp(p, r.exp, true); parts.push(`${r.exp} KN`); }
     if (r.gold) { p.c.gold += r.gold; parts.push(`${r.gold} lượng`); }
@@ -1017,7 +1030,43 @@ class World {
   }
 
   // ---------- Túi đồ / trang bị ----------
-  useItem(p, uid) {
+  // dùng nhiều cái một lần (rương, bùa nhân đôi KN, lượt quay...): phần thưởng gộp lại báo một lần
+  useItem(p, uid, n = 1) {
+    n = Math.max(1, Math.min(200, n | 0 || 1));
+    const s = p.c.inv.find(x => x.uid === uid);
+    if (!s) return;
+    const it = ITEMS[s.id], e = it.effect || {};
+    if (n === 1 || !this.batchable(it)) return this.useOne(p, uid);
+    n = Math.min(n, s.qty);
+    p._batch = { exp: 0, gold: 0, knb: 0, items: new Map(), muted: 0 };
+    let used = 0;
+    try {
+      for (let i = 0; i < n; i++) {
+        const before = s.qty;
+        this.useOne(p, uid);
+        const now = p.c.inv.find(x => x.uid === uid);
+        if (now && now.qty === before) break;   // không dùng được nữa (túi đầy, hết lượt...)
+        used++;
+        if (!now) break;
+      }
+    } finally {
+      const B = p._batch; p._batch = null;
+      if (used) {
+        const parts = [];
+        if (B.exp) parts.push(`${B.exp} KN`);
+        if (B.gold) parts.push(`${B.gold} lượng`);
+        if (B.knb) parts.push(`${B.knb} Nguyên Bảo`);
+        for (const [id, q] of B.items) parts.push(`${ITEMS[id] ? ITEMS[id].name : id} x${q}`);
+        this.toast(p, `Đã dùng ${used} ${it.name}${parts.length ? ': nhận ' + parts.join(', ') : ''}`, 'reward');
+      }
+      p.dirtyMe = true; this.db.markDirty();
+    }
+  }
+  batchable(it) {
+    const e = it.effect || {};
+    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.rename || e.pet || e.learn || e.dragon);
+  }
+  useOne(p, uid) {
     const c = p.c;
     const s = c.inv.find(x => x.uid === uid);
     if (!s) return;
@@ -1642,7 +1691,10 @@ class World {
   }
 
   fx(mapId, data) { this.io.to('map:' + mapId).emit('fx', data); }
-  toast(p, text, type = 'info') { p.socket.emit('toast', { text, type }); }
+  toast(p, text, type = 'info') {
+    if (p._batch && type === 'reward') { p._batch.muted++; return; }   // dùng hàng loạt: gom thông báo
+    p.socket.emit('toast', { text, type });
+  }
 }
 
 // ---------- Hiệu ứng khống chế / sát thương theo thời gian ----------

@@ -305,7 +305,7 @@ io.on('connection', socket => {
   on('dodge', inGame(d => world.dodge(player, d)));
   on('story', inGame(d => world.story.action(player, d)));
   on('pickup', inGame(d => world.pickupItem(player, d && typeof d.id === 'string' ? d.id : null)));
-  on('useItem', inGame(d => world.useItem(player, d && d.uid)));
+  on('useItem', inGame(d => world.useItem(player, d && d.uid, d && d.n)));
   on('quickUse', inGame(d => {
     const id = d && d.kind === 'mp' ? player.c.quickMp : player.c.quickHp;
     const pref = d && d.kind === 'mp' ? ['mp5', 'mp4', 'mp6', 'mp3', 'mp2', 'mp1'] : ['hp5', 'hp4', 'hp6', 'hp3', 'hp2', 'hp1'];

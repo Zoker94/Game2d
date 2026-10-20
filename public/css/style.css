@@ -1413,3 +1413,6 @@ table.tbl th { background: linear-gradient(180deg, var(--or2), var(--or1)); colo
 .dead-opt i { background: #1e1f24; border: 2px solid var(--ink2); }
 .dead-opt.here { background: linear-gradient(180deg, var(--or3), var(--or2) 55%, var(--or1)); border-color: #ffd890; }
 .dead-opt.here b { color: #3a1a04; text-shadow: 0 1px 0 rgba(255,230,180,.6); } .dead-opt.here small { color: #4a2408; }
+
+.use-multi { display: inline-flex; align-items: center; gap: 3px; }
+.use-multi input { width: 58px; padding: 3px 5px; text-align: center; }
