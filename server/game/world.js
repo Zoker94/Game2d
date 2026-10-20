@@ -1727,14 +1727,27 @@ class World {
     p.stillSince = now;
     if (p.med) { p.med = false; p.dirtyMe = true; }
   }
+  // nút ngồi thiền: ngồi ngay ở bất cứ đâu khi không giao chiến; bấm lại (hoặc di chuyển) để đứng dậy
+  toggleMeditate(p) {
+    const now = Date.now();
+    if (p.med) return this.wake(p, now);
+    if (p.dead) return;
+    if (p.duel || p.trade) return this.toast(p, 'Không thể ngồi thiền lúc này', 'error');
+    if (now - p.lastCombat < 6000 || this.inPvp(p, now)) return this.toast(p, 'Đang giao chiến, chưa thể ngồi thiền', 'error');
+    if (p.c.riding) { p.c.riding = false; this.recalc(p); }
+    const safe = this.maps[p.mapId].def.safe;
+    p.med = true; p.medTick = now; p.stillSince = now - MED_AFTER; p.dirtyMe = true;
+    this.toast(p, safe ? '🧘 Ngồi thiền – di chuyển để đứng dậy' : '🧘 Ngồi thiền – hồi phục nhanh hơn', 'info');
+  }
   meditate(p, m, now) {
     if (!p.med) {
       if (!m.def.safe || p.duel || p.c.riding || p.trade || now - p.stillSince < MED_AFTER) return;
       p.med = true; p.medTick = now; p.dirtyMe = true;
-      this.toast(p, '🧘 Bắt đầu ngồi thiền: hồi phục nhanh, mỗi 5 giây lĩnh ngộ thêm kinh nghiệm. Di chuyển để đứng dậy.', 'info');
+      this.toast(p, '🧘 Tự ngồi thiền – hồi phục nhanh, lĩnh ngộ thêm kinh nghiệm', 'info');
       return;
     }
-    if (p.c.riding || !m.def.safe) return this.wake(p, now);
+    if (p.c.riding || now - p.lastCombat < 1000) return this.wake(p, now);   // bị đánh thì đứng dậy
+    if (!m.def.safe) return;   // ngoài thành chỉ hồi phục nhanh, không lĩnh ngộ kinh nghiệm
     if (now - p.medTick >= 5000 && p.c.level < U.MAX_LEVEL) {
       p.medTick = now;
       this.gainExp(p, Math.max(1, Math.round(U.expNext(p.c.level) * MED_EXP)), true);
@@ -1749,8 +1762,8 @@ class World {
     const inCombat = now - p.lastCombat < 6000;
     const safe = m.def.safe && !p.duel;   // đang thách đấu trong thành: hồi như ngoài thành
     const weak = p.weakUntil > now;      // vừa về thành sau khi tử trận: hồi chậm
-    const hpR = weak ? (p.med ? 0.03 : 0.008) : safe ? (p.med ? 0.12 : 0.06) : inCombat ? 0.004 : 0.02;
-    const mpR = weak ? (p.med ? 0.03 : 0.01) : safe ? (p.med ? 0.12 : 0.06) : inCombat ? 0.01 : 0.03;
+    const hpR = weak ? (p.med ? 0.03 : 0.008) : safe ? (p.med ? 0.12 : 0.06) : inCombat ? 0.004 : p.med ? 0.05 : 0.02;
+    const mpR = weak ? (p.med ? 0.03 : 0.01) : safe ? (p.med ? 0.12 : 0.06) : inCombat ? 0.01 : p.med ? 0.07 : 0.03;
     const oh = c.hp, om = c.mp;
     c.hp = Math.min(s.maxHp, c.hp + Math.ceil(s.maxHp * (hpR + s.regen) * this.healMul(p)));
     c.mp = Math.min(s.maxMp, c.mp + Math.ceil(s.maxMp * mpR));

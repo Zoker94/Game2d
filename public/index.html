@@ -11,6 +11,9 @@
 <title>Võ Lâm Pixel</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%2314101c'/><path d='M3 13 L12 4 L13 5 L4 14Z' fill='%23ffd76a'/><rect x='2' y='11' width='4' height='1' fill='%23b8860b'/></svg>">
+<link rel="preload" href="/fonts/BeVietnamPro-600-vietnamese.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/BeVietnamPro-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -101,6 +104,7 @@
   <!-- ============ TRONG GAME ============ -->
   <section id="screen-game" class="screen">
     <canvas id="game"></canvas>
+    <div id="vignette"></div>
 
     <div id="hud">
       <div id="hud-status">
@@ -189,6 +193,7 @@
           <button class="act pot" id="btn-mp">💧</button>
           <button class="act small-act" id="btn-target" title="Đổi mục tiêu">🎯</button>
           <button class="act small-act" id="btn-mount" title="Cưỡi thú (T)">🐎</button>
+          <button class="act small-act" id="btn-med" title="Ngồi thiền (Y)">🧘</button>
           <button class="act pick hidden" id="btn-pick" title="Nhặt vật phẩm (F)">🖐<span>Nhặt</span></button>
           <button class="act dodge" id="btn-dodge" title="Khinh công (Shift / Q)"><span class="dg-ic">💨</span><div class="cdo"></div><div class="cdt"></div></button>
         </div>

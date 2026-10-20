@@ -155,7 +155,7 @@
       ctx.translate(s.x + Math.cos(a) * r, s.y - 26 + Math.sin(a) * r); ctx.rotate(a);
       ctx.fillStyle = '#4affa0'; ctx.strokeStyle = '#003a1a'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(16, 0); ctx.lineTo(-8, -11); ctx.lineTo(-3, 0); ctx.lineTo(-8, 11); ctx.closePath(); ctx.fill(); ctx.stroke();
-      ctx.rotate(-a); ctx.font = '12px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🧭', 0, -16);
+      ctx.rotate(-a); ctx.font = '12px Be Vietnam Pro, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🧭', 0, -16);
     }
     ctx.restore();
   }

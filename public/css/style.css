@@ -4,7 +4,7 @@
   --rare: #4fa3ff; --epic: #c060ff; --legendary: #ff9b2f; --common: #d0d0d0;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: none; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; font-weight: 500; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: none; }
 input, select, textarea { user-select: text; -webkit-user-select: text; font: inherit; }
 #app { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; overflow: hidden; }
 #app.rotated { transform-origin: top left; transform: rotate(90deg) translateY(-100%); }
@@ -59,6 +59,10 @@ input:focus, select:focus { border-color: var(--gold); }
 
 /* ---------- Trong game ---------- */
 #game { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; display: block; }
+/* lớp ám màu + tối viền: trình duyệt tự ghép (không tốn công vẽ lại toàn màn hình mỗi khung trên canvas) */
+#vignette { position: absolute; inset: 0; pointer-events: none; background: var(--vtint, transparent); }
+#vignette::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse farthest-corner at 50% 50%, rgba(10,5,20,0) 42%, rgba(10,5,20,.55) 100%); }
+#vignette.off { display: none; }
 #hud { position: absolute; inset: 0; pointer-events: none; }
 #hud > * { pointer-events: auto; }
 .bar { position: relative; height: 14px; background: #1a0f12; border: 1px solid #000; border-radius: 3px; overflow: hidden; margin: 2px 0; }
@@ -628,7 +632,7 @@ body.touch .kb-slots { grid-template-columns: repeat(4, 1fr); } body.touch .kb-s
 @keyframes scIn { from { opacity: 0; } to { opacity: 1; } }
 .sc-title { font-size: 30px; font-weight: 800; color: #ffd76a; letter-spacing: 2px; text-align: center; text-shadow: 0 0 18px rgba(255,160,40,.6), 0 2px 0 #3a1a00; margin-bottom: 22px; }
 .sc-title::before, .sc-title::after { content: '❖'; margin: 0 14px; color: #b8893a; font-size: 18px; vertical-align: middle; }
-.sc-text { max-width: 680px; font-size: 18px; line-height: 1.7; color: #f0e2c0; text-align: center; min-height: 6em; font-family: Georgia, 'Times New Roman', serif; }
+.sc-text { max-width: 680px; font-size: 18px; line-height: 1.7; color: #f0e2c0; text-align: center; min-height: 6em; font-family: 'Playfair Display', Georgia, serif; }
 .sc-hint { position: absolute; bottom: 22px; font-size: 12px; color: #a08860; animation: blink 1.6s infinite; }
 @keyframes blink { 50% { opacity: .3; } }
 #story-box { background: linear-gradient(180deg, rgba(60,30,10,.9), rgba(30,16,8,.9)); border: 1px solid #ff9a3a; border-radius: 8px; padding: 6px 8px; font-size: 12px; cursor: pointer; box-shadow: 0 0 10px rgba(255,140,40,.3); margin-bottom: 4px; }
@@ -1518,7 +1522,7 @@ body.touch #update-gate .ug-box { padding: 16px 14px; }
 /* ---- tuyệt kỹ: lớp nứt màn + tên chiêu ---- */
 #ult-crack { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; display: none; }
 #ult-banner { position: absolute; left: 0; right: 0; top: 17%; pointer-events: none; z-index: 41; text-align: center; opacity: 0; }
-#ult-banner b { display: block; font-size: clamp(26px, 5vw, 54px); letter-spacing: 6px; color: #fff; text-shadow: 0 0 12px var(--uc), 0 0 28px var(--uc), 0 3px 0 #000; font-family: serif; }
+#ult-banner b { display: block; font-size: clamp(26px, 5vw, 54px); letter-spacing: 6px; color: #fff; text-shadow: 0 0 12px var(--uc), 0 0 28px var(--uc), 0 3px 0 #000; font-family: 'Playfair Display', Georgia, serif; }
 #ult-banner small { display: block; margin-top: 4px; font-size: 13px; letter-spacing: 8px; color: var(--uc); text-shadow: 0 1px 2px #000; }
 #ult-banner.victim b { color: #ffd0d0; text-shadow: 0 0 12px #ff2020, 0 0 26px #a00000, 0 3px 0 #000; }
 #ult-banner.victim small { color: #ff6a6a; }
@@ -1531,7 +1535,7 @@ body.touch #update-gate .ug-box { padding: 16px 14px; }
 #map-loading.hidden { display: none; }
 #map-loading.out { opacity: 0; }
 #map-loading .ml-box { width: min(440px, 86vw); text-align: center; }
-#map-loading .ml-name { font-family: serif; font-size: clamp(24px, 4.5vw, 38px); letter-spacing: 4px; color: #ffe8b0; text-shadow: 0 0 14px rgba(255, 190, 90, .55), 0 2px 0 #000; }
+#map-loading .ml-name { font-family: 'Playfair Display', Georgia, serif; font-size: clamp(24px, 4.5vw, 38px); letter-spacing: 4px; color: #ffe8b0; text-shadow: 0 0 14px rgba(255, 190, 90, .55), 0 2px 0 #000; }
 #map-loading .ml-sub { margin-top: 4px; color: #c8b890; font-size: 13px; letter-spacing: 3px; }
 #map-loading .ml-bar { margin: 18px auto 12px; height: 8px; border-radius: 6px; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 215, 120, .35); overflow: hidden; }
 #map-loading .ml-bar i { display: block; height: 100%; width: 10%; background: linear-gradient(90deg, #b8741e, #ffd76a); box-shadow: 0 0 8px #ffb84a; transition: width .25s; }
@@ -1601,3 +1605,30 @@ body.touch #map-row { gap: 3px; }
 #tp-box .tp-pts input { width: 80px; padding: 3px 6px; border-radius: 6px; border: 1px solid rgba(201,154,58,.4); background: rgba(0,0,0,.35); color: #fff; font: inherit; }
 #tp-box .tp-pts small { color: #a89a80; }
 #tp-box .tp-pl .btn { padding: 3px 6px; }
+
+/* phông chữ: nút, ô nhập dùng chung phông giao diện; tiêu đề lớn dùng phông có chân */
+button, input, select, textarea { font-family: inherit; }
+#duel-banner, .npc-head h3, #panel-title, .panel-title, .sc-title { font-family: 'Playfair Display', Georgia, serif; letter-spacing: .5px; }
+/* nút ngồi thiền */
+#btn-med { right: 200px; bottom: 162px; }
+#btn-med.act { font-size: 0; background: url(/assets/skills/ui_med.png) center/128% no-repeat padding-box, conic-gradient(from 210deg, #e0fff4, #4ac8a8, #10504a, #a0f0dc, #e0fff4) border-box; }
+body.meditating #btn-med, body.meditating #med-sk { box-shadow: 0 0 0 2px #9ff0d8, 0 0 14px rgba(120,240,210,.85); animation: medPulse 1.6s ease-in-out infinite; }
+@keyframes medPulse { 50% { box-shadow: 0 0 0 2px #9ff0d8, 0 0 22px rgba(120,240,210,1); } }
+/* ---- lớp thời tiết (CSS, trình duyệt tự ghép) ---- */
+#wx-layer, #wx-flash { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+#wx-flash { background: rgb(230,240,255); }
+#wx-layer.wx-rain { background: rgba(30,45,70,.2); }
+#wx-layer.wx-storm { background: rgba(14,20,40,.34); }
+#wx-layer.wx-snow { background: linear-gradient(rgba(220,235,255,.05), rgba(240,248,255,.12)); }
+#wx-layer.wx-blizzard { background: linear-gradient(rgba(220,235,255,.18), rgba(240,248,255,.34)); }
+#wx-layer.wx-wind { background: rgba(120,130,110,.06); }
+#wx-layer.wx-sand { background: rgba(200,160,90,.26); }
+#wx-layer.wx-sun { background:
+    radial-gradient(ellipse farthest-corner at 50% 50%, rgba(120,50,0,0) 45%, rgba(120,50,0,.22) 100%),
+    radial-gradient(circle at 85% -8%, rgba(255,250,210,.55) 0, rgba(255,210,120,.2) 22%, rgba(255,180,80,0) 70%),
+    rgba(255,170,60,.1); }
+#wx-layer.wx-sun::before { content: ''; position: absolute; inset: 0;
+  background: repeating-conic-gradient(from 200deg at 85% -8%, rgba(255,240,190,.09) 0deg 2.2deg, rgba(255,240,190,0) 2.2deg 8deg);
+  -webkit-mask-image: radial-gradient(circle at 85% -8%, #000 0, rgba(0,0,0,.6) 45%, transparent 85%); mask-image: radial-gradient(circle at 85% -8%, #000 0, rgba(0,0,0,.6) 45%, transparent 85%);
+  animation: sunRays 6s ease-in-out infinite; }
+@keyframes sunRays { 50% { opacity: .55; } }

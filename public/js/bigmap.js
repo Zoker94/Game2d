@@ -26,7 +26,7 @@
     layout = { sc, dpr };
   }
   function label(t, x, y, col, bold, size_) {
-    ctx.font = `${bold ? 800 : 600} ${size_ || 11}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.font = `${bold ? 800 : 600} ${size_ || 11}px Be Vietnam Pro, system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
     ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.strokeText(t, x, y); ctx.fillStyle = col; ctx.fillText(t, x, y);
   }
   function draw() {
@@ -44,7 +44,7 @@
       ctx.save(); ctx.translate(x, y); ctx.rotate(now / 600); ctx.strokeStyle = '#7fd4ff'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(0, 0, 7, 0, 4.5); ctx.stroke(); ctx.restore();
       dot(x, y, '#bfefff', 3.5);
       const txt = '➜ ' + p.toName;
-      ctx.font = '800 11px system-ui, sans-serif';
+      ctx.font = '800 11px Be Vietnam Pro, system-ui, sans-serif';
       const hw = ctx.measureText(txt).width / 2 + 4;
       const tx = Math.max(hw, Math.min(m.w * sc - hw, x)), ty = y < 30 ? y + 26 : y - 9;
       label(txt, tx, ty, '#9ae6ff', true);

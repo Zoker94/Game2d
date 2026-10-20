@@ -50,12 +50,38 @@
   }
 
   // ---------- vẽ ----------
+  // Lớp phủ toàn màn hình (ám màu trời mưa, sương tuyết, nắng gắt, chớp sáng) dùng thẻ div + CSS do trình duyệt tự ghép,
+  // không vẽ lại cả màn hình trên canvas mỗi khung. Canvas chỉ còn vẽ hạt mưa / tuyết / gió và tia sét.
+  let layer = null, flashEl = null, layerKey = '', layerOp = -1, flashOp = -1;
+  function ensureLayer() {
+    if (layer && layer.isConnected) return true;
+    const host = document.getElementById('screen-game'), vig = document.getElementById('vignette');
+    if (!host) return false;
+    layer = document.createElement('div'); layer.id = 'wx-layer';
+    flashEl = document.createElement('div'); flashEl.id = 'wx-flash';
+    host.insertBefore(flashEl, vig ? vig.nextSibling : host.firstChild.nextSibling);
+    host.insertBefore(layer, flashEl);
+    return true;
+  }
+  function layerSet(key, op) {
+    if (!ensureLayer()) return;
+    if (key !== layerKey) { layerKey = key; layer.className = key ? 'wx-' + key : ''; }
+    op = Math.round(op * 50) / 50;
+    if (op !== layerOp) { layerOp = op; layer.style.opacity = op; }
+  }
+  function flashSet(op) {
+    if (!ensureLayer()) return;
+    op = Math.round(op * 20) / 20;
+    if (op !== flashOp) { flashOp = op; flashEl.style.opacity = op; }
+  }
   function draw(ctx, cw, ch, dpr, now, cam, zoom, fxq) {
     const dt = Math.min(50, lastT ? now - lastT : 16) / 16.67; lastT = now;
     // đổi thời tiết: giảm dần cái cũ rồi tăng cái mới
     if (pending) { level = Math.max(0, level - 0.012 * dt); if (level === 0) { kind = pending; pending = null; drops = []; flakes = []; streaks = []; bits = []; splashes = []; } }
     else if (kind !== 'clear') level = Math.min(1, level + 0.008 * dt);
-    if (kind === 'clear' || level <= 0) { lastCam = cam && { x: cam.x, y: cam.y }; return; }
+    if (kind === 'clear' || level <= 0) { lastCam = cam && { x: cam.x, y: cam.y }; layerSet('', 0); flashSet(0); return; }
+    layerSet(kind === 'wind' && theme === 'desert' ? 'sand' : kind, level);
+    if (kind !== 'storm') flashSet(0);
     const W = cw / dpr, H = ch / dpr;
     // trôi theo camera để hạt mưa/tuyết gắn với thế giới
     let dx = 0, dy = 0;
@@ -67,16 +93,14 @@
     if (kind === 'rain' || kind === 'storm') drawRain(ctx, W, H, dt, dx, dy, area, now);
     if (kind === 'snow' || kind === 'blizzard') drawSnow(ctx, W, H, dt, dx, dy, area, now);
     if (kind === 'wind' || kind === 'blizzard' || kind === 'storm') drawWind(ctx, W, H, dt, dx, dy, area, now);
-    if (kind === 'sun') drawSun(ctx, W, H, now);
+    if (kind === 'sun') drawSun();
     ctx.restore();
   }
 
   function drawRain(ctx, W, H, dt, dx, dy, area, now) {
     const storm = kind === 'storm';
     // trời tối lại
-    ctx.fillStyle = storm ? `rgba(14,20,40,${0.34 * level})` : `rgba(30,45,70,${0.2 * level})`;
-    ctx.fillRect(0, 0, W, H);
-    const want = Math.round(area * (storm ? 260 : 170) * level);
+    const want = Math.round(area * (storm ? 120 : 85) * level);   // ít hạt hơn (mỗi hạt dài, rõ hơn) cho nhẹ
     while (drops.length < want) drops.push(spawnDrop(W, H, drops.length > 0));
     if (drops.length > want) drops.length = want;
     const wx = windX();
@@ -86,7 +110,7 @@
     for (const d of drops) {
       d.x += wx * dt - dx; d.y += d.vy * dt - dy;
       if (d.y > d.end) {
-        if (splashes.length < 120) splashes.push({ x: d.x, y: d.end, t: 0 });
+        if (splashes.length < 60) splashes.push({ x: d.x, y: d.end, t: 0 });
         Object.assign(d, spawnDrop(W, H, true));
         continue;
       }
@@ -134,8 +158,8 @@
         for (const s of bolt.segs) { ctx.lineWidth = s[4] + pass[0]; ctx.beginPath(); ctx.moveTo(s[0], s[1]); ctx.lineTo(s[2], s[3]); ctx.stroke(); }
       }
     }
+    flashSet(flash * 0.55);
     if (flash > 0) {
-      ctx.fillStyle = `rgba(230,240,255,${flash * 0.55})`; ctx.fillRect(0, 0, W, H);
       flash = Math.max(0, flash - 0.07);
       if (flash < 0.5 && flash > 0.42 && Math.random() < 0.5) flash = 0.8;   // chớp nháy 2 lần
     }
@@ -144,11 +168,7 @@
   function drawSnow(ctx, W, H, dt, dx, dy, area, now) {
     const bl = kind === 'blizzard';
     // sương trắng mờ, dày hơn ở phía dưới
-    const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, `rgba(220,235,255,${(bl ? 0.18 : 0.05) * level})`);
-    g.addColorStop(1, `rgba(240,248,255,${(bl ? 0.34 : 0.12) * level})`);
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    const want = Math.round(area * (bl ? 180 : 90) * level);
+    const want = Math.round(area * (bl ? 110 : 60) * level);
     while (flakes.length < want) flakes.push(spawnFlake(W, H, flakes.length > 0));
     if (flakes.length > want) flakes.length = want;
     const wx = bl ? 6 : 0.4;
@@ -170,9 +190,6 @@
 
   function drawWind(ctx, W, H, dt, dx, dy, area, now) {
     const pure = kind === 'wind', sand = pure && theme === 'desert';
-    if (sand) {   // bão cát: phủ màu vàng đục
-      ctx.fillStyle = `rgba(200,160,90,${0.26 * level})`; ctx.fillRect(0, 0, W, H);
-    } else if (pure) { ctx.fillStyle = `rgba(120,130,110,${0.06 * level})`; ctx.fillRect(0, 0, W, H); }
     // vệt gió: gom theo 3 mức độ mờ, mỗi mức một lần vẽ
     const wantS = Math.round(area * (pure ? 18 : 9) * level);
     while (streaks.length < wantS) streaks.push(spawnStreak(W, H, streaks.length > 0));
@@ -213,56 +230,8 @@
     ctx.globalAlpha = 1;
   }
 
-  // trời nắng: các lớp toàn màn hình (phủ vàng, quầng mặt trời, tia sáng, lóa ống kính, sóng nhiệt, viền tối) vẽ vào
-  // một ảnh đệm, mỗi 120ms mới vẽ lại một lần; mỗi khung chỉ chép ảnh đệm lên màn (đỡ nặng hẳn trên máy yếu)
-  let sunCv = null, sunAt = 0;
-  function drawSun(ctx, W, H, now) {
-    const w = Math.ceil(W), h = Math.ceil(H);
-    if (!sunCv || sunCv.width !== w || sunCv.height !== h) { sunCv = document.createElement('canvas'); sunCv.width = w; sunCv.height = h; sunAt = 0; }
-    if (now - sunAt > 120) { sunAt = now; paintSun(sunCv.getContext('2d'), w, h, now); }
-    ctx.drawImage(sunCv, 0, 0, W, H);
-  }
-  function paintSun(ctx, W, H, now) {
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = `rgba(255,170,60,${0.1 * level})`; ctx.fillRect(0, 0, W, H);
-    const sx = W * 0.85, sy = -H * 0.08;
-    ctx.globalCompositeOperation = 'lighter';
-    const g = ctx.createRadialGradient(sx, sy, 10, sx, sy, Math.max(W, H) * 0.9);
-    g.addColorStop(0, `rgba(255,250,210,${0.55 * level})`);
-    g.addColorStop(0.25, `rgba(255,210,120,${0.18 * level})`);
-    g.addColorStop(1, 'rgba(255,180,80,0)');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    // tia sáng
-    const L = Math.hypot(W, H) * 1.2;
-    for (let i = 0; i < 7; i++) {
-      const a = Math.PI * 0.55 + i * 0.13 + Math.sin(now / 4000 + i * 1.7) * 0.03;
-      const wdt = 0.025 + 0.02 * Math.sin(now / 2600 + i);
-      ctx.fillStyle = `rgba(255,240,190,${(0.05 + 0.03 * Math.sin(now / 1800 + i * 2)) * level})`;
-      ctx.beginPath(); ctx.moveTo(sx, sy);
-      ctx.lineTo(sx + Math.cos(a - wdt) * L, sy + Math.sin(a - wdt) * L);
-      ctx.lineTo(sx + Math.cos(a + wdt) * L, sy + Math.sin(a + wdt) * L);
-      ctx.closePath(); ctx.fill();
-    }
-    // vầng sáng lóa ống kính
-    const fx = W * 0.5, fy = H * 0.5;
-    [[0.35, 26, 'rgba(255,220,140,'], [0.6, 14, 'rgba(180,255,200,'], [1.15, 40, 'rgba(255,170,90,']].forEach(([t, r, c]) => {
-      ctx.fillStyle = c + (0.08 * level) + ')';
-      ctx.beginPath(); ctx.arc(sx + (fx - sx) * t * 1.4, sy + (fy - sy) * t * 1.4, r, 0, Math.PI * 2); ctx.fill();
-    });
-    ctx.globalCompositeOperation = 'source-over';
-    // sóng nhiệt dưới đáy màn hình
-    for (let i = 0; i < 6; i++) {
-      const y = H * (0.62 + i * 0.065) + Math.sin(now / 500 + i) * 3;
-      ctx.fillStyle = `rgba(255,230,180,${0.045 * level})`;
-      ctx.beginPath(); ctx.moveTo(0, y);
-      for (let x = 0; x <= W; x += 24) ctx.lineTo(x, y + Math.sin(x / 40 + now / 300 + i * 2) * 2.5);
-      ctx.lineTo(W, y + 5); ctx.lineTo(0, y + 5); ctx.closePath(); ctx.fill();
-    }
-    // viền tối nóng
-    const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.4, W / 2, H / 2, Math.max(W, H) * 0.75);
-    v.addColorStop(0, 'rgba(120,50,0,0)'); v.addColorStop(1, `rgba(120,50,0,${0.22 * level})`);
-    ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
-  }
+  // trời nắng: quầng mặt trời, tia nắng, viền nóng đều là CSS (#wx-layer.wx-sun), canvas không phải vẽ gì
+  function drawSun() {}
 
   window.Weather = { set, draw, get kind() { return pending || kind; }, INFO };
 })();

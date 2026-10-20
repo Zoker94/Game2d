@@ -4,6 +4,16 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Phông chữ mới Be Vietnam Pro hiển thị dấu tiếng Việt sắc nét cho toàn bộ giao diện, tên nhân vật, số sát thương; tiêu đề dùng phông có chân Playfair Display.',
+      'Bong bóng lời thoại trên đầu nhân vật vẽ lại như truyện tranh: nền giấy kem, đuôi cong chỉ vào người nói, bật nảy khi xuất hiện, chữ hiện dần như đang nói, nhãn kênh (Thế giới / Bang / Mật); nhiều người nói cùng lúc thì bong bóng xếp chồng, không đè nhau.',
+      'Nút Ngồi thiền (phím Y, trên điện thoại là nút cạnh nút cưỡi thú): ngồi ngay ở bất cứ đâu khi không giao chiến – hồi máu / nội lực nhanh hơn; trong thành vẫn lĩnh ngộ thêm kinh nghiệm. Di chuyển, ra chiêu hoặc bị tấn công sẽ đứng dậy.',
+      'Mượt hơn: lớp ám màu, tối viền và các lớp thời tiết (trời mưa tối, sương tuyết, nắng gắt, chớp sáng) chuyển sang để trình duyệt tự ghép thay vì vẽ lại cả màn hình mỗi khung; trời nắng nhẹ hơn ~200 lần, mưa / bão / tuyết bớt hạt cho nhẹ.',
+      'Phím tắt: bảng Dịch chuyển nhanh của chủ server đổi sang phím ` (phím G vẫn mở Bang hội).'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Quản trị viên có thể tặng điểm tiềm năng và điểm võ học cho người chơi tự cộng (bảng 🧭 → Người chơi → ⭐+ / 📖+, lệnh /tiemnang <tên> <số>, /kynang <tên> <số>, hoặc trang quản trị). Điểm được tặng không mất khi tẩy điểm.'
     ]
   },

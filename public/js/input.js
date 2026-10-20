@@ -36,7 +36,7 @@
   };
 
   // ---------- Bàn phím ----------
-  const KEYMAP = { Digit1: ['skill', 0], Space: ['skill', 0], Digit2: ['slot', 1], Digit3: ['slot', 2], Digit4: ['slot', 3], Digit5: ['slot', 4], Digit6: ['slot', 5], Digit7: ['slot', 6], Digit8: ['slot', 7], Digit9: ['slot', 8], KeyT: ['mount'], ShiftLeft: ['dodge'], ShiftRight: ['dodge'], KeyQ: ['dodge'],
+  const KEYMAP = { Digit1: ['skill', 0], Space: ['skill', 0], Digit2: ['slot', 1], Digit3: ['slot', 2], Digit4: ['slot', 3], Digit5: ['slot', 4], Digit6: ['slot', 5], Digit7: ['slot', 6], Digit8: ['slot', 7], Digit9: ['slot', 8], KeyT: ['mount'], KeyY: ['meditate'], ShiftLeft: ['dodge'], ShiftRight: ['dodge'], KeyQ: ['dodge'],
     KeyZ: ['potion', 'hp'], KeyX: ['potion', 'mp'], Tab: ['target'], KeyF: ['interact'], KeyR: ['auto'], KeyH: ['recall'],
     KeyI: ['panel', 'inventory'], KeyC: ['panel', 'character'], KeyJ: ['panel', 'quests'], KeyG: ['panel', 'guild'], KeyB: ['panel', 'friends'],
     KeyO: ['panel', 'events'], KeyL: ['panel', 'leaderboard'], KeyM: ['panel', 'mount'], KeyK: ['panel', 'skills'], KeyU: ['panel', 'giftcode'], KeyV: ['tlist'], KeyN: ['bigmap'], Escape: ['escape'], Enter: ['chat'] };
@@ -115,6 +115,7 @@
   hold(document.getElementById('btn-mp'), () => emit('potion', 'mp'));
   hold(document.getElementById('btn-target'), () => emit('target'));
   hold(document.getElementById('btn-mount'), () => emit('mount'));
+  hold(document.getElementById('btn-med'), () => emit('meditate'));
   hold(document.getElementById('btn-dodge'), () => emit('dodge'));
   hold(document.getElementById('btn-pick'), () => emit('pickup'));
 

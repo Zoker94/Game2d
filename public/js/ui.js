@@ -276,6 +276,15 @@
       d.onmouseleave = hideTip;
       bar.appendChild(d);
     }
+    {   // nút ngồi thiền
+      const d = document.createElement('div');
+      d.className = 'skill med-sk'; d.id = 'med-sk';
+      d.innerHTML = `<i class="sk-img" style="background-image:url('/assets/skills/ui_med.png')"></i><span class="key">Y</span>`;
+      d.onclick = () => Input.emit('meditate');
+      d.onmouseenter = e => tip(e, '<b>Ngồi thiền</b><br>Ngồi xuống điều tức: hồi máu và nội lực nhanh hơn. Trong thành mỗi 5 giây lĩnh ngộ thêm kinh nghiệm.<br>Không dùng được khi đang giao chiến; di chuyển hoặc bị tấn công sẽ đứng dậy.<br>Phím Y');
+      d.onmouseleave = hideTip;
+      bar.appendChild(d);
+    }
     for (const k of ['hp', 'mp']) {
       const d = document.createElement('div');
       d.className = 'skill'; d.id = 'pot-' + k;
@@ -451,6 +460,7 @@
   UI.pvpOn = () => !!G._duelWith || (G.pvpUntil || 0) > performance.now();
   UI.frame = function (now) {
     { const on = UI.pvpOn(); if (on !== UI._pvpCls) { UI._pvpCls = on; document.body.classList.toggle('pvp-on', on); } }
+    { const md = !!(G.me && G.me.med); if (md !== UI._medCls) { UI._medCls = md; document.body.classList.toggle('meditating', md); } }
     // hồi khinh công
     const dc = G.dodgeCd, dr = dc && dc.until > now ? (dc.until - now) / dc.total : 0;
     const dtx = dc && dc.until > now && !dc.pending ? Math.ceil((dc.until - now) / 1000) : '';
@@ -1016,7 +1026,7 @@
       ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length];
       ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R, a0, a1); ctx.closePath(); ctx.fill();
       ctx.strokeStyle = '#ffd76a'; ctx.lineWidth = 3; ctx.stroke();
-      ctx.save(); ctx.rotate((a0 + a1) / 2); ctx.fillStyle = '#fff'; ctx.font = 'bold 18px system-ui'; ctx.textAlign = 'right'; ctx.fillText(prizes[i], R - 14, 6); ctx.restore();
+      ctx.save(); ctx.rotate((a0 + a1) / 2); ctx.fillStyle = '#fff'; ctx.font = 'bold 18px Be Vietnam Pro, system-ui'; ctx.textAlign = 'right'; ctx.fillText(prizes[i], R - 14, 6); ctx.restore();
     }
     ctx.restore();
     ctx.fillStyle = '#ffd76a'; ctx.beginPath(); ctx.arc(C, C, 26, 0, Math.PI * 2); ctx.fill();
@@ -1149,7 +1159,7 @@
       html += '</div>';
     } else if (tab === 'keys') {
       const selSlot = panelState.slot != null ? panelState.slot : -1;
-      html += `<div class="kb-fixed"><span><b>Phím 1 / Space</b> Đánh thường</span><span><b>Shift / Q</b> Khinh công</span><span><b>Z / X</b> Bình máu / nội lực</span></div>`;
+      html += `<div class="kb-fixed"><span><b>Phím 1 / Space</b> Đánh thường</span><span><b>Shift / Q</b> Khinh công</span><span><b>Y</b> Ngồi thiền</span><span><b>Z / X</b> Bình máu / nội lực</span></div>`;
       html += `<p class="small muted">Chọn một ô phím, rồi bấm vào võ công bên dưới để gán. Bấm vào võ công đã gán ở ô khác sẽ đổi chỗ hai ô.${Input.isTouch ? ' Trên điện thoại, ô 1–6 là 6 nút chiêu bên phải màn hình.' : ''}</p><div class="kb-slots">`;
       for (let n = 0; n < 8; n++) {
         const s = hb[n] ? skills[hb[n]] : null;

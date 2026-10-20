@@ -75,7 +75,7 @@
     if (pk.parentNode !== row) row.appendChild(pk);
     if (fsOk && !$('btn-fs')) { const b = document.createElement('button'); b.id = 'btn-fs'; b.className = 'qb sq'; b.onclick = e => { e.stopPropagation(); toggleFs(); }; fsIcon(b); row.insertBefore(b, pk); }
     let tp = $('btn-tp');
-    if (G.me.owner && !tp) { tp = document.createElement('button'); tp.id = 'btn-tp'; tp.className = 'qb sq'; tp.title = 'Dịch chuyển nhanh (quản trị) – phím G'; tp.innerHTML = '<i>🧭</i><span>Bay</span>'; tp.onclick = e => { e.stopPropagation(); openTp(); }; row.insertBefore(tp, row.firstChild); }
+    if (G.me.owner && !tp) { tp = document.createElement('button'); tp.id = 'btn-tp'; tp.className = 'qb sq'; tp.title = 'Dịch chuyển nhanh (quản trị) – phím `'; tp.innerHTML = '<i>🧭</i><span>Bay</span>'; tp.onclick = e => { e.stopPropagation(); openTp(); }; row.insertBefore(tp, row.firstChild); }
     else if (!G.me.owner && tp) tp.remove();
   }
   setInterval(ensure, 500);
@@ -84,7 +84,7 @@
   document.addEventListener('keydown', ev => {
     if (!G.inGame || /INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) return;
     if (ev.code === 'F11' && fsOk) { ev.preventDefault(); toggleFs(); }
-    else if (ev.code === 'KeyG' && G.me && G.me.owner) openTp();
+    else if (ev.code === 'Backquote' && G.me && G.me.owner) openTp();
   });
   window.HudTools = { toggleFs, openTp };
 })();

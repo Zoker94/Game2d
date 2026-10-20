@@ -459,28 +459,19 @@
   }
 
   // ---------- ánh sáng & tông màu (toạ độ màn hình) ----------
-  let vigCanvas = null, vigKey = '';
+  let vigKey = '';
   const TINT = { cave: ['#4060c0', 0.14], town: ['#ffcf80', 0.08], plains: ['#ffe0a0', 0.07], bamboo: ['#a0ffb0', 0.06], mountain: ['#ffb070', 0.08], desert: ['#ffb050', 0.1], snow: ['#a0d0ff', 0.1], demon: ['#ff2040', 0.12], arena: ['#ffd090', 0.06] };
   // lớp ám màu theo vùng + tối viền. cheap: gộp sẵn màu ám vào ảnh tối viền (1 lần vẽ, không dùng hòa trộn 'overlay'
   // vốn rất nặng); ảnh dựng sẵn đúng cỡ màn hình, chỉ dựng lại khi đổi cỡ.
-  function overlay(ctx, cw, ch, cheap) {
-    cheap = true;   // hòa trộn 'overlay' toàn màn hình quá nặng cả trên máy tính yếu: luôn dùng ảnh gộp sẵn
+  function overlay(on) {
+    const el = document.getElementById('vignette'); if (!el) return;
     const [tc, ta] = TINT[theme] || TINT.plains;
-    const k = cw + 'x' + ch + (cheap ? ':' + theme : '');
-    if (vigKey !== k) {
-      vigKey = k; vigCanvas = document.createElement('canvas');
-      const sw = Math.max(32, cw), sh = Math.max(32, ch);   // vẽ sẵn đúng cỡ màn hình: mỗi khung chỉ chép, không phóng to
-      vigCanvas.width = sw; vigCanvas.height = sh;
-      const g = vigCanvas.getContext('2d');
-      if (cheap) { g.globalAlpha = ta; g.fillStyle = tc; g.fillRect(0, 0, sw, sh); g.globalAlpha = 1; }
-      const grd = g.createRadialGradient(sw / 2, sh / 2, Math.min(sw, sh) * 0.35, sw / 2, sh / 2, Math.max(sw, sh) * 0.75);
-      grd.addColorStop(0, 'rgba(0,0,0,0)'); grd.addColorStop(1, 'rgba(10,5,20,0.55)');
-      g.fillStyle = grd; g.fillRect(0, 0, sw, sh);
-    }
-    ctx.save();
-    if (!cheap) { ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = ta * 2; ctx.fillStyle = tc; ctx.fillRect(0, 0, cw, ch); }
-    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.drawImage(vigCanvas, 0, 0);
-    ctx.restore();
+    const k = on ? theme : 'off';
+    if (vigKey === k) return;
+    vigKey = k;
+    el.classList.toggle('off', !on);
+    const n = parseInt(tc.slice(1), 16);
+    el.style.setProperty('--vtint', `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${ta})`);
   }
 
   // ---------- API ----------

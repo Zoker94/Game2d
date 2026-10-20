@@ -1621,6 +1621,21 @@ def ui_mount(ic, col):   # cưỡi thú: đầu ngựa
     ic.shade(ic.stroke(bez([(58, 30), (68, 40), (78, 48)], 10), 2.2, 2.2), '#c02020', '#5a0808', edge=0.4, shine=0.3)   # dây cương
     ic.shade(ic.stroke(bez([(60, 42), (52, 52), (40, 58)], 10), 2, 2), '#c02020', '#5a0808', edge=0.4, shine=0.3)
     ic.shade(ic.ell(60, 42, 2.6), '#ffe27a', '#8a5a10', edge=0.5, shine=0.4)
+def ui_med(ic, col):   # ngồi thiền: người ngồi kiết già, vầng hào quang sau lưng
+    ic.energy(ic.ring(48, 40, 30, 2.6), col, r=4, k=0.8, core=0.5)
+    for k in range(3):
+        ic.energy(ic.stroke(arcpts(48, 46, 16 + k * 9, 6 + k * 3, 3.6, 5.8, 20), 0.5, 1.6, 1.6), col, r=2, k=0.5, core=0.3, body=0.6)
+    body = ic.poly(bez([(48, 30), (38, 34), (34, 50), (36, 64)], 12) + bez([(60, 64), (62, 50), (58, 34), (48, 30)], 12))
+    legs = ic.ell(48, 70, 25, 9)
+    arms = ic.poly(bez([(38, 38), (28, 50), (32, 62), (46, 64)], 12) + bez([(50, 64), (64, 62), (68, 50), (58, 38)], 12) + [(56, 44)] + bez([(56, 44), (60, 54), (50, 58)], 8) + bez([(46, 58), (36, 54), (40, 44)], 8))
+    head = ic.ell(48, 22, 8.5, 9.5)
+    sil = np.clip(body + legs + arms + head, 0, 1)
+    ic.glow(sil, col, 5, 0.9)
+    ic.shade(legs, '#d8f4ff', '#3a6a8a', ang=-60, edge=0.6, shine=0.3)
+    ic.shade(np.clip(body + arms, 0, 1), '#f0fbff', '#4a7a9a', ang=-50, edge=0.6, shine=0.35)
+    ic.shade(head, '#fff4e0', '#8a6a4a', ang=-40, edge=0.6, shine=0.4)
+    ic.over(ic.ell(48, 13.5, 4, 3), '#2a1a10', 0.9)          # búi tóc
+    ic.energy(ic.ell(48, 60, 3.2), '#ffffff', r=3, k=1.0, core=1.0)   # đan điền phát sáng
 def ui_target(ic, col):   # chọn mục tiêu: hồng tâm
     ic.energy(ic.ring(48, 48, 28, 3.2), col, r=4, k=0.9, core=0.6)
     ic.energy(ic.ring(48, 48, 15, 2.6), col, r=3, k=0.8, core=0.6)
@@ -1650,6 +1665,7 @@ def register():
     SKILLS['ui_dodge'] = ('ui_cyan', '#a8f0ff', ui_dodge)
     SKILLS['ui_mount'] = ('ui_gold', '#ffc040', ui_mount)
     SKILLS['ui_target'] = ('ui_red', '#ff5a4a', ui_target)
+    SKILLS['ui_med'] = ('ui_cyan', '#9ff0d8', ui_med)
     SKILLS['dr_fire'] = ('dragon_fire', '#ff5a1a', dr_fire)
     SKILLS['dr_water'] = ('dragon_water', '#2fa8ff', dr_water)
     SKILLS['dr_ice'] = ('dragon_ice', '#9ee8ff', dr_ice)

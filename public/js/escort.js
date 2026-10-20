@@ -48,7 +48,7 @@
     ctx.closePath();
     ctx.fillStyle = mode === 2 ? '#141018' : '#d82020'; ctx.fill();
     ctx.lineWidth = 1.5; ctx.strokeStyle = mode === 2 ? '#ff3030' : '#ffe9a0'; ctx.stroke();
-    ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = 'bold 11px Be Vietnam Pro, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = mode === 2 ? '#ff4040' : '#fff';
     ctx.fillText(mode === 2 ? '☠' : 'PK', px + dir * 11, py1 + 9 + Math.sin(now / 140 + 2) * 1);
     ctx.restore();
@@ -67,7 +67,7 @@
       P(fx, fy, 2, 34, woodD);
       c.fillStyle = '#c81c1c'; c.beginPath(); c.moveTo(fx + 2, fy + 1); c.lineTo(fx + 22, fy + 5); c.lineTo(fx + 2, fy + 15); c.closePath(); c.fill();
       c.strokeStyle = tc; c.lineWidth = 1; c.stroke();
-      c.font = 'bold 9px system-ui, sans-serif'; c.fillStyle = tc; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('镖', fx + 9, fy + 8);
+      c.font = 'bold 9px Be Vietnam Pro, system-ui, sans-serif'; c.fillStyle = tc; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('镖', fx + 9, fy + 8);
     };
     if (view === 'side') {
       flag(14, 14);
@@ -260,7 +260,7 @@
     ctx.translate(s.x + Math.cos(a) * r, s.y - 26 + Math.sin(a) * r); ctx.rotate(a);
     ctx.fillStyle = g.col; ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(-7, -9); ctx.lineTo(-2, 0); ctx.lineTo(-7, 9); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.rotate(-a); ctx.font = '12px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🛒', 0, -16);
+    ctx.rotate(-a); ctx.font = '12px Be Vietnam Pro, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🛒', 0, -16);
     ctx.restore();
   }
 

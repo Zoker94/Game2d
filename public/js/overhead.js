@@ -97,7 +97,7 @@
     const k = text + '|' + size + '|' + fill + '|' + stroke + '|' + weight + '|' + lw + '|' + sc;
     let c = tcache.get(k);
     if (c) return c;
-    const font = `${weight} ${size}px system-ui, sans-serif`;
+    const font = `${weight} ${size}px Be Vietnam Pro, system-ui, sans-serif`;
     mcv.font = font;
     const w = mcv.measureText(text).width, pad = lw + 2, cw = w + pad * 2, ch = size * 1.5 + pad * 2;
     c = document.createElement('canvas'); c.width = Math.max(1, Math.ceil(cw * sc)); c.height = Math.max(1, Math.ceil(ch * sc));
@@ -124,7 +124,7 @@
   }
   function outlined(ctx, text, x, y, size, fill, stroke, weight) {
     if (typeof fill === 'string' && Number.isInteger(size)) return cachedText(ctx, text, x, y, size, fill, stroke, weight || 900, Math.max(3, size / 5));
-    ctx.font = `${weight || 900} ${size}px system-ui, sans-serif`;
+    ctx.font = `${weight || 900} ${size}px Be Vietnam Pro, system-ui, sans-serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(3, size / 5); ctx.strokeStyle = stroke; ctx.strokeText(text, x, y);
     ctx.fillStyle = fill; ctx.fillText(text, x, y);
@@ -184,29 +184,75 @@
     if (lines.length > 3) { lines.length = 3; lines[2] = lines[2].replace(/.{0,2}$/, '…'); }
     return lines;
   }
-  function drawBubble(ctx, x, top, b, now) {
+  // Bong bóng lời thoại kiểu truyện tranh: nền giấy kem, đuôi cong chỉ vào người nói, bật lên khi xuất hiện,
+  // chữ hiện dần như đang nói. Viền theo kênh (thế giới vàng, bang xanh, mật hồng).
+  const BUB_COL = { world: '#c9902a', guild: '#3f7fd0', pm: '#d0559a', map: '#6a8a4a' };
+  const BUB_TAG = { world: 'Thế giới', guild: 'Bang', pm: 'Mật' };
+  function bubblePath(ctx, bx, by, w, h, x, r) {
+    const tx = Math.max(bx + r + 6, Math.min(bx + w - r - 14, x - 4));   // gốc đuôi, lệch nhẹ sang trái
+    ctx.beginPath();
+    ctx.moveTo(bx + r, by);
+    ctx.lineTo(bx + w - r, by); ctx.quadraticCurveTo(bx + w, by, bx + w, by + r);
+    ctx.lineTo(bx + w, by + h - r); ctx.quadraticCurveTo(bx + w, by + h, bx + w - r, by + h);
+    ctx.lineTo(tx + 12, by + h);
+    ctx.quadraticCurveTo(tx + 8, by + h + 5, x + 1, by + h + 11);        // đuôi cong xuống phía đầu nhân vật
+    ctx.quadraticCurveTo(tx + 3, by + h + 4, tx, by + h);
+    ctx.lineTo(bx + r, by + h); ctx.quadraticCurveTo(bx, by + h, bx, by + h - r);
+    ctx.lineTo(bx, by + r); ctx.quadraticCurveTo(bx, by, bx + r, by);
+    ctx.closePath();
+  }
+  function drawBubble(ctx, x, top, b, now, taken) {
     const age = now - b.t0;
     if (age > b.dur) return false;
-    const a = age < 150 ? age / 150 : age > b.dur - 400 ? (b.dur - age) / 400 : 1;
     ctx.save();
-    ctx.globalAlpha = a;
-    ctx.font = '600 11px system-ui, sans-serif';
-    if (!b.lines) b.lines = wrap(ctx, b.text, 130);
-    const w = Math.max(30, ...b.lines.map(l => ctx.measureText(l).width)) + 14, lh = 13, h = b.lines.length * lh + 10;
-    const bx = Math.round(x - w / 2), by = Math.round(top - h - 12 - (age < 150 ? (1 - age / 150) * 6 : 0));
-    const col = b.ch === 'guild' ? '#7fb8ff' : b.ch === 'world' ? '#ffd76a' : b.ch === 'pm' ? '#ff9ad8' : '#ffffff';
-    ctx.fillStyle = 'rgba(20,14,30,0.86)'; ctx.strokeStyle = col; ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(bx, by, w, h, 6); else ctx.rect(bx, by, w, h);
-    ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x - 5, by + h - 0.5); ctx.lineTo(x, by + h + 7); ctx.lineTo(x + 5, by + h - 0.5); ctx.closePath();
-    ctx.fill(); ctx.beginPath(); ctx.moveTo(x - 5, by + h); ctx.lineTo(x, by + h + 7); ctx.lineTo(x + 5, by + h); ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    b.lines.forEach((l, i) => ctx.fillText(l, x, by + 5 + i * lh));
+    ctx.font = '600 11.5px Be Vietnam Pro, system-ui, sans-serif';
+    if (!b.lines) { b.lines = wrap(ctx, b.text, 150); b.lw = b.lines.map(l => ctx.measureText(l).width); b.total = b.lines.reduce((n, l) => n + l.length, 0); }
+    const tag = BUB_TAG[b.ch], lh = 15, padX = 9;
+    const w = Math.round(Math.max(36, ...b.lw) + padX * 2), h = b.lines.length * lh + 10;
+    const pop = Math.min(1, age / 220), k = pop < 1 ? 1 + 1.7 * Math.pow(pop - 1, 3) + 0.7 * Math.pow(pop - 1, 2) : 1;   // bật nảy (easeOutBack)
+    const fade = age > b.dur - 350 ? (b.dur - age) / 350 : 1;
+    const bob = Math.sin(now / 520 + x * 0.05) * 1.2;
+    const bx = Math.round(x - w / 2);
+    let by = Math.round(top - h - 16 + bob);
+    // nhiều người đứng gần cùng nói: bong bóng sau đẩy lên trên bong bóng trước, không đè nhau
+    if (taken) {
+      for (let moved = true, n = 0; moved && n < 6; n++) {
+        moved = false;
+        for (const r of taken) if (bx < r[0] + r[2] + 4 && bx + w + 4 > r[0] && by < r[1] + r[3] + 14 && by + h + 14 > r[1]) { by = r[1] - h - 14; moved = true; }
+      }
+      taken.push([bx, by, w, h]);
+    }
+    ctx.globalAlpha = Math.max(0, fade) * Math.min(1, pop * 1.6);
+    ctx.translate(x, by + h + 11); ctx.scale(k, k); ctx.translate(-x, -(by + h + 11));
+    const col = BUB_COL[b.ch] || '#8a6a3a';
+    // bóng đổ mềm
+    ctx.fillStyle = 'rgba(0,0,0,0.28)'; bubblePath(ctx, bx + 1.5, by + 2.5, w, h, x + 1.5, 8); ctx.fill();
+    // thân bong bóng
+    const g = ctx.createLinearGradient(0, by, 0, by + h);
+    g.addColorStop(0, '#fffdf6'); g.addColorStop(1, '#f2e6cc');
+    ctx.fillStyle = g; bubblePath(ctx, bx, by, w, h, x, 8); ctx.fill();
+    ctx.lineWidth = 1.6; ctx.strokeStyle = col; ctx.stroke();
+    // vệt sáng mép trên
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(bx + 8, by + 2.2); ctx.lineTo(bx + w - 8, by + 2.2); ctx.stroke();
+    // nhãn kênh nhỏ ở góc trên
+    if (tag) {
+      ctx.font = '700 8px Be Vietnam Pro, system-ui, sans-serif';
+      const tw = ctx.measureText(tag).width + 8;
+      ctx.fillStyle = col; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(bx + 6, by - 6, tw, 11, 5); else ctx.rect(bx + 6, by - 6, tw, 11); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(tag, bx + 10, by - 0.5);
+      ctx.font = '600 11.5px Be Vietnam Pro, system-ui, sans-serif';
+    }
+    // chữ hiện dần như đang nói (khoảng 35 ký tự / giây, tối đa 1,2 giây)
+    let left = Math.ceil(b.total * Math.min(1, age / Math.min(1200, b.total * 28)));
+    ctx.fillStyle = '#2b1d10'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    for (let i = 0; i < b.lines.length && left > 0; i++) {
+      const l = b.lines[i], part = left >= l.length ? l : l.slice(0, left);
+      ctx.fillText(part, Math.round(x - b.lw[i] / 2), by + 6 + i * lh);
+      left -= l.length;
+    }
     ctx.restore();
     return true;
   }
-
 
   // ---------- nhận biết mạnh / yếu ----------
   // danh hiệu theo lực chiến
@@ -240,7 +286,7 @@
       ctx.fillStyle = '#ff3a5a'; ctx.beginPath(); ctx.arc(0, 1, 1.6, 0, TAU); ctx.fill();
     } else {
       star(ctx, 0, 0, 6, '#ffd84a', 0);
-      ctx.font = 'bold 7px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#5a3a00'; ctx.fillText(rank, 0, 0.5);
+      ctx.font = 'bold 7px Be Vietnam Pro, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#5a3a00'; ctx.fillText(rank, 0, 0.5);
     }
     ctx.restore();
   }
@@ -249,7 +295,7 @@
   function rainbowName(ctx, text, x, y, w) {
     const now = performance.now(), sh = (now / 1600) % 1;
     ctx.save();
-    ctx.font = '800 12px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '800 12px Be Vietnam Pro, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.lineJoin = 'round'; ctx.lineWidth = 3.4; ctx.strokeStyle = '#120818'; ctx.strokeText(text, x, y);
     const g = ctx.createLinearGradient(x - w / 2, 0, x + w / 2, 0);
     for (let i = 0; i <= 14; i++) g.addColorStop(i / 14, RAINBOW[Math.floor(i / 2 + sh * 7) % 7]);
@@ -278,14 +324,14 @@
     if (pk) nameCol = pk === 2 ? '#c00010' : '#ff5a5a';
     else if (o.party) nameCol = '#5dff8a';
     const name = (pk ? '☠ ' : '') + (o.party ? '👥 ' : '') + (o.gm ? '[GM] ' : '') + o.name + (o.level ? ' Lv' + o.level : '');
-    const w = textW('bold 12px system-ui, sans-serif', name);
+    const w = textW('bold 12px Be Vietnam Pro, system-ui, sans-serif', name);
     if (o.gm) rainbowName(ctx, name, x, top - 10, w);   // quản trị viên: tên 7 sắc cầu vồng lấp lánh
     else outlined(ctx, name, x, top - 10, 12, nameCol, '#000', 700);
     if (o.rank) drawBadge(ctx, x - w / 2 - 10, top - 11, o.rank);
     // Võ Lâm Minh Chủ: danh hiệu riêng vàng rực thay cho danh hiệu lực chiến
     if (o.mc) {
       const now = performance.now(), mt = '👑【Võ Lâm Minh Chủ】';
-      const mw = textW('900 11px system-ui, sans-serif', mt);
+      const mw = textW('900 11px Be Vietnam Pro, system-ui, sans-serif', mt);
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
       const g = ctx.createLinearGradient(x - mw / 2, 0, x + mw / 2, 0);
       const sh = (now / 1500) % 1;
@@ -298,7 +344,7 @@
     }
     // danh hiệu: chữ nhỏ có khung, bậc cao có viền sáng
     const tt = '【' + t.name + '】';
-    const tw = textW('700 10px system-ui, sans-serif', tt);
+    const tw = textW('700 10px Be Vietnam Pro, system-ui, sans-serif', tt);
     if (t.tier >= 3) {
       ctx.save(); ctx.globalAlpha = 0.35 + Math.sin(performance.now() / 300) * 0.1; ctx.fillStyle = t.color;
       ctx.fillRect(Math.round(x - tw / 2 - 2), top - 29, Math.round(tw + 4), 12); ctx.restore();
@@ -363,5 +409,5 @@
       FX.emit(1, x + (Math.random() - 0.5) * 30, y - 4, { speed: 6, vy: -45, life: 700, size: 2, color: cols[Math.floor(Math.random() * cols.length)] });
   }
 
-  window.Overhead = { cachedText, ST, mask, drawUnder, drawOver, add, drawFloats, drawBubble, TITLES, title, relColor, pkLevel, drawBadge, drawNameplate, drawPkAura, drawEnhance };
+  window.Overhead = { clearText: () => tcache.clear(), cachedText, ST, mask, drawUnder, drawOver, add, drawFloats, drawBubble, TITLES, title, relColor, pkLevel, drawBadge, drawNameplate, drawPkAura, drawEnhance };
 })();

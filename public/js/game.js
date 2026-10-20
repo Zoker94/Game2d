@@ -87,6 +87,11 @@
       G.data = await api('/api/gamedata');
     } catch (e) { G.modal('Không thể kết nối máy chủ. Vui lòng thử lại.', [{ t: 'Tải lại', fn: () => location.reload() }]); return; }
     $('online-count').textContent = G.config.online;
+    // phông chữ: đợi tối đa 1,5 giây để chữ vẽ trên canvas (tên, số sát thương) dùng đúng phông ngay từ đầu
+    if (document.fonts && document.fonts.load) {
+      await Promise.race([Promise.all(['500 12px "Be Vietnam Pro"', '600 12px "Be Vietnam Pro"', '700 12px "Be Vietnam Pro"', '800 12px "Be Vietnam Pro"', '700 20px "Playfair Display"'].map(f => document.fonts.load(f, 'Võ Lâm').catch(() => {}))), new Promise(r => setTimeout(r, 1500))]);
+      document.fonts.addEventListener && document.fonts.addEventListener('loadingdone', () => Overhead.clearText && Overhead.clearText());
+    }
     splashProgress(40, 'Đang tải hình ảnh...');
     await Assets.ready;
     splashProgress(92);
@@ -809,6 +814,7 @@
   Input.on('pickup', () => { if (!pickNear()) UI.toast('Không có vật phẩm ở gần', 'error'); });
   Input.on('auto', () => setAuto(!G.auto));
   Input.on('mount', () => G.socket && G.socket.emit('mount', { op: 'ride' }));
+  Input.on('meditate', () => G.socket && G.me && !G.me.dead && G.socket.emit('meditate'));
   // Khinh công (nhảy vọt): theo hướng đang đi, không đi thì theo hướng đang nhìn
   Input.on('dodge', () => {
     const now = performance.now();
@@ -1269,7 +1275,8 @@
       const ni = nearItem(80);
       if (ni) label(ni.x, ni.y - 34 + Math.sin(now / 200) * 2, '[F] Nhặt', '#ffe9a8', 11, true);
     }
-    for (const [e, top] of bubbles) if (!Overhead.drawBubble(ctx, e.x, top, e.bubble, now)) e.bubble = null;
+    const taken = [];
+    for (const [e, top] of bubbles) if (!Overhead.drawBubble(ctx, e.x, top, e.bubble, now, taken)) e.bubble = null;
 
     BossArt.drawOver(ctx, now);   // chiêu boss: nổ, gai đá / băng, sét, lốc xoáy đè lên nhân vật
     if (!gfx.lowFx) { WorldArt.ambient(now, cam, vw, vh, fdt); WorldArt.drawAmbient(ctx, now); }   // máy yếu: bỏ hạt bay lơ lửng
@@ -1291,7 +1298,7 @@
     WorldMap.drawArrow(ctx, now);
     Dungeon.drawArrow(ctx, now);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    if (!gfx.lowFx) WorldArt.overlay(ctx, canvas.width, canvas.height, true);   // máy yếu: bỏ lớp ám màu / tối viền
+    WorldArt.overlay(!gfx.lowFx);   // lớp ám màu / tối viền bằng CSS; máy yếu thì tắt
     Weather.draw(ctx, canvas.width, canvas.height, DPR, now, cam, zoom, gfx.fx);
     const fl = FX.flash(now);
     if (fl) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = fl.a; ctx.fillStyle = fl.color; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.globalAlpha = 1; }
@@ -1419,7 +1426,7 @@
 
   function label(x, y, text, color, size = 12, outline) {
     if (outline !== false && Number.isInteger(size)) return Overhead.cachedText(ctx, text, x, y, size, color, 'rgba(0,0,0,0.85)', 'bold', 3);
-    ctx.font = `bold ${size}px system-ui, sans-serif`;
+    ctx.font = `bold ${size}px Be Vietnam Pro, system-ui, sans-serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     if (outline !== false) { ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.strokeText(text, x, y); }
     ctx.fillStyle = color; ctx.fillText(text, x, y);

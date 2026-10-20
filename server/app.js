@@ -359,6 +359,7 @@ io.on('connection', socket => {
   on('escort', inGame(d => world.escort.action(player, d)));
   on('sell', inGame(d => world.sell(player, d || {})));
   on('attr', inGame(d => world.attrAction(player, d)));
+  on('meditate', inGame(() => world.toggleMeditate(player)));
   on('party', inGame(d => world.party.action(player, d)));
   on('recall', inGame(() => world.startRecall(player)));
   on('rename', inGame(d => world.renameChar(player, d)));
