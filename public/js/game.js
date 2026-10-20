@@ -1551,7 +1551,7 @@
         }
         if (!dead && ent && ent.k) Overhead.drawPkAura(ctx, x, y, ent.k, now);
         ctx.drawImage(Assets.charFrame(cls, dir, state, fi, ap), x - 48, y - 86, 96, 96);
-        top = y - 72;
+        top = state === 'med' ? y - 50 : y - 72;   // ngồi thiền: tên hạ xuống theo dáng ngồi
       } else {
         ctx.drawImage(Sprites.playerSprite(cls, colors, dir, fr, atk, ap), x - 32, y - 58 + breathe);
         top = y - 58;
