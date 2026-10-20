@@ -1,6 +1,6 @@
 """Làm nét + cắt + ghép sprite thú cưỡi từ ảnh sheet có sẵn (kiểu RPG: 4 hàng xuống / trái / phải / lên).
 
-  python3 tools/spriteup.py <ảnh sheet> <id> [--out design/mounts3]
+  python3 tools/spriteup.py [mã thú ...] [--out design/mounts3]     (ảnh gốc ở design/mounts3/src, khai báo trong CFG)
 
 Các bước:
   1. cắt từng ô, xoá nền trắng (loang từ mép ảnh, gồm cả quầng nhiễu JPEG quanh viền), bỏ đốm lẻ
@@ -20,12 +20,16 @@ from scipy.ndimage import binary_dilation, label
 # cấu hình từng thú: ô gốc, số cột khung, hệ số phóng hiển thị, khung đứng / chạy, điểm yên (tỉ lệ trong ô, mặt quay phải),
 # lớp đè (nửa bề ngang dải giữa, từ độ cao nào), độ nổi khi bay (điểm ảnh gốc),
 # over_side: lớp đè nhìn ngang theo từng khung gốc trong dải x: 'all' đè cả người cưỡi, 'legs' đè từ hông trở xuống
+HORSE = dict(src='ngua_xam.jpg', src_cell=72, cols=3, k=1.75, idle=[1], run=[0, 1, 2, 1], side_row=2, gain=1.0,
+             seat={'side': (0.40, 0.55), 'down': (0.5, 0.42), 'up': (0.5, 0.48)}, over_down=(0.15, 0.40), flies=0, run_ms=120)
 CFG = {
-    'ngua_xam': dict(src_cell=72, cols=3, k=1.75, idle=[1], run=[0, 1, 2, 1], side_row=2, gain=1.0,
-                     seat={'side': (0.40, 0.55), 'down': (0.5, 0.42), 'up': (0.5, 0.48)}, over_down=(0.15, 0.40), flies=0),
+    # cùng một con ngựa gốc, phối lại màu: nâu (giữ nguyên), trắng (Bạch Mã), đen bờm đỏ (Ô Truy Hắc Mã)
+    'ngua_nau': dict(HORSE),
+    'bach_ma': dict(HORSE, scheme='white'),
+    'hac_ma': dict(HORSE, scheme='black'),
     # rồng: cột 0/2 cánh ngang, 1 cánh giơ lên, 3 cánh vỗ xuống -> vòng vỗ cánh lên / ngang / xuống / ngang
-    'hac_long': dict(src_cell=96, cols=4, k=2.0, idle=[1, 0, 3, 2], run=[1, 0, 3, 2], side_row=2, gain=1.3,
-                     seat={'side': (0.62, 0.41), 'down': (0.5, 0.36), 'up': (0.5, 0.42)}, over_down=(0.13, 0.44), flies=14,
+    'hac_long': dict(src='hac_long.jpg', src_cell=96, cols=4, k=1.5, idle=[1, 0, 3, 2], run=[1, 0, 3, 2], side_row=2, gain=1.3,
+                     seat={'side': (0.62, 0.41), 'down': (0.5, 0.36), 'up': (0.5, 0.42)}, over_down=(0.13, 0.44), flies=14, run_ms=120, idle_ms=230,
                      seat_frame={('side', 1): (0.62, 0.42), ('side', 0): (0.60, 0.37), ('side', 3): (0.58, 0.32), ('side', 2): (0.58, 0.31)},
                      # cánh giơ lên che hết người cưỡi, cánh ngang / vỗ xuống che phần chân
                      over_side=dict(x=(0.40, 0.98), modes={1: 'all', 0: 'legs', 2: 'legs', 3: 'legs'})),
@@ -68,6 +72,43 @@ def quantize(rgb, fg, n=48):
     return out
 
 
+def hx(h): return np.array([int(h[i:i + 2], 16) for i in (1, 3, 5)], np.float32)
+
+
+# bảng phối màu ngựa: (lông thân tối, sáng), (bờm đuôi tối, sáng), đốm trắng mặt (None = giữ), viền
+SCHEMES = {
+    'white': dict(body=('#767e90', '#fdfdff'), mane=('#8a90a8', '#ffffff'), blaze='body', line='#2c2c3a', hoof=('#3a3a48', '#9a9aaa')),
+    'black': dict(body=('#0e0e14', '#666e82'), mane=('#3a0408', '#ff5a48'), blaze='body', line=None, hoof=('#1a1a20', '#4a4a56')),
+}
+
+
+def recolor(rgb, fg, scheme):
+    """phối lại màu ngựa: tách bờm-đuôi (vàng đậm), đốm trắng mặt, móng (xám), viền (rất tối), còn lại là lông thân;
+    giữ độ sáng tối của ảnh gốc, chỉ đổi dải màu"""
+    S = SCHEMES[scheme]
+    f = rgb.astype(np.float32) / 255
+    mx, mn = f.max(2), f.min(2)
+    v, sat = mx, np.where(mx > 0, (mx - mn) / np.maximum(mx, 1e-6), 0)
+    r, g, b = f[..., 0], f[..., 1], f[..., 2]
+    hue = (np.degrees(np.arctan2(np.sqrt(3) * (g - b), 2 * r - g - b)) + 360) % 360
+    Y = 0.3 * r + 0.59 * g + 0.11 * b
+    line = fg & (v < 0.12)
+    mane = fg & ~line & (hue >= 24) & (hue <= 55) & (v >= 0.2) & ((sat >= 0.55) | ((hue >= 32) & (sat >= 0.45)))
+    # bóng tối của bờm / đuôi (nâu đỏ đậm) chỉ tính khi nằm sát phần bờm đã chắc chắn
+    mane |= binary_dilation(mane, iterations=2) & ~line & (sat >= 0.45) & (hue >= 12) & (hue <= 55)
+    blaze = fg & ~line & ~mane & (sat < 0.26) & (v > 0.74)
+    hoof = fg & ~line & ~mane & ~blaze & (sat < 0.2)
+    body = fg & ~line & ~mane & ~blaze & ~hoof
+    out = f * 255
+    ramp = lambda m, lo, hi, a, b_: out.__setitem__(m, hx(a) + (hx(b_) - hx(a)) * np.clip((Y[m] - lo) / (hi - lo), 0, 1)[:, None] ** 0.85)
+    ramp(body, 0.16, 0.72, *S['body'])
+    ramp(mane, 0.12, 0.85, *S['mane'])
+    ramp(hoof, 0.15, 0.6, *S['hoof'])
+    if S['blaze'] == 'body': ramp(blaze, 0.3, 1.0, *S['body'])
+    if S['line']: out[line] = hx(S['line'])
+    return np.clip(out, 0, 255).astype(np.uint8)
+
+
 def scale2x(img):
     """Scale2x / EPX trên mảng (H, W, C): so khớp màu tuyệt đối (ảnh đã gom màu)"""
     H, W = img.shape[:2]
@@ -86,10 +127,11 @@ def scale2x(img):
     return out
 
 
-def enhance(cell_rgb, k, gain=1.0):
+def enhance(cell_rgb, k, gain=1.0, scheme=None):
     """ô gốc -> ô RGBA đã làm nét, cỡ = ô gốc × k"""
     fg = remove_bg(cell_rgb)
     q = quantize(cell_rgb, fg)
+    if scheme: q = recolor(q, fg, scheme)
     if gain != 1.0:   # thú quá tối (rồng đen): nâng sáng vùng tối để thấy rõ vảy trên nền map
         q = (255 * (q / 255.0) ** (1 / gain)).astype(np.uint8)
     rgba = np.dstack([q, np.where(fg, 255, 0)]).astype(np.uint8)
@@ -119,23 +161,23 @@ def bbox(a):
     return xs.min(), xs.max(), ys.min(), ys.max()
 
 
-def build(src, mid, out):
+def build(mid, out, src_dir='design/mounts3/src'):
     c = CFG[mid]
-    rgb = np.array(Image.open(src).convert('RGB'))
+    rgb = np.array(Image.open(os.path.join(src_dir, c['src'])).convert('RGB'))
     n, k = c['src_cell'], c['k']
     cell = lambda r, i: rgb[r * n:(r + 1) * n, i * n:(i + 1) * n]
     T = int(round(n * k))
     E = {}
     for r in range(4):
         for i in range(c['cols']):
-            e = enhance(cell(r, i), k, c['gain'])
+            e = enhance(cell(r, i), k, c['gain'], c.get('scheme'))
             if r == 1: e = e[:, ::-1].copy()     # hàng 1 quay trái -> lật cho quay phải (hàng 2 vốn quay phải)
             E[r, i] = e
     seq = c['idle'] + c['run']
     ncol = len(seq)
     rows_src = {'side': c['side_row'], 'down': 0, 'up': 3}
     # khung: cùng một chân đặt cố định ở đáy ô (thú bay: lơ lửng phía trên điểm chân)
-    sheet = np.zeros((T * 6, T * ncol, 4), np.uint8)   # hàng 6: lớp đè nhìn ngang
+    sheet = np.zeros((T * (6 if c.get('over_side') else 5), T * ncol, 4), np.uint8)   # hàng 6: lớp đè nhìn ngang
     seats = {v: [] for v in rows_src}
     floor = {}
     for v, r in rows_src.items():
@@ -171,6 +213,8 @@ def build(src, mid, out):
     meta = dict(cell=[T, T], foot=[T // 2, int(floor['side'] + 2 + lift)], footFB=[T // 2, int(floor['down'] + 2 + lift)],
                 frames={'idle': [0, len(c['idle'])], 'run': [len(c['idle']), len(c['run'])]},
                 rows={'side': [0, 5] if c.get('over_side') else [0], 'down': [1, 2], 'up': [3, 4]}, seats=seats, flies=bool(c['flies']))
+    if c.get('run_ms'): meta['runMs'] = c['run_ms']
+    if c.get('idle_ms'): meta['idleMs'] = c['idle_ms']
     mp = os.path.join(out, 'mounts.json')
     allm = json.load(open(mp)) if os.path.exists(mp) else {}
     allm[mid] = meta
@@ -182,5 +226,6 @@ if __name__ == '__main__':
     args = [x for x in sys.argv[1:] if not x.startswith('--')]
     out = sys.argv[sys.argv.index('--out') + 1] if '--out' in sys.argv else 'design/mounts3'
     if '--out' in sys.argv: args.remove(out)
-    build(args[0], args[1], out)
-    print('ok', args[1])
+    for mid in args or list(CFG):
+        build(mid, out)
+        print('ok', mid)

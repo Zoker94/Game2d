@@ -19,7 +19,10 @@ const MOUNTS = {
   kim_quy:   { name: 'Kim Quy',         rarity: 'epic',      lv: 28, speed: 0.26, sprite: 'tiger', color: '#f0c23a', mane: '#2ad08a', price: 0,
                stats: { hp: 420, def: 26 }, growth: { hp: 60, def: 4.2 } },
   phuong_hoang: { name: 'Phượng Hoàng',  rarity: 'legendary', lv: 45, speed: 0.48, sprite: 'qilin', color: '#ff5a1a', mane: '#ffd040', price: 0, fly: true,
-               stats: { hp: 480, atk: 34, def: 16, crit: 4 }, growth: { hp: 56, atk: 5.6, def: 2.8, crit: 0.12 } }
+               stats: { hp: 480, atk: 34, def: 16, crit: 4 }, growth: { hp: 56, atk: 5.6, def: 2.8, crit: 0.12 } },
+  // Hắc Long: rồng đen cánh dơi, thiên về tấn công và chí mạng
+  hac_long:  { name: 'Hắc Long',        rarity: 'legendary', lv: 50, speed: 0.50, sprite: 'qilin', color: '#2a2a30', mane: '#c02020', price: 0, fly: true,
+               stats: { hp: 480, atk: 42, def: 16, crit: 5 }, growth: { hp: 56, atk: 6.8, def: 2.8, crit: 0.15 } }
 };
 for (const id in MOUNTS) MOUNTS[id].id = id;
 

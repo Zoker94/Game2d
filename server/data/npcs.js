@@ -35,7 +35,7 @@ const NPCS = {
       { id: 'rename_card', knb: 20 }, { id: 'lucky_chest', knb: 30 }, { id: 'exp_x2', knb: 10 }, { id: 'wheel_ticket', knb: 15 }, { id: 'stone', knb: 3 },
       { id: 'stone2', knb: 40 }, { id: 'insure', knb: 60 }, { id: 'mount_food', knb: 2 }, { id: 'mount_stone', knb: 30 },
       { id: 'book_fire', knb: 800 }, { id: 'book_water', knb: 800 }, { id: 'book_ice', knb: 800 },
-      { id: 'mount_kim_nguu', knb: 1200 }, { id: 'mount_bach_ho', knb: 1500 }, { id: 'mount_kim_quy', knb: 2000 }, { id: 'mount_hoa_ky_lan', knb: 5000 }, { id: 'mount_phuong_hoang', knb: 6500 }, { id: 'mount_thanh_long', knb: 8000 }
+      { id: 'mount_kim_nguu', knb: 1200 }, { id: 'mount_bach_ho', knb: 1500 }, { id: 'mount_kim_quy', knb: 2000 }, { id: 'mount_hoa_ky_lan', knb: 5000 }, { id: 'mount_phuong_hoang', knb: 6500 }, { id: 'mount_thanh_long', knb: 8000 }, { id: 'mount_hac_long', knb: 8000 }
     ] },
   tang_kinh: { name: 'Tàng Kinh Các', sprite: 'elder', color: '#2a6a4a', action: 'shop', bookShop: true,
     talk: 'Võ học vô biên. Mỗi môn phái có bí truyền riêng – hãy mua sách để lĩnh ngộ, rồi rèn luyện trong bảng Võ Công (phím K).',

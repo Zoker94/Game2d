@@ -2,7 +2,7 @@
 // Kim Quy / Kim Ngưu lấp lánh ánh vàng. Lớp 'under' vẽ trước con thú, lớp 'over' vẽ sau người cưỡi.
 (function () {
   const TAU = Math.PI * 2;
-  const FLY = new Set(['thanh_long', 'phuong_hoang']);
+  const FLY = new Set(['thanh_long', 'phuong_hoang', 'hac_long']);
   const lastEmit = new Map();
   function every(key, ms, now) {
     const t = lastEmit.get(key) || 0;
@@ -157,7 +157,8 @@
     kim_quy:      { c: '#5affb8', c2: '#ffd040', trail: 'bubble', pal: 'jade' },
     hoa_ky_lan:   { c: '#ffb030', c2: '#ff4a10', trail: 'ember',  pal: 'fire' },
     phuong_hoang: { c: '#ffe070', c2: '#ff5a1a', trail: 'ember',  pal: 'fire' },
-    thanh_long:   { c: '#9ef6ff', c2: '#c49aff', trail: null,     pal: 'blue' }
+    thanh_long:   { c: '#9ef6ff', c2: '#c49aff', trail: null,     pal: 'blue' },
+    hac_long:     { c: '#ff4a3a', c2: '#5a0a18', trail: null,     pal: 'blood' }
   };
   const stageOf = lv => lv >= 50 ? 4 : lv >= 40 ? 3 : lv >= 25 ? 2 : lv >= 10 ? 1 : 0;
   const rankOf = id => RANK[(G.data.mounts[id] || {}).rarity] || 0;

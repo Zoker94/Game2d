@@ -4,6 +4,13 @@ const CHANGELOG = [
   {
     date: '20/10/2026',
     items: [
+      'Thú cưỡi mới: Hắc Long – rồng đen cánh dơi bay lượn, vỗ cánh che người cưỡi (8000 nguyên bảo tại Mã Phu).',
+      'Vẽ lại Ngựa Nâu, Bạch Mã và Ô Truy Hắc Mã: nét hơn, đủ dáng nhìn ngang, trước và sau.'
+    ]
+  },
+  {
+    date: '20/10/2026',
+    items: [
       'Khảm đá: 5 loại đá (Hồng Ngọc, Lục Bảo, Lam Ngọc, Hoàng Ngọc, Tử Tinh) × 5 cấp. Khảm vào trang bị tại Thợ Rèn để tăng chỉ số; đá cấp 4-5 thêm 1 dòng hiệu ứng. Luyện 3 viên thành 1 viên cấp cao hơn.',
       'Thợ Rèn Vương hướng dẫn khảm đá (từ cấp 15, tặng đá tập khảm). Bãi luyện đá mới: Bảo Thạch Khoáng Động (cấp 25+) và Huyền Tinh Mật Cảnh (cấp 55+), đi bằng Xa Phu.',
       'Trang bị cường hóa từ +5 có vòng sáng xoay quanh icon, càng cao càng rực rỡ (+14 trở lên: cầu vồng).',

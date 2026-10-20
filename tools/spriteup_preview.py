@@ -44,7 +44,7 @@ def sheet_preview(mid, src, path):
     m = meta[mid]; T = m['cell'][0]
     sh = Image.open(f'{D}/{mid}.png')
     ncol = sh.width // T
-    n = {'hac_long': 96, 'ngua_xam': 72}[mid]
+    n = {'hac_long': 96}.get(mid, 72)
     src_im = Image.open(src).convert('RGB')
     Z = 2
     pad = 16

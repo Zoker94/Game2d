@@ -138,14 +138,16 @@
       if (!mountLoading[id]) mountLoading[id] = load('mounts/' + id + '.png').then(im => { if (im) mountImgs[id] = im; });
       return null;
     }
+    // thú làm từ sheet riêng (tools/spriteup.py) có cỡ ô, số khung, hàng, điểm chân riêng trong MOUNT_META.per[id]
+    const M = (MOUNT_META.per && MOUNT_META.per[id]) || MOUNT_META;
     const seats = MOUNT_META.seats && MOUNT_META.seats[id];
     if (!view || !seats || !seats[view]) view = 'side';
-    const [fs, fn] = MOUNT_META.frames[moving ? 'run' : 'idle'];
-    const k = Math.floor(t / (moving ? 95 : 700)) % fn;
-    const col = fs + k, [cw, ch] = MOUNT_META.cell;
-    const rows = (MOUNT_META.rows && MOUNT_META.rows[view]) || [0];
-    const s = MOUNT_META.scale || 1;   // thú vẽ mới (tools/mounts2.py): ô 192 thu về x2/3
-    const foot = view === 'side' ? MOUNT_META.foot : (MOUNT_META.footFB || MOUNT_META.foot);
+    const [fs, fn] = M.frames[moving ? 'run' : 'idle'];
+    const k = Math.floor(t / (moving ? (M.runMs || 95) : (M.idleMs || 700))) % fn;
+    const col = fs + k, [cw, ch] = M.cell;
+    const rows = (M.rows && M.rows[view]) || [0];
+    const s = M.scale || 1;   // thú vẽ mới (tools/mounts2.py): ô 192 thu về x2/3
+    const foot = view === 'side' ? M.foot : (M.footFB || M.foot);
     const seat = seats ? seats[view][col] : MOUNT_META.seat[id][col];
     return {
       img: mountImgs[id], sx: col * cw, cw, ch, dw: cw * s, dh: ch * s, k, view,
