@@ -308,7 +308,7 @@
     s.on('duel', d => Duel.onDuel(d));
     s.on('duelRing', d => Duel.onRing(d));
     s.on('giftResult', d => Gift.onResult(d));
-    s.on('me', d => { if (G.me && d.riding !== G.me.riding) GameAudio.sfx('mount'); G.me = d; UI.updateHud(); $('dead-overlay').classList.toggle('hidden', !d.dead); });
+    s.on('me', d => { if (G.me && d.riding !== G.me.riding) GameAudio.sfx('mount'); G.me = d; if (d.pvp) G.pvpUntil = performance.now() + 8000; UI.updateHud(); $('dead-overlay').classList.toggle('hidden', !d.dead); });
     s.on('pos', d => { G.self.x = d.x; G.self.y = d.y; G.moveTo = null; });
     s.on('weather', w => Weather.set(w));
     s.on('cartGone', id => { G.carts.delete(id); if (G.target === id) G.target = null; });

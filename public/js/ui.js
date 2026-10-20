@@ -447,7 +447,10 @@
   window.addEventListener('resize', () => { menuFitKey = ''; setTimeout(fitMenu, 120); });
   UI.fitMenu = () => { menuFitKey = ''; fitMenu(); };
 
+  // đang giao tranh với người chơi: thu gọn thông báo, ẩn khung phụ để thấy rõ đối thủ
+  UI.pvpOn = () => (G.pvpUntil || 0) > performance.now();
   UI.frame = function (now) {
+    { const on = UI.pvpOn(); if (on !== UI._pvpCls) { UI._pvpCls = on; document.body.classList.toggle('pvp-on', on); } }
     // hồi khinh công
     const dc = G.dodgeCd, dr = dc && dc.until > now ? (dc.until - now) / dc.total : 0;
     const dtx = dc && dc.until > now && !dc.pending ? Math.ceil((dc.until - now) / 1000) : '';
@@ -489,14 +492,21 @@
   };
 
   // ================= Thông báo / chat =================
+  const toastSeen = new Map();
   UI.toast = function (text, type = 'info') {
-    const box = $('toasts');
+    const box = $('toasts'), pvp = UI.pvpOn(), now = performance.now();
+    if (pvp) {
+      // khi PK: bỏ thông báo vặt, không lặp lại cùng một câu, tối đa 2 dòng nhỏ ở mép trên
+      if (type === 'info' || type.startsWith('item') || /hồi chiêu|chưa hồi|tầm|quá xa|Đã dùng/i.test(text)) return;
+      if (now - (toastSeen.get(text) || 0) < 4000) return;
+    }
+    toastSeen.set(text, now); if (toastSeen.size > 60) toastSeen.clear();
     const d = document.createElement('div');
     d.className = 'toast ' + type;
     d.textContent = text;
     box.appendChild(d);
-    while (box.children.length > 5) box.firstChild.remove();
-    setTimeout(() => d.remove(), 3100);
+    while (box.children.length > (pvp ? 2 : 5)) box.firstChild.remove();
+    setTimeout(() => d.remove(), pvp ? 1800 : 3100);
     if (type === 'item:epic' || type === 'item:legendary') GameAudio.sfx('rare');
     else if (type.startsWith('item')) G.sfx('pick');
     else if (type === 'level') GameAudio.sfx('level');

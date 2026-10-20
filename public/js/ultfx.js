@@ -116,9 +116,11 @@
     crack(sx, sy, color, victim) {
       ensure(); cv.style.display = 'block';
       const [w, h] = fit();
-      const size = Math.min(w, h) * (victim ? 0.62 : 0.5);
+      const pvp = document.body.classList.contains('pvp-on');   // đang PK: vết nứt nhỏ, không che đối thủ
+      const size = Math.min(w, h) * (pvp ? 0.26 : victim ? 0.62 : 0.5);
+      if (pvp) { sx = w * (Math.random() < 0.5 ? 0.1 : 0.9); sy = h * (0.3 + Math.random() * 0.4); }   // dạt ra mép màn hình, giữa màn để nhìn đối thủ
       cracks.push(make(sx == null ? w / 2 : sx, sy == null ? h / 2 : sy, size, color, victim));
-      if (victim) cracks.push(make(w * (0.2 + Math.random() * 0.6), h * (0.2 + Math.random() * 0.6), size * 0.6, color, false));
+      if (victim && !pvp) cracks.push(make(w * (0.2 + Math.random() * 0.6), h * (0.2 + Math.random() * 0.6), size * 0.6, color, false));
       if (!raf) raf = requestAnimationFrame(frame);
     },
     banner

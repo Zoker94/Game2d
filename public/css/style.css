@@ -1542,3 +1542,14 @@ body.touch #update-gate .ug-box { padding: 16px 14px; }
 .at-btns .at-in:disabled { opacity: .45; }
 .at-main .at-on { color: #8fe0a0; }
 @media (max-width: 560px) { .at-row { flex-wrap: wrap; } .at-btns { width: 100%; justify-content: flex-end; } }
+/* ---- đang PK: thu gọn thông báo, ẩn khung phụ để không che đối thủ ---- */
+body.pvp-on #toasts { top: 180px; }
+body.pvp-on .toast { font-size: 11.5px; padding: 2px 14px; opacity: .88; }
+body.pvp-on .toast.level { font-size: 14px; }
+body.pvp-on #ult-banner { top: 120px; }
+body.pvp-on #ult-banner b { font-size: clamp(18px, 2.6vw, 28px); letter-spacing: 3px; }
+body.pvp-on #ult-banner small { font-size: 10px; letter-spacing: 4px; }
+body.pvp-on #announce { opacity: 0; }
+body.pvp-on #tutorial-box, body.pvp-on #story-box, body.pvp-on #daily-box { opacity: 0; pointer-events: none; transition: opacity .25s; }
+body.pvp-on #duel-banner { top: 22%; font-size: 30px; }
+body.pvp-on #duel-banner small { font-size: 12px; }

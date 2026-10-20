@@ -4,6 +4,12 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Đang PK không còn bị thông báo che đối thủ: thông báo thu nhỏ, dạt lên mép trên, tối đa 2 dòng, tự tắt nhanh, không lặp lại cùng một câu; bỏ các thông báo vặt (chiêu chưa hồi, ngoài tầm, đã dùng bình…). Chữ tuyệt kỹ nhỏ lại và nằm phía trên, vết nứt màn hình dạt ra mép màn; tạm ẩn chữ chạy, khung nhiệm vụ / cốt truyện. Hết giao tranh 8 giây mọi thứ hiện lại như cũ.'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Điểm tiềm năng: thêm ô nhập số điểm nhanh cho từng thuộc tính (gõ số rồi Enter), nút +10 và nút "Gợi ý theo hệ" tự chia 60% thuộc tính chính – 30% Sinh Khí – 10% Thân Pháp.',
       'Cân lại tiềm năng theo hệ võ công: Sức Mạnh +0,6 tấn công và +0,2% sát thương võ công khi tu Ngoại công; Nội Công +0,4 tấn công, +5 nội lực và +0,2% sát thương võ công khi tu Nội công; Sinh Khí +12 sinh lực, +0,3 phòng thủ; Thân Pháp +0,04% chí mạng, +0,025% né tránh, +0,05 tốc độ. Bảng Nhân vật hiện rõ thuộc tính nào hợp hệ đang tu và % sát thương đang được cộng.',
       'Né chiêu đổi thành Khinh công (Shift / Q): nhân vật tung mình nhảy vọt lên rồi đáp xuống (xa hơn, ~190), bóng đổ ở lại mặt đất, vẫn để lại bóng mờ phía sau và né mọi đòn khi đang trên không.'
