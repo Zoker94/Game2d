@@ -251,7 +251,7 @@
       ${c ? `<div class="card"><h3>Chỉnh sửa nhân vật (${esc(u.character.clsName)})</h3><div class="row">
         <label>Tên<input id="e-name" value="${esc(c.name)}" style="width:130px"></label><label>Cấp<input id="e-level" type="number" value="${c.level}" style="width:80px"></label>
         <label>Ngân lượng<input id="e-gold" type="number" value="${c.gold}" style="width:120px"></label><label>Nguyên bảo<input id="e-knb" type="number" value="${c.knb}" style="width:100px"></label>
-        <label>+ Kinh nghiệm<input id="e-exp" type="number" value="0" style="width:110px"></label><button class="btn primary" id="e-save">Lưu</button>${u.online ? '<button class="btn" id="e-heal">Hồi đầy máu</button>' : ''}</div>
+        <label>+ Kinh nghiệm<input id="e-exp" type="number" value="0" style="width:110px"></label><label title="Người chơi tự cộng trong bảng Nhân vật. Số âm để thu lại.">+ Điểm tiềm năng (đã tặng ${c.attrBonus | 0})<input id="e-attr" type="number" value="0" style="width:90px"></label><label title="Người chơi tự cộng trong bảng Võ Công. Số âm để thu lại.">+ Điểm võ học (đã tặng ${c.spBonus | 0})<input id="e-sp" type="number" value="0" style="width:90px"></label><button class="btn primary" id="e-save">Lưu</button>${u.online ? '<button class="btn" id="e-heal">Hồi đầy máu</button>' : ''}</div>
         <div class="small muted" style="margin-top:6px">Bản đồ: ${esc(c.map)} · Lực chiến: ${fmt(c.power)} · Quái: ${fmt(c.kills)} · PK: ${fmt(c.pvpKills)} · Boss: ${fmt(c.bossKills)} · Chết: ${fmt(c.deaths)} · Thời gian chơi: ${Math.round((c.playTime || 0) / 60)} phút</div></div>
       <div class="card"><h3>Tặng vật phẩm</h3><div class="row"><label style="flex:1">Vật phẩm${itemSearchHtml('e-item')}<select id="e-item">${itemOptions(items)}</select></label><label>SL<input id="e-qty" type="number" value="1" style="width:70px"></label><label>Cường hóa<input id="e-plus" type="number" value="0" min="0" max="15" style="width:70px"></label><button class="btn ok" id="e-give">Tặng</button></div></div>
       <div class="card"><h3>Trang bị</h3><div class="items">${Object.entries(c.equip).map(([s, e]) => e ? `<span class="item">${itemName(e.id)}${e.plus ? ' +' + e.plus : ''} <a data-rmslot="${s}" style="cursor:pointer" title="Xóa">✕</a></span>` : '').join('') || '<span class="muted">Không</span>'}</div>
@@ -266,7 +266,7 @@
         <div class="row" style="margin-top:10px">${c ? '<button class="btn danger" id="e-reset">Xóa nhân vật</button>' : ''}<button class="btn danger" id="e-del">Xóa tài khoản</button></div></div>`);
     const again = async () => { await userDetail(id, reload); reload && reload(); };
     const on = (bid, fn) => { const b = $(bid); if (b) b.onclick = fn; };
-    on('e-save', async () => { await run(() => api(`/users/${id}/update`, { name: $('e-name').value, level: +$('e-level').value, gold: +$('e-gold').value, knb: +$('e-knb').value, addExp: +$('e-exp').value || 0 }), 'Đã lưu'); again(); });
+    on('e-save', async () => { await run(() => api(`/users/${id}/update`, { name: $('e-name').value, level: +$('e-level').value, gold: +$('e-gold').value, knb: +$('e-knb').value, addExp: +$('e-exp').value || 0, addAttr: +$('e-attr').value || 0, addSp: +$('e-sp').value || 0 }), 'Đã lưu'); again(); });
     on('e-heal', () => run(() => api(`/users/${id}/update`, { heal: true }), 'Đã hồi máu'));
     bindItemSearch('e-item', items);
     on('e-give', async () => {

@@ -1597,3 +1597,7 @@ body.touch #quick-btns .qb i { font-size: 12px; line-height: 1; }
 body.touch #quick-btns .qb i svg { width: 13px; height: 13px; }
 body.touch #quick-btns .qb span { font-size: 7.5px; line-height: 1.1; }
 body.touch #map-row { gap: 3px; }
+#tp-box .tp-pts { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 4px 2px 6px; color: #e8d8b0; font-size: 12px; }
+#tp-box .tp-pts input { width: 80px; padding: 3px 6px; border-radius: 6px; border: 1px solid rgba(201,154,58,.4); background: rgba(0,0,0,.35); color: #fff; font: inherit; }
+#tp-box .tp-pts small { color: #a89a80; }
+#tp-box .tp-pl .btn { padding: 3px 6px; }

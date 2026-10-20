@@ -21,7 +21,7 @@
   function fsIcon(b) { const on = fsOn(); b.innerHTML = `<i>${on ? SVG_OUT : SVG_IN}</i><span>${on ? 'Thu nhỏ' : 'Toàn màn'}</span>`; b.title = on ? 'Thoát toàn màn hình (F11)' : 'Toàn màn hình (F11)'; }
 
   // ---------- dịch chuyển nhanh (quản trị) ----------
-  let tab = 'map', online = null, q = '';
+  let tab = 'map', online = null, q = '', ptsN = 100;
   function box() { return $('tp-box'); }
   function openTp() {
     if (box()) { box().remove(); return; }
@@ -51,9 +51,13 @@
       list.querySelectorAll('[data-map]').forEach(el => el.onclick = () => { cmd('/tp ' + el.dataset.map); b.remove(); G.sfx && G.sfx('click'); });
     } else {
       if (!online) { list.innerHTML = '<p class="muted small">Đang tải...</p>'; return; }
-      const me = G.me && G.me.name, arr = online.filter(p => p.name !== me && (!f || p.name.toLowerCase().includes(f)));
+      const arr = online.filter(p => !f || p.name.toLowerCase().includes(f));   // gồm cả bản thân (tự tặng điểm)
       list.innerHTML = arr.map(p => `<div class="tp-pl"><div><b>${esc(p.name)}</b><small>${esc(G.data.classes[p.cls] ? G.data.classes[p.cls].name : p.cls)} · Cấp ${p.level} · ${esc(p.map)}</small></div>
-        <button class="btn small" data-goto="${esc(p.name)}">Đến</button><button class="btn small" data-keo="${esc(p.name)}">Kéo về</button></div>`).join('') || '<p class="muted small">Không có người chơi nào khác online</p>';
+        <button class="btn small" data-goto="${esc(p.name)}">Đến</button><button class="btn small" data-keo="${esc(p.name)}">Kéo về</button>
+        <button class="btn small" data-pts="tiemnang" data-n="${esc(p.name)}" title="Tặng điểm tiềm năng">⭐+</button><button class="btn small" data-pts="kynang" data-n="${esc(p.name)}" title="Tặng điểm võ học">📖+</button></div>`).join('') || '<p class="muted small">Không có người chơi nào khác online</p>';
+      list.insertAdjacentHTML('afterbegin', `<div class="tp-pts">Số điểm tặng <input type="number" class="tp-ptn" value="${ptsN}" step="10"> <small>⭐ tiềm năng · 📖 võ học · số âm để thu lại</small></div>`);
+      const ptn = list.querySelector('.tp-ptn'); ptn.onkeydown = e => e.stopPropagation(); ptn.oninput = () => { ptsN = Math.trunc(+ptn.value) || 0; };
+      list.querySelectorAll('[data-pts]').forEach(el => el.onclick = () => { if (ptsN) { cmd(`/${el.dataset.pts} ${el.dataset.n} ${ptsN}`); G.sfx && G.sfx('click'); } });
       list.querySelectorAll('[data-goto]').forEach(el => el.onclick = () => { cmd('/goto ' + el.dataset.goto); b.remove(); });
       list.querySelectorAll('[data-keo]').forEach(el => el.onclick = () => { cmd('/keo ' + el.dataset.keo); G.sfx && G.sfx('click'); });
     }

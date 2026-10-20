@@ -23,6 +23,9 @@ const { Story } = require('./story');
 const { Duel } = require('./duel');
 const { DaiHoi, DAIHOI_MAP } = require('./daihoi');
 const { isOwner } = require('../owner');
+// tổng điểm tiềm năng / võ học: theo cấp + điểm quản trị viên tặng thêm (c.attrBonus, c.spBonus)
+const attrTotalOf = c => attrTotal(c.level) + Math.max(0, c.attrBonus | 0);
+const spTotalOf = c => skillPointsTotal(c.level) + Math.max(0, c.spBonus | 0);
 const { ATTRS, attrTotal, attrUsed, attrResetCost } = require('../data/attrs');
 const { SECT_MAP } = require('../data/sect');
 
@@ -233,8 +236,8 @@ class World {
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, owner: isOwner(p.user) ? 1 : 0, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null,
       minhChu: this.daihoi && this.daihoi.isMinhChu(p.userId) ? 1 : 0,
-      attr: c.attr || {}, attrFree: attrTotal(c.level) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
-      branch: branchOf(c), skills: c.skills || {}, hotbar: c.hotbar, sp: skillPointsTotal(c.level) - (c.spSpent || 0),
+      attr: c.attr || {}, attrFree: attrTotalOf(c) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
+      branch: branchOf(c), skills: c.skills || {}, hotbar: c.hotbar, sp: spTotalOf(c) - (c.spSpent || 0),
       mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
       sect: this.sect ? this.sect.meView(p) : null,
       med: !!p.med, pvp: this.inPvp(p) ? 1 : 0, st: this.statusView(p), friends: Object.keys(c.friends || {}).length, friendIds: this.friendIds(c), pk: c.pk || 0,
@@ -343,7 +346,7 @@ class World {
       c.hp = p.stats.maxHp; c.mp = p.stats.maxMp;
       this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y });
       this.toast(p, `Thăng cấp ${c.level}!`, 'level');
-      this.toast(p, `⭐ Có ${attrTotal(c.level) - attrUsed(c.attr)} điểm tiềm năng chưa cộng (bảng Nhân vật – phím C)`, 'reward');
+      this.toast(p, `⭐ Có ${attrTotalOf(c) - attrUsed(c.attr)} điểm tiềm năng chưa cộng (bảng Nhân vật – phím C)`, 'reward');
       const unlocked = CLASSES[c.cls].skills.filter(s => s.lv === c.level);
       for (const s of unlocked) this.toast(p, `Lĩnh ngộ võ công mới: ${s.name}`, 'reward');
       if (c.level % 10 === 0) this.features.announce(`⚔️ ${c.name} (${CLASSES[c.cls].name}) đã đạt cấp ${c.level}!`);
@@ -1175,14 +1178,14 @@ class World {
       if (!(c.spSpent > 0)) return this.toast(p, 'Chưa dùng điểm võ học nào, không cần tẩy', 'error');
       U.removeByUid(c, uid, 1);
       this.resetSkillPoints(c); this.recalc(p);
-      this.toast(p, `📕 Tẩy Tủy Kinh: đã hoàn lại toàn bộ ${skillPointsTotal(c.level)} điểm võ học, võ công trở về tầng 1.`, 'reward');
+      this.toast(p, `📕 Tẩy Tủy Kinh: đã hoàn lại toàn bộ ${spTotalOf(c)} điểm võ học, võ công trở về tầng 1.`, 'reward');
       p.dirtyMe = true; this.db.markDirty(); return;
     }
     if (e.resetAttr) {
       if (!attrUsed(c.attr)) return this.toast(p, 'Chưa cộng điểm tiềm năng nào', 'error');
       U.removeByUid(c, uid, 1);
       c.attr = {}; this.recalc(p);
-      this.toast(p, `📗 Tẩy Tiềm Năng: đã hoàn lại ${attrTotal(c.level)} điểm tiềm năng, mở bảng Nhân vật (phím C) để cộng lại.`, 'reward');
+      this.toast(p, `📗 Tẩy Tiềm Năng: đã hoàn lại ${attrTotalOf(c)} điểm tiềm năng, mở bảng Nhân vật (phím C) để cộng lại.`, 'reward');
       p.dirtyMe = true; this.db.markDirty(); return;
     }
     if (e.learn) {
@@ -1438,7 +1441,7 @@ class World {
     const c = p.c; c.attr = c.attr || {};
     if (d.op === 'add') {
       const pts = d.pts && typeof d.pts === 'object' ? d.pts : { [d.k]: d.n };
-      let free = attrTotal(c.level) - attrUsed(c.attr), used = 0;
+      let free = attrTotalOf(c) - attrUsed(c.attr), used = 0;
       for (const k in pts) {
         if (!ATTRS[k]) continue;
         const n = Math.max(0, Math.min(free, pts[k] | 0));
@@ -1553,7 +1556,7 @@ class World {
       const lv = c.skills[base.id] || 1;
       if (lv >= SKILL_MAX) return this.toast(p, 'Võ công đã đạt cảnh giới tối đa', 'error');
       const cost = upgradeCost(idx === DRAGON_SLOT ? 5 : idx, lv);
-      const sp = skillPointsTotal(c.level) - (c.spSpent || 0);
+      const sp = spTotalOf(c) - (c.spSpent || 0);
       if (sp < cost.sp) return this.toast(p, `Cần ${cost.sp} điểm võ học (mỗi cấp nhân vật nhận 1 điểm)`, 'error');
       if (c.gold < cost.gold) return this.toast(p, `Cần ${cost.gold.toLocaleString('vi-VN')} lượng`, 'error');
       c.gold -= cost.gold; c.spSpent = (c.spSpent || 0) + cost.sp;
@@ -1571,6 +1574,29 @@ class World {
   resetSkillPoints(c) {
     for (const id in c.skills) if (c.skills[id] > 1) c.skills[id] = 1;
     c.spSpent = 0;
+  }
+
+  // quản trị viên tặng điểm tiềm năng (kind 'attr') / võ học (kind 'sp') cho nhân vật; n âm để thu lại phần đã tặng
+  grantPoints(c, kind, n) {
+    n = Math.trunc(+n || 0);
+    if (!c || !n || (kind !== 'attr' && kind !== 'sp')) return 0;
+    const key = kind === 'attr' ? 'attrBonus' : 'spBonus';
+    const before = Math.max(0, c[key] | 0);
+    c[key] = U.clamp(before + n, 0, 100000);
+    const d = c[key] - before;
+    // thu lại quá số điểm còn trống: tẩy phần đã cộng để không âm
+    if (d < 0) {
+      if (kind === 'attr' && attrUsed(c.attr) > attrTotalOf(c)) c.attr = {};
+      if (kind === 'sp' && (c.spSpent || 0) > spTotalOf(c)) this.resetSkillPoints(c);
+    }
+    const p = this.players.get(c.userId) || [...this.players.values()].find(q => q.c === c);
+    if (p && d) {
+      this.recalc(p); p.dirtyMe = true;
+      const nm = kind === 'attr' ? 'điểm tiềm năng (bảng Nhân vật – phím C)' : 'điểm võ học (bảng Võ Công – phím K)';
+      this.toast(p, d > 0 ? `🎁 Quản trị viên tặng bạn ${d} ${nm}` : `Quản trị viên thu lại ${-d} ${nm}`, d > 0 ? 'reward' : 'info');
+    }
+    this.db.markDirty();
+    return d;
   }
 
   selectDragon(p, el) {

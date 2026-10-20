@@ -130,6 +130,8 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
         if (Object.values(db.data.users).some(x => x !== u && x.character && x.character.name.toLowerCase() === lower)) return { error: 'Tên đã tồn tại' };
         c.name = String(b.name).slice(0, 14);
       }
+      if (b.addAttr) world.grantPoints(c, 'attr', b.addAttr);   // tặng điểm tiềm năng / võ học để người chơi tự cộng
+      if (b.addSp) world.grantPoints(c, 'sp', b.addSp);
       if (b.heal && p) { c.hp = p.stats.maxHp; c.mp = p.stats.maxMp; p.dead = false; }
     }
     if (b.isGM != null) u.isAdmin = !!b.isGM;

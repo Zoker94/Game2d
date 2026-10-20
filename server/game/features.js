@@ -431,7 +431,7 @@ class Features {
     const findPlayer = name => [...w.players.values()].find(o => o.c.name.toLowerCase() === String(name || '').toLowerCase());
     switch (c) {
       case 'help': case 'lenh':
-        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: 'Lệnh admin: /admin (mở trang quản trị) · /tb <nội dung> · /tp <bản đồ> · /level <cấp> · /gold <số> · /knb <số> · /give <mã vật phẩm> [số lượng] [+cường hóa] · /heal · /boss <mã boss> · /event <mã sự kiện> [phút] · /kick <tên> · /goto <tên> · /keo <tên> · /online · /thoitiet <clear|rain|storm|wind|snow|blizzard|sun> [phút] · /cottruyen <chương> [bước] | reset · /tusat' });
+        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: 'Lệnh admin: /admin (mở trang quản trị) · /tb <nội dung> · /tp <bản đồ> · /level <cấp> · /gold <số> · /knb <số> · /give <mã vật phẩm> [số lượng] [+cường hóa] · /heal · /boss <mã boss> · /event <mã sự kiện> [phút] · /kick <tên> · /goto <tên> · /keo <tên> · /tiemnang <tên> <số> · /kynang <tên> <số> · /online · /thoitiet <clear|rain|storm|wind|snow|blizzard|sun> [phút] · /cottruyen <chương> [bước] | reset · /tusat' });
         break;
       case 'tb': case 'thongbao': {
         const msg = args.join(' ');
@@ -461,6 +461,17 @@ class Features {
         const o = findPlayer(args.join(' '));
         if (!o) return err('Người chơi không online');
         o.socket.emit('kicked', { reason: 'Bị quản trị viên mời ra khỏi game' }); w.removePlayer(o); o.socket.disconnect(true); ok('Đã kick ' + o.c.name); break;
+      }
+      case 'tiemnang': case 'kynang': {   // /tiemnang <tên> <số> · /kynang <tên> <số> (số âm để thu lại)
+        const n = Math.trunc(+args[args.length - 1]), name = args.slice(0, -1).join(' ');
+        if (!name || !Number.isFinite(n) || !n) return err(`Cú pháp: /${c} <tên nhân vật> <số điểm>`);
+        const o = findPlayer(name);
+        const u = o ? o.user : Object.values(this.db.data.users).find(x => x.character && x.character.name.toLowerCase() === name.toLowerCase());
+        if (!u || !u.character) return err('Không tìm thấy nhân vật ' + name);
+        const d = w.grantPoints(u.character, c === 'tiemnang' ? 'attr' : 'sp', n);
+        this.db.log('admin', `${p.c.name} ${d >= 0 ? 'tặng' : 'thu'} ${Math.abs(d)} điểm ${c === 'tiemnang' ? 'tiềm năng' : 'võ học'} cho ${u.character.name}`);
+        ok(`${u.character.name}: ${d >= 0 ? '+' : ''}${d} điểm ${c === 'tiemnang' ? 'tiềm năng' : 'võ học'} (tổng tặng ${u.character[c === 'tiemnang' ? 'attrBonus' : 'spBonus'] | 0})`);
+        break;
       }
       case 'goto': { const o = findPlayer(args.join(' ')); if (!o) return err('Người chơi không online'); w.enterMap(p, o.mapId, o.x + 40, o.y); break; }
       case 'keo': { const o = findPlayer(args.join(' ')); if (!o) return err('Người chơi không online'); w.enterMap(o, p.mapId, p.x + 40, p.y); ok('Đã kéo ' + o.c.name + ' tới chỗ bạn'); break; }

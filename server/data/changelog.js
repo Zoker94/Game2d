@@ -4,6 +4,12 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Quản trị viên có thể tặng điểm tiềm năng và điểm võ học cho người chơi tự cộng (bảng 🧭 → Người chơi → ⭐+ / 📖+, lệnh /tiemnang <tên> <số>, /kynang <tên> <số>, hoặc trang quản trị). Điểm được tặng không mất khi tẩy điểm.'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Sửa nhiều lỗi bảo mật nghiêm trọng: gói tin giả có thể làm sập máy chủ, biến ngân lượng thành lỗi rồi mua bán miễn phí, làm hỏng túi đồ / hệ võ công, hoặc ép người khác vào bang. Bang chủ giờ chỉ duyệt được người đã nộp đơn.',
       'Chặn hack tốc độ di chuyển (gửi dồn dập gói di chuyển).',
       'Giao dịch: nếu món đồ bị đổi cường hoá / đá khảm sau khi đã đưa lên bàn, giao dịch tự huỷ – không còn bị lừa nhận đồ khác với lúc khoá.',
