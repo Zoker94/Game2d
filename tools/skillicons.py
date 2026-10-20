@@ -977,6 +977,613 @@ def cl6(ic, col):   # Ngũ Lôi Hộ Pháp
         lightning(ic, x, y, 48 + math.cos(a) * 14, 56 + math.sin(a) * 14, '#f0e0ff', w=1.8, n=3, amp=2.5, seed=20 + k, branches=0)
 def cl7(ic, col): scroll(ic, 48, 50, 54, 46, '道', col)
 
+# =====================================================================
+# Hệ thứ hai (server/data/branches.js): mã <phái>b0..b5 + nội công bị động b8
+# =====================================================================
+def sil(ic, m, body, rim):
+    """tô bóng người tối + viền sáng"""
+    ic.glow(m, rim, 2.5, 1.1)
+    ic.over(m, body)
+    rr = np.clip(m - np.roll(np.roll(m, -int(1.4 * SS), 0), -int(1.0 * SS), 1), 0, 1)
+    ic.over(rr, light(rim, 0.3), 0.9)
+
+def stander(ic, cx, by, sc, arms=(), legs=None, plume=False):
+    """người đứng (gốc ở chân), arms: danh sách đường tay theo toạ độ tương đối"""
+    T = lambda pts: [(cx + x * sc, by + y * sc) for x, y in pts]
+    m = ic.ell(cx, by - 60 * sc, 5.6 * sc, 6.2 * sc)
+    m = np.maximum(m, ic.poly(T([(-2.5, -55), (2.5, -55), (3, -50), (-3, -50)])))
+    m = np.maximum(m, ic.poly(T([(-10, -52), (10, -52), (7.5, -30), (-7.5, -30)])))
+    m = np.maximum(m, ic.poly(T([(-7.5, -32), (7.5, -32), (12, -16), (-12, -16)])))
+    for lg in (legs or ([(-4, -18), (-8, -8), (-11, 0)], [(4, -18), (8, -8), (11, 0)])):
+        m = np.maximum(m, ic.stroke(T(lg), 5.6 * sc, 4.2 * sc))
+    for a in arms:
+        m = np.maximum(m, ic.stroke(T(a), 4.6 * sc, 3.4 * sc))
+    if plume:
+        m = np.maximum(m, ic.ell(cx, by - 63 * sc, 6.8 * sc, 5.2 * sc))                       # mũ trụ
+        m = np.maximum(m, ic.poly(T([(-1.6, -66), (1.6, -66), (0, -76)])))
+        for sg in (-1, 1): m = np.maximum(m, ic.poly(T([(sg * 5, -62), (sg * 12, -68), (sg * 7, -58)])))
+    return m
+
+def staff(ic, x0, y0, x1, y1, w=6, c=('#ffe48a', '#7a4a08', '#d89a20'), band=('#e83a2a', '#6a0a08'), glowc=None, mids=(0.5,)):
+    m = ic.line([(x0, y0), (x1, y1)], w)
+    if glowc: ic.glow(m, glowc, 4, 0.9)
+    ic.shade(m, c[0], c[1], edge=0.6, shine=0.35, c3=c[2])
+    dx, dy = x1 - x0, y1 - y0; L = math.hypot(dx, dy); ux, uy = dx / L, dy / L; nx, ny = -uy, ux
+    if band:
+        for t in (0.07, 0.93) + tuple(mids):
+            x, y = x0 + dx * t, y0 + dy * t
+            bl, bw = max(2.2, w * 0.24), w * 0.62
+            ic.shade(ic.poly([(x - ux * bl + nx * bw, y - uy * bl + ny * bw), (x + ux * bl + nx * bw, y + uy * bl + ny * bw),
+                              (x + ux * bl - nx * bw, y + uy * bl - ny * bw), (x - ux * bl - nx * bw, y - uy * bl - ny * bw)]), band[0], band[1], edge=0.6, shine=0.3)
+    return m
+
+def burst(ic, x, y, r, col, n=10, seed=0, k=1.0):
+    rng = np.random.RandomState(seed)
+    pts = []
+    for i in range(n * 2):
+        a = i / (n * 2) * TAU + 0.2
+        rr = r * rng.uniform(0.8, 1.15) if i % 2 == 0 else r * 0.42
+        pts.append((x + math.cos(a) * rr, y + math.sin(a) * rr))
+    m = ic.poly(pts)
+    ic.energy(m, col, r=4, k=k, core=0.9)
+    return m
+
+def bomb(ic, cx, cy, r, body=('#6a6a80', '#0c0c14'), fuse_to=None, spark='#ffd040', band='#c03020'):
+    m = ic.ell(cx, cy, r)
+    ic.glow(m, '#ffb050', 4, 0.5)
+    ic.shade(m, body[0], body[1], ang=-50, edge=0.6, shine=0.4)
+    ic.over(ic.ell(cx - r * 0.38, cy - r * 0.38, r * 0.22, r * 0.14), '#ffffff', 0.55)
+    if band: ic.shade(ic.stroke(arcpts(cx, cy, r * 0.98, r * 0.32, 0.05, math.pi - 0.05, 20), r * 0.18, r * 0.18) * m, band, dark(band, 0.5), edge=0.3, shine=0.2)
+    cap = ic.poly([(cx - r * 0.3, cy - r * 0.86), (cx + r * 0.3, cy - r * 0.86), (cx + r * 0.26, cy - r * 1.12), (cx - r * 0.26, cy - r * 1.12)])
+    ic.shade(cap, '#ffd070', '#7a4a10', edge=0.5, shine=0.3)
+    if fuse_to:
+        fx, fy = fuse_to
+        fp = bez([(cx, cy - r * 1.1), (cx + (fx - cx) * 0.1, fy + (cy - r - fy) * 0.1 - 6), (fx - 4, fy + 6), (fx, fy)], 20)
+        ic.shade(ic.stroke(fp, 2.2, 1.6), '#e8c890', '#6a4a20', edge=0.4, shine=0.2)
+        burst(ic, fx, fy, 6, spark, n=8, seed=3)
+        ic.sparkle(fx, fy, 4.5, spark)
+    return m
+
+def phoenix(ic, cx, cy, sc, col):
+    """phượng hoàng lửa dang cánh, đầu ngẩng, đuôi dài rủ xuống"""
+    c = sat(col)
+    W = lambda pts: [(cx + x * sc, cy + y * sc) for x, y in pts]
+    wings = np.zeros((R, R), np.float32)
+    for sg in (-1, 1):
+        wings = np.maximum(wings, ic.poly(W(bez([(0, -4), (sg * 16, -22), (sg * 34, -26), (sg * 44, -30)], 16) +
+                                               bez([(sg * 44, -30), (sg * 36, -12), (sg * 20, 0), (0, 6)], 16))))
+        for k in range(5):
+            a = math.radians(-58 + k * 13)
+            L = 46 - k * 4
+            ex, ey = math.cos(a) * L, math.sin(a) * L - 4
+            pts = bez([(sg * 10, -6 + k * 2), (sg * (ex * 0.6), ey * 0.7 - 6), (sg * ex, ey)], 16)
+            wings = np.maximum(wings, ic.stroke(W(pts), 8 * sc, 1.0 * sc, 9 * sc))
+    tail = np.zeros((R, R), np.float32)
+    for (ex, ey, bend) in ((-26, 46, -16), (-6, 50, 6), (14, 46, 18), (-16, 50, -4), (4, 52, 12)):
+        pts = bez([(0, 8), (bend, 22), (ex * 0.6, ey * 0.8), (ex, ey)], 24)
+        tail = np.maximum(tail, ic.stroke(W(pts), 7 * sc, 1 * sc, 6 * sc))
+    ic.energy(tail, c, r=5, k=0.9, core=0.6)
+    ic.energy(wings, c, r=5, k=1.0, core=0.7)
+    body = np.maximum(ic.ell(cx, cy + 2 * sc, 6.5 * sc, 12 * sc), ic.stroke(W(bez([(0, -4), (1, -14), (3, -22)], 10)), 6 * sc, 4 * sc))
+    head = ic.ell(cx + 3.5 * sc, cy - 24 * sc, 5 * sc, 4.4 * sc)
+    beak = ic.poly(W([(7, -26), (14, -23), (7, -21.5)]))
+    crest = np.zeros((R, R), np.float32)
+    for (ex, ey) in ((-6, -38), (-1, -40), (-9, -33)):
+        crest = np.maximum(crest, ic.stroke(W(bez([(2, -27), (ex + 3, ey + 5), (ex, ey)], 8)), 2.4 * sc, 0.6 * sc))
+    bm = np.clip(body + head, 0, 1)
+    ic.energy(crest, '#ffe060', r=2, k=0.9, core=0.6)
+    ic.glow(bm, '#ffe060', 3, 1.0)
+    ic.shade(bm, '#ffffff', '#ffa020', ang=-90, edge=0.3, shine=0.3, c3='#fff070')
+    ic.shade(beak, '#ffe080', '#8a4a08', edge=0.5, shine=0.2)
+    ic.over(ic.ell(cx + 5 * sc, cy - 24.5 * sc, 1.2 * sc), '#3a0400')
+    return wings
+
+def emblem(ic, glyph, col, metal=('#fff0b0', '#7a4a08', '#e8b040'), oct_=False):
+    """nội công bị động: ấn ký tròn/bát giác bằng kim loại, chữ phát sáng"""
+    c = sat(col)
+    if oct_:
+        disc = ic.poly([(48 + math.cos(k / 8 * TAU + math.pi / 8) * 30, 48 + math.sin(k / 8 * TAU + math.pi / 8) * 30) for k in range(8)])
+        inner = ic.poly([(48 + math.cos(k / 8 * TAU + math.pi / 8) * 23, 48 + math.sin(k / 8 * TAU + math.pi / 8) * 23) for k in range(8)])
+    else:
+        disc = ic.ell(48, 48, 29); inner = ic.ell(48, 48, 22)
+    ic.glow(disc, c, 6, 1.0)
+    ic.shade(disc, metal[0], metal[1], ang=-55, edge=0.6, shine=0.4, c3=metal[2])
+    for k in range(8):
+        a = k / 8 * TAU
+        ic.shade(ic.ell(48 + math.cos(a) * 26, 48 + math.sin(a) * 26, 1.6), '#ffffff', metal[1], edge=0.4, shine=0.3)
+    ic.grad(inner, light(c, 0.15), dark(c, 0.7), -60)
+    ic.over(np.clip(inner - erode(inner, 0.9), 0, 1), dark(metal[1], 0.4), 0.9)
+    ic.over(ic.ring(48, 48, 18.5, 0.7), light(c, 0.5), 0.5)
+    gm = ic.text(glyph, 48, 47, 25)
+    ic.glow(gm, c, 2.5, 1.2); ic.over(gm, '#fffbe8')
+    return disc
+
+def ray_ring(ic, cx, cy, r0, r1, n, col, k=0.5, w=2.0):
+    for i in range(n):
+        a = i / n * TAU
+        ic.energy(ic.stroke([(cx + math.cos(a) * r0, cy + math.sin(a) * r0), (cx + math.cos(a) * r1, cy + math.sin(a) * r1)], w, 0.3), col, r=2, k=k, core=0.3, body=0.6)
+
+# ---------------- Thiếu Lâm (La Hán Côn) ----------------
+def tlb0(ic, col):   # Phục Hổ Côn: côn bổ xuống, chấn động mặt đất
+    gr = ic.ell(30, 78, 30, 7); ic.energy(np.clip(gr - ic.ell(30, 78, 22, 4.5), 0, 1), col, r=3, k=0.7, core=0.4, body=0.7)
+    for (x, y) in ((8, 64), (14, 54), (50, 60), (56, 70)): ic.shade(ic.poly([(x - 2.5, y), (x, y - 3), (x + 3, y - 1), (x + 1.5, y + 2.5)]), '#c0a070', '#3a2a10', edge=0.5, shine=0.3)
+    for (a, b) in (((84, 8), (40, 52)), ((88, 18), (48, 58))): ic.energy(ic.stroke([a, b], 0.4, 2.2), col, r=1.5, k=0.6, core=0.3, body=0.6)
+    staff(ic, 86, 10, 32, 70, 6.5)
+    burst(ic, 30, 73, 15, col, n=9, seed=4)
+    for (x, y) in ((70, 76), (80, 64)): ic.sparkle(x, y, 3)
+def tlb1(ic, col):   # Hoành Tảo Thiên Quân: côn ngang quét vệt bán nguyệt
+    ic.energy(ic.stroke(arcpts(48, 34, 42, 46, 0.1, math.pi - 0.1, 48), 1, 13, 1), col, r=6, k=1.0, core=0.9)
+    for k in range(3):
+        ic.energy(ic.stroke(arcpts(48, 34, 34 - k * 7, 36 - k * 8, 0.35, math.pi - 0.35, 30), 0.5, 2.2, 0.5), col, r=2, k=0.5, core=0.3, body=0.6)
+    staff(ic, 8, 40, 88, 28, 6.5)
+    for (x, y, r) in ((14, 86, 6), (28, 90, 4.5), (74, 88, 5.5), (86, 82, 4)): ic.over(ic.ell(x, y, r, r * 0.6), '#d8b880', 0.35)
+    ic.sparkle(88, 28, 5); ic.sparkle(14, 18, 3)
+def tlb2(ic, col):   # La Hán Trận: ba La Hán cầm côn đứng thành trận
+    ic.energy(ic.ring(48, 80, 40, 2.2, 10), col, r=4, k=0.8, core=0.5)
+    ic.energy(ic.text('卍', 48, 22, 18), col, r=4, k=1.0, core=0.5)
+    for (x, by, sc, sg) in ((48, 74, 0.82, 1), (22, 86, 0.72, -1), (74, 86, 0.72, 1)):
+        sx = x + sg * 14 * sc
+        staff(ic, sx, by - 76 * sc, sx, by + 2, 3.4, band=('#e83a2a', '#6a0a08'), mids=())
+        m = stander(ic, x, by, sc, arms=([(sg * 9, -50), (sg * 13, -42), (sg * 14, -50)], [(-sg * 9, -50), (-sg * 6, -40), (-sg * 1, -44)]))
+        sil(ic, m, '#2a1608', '#ffd040')
+def tlb4(ic, col):   # Phong Ma Trượng: tích trượng lao tới
+    comet(ic, 8, 90, 58, 40, col, 15)
+    staff(ic, 26, 76, 72, 30, 4.6, band=None)
+    ring = ic.ring(78, 22, 9, 2.4)
+    ic.glow(ring, '#ffc030', 4, 1.0); ic.shade(ring, '#fff0a0', '#8a5208', edge=0.6, shine=0.4, c3='#e8b030')
+    for a in (-0.4, 1.1, 2.6, 4.1):
+        x, y = 78 + math.cos(a) * 11, 22 + math.sin(a) * 11
+        ic.shade(ic.ring(x, y, 3, 1.3), '#ffe890', '#8a5208', edge=0.5, shine=0.3)
+    ic.shade(ic.poly([(78, 10), (81, 18), (78, 22), (75, 18)]), '#fff6c0', '#a86a10', edge=0.5, shine=0.3)
+def tlb5(ic, col):   # Kim Cang Phục Ma: cự côn giáng xuống
+    ray_ring(ic, 48, 74, 18, 46, 14, col, k=0.5, w=2.6)
+    ground = ic.poly([(0, 78), (96, 74), (96, 96), (0, 96)]); ic.shade(ground, '#5a4020', '#140c04', ang=-90, edge=0.3, shine=0.1)
+    rng = np.random.RandomState(8); cr = np.zeros((R, R), np.float32)
+    for a in (0.15, 0.6, 2.5, 3.0, 1.6):
+        cr = np.maximum(cr, ic.stroke(bolt_pts(48, 80, 48 + math.cos(a) * 46, 80 + math.sin(a) * 14, 4, 2.5, rng), 2.6, 0.5))
+    ic.energy(cr * (YY > 74), col, r=3, k=1.0, core=0.8)
+    ic.energy(ic.ell(48, 78, 26, 6), col, r=6, k=1.0, core=1.0)
+    staff(ic, 48, 4, 48, 76, 12, glowc='#ffc030', mids=(0.35, 0.65))
+    for (x, y) in ((22, 24), (76, 30)): ic.sparkle(x, y, 4.5)
+def tlb8(ic, col):   # Kim Cương Bất Hoại Thể
+    ray_ring(ic, 48, 48, 32, 44, 16, col, k=0.6)
+    emblem(ic, '金', col, oct_=True)
+
+# ---------------- Thiên Vương (Chân Hỏa Tâm Pháp) ----------------
+def tvb0(ic, col):   # Liệt Hỏa Chưởng: chưởng đẩy quả cầu lửa
+    comet(ic, 30, 64, 66, 34, col, 20)
+    fb = ic.ell(66, 32, 13)
+    for k in range(7):
+        a = k / 7 * TAU
+        fb = np.maximum(fb, ic.poly(rot(flame_pts(0, 0, 9, 9), a + math.pi / 2, 0, 0, 1, 66 + math.cos(a) * 11, 32 + math.sin(a) * 11)))
+    ic.energy(fb, col, r=6, k=1.1, core=1.0)
+    palm(ic, 28, 68, 1.05, 0.85, '#ffc8a0', '#8a3a1a', glowc='#ff6020')
+def tvb1(ic, col):   # Hỏa Diệm Đao Khí: đao lửa + vầng đao khí lửa
+    wave = crescent(ic, 52, 46, 30, 13, math.pi)
+    fl = np.zeros((R, R), np.float32)
+    for k in range(7):
+        a = -1.1 + k * 0.37
+        x, y = 52 + math.cos(a) * 28, 46 + math.sin(a) * 28
+        fl = np.maximum(fl, ic.poly(rot(flame_pts(0, 0, 8, 14, 0), a + math.pi / 2, 0, 0, 1, x, y)))
+    ic.energy(np.clip(wave + fl, 0, 1), col, r=6, k=1.0, core=0.9)
+    blade_curved(ic, 10, 88, 46, 50, 5.5, -5, blade=('#fff4e0', '#c06030'), grip='#4a1008', glow='#ff4010')
+    aura_flames(ic, 30, 72, col, 4, 7, 16, 10)
+def tvb2(ic, col):   # Liệt Diễm Phần Thiên: cột lửa ngút trời
+    fire_bed(ic, 92, col, seed=7, h=18, n=8)
+    pil = ic.poly([(32, 90), (40, 40), (36, 4), (60, 4), (56, 40), (64, 90)])
+    ic.energy(pil, col, r=7, k=1.1, core=0.9)
+    for k in range(5):
+        y = 16 + k * 15
+        ic.energy(ic.stroke(arcpts(48, y, 16 - k * 0.5, 4, 0.2, math.pi * 1.6, 20), 0.4, 2.2, 1.2), '#fff0a0', r=2, k=0.5, core=0.4, body=0.7)
+    for (x, y) in ((18, 30), (78, 22), (22, 60), (80, 56), (70, 38)): ic.energy(ic.ell(x, y, 1.8), '#ffc040', r=2, k=0.9, core=0.6)
+def tvb4(ic, col):   # Chiến Thần Giáng Thế: chiến thần đứng giữa lửa, cầm kích
+    aura_flames(ic, 48, 92, col, 7, 14, 64, 34)
+    hx_ = 70
+    ic.shade(ic.line([(hx_, 10), (hx_, 92)], 3.2), '#8a5a3a', '#2a1408', edge=0.6, shine=0.2)
+    hb = ic.poly([(hx_, 4), (hx_ + 3, 14), (hx_, 20), (hx_ - 3, 14)])
+    hb = np.maximum(hb, ic.poly(bez([(hx_ + 1, 16), (hx_ + 14, 12), (hx_ + 12, 26), (hx_ + 1, 24)], 14)))
+    ic.glow(hb, '#ff6020', 3, 0.8); ic.shade(hb, '#ffffff', '#6a7080', edge=0.6, shine=0.3)
+    m = stander(ic, 46, 90, 1.05, arms=([(9, -50), (18, -42), (24, -46)], [(-9, -50), (-17, -40), (-20, -30)]), plume=True)
+    m = np.maximum(m, ic.poly([(46 - 14, 90 - 55), (46 - 6, 90 - 56), (46 - 9, 90 - 46)]))
+    m = np.maximum(m, ic.poly([(46 + 14, 90 - 55), (46 + 6, 90 - 56), (46 + 9, 90 - 46)]))
+    sil(ic, m, '#1a0604', '#ff6a3a')
+    ic.shade(ic.stroke(bez([(46, 90 - 76 * 1.05), (40, 6), (30, 10), (24, 18)], 16), 3.6, 1.0), '#ff3a2a', '#6a0808', edge=0.4, shine=0.3)
+    for sx in (-1, 1): ic.glow(ic.ell(46 + sx * 2.2, 90 - 60 * 1.05, 0.9), '#ffe040', 1, 1.6)
+def tvb5(ic, col):   # Hỏa Phượng Liêu Nguyên
+    fire_bed(ic, 94, '#ff5010', seed=11, h=16, n=8)
+    phoenix(ic, 48, 44, 0.95, col)
+def tvb8(ic, col):   # Thiên Vương Chân Hỏa
+    fl = np.zeros((R, R), np.float32)
+    for k in range(10):
+        a = k / 10 * TAU
+        fl = np.maximum(fl, ic.poly(rot(flame_pts(0, 0, 10, 14), a + math.pi / 2, 0, 0, 1, 48 + math.cos(a) * 28, 48 + math.sin(a) * 28)))
+    ic.energy(fl, col, r=5, k=1.0, core=0.6)
+    emblem(ic, '炎', col, metal=('#ffe0b0', '#6a1a08', '#e86a30'))
+
+# ---------------- Đường Môn (Cơ Quan Hỏa Khí) ----------------
+def dmb0(ic, col):   # Tích Lịch Đạn: bom tròn ngòi đang cháy
+    bomb(ic, 42, 58, 24, fuse_to=(76, 18), spark=col)
+    for (x, y) in ((84, 30), (68, 10), (86, 12)): ic.energy(ic.ell(x, y, 1.3), '#ffe080', r=1.5, k=1.0, core=0.6)
+def dmb1(ic, col):   # Loạn Hoàn Kích: nhiều đạn bay vòng cung, nổ tung
+    burst(ic, 70, 66, 20, col, n=11, seed=6)
+    burst(ic, 70, 66, 10, '#fff4c0', n=7, seed=2)
+    for (x0, y0, x1, y1, r) in ((6, 86, 30, 24, 7), (10, 60, 52, 22, 6.5), (4, 40, 22, 52, 6)):
+        pts = bez([(x0, y0), ((x0 + x1) / 2 - 4, min(y0, y1) - 12), (x1, y1)], 20)
+        for i in range(0, 14, 3): ic.energy(ic.ell(*pts[i], 1.2), col, r=1.5, k=0.6, core=0.3, body=0.6)
+        bomb(ic, x1, y1, r, band=None, fuse_to=None)
+        ic.sparkle(x1 + r * 0.5, y1 - r * 1.3, 2.6, col)
+def dmb2(ic, col):   # Địa Diệm Hỏa: địa lôi phun lửa
+    ground = ic.poly([(0, 76), (96, 72), (96, 96), (0, 96)]); ic.shade(ground, '#2a4a3a', '#06100c', ang=-90, edge=0.3, shine=0.1)
+    aura_flames(ic, 48, 72, col, 7, 13, 56, 26)
+    mine = ic.ell(48, 76, 26, 8)
+    for k in range(7): mine = np.maximum(mine, ic.poly([(24 + k * 8, 72), (27 + k * 8, 64), (30 + k * 8, 72)]))
+    ic.shade(mine, '#9a9aa8', '#14141c', ang=-90, edge=0.6, shine=0.3)
+    ic.over(ic.ring(48, 76, 18, 1.2, 5), '#c03020', 0.8)
+    ic.energy(ic.ell(48, 75, 8, 2.6), '#fff0a0', r=4, k=1.0, core=1.0)
+def dmb4(ic, col):   # Băng Tâm Tiên Lôi: thuỷ lôi băng gai
+    for (x, y, r) in ((18, 22, 7), (80, 78, 8), (82, 20, 5)): snowflake(ic, x, y, r, '#e0f8ff', 1.3)
+    sp = np.zeros((R, R), np.float32)
+    for k in range(8):
+        a = k / 8 * TAU + 0.2
+        sp = np.maximum(sp, ic.poly([(48 + math.cos(a - 0.22) * 15, 50 + math.sin(a - 0.22) * 15), (48 + math.cos(a) * 30, 50 + math.sin(a) * 30), (48 + math.cos(a + 0.22) * 15, 50 + math.sin(a + 0.22) * 15)]))
+    ic.glow(sp, col, 4, 1.0); ic.shade(sp, '#ffffff', '#3a8ac8', ang=-60, edge=0.5, shine=0.3)
+    core = ic.ell(48, 50, 17)
+    ic.glow(core, col, 5, 0.9); ic.shade(core, '#e8fbff', '#2a6aa8', ang=-50, edge=0.6, shine=0.45, c3='#8ad8ff')
+    for (a, b) in (((40, 42), (48, 52)), ((48, 52), (58, 46)), ((48, 52), (46, 64))): ic.over(ic.line([a, b], 0.8), '#ffffff', 0.7)
+    ic.energy(ic.ell(48, 50, 4.5), '#ffffff', r=3, k=1.0, core=1.0)
+def dmb5(ic, col):   # Cửu Cung Phi Tinh: cửu cung + mưa sao
+    g = [(30 + i * 18, 26 + j * 18) for j in range(3) for i in range(3)]
+    gm = np.zeros((R, R), np.float32)
+    for i in range(3):
+        gm = np.maximum(gm, ic.line([(30 + i * 18, 26), (30 + i * 18, 62)], 0.8)); gm = np.maximum(gm, ic.line([(30, 26 + i * 18), (66, 26 + i * 18)], 0.8))
+    ic.energy(gm, col, r=2, k=0.6, core=0.3, body=0.6)
+    ic.energy(ic.ring(48, 44, 30, 1.2), col, r=3, k=0.5, core=0.3, body=0.6)
+    for (x, y) in g: ic.sparkle(x, y, 3.6, col)
+    for (x0, y0, x1, y1) in ((60, 30, 82, 84), (34, 40, 52, 90), (12, 26, 22, 76)):
+        ic.energy(ic.stroke(bez([(x0, y0), (x1, y1)], 10), 0.4, 6, 5), col, r=4, k=0.9, core=0.8)
+        ic.sparkle(x1, y1, 5.5, col)
+def dmb8(ic, col):   # Đường Môn Cơ Quan Thuật: bánh răng
+    gear = ic.ell(48, 48, 35)
+    for k in range(12):
+        a = k / 12 * TAU
+        gear = np.maximum(gear, ic.poly(rot([(-4, 0), (4, 0), (3, -7), (-3, -7)], a + math.pi / 2, 0, 0, 1, 48 + math.cos(a) * 34, 48 + math.sin(a) * 34)))
+    ic.glow(gear, col, 4, 0.8); ic.shade(gear, '#c8d8d0', '#1a2a24', ang=-55, edge=0.6, shine=0.3)
+    emblem(ic, '機', col, metal=('#ffe8b0', '#6a4010', '#d8a040'))
+
+# ---------------- Ngũ Độc (Huyết Đao) ----------------
+def ndb0(ic, col):   # Huyết Đao Trảm: đao đỏ + vệt chém máu
+    ic.energy(ic.stroke(arcpts(46, 50, 36, 34, -2.4, 0.6, 40), 0.6, 9, 10), col, r=5, k=0.9, core=0.6)
+    blade_curved(ic, 18, 84, 78, 18, 7, -8, blade=('#ffe0e8', '#a0203a'), grip='#2a0a14', glow='#ff2050')
+    for (x, y, r) in ((76, 70, 4.5), (84, 82, 3), (66, 82, 2.5)):
+        d = ic.poly(bez([(x, y - r * 2), (x + r * 1.1, y - r * 0.2), (x, y + r), (x - r * 1.1, y - r * 0.2), (x, y - r * 2)], 16))
+        ic.glow(d, '#ff2040', 2, 0.8); ic.shade(d, '#ff6a7a', '#6a0818', edge=0.5, shine=0.4)
+def ndb1(ic, col):   # U Minh Độc Đao: song đao bắt chéo nhỏ độc
+    ic.energy(ic.stroke([(12, 20), (84, 80)], 1, 5, 6), col, r=4, k=0.8, core=0.6)
+    ic.energy(ic.stroke([(84, 20), (12, 80)], 1, 5, 6), col, r=4, k=0.8, core=0.6)
+    blade_curved(ic, 20, 84, 76, 16, 5.5, -6, blade=('#f0d8ff', '#6a2a8a'), grip='#1a0a2a', glow='#c040ff')
+    blade_curved(ic, 76, 84, 20, 16, 5.5, 6, blade=('#f0d8ff', '#6a2a8a'), grip='#1a0a2a', glow='#c040ff')
+    for (x, y, r) in ((30, 46, 3.5), (66, 48, 3), (48, 74, 4)):
+        d = ic.poly(bez([(x, y - r * 2), (x + r * 1.1, y - r * 0.2), (x, y + r), (x - r * 1.1, y - r * 0.2), (x, y - r * 2)], 16))
+        ic.glow(d, '#8fe03a', 2, 0.9); ic.shade(d, '#d0ff8a', '#2a6a0a', edge=0.5, shine=0.4)
+    ic.energy(ic.ell(48, 50, 5), col, r=4, k=1.0, core=0.9)
+def ndb2(ic, col):   # Bách Độc Toàn Phong: lốc độc xoáy
+    m = np.zeros((R, R), np.float32)
+    for k in range(3):
+        a0 = k / 3 * TAU
+        pts = [(48 + math.cos(a0 + t * 4.2) * (4 + t * 38), 48 + math.sin(a0 + t * 4.2) * (4 + t * 34)) for t in np.linspace(0, 1, 50)]
+        m = np.maximum(m, ic.stroke(pts, 1.5, 1.0, 10))
+    ic.energy(m, col, r=5, k=1.0, core=0.7)
+    ic.over(ic.ell(48, 48, 7), '#102a04', 0.85)
+    ic.energy(ic.ring(48, 48, 7, 1.2), col, r=2, k=0.8, core=0.6)
+    for k in range(7):
+        a = k / 7 * TAU + 0.4; r = 22 + (k % 3) * 7; x, y = 48 + math.cos(a) * r, 48 + math.sin(a) * r
+        ic.over(ic.ring(x, y, 2.4, 0.9), light(col, 0.4), 0.9)
+    for (x, y) in ((16, 22), (80, 78)):
+        d = ic.poly(bez([(x, y - 7), (x + 3.6, y), (x, y + 3.4), (x - 3.6, y), (x, y - 7)], 14))
+        ic.glow(d, col, 2, 0.8); ic.shade(d, light(col, 0.4), dark(col, 0.4), edge=0.5, shine=0.4)
+def ndb4(ic, col):   # Quỷ Ảnh Truy Hồn: hồn ma lướt tới cầm đao
+    body = ic.poly(bez([(54, 18), (36, 16), (30, 36), (34, 50)], 20) + bez([(34, 50), (24, 62), (14, 70), (4, 86)], 20) +
+                   bez([(4, 86), (22, 78), (34, 74), (46, 66)], 16) + bez([(46, 66), (66, 60), (74, 38), (54, 18)], 24))
+    tail2 = ic.stroke(bez([(40, 60), (26, 76), (16, 90)], 14), 6, 0.6)
+    gm = np.clip(body + tail2, 0, 1)
+    ic.energy(gm, col, r=6, k=0.9, core=0.25, body=0.7)
+    ic.over(ic.ell(52, 36, 14, 16) * body, '#14041e', 0.55)
+    for (x, y) in ((46, 33), (59, 31)):
+        e = ic.poly([(x - 4, y - 1), (x + 4, y - 3), (x + 2, y + 2)])
+        ic.glow(e, '#ff40ff', 2, 1.4); ic.over(e, '#fff0ff')
+    ic.over(ic.poly(bez([(46, 44), (52, 50), (60, 42)], 10) + [(54, 46)]), '#0a0010', 0.9)
+    blade_curved(ic, 60, 70, 90, 30, 4.5, -5, blade=('#f0d8ff', '#6a2a8a'), grip='#1a0a2a', glow='#c040ff')
+def ndb5(ic, col):   # Vạn Cổ Ma Đao: ma đao khổng lồ với ma nhãn
+    aura_flames(ic, 48, 94, col, 7, 14, 70, 34)
+    ic.energy(ic.ring(48, 46, 36, 1.6), col, r=4, k=0.6, core=0.3, body=0.6)
+    # lưỡi đao rộng, mũi chúc xuống
+    bm = ic.poly(bez([(40, 30), (36, 52), (40, 74), (48, 92)], 20) + bez([(48, 92), (58, 72), (60, 50), (56, 30)], 20))
+    ic.glow(bm, col, 5, 1.1)
+    ic.shade(bm, '#f0d0ff', '#3a0a5a', ang=0, edge=0.6, shine=0.2, c3='#9a50d0')
+    ic.over(ic.stroke(bez([(56, 32), (59, 52), (56, 72), (48, 90)], 20), 1.2, 0.3), '#ffffff', 0.7)
+    for (y, w) in ((46, 5), (60, 4.5), (74, 3.5)): ic.over(ic.poly([(48 - w, y), (48, y - 3), (48 + w, y), (48, y + 3)]), '#4a0a6a', 0.7)
+    gd = ic.poly([(26, 26), (70, 26), (64, 34), (32, 34)])
+    gd = np.maximum(gd, ic.poly([(26, 26), (20, 18), (32, 24)])); gd = np.maximum(gd, ic.poly([(70, 26), (76, 18), (64, 24)]))
+    ic.shade(gd, '#b0a0c0', '#1a0a24', edge=0.6, shine=0.35)
+    ic.shade(ic.line([(48, 26), (48, 6)], 6), '#4a2a5a', '#14041e', edge=0.6, shine=0.2)
+    ic.shade(ic.ell(48, 5, 4), '#d0b0e0', '#2a0a3a', edge=0.5, shine=0.4)
+    e = ic.poly(bez([(41, 30), (48, 26), (55, 30)], 8) + bez([(55, 30), (48, 34), (41, 30)], 8))
+    ic.glow(e, '#ff3030', 2.5, 1.4); ic.over(e, '#ffd040'); ic.over(ic.ell(48, 30, 1.1, 2.4), '#200000')
+def ndb8(ic, col):   # Huyết Ma Công
+    for k in range(6):
+        a = k / 6 * TAU - math.pi / 2; x, y = 48 + math.cos(a) * 38, 48 + math.sin(a) * 38
+        d = ic.poly(bez([(x, y - 7), (x + 4, y), (x, y + 4), (x - 4, y), (x, y - 7)], 14))
+        ic.glow(d, '#ff2050', 2, 0.9); ic.shade(d, '#ff6a7a', '#6a0818', edge=0.5, shine=0.4)
+    emblem(ic, '血', col, metal=('#e8d0d8', '#3a0a1a', '#a06070'), oct_=True)
+
+# ---------------- Nga My (Kiếm pháp) ----------------
+NMS = dict(blade=('#ffffff', '#c0a8c8'), guard=('#ffe0f0', '#a04a80'), grip='#6a1a4a')
+def nmb0(ic, col):   # Thanh Phong Kiếm: kiếm + làn gió xoáy
+    for (cx, cy, r, a0) in ((30, 30, 10, 0.0), (70, 70, 9, 3.2), (66, 24, 6, 1.0)):
+        sp = [(cx + math.cos(a0 + t * 5) * r * (1 - t * 0.7), cy + math.sin(a0 + t * 5) * r * (1 - t * 0.7)) for t in np.linspace(0, 1, 30)]
+        ic.energy(ic.stroke(sp, 2.6, 0.5), '#c8ffe8', r=2, k=0.7, core=0.4, body=0.8)
+        tx, ty = cx + math.cos(a0) * r, cy + math.sin(a0) * r
+        ic.energy(ic.stroke([(tx, ty), (tx - 18, ty + 4)], 2.4, 0.3), '#c8ffe8', r=2, k=0.6, core=0.3, body=0.7)
+    sword(ic, 14, 70, 86, 32, 6.5, glow='#ffb6d8', tassel='#ff6aa8', **NMS)
+    for (x, y, a) in ((40, 84, 0.5), (84, 56, 2.0), (20, 46, 4.0)): ic.shade(ic.poly(petal(x, y, 7, 2.6, a)), '#9ae8b0', '#2a6a3a', edge=0.4, shine=0.3)
+def nmb1(ic, col):   # Tam Hoa Tụ Đỉnh: kiếm đâm thẳng, ba đoá hoa tụ trên mũi
+    ic.energy(ic.poly([(40, 92), (56, 92), (50, 30), (46, 30)]), col, r=5, k=0.6, core=0.3, body=0.5)
+    sword(ic, 48, 92, 48, 34, 6.5, glow='#ffb6d8', tassel='#ff6aa8', **NMS)
+    ic.energy(ic.ell(48, 22, 18), col, r=6, k=0.6, core=0.3, body=0.3)
+    for (x, y, s) in ((48, 12, 7.5), (37, 28, 7.5), (59, 28, 7.5)):
+        fl = np.zeros((R, R), np.float32)
+        for k in range(5): fl = np.maximum(fl, ic.ell(x + math.cos(k / 5 * TAU - math.pi / 2) * s * 0.55, y + math.sin(k / 5 * TAU - math.pi / 2) * s * 0.55, s * 0.5))
+        ic.glow(fl, col, 3, 0.9); ic.shade(fl, '#ffe8f4', '#e05a9a', ang=-90, edge=0.5, shine=0.3)
+        ic.over(ic.ell(x, y, s * 0.24), '#ffe040')
+    ic.sparkle(48, 22, 5)
+def nmb2(ic, col):   # Kiếm Vũ Hồng Trần: kiếm xoay theo vòng xoáy cánh hoa
+    for k in range(4):
+        a0 = k / 4 * TAU
+        pts = [(48 + math.cos(a0 + t * 2.4) * (8 + t * 30), 48 + math.sin(a0 + t * 2.4) * (8 + t * 30)) for t in np.linspace(0, 1, 30)]
+        ic.energy(ic.stroke(pts, 0.6, 5, 4), col, r=4, k=0.8, core=0.5, body=0.8)
+    for k in range(4):
+        a = k / 4 * TAU + 2.4 + 0.5; r = 30
+        x, y = 48 + math.cos(a) * r, 48 + math.sin(a) * r
+        ta = a + math.pi / 2
+        sword(ic, x - math.cos(ta) * 14, y - math.sin(ta) * 14, x + math.cos(ta) * 14, y + math.sin(ta) * 14, 3.8, glow=None, tassel=None, **NMS)
+    for k in range(8):
+        a = k / 8 * TAU + 0.3; r = 14 + (k % 3) * 9
+        ic.shade(ic.poly(petal(48 + math.cos(a) * r, 48 + math.sin(a) * r, 6, 2.4, a * 2)), '#ffd0e8', '#c05a8a', edge=0.4, shine=0.3)
+    ic.energy(ic.ell(48, 48, 5), col, r=4, k=1.0, core=1.0)
+def nmb4(ic, col):   # Phi Hoa Truy Ảnh: lướt kiếm kéo theo cánh hoa
+    comet(ic, 8, 88, 56, 42, col, 14)
+    rng = np.random.RandomState(4)
+    for k in range(9):
+        t = rng.uniform(0.05, 0.85); x, y = 8 + 48 * t + rng.uniform(-12, 12), 88 - 46 * t + rng.uniform(-12, 12)
+        ic.shade(ic.poly(petal(x, y, rng.uniform(5, 8), 2.4, rng.uniform(0, TAU))), '#ffd8ec', '#c05a8a', edge=0.4, shine=0.3)
+    sword(ic, 40, 62, 88, 12, 5.6, glow='#ffd0e8', tassel='#ff6aa8', **NMS)
+def nmb5(ic, col):   # Vạn Hoa Kiếm Trận: kiếm trận trên đoá mai lớn
+    fl = np.zeros((R, R), np.float32)
+    for k in range(5): fl = np.maximum(fl, ic.ell(48 + math.cos(k / 5 * TAU - math.pi / 2) * 13, 66 + math.sin(k / 5 * TAU - math.pi / 2) * 11, 11, 10))
+    ic.glow(fl, col, 6, 1.0); ic.shade(fl, '#fff0f8', '#d04a8a', ang=-90, edge=0.5, shine=0.3)
+    for k in range(10): a = k / 10 * TAU; ic.over(ic.line([(48, 66), (48 + math.cos(a) * 8, 66 + math.sin(a) * 7)], 0.6), '#c02a6a', 0.8)
+    ic.energy(ic.ell(48, 66, 4), '#ffe060', r=3, k=1.0, core=0.8)
+    for k in range(7):
+        a = math.pi + 0.25 + k * (math.pi - 0.5) / 6
+        x, y = 48 + math.cos(a) * 40, 70 + math.sin(a) * 44
+        sword(ic, x, y - 16, x, y + 6, 3.6, glow='#ffd0e8', tassel=None, **NMS)
+    for (x, y, a) in ((14, 86, 0.4), (84, 84, 2.4), (22, 70, 4.4), (76, 68, 1.4)): ic.shade(ic.poly(petal(x, y, 6, 2.4, a)), '#ffd8ec', '#c05a8a', edge=0.4, shine=0.3)
+def nmb8(ic, col):   # Nga My Kiếm Tâm
+    for k in range(5):
+        a = k / 5 * TAU - math.pi / 2
+        ic.shade(ic.poly(petal(48 + math.cos(a) * 24, 48 + math.sin(a) * 24, 20, 9, a)), '#ffd0e8', '#a03a70', edge=0.5, shine=0.3)
+    emblem(ic, '劍', col, metal=('#fff0f8', '#7a2a5a', '#e8a0c8'))
+
+# ---------------- Thúy Yên (Băng Tâm Quyết) ----------------
+def icicle(ic, x0, y0, x1, y1, w, col):
+    dx, dy = x1 - x0, y1 - y0; L = math.hypot(dx, dy); ux, uy = dx / L, dy / L; nx, ny = -uy, ux
+    m = ic.poly([(x0, y0), (x0 + ux * L * 0.25 + nx * w, y0 + uy * L * 0.25 + ny * w), (x1, y1), (x0 + ux * L * 0.25 - nx * w, y0 + uy * L * 0.25 - ny * w)])
+    ic.glow(m, col, 3, 0.9)
+    ic.shade(m, '#ffffff', '#3a8ac8', ang=math.degrees(math.atan2(ny, nx)), edge=0.5, shine=0)
+    ic.over(ic.poly([(x0, y0), (x0 + ux * L * 0.25 + nx * w, y0 + uy * L * 0.25 + ny * w), (x1, y1)]), '#ffffff', 0.4)
+    return m
+def tyb0(ic, col):   # Băng Phách Châm: ba kim băng bay
+    for k, (o, ln) in enumerate(((-12, 56), (0, 66), (12, 52))):
+        x0, y0 = 12 + o * 0.7, 80 + o * 0.7; x1, y1 = x0 + ln * 0.72, y0 - ln * 0.72
+        ic.energy(ic.stroke([(x0 - 6, y0 + 6), (x0 + (x1 - x0) * 0.5, y0 + (y1 - y0) * 0.5)], 0.3, 3.4), col, r=2, k=0.6, core=0.3, body=0.6)
+        icicle(ic, x0 + (x1 - x0) * 0.35, y0 + (y1 - y0) * 0.35, x1, y1, 2.8, col)
+    snowflake(ic, 76, 70, 9, '#e0f8ff', 1.4); ic.sparkle(80, 18, 4)
+def tyb1(ic, col):   # Hàn Băng Kiếm Khí: ba băng kiếm bay ngang
+    for k in range(4): ic.energy(ic.stroke([(4, 30 + k * 13), (40, 32 + k * 12)], 0.3, 2), col, r=2, k=0.5, core=0.3, body=0.6)
+    for (y, x0, x1, w) in ((28, 22, 82, 5), (50, 14, 92, 6), (72, 22, 82, 5)):
+        icicle(ic, x0, y, x1, y, w, col)
+        ic.energy(ic.stroke([(x0 - 10, y), (x0 + 6, y)], 0.5, 3), '#ffffff', r=2, k=0.5, core=0.4, body=0.6)
+    snowflake(ic, 18, 88, 5, '#e0f8ff', 1.1)
+def tyb2(ic, col):   # Tuyết Ảnh Phiêu Linh: bão tuyết xoáy
+    for k in range(4):
+        ic.energy(ic.stroke(arcpts(48, 48, 40 - k * 8, 30 - k * 6, 2.4 + k * 0.6, 2.4 + k * 0.6 + 3.6, 36, tilt=-0.3), 0.4, 3.2, 3.6), col, r=3, k=0.6, core=0.4, body=0.7)
+    for (x, y, r) in ((48, 48, 13), (20, 26, 7), (78, 26, 6), (22, 74, 6), (76, 72, 8), (52, 14, 4), (52, 84, 4.5), (86, 48, 3.5), (10, 50, 3.5)):
+        snowflake(ic, x, y, r, '#f0fcff', 1.0 + r * 0.06)
+def tyb4(ic, col):   # Băng Liên Phong Ấn: sen băng giữa ấn trận
+    ic.energy(ic.ring(48, 54, 38, 1.4, 34), col, r=3, k=0.7, core=0.4)
+    ic.energy(ic.ring(48, 54, 31, 1.0, 27), col, r=2, k=0.6, core=0.3)
+    for k in range(12):
+        a = k / 12 * TAU; x, y = 48 + math.cos(a) * 34.5, 54 + math.sin(a) * 30.5
+        ic.energy(ic.poly([(x, y - 2.4), (x + 2.4, y), (x, y + 2.4), (x - 2.4, y)]), col, r=2, k=0.7, core=0.5)
+    lotus(ic, 48, 62, 1.15, '#bfefff', glowc='#9ae8ff')
+    ic.energy(ic.ell(48, 50, 5), '#ffffff', r=4, k=1.0, core=1.0)
+    for (x, y) in ((18, 18), (80, 20)): snowflake(ic, x, y, 6, '#e8fbff', 1.2)
+def tyb5(ic, col):   # Thiên Sơn Tuyết Lở: núi tuyết + băng đá rơi
+    mt = ic.poly([(0, 96), (0, 70), (20, 48), (34, 60), (54, 30), (74, 56), (86, 46), (96, 56), (96, 96)])
+    ic.shade(mt, '#6a8aa8', '#0a1424', ang=-90, edge=0.4, shine=0.1)
+    cap = ic.poly([(14, 55), (20, 48), (26, 54), (22, 56), (18, 54)])
+    cap = np.maximum(cap, ic.poly([(44, 44), (54, 30), (64, 44), (59, 48), (54, 44), (49, 49)]))
+    cap = np.maximum(cap, ic.poly([(82, 50), (86, 46), (91, 51), (87, 52)]))
+    ic.shade(cap, '#ffffff', '#a8c8e8', ang=-90, edge=0.3, shine=0.2)
+    cl = np.zeros((R, R), np.float32)
+    for (x, y, r) in ((30, 82, 12), (52, 88, 13), (72, 84, 11), (14, 90, 9), (88, 90, 9)): cl = np.maximum(cl, ic.ell(x, y, r, r * 0.7))
+    ic.glow(cl, '#ffffff', 3, 0.5); ic.shade(cl * (YY > 72), '#ffffff', '#a8c8e8', ang=-90, edge=0.3, shine=0.2)
+    for (x, y, ln) in ((20, 10, 22), (44, 4, 18), (66, 10, 24), (86, 6, 16), (34, 24, 14)):
+        icicle(ic, x - ln * 0.35, y, x + ln * 0.3, y + ln, 3.6, col)
+def tyb8(ic, col):   # Huyền Băng Tâm Pháp
+    snowflake(ic, 48, 48, 44, '#e8fbff', 3)
+    emblem(ic, '冰', col, metal=('#ffffff', '#2a5a8a', '#a8d8f0'), oct_=True)
+
+# ---------------- Cái Bang (Đả Cẩu Bổng) ----------------
+JADE = dict(c=('#b8ffd0', '#1a6a3a', '#40c070'), band=None, glowc='#40ff90')
+def paw(ic, x, y, s, col, a=0.55):
+    m = ic.ell(x, y + s * 0.5, s * 0.75, s * 0.6)
+    for (dx, dy) in ((-0.8, -0.4), (-0.3, -0.9), (0.3, -0.9), (0.8, -0.4)): m = np.maximum(m, ic.ell(x + dx * s, y + dy * s, s * 0.28, s * 0.34))
+    ic.over(m, col, a)
+def cbb0(ic, col):   # Bổng Đả Song Khuyển: bổng đánh hai cú
+    for (x, y, a) in ((16, 30, 0.4), (78, 82, -0.3), (86, 66, -0.2)): paw(ic, x, y, 5, '#f0d8a0', 0.35)
+    staff(ic, 14, 14, 74, 74, 6, **JADE)
+    burst(ic, 76, 76, 13, col, n=8, seed=1)
+    burst(ic, 36, 70, 10, col, n=7, seed=9)
+    ic.energy(ic.stroke(arcpts(46, 46, 30, 30, 1.0, 2.2, 20), 0.5, 4, 1), col, r=3, k=0.7, core=0.4)
+def cbb1(ic, col):   # Bát Cẩu Triều Đầu: bổng liên hoàn, tàn ảnh xoè quạt
+    for k, a in enumerate((-1.9, -1.55, -1.2, -0.85)):
+        x1, y1 = 22 + math.cos(a) * 70, 82 + math.sin(a) * 70
+        if k < 3: ic.energy(ic.line([(22, 82), (x1, y1)], 5), col, r=3, k=0.3 + k * 0.15, core=0.1, body=0.25 + k * 0.15)
+        else: staff(ic, 22, 82, x1, y1, 6, **JADE)
+    ic.energy(ic.stroke(arcpts(22, 82, 66, 66, -2.0, -0.75, 30), 1, 6, 8), col, r=4, k=0.8, core=0.6)
+    for k in range(4): ic.sparkle(22 + math.cos(-1.9 + k * 0.35) * 70, 82 + math.sin(-1.9 + k * 0.35) * 70, 2.6 + k * 0.6)
+def cbb2(ic, col):   # Thiên Hạ Vô Cẩu: bổng xoay tít quét vòng
+    ic.energy(ic.ring(48, 50, 36, 6, 30), col, r=5, k=0.9, core=0.6, body=0.7)
+    for k in range(3): ic.energy(ic.stroke(arcpts(48, 50, 28 - k * 6, 23 - k * 5, 0.6 + k, 2.6 + k, 20), 0.4, 2.4, 0.4), col, r=2, k=0.6, core=0.3, body=0.7)
+    staff(ic, 12, 60, 84, 40, 6, **JADE)
+    ic.energy(ic.ell(48, 50, 5), '#fff0a0', r=4, k=1.0, core=1.0)
+    for (x, y, r) in ((14, 88, 6), (34, 92, 4), (64, 92, 5), (84, 86, 4.5)): ic.over(ic.ell(x, y, r, r * 0.6), '#d8b880', 0.35)
+def cbb4(ic, col):   # Túy Bát Tiên: bát rượu nghiêng, rượu văng theo bước lướt
+    comet(ic, 6, 90, 50, 50, col, 14)
+    sp = np.zeros((R, R), np.float32)
+    for (x, y, r) in ((44, 44, 3), (36, 52, 2.4), (30, 40, 2), (52, 34, 2.2), (26, 60, 1.6)): sp = np.maximum(sp, ic.ell(x, y, r))
+    sp = np.maximum(sp, ic.stroke(bez([(58, 40), (48, 38), (40, 48), (34, 58)], 16), 5, 1))
+    ic.glow(sp, '#ffe0a0', 2, 0.6); ic.shade(sp, '#fff4c8', '#c08a30', edge=0.4, shine=0.4)
+    A, BX, BY = -0.45, 68, 32
+    bw = ic.poly(rot(bez([(-20, 0), (-18, 18), (18, 18), (20, 0)], 16), A, 0, 0, 1, BX, BY))
+    foot = ic.poly(rot([(-7, 16), (7, 16), (8, 21), (-8, 21)], A, 0, 0, 1, BX, BY))
+    top = ic.poly(rot(arcpts(0, 0, 20, 5.5, 0, TAU, 40), A, 0, 0, 1, BX, BY))
+    ic.glow(np.clip(bw + top + foot, 0, 1), '#ffc040', 4, 0.8)
+    ic.shade(foot, '#c89a60', '#3a2208', edge=0.6, shine=0.2)
+    ic.shade(bw, '#f0d8a8', '#5a3810', ang=-60, edge=0.6, shine=0.35, c3='#b08040')
+    ic.shade(top, '#ffe8a0', '#c07a10', ang=-90, edge=0.7, shine=0.0)
+    ic.over(np.clip(top - erode(top, 0.9), 0, 1), '#3a2208', 0.9)
+    ic.over(ic.text('酒', BX + 2, BY + 10, 12) * bw, '#7a1a0a', 0.85)
+    for k in range(8): ic.dots([(18 + (k % 4) * 20 + (k // 4) * 8, 12 + (k // 4) * 70 + (k % 2) * 4)], 1.2, '#ffe080', 0.8)
+def cbb5(ic, col):   # Đả Cẩu Thần Bổng: thần bổng giữa lốc bổng ảnh
+    m = np.zeros((R, R), np.float32)
+    for k in range(4):
+        a0 = k / 4 * TAU
+        pts = [(48 + math.cos(a0 + t * 3) * (10 + t * 32), 48 + math.sin(a0 + t * 3) * (8 + t * 28)) for t in np.linspace(0, 1, 40)]
+        m = np.maximum(m, ic.stroke(pts, 1, 0.6, 8))
+    ic.energy(m, col, r=5, k=1.0, core=0.7)
+    for k in range(4):
+        a = k / 4 * TAU + 0.6; x, y = 48 + math.cos(a) * 34, 48 + math.sin(a) * 30
+        ta = a + math.pi / 2
+        staff(ic, x - math.cos(ta) * 9, y - math.sin(ta) * 9, x + math.cos(ta) * 9, y + math.sin(ta) * 9, 3.2, c=('#b8ffd0', '#1a6a3a', '#40c070'), band=None)
+    staff(ic, 48, 4, 48, 92, 9, c=('#e0fff0', '#1a7a40', '#50e080'), band=('#ffd060', '#7a4a08'), glowc='#60ffa0', mids=())
+    ic.sparkle(48, 8, 6)
+def cbb8(ic, col):   # Đả Cẩu Tâm Pháp
+    staff(ic, 10, 86, 86, 10, 7, **JADE)
+    emblem(ic, '棒', col)
+
+# ---------------- Võ Đang (Thái Cực Kiếm) ----------------
+VDS = dict(blade=('#ffffff', '#8aa0c8'), guard=('#d8e8ff', '#3a5a9a'), grip='#1a2a5a')
+def vdb0(ic, col):   # Thái Cực Kiếm: kiếm vẽ đường cong âm dương
+    s1 = bez([(14, 20), (60, 4), (70, 44), (48, 50)], 30) ; s2 = bez([(48, 50), (26, 56), (34, 94), (82, 78)], 30)
+    ic.energy(ic.stroke(s1, 1, 8, 9), '#ffffff', r=4, k=0.8, core=0.7)
+    m2 = ic.stroke(s2, 9, 1, 9); ic.glow(m2, '#4a7aff', 4, 1.0); ic.grad(m2, '#3a5aa8', '#0a1430', -60); ic.over(np.clip(m2 - erode(m2, 0.8), 0, 1), '#a8c8ff', 0.9)
+    sword(ic, 20, 84, 80, 14, 6.5, glow='#a8c8ff', tassel='#4a8aff', **VDS)
+def vdb1(ic, col):   # Tam Hoàn Sáo Nguyệt: kiếm xuyên ba vòng trăng khuyết
+    sword(ic, 16, 82, 84, 14, 6.5, glow='#cfe0ff', tassel='#4a8aff', **VDS)
+    for k, t in enumerate((0.45, 0.65, 0.85)):
+        x, y = 16 + 68 * t, 82 - 68 * t; r = 13 - k * 2
+        ring = ic.ring(x, y, r, 2.4, r * 0.45)
+        rr = Image.fromarray((ring * 255).astype(np.uint8)).rotate(-45, center=(x * SS, y * SS), resample=Image.BICUBIC)
+        ring = np.asarray(rr).astype(np.float32) / 255
+        cm = crescent(ic, x, y, r + 1.5, r * 0.5, -math.pi * 0.75) * ring
+        ic.energy(ring, col, r=3, k=0.7, core=0.4, body=0.6)
+        ic.energy(cm, '#ffffff', r=3, k=0.6, core=0.8)
+    ic.energy(crescent(ic, 26, 26, 11, 5, -0.4), '#fff4c0', r=4, k=0.9, core=0.6)
+def vdb2(ic, col):   # Thái Cực Kiếm Vũ: hai kiếm đuổi nhau thành vòng âm dương
+    a1 = ic.stroke(arcpts(48, 48, 34, 34, -math.pi / 2, math.pi / 2, 40), 1, 9, 8); ic.energy(a1, '#ffffff', r=4, k=0.8, core=0.6)
+    a2 = ic.stroke(arcpts(48, 48, 34, 34, math.pi / 2, math.pi * 1.5, 40), 1, 9, 8); ic.glow(a2, '#4a7aff', 4, 1.0); ic.grad(a2, '#3a5aa8', '#0a1430', -60); ic.over(np.clip(a2 - erode(a2, 0.8), 0, 1), '#a8c8ff', 0.9)
+    taiji(ic, 48, 48, 12, white='#f0f6ff', black='#0a1430', glowc='#7ab0ff')
+    sword(ic, 34, 80, 80, 40, 5, tassel=None, glow='#cfe0ff', **VDS)
+    sword(ic, 62, 16, 16, 56, 5, tassel=None, glow='#4a7aff', **VDS)
+def vdb4(ic, col):   # Nhân Kiếm Hợp Nhất: người ngự kiếm bay
+    for k in range(4): ic.energy(ic.stroke([(4, 58 + k * 6), (40, 64 + k * 3)], 0.3, 2.4), col, r=2, k=0.6, core=0.3, body=0.6)
+    ic.energy(ic.stroke([(6, 70), (70, 70)], 0.5, 8, 6), col, r=5, k=0.8, core=0.6)
+    sword(ic, 14, 72, 90, 68, 6, glow='#cfe0ff', tassel='#4a8aff', **VDS)
+    m = stander(ic, 50, 68, 0.78, arms=([(-9, -50), (-18, -44), (-26, -46)], [(9, -50), (16, -58), (20, -66)]), legs=([(-4, -18), (-8, -8), (-9, 0)], [(4, -18), (7, -8), (8, 0)]))
+    sil(ic, m, '#0a1028', '#9fc5ff')
+    sc = ic.stroke(bez([(46, 34), (30, 30), (16, 38)], 14), 3.2, 0.6); ic.energy(sc, '#4a8aff', r=2, k=0.6, core=0, body=0.8)
+def vdb5(ic, col):   # Vạn Kiếm Quy Tông: muôn kiếm xoáy về một thanh kiếm lớn
+    for k in range(10):
+        a = k / 10 * TAU; r = 38 if k % 2 else 30
+        x, y = 48 + math.cos(a) * r, 48 + math.sin(a) * r
+        ta = a + math.pi * 0.62
+        ex, ey = x + math.cos(ta) * 11, y + math.sin(ta) * 11
+        ic.energy(ic.stroke([(x - math.cos(ta) * 14, y - math.sin(ta) * 14), (x, y)], 0.3, 2.6), col, r=2, k=0.6, core=0.3, body=0.6)
+        sword(ic, x - math.cos(ta) * 4, y - math.sin(ta) * 4, ex, ey, 2.6, glow=None, tassel=None, **VDS)
+    ic.energy(ic.ell(48, 48, 14), col, r=6, k=0.8, core=0.6, body=0.5)
+    sword(ic, 48, 88, 48, 6, 7.5, glow='#cfe0ff', tassel='#4a8aff', **VDS)
+def vdb8(ic, col):   # Thái Cực Kiếm Tâm
+    sword(ic, 48, 94, 48, 2, 6, tassel=None, glow='#7ab0ff', **VDS)
+    emblem(ic, '極', col, metal=('#f0f6ff', '#2a3a6a', '#a8b8e0'), oct_=True)
+
+# ---------------- Côn Lôn (Lôi Đình Kiếm) ----------------
+CLS_ = dict(blade=('#ffffff', '#a898c8'), guard=('#f0e0ff', '#5a3a9a'), grip='#2a1a4a')
+def clb0(ic, col):   # Ngạo Tuyết Kiếm: kiếm dựng trên đỉnh núi tuyết
+    mt = ic.poly([(0, 96), (0, 80), (22, 62), (34, 70), (52, 50), (70, 68), (84, 60), (96, 70), (96, 96)])
+    ic.shade(mt, '#6a5a90', '#0a0618', ang=-90, edge=0.4, shine=0.1)
+    cap = np.maximum(ic.poly([(44, 59), (52, 50), (60, 58), (56, 61), (52, 58), (48, 62)]), ic.poly([(17, 66), (22, 62), (27, 66), (22, 67)]))
+    ic.shade(cap, '#ffffff', '#c0b0e0', ang=-90, edge=0.3, shine=0.2)
+    ic.energy(ic.poly([(44, 52), (60, 52), (54, 4), (50, 4)]), col, r=5, k=0.6, core=0.3, body=0.4)
+    sword(ic, 52, 58, 52, 6, 7, glow='#e0c8ff', tassel='#b060ff', **CLS_)
+    for (x, y, r) in ((22, 26, 7), (80, 34, 6), (76, 12, 4)): snowflake(ic, x, y, r, '#f0e8ff', 1.2)
+def clb1(ic, col):   # Lôi Đình Trảm: kiếm chém kèm sét
+    ic.energy(ic.stroke(arcpts(48, 52, 38, 34, -2.7, 0.3, 40), 0.6, 10, 11), col, r=5, k=0.9, core=0.7)
+    sword(ic, 16, 82, 82, 16, 7, glow='#e6c8ff', tassel='#b060ff', **CLS_)
+    lightning(ic, 26, 70, 84, 12, '#fff68f', w=3, n=7, amp=5, seed=5, branches=2)
+def clb2(ic, col):   # Phong Lôi Kiếm Trận: bốn kiếm cắm đất nối sét
+    ic.energy(ic.ring(48, 70, 36, 1.8, 12), col, r=3, k=0.7, core=0.4)
+    for k in range(3): ic.energy(ic.stroke(arcpts(48, 46, 32 - k * 6, 10, 2.8, 6.2, 30, tilt=-0.15), 0.4, 2.6, 3), '#d8c8ff', r=3, k=0.5, core=0.3, body=0.6)
+    pos = [(16, 70), (36, 82), (60, 82), (80, 70)]
+    for i in range(3):
+        lightning(ic, pos[i][0], pos[i][1] - 26, pos[i + 1][0], pos[i + 1][1] - 26, '#fff68f', w=2.4, n=4, amp=3, seed=30 + i, branches=0)
+    lightning(ic, 48, 4, 48, 50, '#fff68f', w=4, n=5, amp=5, seed=40, branches=1)
+    for (x, y) in pos:
+        sword(ic, x, y - 34, x, y + 4, 4.4, glow='#e6c8ff', tassel=None, **CLS_)
+def clb4(ic, col):   # Thiểm Điện Bộ: bóng người hoá điện lướt đi
+    rng = np.random.RandomState(3)
+    for k, y in enumerate((40, 56, 72)):
+        ic.energy(ic.stroke(bolt_pts(2, y + 6, 46, y - 4, 5, 3, rng), 2.6, 0.6), col, r=3, k=0.8, core=0.6)
+    m = ic.ell(62, 24, 6.5)
+    m = np.maximum(m, ic.poly([(56, 30), (68, 30), (72, 50), (64, 54), (58, 52)]))
+    m = np.maximum(m, ic.stroke([(64, 50), (78, 62), (74, 82)], 5, 3)); m = np.maximum(m, ic.stroke([(60, 50), (48, 64), (36, 70)], 5, 3))
+    m = np.maximum(m, ic.stroke([(58, 34), (46, 42), (38, 38)], 4, 2.5)); m = np.maximum(m, ic.stroke([(68, 34), (80, 40), (90, 34)], 4, 2.5))
+    ic.energy(m, col, r=5, k=1.1, core=0.8)
+    lightning(ic, 62, 16, 70, 70, '#ffffff', w=1.6, n=5, amp=4, seed=9, branches=1)
+def clb5(ic, col):   # Lôi Thần Giáng Thế: lôi thần giơ búa sét, vòng trống sấm
+    for k in range(8):
+        a = math.pi + k / 7 * math.pi; x, y = 48 + math.cos(a) * 38, 54 + math.sin(a) * 38
+        dm = ic.ell(x, y, 6, 5.4)
+        ic.glow(dm, col, 3, 0.8); ic.shade(dm, '#e05a3a', '#4a0a08', edge=0.6, shine=0.3)
+        ic.over(ic.ring(x, y, 3.6, 1), '#ffd060', 0.8)
+    ic.energy(ic.stroke(arcpts(48, 54, 38, 38, math.pi, TAU, 40), 1.6, 1.6), '#ffd060', r=2, k=0.5, core=0.3, body=0.6)
+    lightning(ic, 70, 18, 86, 92, '#fff68f', w=3.4, n=5, amp=5, seed=21, branches=1)
+    lightning(ic, 26, 40, 10, 92, col, w=2.8, n=5, amp=4, seed=22, branches=1)
+    m = stander(ic, 46, 94, 1.0, arms=([(9, -50), (18, -60), (22, -70)], [(-9, -50), (-18, -42), (-24, -50)]))
+    m = np.maximum(m, ic.poly([(46 - 8, 94 - 66), (46 - 18, 94 - 74), (46 - 6, 94 - 62)])); m = np.maximum(m, ic.poly([(46 + 8, 94 - 66), (46 + 18, 94 - 74), (46 + 6, 94 - 62)]))
+    sil(ic, m, '#140828', '#d08aff')
+    for sx in (-1, 1): ic.glow(ic.ell(46 + sx * 2.2, 94 - 61, 0.9), '#ffff80', 1, 1.6)
+    ic.shade(ic.line([(68, 24), (74, 12)], 2.6), '#8a6a4a', '#2a1a08', edge=0.5, shine=0.2)
+    hm = ic.poly(rot([(-8, -5), (8, -5), (8, 5), (-8, 5)], -1.1 + math.pi / 2, 0, 0, 1, 75, 10))
+    ic.glow(hm, '#fff68f', 4, 1.2); ic.shade(hm, '#fffbe0', '#7a6a20', edge=0.6, shine=0.4, c3='#ffd040')
+    burst(ic, 75, 10, 6, '#fff68f', n=8, seed=2, k=0.8)
+    ic.sparkle(30, 18, 4, col)
+def clb8(ic, col):   # Côn Lôn Kiếm Ý
+    lightning(ic, 70, 2, 80, 94, '#fff68f', w=3.4, n=6, amp=6, seed=50, branches=1)
+    lightning(ic, 22, 2, 14, 94, col, w=3.0, n=6, amp=6, seed=51, branches=1)
+    emblem(ic, '雷', col, metal=('#f4e8ff', '#3a1a6a', '#b898e0'))
+
 # ---------------- Long Ấn ----------------
 def dr_fire(ic, col):
     fire_bed(ic, 92, '#ff4a10', seed=3, h=34, n=8)
@@ -1027,7 +1634,10 @@ _cls_map = {'tl': 'thieulam', 'tv': 'thienvuong', 'dm': 'duongmon', 'nd': 'ngudo
 _colors = {}
 def _load_colors():
     import json, subprocess
-    js = "const {CLASSES}=require('./server/data/classes');const o={};for(const c of Object.values(CLASSES))for(const s of [...c.skills,...(c.extra||[])])o[s.id]=s.color||'#ffd76a';console.log(JSON.stringify(o))"
+    js = ("const {CLASSES}=require('./server/data/classes');const {ALT}=require('./server/data/branches');const o={};"
+          "for(const c of Object.values(CLASSES))for(const s of [...c.skills,...(c.extra||[])])o[s.id]=s.color||'#ffd76a';"
+          "for(const a of Object.values(ALT))for(const s of [...a.skills,a.passive])o[s.id]=s.color||'#ffd76a';"   # hệ thứ hai
+          "console.log(JSON.stringify(o))")
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     return json.loads(subprocess.check_output(['node', '-e', js], cwd=root))
 def register():

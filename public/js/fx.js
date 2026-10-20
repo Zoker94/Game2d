@@ -43,10 +43,12 @@
   function pos(f) {
     const src = f.from ? entityById(f.from) : null;
     const tgt = f.to ? entityById(f.to) : null;
-    const sx = (f.t === 'dash') ? f.x : (src ? src.x : f.x), sy = (f.t === 'dash') ? f.y : (src ? src.y : f.y);
+    const d = DASHES.has(f.t);   // chiêu lướt: điểm xuất phát là chỗ đứng cũ
+    const sx = d ? f.x : (src ? src.x : f.x), sy = d ? f.y : (src ? src.y : f.y);
     const tx = tgt ? tgt.x : (f.tx != null ? f.tx : f.x), ty = tgt ? tgt.y : (f.ty != null ? f.ty : f.y);
     return { sx, sy, tx, ty, src };
   }
+  const DASHES = new Set(['dash', 'staffleap', 'shadowdash', 'petaldash', 'swordrider', 'lightningdash', 'drunkdash']);
   function zig(x0, y0, x1, y1, seg, amp) {
     const pts = [[x0, y0]];
     for (let i = 1; i < seg; i++) { const t = i / seg; pts.push([x0 + (x1 - x0) * t + (R() - 0.5) * amp, y0 + (y1 - y0) * t + (R() - 0.5) * amp * 0.4]); }
@@ -768,7 +770,7 @@
       const { sx, sy, tx, ty, src } = pos(f);
       const c = f.color || '#fff', r = f.r || 140;
       const bx = sx, by = sy - 28, ex = tx, ey = ty - 28;
-      if (SIG[f.t]) { SIG[f.t].draw(ctx, f, p, { sx, sy, tx, ty, src }); if (!/dragon$/.test(f.t)) spriteLayer(ctx, f, p, { sx, sy, tx, ty, bx, by, ex, ey, src, r, c }, true); continue; }
+      if (SIG[f.t]) { SIG[f.t].draw(ctx, f, p, { sx, sy, tx, ty, src }); if (!/dragon$/.test(f.t) && !SIG[f.t].own) spriteLayer(ctx, f, p, { sx, sy, tx, ty, bx, by, ex, ey, src, r, c }, true); continue; }
       switch (f.t) {
         case 'slash': case 'slash2': case 'bite': {
           const a = Math.atan2(ey - by, ex - bx);

@@ -376,6 +376,284 @@ d.ellipse([24, 24, 40, 40], fill=A_BODY); d.pieslice([24, 24, 40, 40], 90, 270, 
 d.ellipse([28, 24, 36, 32], fill=CORE); d.ellipse([28, 32, 36, 40], fill=A_BODY)
 add('bagua', [rot_img(base, -k * 11.25) for k in range(4)])
 
+
+# ======== binh khí / hình nhân cho các chiêu hình ảnh (hệ thứ hai) ========
+DARK, MID = (120, 120, 120, 235), (180, 180, 180, 240)
+
+def glow_poly(d, pts, grow=1.5, body=A_BODY):
+    """đa giác có viền sáng mờ bao quanh"""
+    cx = sum(x for x, _ in pts) / len(pts); cy = sum(y for _, y in pts) / len(pts)
+    g = []
+    for x, y in pts:
+        dx, dy = x - cx, y - cy; L = math.hypot(dx, dy) or 1
+        g.append((x + dx / L * grow, y + dy / L * grow))
+    d.polygon(g, fill=A_GLOW); d.polygon(pts, fill=body)
+
+# côn / trượng (nằm ngang, đối xứng): thân gỗ, đai kim loại hai đầu
+im, d = new()
+d.rounded_rectangle([1, 27, 63, 37], radius=4, fill=A_GLOW)
+d.rectangle([3, 29, 61, 35], fill=MID)
+d.line([(4, 30), (60, 30)], fill=CORE)
+for x0 in (3, 12, 47, 56):
+    d.rectangle([x0, 28, x0 + 4, 36], fill=CORE); d.line([(x0 + 2, 28), (x0 + 2, 36)], fill=DARK)
+d.rectangle([29, 28, 35, 36], fill=A_BODY); d.line([(30, 29), (34, 35)], fill=DARK); d.line([(30, 35), (34, 29)], fill=DARK)
+add('staff', [im])
+
+# đao cong (hướng phải): chuôi, đốc, lưỡi bản to cong lên
+im, d = new()
+back = [(18, 30), (34, 29), (46, 26), (56, 20), (62, 14)]
+edge = [(62, 14), (60, 22), (52, 31), (40, 37), (26, 39), (18, 38)]
+glow_poly(d, back + edge, 2)
+d.polygon(back + edge, fill=A_BODY)
+d.line([(20, 33), (36, 32), (48, 28), (58, 20)], fill=CORE, width=2)
+d.line(edge[1:], fill=CORE)
+d.rectangle([14, 26, 18, 42], fill=MID); d.rectangle([15, 27, 17, 41], fill=CORE)
+d.rectangle([3, 32, 14, 36], fill=DARK)
+for x in range(4, 14, 3): d.line([(x, 32), (x + 1, 36)], fill=MID)
+d.ellipse([0, 31, 5, 37], fill=MID)
+add('blade', [im])
+
+# chùy (Thiên Vương, hướng phải): cán + quả chùy gai
+im, d = new()
+d.rectangle([2, 30, 40, 34], fill=DARK); d.line([(2, 31), (40, 31)], fill=MID)
+star(d, 48, 32, 15, 8, 0.2, A_GLOW, 0.55)
+star(d, 48, 32, 13, 8, 0.2, MID, 0.6)
+d.ellipse([39, 23, 57, 41], fill=A_BODY); d.ellipse([42, 25, 50, 32], fill=CORE)
+add('hammer', [im])
+
+# hỏa lôi đạn (bom tròn, ngòi lóe lửa)
+fr = []
+for i in range(3):
+    im, d = new()
+    d.ellipse([16, 22, 46, 52], fill=A_GLOW); d.ellipse([18, 24, 44, 50], fill=MID)
+    d.ellipse([22, 27, 32, 36], fill=CORE)
+    d.rectangle([28, 18, 36, 24], fill=DARK); d.line([(29, 19), (35, 19)], fill=MID)
+    d.line([(32, 18), (36, 13), (41, 11)], fill=A_BODY, width=2)
+    star(d, 42, 10, 6 + (i % 2) * 3, 6, i * 0.5, A_BODY, 0.35); d.ellipse([40, 8, 44, 12], fill=CORE)
+    fr.append(im)
+add('bomb', fr)
+
+# địa lôi (đĩa có gai + đèn nháy)
+fr = []
+for i in range(2):
+    im, d = new()
+    for k in range(8):
+        a = k / 8 * TAU; x, y = 32 + math.cos(a) * 24, 36 + math.sin(a) * 12
+        d.polygon([(32 + math.cos(a - 0.15) * 16, 36 + math.sin(a - 0.15) * 8), (x, y), (32 + math.cos(a + 0.15) * 16, 36 + math.sin(a + 0.15) * 8)], fill=MID)
+    d.ellipse([12, 26, 52, 46], fill=A_GLOW); d.ellipse([14, 27, 50, 44], fill=DARK)
+    d.ellipse([18, 26, 46, 40], fill=MID); d.ellipse([22, 27, 42, 36], fill=A_BODY)
+    if i == 0: d.ellipse([27, 26, 37, 34], fill=CORE)
+    else: d.ellipse([29, 28, 35, 32], fill=MID)
+    fr.append(im)
+add('mine', fr)
+
+# phi tinh cơ quan (Cửu Cung Phi Tinh): sao 6 cánh có trục, xoay
+fr = []
+for i in range(2):
+    im, d = new(); rot = i * math.pi / 6
+    star(d, 32, 32, 30, 6, rot, A_GLOW, 0.38)
+    star(d, 32, 32, 27, 6, rot, A_BODY, 0.32)
+    star(d, 32, 32, 18, 6, rot, CORE, 0.3)
+    d.ellipse([24, 24, 40, 40], fill=MID); d.ellipse([27, 27, 37, 37], fill=CORE)
+    for k in range(6):
+        a = rot + math.pi / 6 + k / 6 * TAU; x, y = 32 + math.cos(a) * 6, 32 + math.sin(a) * 6
+        d.point((x, y), fill=DARK)
+    fr.append(im)
+add('flystar', fr)
+
+# cánh hoa (đào/anh đào), 2 khung lật
+fr = []
+for i in range(2):
+    im, d = new(); w = [9, 4][i]
+    pts = [(32 + math.cos(t / 20 * TAU) * w * (1 + 0.3 * math.cos(t / 20 * TAU)), 32 + math.sin(t / 20 * TAU) * 13) for t in range(20)]
+    glow_poly(d, pts, 2)
+    d.polygon([(32, 19), (30, 16), (32, 21), (34, 16)], fill=(0, 0, 0, 0))   # khía đầu cánh
+    d.line([(32, 22), (32, 42)], fill=CORE)
+    d.ellipse([32 - w * 0.4, 33, 32 + w * 0.4, 42], fill=CORE)
+    fr.append(im)
+add('petal', fr)
+
+# gai băng lớn (đứng, chân ở đáy ô)
+im, d = new()
+for dx, h, w in ((-14, 28, 6), (14, 34, 7)):
+    x = 32 + dx; glow_poly(d, [(x - w, 63), (x + dx * 0.15, 63 - h), (x + w, 63)], 1.5, MID)
+glow_poly(d, [(20, 63), (31, 1), (34, 6), (44, 63)], 2, A_BODY)
+d.polygon([(31, 1), (34, 6), (44, 63), (32, 63)], fill=MID)
+d.line([(31, 4), (28, 60)], fill=CORE, width=2); d.line([(33, 20), (38, 40)], fill=CORE)
+add('icespike', [im])
+
+# tam hoàn (vòng nguyệt sáng có điểm lóe)
+im, d = new()
+d.ellipse([5, 5, 59, 59], outline=A_GLOW, width=8)
+d.ellipse([8, 8, 56, 56], outline=A_BODY, width=4)
+d.arc([8, 8, 56, 56], 200, 320, fill=CORE, width=4)
+d.arc([12, 12, 52, 52], 30, 120, fill=MID, width=1)
+star(d, 14, 22, 6, 4, 0, CORE, 0.3)
+add('moonring', [im])
+
+# hồ lô rượu (Cái Bang)
+im, d = new()
+d.ellipse([16, 28, 48, 60], fill=A_GLOW); d.ellipse([18, 30, 46, 58], fill=MID)
+d.ellipse([21, 12, 43, 34], fill=A_GLOW); d.ellipse([23, 14, 41, 32], fill=MID)
+d.rectangle([22, 29, 42, 32], fill=DARK)
+d.ellipse([22, 34, 30, 44], fill=CORE); d.ellipse([26, 17, 32, 23], fill=CORE)
+d.rectangle([29, 6, 35, 14], fill=DARK); d.rectangle([30, 4, 34, 7], fill=A_BODY)
+d.line([(42, 30), (52, 36), (50, 46)], fill=A_BODY, width=2); d.ellipse([47, 44, 53, 50], fill=CORE)
+add('gourd', [im])
+
+# vết nứt mặt đất (nhìn từ trên, vẽ dẹt khi dùng), 3 khung lan rộng
+fr = []
+rnd = random.Random(21)
+cracks = []
+for k in range(7):
+    a = k / 7 * TAU + rnd.random() * 0.5; pts = [(32, 32)]; x, y = 32, 32
+    for s in range(6):
+        a += (rnd.random() - 0.5) * 0.7; x += math.cos(a) * 5; y += math.sin(a) * 5; pts.append((x, y))
+    cracks.append(pts)
+for i in range(3):
+    im, d = new(); n = 2 + i * 2
+    for c in cracks:
+        d.line(c[:n + 1], fill=A_GLOW, width=5); d.line(c[:n + 1], fill=A_BODY, width=3); d.line(c[:n + 1], fill=CORE, width=1)
+        if n >= 4: d.line([c[3], (c[3][0] + (c[3][1] - 32) * 0.3, c[3][1] - (c[3][0] - 32) * 0.3)], fill=A_BODY, width=1)
+    d.ellipse([26, 28, 38, 36], fill=CORE)
+    fr.append(im)
+add('crack', fr)
+
+# đầu lâu (ma đao)
+im, d = new()
+d.ellipse([14, 10, 50, 44], fill=A_GLOW); d.ellipse([16, 12, 48, 42], fill=A_BODY)
+d.rounded_rectangle([22, 36, 42, 52], radius=4, fill=A_BODY)
+d.ellipse([20, 22, 30, 32], fill=DARK); d.ellipse([34, 22, 44, 32], fill=DARK)
+d.ellipse([23, 25, 27, 29], fill=CORE); d.ellipse([37, 25, 41, 29], fill=CORE)
+d.polygon([(32, 33), (29, 39), (35, 39)], fill=DARK)
+for x in range(24, 41, 4): d.line([(x, 43), (x, 51)], fill=DARK)
+d.polygon([(16, 18), (6, 4), (20, 13)], fill=MID); d.polygon([(48, 18), (58, 4), (44, 13)], fill=MID)   # sừng
+add('skullhead', [im])
+
+# mũi tên (Truy Tâm Tiễn, hướng phải)
+im, d = new()
+d.line([(4, 32), (50, 32)], fill=A_GLOW, width=5); d.line([(6, 32), (50, 32)], fill=MID, width=2)
+glow_poly(d, [(48, 25), (62, 32), (48, 39), (51, 32)], 1.5)
+d.line([(50, 32), (61, 32)], fill=CORE)
+for dx in (0, 5):
+    d.polygon([(4 + dx, 32), (0 + dx, 24), (8 + dx, 31)], fill=A_BODY); d.polygon([(4 + dx, 32), (0 + dx, 40), (8 + dx, 33)], fill=A_BODY)
+add('arrow', [im])
+
+# ---- hình nhân (đứng, chân ở đáy ô; dùng anchor ~0.97) ----
+def robe_body(d, cx, top, bot, w0, w1, col):
+    d.polygon([(cx - w0, top), (cx + w0, top), (cx + w1, bot), (cx - w1, bot)], fill=col)
+
+# La Hán (sư hư ảnh cầm côn): khung 0 giơ côn, khung 1 nện côn xuống
+fr = []
+for i in range(2):
+    im, d = new()
+    d.ellipse([20, 1, 44, 25], outline=A_GLOW, width=3)                     # vầng hào quang
+    robe_body(d, 32, 22, 62, 9, 16, A_GLOW); robe_body(d, 32, 23, 61, 8, 15, MID)
+    d.polygon([(24, 23), (40, 23), (28, 50)], fill=A_BODY)                 # cà sa vắt chéo
+    d.line([(24, 24), (36, 60)], fill=CORE)
+    d.ellipse([26, 7, 38, 20], fill=A_BODY); d.ellipse([28, 8, 34, 13], fill=CORE)   # đầu trọc
+    for k in range(5): d.point((27 + k * 2.4, 22), fill=CORE)                # chuỗi hạt
+    if i == 0:
+        d.line([(41, 30), (44, 22)], fill=A_BODY, width=4)                  # tay giơ
+        d.line([(44, 2), (44, 62)], fill=A_GLOW, width=5); d.line([(44, 3), (44, 61)], fill=CORE, width=2)
+        d.rectangle([42, 2, 46, 6], fill=MID); d.rectangle([42, 57, 46, 61], fill=MID)
+    else:
+        d.line([(40, 30), (48, 36)], fill=A_BODY, width=4)
+        d.line([(30, 8), (62, 62)], fill=A_GLOW, width=5); d.line([(31, 9), (61, 61)], fill=CORE, width=2)
+        star(d, 60, 60, 6, 6, 0, CORE, 0.4)
+    d.line([(23, 30), (19, 42)], fill=A_BODY, width=4)
+    fr.append(im)
+add('arhat', fr)
+
+# Chiến Thần (tướng giáp, mũ lông trĩ, kích): khung 0 giơ kích, khung 1 chém
+fr = []
+for i in range(2):
+    im, d = new()
+    d.polygon([(20, 22), (44, 22), (54, 62), (10, 62)], fill=A_GLOW)                 # áo choàng
+    robe_body(d, 32, 22, 62, 10, 14, DARK)
+    d.rectangle([22, 22, 42, 44], fill=MID); d.line([(32, 23), (32, 43)], fill=DARK)
+    for y in range(26, 44, 4): d.line([(23, y), (41, y)], fill=A_BODY)            # giáp vảy
+    d.ellipse([15, 19, 27, 29], fill=A_BODY); d.ellipse([37, 19, 49, 29], fill=A_BODY)  # giáp vai
+    d.rectangle([22, 42, 42, 46], fill=CORE)
+    d.ellipse([26, 9, 38, 22], fill=A_BODY); d.rectangle([25, 7, 39, 12], fill=MID)  # đầu + mũ
+    d.rectangle([29, 13, 31, 15], fill=CORE); d.rectangle([33, 13, 35, 15], fill=CORE)
+    d.line([(28, 7), (18, 1), (10, 2)], fill=CORE, width=2); d.line([(36, 7), (46, 1), (54, 2)], fill=CORE, width=2)  # lông trĩ
+    if i == 0:
+        d.line([(46, 26), (50, 18)], fill=A_BODY, width=4)
+        d.line([(50, 0), (50, 62)], fill=MID, width=3)
+        glow_poly(d, [(48, 0), (52, -4), (55, 6), (50, 8)], 1)
+        d.chord([44, 4, 62, 20], 270, 90, fill=A_BODY)                            # lưỡi kích nguyệt
+    else:
+        d.line([(46, 26), (54, 30)], fill=A_BODY, width=4)
+        d.line([(30, 50), (63, 14)], fill=MID, width=3)
+        d.chord([52, 6, 66, 22], 180, 360, fill=A_BODY); d.line([(56, 16), (63, 8)], fill=CORE, width=2)
+    d.line([(18, 26), (14, 40)], fill=A_BODY, width=4)
+    fr.append(im)
+add('warlord', fr)
+
+# Lôi Thần (vòng trống sấm sau lưng, hai tay giơ búa)
+fr = []
+for i in range(2):
+    im, d = new()
+    for k in range(8):                                                             # vòng trống
+        a = k / 8 * TAU + i * 0.2; x, y = 32 + math.cos(a) * 26, 30 + math.sin(a) * 26
+        d.ellipse([x - 5, y - 5, x + 5, y + 5], fill=A_GLOW); d.ellipse([x - 4, y - 4, x + 4, y + 4], fill=MID); d.ellipse([x - 2, y - 2, x + 2, y + 2], fill=CORE)
+    d.ellipse([6, 4, 58, 56], outline=A_GLOW, width=2)
+    robe_body(d, 32, 24, 60, 8, 13, A_BODY)
+    d.polygon([(24, 24), (40, 24), (36, 40), (28, 40)], fill=MID)                    # ngực trần
+    d.line([(32, 26), (32, 38)], fill=DARK)
+    d.polygon([(26, 46), (19, 60), (45, 60), (38, 46)], fill=DARK)                    # váy
+    d.ellipse([26, 10, 38, 24], fill=A_BODY)
+    d.polygon([(26, 12), (24, 4), (29, 10), (32, 2), (35, 10), (40, 4), (38, 12)], fill=CORE)  # tóc dựng
+    d.polygon([(36, 17), (43, 19), (36, 21)], fill=MID)                               # mỏ chim
+    d.rectangle([29, 15, 31, 16], fill=CORE); d.rectangle([33, 15, 35, 16], fill=CORE)
+    d.polygon([(24, 26), (6, 18 - i * 6), (8, 30), (24, 34)], fill=A_GLOW)           # cánh
+    d.polygon([(40, 26), (58, 18 - i * 6), (56, 30), (40, 34)], fill=A_GLOW)
+    hy = 8 if i == 0 else 20
+    d.line([(25, 27), (14, hy)], fill=A_BODY, width=4); d.line([(39, 27), (50, hy)], fill=A_BODY, width=4)
+    d.rectangle([9, hy - 6, 19, hy - 1], fill=CORE); d.rectangle([45, hy - 6, 55, hy - 1], fill=CORE)   # búa sấm
+    star(d, 32, 42, 4, 4, 0, CORE, 0.3)
+    fr.append(im)
+add('thundergod', fr)
+
+# phượng hoàng lửa (hướng phải), 4 khung vỗ cánh
+fr = []
+for i in range(4):
+    im, d = new(); wy = [-30, -14, 10, -14][i]
+    for k in range(3):                                                              # ba lông đuôi dài uốn lượn
+        sp = (k - 1) * 9; pts_u, pts_d = [], []
+        for t in range(11):
+            u = t / 10; x = 26 - u * 24; y = 34 + sp * u + math.sin(u * 4 + i * 0.8 + k) * 3 * u
+            w = 1 + 3 * math.sin(math.pi * min(1, u * 1.3))
+            pts_u.append((x, y - w)); pts_d.append((x, y + w))
+        d.polygon(pts_u + pts_d[::-1], fill=A_BODY if k == 1 else MID)
+        ex, ey = pts_u[-1][0], (pts_u[-1][1] + pts_d[-1][1]) / 2
+        d.ellipse([ex - 3, ey - 4, ex + 4, ey + 4], fill=A_GLOW); d.ellipse([ex - 1, ey - 2, ex + 2, ey + 2], fill=CORE)
+    far = [(30, 31), (22, 32 + wy * 0.9), (14, 30 + wy * 0.75), (20, 32 + wy * 0.4), (26, 34)]   # cánh xa
+    d.polygon(far, fill=A_GLOW)
+    d.ellipse([22, 27, 44, 39], fill=A_BODY); d.ellipse([28, 29, 40, 34], fill=CORE)  # thân
+    d.line([(40, 31), (48, 22)], fill=A_BODY, width=6)                               # cổ
+    d.ellipse([45, 15, 56, 25], fill=A_BODY); d.rectangle([51, 18, 52, 19], fill=DARK)
+    d.polygon([(55, 18), (63, 21), (55, 23)], fill=CORE)                              # mỏ
+    d.polygon([(47, 17), (40, 6), (46, 11), (45, 2), (50, 13)], fill=CORE)            # mào
+    tipx = 22 + (1 if wy < 0 else 0) * 4
+    wing = [(38, 30), (26, 32 + wy * 0.85), (tipx, 32 + wy), (34, 32 + wy * 1.05), (44, 32 + wy * 0.9), (52, 32 + wy * 0.55), (44, 33)]
+    glow_poly(d, wing, 2, A_BODY)
+    for k in range(5):                                                              # lông cánh
+        t = (k + 0.5) / 5; d.line([(36 + t * 8, 31), (tipx + t * 28, 32 + wy * (1.0 - t * 0.45))], fill=CORE)
+    fr.append(im)
+add('phoenix', fr)
+
+# hư ảnh lướt (người cầm binh khí nhoài tới, hướng phải)
+im, d = new()
+d.polygon([(10, 40), (24, 30), (34, 30), (30, 46), (14, 50)], fill=A_GLOW)             # vạt áo bay
+d.polygon([(22, 28), (36, 26), (40, 40), (28, 44)], fill=A_BODY)                      # thân nghiêng
+d.ellipse([34, 16, 46, 28], fill=A_BODY); d.line([(34, 20), (24, 16), (16, 18)], fill=MID, width=2)   # đầu + tóc bay
+d.line([(28, 44), (16, 60)], fill=A_BODY, width=4); d.line([(34, 42), (46, 58)], fill=A_BODY, width=4)  # chân sải
+d.line([(38, 30), (50, 32)], fill=A_BODY, width=3)
+d.line([(48, 32), (63, 30)], fill=CORE, width=2); d.line([(46, 30), (46, 35)], fill=MID, width=2)  # kiếm
+add('lunge', [im])
+
 out = sys.argv[1] if len(sys.argv) > 1 else 'public/assets'
 os.makedirs(out, exist_ok=True)
 cols = max(len(r) for r in rows)
