@@ -1613,7 +1613,7 @@ def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
         hp.poly([(cx - 6.3, cy), (cx - 5.4, cy + 4), (cx - 3, cy + 7), (cx - 1, cy + 8.2 - (0.3 if fem else 0)), (cx + 1, cy + 8.2 - (0.3 if fem else 0)), (cx + 3, cy + 7), (cx + 5.4, cy + 4), (cx + 6.3, cy)])
         if st not in ('buns', 'turban'): hp.ell((cx - 6.5, cy + 1.6), 1.3, 2.1).ell((cx + 6.5, cy + 1.6), 1.3, 2.1)
         def face(d, cx=cx + fs, cy=cy):
-            lid, iris, white = '#2a1822', '#3a2216', '#f6f2ee'
+            lid, iris, white = '#2a1822', L.get('eyecol', '#3a2216'), L.get('eyewhite', '#f6f2ee')
             for ex, s in ((cx - 3, -1), (cx + 3, 1)):
                 for x in (ex - 1, ex, ex + 1): d.px(x, cy + 1, lid)
                 d.px(ex + s, cy + 2, white); d.px(ex, cy + 2, iris); d.px(ex - s, cy + 2, iris)
@@ -1821,6 +1821,17 @@ def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
             bd.poly([(cx + 0.8, cy + 2.6), (cx + 5.0, cy + 4.6), (cx + 6.2, cy + 6.5), (cx + 5.6, cy + 11), (cx + 4.2, cy + 17), (cx + 2.4, cy + 12), (cx - 0.6, cy + 7)])
             bd.mark(lambda d: d.line([(cx + 3.6, cy + 8), (cx + 3.8, cy + 14)], 1, 0.5))
         parts.append(bd)
+    if L.get('horns'):   # sừng (ma đầu): cong ra ngoài rồi vút lên, mặt trái sáng
+        hcol = L['horns']
+        if view == 'right':
+            specs = [((cx - 2.6, cy - 6.4), [(cx - 6.0, cy - 10.5), (cx - 9.6, cy - 13.0), (cx - 11.2, cy - 17.5)], -0.4),
+                     ((cx + 1.6, cy - 6.8), [(cx - 0.6, cy - 11.5), (cx - 3.4, cy - 14.8), (cx - 4.2, cy - 19.5)], 0.4)]
+        else:
+            specs = [((cx + sx * 4.4, cy - 5.6), [(cx + sx * 7.8, cy - 9.8), (cx + sx * 9.2, cy - 14.4), (cx + sx * 7.6, cy - 19.0)], 0.5 if view == 'down' else -0.5) for sx in (-1, 1)]
+        for b, pts, z in specs:
+            hn = Part(hd + z, hcol, sig=1.2, spec=0.55, ol=2).ribbon([b] + pts, 3.6, 0.5)
+            hn.mark(lambda d, b=b, pts=pts: [d.line([(b[0] + (pts[0][0] - b[0]) * k, b[1] + (pts[0][1] - b[1]) * k - 1), (b[0] + (pts[0][0] - b[0]) * k + 1.2, b[1] + (pts[0][1] - b[1]) * k)], dark(hcol, 0.45), 0.6) for k in (0.3, 0.7, 1.0)])
+            parts.append(hn)
     if htier: helmet_parts(L, B, J, pr, view, htier, cx, cy, hd + 1.0, helm)
 
 
