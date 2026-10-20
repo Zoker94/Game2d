@@ -216,7 +216,10 @@
     $('class-desc').textContent = cl.desc;
     const b = cl.base;
     $('class-stats').innerHTML = `<div>❤️ ${b.hp}</div><div>💧 ${b.mp}</div><div>⚔️ ${b.atk}</div><div>🛡️ ${b.def}</div><div>💥 ${b.crit}%</div><div>👟 ${b.spd}</div>`;
-    $('class-skills').innerHTML = cl.skills.map(s => `<div>⭐ <b>${s.name}</b> <span class="muted">(Cấp ${s.lv}${s.mp ? ', ' + s.mp + ' MP' : ''})</span></div>`).join('');
+    // hai hệ võ công: hệ mặc định khi tạo nhân vật, đổi trong bảng Võ Công (miễn phí dưới cấp 20)
+    const brs = cl.branches ? [cl.branches[cl.defBranch], ...Object.values(cl.branches).filter(b => b.key !== cl.defBranch)] : [{ name: '', skills: cl.skills }];
+    $('class-skills').innerHTML = brs.map((b, k) => `<div class="cs-br"><span class="br-tag br-${b.key || 'noi'}">${b.kind || ''}</span> <b>${b.name}</b>${k === 0 ? ' <span class="muted small">(mặc định)</span>' : ' <span class="muted small">(đổi trong bảng Võ Công)</span>'}</div>`
+      + b.skills.filter((s, i) => i !== 3).map(s => `<div>⭐ <b>${s.name}</b>${s.ult ? ' <span class="br-ult">Tuyệt kỹ</span>' : ''} <span class="muted">(Cấp ${s.lv}${s.mp ? ', ' + s.mp + ' MP' : ''})</span></div>`).join('')).join('');
   }
   function animPreview() {
     previewT++;
@@ -324,6 +327,7 @@
     s.on('weather', w => Weather.set(w));
     s.on('cartGone', id => { G.carts.delete(id); if (G.target === id) G.target = null; });
     s.on('fx', onFx);
+    s.on('ultHit', onUltHit);
     s.on('dmg', onDmg);
     s.on('gain', d => {
       if (d.exp) addFloat(G.self.x, G.self.y - 90, d.party ? `+${d.exp} KN 👥` : `+${d.exp} KN`, d.party ? '#9effb0' : '#ffe48a', 13);
@@ -427,7 +431,7 @@
       }
       let e = G.players.get(p.i);
       if (!e) { e = { x: p.x, y: p.y }; G.players.set(p.i, e); }
-      Object.assign(e, { id: p.i, name: p.n, cls: p.c, tx: p.x, ty: p.y, dir: p.d, moving: p.m, hp: p.h, maxHp: p.H, level: p.l, guild: p.g, dead: p.a, gm: p.v, ap: p.q, st: p.s || 0, el: p.el || '', pw: p.pw || 0, rk: p.rk || 0, k: p.k || 0, pm: p.pm || 0, rb: p.rb || 0, mc: p.mc || 0, bf: p.bf || null, seen: now });
+      Object.assign(e, { id: p.i, name: p.n, cls: p.c, tx: p.x, ty: p.y, dir: p.d, moving: p.m, hp: p.h, maxHp: p.H, level: p.l, guild: p.g, dead: p.a, gm: p.v, ap: p.q, st: p.s || 0, el: p.el || '', pw: p.pw || 0, rk: p.rk || 0, k: p.k || 0, pm: p.pm || 0, rb: p.rb || 0, mc: p.mc || 0, bf: p.bf || null, md: p.md || 0, seen: now });
       if (p.d === 1 || p.d === 2) e.lastH = p.d;
     }
     for (const id of G.players.keys()) if (!seenP.has(id)) G.players.delete(id);
@@ -475,6 +479,7 @@
     G.fx.push(f);
     FxSpawn(f);
     if (ULTI[d.t]) ulti(d);
+    else if (d.ult) ultSkill(d);
     if (d.t === 'levelup' && !d.small) sfx('level');
     else fxSound(d);
   }
@@ -500,6 +505,31 @@
     void ov.offsetWidth; ov.classList.add('play');
     clearTimeout(ov._t); ov._t = setTimeout(() => ov.classList.remove('play'), 2200);
   }
+  // tuyệt kỹ của hai hệ võ công: người ra chiêu rung mạnh 2 nhịp + màn hình nứt tại điểm giáng đòn; người đứng gần rung nhẹ
+  function ultSkill(d) {
+    const self = d.from === G.you;
+    const wx = d.tx != null ? d.tx : d.x, wy = d.ty != null ? d.ty : d.y;
+    const near = Math.hypot(wx - G.self.x, wy - G.self.y);
+    if (!self) { if (near < 520 && G.settings.shake) G.rumble(7 * (1 - near / 520) + 2, 500); return; }
+    const t = performance.now();
+    if (G.settings.shake) {
+      rumbles.push({ t0: t, t1: t + 260, amp: 6, grow: true });          // gồng chiêu
+      rumbles.push({ t0: t + 260, t1: t + 1160, amp: 26 });             // giáng đòn: rung dữ rồi tắt dần
+      if (navigator.vibrate) try { navigator.vibrate([40, 30, 140]); } catch (e) { }
+    }
+    const sk = (G.mySkills() || []).find(s => s && s.fx === d.t);
+    setTimeout(() => { const p = toScreen(wx, wy - 30); UltFX.crack(p[0], p[1], d.color, false); GameAudio.sfx('thunder', 0); }, 260);
+    if (sk) UltFX.banner(sk.name, d.color, false);
+  }
+  // trúng tuyệt kỹ của người chơi khác: rung, nứt màn, viền đỏ, tên chiêu
+  function onUltHit(d) {
+    if (G.settings.shake) { const t = performance.now(); rumbles.push({ t0: t, t1: t + 900, amp: 20 }); if (navigator.vibrate) try { navigator.vibrate([120, 40, 80]); } catch (e) { } }
+    const p = toScreen(G.self.x, G.self.y - 40);
+    UltFX.crack(p[0], p[1], d.color || '#ff4040', true);
+    UltFX.banner(d.name || 'Tuyệt kỹ', d.color, true);
+  }
+  // toạ độ thế giới -> toạ độ màn hình (px CSS)
+  function toScreen(wx, wy) { return [(wx - cam.x) * zoom, (wy - cam.y) * zoom]; }
   function rumbleAmp(now) {
     let a = 0;
     for (let i = rumbles.length - 1; i >= 0; i--) {
@@ -625,12 +655,16 @@
     return out;
   }
   G.scaleSkill = scaleSkill;
+  // hệ võ công đang tu (Nội công / Ngoại công): bộ chiêu, nội công bị động, tầm đánh thường
+  G.myBranch = () => { const cl = G.data.classes[G.me.cls]; return (cl.branches && (cl.branches[G.me.branch] || cl.branches[cl.defBranch])) || { skills: cl.skills, passive: cl.extra && cl.extra[1], range: cl.range }; };
+  G.myRange = () => G.myBranch().range;
   function mySkills() {
     if (!G.me) return [];
     const learnedMap = G.me.skills || {};
-    const list = G.data.classes[G.me.cls].skills.map((s, i) => Object.assign(scaleSkill(s, learnedMap[s.id] || 1), { idx: i, slv: learnedMap[s.id] || 1, learned: i === 0 || !!learnedMap[s.id] }));
+    const br = G.myBranch();
+    const list = br.skills.map((s, i) => Object.assign(scaleSkill(s, learnedMap[s.id] || 1), { idx: i, slv: learnedMap[s.id] || 1, learned: i === 0 || !!learnedMap[s.id] }));
     if (G.me.dragon && G.me.dragons && G.me.dragons[G.me.dragon]) { const d = G.data.dragons[G.me.dragon]; list[6] = Object.assign(scaleSkill(d, learnedMap[d.id] || 1), { idx: 6, slv: learnedMap[d.id] || 1, learned: true }); }
-    (G.data.classes[G.me.cls].extra || []).forEach((s, k) => { list[7 + k] = Object.assign(scaleSkill(s, learnedMap[s.id] || 1), { idx: 7 + k, slv: learnedMap[s.id] || 1, learned: !!learnedMap[s.id] }); });
+    [G.data.classes[G.me.cls].extra[0], br.passive].forEach((s, k) => { if (s) list[7 + k] = Object.assign(scaleSkill(s, learnedMap[s.id] || 1), { idx: 7 + k, slv: learnedMap[s.id] || 1, learned: !!learnedMap[s.id] }); });
     return list;
   }
   // ô kỹ năng 1..6 -> chỉ số võ công (0 = trống)
@@ -655,7 +689,7 @@
     if (G.pending[i] && now - G.pending[i] < 300) return;
     if (i === 0 || (sk.type !== 'buff' && sk.type !== 'heal')) {
       if (G.map.safe && !Duel.fighting()) { if (i > 0 || !G._safeWarn || now - G._safeWarn > 3000) { UI.toast('Không thể giao chiến trong thành', 'error'); G._safeWarn = now; } return; }
-      const t = validTarget() || pickTarget(Math.max(sk.range || 0, G.data.classes[G.me.cls].range) + 40);
+      const t = validTarget() || pickTarget(Math.max(sk.range || 0, G.myRange()) + 40);
       if (!t && (sk.type === 'single' || sk.type === 'dot')) {
         // không có mục tiêu: chạy tới quái gần nhất trong 350px
         const near = nearestEnemy(350);
@@ -900,7 +934,7 @@
       if (!t || t.dead) G.chase = null;
       else {
         const sk = mySkills()[G.chase.skill] || mySkills()[0];
-        const range = (sk.range || G.data.classes[G.me.cls].range) * 0.85;
+        const range = (sk.range || G.myRange()) * 0.85;
         const d = Math.hypot(t.x - s.x, t.y - s.y);
         if (d > range) G.moveTo = { x: t.x, y: t.y, chase: true };
         else { G.moveTo = null; useSkill(G.chase.skill); if (G.chase.skill !== 0) G.chase.skill = 0; }
@@ -1048,7 +1082,7 @@
       if (!sk || !sk.learned || me.level < sk.lv || !skillReady(i) || me.mp < sk.mp) continue;
       if (sk.type === 'buff') { if (!me.buffs.some(b => b.name === sk.name)) { useSkill(i); return; } continue; }
       if (sk.type === 'heal') { if (me.hp < st.maxHp * 0.6) { useSkill(i); return; } continue; }
-      const range = (sk.type === 'aoe' && !sk.range ? sk.radius : (sk.range || G.data.classes[me.cls].range)) * 0.85;
+      const range = (sk.type === 'aoe' && !sk.range ? sk.radius : (sk.range || G.myRange())) * 0.85;
       const d = Math.hypot(t.x - s.x, t.y - s.y);
       if (d > range) { if (i === 0) G.moveTo = { x: t.x, y: t.y }; continue; }
       G.moveTo = null;
@@ -1401,6 +1435,19 @@
     }
     return m;
   }
+  // Ngồi thiền: vòng khí xanh nhạt dưới đất, các đốm linh khí bay lên và tụ vào người
+  function medAura(x, y, now, seed) {
+    const t = now / 1000 + seed;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    ctx.translate(Math.round(x), Math.round(y) - 2); ctx.scale(1, 0.42);
+    for (let k = 0; k < 2; k++) {
+      const r = 26 + k * 10 + Math.sin(t * 2 + k) * 2;
+      ctx.strokeStyle = `rgba(150,230,255,${0.32 - k * 0.12})`; ctx.lineWidth = 3 - k;
+      ctx.beginPath(); ctx.arc(0, 0, r, t * (k ? -0.6 : 0.8), t * (k ? -0.6 : 0.8) + Math.PI * 1.6); ctx.stroke();
+    }
+    ctx.restore();
+    if (Math.random() < 0.12) FX.emit(1, x + (Math.random() - 0.5) * 50, y - 4, { speed: 4, vy: -26, life: 1400, size: 2.6, color: Math.random() < 0.5 ? '#bff4ff' : '#fff6c0', drag: 0.4 });
+  }
   // Vẽ nhân vật (có thú cưỡi, hào quang cường hóa). Trả về tọa độ y đỉnh đầu để vẽ tên.
   function drawHero(x, y, cls, dir, lastH, moving, atk, ap, dead, seed, now, ent) {
     ap = ap || [];
@@ -1423,6 +1470,11 @@
         dir = mo.vdir;
       }
       else if (moving) { state = 'walk'; fi = Math.floor(now / 70 + seed) % Assets.frameCount(cls, 'walk'); }
+      else if (ent && (ent === G.self ? G.me && G.me.med : ent.md) && !ap[7]) {   // ngồi thiền (đứng yên trong thành 30 giây)
+        state = 'med'; fi = Math.floor(now / 325 + seed) % Assets.frameCount(cls, 'med');
+        if (dir > 3) dir = dir === 4 || dir === 6 ? 2 : 1;   // ngồi thiền chỉ có 4 hướng
+        medAura(x, y, now, seed);
+      }
       else { fi = Math.floor(now / 200 + seed) % Assets.frameCount(cls, 'idle'); if (mo) dir = mo.vdir; }
     }
     const colors = G.data.classes[cls].colors;

@@ -419,7 +419,9 @@ def solve(B, P):
     for side, k in ((1, 'R'), (-1, 'L')):
         J['hp' + k] = hip + Rp @ V(side * B['hw'], 0, 0)
         la, lk, lb = P['leg' + k]
-        d1 = Rp @ limb(la, lb, side); d2 = Rp @ limb(la - lk, lb, side)
+        d1 = Rp @ limb(la, lb, side)
+        sh = P.get('shin' + k)   # hướng cẳng chân riêng (a, b) khi cần gập vào trong (ngồi kiết già)
+        d2 = Rp @ (limb(sh[0], sh[1], side) if sh else limb(la - lk, lb, side))
         J['kn' + k] = J['hp' + k] + d1 * B['thigh']; J['an' + k] = J['kn' + k] + d2 * B['shin']
         fp = P['foot' + k]
         fd = Rp @ V(0, math.cos(fp), math.sin(fp))
@@ -594,6 +596,16 @@ def _anim_pose(L, B, name):
                     a = base['arm' + k]; P['arm' + k] = (a[0] + 0.04 * b, a[1] + 0.02 * b, a[2] + 0.05 * b)
             return P
         return f
+    if name == 'meditate':   # ngồi kiết già: đùi xoè ngang, cẳng chân gập vào trong, hai tay kết ấn trước bụng
+        def f(t):
+            P = dict(base); b = math.sin(TAU * t)
+            P.update(legR=(1.5, 0.0, 0.95), legL=(1.5, 0.0, 0.95), shinR=(1.5, -1.2), shinL=(1.45, -1.25), footR=-0.6, footL=-0.6, air=True, lift=0.0,
+                     root=(0.0, 0.0, 6.5 - B['hip'] + 0.25 * b), hipyaw=0.0, twist=0.0, side=0.0,
+                     lean=0.03 + 0.015 * b, head=(0.12 - 0.03 * b, 0.0), breath=0.5 + 0.5 * b,
+                     ikR=(2.6, 8.5, -15.5), ikL=(-2.6, 8.5, -15.5), gripw=0.0, openR=0.0, openL=0.0)
+            P['wR'] = (1.57, 0.05); P['wL'] = (-1.57, 0.05)   # binh khí đặt nằm ngang trên đùi
+            return P
+        return f
     if name in ('walk', 'run'):
         run = name == 'run'
         def f(t):
@@ -652,7 +664,7 @@ def _anim_pose(L, B, name):
 
 ANIMS = [('idle', 8, 1.6, True), ('walk', 12, 0.8, True), ('run', 12, 0.56, True), ('attack', 12, 0.62, False),
          ('ride', 4, 0.44, True), ('ride_attack', 8, 0.62, False), ('ride_cast', 8, 0.9, False), ('ride_hurt', 3, 0.3, False),
-         ('cast', 12, 0.9, False), ('hurt', 4, 0.3, False), ('death', 8, 0.9, False)]
+         ('cast', 12, 0.9, False), ('hurt', 4, 0.3, False), ('death', 8, 0.9, False), ('meditate', 8, 2.6, True)]
 DIAG_ANIMS = {'idle', 'walk', 'run'}   # động tác có thêm 2 hướng chéo
 COLS = 8                               # số cột của sheet; động tác > 8 khung xuống dòng (mỗi hướng ceil(n / 8) hàng)
 FRAME_T = {'attack': [0, .1, .2, .28, .35, .41, .46, .5, .56, .66, .78, .9], 'cast': [0, .08, .16, .24, .32, .4, .48, .56, .64, .74, .84, .96],

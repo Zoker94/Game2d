@@ -2,6 +2,16 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '21/10/2026',
+    items: [
+      'Mỗi môn phái chia hai hệ: Nội công (vận khí, mạnh theo điểm Nội Công, xuyên 20% phòng thủ) và Ngoại công (binh khí, mạnh theo điểm Sức Mạnh). Mỗi hệ có bộ chiêu và nội công bị động riêng – xem bảng Võ Công, mục "Hệ phái". Đổi hệ miễn phí dưới cấp 20, từ cấp 20 cần Tẩy Tủy Kinh.',
+      'Vật phẩm mới: Tẩy Tủy Kinh (tẩy điểm võ học) và Tẩy Tiềm Năng Đan (tẩy điểm tiềm năng miễn phí) – bán ở Tàng Kinh Các và Kỳ Trân Các.',
+      'Ngồi thiền: đứng yên trong thành 30 giây sẽ tự ngồi thiền – hồi phục nhanh gấp đôi và mỗi 5 giây lĩnh ngộ thêm kinh nghiệm.',
+      'Chiêu thức hiện hình rõ hơn: kiếm, côn, đao, đạn, băng, hoa, hình nhân… thay cho vệt sáng (ví dụ Vô Ngã Vô Kiếm của Võ Đang: kiếm bay quanh người rồi phóng tới địch).',
+      'Tuyệt kỹ: rung màn hình dữ dội, màn hình nứt vỡ tại điểm giáng đòn; người bị trúng tuyệt kỹ cũng thấy màn hình nứt và viền đỏ.'
+    ]
+  },
+  {
     date: '20/10/2026',
     items: [
       'Nhân vật di chuyển 8 hướng: đi xiên thấy dáng chéo (nghiêng 3/4), dừng lại vẫn giữ hướng chéo.',

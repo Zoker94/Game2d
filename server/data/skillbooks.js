@@ -37,14 +37,15 @@ const skillPointsTotal = level => Math.max(0, level - 1);
 
 const BOOKS = {};       // itemId -> { cls, skillId, idx }
 for (const [cls, cl] of Object.entries(CLASSES)) {
-  cl.skills.forEach((sk, idx) => {
-    if (idx === 0) return;
-    BOOKS['sk_' + sk.id] = { cls, skillId: sk.id, idx, name: sk.name, lv: sk.lv, price: BOOK_PRICE[idx] };
-  });
-  (cl.extra || []).forEach((sk, k) => {
-    const idx = 7 + k;
-    BOOKS['sk_' + sk.id] = { cls, skillId: sk.id, idx, name: sk.name, lv: sk.lv, price: BOOK_PRICE[idx], passive: sk.type === 'passive' };
-  });
+  for (const br of Object.values(cl.branches)) {   // sách cả hai hệ (ô 3 buff dùng chung chỉ có 1 cuốn)
+    br.skills.forEach((sk, idx) => {
+      if (idx === 0 || BOOKS['sk_' + sk.id]) return;
+      BOOKS['sk_' + sk.id] = { cls, skillId: sk.id, idx, name: sk.name, lv: sk.lv, price: BOOK_PRICE[idx], branch: sk.branch || null };
+    });
+    BOOKS['sk_' + br.passive.id] = { cls, skillId: br.passive.id, idx: 8, name: br.passive.name, lv: br.passive.lv, price: BOOK_PRICE[8], passive: true, branch: br.key };
+  }
+  const ab = cl.extra[0];
+  BOOKS['sk_' + ab.id] = { cls, skillId: ab.id, idx: 7, name: ab.name, lv: ab.lv, price: BOOK_PRICE[7], passive: false, branch: null };
 }
 
 module.exports = { SKILL_MAX, scaleSkill, upgradeCost, skillPointsTotal, BOOKS, BOOK_PRICE };

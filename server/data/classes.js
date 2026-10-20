@@ -126,7 +126,7 @@ const CLASSES = {
     growth: { hp: 24, mp: 10, atk: 4.9, def: 1.9, crit: 0.07 },
     skills: [
       { id: 'vd0', name: 'Thái Cực Kiếm Khí', lv: 1, mp: 0, cd: 700, type: 'single', mult: 1.0, range: 260, fx: 'bolt', color: '#b0c4de' },
-      { id: 'vd1', name: 'Vô Ngã Vô Kiếm', lv: 3, mp: 15, cd: 4000, type: 'line', mult: 2.3, range: 320, width: 50, fx: 'beam', color: '#87ceeb' },
+      { id: 'vd1', name: 'Vô Ngã Vô Kiếm', lv: 3, mp: 15, cd: 4000, type: 'line', mult: 2.3, range: 320, width: 50, fx: 'orbitswords', color: '#87ceeb' },
       { id: 'vd2', name: 'Thái Cực Đồ', lv: 6, mp: 32, cd: 9000, type: 'aoe', mult: 1.8, radius: 150, range: 260, fx: 'taiji', color: '#ffffff' },
       { id: 'vd3', name: 'Tọa Vong Vô Ngã', lv: 20, mp: 40, cd: 25000, type: 'buff', buff: { atk: 0.25, regen: 0.015, dur: 12000 }, fx: 'aura', color: '#4169e1' },
       { id: 'vd4', name: 'Thất Tinh Kiếm Trận', lv: 35, mp: 45, cd: 9000, type: 'aoe', mult: 2.9, radius: 150, range: 280, fx: 'swords', color: '#9fc5ff' },
@@ -174,18 +174,35 @@ const EXTRA = {
   conlon:     [{ id: 'cl6', name: 'Ngũ Lôi Hộ Pháp', lv: 25, mp: 50, cd: 30000, type: 'buff', buff: { atk: 0.2, reflect: 10, crit: 10, dur: 12000 }, aura: 'thunder', fx: 'aura', color: '#d08aff', desc: 'Ngũ lôi quấn thân: +20% tấn công, +10% chí mạng, phản lại 10% sát thương.' },
                { id: 'cl7', name: 'Côn Lôn Đạo Pháp', lv: 40, type: 'passive', passive: { atk: 0.06, mp: 0.08 }, color: '#da70d6', desc: 'Đạo pháp huyền môn: +6% tấn công, +8% nội lực.' }]
 };
+// hai hệ Nội công / Ngoại công (server/data/branches.js): hệ mặc định dùng bộ võ công trên, hệ còn lại thay ô 0, 1, 2, 4, 5 và nội công bị động
+const { BRANCH_INFO, ALT, BRANCH_NAME } = require('./branches');
 for (const k in CLASSES) {
-  CLASSES[k].extra = EXTRA[k];
-  CLASSES[k].skills.forEach(s => { if (s.type === 'buff' && !s.aura) s.aura = 'ring'; });
+  const cl = CLASSES[k];
+  cl.extra = EXTRA[k];
+  cl.skills.forEach(s => { if (s.type === 'buff' && !s.aura) s.aura = 'ring'; });
+  cl.skills[5].ult = true;   // tuyệt kỹ: rung màn hình mạnh, nứt màn
+  const info = BRANCH_INFO[k], other = info.def === 'noi' ? 'ngoai' : 'noi', alt = ALT[k];
+  const altSkills = [alt.skills[0], alt.skills[1], alt.skills[2], cl.skills[3], alt.skills[3], alt.skills[4]];
+  cl.branches = {
+    [info.def]: { key: info.def, kind: BRANCH_NAME[info.def], name: info[info.def], skills: cl.skills, passive: cl.extra[1], range: cl.range },
+    [other]: { key: other, kind: BRANCH_NAME[other], name: info[other], skills: altSkills, passive: alt.passive, range: alt.skills[0].range }
+  };
+  for (const b of Object.values(cl.branches)) { b.skills.forEach(s => { if (s.branch == null && s !== cl.skills[3]) s.branch = b.key; }); b.passive.branch = b.key; }
+  cl.defBranch = info.def;
 }
-// lấy võ công theo ô: 0-5 chiêu môn phái, 7 buff chủ động, 8 nội công bị động (6 là Long Ấn, xem dragons.js)
+const branchOf = c => (c && CLASSES[c.cls] && CLASSES[c.cls].branches[c.branch]) ? c.branch : (c && CLASSES[c.cls] ? CLASSES[c.cls].defBranch : 'noi');
+// lấy võ công theo ô: 0-5 chiêu môn phái, 7 buff chủ động, 8 nội công bị động (6 là Long Ấn, xem dragons.js); theo hệ đang tu
 const ACTIVE_BUFF_SLOT = 7, PASSIVE_SLOT = 8;
-function classSkill(cls, idx) {
+function classSkill(cls, idx, branch) {
   const cl = CLASSES[cls];
   if (!cl) return null;
-  if (idx >= 0 && idx < cl.skills.length) return cl.skills[idx];
-  if (idx === ACTIVE_BUFF_SLOT || idx === PASSIVE_SLOT) return cl.extra[idx - ACTIVE_BUFF_SLOT];
+  const br = cl.branches[branch] || cl.branches[cl.defBranch];
+  if (idx >= 0 && idx < br.skills.length) return br.skills[idx];
+  if (idx === ACTIVE_BUFF_SLOT) return cl.extra[0];
+  if (idx === PASSIVE_SLOT) return br.passive;
   return null;
 }
+// tầm đánh thường theo hệ (hệ nội công của phái cận chiến đánh tầm trung và ngược lại)
+const classRange = (cls, branch) => { const cl = CLASSES[cls]; if (!cl) return 80; const br = cl.branches[branch] || cl.branches[cl.defBranch]; return br.range; };
 
-module.exports = { CLASSES, classSkill, ACTIVE_BUFF_SLOT, PASSIVE_SLOT };
+module.exports = { CLASSES, classSkill, classRange, branchOf, ACTIVE_BUFF_SLOT, PASSIVE_SLOT };

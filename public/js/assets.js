@@ -13,7 +13,7 @@
   const CLASSES = ['thieulam', 'ngudoc', 'thienvuong', 'caibang', 'vodang', 'ngamy', 'thuyyen', 'conlon', 'duongmon'];
   const SRC = 144, CELL = 96, FOOT_X = 48, FOOT_Y = 86;
   const STATE_ANIM = { idle: 'idle', walk: 'walk', run: 'run', atk: 'attack', cast: 'cast', hurt: 'hurt', dead: 'death',
-                       ride: 'ride', ride_atk: 'ride_attack', ride_cast: 'ride_cast', ride_hurt: 'ride_hurt' };
+                       ride: 'ride', ride_atk: 'ride_attack', ride_cast: 'ride_cast', ride_hurt: 'ride_hurt', med: 'meditate' };
   // Quái / boss: thêm tên quái (id trong server/data/monsters.js) vào đây khi có ảnh
   // public/assets/monsters/<id>.png (ảnh nền trong suốt, chân nhân vật ở đáy ảnh).
   const MONSTERS = [];

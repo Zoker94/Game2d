@@ -1,5 +1,6 @@
 // Lõi thế giới game: bản đồ, người chơi, quái vật, chiến đấu, rơi đồ, NPC.
-const { CLASSES, classSkill, PASSIVE_SLOT } = require('../data/classes');
+const { CLASSES, classSkill, classRange, branchOf, PASSIVE_SLOT } = require('../data/classes');
+const { BRANCH_BONUS, BRANCH_FREE_LV } = require('../data/branches');
 const { ITEMS, RARITY, equipId } = require('../data/items');
 const { MONSTERS, BOSSES } = require('../data/monsters');
 const VM_IDS = ['vm_tq1', 'vm_tq2', 'vm_tq3', 'vm_tq4', 'vm_tq5', 'vm_tq6', 'vm_tq7'];
@@ -132,7 +133,7 @@ class World {
       id: 'p' + (entSeq++), userId: user.id, user, c, socket,
       mapId: null, x: 0, y: 0, dir: 0, moving: false,
       buffs: [], cds: {}, stats: null, dead: false, target: null,
-      lastMove: Date.now(), lastCombat: 0, lastChat: 0, dirtyMe: true, joinAt: Date.now(),
+      lastMove: Date.now(), stillSince: Date.now(), med: false, lastCombat: 0, lastChat: 0, dirtyMe: true, joinAt: Date.now(),
       lastPos: null
     };
     this.players.set(user.id, p);
@@ -186,7 +187,7 @@ class World {
     if (old && old.def.instance && p.mapId !== mapId && this.dungeon) this.dungeon.onExit(p, p.mapId);
     if (p.recall) this.cancelRecall(p);
     const m = this.maps[mapId];
-    p.mapId = mapId; p.x = x; p.y = y; p.c.map = mapId; p.target = null; p.lastMove = Date.now();
+    p.mapId = mapId; p.x = x; p.y = y; p.c.map = mapId; p.target = null; p.lastMove = Date.now(); this.wake(p, Date.now());
     m.players.add(p);
     p.socket.join('map:' + mapId);
     const d = m.def;
@@ -228,10 +229,10 @@ class World {
       dragons: c.dragons || {}, dragon: c.dragon || null,
       minhChu: this.daihoi && this.daihoi.isMinhChu(p.userId) ? 1 : 0,
       attr: c.attr || {}, attrFree: attrTotal(c.level) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
-      skills: c.skills || {}, hotbar: c.hotbar, sp: skillPointsTotal(c.level) - (c.spSpent || 0),
+      branch: branchOf(c), skills: c.skills || {}, hotbar: c.hotbar, sp: skillPointsTotal(c.level) - (c.spSpent || 0),
       mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
       sect: this.sect ? this.sect.meView(p) : null,
-      st: this.statusView(p), friends: Object.keys(c.friends || {}).length, friendIds: this.friendIds(c), pk: c.pk || 0,
+      med: !!p.med, st: this.statusView(p), friends: Object.keys(c.friends || {}).length, friendIds: this.friendIds(c), pk: c.pk || 0,
       rank: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0
     };
   }
@@ -287,7 +288,7 @@ class World {
       if (r.gold) { p.c.gold += r.gold; B.gold += r.gold; }
       if (r.knb) { p.c.knb += r.knb; B.knb += r.knb; }
       for (let [id, qty] of (r.items || [])) {
-        if (id === '@book1') id = 'sk_' + CLASSES[p.c.cls].skills[1].id;
+        if (id === '@book1') id = 'sk_' + classSkill(p.c.cls, 1, branchOf(p.c)).id;
         this.giveItem(p, id, qty);
         B.items.set(id, (B.items.get(id) || 0) + qty);
       }
@@ -299,7 +300,7 @@ class World {
     if (r.gold) { p.c.gold += r.gold; parts.push(`${r.gold} lượng`); }
     if (r.knb) { p.c.knb += r.knb; parts.push(`${r.knb} Nguyên Bảo`); }
     for (let [id, qty] of (r.items || [])) {
-      if (id === '@book1') id = 'sk_' + CLASSES[p.c.cls].skills[1].id;
+      if (id === '@book1') id = 'sk_' + classSkill(p.c.cls, 1, branchOf(p.c)).id;
       this.giveItem(p, id, qty);
       parts.push(`${ITEMS[id] ? ITEMS[id].name : id} x${qty}`);
     }
@@ -366,6 +367,7 @@ class World {
       return;
     }
     if (p.recall && Math.hypot(x - p.recall.x, y - p.recall.y) > 24) this.cancelRecall(p, 'Bạn đã di chuyển');
+    if (d > 0.5) this.wake(p, now);
     p.x = x; p.y = y;
     p.dir = (data.d | 0) & 3;
     p.moving = !!data.m;
@@ -584,10 +586,11 @@ class World {
 
   useSkill(p, idx, targetId) {
     if (p.dead) return;
+    this.wake(p, Date.now());
     if (isCC(p, Date.now())) return this.toast(p, 'Đang bị khống chế, không thể ra chiêu!', 'error');
     const cl = CLASSES[p.c.cls];
     idx = idx | 0;
-    const base = idx === DRAGON_SLOT ? (p.c.dragon && p.c.dragons && p.c.dragons[p.c.dragon] ? DRAGONS[p.c.dragon] : null) : classSkill(p.c.cls, idx);
+    const base = idx === DRAGON_SLOT ? (p.c.dragon && p.c.dragons && p.c.dragons[p.c.dragon] ? DRAGONS[p.c.dragon] : null) : classSkill(p.c.cls, idx, branchOf(p.c));
     if (!base) { if (idx === DRAGON_SLOT) this.toast(p, 'Chưa lĩnh ngộ Long Ấn. Dùng Bí Kíp rồng (cấp 30) để học.', 'error'); return; }
     if (idx > 0 && idx !== DRAGON_SLOT && !p.c.skills[base.id]) return this.toast(p, `Chưa học ${base.name}. Mua sách tại Tàng Kinh Các ở Tương Dương.`, 'error');
     if (base.type === 'passive') return this.toast(p, `${base.name} là nội công bị động, đã tự có hiệu lực`, 'info');
@@ -613,20 +616,21 @@ class World {
       }
     } else {
       if (map.def.safe && !(p.duel && p.duel.state === 'fight')) return this.toast(p, 'Không thể giao chiến trong thành', 'error');
-      const range = sk.range || cl.range;
+      const range = sk.range || classRange(p.c.cls, branchOf(p.c));
       const t = this.findTarget(p, Math.max(range, sk.type === 'aoe' ? sk.radius : 0), targetId);
       if (!t && (sk.type === 'single' || sk.type === 'dot' || sk.type === 'dash')) {
         if (idx === 0) return; // đánh thường không có mục tiêu: bỏ qua im lặng
         return this.toast(p, 'Không có mục tiêu trong tầm', 'error');
       }
       if (t) { this.faceTo(p, t); p.target = t.id; }
-      if (isRanged(p.c.cls) && sk.type !== 'dash') {   // chống thả diều: đánh xa phải đứng yên vận chiêu
+      if (isRanged(p) && sk.type !== 'dash') {   // chống thả diều: đánh xa phải đứng yên vận chiêu
         const lock = idx === 0 ? CAST_LOCK.basic : CAST_LOCK.skill;
         p.castLock = now + lock; p.socket.emit('castLock', { ms: lock });
       }
       const enemies = this.enemiesOf(p);
       let hits = [];
       let fxd = { t: sk.fx, from: p.id, x: p.x, y: p.y, color: sk.color, dir: p.dir };
+      if (sk.ult) fxd.ult = 1;
       if (sk.type === 'dash') {
         const ang = Math.atan2(t.y - p.y, t.x - p.x);
         const nx = t.x - Math.cos(ang) * 40, ny = t.y - Math.sin(ang) * 40;
@@ -663,6 +667,7 @@ class World {
         for (const h of list) {
           if (h.dead) continue;
           this.damage(p, h, sk.mult);
+          if (sk.ult && h.c && h.socket) h.socket.emit('ultHit', { from: p.id, name: sk.name, color: sk.color, fx: sk.fx });
           if (sk.type === 'dot' || sk.dotTicks) this.addDot(p, h, sk, 'poison');
           if (h.dead) continue;
           if (sk.freeze) this.applyStatus(h, 'freeze', sk.freeze, p);
@@ -754,9 +759,12 @@ class World {
     return { dmg: Math.round(dmg), crit: isCrit };
   }
 
-  damage(p, t, mult) {
+  damage(p, t, mult, ultFrom) {
     const isPlayer = !!t.c, fx = p.stats.fx || {};
-    const def = (isPlayer ? t.stats.def : t.tpl.def) * (1 - (fx.pierce || 0) / 100);
+    // hệ võ công: điểm thuộc tính chính tăng sát thương võ công; nội công xuyên một phần phòng thủ
+    const bb = p.c ? BRANCH_BONUS[branchOf(p.c)] : null;
+    if (bb) mult *= 1 + ((p.c.attr && p.c.attr[bb.attr]) | 0) * bb.per;
+    const def = (isPlayer ? t.stats.def : t.tpl.def) * (1 - (fx.pierce || 0) / 100) * (1 - (bb ? bb.pierce : 0));
     let { dmg, crit } = this.calcDamage(p.stats.atk * 1.6, p.stats.crit, def, mult, 0.35, 1.75 + (fx.critdmg || 0) / 100);
     const [em, ek] = elemMult(p.stats.el, isPlayer ? t.stats.del : t.tpl.el);
     dmg *= em;
@@ -780,7 +788,7 @@ class World {
     if (src && src.c && t && !t.c && !t.cart) src.lastHitMon = Date.now();   // thú cưng biết chủ đang giao chiến
     if (t.dead) return;
     if (t.c && src && t.dodgeUntil > Date.now()) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return; }   // đang lướt né
-    if (t.c && src && src.c && isRanged(src.c.cls) && !isRanged(t.c.cls)) dmg = Math.max(1, Math.round(dmg * MELEE_GUARD));   // cận chiến: hộ thể trước đòn đánh xa
+    if (t.c && src && src.c && isRanged(src) && !isRanged(t)) dmg = Math.max(1, Math.round(dmg * MELEE_GUARD));   // cận chiến: hộ thể trước đòn đánh xa
     // phòng thủ từ trang bị (chỉ với đòn đánh trực tiếp, không áp cho độc/bỏng)
     if (t.c && src && (kind === 'hit' || kind === 'crit' || kind === 'hurt')) {
       const fx = t.stats.fx || {};
@@ -1107,7 +1115,7 @@ class World {
   }
   batchable(it) {
     const e = it.effect || {};
-    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.rename || e.pet || e.learn || e.dragon);
+    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.rename || e.pet || e.learn || e.dragon || e.resetSkill || e.resetAttr);
   }
   useOne(p, uid) {
     const c = p.c;
@@ -1138,10 +1146,25 @@ class World {
     }
     if (e.expBuff) { c.expBuffUntil = Math.max(Date.now(), c.expBuffUntil || 0) + e.expBuff; this.toast(p, 'Nhân đôi kinh nghiệm 30 phút!', 'reward'); }
     if (e.wheel) { c.wheel.extra = (c.wheel.extra || 0) + 1; this.toast(p, 'Nhận thêm 1 lượt Vòng Quay', 'reward'); }
+    if (e.resetSkill) {
+      if (!(c.spSpent > 0)) return this.toast(p, 'Chưa dùng điểm võ học nào, không cần tẩy', 'error');
+      U.removeByUid(c, uid, 1);
+      this.resetSkillPoints(c); this.recalc(p);
+      this.toast(p, `📕 Tẩy Tủy Kinh: đã hoàn lại toàn bộ ${skillPointsTotal(c.level)} điểm võ học, võ công trở về tầng 1.`, 'reward');
+      p.dirtyMe = true; this.db.markDirty(); return;
+    }
+    if (e.resetAttr) {
+      if (!attrUsed(c.attr)) return this.toast(p, 'Chưa cộng điểm tiềm năng nào', 'error');
+      U.removeByUid(c, uid, 1);
+      c.attr = {}; this.recalc(p);
+      this.toast(p, `📗 Tẩy Tiềm Năng: đã hoàn lại ${attrTotal(c.level)} điểm tiềm năng, mở bảng Nhân vật (phím C) để cộng lại.`, 'reward');
+      p.dirtyMe = true; this.db.markDirty(); return;
+    }
     if (e.learn) {
       const b = BOOKS[s.id];
       if (b.cls !== c.cls) return this.toast(p, `Sách này của môn phái ${CLASSES[b.cls].name}, bạn không thể học`, 'error');
       if (c.skills[e.learn]) return this.toast(p, 'Bạn đã học võ công này rồi. Nâng cấp trong bảng Võ Công (phím K).', 'error');
+      if (b.branch && b.branch !== branchOf(c)) return this.toast(p, `Sách thuộc hệ ${CLASSES[c.cls].branches[b.branch].kind} (${CLASSES[c.cls].branches[b.branch].name}). Bạn đang tu ${CLASSES[c.cls].branches[branchOf(c)].kind} – đổi hệ trong bảng Võ Công.`, 'error');
       U.removeByUid(c, uid, 1);
       c.skills[e.learn] = 1;
       if (b.passive) this.recalc(p);
@@ -1278,7 +1301,7 @@ class World {
     if (npc.shop) {
       const tier = MAPS[p.mapId].tier;
       out.shop = npc.shop.filter(id => !npc.field || ITEMS[id].type !== 'equip' || ITEMS[id].tier <= tier + 1)
-        .filter(id => !npc.bookShop || ITEMS[id].cls === p.c.cls)
+        .filter(id => !npc.bookShop || !ITEMS[id].cls || (ITEMS[id].cls === p.c.cls && (!BOOKS[id] || !BOOKS[id].branch || BOOKS[id].branch === branchOf(p.c))))   // sách: đúng phái, đúng hệ đang tu
         .map(id => ({ id, price: ITEMS[id].price }));
     }
     if (npc.knbShop) out.knbShop = npc.knbShop;
@@ -1479,9 +1502,22 @@ class World {
       const bar = Array.isArray(a.bar) ? a.bar.slice(0, HOTBAR_N).map(x => x | 0) : [];
       if (bar.length !== HOTBAR_N || bar.some(x => x < 0 || x >= PASSIVE_SLOT)) return;   // nội công bị động không gán phím
       c.hotbar = bar;
+    } else if (a.op === 'branch') {
+      const to = a.to;
+      if (!cl.branches[to] || to === branchOf(c)) return;
+      if (c.level >= BRANCH_FREE_LV) {
+        if (!U.countItem(c, 'tay_tuy_kinh')) return this.toast(p, `Từ cấp ${BRANCH_FREE_LV} đổi hệ cần 1 Tẩy Tủy Kinh (bán ở Tàng Kinh Các / Kỳ Trân Các)`, 'error');
+        U.removeItemById(c, 'tay_tuy_kinh', 1);
+      }
+      c.branch = to;
+      this.resetSkillPoints(c);
+      this.recalc(p);
+      const br = cl.branches[to];
+      this.toast(p, `Đã chuyển sang ${br.kind}: ${br.name}. Điểm võ học đã hoàn lại, hãy học sách võ công của hệ mới tại Tàng Kinh Các.`, 'reward');
+      this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y });
     } else if (a.op === 'upgrade') {
       const idx = a.idx | 0;
-      const base = idx === DRAGON_SLOT ? (c.dragon && DRAGONS[c.dragon]) : classSkill(c.cls, idx);
+      const base = idx === DRAGON_SLOT ? (c.dragon && DRAGONS[c.dragon]) : classSkill(c.cls, idx, branchOf(c));
       if (!base) return;
       const learned = idx === 0 || (idx === DRAGON_SLOT ? c.dragons && c.dragons[c.dragon] : c.skills[base.id]);
       if (!learned) return this.toast(p, 'Chưa học võ công này', 'error');
@@ -1500,6 +1536,12 @@ class World {
     }
     p.dirtyMe = true;
     this.db.markDirty();
+  }
+
+  // tẩy điểm võ học: mọi võ công đã học về tầng 1, hoàn lại toàn bộ điểm võ học (ngân lượng đã tiêu không hoàn)
+  resetSkillPoints(c) {
+    for (const id in c.skills) if (c.skills[id] > 1) c.skills[id] = 1;
+    c.spSpent = 0;
   }
 
   selectDragon(p, el) {
@@ -1620,15 +1662,35 @@ class World {
     if (this.tickN % 5 === 0) for (const p of this.players.values()) if (p.c.pet) this.petTick(p, now);
   }
 
+  // ---------- Ngồi thiền: đứng yên trong thành 30 giây thì tự ngồi thiền (hồi phục nhanh, tích luỹ chút kinh nghiệm) ----------
+  wake(p, now) {
+    p.stillSince = now;
+    if (p.med) { p.med = false; p.dirtyMe = true; }
+  }
+  meditate(p, m, now) {
+    if (!p.med) {
+      if (!m.def.safe || p.duel || p.c.riding || p.trade || now - p.stillSince < MED_AFTER) return;
+      p.med = true; p.medTick = now; p.dirtyMe = true;
+      this.toast(p, '🧘 Bắt đầu ngồi thiền: hồi phục nhanh, mỗi 5 giây lĩnh ngộ thêm kinh nghiệm. Di chuyển để đứng dậy.', 'info');
+      return;
+    }
+    if (p.c.riding || !m.def.safe) return this.wake(p, now);
+    if (now - p.medTick >= 5000 && p.c.level < U.MAX_LEVEL) {
+      p.medTick = now;
+      this.gainExp(p, Math.max(1, Math.round(U.expNext(p.c.level) * MED_EXP)), true);
+    }
+  }
+
   regen(p, m, now) {
     if (p.c.pk > 0) { if (!p.pkDecayAt) p.pkDecayAt = now + 15 * 60000; else if (now >= p.pkDecayAt) { p.c.pk--; p.pkDecayAt = now + 15 * 60000; } }
     if (p.dead) return;
+    this.meditate(p, m, now);
     const s = p.stats, c = p.c;
     const inCombat = now - p.lastCombat < 6000;
     const safe = m.def.safe && !p.duel;   // đang thách đấu trong thành: hồi như ngoài thành
     const weak = p.weakUntil > now;      // vừa về thành sau khi tử trận: hồi chậm
-    const hpR = weak ? 0.008 : safe ? 0.06 : inCombat ? 0.004 : 0.02;
-    const mpR = weak ? 0.01 : safe ? 0.06 : inCombat ? 0.01 : 0.03;
+    const hpR = weak ? (p.med ? 0.03 : 0.008) : safe ? (p.med ? 0.12 : 0.06) : inCombat ? 0.004 : 0.02;
+    const mpR = weak ? (p.med ? 0.03 : 0.01) : safe ? (p.med ? 0.12 : 0.06) : inCombat ? 0.01 : 0.03;
     const oh = c.hp, om = c.mp;
     c.hp = Math.min(s.maxHp, c.hp + Math.ceil(s.maxHp * (hpR + s.regen)));
     c.mp = Math.min(s.maxMp, c.mp + Math.ceil(s.maxMp * mpR));
@@ -1741,7 +1803,7 @@ class World {
       ps.push({ i: p.id, n: p.c.name, c: p.c.cls, x: Math.round(p.x), y: Math.round(p.y), d: p.dir, m: p.moving ? 1 : 0,
         h: Math.max(0, Math.round(p.c.hp)), H: p.stats.maxHp, l: p.c.level, g: g ? g.name : '', a: p.dead ? 1 : 0,
         q: this.appearance(p.c), v: p.user.isAdmin ? 1 : 0, s: stMask(p, now),
-        pw: p.stats.power || 0, el: p.stats.el || '', rk: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0, k: p.c.pk || 0, pm: p.c.pkMode | 0, rb: p.c.robUntil > now ? 1 : 0, mc: this.daihoi && this.daihoi.isMinhChu(p.userId) ? 1 : 0, bf: p.buffs.length ? p.buffs.filter(b => b.until > now && b.aura).map(b => [b.aura, b.color]) : 0 });
+        md: p.med ? 1 : 0, pw: p.stats.power || 0, el: p.stats.el || '', rk: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0, k: p.c.pk || 0, pm: p.c.pkMode | 0, rb: p.c.robUntil > now ? 1 : 0, mc: this.daihoi && this.daihoi.isMinhChu(p.userId) ? 1 : 0, bf: p.buffs.length ? p.buffs.filter(b => b.until > now && b.aura).map(b => [b.aura, b.color]) : 0 });
     }
     const ms = [];
     for (const mon of m.monsters.values()) {
@@ -1783,13 +1845,25 @@ const SKILL_STATUS = {
   ty1: ['slow', 1500, 0.5], ty2: ['slow', 2000, 1], ty4: ['bleed', 3000, 0.6], ty5: ['freeze', 2000, 1],
   cb1: ['stun', 3000, 0.3], cb2: ['slow', 2000, 0.5], cb4: ['stun', 3000, 1], cb5: ['stun', 8000, 1],
   vd1: ['slow', 1500, 0.4], vd2: ['slow', 2000, 1], vd5: ['stun', 4000, 0.5],
-  cl1: ['stun', 3000, 0.25], cl2: ['burn', 3000, 0.6], cl4: ['slow', 2500, 1], cl5: ['stun', 5000, 0.6]
+  cl1: ['stun', 3000, 0.25], cl2: ['burn', 3000, 0.6], cl4: ['slow', 2500, 1], cl5: ['stun', 5000, 0.6],
+  // hệ thứ hai (server/data/branches.js): đánh thường cận chiến làm chậm như các phái cận chiến
+  tlb0: ['slow', 1500, 0.5], tlb1: ['stun', 3000, 0.3], tlb2: ['slow', 2000, 1], tlb4: ['stun', 3000, 1], tlb5: ['stun', 6000, 1],
+  tvb1: ['burn', 3000, 0.6], tvb2: ['burn', 3000, 1], tvb4: ['stun', 3000, 0.4], tvb5: ['burn', 4000, 1],
+  dmb1: ['burn', 3000, 0.5], dmb2: ['burn', 3000, 1], dmb5: ['stun', 4000, 0.5],
+  ndb0: ['slow', 1500, 0.5], ndb1: ['bleed', 3000, 1], ndb2: ['poison', 3000, 1], ndb4: ['stun', 3000, 1], ndb5: ['poison', 5000, 1],
+  nmb0: ['slow', 1500, 0.5], nmb1: ['bleed', 3000, 0.5], nmb2: ['slow', 2000, 0.6], nmb4: ['stun', 3000, 0.6], nmb5: ['slow', 2500, 1],
+  tyb1: ['slow', 2000, 0.6], tyb2: ['slow', 2500, 1], tyb5: ['freeze', 2000, 1],
+  cbb0: ['slow', 1500, 0.5], cbb1: ['stun', 3000, 0.35], cbb2: ['slow', 2000, 0.6], cbb4: ['stun', 3000, 1], cbb5: ['stun', 7000, 1],
+  vdb0: ['slow', 1500, 0.5], vdb1: ['slow', 2000, 0.5], vdb2: ['bleed', 3000, 0.5], vdb4: ['stun', 3000, 1], vdb5: ['stun', 5000, 0.6],
+  clb0: ['slow', 1500, 0.5], clb1: ['stun', 3000, 0.3], clb2: ['slow', 2000, 0.6], clb4: ['stun', 3000, 1], clb5: ['stun', 5000, 0.7]
 };
 // ---------- Cân bằng cận chiến / đánh xa ----------
-const isRanged = cls => (CLASSES[cls] && CLASSES[cls].range || 0) >= 200;
+const isRanged = p => classRange(p.c.cls, branchOf(p.c)) >= 200;   // theo hệ đang tu
 const CAST_LOCK = { basic: 260, skill: 450 };   // đánh xa đứng yên vận chiêu (ms)
 const MELEE_GUARD = 0.85;                       // cận chiến nhận 85% sát thương từ người chơi đánh xa
-const STUN_IMMUNE = 3000;                       // kháng choáng sau khi hết choáng (ms)
+const STUN_IMMUNE = 3000;
+const MED_AFTER = 30000;                        // đứng yên trong thành bao lâu thì ngồi thiền (ms)
+const MED_EXP = 0.0005;                         // mỗi 5 giây ngồi thiền: 0,05% kinh nghiệm cấp hiện tại                       // kháng choáng sau khi hết choáng (ms)
 const FX_STATUS = { firedragon: ['burn', 4000, 1] };
 // quái gây hiệu ứng khi đánh trúng
 const MON_STATUS = { snake: ['poison', 4000, 0.25], scorpion: ['poison', 4000, 0.3], yeti: ['slow', 2000, 0.3], demon: ['burn', 3000, 0.25], bear: ['stun', 700, 0.12], tiger: ['bleed', 3000, 0.2], ghost: ['slow', 1500, 0.2] };

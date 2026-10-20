@@ -543,13 +543,15 @@ SIMPLE = {
     'vm_book': lambda ic: book(ic, ('#b01818', '#3a0606'), '岳'),
     'book': lambda ic: book(ic, ('#e8b030', '#7a4a08'), '倍'),
     'skillbook': lambda ic: book(ic, ('#3a5aa0', '#101a40'), '武'),
+    'book_wash': lambda ic: book(ic, ('#7a2ab0', '#24083a'), '髓'),     # Tẩy Tủy Kinh: tẩy điểm võ học
+    'book_attr': lambda ic: book(ic, ('#2a9a6a', '#06301e'), '潛'),     # Tẩy Tiềm Năng Đan: tẩy điểm tiềm năng
     'book_fire': lambda ic: book(ic, ('#e04020', '#5a0a08'), '炎', emblem=elem_emblem('#ff5020', 'fire')),
     'book_water': lambda ic: book(ic, ('#2a7ad0', '#0a2050'), '水', emblem=elem_emblem('#2a8aff', 'water')),
     'book_ice': lambda ic: book(ic, ('#7ac8e8', '#1a4a6a'), '冰', emblem=elem_emblem('#9ae0ff', 'ice')),
     'stone': stone, 'stone2': lambda ic: stone(ic, True), 'insure': insure, 'food': food, 'blood': blood,
     'chest': chest, 'chest_gold': lambda ic: chest(ic, True), 'ticket': ticket, 'lantern': lantern, 'saddle': saddle, 'gold': gold_icon,
 }
-SIMPLE_GLOW = {'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040'}
+SIMPLE_GLOW = {'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040'}
 
 def build():
     tiles, index = [], {}

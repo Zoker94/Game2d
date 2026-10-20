@@ -115,6 +115,8 @@ const CONSUMABLES = [
   { id: 'wheel_ticket', name: 'Vé Vòng Quay', desc: 'Thêm 1 lượt quay Vòng Quay May Mắn', effect: { wheel: 1 }, price: 3000, icon: 'ticket' },
   { id: 'rename_card', name: 'Thẻ Đổi Tên', desc: 'Sử dụng để đổi tên nhân vật (3-14 ký tự, không trùng tên người khác). Không thể giao dịch. Lần mua đầu tiên miễn phí.', effect: { rename: 1 }, price: 50000, icon: 'ticket', rarity: 'epic', noTrade: true },
   { id: 'pet_hong_long', name: 'Hồng Long Ấu Thú', desc: 'Thú cưng rồng lửa (bản thử nghiệm). Sử dụng để triệu hồi / thu hồi. Rồng bay theo chủ, khi chủ giao chiến sẽ lao tới phun lửa vào mục tiêu (sát thương theo 35% công của chủ, gây bỏng).', effect: { pet: 'hong_long' }, price: 0, icon: 'pet:hong_long', rarity: 'legendary', stack: false, noSell: true },
+  { id: 'tay_tuy_kinh', name: 'Tẩy Tủy Kinh', desc: 'Sử dụng để tẩy điểm võ học: mọi võ công đã học trở về tầng 1, hoàn lại toàn bộ điểm võ học để cộng lại. Cũng dùng để đổi hệ Nội công / Ngoại công từ cấp 20 (bảng Võ Công).', effect: { resetSkill: 1 }, price: 60000, icon: 'book_wash', rarity: 'epic' },
+  { id: 'tay_tiem_nang', name: 'Tẩy Tiềm Năng Đan', desc: 'Sử dụng để tẩy toàn bộ điểm tiềm năng (Sức Mạnh, Thân Pháp, Sinh Khí, Nội Công) mà không tốn ngân lượng, rồi cộng lại theo hệ võ công.', effect: { resetAttr: 1 }, price: 40000, icon: 'book_attr', rarity: 'epic' },
   { id: 'event_token', name: 'Hoa Đăng', desc: 'Vật phẩm sự kiện. Đổi quà tại Lễ Quan.', price: 0, icon: 'lantern', material: true }
 ];
 CONSUMABLES.forEach(c => { ITEMS[c.id] = Object.assign({ type: 'use', lv: c.lv || 1, rarity: 'common', stack: true }, c); });

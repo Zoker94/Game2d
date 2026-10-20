@@ -648,7 +648,7 @@
     else if (it.type === 'equip') btns += `<button class="btn small green" data-act="equip">Trang bị</button>`;
     else if (it.type === 'use') {
       btns += `<button class="btn small green" data-act="use">Sử dụng</button>`;
-      const e = it.effect || {}, multi = !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.rename || e.pet || e.learn || e.dragon);
+      const e = it.effect || {}, multi = !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.rename || e.pet || e.learn || e.dragon || e.resetSkill || e.resetAttr);
       if (multi && s.qty > 1) {   // dùng nhiều cái một lần (rương, bùa, vé quay...)
         const def = Math.min(s.qty, panelState.useN || 10);
         btns += `<span class="use-multi"><input type="number" id="use-n" min="1" max="${Math.min(200, s.qty)}" value="${def}"><button class="btn small green" data-act="usen">Dùng</button></span>`;
@@ -1097,11 +1097,25 @@
     const BOOK_PRICE = [0, 300, 2500, 12000, 50000, 180000, 0, 30000, 90000];
     const upCost = (idx, lv) => ({ sp: lv, gold: Math.round(400 * lv * lv * ((idx === 6 ? 5 : idx === 7 ? 4 : idx === 8 ? 5 : idx) + 1)) });
     const tab = panelState.tab || 'keys';
-    const baseOf = i => i === 6 ? G.data.dragons[me.dragon] : i >= 7 ? G.data.classes[me.cls].extra[i - 7] : G.data.classes[me.cls].skills[i];
+    const br = G.myBranch(), cl = G.data.classes[me.cls];
+    const baseOf = i => i === 6 ? G.data.dragons[me.dragon] : i === 7 ? cl.extra[0] : i === 8 ? br.passive : br.skills[i];
     const ico = (s, i) => Assets.skillIconHTML(me.cls, s) || (i === 0 ? '⚔️' : i === 6 ? '🐉' : '✦');
-    let html = `<div class="sk-head"><div>📜 Điểm võ học: <b style="color:#ffd76a">${me.sp}</b> <span class="small muted">(mỗi cấp nhân vật +1 điểm)</span></div><div class="small muted">Sách võ công bán tại <b>Tàng Kinh Các</b> – Tương Dương</div></div>`;
-    html += tabs([['keys', '⌨️ Gán phím'], ['attack', '⚔️ Chiêu thức'], ['support', '✨ Hỗ trợ'], ['passive', '☯ Nội công'], ['dragon', '🐉 Long Ấn']], tab);
-    if (tab === 'keys') {
+    let html = `<div class="sk-head"><div>📜 Điểm võ học: <b style="color:#ffd76a">${me.sp}</b> <span class="small muted">(mỗi cấp nhân vật +1 điểm)</span></div><div class="small">Hệ: <b class="br-tag br-${br.key}">${br.kind || ''} · ${esc(br.name || '')}</b></div><div class="small muted">Sách võ công bán tại <b>Tàng Kinh Các</b> – Tương Dương</div></div>`;
+    html += tabs([['branch', '🔀 Hệ phái'], ['keys', '⌨️ Gán phím'], ['attack', '⚔️ Chiêu thức'], ['support', '✨ Hỗ trợ'], ['passive', '☯ Nội công'], ['dragon', '🐉 Long Ấn']], tab);
+    if (tab === 'branch' && cl.branches) {
+      const freeLv = G.data.branchFreeLv || 20, wash = (me.inv || []).filter(x => x.id === 'tay_tuy_kinh').reduce((a, x) => a + x.qty, 0);
+      html += `<p class="small muted">Mỗi môn phái có hai hệ. <b>Nội công</b>: vận khí, sát thương võ công tăng theo điểm <b>Nội Công</b> và xuyên 20% phòng thủ. <b>Ngoại công</b>: binh khí, sát thương võ công tăng theo điểm <b>Sức Mạnh</b>. Đổi hệ sẽ hoàn lại toàn bộ điểm võ học; ${me.level < freeLv ? `<b style="color:#4ade80">miễn phí dưới cấp ${freeLv}</b>` : `cần <b>1 Tẩy Tủy Kinh</b> (đang có ${wash})`}. Nên tẩy tiềm năng (Tẩy Tiềm Năng Đan) để cộng lại theo hệ mới.</p><div class="br-grid">`;
+      for (const b of Object.values(cl.branches)) {
+        const cur = b.key === br.key;
+        html += `<div class="br-card ${cur ? 'cur' : ''}"><div class="br-top"><span class="br-tag br-${b.key}">${b.kind}</span><b>${esc(b.name)}</b>${cur ? '<span class="small" style="color:#4ade80">✔ Đang tu</span>' : ''}</div>
+          <div class="small muted">Đánh thường tầm ${b.range >= 200 ? 'xa' : 'gần'} (${b.range}px)</div><div class="br-sk">`;
+        b.skills.forEach((s, i) => { html += `<div class="br-row" title="${esc(skillDesc(s))}"><div class="sk-ico small">${ico(s, i)}</div><span>${esc(s.name)}${s.ult ? ' <span class="br-ult">Tuyệt kỹ</span>' : ''}</span><span class="small muted">cấp ${s.lv}</span></div>`; });
+        html += `<div class="br-row"><div class="sk-ico small">${ico(b.passive, 8)}</div><span>${esc(b.passive.name)} <span class="kb-cat kb-passive">Bị động</span></span><span class="small muted">cấp ${b.passive.lv}</span></div></div>`;
+        html += cur ? '' : `<button class="btn primary" data-branch="${b.key}">Chuyển sang ${b.kind}</button>`;
+        html += '</div>';
+      }
+      html += '</div>';
+    } else if (tab === 'keys') {
       const selSlot = panelState.slot != null ? panelState.slot : -1;
       html += `<div class="kb-fixed"><span><b>Phím 1 / Space</b> Đánh thường</span><span><b>Shift / Q</b> Né chiêu</span><span><b>Z / X</b> Bình máu / nội lực</span></div>`;
       html += `<p class="small muted">Chọn một ô phím, rồi bấm vào võ công bên dưới để gán. Bấm vào võ công đã gán ở ô khác sẽ đổi chỗ hai ô.${Input.isTouch ? ' Trên điện thoại, ô 1–6 là 6 nút chiêu bên phải màn hình.' : ''}</p><div class="kb-slots">`;
@@ -1166,6 +1180,10 @@
     });
     if ($('kb-reset')) $('kb-reset').onclick = () => save([1, 2, 3, 4, 5, 6, 7, 0]);
     body.querySelectorAll('[data-up]').forEach(b => b.onclick = () => emit('skillOp', { op: 'upgrade', idx: +b.dataset.up }));
+    body.querySelectorAll('[data-branch]').forEach(b => b.onclick = () => {
+      const nb = cl.branches[b.dataset.branch];
+      if (confirm(`Chuyển sang ${nb.kind} – ${nb.name}?\nMọi võ công trở về tầng 1 và hoàn lại điểm võ học.${me.level >= (G.data.branchFreeLv || 20) ? '\nTốn 1 Tẩy Tủy Kinh.' : ''}`)) emit('skillOp', { op: 'branch', to: nb.key });
+    });
   }
 
   function mountStats(id, lv) {

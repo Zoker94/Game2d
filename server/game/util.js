@@ -1,4 +1,4 @@
-const { CLASSES } = require('../data/classes');
+const { CLASSES, branchOf } = require('../data/classes');
 const { scaleSkill } = require('../data/skillbooks');
 const { ITEMS } = require('../data/items');
 const { mountStats } = require('../data/mounts');
@@ -168,7 +168,7 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
   }
   if (guildLevel > 0) { s.atk *= 1 + guildLevel * 0.02; s.def *= 1 + guildLevel * 0.02; s.maxHp *= 1 + guildLevel * 0.02; }
   // nội công bị động (đã học thì luôn có hiệu lực, mạnh dần theo tầng)
-  const ps = cl.extra && cl.extra[1];
+  const ps = cl.branches ? cl.branches[branchOf(c)].passive : cl.extra && cl.extra[1];   // nội công bị động của hệ đang tu
   const FXK = ['dodge', 'dmgred', 'lifesteal', 'reflect', 'critdmg', 'ccres'];
   if (ps && c.skills && c.skills[ps.id]) {
     const pv = scaleSkill(ps, c.skills[ps.id]).passive;
