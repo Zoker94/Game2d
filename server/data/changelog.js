@@ -5,7 +5,8 @@ const CHANGELOG = [
     date: '20/10/2026',
     items: [
       'Thú cưỡi mới: Hắc Long – rồng đen cánh dơi bay lượn, vỗ cánh che người cưỡi (8000 nguyên bảo tại Mã Phu).',
-      'Vẽ lại Ngựa Nâu, Bạch Mã và Ô Truy Hắc Mã: nét hơn, đủ dáng nhìn ngang, trước và sau.'
+      'Vẽ lại Ngựa Nâu, Bạch Mã và Ô Truy Hắc Mã: nét hơn, đủ dáng nhìn ngang, trước và sau.',
+      'Bản đồ thêm nhiều chi tiết: ruộng rau quanh thành và ngoại ô, chậu cảnh trước nhà và sạp hàng, nấm, gốc cây, khúc gỗ, bụi cây trong rừng; xương rồng mới ở sa mạc, cây khô trắng ở làng hoang và cổ mộ.'
     ]
   },
   {

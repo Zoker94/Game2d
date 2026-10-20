@@ -291,6 +291,42 @@
     decoCache[k] = c;
     return c;
   }
+  // vật cắt từ tileset (tools/flora.py) rải theo vùng
+  const FLORA_WILD = {
+    plains: ['mush_r1', 'mush_b1', 'mush_w1', 'mush_o1', 'stump_s1', 'stump_s2', 'log_moss1', 'shrub_leafy', 'shrub_round', 'fern_big', 'grass_tuft', 'moss_mound1', 'mush_r2', 'stump_root', 'shrub_ball', 'mush_w2', 'leaf_pile', 'mush_b2'],
+    river: ['log_moss1', 'log_moss2', 'fern_big', 'mush_w1', 'mush_b3', 'shrub_round', 'moss_mound2', 'grass_tuft', 'stump_s3', 'mush_o2', 'shrub_ball'],
+    bamboo: ['fern_big', 'moss_mound1', 'moss_mound2', 'mush_b4', 'mush_gold', 'log_moss2', 'stump_s1', 'grass_tuft', 'shrub_leafy', 'mush_pink'],
+    mountain: ['stump_r1', 'stump_r2', 'stump_l1', 'stump_axe', 'log_dry1', 'log_dry3', 'grass_dry', 'fern_dry', 'leaves_dry', 'mush_b5', 'stump_r3', 'mush_o3'],
+    ruins: ['roots_dead', 'stump_r4', 'stump_l2', 'log_dry2', 'grass_dry', 'leaves_dry', 'fern_dry', 'mush_pink2', 'stump_axe', 'grass_low'],
+    town: ['shrub_round', 'shrub_ball', 'grass_tuft', 'moss_mound1']
+  };
+  const POTS = ['pot_topiary1', 'pot_topiary2', 'pot_topiary3', 'pot_tree1', 'pot_tree2', 'pot_cypress', 'pot_palm', 'pot_fern', 'pot_leafy', 'pot_vine', 'pot_bamboo', 'pot_bonsai', 'planter_bonsai'];
+  const FLORA_SHADOW = /^(pot_|planter_|stump_|log_|cactus_|shrub_|pumpkin|tree_dead|moss_)/;
+  // luống rau: ô cỏ trống 3x2 gần thành / làng -> trồng thẳng hàng một loại cây
+  const CROPS = ['crop_cabbage', 'crop_corn', 'crop_wheat', 'crop_wheat_gold', 'crop_pumpkin', 'crop_cauli', 'crop_eggplant', 'crop_tomato', 'crop_pepper', 'crop_bean', 'crop_lettuce', 'crop_radish', 'crop_melon'];
+  const PATCHES = ['patch_cabbage', 'patch_turnip', 'patch_tomato', 'patch_leafy', 'patch_herb', 'patch_sprout'];
+  function farmPlots(solid, busy) {
+    const rate = theme === 'town' ? 0.035 : map.id === 'ngoai_o' || flora === 'plains' ? 0.012 : flora === 'river' ? 0.006 : 0;
+    if (!rate) return;
+    const used = new Set();
+    for (let ty = 1; ty < map.h - 3; ty++) for (let tx = 1; tx < map.w - 4; tx++) {
+      if (hash(tx, ty, 141) >= rate) continue;
+      let ok = true;
+      for (let dy = 0; dy < 2 && ok; dy++) for (let dx = 0; dx < 3 && ok; dx++) {
+        const k = (tx + dx) + ',' + (ty + dy), t = map.tiles[(ty + dy) * map.w + tx + dx];
+        if (t !== T.GRASS || busy.has(k) || used.has(k)) ok = false;
+      }
+      if (!ok) continue;
+      for (let dy = -1; dy < 3; dy++) for (let dx = -1; dx < 4; dx++) used.add((tx + dx) + ',' + (ty + dy));
+      const patch = hash(tx, ty, 142) < 0.35;
+      const nm = patch ? PATCHES[Math.floor(hash(tx, ty, 143) * PATCHES.length)] : CROPS[Math.floor(hash(tx, ty, 143) * CROPS.length)];
+      const sway = /wheat|corn/.test(nm);
+      const cols = patch ? 3 : 5, rows = patch ? 2 : 3;
+      for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++)
+        decos.push({ x: tx * TILE + 24 + i * (patch ? 72 : 36), y: ty * TILE + 34 + j * (patch ? 52 : 34), kind: 'tuft', v: 0, sway, nat: nm, ph: hash(i, j, tx) * 6.28 });
+      decos.push({ x: tx * TILE + 96, y: ty * TILE + 12, kind: 'rock', v: 0, nat: 'furrow', ph: 0, flatRow: { w: TILE * 3 - 8, h: TILE * 2 - 18 } });   // nền đất luống
+    }
+  }
   function buildDecos() {
     decos = [];
     const solid = new Set([2, 3, 4, 8, 9, 12, 14, 15, 16, 17]);
@@ -312,6 +348,7 @@
         else if (r < 0.2 + fl) { kind = 'rock'; nat = pick(['rock_s0', 'rock_s1', 'pebbles0', 'rock_m0'], 109); }
         else if (r < 0.206 + fl && theme !== 'town') { kind = 'rock'; nat = pick(['mush_red', 'mush_brown', 'stump0', 'log0', 'mush_brown'], 110); }
         else if (r < 0.212 + fl && theme === 'mountain') { kind = 'rock'; nat = 'leaves0'; }
+        else if (r < 0.245 + fl && FLORA_WILD[flora]) { kind = 'rock'; nat = pick(FLORA_WILD[flora], 121); }   // nấm, gốc cây, khúc gỗ, bụi (tools/flora.py)
       }
       else if (t === T.PATH && theme === 'cave') {
         if (r < 0.05) { kind = 'rock'; nat = pick(icy ? ['peb_ice', 'istalag2', 'fern_blue', 'crys_b1'] : ['peb_cave', 'stalag2', 'mush_glow', 'plant_glow', 'crys_p1', 'peb_cave'], 112); }
@@ -319,12 +356,30 @@
         if (nat === 'crys_p1' || nat === 'crys_b1' || nat === 'mush_glow' || nat === 'plant_glow') glowC = { crys_p1: '#a060ff', crys_b1: '#60c8ff', mush_glow: '#ff9a40', plant_glow: '#ffa040' }[nat];
       }
       else if (t === T.PATH) { if (r < 0.04) { kind = 'rock'; nat = pick(['pebbles0', 'rock_s0', 'pebbles0'], 111); } else if (r < 0.07) { kind = theme === 'mountain' ? 'tuft' : 'drytuft'; sway = true; nat = theme === 'mountain' ? 'tuft1' : 'tuft_dry'; } }
-      else if (t === T.SAND) { if (r < 0.05) { kind = 'drytuft'; sway = true; } else if (r < 0.065) kind = 'bones'; else if (r < 0.08) kind = 'rock'; }
-      else if (t === T.SNOW) { if (r < 0.07) { kind = 'snowtuft'; sway = true; } else if (r < 0.085) kind = 'rock'; }
-      else if (t === T.DARK) { if (r < 0.035) kind = 'crystal'; else if (r < 0.05) kind = 'bones'; }
-      if (kind) decos.push({ x, y, kind, v, sway, nat, ph: hash(tx, ty, 105) * 6.28, glow: glowC, gy: glowC ? 12 : 30 });
+      else if (t === T.SAND) {
+        if (r < 0.05) { kind = 'drytuft'; sway = true; } else if (r < 0.065) kind = 'bones'; else if (r < 0.08) kind = 'rock';
+        else if (r < 0.105) { kind = 'rock'; nat = pick(['cactus_m1', 'cactus_m2', 'cactus_s1', 'cactus_pear', 'cactus_barrel1', 'cactus_barrel2', 'cactus_cluster', 'grass_dry', 'fern_dry', 'grass_dry'], 122); }
+      }
+      else if (t === T.SNOW) { if (r < 0.07) { kind = 'snowtuft'; sway = true; } else if (r < 0.085) kind = 'rock'; else if (r < 0.092) { kind = 'rock'; nat = pick(['stump_white1', 'stump_white2', 'log_dry2'], 123); } }
+      else if (t === T.DARK) { if (r < 0.035) kind = 'crystal'; else if (r < 0.05) kind = 'bones'; else if (r < 0.068) { kind = 'rock'; nat = pick(['roots_dead', 'stump_white1', 'leaves_dry', 'stump_white2', 'roots_dead', 'grass_dry'], 124); } }
+      if (kind) decos.push({ x, y, kind, v, sway, nat, ph: hash(tx, ty, 105) * 6.28, glow: glowC, gy: glowC ? 12 : 30, sh: nat && FLORA_SHADOW.test(nat) });
     }
-    if (theme === 'town') for (const n of map.npcs) decos.push({ x: (n.x + 1.2) * TILE, y: (n.y + 0.9) * TILE, kind: 'lantern', v: 0, sway: false, ph: 0, glow: '#ffb040' });
+    farmPlots(solid, busy);
+    // chậu cảnh hai bên cửa công trình trong thành / môn phái
+    if (theme === 'town' || map.sect) for (const b of map.buildings || []) {
+      if (hash(b.x, b.y, 131) < 0.35) continue;
+      const by = (b.y + b.h) * TILE + 6;
+      for (const [k, px] of [[0, b.x * TILE - 14], [1, (b.x + b.w) * TILE + 14]]) {
+        const tx = Math.floor(px / TILE), ty = b.y + b.h;
+        if (tx < 0 || tx >= map.w || ty >= map.h || solid.has(map.tiles[ty * map.w + tx])) continue;
+        decos.push({ x: px, y: by, kind: 'rock', v: 0, sway: false, nat: POTS[Math.floor(hash(b.x + k, b.y, 132) * POTS.length)], ph: 0, sh: true });
+      }
+    }
+    if (theme === 'town') for (const n of map.npcs) {
+      decos.push({ x: (n.x + 1.2) * TILE, y: (n.y + 0.9) * TILE, kind: 'lantern', v: 0, sway: false, ph: 0, glow: '#ffb040' });
+      if (hash(n.x, n.y, 133) < 0.55) decos.push({ x: (n.x - 0.9) * TILE, y: (n.y + 0.85) * TILE, kind: 'rock', v: 0, sway: false, nat: POTS[Math.floor(hash(n.x, n.y, 134) * POTS.length)], ph: 0, sh: true });   // chậu cảnh cạnh sạp
+      else if (hash(n.x, n.y, 135) < 0.5) decos.push({ x: (n.x - 0.9) * TILE, y: (n.y + 0.85) * TILE, kind: 'rock', v: 0, sway: false, nat: ['pumpkin_big', 'grapes', 'patch_cabbage'][Math.floor(hash(n.x, n.y, 136) * 3)], ph: 0, sh: true });   // nông sản bày bán
+    }
     for (const pr of map.props || []) {   // đồ trang trí đặt sẵn (lư hương, vạc lửa, cờ phướn...)
       const glow = { stonelamp: '#ffc060', brazier: '#ff9030', bonfire: '#ff9030', cauldron: '#7aff40', lantern: '#ffb040', censer: '#ffb060' }[pr.k];
       const sv = ['town', 'thieulam', 'vodang', 'ngamy', 'duongmon', 'ngudoc', 'thuyyen', 'caibang', 'thienvuong', 'conlon'].indexOf(map.sect || 'town');
@@ -503,11 +558,20 @@
   function visibleDecos(cam, vw, vh, out) {
     for (const d of decos) {
       if (d.x < cam.x - 60 || d.x > cam.x + vw + 60 || d.y < cam.y - 40 || d.y > cam.y + vh + 60) continue;
-      out.push({ y: d.flat ? -1e9 : d.y, k: 'deco', d });   // đồ hình phẳng luôn nằm dưới mọi thứ
+      out.push({ y: d.flat || d.flatRow ? -1e9 : d.y, k: 'deco', d });   // đồ hình phẳng luôn nằm dưới mọi thứ
     }
   }
   function drawDeco(ctx, d, now, nearPlayers) {
+    if (d.flatRow) {   // luống đất: nền nâu sẫm, các rãnh ngang
+      const { w, h } = d.flatRow, x0 = Math.round(d.x - w / 2), y0 = Math.round(d.y);
+      ctx.fillStyle = 'rgba(70,44,22,0.85)'; ctx.fillRect(x0, y0, w, h);
+      ctx.fillStyle = 'rgba(40,24,10,0.6)'; for (let yy = y0 + 14; yy < y0 + h - 4; yy += 17) ctx.fillRect(x0 + 4, yy, w - 8, 4);
+      ctx.fillStyle = 'rgba(130,90,50,0.45)'; for (let yy = y0 + 10; yy < y0 + h - 4; yy += 17) ctx.fillRect(x0 + 4, yy, w - 8, 2);
+      ctx.strokeStyle = 'rgba(30,18,8,0.5)'; ctx.lineWidth = 2; ctx.strokeRect(x0 + 1, y0 + 1, w - 2, h - 2);
+      return;
+    }
     const ns = d.nat && Assets.nature(d.nat);
+    if (ns && d.sh) { ctx.fillStyle = 'rgba(10,16,8,0.25)'; ctx.beginPath(); ctx.ellipse(Math.round(d.x), Math.round(d.y) - 1, ns.w * 0.36, Math.max(4, ns.w * 0.1), 0, 0, Math.PI * 2); ctx.fill(); }
     const img = ns ? null : decoSprite(d.kind, d.kind === 'banner' ? d.v : d.v % 6);
     ctx.save(); ctx.translate(Math.round(d.x), Math.round(d.y));
     if (d.sway) {
@@ -535,6 +599,7 @@
     ruins: ['tree_old0', 'tree_teal0', 'tree_old0', 'tree_green1', 'tree_autumn1'],
     mountain: ['tree_autumn0', 'tree_pine0', 'tree_bonsai0', 'tree_autumn1', 'tree_pine1', 'tree_green1']
   };
+  const CACTI = ['cactus_tall', 'cactus_big', 'cactus_col', 'cactus_m1', 'cactus_big', 'cactus_m2', 'cactus_cluster'];
   const CAVE_ROCK = ['stalag0', 'pillar0', 'boulder_c0', 'stalag1', 'crys_p0', 'stalag0', 'boulder_c0'];
   const CAVE_ICE = ['istalag0', 'ipillar0', 'boulder_i0', 'crys_b0', 'istalag1', 'istalag0'];
   const ROCKY = new Set(['plains', 'town', 'river', 'ruins', 'bamboo', 'mountain']);
@@ -551,11 +616,12 @@
     }
     let img, big = false;
     const vh = ((tx * 7 + ty * 13) >>> 0);
-    const nat = t === T.TREE ? (TREES[flora] || TREES.plains) : t !== T.ROCK ? null : theme === 'cave' ? (icy ? CAVE_ICE : CAVE_ROCK) : ROCKY.has(flora) ? ['rock_l0', 'rock_l1', 'rock_m0'] : null;
+    const nat = t === T.TREE ? (TREES[flora] || TREES.plains) : t === T.CACTUS ? CACTI : t === T.DEADTREE ? ['tree_dead_white'] : t !== T.ROCK ? null : theme === 'cave' ? (icy ? CAVE_ICE : CAVE_ROCK) : ROCKY.has(flora) ? ['rock_l0', 'rock_l1', 'rock_m0'] : null;
     const ns = nat && Assets.nature(nat[vh % nat.length]);
     if (ns) {   // cây / đá vẽ sẵn (tools/nature.py)
       const qx = tx * TILE + 32, qy = (ty + 1) * TILE - 8;
       ctx.save(); ctx.translate(qx, qy);
+      if (t === T.CACTUS || t === T.DEADTREE) { ctx.fillStyle = 'rgba(30,16,4,0.28)'; ctx.beginPath(); ctx.ellipse(6, -2, ns.w * 0.4, 8, 0, 0, Math.PI * 2); ctx.fill(); }
       if (t === T.TREE) {
         ctx.fillStyle = 'rgba(10,20,8,0.28)'; ctx.beginPath(); ctx.ellipse(10, -2, 40, 11, 0, 0, Math.PI * 2); ctx.fill();
         ctx.transform(1, 0, Math.sin(now / 1500 + tx * 1.3 + ty * 0.7) * 0.025, 1, 0, 0);
