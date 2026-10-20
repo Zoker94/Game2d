@@ -19,13 +19,16 @@ from scipy.ndimage import binary_dilation, label
 
 # cấu hình từng thú: ô gốc, số cột khung, hệ số phóng hiển thị, khung đứng / chạy, điểm yên (tỉ lệ trong ô, mặt quay phải),
 # lớp đè (nửa bề ngang dải giữa, từ độ cao nào), độ nổi khi bay (điểm ảnh gốc),
-# over_side: các khung nhìn ngang có cánh đè lên người cưỡi (phần ảnh phía trên hông người cưỡi trong dải x)
+# over_side: lớp đè nhìn ngang theo từng khung gốc trong dải x: 'all' đè cả người cưỡi, 'legs' đè từ hông trở xuống
 CFG = {
-    'ngua_xam': dict(src_cell=72, cols=3, k=1.75, idle=[1], run=[0, 1, 2, 1], side_row=1, gain=1.0,
+    'ngua_xam': dict(src_cell=72, cols=3, k=1.75, idle=[1], run=[0, 1, 2, 1], side_row=2, gain=1.0,
                      seat={'side': (0.40, 0.55), 'down': (0.5, 0.42), 'up': (0.5, 0.48)}, over_down=(0.15, 0.40), flies=0),
-    'hac_long': dict(src_cell=96, cols=3, k=2.0, idle=[0, 1, 2, 1], run=[0, 1, 2, 1], side_row=1, gain=1.3,
+    # rồng: cột 0/2 cánh ngang, 1 cánh giơ lên, 3 cánh vỗ xuống -> vòng vỗ cánh lên / ngang / xuống / ngang
+    'hac_long': dict(src_cell=96, cols=4, k=2.0, idle=[1, 0, 3, 2], run=[1, 0, 3, 2], side_row=2, gain=1.3,
                      seat={'side': (0.62, 0.41), 'down': (0.5, 0.36), 'up': (0.5, 0.42)}, over_down=(0.13, 0.44), flies=14,
-                     over_side=dict(frames=[1], x=(0.40, 0.98))),   # cánh giơ lên che người cưỡi, cánh hạ thì lộ người
+                     seat_frame={('side', 1): (0.62, 0.42), ('side', 0): (0.60, 0.37), ('side', 3): (0.58, 0.32), ('side', 2): (0.58, 0.31)},
+                     # cánh giơ lên che hết người cưỡi, cánh ngang / vỗ xuống che phần chân
+                     over_side=dict(x=(0.40, 0.98), modes={1: 'all', 0: 'legs', 2: 'legs', 3: 'legs'})),
 }
 
 
@@ -126,7 +129,7 @@ def build(src, mid, out):
     for r in range(4):
         for i in range(c['cols']):
             e = enhance(cell(r, i), k, c['gain'])
-            if r in (1, 2): e = e[:, ::-1].copy()     # ảnh gốc nhìn ngang quay trái -> game cần quay phải
+            if r == 1: e = e[:, ::-1].copy()     # hàng 1 quay trái -> lật cho quay phải (hàng 2 vốn quay phải)
             E[r, i] = e
     seq = c['idle'] + c['run']
     ncol = len(seq)
@@ -140,15 +143,17 @@ def build(src, mid, out):
     for ci, fi in enumerate(seq):
         for v, r in rows_src.items():
             a = E[r, fi]
-            fx_, fy_ = c['seat'][v]
+            fx_, fy_ = c.get('seat_frame', {}).get((v, fi), c['seat'][v])
             seat = (round(fx_ * T, 1), round(fy_ * T, 1))
             if v == 'side':
                 sheet[0:T, ci * T:(ci + 1) * T] = a
                 os_ = c.get('over_side')
-                if os_ and fi in os_['frames']:
+                mode = os_ and os_['modes'].get(fi)
+                if mode:
                     ov = np.zeros_like(a)
                     xl, xr = int(os_['x'][0] * T), int(os_['x'][1] * T)
-                    ov[:int(seat[1]) - 1, xl:xr] = a[:int(seat[1]) - 1, xl:xr]
+                    yt = 0 if mode == 'all' else int(seat[1]) + 1
+                    ov[yt:, xl:xr] = a[yt:, xl:xr]
                     sheet[5 * T:6 * T, ci * T:(ci + 1) * T] = ov
             else:
                 rowi = 1 if v == 'down' else 3

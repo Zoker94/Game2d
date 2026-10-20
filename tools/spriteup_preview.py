@@ -73,7 +73,7 @@ def sheet_preview(mid, src, path):
         s = scene(mid, v, run0 + 1, fl)
         out.alpha_composite(s.resize((s.width * Z, s.height * Z), Image.NEAREST), (pad + j * (T + 60) * Z, y))
     y += (T + 70) * Z + 10
-    d.text((pad, y), 'nhin ngang tung khung chay (canh gio len che nguoi cuoi, canh ha thi lo nguoi)', fill=(255, 235, 190, 255)); y += 18
+    d.text((pad, y), 'nhin ngang tung khung chay', fill=(255, 235, 190, 255)); y += 18
     for j in range(min(4, m['frames']['run'][1])):
         s = scene(mid, 'side', run0 + j)
         out.alpha_composite(s.resize((s.width * Z, s.height * Z), Image.NEAREST), (pad + j * (T + 60) * Z, y))
