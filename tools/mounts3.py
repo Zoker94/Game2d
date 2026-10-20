@@ -158,12 +158,15 @@ def to_scene(m, view):
             if kind == 'cap': np_.append((kind, P(a), P(b), r0 * k, r1 * k, col, o))
             else: np_.append((kind, P(a), tuple(x * k for x in b), r0, r1, col, o))
         m2 = M3(); m2.prims = np_; m2.marks = [(P(p), c, v) for p, c, v in m.marks]; m2.seat = P(m.seat)
+        for a_ in ('cell', 'foot', 'footfb'):
+            if hasattr(m, a_): setattr(m2, a_, getattr(m, a_))
         m2.polys = [([P(q) for q in pts], c, v) for pts, c, v in m.polys]
         m2.cloth = [(a * k, b * k, c * k, d * k) + tuple(r) for a, b, c, d, *r in m.cloth]; m2.stripes = m.stripes
         m2.vpat = [(v, g, (lambda U, V, ny, fn=fn: fn(U / k, V / k, ny)), c) for v, g, fn, c in m.vpat]
         m = m2
-    foot = FOOT if view == 'side' else FOOTFB
-    sc = MScene(CW, CH, foot[0], foot[1], 1.0)
+    cw, ch = getattr(m, 'cell', (CW, CH))
+    foot = getattr(m, 'foot', FOOT) if view == 'side' else getattr(m, 'footfb', FOOTFB)
+    sc = MScene(cw, ch, foot[0], foot[1], 1.0)
     sc.blend = 1.6
     sf = m.seat[0]
     front = {k: [] for k in LAYERS}
@@ -785,6 +788,173 @@ HORSE = dict(kind='quad', h=46, len=19, br=9.6, fl=(7.5, 11.5, 9.0, 3.6), hl=(10
              legw=(4.2, 2.8, 1.75, 2.1), fur=0.25, neck=(15, 18), neckw=(8.8, 4.8), crest=True,
              head=dict(skull=(5.0, 4.5, 3.6), ang=-1.05, len=13, mw=(4.0, 2.8), ear=(0.25, 5.0, 1.4)),
              manekind='hair', tail='hair', blanket='#2a4a9a', trim='#e8c060', leather='#5a3218', eyehi='#fff4e0', scale=1.2)
+# ======================= rồng / phượng thân dài uốn lượn (ô lớn) =======================
+BIG_CELL, BIG_FOOT, BIG_FOOTFB = (256, 176), (168, 168), (128, 166)
+
+
+def dragon_long(sp, kind, i):
+    """Thanh Long thân rắn dài uốn lượn: sóng dọc đi dọc thân, khúc thân xoắn gần / xa tạo lớp chồng nhau"""
+    m = M3(); m.cell, m.foot, m.footfb = BIG_CELL, BIG_FOOT, BIG_FOOTFB
+    col, bel, mane = sp['col'], sp['belly'], sp['mane']
+    run = kind == 'run'
+    t = (i / 6 if run else i / 2 * 0.35) * TAU
+    base = sp['fly']
+    N = 52
+    pts, rs = [], []
+    for j in range(N):
+        q = j / (N - 1)                                   # 0 gáy .. 1 chóp đuôi
+        f = 12 - q * 128
+        A = 3 + 19 * smooth(q / 0.3)                      # đoạn trước gần thẳng để đặt yên
+        u = base + 32 + math.sin(q * TAU * 1.55 - t) * A - q * 8
+        sd = math.sin(q * TAU * 1.25 - t * 0.8) * (1.5 + 10 * smooth(q / 0.5))
+        pts.append((f, u, sd))
+        r = sp['br'] * (0.86 + q * 1.1 if q < 0.12 else max(0.08, 1 - (q - 0.12) ** 1.15 * 1.08))
+        rs.append(r)
+    BODY = dict(col=col, cs=bel, back=sp.get('back'), grp='body', spec=0.45, fur=0)
+    m.chain(pts, rs, **BODY)
+    back = sp.get('back', dk(col, 0.3))
+    # vảy rồng: lưới vảy hình thoi sẫm trên lưng và hai bên, bụng sáng có khía ngang
+    m.vpat.append(('*', ['body', 'neck'], lambda U, V, ny: (np.sin(U * 1.25 + V * 1.05) * np.sin(U * 1.25 - V * 1.05) > 0.5) & (ny < 0.25), (back, 0.55)))
+    m.vpat.append(('side', ['body', 'neck'], lambda U, V, ny: (ny > 0.38) & (np.sin(U * 1.7) > 0.72), (dk(bel, 0.25), 0.6)))
+    # vây lưng răng cưa dọc thân
+    for j in range(2, N - 4):
+        pj, r = pts[j], rs[j]
+        nxt = pts[j + 1]
+        h_ = (4.6 - 3.2 * j / N) * (1.15 if j % 2 else 0.8)
+        m.spike((pj[0], pj[1] + r * 0.82, pj[2]), (pj[0] - 2.4, pj[1] + r * 0.82 + h_, pj[2] + (nxt[2] - pj[2]) * 0.5), 1.0 + r * 0.16,
+                col=mane if j % 2 else lt(mane, 0.25), grp='mane', spec=0.4, blend=0.25)
+    # chóp đuôi: tua lửa ngọc
+    tp = pts[-1]
+    for k in range(5):
+        a = math.pi + (k - 2) * 0.32 + math.sin(t + k) * 0.15
+        m.spike(tp, (tp[0] + math.cos(a) * 8, tp[1] + math.sin(a) * 8 + 1, tp[2]), 1.5, col=mane if k % 2 else lt(mane, 0.3), grp='mane', fur=0.3)
+    # 4 chân ngắn có vuốt, vờn như bơi trong mây
+    for jj, s_, ph in ((5, 1, 0), (5, -1, 0.5), (19, 1, 0.5), (19, -1, 0)):
+        pj = pts[jj]; r = rs[jj]
+        sw = math.sin(t + ph * TAU) * 3.0
+        hip = (pj[0], pj[1] - r * 0.35, pj[2] + s_ * r * 0.7)
+        kn = (pj[0] + 3 + sw * 0.4, pj[1] - r - 2.5, hip[2] + s_ * 1.4)
+        ft = (pj[0] + 7 + sw, pj[1] - r - 5.0 + abs(sw) * 0.3, hip[2] + s_ * 1.6)
+        m.cap(hip, kn, 3.2, 2.3, col=col, cs=bel, grp='leg', spec=0.4)
+        m.cap(kn, ft, 2.3, 1.7, col=col, grp='leg', spec=0.4)
+        for k in range(3): m.spike((kn[0] - 1, kn[1] + 0.6 - k * 0.6, kn[2]), (kn[0] - 5 - k, kn[1] - 0.5 - k * 0.8, kn[2]), 1.0, col=mane, grp='leg', fur=0.3)
+        for kk in (-1, 0, 1): m.spike(ft, (ft[0] + 3.0, ft[1] - 1.6, ft[2] + kk * 1.1), 0.85, col=sp['claw'], grp='claw', spec=0.6)
+    # đầu rồng to ngẩng cao
+    h0 = pts[0]
+    hc = (h0[0] + 10, h0[1] + 8, h0[2])
+    m.cap(h0, hc, rs[0] * 1.02, 6.8, col=col, cs=bel, grp='neck', spec=0.35)
+    H = dragon_head(m, hc, -0.08, 1.5, sp, t, 1.6 if (run and i % 3 == 0) else 0.7, s0=hc[2])
+    for s_ in (1, -1):   # râu rồng dài bay ra sau
+        w0 = H(11.0, -1.6, s_ * 3.0)
+        wp = bez3([w0, (w0[0] + 4, w0[1] - 7 + math.sin(t) * 1.5, w0[2] + s_ * 2), (w0[0] - 10, w0[1] - 14 + math.sin(t + 1) * 3, w0[2] + s_ * 3),
+                   (w0[0] - 30, w0[1] - 9 + math.sin(t + 2) * 4, w0[2] + s_ * 4)], 12)
+        m.strand(wp, 1.3, 0.5, sp['whisker'], grp='whisker', blend=0.05, spec=0.3)
+    for k in range(10):   # bờm dài bay sau gáy
+        b0 = (hc[0] - 4 + k * 0.2, hc[1] + 5 - k * 1.3, hc[2])
+        ln = 13 + k * 0.8
+        m.strand(bez3([b0, (b0[0] - ln * 0.4, b0[1] + 1.5 - k * 0.2, b0[2] + 0.5),
+                       (b0[0] - ln, b0[1] + 2.5 - k * 0.8 + math.sin(t + k * 0.7) * 2.0, b0[2] + 1)], 4), 2.4, 0.5,
+                 mane if k % 2 else lt(mane, 0.2), grp='mane', fur=0.5, blend=0.25)
+    # vài cụm mây nhỏ dưới thân
+    for (cf, cz) in ((-8, -9), (-55, 8), (-100, -7)):
+        cu = base + 4 + math.sin(t + cf * 0.1) * 0.8
+        for q in range(3):
+            m.ell((cf + (q - 1) * 5, cu + (1.8 if q == 1 else 0), cz), 4.2, 2.6, 3.2, col='#f2f6ff', grp='cloud', spec=0.25, blend=1.4)
+    # yên trên gáy rồng
+    sj = 6
+    pj = pts[sj]; r = rs[sj]
+    m.cloth.append((pj[0], pj[1] + r * 0.6, 6.5, r * 1.2, sp['blanket'], sp['trim'], None, ['body']))
+    m.cap((pj[0] + 4.5, pj[1] + r * 0.84, pj[2]), (pj[0] - 4.5, pj[1] + r * 0.84, pj[2]), 2.5, 2.5, col=sp['leather'], grp='tack', spec=0.4, blend=0.3)
+    m.ell((pj[0] + 5.0, pj[1] + r * 0.84 + 1.7, pj[2]), 1.1, 1.8, 2.2, col=dk(sp['leather'], 0.15), grp='tack', blend=0.25, spec=0.5)
+    m.ell((pj[0] - 5.0, pj[1] + r * 0.84 + 2.0, pj[2]), 1.4, 2.2, 2.8, col=dk(sp['leather'], 0.15), grp='tack', blend=0.25, spec=0.5)
+    m.seat = (pj[0], pj[1] + r * 0.82 + 1.0, pj[2] * 0.3)
+    m.scale = sp.get('scale', 1.0)
+    return m
+
+
+def phoenix_long(sp, kind, i):
+    """Phượng Hoàng: cánh xòe lớn nhiều lớp, cổ thanh chữ S, 5 dải đuôi rất dài uốn lượn như dải lụa"""
+    m = M3(); m.cell, m.foot, m.footfb = BIG_CELL, BIG_FOOT, BIG_FOOTFB
+    col, bel, mane = sp['col'], sp['belly'], sp['mane']
+    run = kind == 'run'
+    t = (i / 6 if run else i / 2 * 0.35) * TAU
+    flap = math.sin(t) if run else 0.6 + 0.1 * math.sin(t)
+    base = sp['fly'] + (math.cos(t) * 2 if run else 0)
+    bc = (0, base + 30, 0)
+    BB = dict(col=col, cs=bel, back=sp.get('back'), grp='body', fur=0.5)
+    m.ell(bc, 13, 8.2, 8.0, **BB)
+    m.ell((bc[0] + 8, bc[1] + 2.2, 0), 7.4, 7.8, 7.0, **BB)        # ức
+    m.ell((bc[0] - 11, bc[1] + 0.8, 0), 7.6, 5.6, 5.8, **BB)
+    m.vpat.append(('*', ['body', 'neck', 'wing'], lambda U, V, ny: (np.sin(U * 1.6 + np.sin(V * 1.1) * 1.4) > 0.75) & (ny < 0.3), (sp.get('back', dk(col, 0.3)), 0.4)))
+    nk = bez3([(bc[0] + 9, bc[1] + 4, 0), (bc[0] + 17, bc[1] + 10, 0), (bc[0] + 11, bc[1] + 19, 0), (bc[0] + 17, bc[1] + 27 + math.sin(t) * 0.8, 0)], 9)
+    m.chain(nk, [3.8, 3.2, 2.7, 2.3, 2.05, 1.95, 1.95, 2.0, 2.15, 2.35], col=col, cs=bel, grp='neck', fur=0.4)
+    hc = nk[-1]
+    m.ell(hc, 3.3, 3.0, 2.9, col=col, grp='head', fur=0.3)
+    m.spike((hc[0] + 2.4, hc[1] + 0.2, 0), (hc[0] + 8.0, hc[1] - 2.2, 0), 1.5, col=sp['beak'], grp='head', spec=0.6, blend=0.3)
+    m.spike((hc[0] + 2.2, hc[1] - 1.1, 0), (hc[0] + 6.0, hc[1] - 2.7, 0), 1.0, col=dk(sp['beak'], 0.2), grp='head', spec=0.5, blend=0.3)
+    for k in range(6):   # mào lửa
+        b0 = (hc[0] - 0.4 - k * 0.5, hc[1] + 2.2, 0)
+        tip = (b0[0] - 3.5 - k * 1.6, b0[1] + 6.5 - k * 0.8 + math.sin(t + k) * 0.7, 0)
+        m.strand(bez3([b0, ((b0[0] + tip[0]) / 2 + 0.9, (b0[1] + tip[1]) / 2, 0), tip], 3), 1.3, 0.35, mx(mane, '#ff6020', k / 6), grp='mane', spec=0.4, blend=0.2)
+    for k in range(3):   # râu má dài
+        b0 = (hc[0] - 1, hc[1] - 1.5, 0)
+        m.strand(bez3([b0, (b0[0] - 4, b0[1] - 3 - k, 0.5), (b0[0] - 9 - k * 2, b0[1] - 2 - k * 1.5 + math.sin(t + k) * 1.2, 1)], 4), 0.9, 0.3, mane, grp='mane', blend=0.15)
+    # cánh lớn: lông bao, thứ cấp, sơ cấp dài
+    for s_ in (1, -1):
+        sh = (bc[0] + 3, bc[1] + 5, s_ * 6)
+        a = 0.45 + flap * 0.9
+        dv = (0.15, math.sin(a), math.cos(a) * s_)
+        wr = add3(sh, tuple(x * 16 for x in dv))
+        tipb = add3(sh, tuple(x * 33 for x in dv))
+        m.cap(sh, wr, 3.8, 2.8, col=col, grp='wing', fur=0.4, spec=0.2, **({} if s_ > 0 else dict(layer='mid')))
+        m.cap(wr, tipb, 2.8, 1.6, col=mx(col, mane, 0.3), grp='wing', fur=0.3, spec=0.2, **({} if s_ > 0 else dict(layer='mid')))
+        for k in range(18):
+            tt = k / 17
+            bp = lerp3(sh, tipb, tt)
+            ln = 11 + 28 * tt ** 1.2
+            tip = (bp[0] - ln * (0.95 - 0.2 * tt), bp[1] - ln * (0.3 - 0.65 * tt), bp[2] + s_ * tt * 3)
+            c = mx(mx(col, mane, 0.2 + 0.65 * tt), '#fff2a0', 0.3 * tt ** 2)
+            if k % 2: c = mx(c, col, 0.35)                  # lông xen kẽ vàng / đỏ cho tách từng chiếc
+            wl = {} if s_ > 0 else dict(layer='mid')        # cánh xa: không tô sẫm như chân xa
+            m.spike(bp, tip, 3.0 - tt * 0.6, col=lt(c, 0.15), grp='wing', fur=0, spec=0.5, blend=0.22, zk=1.1, **wl)
+        for k in range(8):
+            tt = k / 7
+            bp = lerp3(sh, wr, tt)
+            m.spike(bp, (bp[0] - 7.5, bp[1] - 1.8, bp[2] + s_ * 0.5), 2.6, col=mx(col, '#ffd040', 0.12 + 0.2 * (k % 2)), grp='wing', fur=0.3, spec=0.3, blend=0.25, **({} if s_ > 0 else dict(layer='mid')))
+    # 7 dải đuôi rất dài, mảnh như tơ, uốn lượn lệch nhịp; cuối mỗi dải là lông vũ hình lá có đốm mắt
+    for k in range(7):
+        q = (k - 3) / 3
+        n_ = 28 - abs(k - 3) * 3
+        tp = []
+        for j in range(n_):
+            f = bc[0] - 10 - j * 4.4
+            u = bc[1] + 0.5 - j * 0.5 + q * j * 1.15 + math.sin(j * 0.34 - t * 1.2 + k * 1.1) * (0.5 + j * 0.45)
+            sd = q * (1.5 + j * 0.35) + math.sin(j * 0.27 - t + k * 1.6) * j * 0.15
+            tp.append((f, u, sd))
+        for j in range(n_ - 1):
+            tt = j / (n_ - 1)
+            m.cap(tp[j], tp[j + 1], 1.05 - 0.45 * tt, 1.0 - 0.45 * tt, col=mx(mx(col, mane, 0.2 + 0.1 * k), '#ffe680', tt * 0.8), grp='tail', fur=0.05, spec=0.4, blend=0.15, zk=0.5)
+        e0, e1 = tp[-3], tp[-1]
+        dx, dy = e1[0] - e0[0], e1[1] - e0[1]; ln = math.hypot(dx, dy) or 1
+        c0 = ((e0[0] + e1[0]) / 2, (e0[1] + e1[1]) / 2, e1[2])
+        m.cap((c0[0] + dx / ln * 3.5, c0[1] + dy / ln * 3.5, c0[2]), (c0[0] - dx / ln * 3.5, c0[1] - dy / ln * 3.5, c0[2]), 1.0, 1.0, col='#ffe060', grp='tail', blend=0.1)
+        m.ell((c0[0] - dx / ln * 3.5, c0[1] - dy / ln * 3.5, c0[2]), 3.4, 2.6, 1.6, col='#ffc030', grp='tail', spec=0.5, blend=0.4, rot=math.atan2(-dy, dx))   # lá lông
+        m.ell((c0[0] - dx / ln * 4.0, c0[1] - dy / ln * 4.0, c0[2] + 0.5), 2.0, 1.6, 1.4, col=sp['eyespot'], grp='tail', spec=0.5, blend=0.1)
+        m.ell((c0[0] - dx / ln * 4.2, c0[1] - dy / ln * 4.2, c0[2] + 1.0), 0.9, 0.8, 1.0, col='#1a3a8a', grp='tail', blend=0.05)
+    for s in (1, -1):   # chân co
+        k0 = (bc[0] + 1, bc[1] - 6.5, s * 3)
+        m.cap(k0, (k0[0] - 3.5, k0[1] - 5, k0[2]), 1.4, 1.0, col=sp['beak'], grp='leg', spec=0.4)
+    m.cloth.append((bc[0] + 0.5, bc[1] + 6.0, 6.0, 8.0, sp['blanket'], sp['trim'], None, ['body']))
+    m.cap((bc[0] + 5, bc[1] + 7.4, 0), (bc[0] - 4.5, bc[1] + 7.4, 0), 2.5, 2.5, col=sp['leather'], grp='tack', spec=0.4, blend=0.3)
+    m.ell((bc[0] + 5.5, bc[1] + 9.0, 0), 1.1, 1.8, 2.2, col=dk(sp['leather'], 0.15), grp='tack', blend=0.25, spec=0.5)
+    m.ell((bc[0] - 5.0, bc[1] + 9.3, 0), 1.4, 2.2, 2.8, col=dk(sp['leather'], 0.15), grp='tack', blend=0.25, spec=0.5)
+    m.mark((hc[0] + 1.1, hc[1] + 0.7, 2.8), '#1a0a00', ('side',))
+    for s in (1, -1): m.mark((hc[0] + 1.4, hc[1] + 0.7, s * 2.7), '#1a0a00', ('down',))
+    m.seat = (bc[0] + 0.5, bc[1] + 8.4, 0)
+    m.scale = sp.get('scale', 1.0)
+    return m
+
+
 SPECIES = {
     'ngua_nau': dict(HORSE, blaze='#f4ece0', col='#8c5a30', belly='#b07c4c', back='#5e3a1c', mane='#22140c', sock='#3a2418', hoof='#241a16', blanket='#2a4aa0'),
     'bach_ma': dict(HORSE, col='#eeeef4', belly='#ffffff', back='#c4c4d2', mane='#c8c8d8', sock='#e4e4ec', hoof='#8a8a98', blanket='#a02828', trim='#ffd860',
@@ -805,18 +975,19 @@ SPECIES = {
                        elbowflame=True, manekind='flame', tail='flame', horns='#ffe0a0', whisker='#ffe0a0', fur=0.05, headkind='dragon', hang=-0.3, hscale=1.05,
                        neck=(13, 13),
                        scales='#ffb040', cloven=True, blanket='#6a0a0a', trim='#ffd040', eye='#ffe040', bridle=False, scale=1.22),
-    'thanh_long': dict(kind='dragon', col='#159a78', belly='#f0dc98', back='#0a5c44', mane='#46c8a6', horns='#f0e0b0', whisker='#e8f8f0', claw='#f0e8d0',
-                       br=7.0, fly=6, blanket='#0a3a5a', trim='#ffd860', leather='#3a2010', eye='#ffd020', scale=1.3),
-    'phuong_hoang': dict(kind='bird', col='#e23c18', belly='#ffb040', back='#a81c0c', mane='#ffd040', beak='#ffc030', eyespot='#30d0c0',
-                         fly=8, blanket='#6a0a2a', trim='#ffe060', leather='#4a1a10', scale=1.42),
+    'thanh_long': dict(kind='dragon_long', col='#159a78', belly='#f0dc98', back='#0a5c44', mane='#46c8a6', horns='#f0e0b0', whisker='#e8f8f0', claw='#f0e8d0',
+                       br=10.5, fly=16, blanket='#0a3a5a', trim='#ffd860', leather='#3a2010', eye='#ffd020', scale=1.3, cell=(256, 176), foot=(178, 168), footfb=(128, 166)),
+    'phuong_hoang': dict(kind='phoenix_long', col='#ff4a1c', belly='#ffc848', back='#d62a10', mane='#ffe24a', beak='#ffc030', eyespot='#30d0c0',
+                         fly=10, blanket='#6a0a2a', trim='#ffe060', leather='#4a1a10', scale=1.25, cell=(256, 176), foot=(168, 168), footfb=(128, 166)),
     'kim_quy': dict(kind='turtle', col='#e0b030', back='#a87810', skin='#5aa868', belly='#e8d898', spike='#f8f0c0', blanket='#8a1020', leather='#5a2a10',
                     eye='#d02010', scale=1.36),
 }
-FN = {'quad': quadruped, 'dragon': dragon, 'bird': bird, 'turtle': turtle}
+FN = {'quad': quadruped, 'dragon': dragon, 'bird': bird, 'turtle': turtle, 'dragon_long': dragon_long, 'phoenix_long': phoenix_long}
 
 
 def render(mid, out):
     sp = SPECIES[mid]
+    CW, CH = sp.get('cell', (128, 120))   # thú dài (rồng, phượng): ô lớn riêng
     sheet = np.zeros((CH * 5, CW * len(FRAMES), 4), np.uint8)
     seats = {v: [] for v in ROWS}
     for c, (kind, i) in enumerate(FRAMES):
@@ -828,7 +999,7 @@ def render(mid, out):
             if len(rows) > 1: sheet[rows[1] * CH:(rows[1] + 1) * CH, c * CW:(c + 1) * CW] = fr
             seats[view].append([seat[0], seat[1]])
     Image.fromarray(sheet, 'RGBA').save(os.path.join(out, mid + '.png'), optimize=True)
-    return mid, seats
+    return mid, seats, sp.get('cell'), sp.get('foot'), sp.get('footfb')
 
 
 def safe(mid, out):
@@ -849,4 +1020,8 @@ if __name__ == '__main__':
         for r in pool.starmap(safe, [(m, out) for m in ids]):
             if r:
                 meta['seat'][r[0]] = r[1]['side']; meta['seats'][r[0]] = r[1]; print('ok', r[0])
+                for key, val in (('cells', r[2]), ('feet', r[3]), ('feetFB', r[4])):   # ô lớn riêng của thú dài
+                    meta.setdefault(key, {})
+                    if val: meta[key][r[0]] = list(val)
+                    else: meta[key].pop(r[0], None)
     json.dump(meta, open(mp, 'w'), ensure_ascii=False)
