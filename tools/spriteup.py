@@ -6,7 +6,7 @@ Các bước:
   1. cắt từng ô, xoá nền trắng (loang từ mép ảnh, gồm cả quầng nhiễu JPEG quanh viền), bỏ đốm lẻ
   2. lọc nhiễu màu JPEG: gom về bảng màu ~48 màu
   3. phóng x4 bằng Scale2x hai lần (giữ cạnh sắc, làm mượt đường chéo) rồi thu về cỡ hiển thị
-  4. ghép thành sheet theo khuôn thú cưỡi của game: hàng side / down / down-đè / up / up-đè,
+  4. ghép thành sheet theo khuôn thú cưỡi của game: hàng side / down / down-đè / up / up-đè / side-đè,
      kèm điểm chân, điểm yên từng khung, và lớp "đè lên người cưỡi" (đầu, cổ ở góc nhìn trước)
 """
 import json
@@ -18,12 +18,14 @@ from PIL import Image
 from scipy.ndimage import binary_dilation, label
 
 # cấu hình từng thú: ô gốc, số cột khung, hệ số phóng hiển thị, khung đứng / chạy, điểm yên (tỉ lệ trong ô, mặt quay phải),
-# lớp đè (nửa bề ngang dải giữa, từ độ cao nào), độ nổi khi bay (điểm ảnh gốc)
+# lớp đè (nửa bề ngang dải giữa, từ độ cao nào), độ nổi khi bay (điểm ảnh gốc),
+# over_side: các khung nhìn ngang có cánh đè lên người cưỡi (phần ảnh phía trên hông người cưỡi trong dải x)
 CFG = {
     'ngua_xam': dict(src_cell=72, cols=3, k=1.75, idle=[1], run=[0, 1, 2, 1], side_row=1, gain=1.0,
                      seat={'side': (0.40, 0.55), 'down': (0.5, 0.42), 'up': (0.5, 0.48)}, over_down=(0.15, 0.40), flies=0),
     'hac_long': dict(src_cell=96, cols=3, k=2.0, idle=[0, 1, 2, 1], run=[0, 1, 2, 1], side_row=1, gain=1.3,
-                     seat={'side': (0.62, 0.41), 'down': (0.5, 0.36), 'up': (0.5, 0.42)}, over_down=(0.13, 0.44), flies=14),
+                     seat={'side': (0.62, 0.41), 'down': (0.5, 0.36), 'up': (0.5, 0.42)}, over_down=(0.13, 0.44), flies=14,
+                     over_side=dict(frames=[1], x=(0.40, 0.98))),   # cánh giơ lên che người cưỡi, cánh hạ thì lộ người
 }
 
 
@@ -130,7 +132,7 @@ def build(src, mid, out):
     ncol = len(seq)
     rows_src = {'side': c['side_row'], 'down': 0, 'up': 3}
     # khung: cùng một chân đặt cố định ở đáy ô (thú bay: lơ lửng phía trên điểm chân)
-    sheet = np.zeros((T * 5, T * ncol, 4), np.uint8)
+    sheet = np.zeros((T * 6, T * ncol, 4), np.uint8)   # hàng 6: lớp đè nhìn ngang
     seats = {v: [] for v in rows_src}
     floor = {}
     for v, r in rows_src.items():
@@ -142,6 +144,12 @@ def build(src, mid, out):
             seat = (round(fx_ * T, 1), round(fy_ * T, 1))
             if v == 'side':
                 sheet[0:T, ci * T:(ci + 1) * T] = a
+                os_ = c.get('over_side')
+                if os_ and fi in os_['frames']:
+                    ov = np.zeros_like(a)
+                    xl, xr = int(os_['x'][0] * T), int(os_['x'][1] * T)
+                    ov[:int(seat[1]) - 1, xl:xr] = a[:int(seat[1]) - 1, xl:xr]
+                    sheet[5 * T:6 * T, ci * T:(ci + 1) * T] = ov
             else:
                 rowi = 1 if v == 'down' else 3
                 sheet[rowi * T:(rowi + 1) * T, ci * T:(ci + 1) * T] = a
@@ -157,7 +165,7 @@ def build(src, mid, out):
     lift = c['flies'] * k
     meta = dict(cell=[T, T], foot=[T // 2, int(floor['side'] + 2 + lift)], footFB=[T // 2, int(floor['down'] + 2 + lift)],
                 frames={'idle': [0, len(c['idle'])], 'run': [len(c['idle']), len(c['run'])]},
-                rows={'side': [0], 'down': [1, 2], 'up': [3, 4]}, seats=seats, flies=bool(c['flies']))
+                rows={'side': [0, 5] if c.get('over_side') else [0], 'down': [1, 2], 'up': [3, 4]}, seats=seats, flies=bool(c['flies']))
     mp = os.path.join(out, 'mounts.json')
     allm = json.load(open(mp)) if os.path.exists(mp) else {}
     allm[mid] = meta

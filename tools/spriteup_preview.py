@@ -49,7 +49,7 @@ def sheet_preview(mid, src, path):
     Z = 2
     pad = 16
     W = max(ncol * T, 4 * (T + 60)) * Z + pad * 2
-    H = (T * 2 + T * 3 + (T + 70) + 120) * Z
+    H = (T * 2 + T * 3 + (T + 70) * 2 + 160) * Z
     out = Image.new('RGBA', (W, H), (52, 74, 50, 255))
     d = ImageDraw.Draw(out)
     y = 10
@@ -71,6 +71,11 @@ def sheet_preview(mid, src, path):
     run0 = m['frames']['run'][0]
     for j, (v, fl) in enumerate([('side', False), ('side', True), ('down', False), ('up', False)]):
         s = scene(mid, v, run0 + 1, fl)
+        out.alpha_composite(s.resize((s.width * Z, s.height * Z), Image.NEAREST), (pad + j * (T + 60) * Z, y))
+    y += (T + 70) * Z + 10
+    d.text((pad, y), 'nhin ngang tung khung chay (canh gio len che nguoi cuoi, canh ha thi lo nguoi)', fill=(255, 235, 190, 255)); y += 18
+    for j in range(min(4, m['frames']['run'][1])):
+        s = scene(mid, 'side', run0 + j)
         out.alpha_composite(s.resize((s.width * Z, s.height * Z), Image.NEAREST), (pad + j * (T + 60) * Z, y))
     out = out.crop((0, 0, W, y + (T + 70) * Z + 10))
     out.save(path)
