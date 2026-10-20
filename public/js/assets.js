@@ -46,9 +46,14 @@
   const ready = Promise.all(jobs);
 
   const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; return [c, x]; };
-  const cache = {};
-  let cacheN = 0;
-  const put = (k, v) => { if (++cacheN > 1400) { for (const key in cache) delete cache[key]; cacheN = 0; } return (cache[k] = v); };
+  // bộ nhớ đệm khung đã ghép: đầy thì bỏ dần khung cũ nhất (không xoá sạch một lần gây khựng hình)
+  const cacheMap = new Map(), CACHE_MAX = 900;   // mỗi khung 144x144 ~ 83KB
+  const put = (k, v) => {
+    cacheMap.set(k, v);
+    if (cacheMap.size > CACHE_MAX) { const it = cacheMap.keys(); for (let i = 0; i < 200; i++) cacheMap.delete(it.next().value); }
+    return v;
+  };
+  const hitOf = k => { const v = cacheMap.get(k); if (v) { cacheMap.delete(k); cacheMap.set(k, v); } return v; };   // dùng lại thì đưa lên cuối hàng
   const has = cls => !!(imgs[cls + '_a0'] && META[cls]);
   function layerOf(cls, name) { const m = META[cls]; return m && m.layers.indexOf(name) >= 0 ? need(cls + '_' + name) : null; }
   // (hàng, cột) của khung: trạng thái game -> động tác trong sheet; ngã = khung cuối của động tác ngã
@@ -95,7 +100,7 @@
     const im = layerOf(cls, 'w' + w) || imgs[cls + '_w0'];
     if (!im) return null;
     const key = 'wg:' + cls + w + ':' + dir + ':' + state + ':' + i + ':' + color;
-    if (cache[key]) return cache[key];
+    { const hit = hitOf(key); if (hit) return hit; }
     const [row, col] = cellOf(cls, dir, state, i);
     const [m, mx] = mk(SRC, SRC);
     if (isFlip(dir)) { mx.translate(SRC, 0); mx.scale(-1, 1); }
@@ -116,7 +121,7 @@
     const metal = L.a && L.ar ? layerOf(cls, 'am' + L.a) : null, hmetal = L.h && L.hr ? layerOf(cls, 'hm' + L.h) : null;
     const fxu = layerOf(cls, 'fxu'), fxo = layerOf(cls, 'fxo');
     const key = cls + ':' + dir + ':' + state + ':' + i + ':' + (body ? L.a + '.' + L.ar + (metal ? 'm' : '') : 'x') + ':' + (wpn ? L.w : 'x') + ':' + (helm ? L.h + '.' + L.hr + (hmetal ? 'm' : '') : 0) + (fxo ? 'f' : '');
-    if (cache[key]) return cache[key];
+    { const hit = hitOf(key); if (hit) return hit; }
     const [row, col] = cellOf(cls, dir, state, i), sx = col * SRC, sy = row * SRC;
     const [c, x] = mk(SRC, SRC);
     if (!state.startsWith('ride')) { x.fillStyle = 'rgba(0,0,0,0.3)'; x.beginPath(); x.ellipse(72, 128, state === 'dead' ? 33 : 19, 6, 0, 0, Math.PI * 2); x.fill(); }
@@ -244,11 +249,11 @@
     const i = ICONS.j.i[key];
     if (i == null) return procIcon.apply(this, arguments);
     const ck = 'ic:' + key;
-    if (cache[ck]) return cache[ck];
+    { const hit = hitOf(ck); if (hit) return hit; }
     const n = ICONS.j.size, cols = ICONS.j.cols;
     const [c, x] = mk(n, n);
     x.drawImage(ICONS.im, (i % cols) * n, Math.floor(i / cols) * n, n, n, 0, 0, n, n);
-    return (cache[ck] = c);
+    return put(ck, c);
   };
 
   const procMonster = Sprites.monsterSprite;
@@ -256,12 +261,12 @@
     const im = imgs['m:' + type];
     if (!im) return procMonster.apply(this, arguments);
     const key = 'm:' + type + ':' + (frame % 2);
-    if (cache[key]) return cache[key];
+    { const hit = hitOf(key); if (hit) return hit; }
     const [c, x] = mk(64, 64);
     const s = Math.min(60 / im.width, 62 / im.height), w = Math.round(im.width * s), h = Math.round(im.height * s);
     x.fillStyle = 'rgba(0,0,0,0.28)'; x.beginPath(); x.ellipse(32, 60, w * 0.3, 4, 0, 0, Math.PI * 2); x.fill();
     x.drawImage(im, 32 - w / 2, 62 - h + (frame % 2), w, h - (frame % 2));
-    return (cache[key] = c);
+    return put(key, c);
   };
 
   // HTML biểu tượng kỹ năng cho nút bấm / bảng võ công

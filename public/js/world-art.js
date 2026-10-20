@@ -348,7 +348,7 @@
         else if (r < 0.2 + fl) { kind = 'rock'; nat = pick(['rock_s0', 'rock_s1', 'pebbles0', 'rock_m0'], 109); }
         else if (r < 0.206 + fl && theme !== 'town') { kind = 'rock'; nat = pick(['mush_red', 'mush_brown', 'stump0', 'log0', 'mush_brown'], 110); }
         else if (r < 0.212 + fl && theme === 'mountain') { kind = 'rock'; nat = 'leaves0'; }
-        else if (r < 0.245 + fl && FLORA_WILD[flora]) { kind = 'rock'; nat = pick(FLORA_WILD[flora], 121); }   // nấm, gốc cây, khúc gỗ, bụi (tools/flora.py)
+        else if (r < 0.23 + fl && FLORA_WILD[flora]) { kind = 'rock'; nat = pick(FLORA_WILD[flora], 121); }   // nấm, gốc cây, khúc gỗ, bụi (tools/flora.py)
       }
       else if (t === T.PATH && theme === 'cave') {
         if (r < 0.05) { kind = 'rock'; nat = pick(icy ? ['peb_ice', 'istalag2', 'fern_blue', 'crys_b1'] : ['peb_cave', 'stalag2', 'mush_glow', 'plant_glow', 'crys_p1', 'peb_cave'], 112); }
@@ -445,7 +445,7 @@
   function ambient(now, cam, vw, vh, dt) {
     const kinds = { cave: ['spark'], plains: ['firefly', 'leaf'], bamboo: ['leaf', 'firefly'], mountain: ['leaf'], town: ['petal'], snow: ['snow'], desert: ['dust'], demon: ['ember'], arena: ['dust'] }[theme] || [];
     const rate = theme === 'snow' ? 0.9 : theme === 'demon' ? 0.5 : theme === 'cave' ? 0.35 : 0.25;
-    if (kinds.length && amb.length < 90 && Math.random() < rate) {
+    if (kinds.length && amb.length < 60 && Math.random() < rate) {
       const k = kinds[Math.floor(Math.random() * kinds.length)];
       const top = k === 'snow' || k === 'leaf' || k === 'petal';
       amb.push({ k, x: cam.x + Math.random() * vw, y: top ? cam.y - 10 : cam.y + Math.random() * vh, t0: now, life: 4000 + Math.random() * 5000, ph: Math.random() * 6.28,
@@ -458,25 +458,34 @@
     }
   }
   function drawAmbient(ctx, now) {
+    if (!amb.length) return;
+    // lượt 1: hạt phát sáng (cộng màu) – đổi chế độ hòa trộn một lần cho cả lượt
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
     for (const a of amb) {
-      const age = (now - a.t0) / a.life, al = Math.min(1, age * 5, (1 - age) * 3);
-      ctx.globalAlpha = Math.max(0, al);
+      if (a.k !== 'spark' && a.k !== 'firefly' && a.k !== 'ember') continue;
+      const age = (now - a.t0) / a.life, al = Math.max(0, Math.min(1, age * 5, (1 - age) * 3));
       if (a.k === 'spark') {   // đốm sáng lơ lửng trong hang (hình thoi nhỏ)
-        ctx.save(); ctx.globalCompositeOperation = 'lighter';
-        ctx.globalAlpha = Math.max(0, al) * (0.4 + Math.sin(now / 260 + a.ph) * 0.4);
+        ctx.globalAlpha = al * (0.4 + Math.sin(now / 260 + a.ph) * 0.4);
         ctx.fillStyle = icy ? '#a8e8ff' : '#7affd0';
         ctx.fillRect(a.x - 1, a.y - 3, 2, 6); ctx.fillRect(a.x - 3, a.y - 1, 6, 2);
-        ctx.restore();
-      } else if (a.k === 'firefly' || a.k === 'ember') {
-        ctx.save(); ctx.globalCompositeOperation = 'lighter';
-        const fl = 0.5 + Math.sin(now / 200 + a.ph) * 0.5;
-        ctx.globalAlpha = Math.max(0, al) * fl;
-        const gs = Sprites.glow(a.k === 'firefly' ? '#d8ff70' : '#ff6020', 10, true); ctx.drawImage(gs, a.x - 10, a.y - 10);
+      } else {
+        ctx.globalAlpha = al * (0.5 + Math.sin(now / 200 + a.ph) * 0.5);
+        ctx.drawImage(Sprites.glow(a.k === 'firefly' ? '#d8ff70' : '#ff6020', 10, true), a.x - 10, a.y - 10);
         ctx.fillStyle = a.k === 'firefly' ? '#f4ffc0' : '#ffd080'; ctx.fillRect(a.x - 1, a.y - 1, 2, 2);
-        ctx.restore();
-      } else if (a.k === 'leaf' || a.k === 'petal') {
-        ctx.save(); ctx.translate(a.x, a.y); ctx.rotate(Math.sin(now / 400 + a.ph) * 1.2);
-        ctx.fillStyle = a.k === 'petal' ? '#ffb0c8' : (a.ph > 3 ? '#e09030' : '#6ab040'); ctx.fillRect(-3, -1.5, 6, 3); ctx.restore();
+      }
+    }
+    ctx.restore();
+    // lượt 2: lá, cánh hoa, tuyết, bụi (lá xoay: đặt ma trận trực tiếp thay vì save/restore từng hạt)
+    for (const a of amb) {
+      if (a.k === 'spark' || a.k === 'firefly' || a.k === 'ember') continue;
+      const age = (now - a.t0) / a.life;
+      ctx.globalAlpha = Math.max(0, Math.min(1, age * 5, (1 - age) * 3));
+      if (a.k === 'leaf' || a.k === 'petal') {
+        const r = Math.sin(now / 400 + a.ph) * 1.2, c = Math.cos(r), sn = Math.sin(r);
+        const m = ctx.getTransform();
+        ctx.transform(c, sn, -sn, c, a.x, a.y);
+        ctx.fillStyle = a.k === 'petal' ? '#ffb0c8' : (a.ph > 3 ? '#e09030' : '#6ab040'); ctx.fillRect(-3, -1.5, 6, 3);
+        ctx.setTransform(m);
       } else if (a.k === 'snow') { ctx.fillStyle = '#ffffff'; ctx.fillRect(a.x, a.y, 3, 3); }
       else if (a.k === 'dust') { ctx.fillStyle = '#e8d0a0'; ctx.fillRect(a.x, a.y, 2, 2); }
     }
@@ -487,13 +496,14 @@
   let vigCanvas = null, vigKey = '';
   const TINT = { cave: ['#4060c0', 0.14], town: ['#ffcf80', 0.08], plains: ['#ffe0a0', 0.07], bamboo: ['#a0ffb0', 0.06], mountain: ['#ffb070', 0.08], desert: ['#ffb050', 0.1], snow: ['#a0d0ff', 0.1], demon: ['#ff2040', 0.12], arena: ['#ffd090', 0.06] };
   // lớp ám màu theo vùng + tối viền. cheap: gộp sẵn màu ám vào ảnh tối viền (1 lần vẽ, không dùng hòa trộn 'overlay'
-  // vốn rất nặng trên điện thoại); ảnh dựng ở 1/4 độ phân giải rồi phóng lên vì chỉ là dải màu mịn.
+  // vốn rất nặng); ảnh dựng sẵn đúng cỡ màn hình, chỉ dựng lại khi đổi cỡ.
   function overlay(ctx, cw, ch, cheap) {
+    cheap = true;   // hòa trộn 'overlay' toàn màn hình quá nặng cả trên máy tính yếu: luôn dùng ảnh gộp sẵn
     const [tc, ta] = TINT[theme] || TINT.plains;
     const k = cw + 'x' + ch + (cheap ? ':' + theme : '');
     if (vigKey !== k) {
       vigKey = k; vigCanvas = document.createElement('canvas');
-      const sw = Math.max(32, cw >> 2), sh = Math.max(32, ch >> 2);
+      const sw = Math.max(32, cw), sh = Math.max(32, ch);   // vẽ sẵn đúng cỡ màn hình: mỗi khung chỉ chép, không phóng to
       vigCanvas.width = sw; vigCanvas.height = sh;
       const g = vigCanvas.getContext('2d');
       if (cheap) { g.globalAlpha = ta; g.fillStyle = tc; g.fillRect(0, 0, sw, sh); g.globalAlpha = 1; }
@@ -503,7 +513,7 @@
     }
     ctx.save();
     if (!cheap) { ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = ta * 2; ctx.fillStyle = tc; ctx.fillRect(0, 0, cw, ch); }
-    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.imageSmoothingEnabled = true; ctx.drawImage(vigCanvas, 0, 0, cw, ch);
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.drawImage(vigCanvas, 0, 0);
     ctx.restore();
   }
 
@@ -517,7 +527,7 @@
     flora = m.theme === 'river' || m.theme === 'ruins' ? m.theme : theme;
     icy = theme === 'cave' && (/bang|ice|tuyet/.test(m.id) || m.weather === 'snow');
     chunks = new Map(); amb.length = 0;
-    buildDecos();
+    buildDecos(); indexDecos();
   }
   function drawGround(ctx, cam, vw, vh, now) {
     const c0 = Math.max(0, Math.floor(cam.x / CPX)), r0 = Math.max(0, Math.floor(cam.y / CPX));
@@ -527,7 +537,7 @@
       const key = cx + ',' + cy;
       let c = chunks.get(key);
       if (!c) {
-        if (built >= 2) { ctx.fillStyle = '#3a722b'; ctx.fillRect(cx * CPX, cy * CPX, CPX, CPX); continue; } // vẽ dần, tránh giật
+        if (built >= 1) { ctx.fillStyle = '#3a722b'; ctx.fillRect(cx * CPX, cy * CPX, CPX, CPX); continue; } // mỗi khung dựng tối đa 1 mảng nền, tránh giật
         c = renderChunk(cx, cy); chunks.set(key, c); built++;
         if (chunks.size > 28) chunks.delete(chunks.keys().next().value);
       } else { chunks.delete(key); chunks.set(key, c); }
@@ -555,34 +565,82 @@
     ctx.restore();
   }
   // các vật trang trí trong khung nhìn -> danh sách để sắp xếp theo y cùng nhân vật
-  function visibleDecos(cam, vw, vh, out) {
+  // lưới ô 4x4 (256px) chứa vật trang trí: mỗi khung chỉ duyệt các ô nằm trong khung nhìn
+  const DG = TILE * 4;
+  let decoGrid = new Map();
+  function indexDecos() {
+    decoGrid = new Map();
     for (const d of decos) {
-      if (d.x < cam.x - 60 || d.x > cam.x + vw + 60 || d.y < cam.y - 40 || d.y > cam.y + vh + 60) continue;
-      out.push({ y: d.flat || d.flatRow ? -1e9 : d.y, k: 'deco', d });   // đồ hình phẳng luôn nằm dưới mọi thứ
+      const k = Math.floor(d.x / DG) + ',' + Math.floor(d.y / DG);
+      let a = decoGrid.get(k); if (!a) decoGrid.set(k, a = []);
+      a.push(d);
     }
   }
+  function visibleDecos(cam, vw, vh, out) {
+    const gx0 = Math.floor((cam.x - 140) / DG), gx1 = Math.floor((cam.x + vw + 140) / DG);
+    const gy0 = Math.floor((cam.y - 60) / DG), gy1 = Math.floor((cam.y + vh + 160) / DG);
+    for (let gy = gy0; gy <= gy1; gy++) for (let gx = gx0; gx <= gx1; gx++) {
+      const a = decoGrid.get(gx + ',' + gy);
+      if (!a) continue;
+      for (const d of a) {
+        if (d.x < cam.x - 140 || d.x > cam.x + vw + 140 || d.y < cam.y - 40 || d.y > cam.y + vh + 160) continue;
+        out.push({ y: d.flat || d.flatRow ? -1e9 : d.y, k: 'deco', d });   // đồ hình phẳng luôn nằm dưới mọi thứ
+      }
+    }
+  }
+  // ảnh vẽ sẵn: bóng elip theo bề ngang (làm tròn 8px) và nền luống đất
+  const shadowCache = new Map();
+  function shadowSprite(w) {
+    const k = Math.max(8, Math.round(w / 8) * 8);
+    let c = shadowCache.get(k);
+    if (!c) {
+      const rx = Math.ceil(k * 0.36), ry = Math.max(4, Math.ceil(k * 0.1));
+      [c] = mk(rx * 2 + 2, ry * 2 + 2);
+      const g = c.getContext('2d'); g.fillStyle = 'rgba(10,16,8,0.25)'; g.beginPath(); g.ellipse(rx + 1, ry + 1, rx, ry, 0, 0, Math.PI * 2); g.fill();
+      shadowCache.set(k, c);
+    }
+    return c;
+  }
+  const ellCache = new Map();   // bóng elip vẽ sẵn cho cây / xương rồng
+  function ellSprite(rx, ry, col) {
+    const k = rx + ':' + ry + col;
+    let c = ellCache.get(k);
+    if (!c) { [c] = mk(rx * 2 + 2, ry * 2 + 2); const g = c.getContext('2d'); g.fillStyle = col; g.beginPath(); g.ellipse(rx + 1, ry + 1, rx, ry, 0, 0, Math.PI * 2); g.fill(); ellCache.set(k, c); }
+    return c;
+  }
+  let furrowImg = null;
+  function furrowSprite(w, h) {
+    if (furrowImg && furrowImg.width === w && furrowImg.height === h) return furrowImg;
+    const [c, g] = mk(w, h);
+    g.fillStyle = 'rgba(70,44,22,0.85)'; g.fillRect(0, 0, w, h);
+    g.fillStyle = 'rgba(40,24,10,0.6)'; for (let yy = 14; yy < h - 4; yy += 17) g.fillRect(4, yy, w - 8, 4);
+    g.fillStyle = 'rgba(130,90,50,0.45)'; for (let yy = 10; yy < h - 4; yy += 17) g.fillRect(4, yy, w - 8, 2);
+    g.strokeStyle = 'rgba(30,18,8,0.5)'; g.lineWidth = 2; g.strokeRect(1, 1, w - 2, h - 2);
+    return (furrowImg = c);
+  }
   function drawDeco(ctx, d, now, nearPlayers) {
-    if (d.flatRow) {   // luống đất: nền nâu sẫm, các rãnh ngang
-      const { w, h } = d.flatRow, x0 = Math.round(d.x - w / 2), y0 = Math.round(d.y);
-      ctx.fillStyle = 'rgba(70,44,22,0.85)'; ctx.fillRect(x0, y0, w, h);
-      ctx.fillStyle = 'rgba(40,24,10,0.6)'; for (let yy = y0 + 14; yy < y0 + h - 4; yy += 17) ctx.fillRect(x0 + 4, yy, w - 8, 4);
-      ctx.fillStyle = 'rgba(130,90,50,0.45)'; for (let yy = y0 + 10; yy < y0 + h - 4; yy += 17) ctx.fillRect(x0 + 4, yy, w - 8, 2);
-      ctx.strokeStyle = 'rgba(30,18,8,0.5)'; ctx.lineWidth = 2; ctx.strokeRect(x0 + 1, y0 + 1, w - 2, h - 2);
+    if (d.flatRow) {   // luống đất: ảnh vẽ sẵn
+      ctx.drawImage(furrowSprite(d.flatRow.w, d.flatRow.h), Math.round(d.x - d.flatRow.w / 2), Math.round(d.y));
       return;
     }
     const ns = d.nat && Assets.nature(d.nat);
-    if (ns && d.sh) { ctx.fillStyle = 'rgba(10,16,8,0.25)'; ctx.beginPath(); ctx.ellipse(Math.round(d.x), Math.round(d.y) - 1, ns.w * 0.36, Math.max(4, ns.w * 0.1), 0, 0, Math.PI * 2); ctx.fill(); }
-    const img = ns ? null : decoSprite(d.kind, d.kind === 'banner' ? d.v : d.v % 6);
-    ctx.save(); ctx.translate(Math.round(d.x), Math.round(d.y));
-    if (d.sway) {
-      let sk = Math.sin(now / 900 + d.ph) * 0.12;
-      for (const p of nearPlayers) if (Math.abs(p.x - d.x) < 26 && Math.abs(p.y - d.y) < 18) sk += (d.x - p.x) > 0 ? 0.35 : -0.35; // cỏ rạp khi đi qua
-      ctx.transform(1, 0, sk, 1, 0, 0);
+    const dx = Math.round(d.x), dy = Math.round(d.y);
+    if (ns && d.sh) { const sc = shadowSprite(ns.w); ctx.drawImage(sc, dx - (sc.width >> 1), dy - 1 - (sc.height >> 1)); }
+    if (ns && !d.sway && !d.flat) {   // vật đứng yên: vẽ thẳng
+      ctx.drawImage(ns.img, ns.sx, ns.sy, ns.w, ns.h, dx - ns.ax, dy - ns.ay, ns.w, ns.h);
+    } else {
+      const img = ns ? null : decoSprite(d.kind, d.kind === 'banner' ? d.v : d.v % 6);
+      ctx.save(); ctx.translate(dx, dy);
+      if (d.sway) {
+        let sk = Math.sin(now / 900 + d.ph) * 0.12;
+        for (const p of nearPlayers) if (Math.abs(p.x - d.x) < 26 && Math.abs(p.y - d.y) < 18) sk += (d.x - p.x) > 0 ? 0.35 : -0.35; // cỏ rạp khi đi qua
+        ctx.transform(1, 0, sk, 1, 0, 0);
+      }
+      if (d.flat) ctx.scale(3.6, 3.6);   // đồ hình phẳng khắc trên nền: phóng to giữa sân
+      if (ns) ctx.drawImage(ns.img, ns.sx, ns.sy, ns.w, ns.h, -ns.ax, -ns.ay, ns.w, ns.h);
+      else ctx.drawImage(img, -24, -46);
+      ctx.restore();
     }
-    if (d.flat) ctx.scale(3.6, 3.6);   // đồ hình phẳng khắc trên nền: phóng to giữa sân
-    if (ns) ctx.drawImage(ns.img, ns.sx, ns.sy, ns.w, ns.h, -ns.ax, -ns.ay, ns.w, ns.h);
-    else ctx.drawImage(img, -24, -46);
-    ctx.restore();
     if (d.fx && Math.random() < 0.15) {   // khói hương, lửa, bọt độc
       const fx = { censer: [0, -34, '#d8d0c8', -18, 1400, 3], brazier: [0, -30, '#ffa030', -60, 600, 3], bonfire: [0, -22, '#ffb030', -55, 650, 3], cauldron: [0, -20, '#8aff50', -25, 900, 2.6], fountain: [0, -24, '#bfeaff', -30, 500, 2] }[d.fx];
       if (fx) FX.emit(1, d.x + fx[0] + (Math.random() - 0.5) * 10, d.y + fx[1], { speed: 4, vy: fx[3], life: fx[4], size: fx[5], color: fx[2], drag: 0.5 });
@@ -621,9 +679,9 @@
     if (ns) {   // cây / đá vẽ sẵn (tools/nature.py)
       const qx = tx * TILE + 32, qy = (ty + 1) * TILE - 8;
       ctx.save(); ctx.translate(qx, qy);
-      if (t === T.CACTUS || t === T.DEADTREE) { ctx.fillStyle = 'rgba(30,16,4,0.28)'; ctx.beginPath(); ctx.ellipse(6, -2, ns.w * 0.4, 8, 0, 0, Math.PI * 2); ctx.fill(); }
+      if (t === T.CACTUS || t === T.DEADTREE) { const e = ellSprite(Math.round(ns.w * 0.4), 8, 'rgba(30,16,4,0.28)'); ctx.drawImage(e, 6 - e.width / 2, -2 - e.height / 2); }
       if (t === T.TREE) {
-        ctx.fillStyle = 'rgba(10,20,8,0.28)'; ctx.beginPath(); ctx.ellipse(10, -2, 40, 11, 0, 0, Math.PI * 2); ctx.fill();
+        const e = ellSprite(40, 11, 'rgba(10,20,8,0.28)'); ctx.drawImage(e, 10 - e.width / 2, -2 - e.height / 2);
         ctx.transform(1, 0, Math.sin(now / 1500 + tx * 1.3 + ty * 0.7) * 0.025, 1, 0, 0);
       }
       ctx.drawImage(ns.img, ns.sx, ns.sy, ns.w, ns.h, -ns.ax, -ns.ay, ns.w, ns.h);
@@ -638,7 +696,7 @@
     if (big || t === T.BAMBOO) {
       ctx.save(); ctx.translate(bx, by);
       ctx.transform(1, 0, Math.sin(now / 1500 + tx * 1.3 + ty * 0.7) * 0.03, 1, 0, 0);
-      if (big) { ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(0, -6, 44, 12, 0, 0, Math.PI * 2); ctx.fill(); }
+      if (big) { const e = ellSprite(44, 12, 'rgba(0,0,0,0.25)'); ctx.drawImage(e, -e.width / 2, -6 - e.height / 2); }
       ctx.drawImage(img, -img.width / 2, big ? -img.height + 6 : -img.height);
       ctx.restore();
     } else ctx.drawImage(img, tx * TILE, by - img.height);

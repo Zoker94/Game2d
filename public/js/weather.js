@@ -96,15 +96,18 @@
     }
     ctx.globalAlpha = 0.9 * level; ctx.stroke();
     // vũng nước bắn tung
-    ctx.strokeStyle = 'rgba(210,230,255,0.7)'; ctx.lineWidth = 1;
+    // vũng nước bắn tung: gom vào một đường vẽ (vòng loang dẹt + 2 giọt bắn), độ mờ chung
     splashes = splashes.filter(s => (s.t += dt) < 14);
+    ctx.strokeStyle = 'rgba(210,230,255,0.7)'; ctx.lineWidth = 1; ctx.fillStyle = '#d8e8ff';
+    ctx.globalAlpha = 0.45 * level;
+    ctx.beginPath();
     for (const s of splashes) {
       s.x -= dx; s.y -= dy;
-      const p = s.t / 14;
-      ctx.globalAlpha = (1 - p) * 0.7 * level;
-      ctx.beginPath(); ctx.ellipse(s.x, s.y, 1 + p * 6, 0.5 + p * 2, 0, 0, Math.PI * 2); ctx.stroke();
-      if (p < 0.4) { ctx.fillStyle = '#d8e8ff'; ctx.fillRect(s.x - 3 - p * 6, s.y - 3 - p * 8, 1, 1); ctx.fillRect(s.x + 2 + p * 6, s.y - 2 - p * 9, 1, 1); }
+      const p = s.t / 14, rx = 1 + p * 6, ry = 0.5 + p * 2;
+      ctx.moveTo(s.x + rx, s.y); ctx.ellipse(s.x, s.y, rx, ry, 0, 0, Math.PI * 2);
+      if (p < 0.4) { ctx.fillRect(s.x - 3 - p * 6, s.y - 3 - p * 8, 1, 1); ctx.fillRect(s.x + 2 + p * 6, s.y - 2 - p * 9, 1, 1); }
     }
+    ctx.stroke();
     ctx.globalAlpha = 1;
     if (storm) drawLightning(ctx, W, H, now);
   }
@@ -145,21 +148,23 @@
     g.addColorStop(0, `rgba(220,235,255,${(bl ? 0.18 : 0.05) * level})`);
     g.addColorStop(1, `rgba(240,248,255,${(bl ? 0.34 : 0.12) * level})`);
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    const want = Math.round(area * (bl ? 260 : 120) * level);
+    const want = Math.round(area * (bl ? 180 : 90) * level);
     while (flakes.length < want) flakes.push(spawnFlake(W, H, flakes.length > 0));
     if (flakes.length > want) flakes.length = want;
     const wx = bl ? 6 : 0.4;
     ctx.fillStyle = '#ffffff';
+    ctx.globalAlpha = 0.85 * level;
+    ctx.beginPath();   // bông lớn: gom chung một đường vẽ; bông nhỏ: ô vuông
     for (const f of flakes) {
       f.ph += 0.03 * dt;
       f.x += (wx * (0.6 + f.r * 0.2) + Math.sin(f.ph) * (bl ? 0.6 : 0.5)) * dt - dx;
       f.y += f.vy * (bl ? 2.2 : 1) * dt - dy;
       if (f.y > H + 6) Object.assign(f, spawnFlake(W, H, true));
       if (f.x > W + 80) f.x -= W + 160; else if (f.x < -80) f.x += W + 160;
-      ctx.globalAlpha = f.a * level;
-      if (f.r > 2.2) { ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2); ctx.fill(); }
+      if (f.r > 2.2) { ctx.moveTo(f.x + f.r, f.y); ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2); }
       else ctx.fillRect(f.x, f.y, f.r * 1.4, f.r * 1.4);
     }
+    ctx.fill();
     ctx.globalAlpha = 1;
   }
 
@@ -168,29 +173,38 @@
     if (sand) {   // bão cát: phủ màu vàng đục
       ctx.fillStyle = `rgba(200,160,90,${0.26 * level})`; ctx.fillRect(0, 0, W, H);
     } else if (pure) { ctx.fillStyle = `rgba(120,130,110,${0.06 * level})`; ctx.fillRect(0, 0, W, H); }
-    // vệt gió
-    const wantS = Math.round(area * (pure ? 34 : 14) * level);
+    // vệt gió: gom theo 3 mức độ mờ, mỗi mức một lần vẽ
+    const wantS = Math.round(area * (pure ? 18 : 9) * level);
     while (streaks.length < wantS) streaks.push(spawnStreak(W, H, streaks.length > 0));
     if (streaks.length > wantS) streaks.length = wantS;
     ctx.lineWidth = 1.6; ctx.lineCap = 'round';
     for (const s of streaks) {
       s.x += s.v * dt - dx; s.y -= dy; s.wob += 0.05 * dt;
       if (s.x - s.len > W) Object.assign(s, spawnStreak(W, H, true));
-      ctx.strokeStyle = sand ? `rgba(240,215,160,${s.a * 1.6 * level})` : `rgba(255,255,255,${s.a * level})`;
-      const yy = s.y + Math.sin(s.wob) * 4;
-      ctx.beginPath(); ctx.moveTo(s.x, yy); ctx.quadraticCurveTo(s.x - s.len / 2, yy + Math.sin(s.wob + 1) * 6, s.x - s.len, yy); ctx.stroke();
+    }
+    for (let q = 0; q < 3; q++) {
+      ctx.beginPath(); let n = 0, am = 0;
+      for (const s of streaks) {
+        if (Math.min(2, Math.floor(s.a * 12)) !== q) continue;
+        const yy = s.y + Math.sin(s.wob) * 4;
+        ctx.moveTo(s.x, yy); ctx.quadraticCurveTo(s.x - s.len / 2, yy + Math.sin(s.wob + 1) * 6, s.x - s.len, yy); n++; am += s.a;
+      }
+      if (!n) continue;
+      const a = am / n;
+      ctx.strokeStyle = sand ? `rgba(240,215,160,${a * 1.6 * level})` : `rgba(255,255,255,${a * level})`; ctx.stroke();
     }
     if (!pure) return;
     // lá cây / cát / tàn tro bay
-    const wantB = Math.round(area * (sand ? 180 : 70) * level);
+    const wantB = Math.round(area * (sand ? 90 : 40) * level);
     while (bits.length < wantB) bits.push(spawnBit(W, H, bits.length > 0));
     if (bits.length > wantB) bits.length = wantB;
+    ctx.globalAlpha = level * (sand ? 0.7 : 0.95);
+    let lastC = null;
     for (const b of bits) {
       b.ph += 0.08 * dt; b.rot += b.vr * dt;
       b.x += b.vx * (sand ? 1.4 : 1) * dt - dx; b.y += (b.vy + Math.sin(b.ph) * 1.2) * dt - dy;
       if (b.x > W + 20 || b.y > H + 30 || b.y < -40) Object.assign(b, spawnBit(W, H, true));
-      ctx.globalAlpha = level * (sand ? 0.7 : 0.95);
-      ctx.fillStyle = b.c;
+      if (b.c !== lastC) { ctx.fillStyle = lastC = b.c; }
       if (sand) { ctx.fillRect(b.x, b.y, b.s * 0.6, b.s * 0.6); continue; }
       ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.rot); ctx.scale(1, Math.abs(Math.sin(b.ph)) * 0.8 + 0.2);
       ctx.beginPath(); ctx.ellipse(0, 0, b.s, b.s * 0.45, 0, 0, Math.PI * 2); ctx.fill();
@@ -199,8 +213,17 @@
     ctx.globalAlpha = 1;
   }
 
+  // trời nắng: các lớp toàn màn hình (phủ vàng, quầng mặt trời, tia sáng, lóa ống kính, sóng nhiệt, viền tối) vẽ vào
+  // một ảnh đệm, mỗi 120ms mới vẽ lại một lần; mỗi khung chỉ chép ảnh đệm lên màn (đỡ nặng hẳn trên máy yếu)
+  let sunCv = null, sunAt = 0;
   function drawSun(ctx, W, H, now) {
-    // ánh nắng gay gắt: phủ vàng cam, tia sáng từ góc trên và sóng nhiệt
+    const w = Math.ceil(W), h = Math.ceil(H);
+    if (!sunCv || sunCv.width !== w || sunCv.height !== h) { sunCv = document.createElement('canvas'); sunCv.width = w; sunCv.height = h; sunAt = 0; }
+    if (now - sunAt > 120) { sunAt = now; paintSun(sunCv.getContext('2d'), w, h, now); }
+    ctx.drawImage(sunCv, 0, 0, W, H);
+  }
+  function paintSun(ctx, W, H, now) {
+    ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = `rgba(255,170,60,${0.1 * level})`; ctx.fillRect(0, 0, W, H);
     const sx = W * 0.85, sy = -H * 0.08;
     ctx.globalCompositeOperation = 'lighter';
