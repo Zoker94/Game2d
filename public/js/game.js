@@ -557,14 +557,18 @@
     }
     return a;
   }
-  // lướt né: để lại 5 bóng mờ dọc đường lướt
+  // khinh công: nhảy vọt lên theo đường cong rồi hạ xuống, để lại 5 bóng mờ dọc đường bay
+  const JUMP_DUR = 460, JUMP_H = 46;
+  const jumpLift = t => Math.sin(Math.PI * t) * JUMP_H;
   function onDodge(d, now) {
     const self = d.from === G.you, e = self ? G.self : G.players.get(d.from);
     const cls = self ? G.me && G.me.cls : e && e.cls, ap = self ? G.me && G.me.ap : e && e.ap;
     const dir = Math.abs(d.tx - d.x) > Math.abs(d.ty - d.y) ? (d.tx > d.x ? 2 : 1) : (d.ty > d.y ? 0 : 3);
     if (cls) G.ghosts.push({ cls, ap, dir, x0: d.x, y0: d.y, x1: d.tx, y1: d.ty, t0: now });
+    const J = { x0: d.x, y0: d.y, x1: d.tx, y1: d.ty, t0: now, dur: JUMP_DUR };
+    if (self) G.self.jump = J; else if (e) e.jump = J;
     if (self) {
-      G.dash = { x0: d.x, y0: d.y, x1: d.tx, y1: d.ty, t0: now, dur: 150 };
+      G.dash = { x0: d.x, y0: d.y, x1: d.tx, y1: d.ty, t0: now, dur: JUMP_DUR };
       G.self.dir = dir; G.moveTo = null; G.chase = null;
       G.dodgeCd = { until: now + d.cd, total: d.cd };
     } else if (e) { e.x = d.tx; e.y = d.ty; e.tx = d.tx; e.ty = d.ty; e.dir = dir; }
@@ -576,7 +580,7 @@
   function ghostFrame(cls, dir, ap) {
     const key = cls + dir + (ap || []).join(',');
     if (ghostCache[key]) return ghostCache[key];
-    const fr = Assets.charFrame(cls, dir, 'walk', 2, ap);
+    const fr = Assets.charFrame(cls, dir, 'run', 3, ap);
     const c = document.createElement('canvas'); c.width = fr.width; c.height = fr.height;
     const x = c.getContext('2d');
     x.drawImage(fr, 0, 0);
@@ -584,14 +588,16 @@
     return (ghostCache[key] = c);
   }
   function drawGhosts(now) {
-    G.ghosts = G.ghosts.filter(g => now - g.t0 < 650);
+    G.ghosts = G.ghosts.filter(g => now - g.t0 < 800);
     for (const g of G.ghosts) {
       if (!Assets.has(g.cls)) continue;
-      const fr = ghostFrame(g.cls, g.dir, g.ap), age = (now - g.t0) / 650;
+      const fr = ghostFrame(g.cls, g.dir, g.ap), age = (now - g.t0) / 800;
+      const reach = Math.min(1, (now - g.t0) / JUMP_DUR);   // bóng mờ chỉ hiện ở đoạn đã bay qua
       for (let k = 0; k < 5; k++) {
         const t = k / 5;
+        if (t > reach) break;
         ctx.globalAlpha = Math.max(0, (0.32 + t * 0.45) * (1 - age * age));
-        ctx.save(); ctx.translate(Math.round(g.x0 + (g.x1 - g.x0) * t), Math.round(g.y0 + (g.y1 - g.y0) * t));
+        ctx.save(); ctx.translate(Math.round(g.x0 + (g.x1 - g.x0) * t), Math.round(g.y0 + (g.y1 - g.y0) * t - jumpLift(t)));
         ctx.drawImage(fr, -48, -86, 96, 96); ctx.restore();
       }
     }
@@ -803,7 +809,7 @@
   Input.on('pickup', () => { if (!pickNear()) UI.toast('Không có vật phẩm ở gần', 'error'); });
   Input.on('auto', () => setAuto(!G.auto));
   Input.on('mount', () => G.socket && G.socket.emit('mount', { op: 'ride' }));
-  // Né chiêu (lướt): theo hướng đang đi, không đi thì theo hướng đang nhìn
+  // Khinh công (nhảy vọt): theo hướng đang đi, không đi thì theo hướng đang nhìn
   Input.on('dodge', () => {
     const now = performance.now();
     if (!G.socket || !G.me || G.me.dead || G.dash || (G.dodgeCd && G.dodgeCd.until > now)) return;
@@ -935,8 +941,8 @@
     const myMask = Overhead.mask(s, now);
     const cc = !!(myMask & 3);   // choáng / đóng băng: không đi, không đánh được
     if (G.dash) {   // đang lướt: trượt nhanh tới điểm đích
-      const p = Math.min(1, (now - G.dash.t0) / G.dash.dur), e2 = 1 - (1 - p) * (1 - p);
-      s.x = G.dash.x0 + (G.dash.x1 - G.dash.x0) * e2; s.y = G.dash.y0 + (G.dash.y1 - G.dash.y0) * e2; s.moving = true;
+      const p = Math.min(1, (now - G.dash.t0) / G.dash.dur);
+      s.x = G.dash.x0 + (G.dash.x1 - G.dash.x0) * p; s.y = G.dash.y0 + (G.dash.y1 - G.dash.y0) * p; s.moving = true;
       if (p >= 1) { G.dash = null; lastSent = { x: s.x, y: s.y, m: false }; lastSend = now; }
       return;
     }
@@ -1467,7 +1473,19 @@
   function drawHero(x, y, cls, dir, lastH, moving, atk, ap, dead, seed, now, ent) {
     ap = ap || [];
     const art = Assets.has(cls);
-    let state = 'idle', fi = 0;
+    let state = 'idle', fi = 0, lift = 0;
+    const J = ent && ent.jump;
+    if (J) {   // khinh công: bay theo đường cong, bóng đổ ở lại mặt đất
+      const p = (now - J.t0) / J.dur;
+      if (p >= 1 || dead) {
+        ent.jump = null;
+        if (!dead) { WorldArt.dust(J.x1, J.y1); WorldArt.dust(J.x1 + 8, J.y1 + 2); FX.emit(8, J.x1, J.y1 - 4, { speed: 50, life: 360, size: 3.5, color: '#e8dcc0', drag: 3 }); }
+      } else {
+        x = J.x0 + (J.x1 - J.x0) * p; y = J.y0 + (J.y1 - J.y0) * p; lift = jumpLift(p); moving = true;
+        const k = 1 - lift / JUMP_H * 0.45;
+        ctx.fillStyle = `rgba(0,0,0,${0.3 * k})`; ctx.beginPath(); ctx.ellipse(Math.round(x), Math.round(y) - 1, 15 * k, 6 * k, 0, 0, Math.PI * 2); ctx.fill();
+      }
+    }
     if (art) {
       const mo = ent && !ap[7] ? motion(ent, x, y, dir, moving, now) : null;   // cưỡi thú: giữ 4 hướng như thú cưỡi
       if (dead) state = 'dead';
@@ -1477,6 +1495,7 @@
         fi = Math.max(0, Math.min(n - 1, Math.floor(p * n)));
       }
       else if (ent && ent.hitAt && now - ent.hitAt < 300) { state = 'hurt'; const n = Assets.frameCount(cls, 'hurt'); fi = Math.min(n - 1, Math.floor((now - ent.hitAt) / (300 / n))); }
+      else if (lift) { state = 'run'; fi = Math.min(Assets.frameCount(cls, 'run') - 1, 3); if (mo) dir = mo.vdir; }
       else if (moving && mo) {
         // chạy khi đủ nhanh, đi bộ khi bị làm chậm / vừa bước; khung theo quãng đường đã đi nên chân không trượt
         state = mo.speed > RUN_SPEED ? 'run' : 'walk';
@@ -1496,7 +1515,7 @@
     const mountId = ap[7];
     const plus = Math.max(ap[2] || 0, ap[5] || 0);
     const gcol = Sprites.enhanceGlow(plus);
-    x = Math.round(x); y = Math.round(y);
+    x = Math.round(x); y = Math.round(y - lift);
     if (dead) ctx.globalAlpha = art ? 0.9 : 0.4;
     if (gcol && !dead) Overhead.drawEnhance(ctx, x, y, plus, gcol, now, seed, !!mountId, 'under');
     let top;

@@ -87,7 +87,8 @@ const ALT = {
 };
 
 // Thưởng theo hệ (world.damage): mỗi điểm thuộc tính chính +0,25% sát thương võ công; nội công xuyên 20% phòng thủ
-const BRANCH_BONUS = { noi: { attr: 'ene', per: 0.0025, pierce: 0.2 }, ngoai: { attr: 'str', per: 0.0025, pierce: 0 } };
+const { ATTRS } = require('./attrs');
+const BRANCH_BONUS = { noi: { attr: 'ene', per: ATTRS.ene.skill, pierce: 0.2 }, ngoai: { attr: 'str', per: ATTRS.str.skill, pierce: 0 } };
 // đổi hệ: miễn phí dưới cấp này, từ cấp này cần 1 Tẩy Tủy Kinh
 const BRANCH_FREE_LV = 20;
 

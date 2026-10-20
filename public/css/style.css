@@ -1536,3 +1536,9 @@ body.touch #update-gate .ug-box { padding: 16px 14px; }
 #map-loading .ml-bar { margin: 18px auto 12px; height: 8px; border-radius: 6px; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 215, 120, .35); overflow: hidden; }
 #map-loading .ml-bar i { display: block; height: 100%; width: 10%; background: linear-gradient(90deg, #b8741e, #ffd76a); box-shadow: 0 0 8px #ffb84a; transition: width .25s; }
 #map-loading .ml-tip { color: #a89a80; font-size: 13px; line-height: 1.5; min-height: 2.6em; }
+.at-btns .at-in { width: 54px; padding: 4px 5px; text-align: center; border-radius: 6px; border: 1px solid rgba(201,154,58,.45); background: rgba(0,0,0,.35); color: #ffe9b0; font: inherit; -moz-appearance: textfield; }
+.at-btns .at-in::-webkit-inner-spin-button, .at-btns .at-in::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.at-btns .at-in:focus { outline: none; border-color: #ffd76a; box-shadow: 0 0 6px rgba(255,215,106,.45); }
+.at-btns .at-in:disabled { opacity: .45; }
+.at-main .at-on { color: #8fe0a0; }
+@media (max-width: 560px) { .at-row { flex-wrap: wrap; } .at-btns { width: 100%; justify-content: flex-end; } }

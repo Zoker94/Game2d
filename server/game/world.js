@@ -25,7 +25,7 @@ const { ATTRS, attrTotal, attrUsed, attrResetCost } = require('../data/attrs');
 const { SECT_MAP } = require('../data/sect');
 
 const HOTBAR_N = 8;          // số ô gán phím (phím 2..9)
-const DODGE_DIST = 170, DODGE_CD = 5000;   // né chiêu: quãng lướt, thời gian hồi
+const DODGE_DIST = 190, DODGE_CD = 5000, DODGE_AIR = 460;   // khinh công: quãng nhảy, thời gian hồi, thời gian trên không (bất tử)
 const TICK = 50;            // 20 tick/giây
 const SNAP_EVERY = 2;       // gửi trạng thái 10 lần/giây
 const PICKUP_R = 56;
@@ -493,12 +493,12 @@ class World {
     owner.dirtyMe = true;
   }
 
-  // ---------- Né chiêu (lướt) ----------
-  // Lướt nhanh ~170px theo hướng chỉ định, bất tử 0,4 giây (đòn đánh trúng sẽ hiện "Né!"), hồi 5 giây.
+  // ---------- Khinh công (nhảy vọt) ----------
+  // Nhảy ~190px theo hướng chỉ định, bất tử khi đang trên không (đòn đánh trúng sẽ hiện "Né!"), hồi 5 giây.
   dodge(p, d) {
     const now = Date.now();
     if (!d || p.dead) return;
-    if (isCC(p, now)) return this.toast(p, 'Đang bị khống chế, không thể né!', 'error');
+    if (isCC(p, now)) return this.toast(p, 'Đang bị khống chế, không thể dùng khinh công!', 'error');
     if (p.dodgeCd && p.dodgeCd > now) return;
     let vx = +d.x, vy = +d.y;
     const n = Math.hypot(vx, vy);
@@ -513,7 +513,7 @@ class World {
     }
     const x0 = p.x, y0 = p.y;
     p.x = x; p.y = y; p.lastMove = now;
-    p.dodgeCd = now + DODGE_CD; p.dodgeUntil = now + 400;
+    p.dodgeCd = now + DODGE_CD; p.dodgeUntil = now + DODGE_AIR;
     p.dir = Math.abs(vx) > Math.abs(vy) ? (vx > 0 ? 2 : 1) : (vy > 0 ? 0 : 3);
     this.fx(p.mapId, { t: 'dodge', from: p.id, x: x0, y: y0, tx: x, ty: y, cd: DODGE_CD });
   }
@@ -1890,7 +1890,7 @@ const CAST_LOCK = { basic: 260, skill: 450 };   // đánh xa đứng yên vận 
 const MELEE_GUARD = 0.85;                       // cận chiến nhận 85% sát thương từ người chơi đánh xa
 const STUN_IMMUNE = 3000;
 // PvP: sát thương người chơi lên người chơi, hồi máu khi đang giao tranh, bình máu (hồi chiêu, tối đa % máu mỗi bình)
-const PVP_DMG = 0.018, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;
+const PVP_DMG = 0.0205, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;
 const MED_AFTER = 30000;                        // đứng yên trong thành bao lâu thì ngồi thiền (ms)
 const MED_EXP = 0.0005;                         // mỗi 5 giây ngồi thiền: 0,05% kinh nghiệm cấp hiện tại                       // kháng choáng sau khi hết choáng (ms)
 const FX_STATUS = { firedragon: ['burn', 4000, 1] };

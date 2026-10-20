@@ -267,12 +267,12 @@
     };
     mk(skills[0], '1/␣', () => G.useSkill(0));
     hb.forEach((idx, n) => mk(idx ? skills[idx] : null, SLOT_KEYS[n], () => G.useSlot(n + 1)));
-    {   // nút né chiêu
+    {   // nút khinh công
       const d = document.createElement('div');
       d.className = 'skill dodge-sk'; d.id = 'dodge-sk';
       d.innerHTML = `<i class="sk-img" style="background-image:url('/assets/skills/ui_dodge.png')"></i><span class="key">⇧/Q</span><div class="cdo"></div><div class="cdt"></div>`;
       d.onclick = () => Input.emit('dodge');
-      d.onmouseenter = e => tip(e, '<b>Né chiêu (lướt)</b><br>Lướt nhanh theo hướng đang đi, né mọi đòn đánh trong 0,4 giây và để lại bóng mờ.<br>Phím Shift hoặc Q · Hồi 5 giây');
+      d.onmouseenter = e => tip(e, '<b>Khinh công</b><br>Tung mình nhảy vọt theo hướng đang đi rồi đáp xuống, né mọi đòn đánh khi đang trên không và để lại bóng mờ.<br>Phím Shift hoặc Q · Hồi 5 giây');
       d.onmouseleave = hideTip;
       bar.appendChild(d);
     }
@@ -448,7 +448,7 @@
   UI.fitMenu = () => { menuFitKey = ''; fitMenu(); };
 
   UI.frame = function (now) {
-    // hồi né chiêu
+    // hồi khinh công
     const dc = G.dodgeCd, dr = dc && dc.until > now ? (dc.until - now) / dc.total : 0;
     const dtx = dc && dc.until > now && !dc.pending ? Math.ceil((dc.until - now) / 1000) : '';
     // phần tử nút được nhớ lại, chỉ tìm lại khi thanh kỹ năng dựng lại (tránh querySelectorAll mỗi khung)
@@ -813,15 +813,19 @@
   const pendSum = () => Object.values(attrPend).reduce((a, b) => a + b, 0);
   function attrPanel(me) {
     const A = G.data.attrs; if (!A) return '';
-    const free = (me.attrFree || 0) - pendSum();
+    const free = (me.attrFree || 0) - pendSum(), br = me.branch, BRN = { noi: 'Nội công', ngoai: 'Ngoại công' };
     const rows = Object.entries(A).map(([k, a]) => {
-      const cur = (me.attr && me.attr[k]) | 0, pd = attrPend[k] | 0;
-      return `<div class="at-row"><div class="at-ic">${a.icon}</div><div class="at-main"><b>${a.name}</b> <span class="at-val">${cur}${pd ? ` <i>+${pd}</i>` : ''}</span><div class="sub">Mỗi điểm: ${a.desc}</div></div>
-        <div class="at-btns"><button class="btn small" data-at="${k}" data-n="-1" ${pd ? '' : 'disabled'}>−</button><button class="btn small" data-at="${k}" data-n="1" ${free > 0 ? '' : 'disabled'}>+1</button><button class="btn small" data-at="${k}" data-n="5" ${free > 0 ? '' : 'disabled'}>+5</button><button class="btn small" data-at="${k}" data-n="999" ${free > 0 ? '' : 'disabled'}>Hết</button></div></div>`;
+      const cur = (me.attr && me.attr[k]) | 0, pd = attrPend[k] | 0, max = pd + free;
+      // thuộc tính hợp hệ: thêm % sát thương võ công
+      const bl = a.branch ? `<div class="sub ${a.branch === br ? 'at-on' : 'muted'}">+${(a.skill * 100).toLocaleString('vi-VN')}% sát thương võ công khi tu ${BRN[a.branch]}${a.branch === br ? ` · hiện tại <b>+${Math.round((cur + pd) * a.skill * 100)}%</b>` : ' (bạn đang tu ' + BRN[br] + ')'}</div>` : '';
+      return `<div class="at-row"><div class="at-ic">${a.icon}</div><div class="at-main"><b>${a.name}</b> <span class="at-val">${cur}${pd ? ` <i>+${pd}</i>` : ''}</span><div class="sub">Mỗi điểm: ${a.desc}</div>${bl}</div>
+        <div class="at-btns"><button class="btn small" data-at="${k}" data-n="-1" ${pd ? '' : 'disabled'}>−</button><input class="at-in" type="number" inputmode="numeric" min="0" max="${max}" value="${pd || ''}" placeholder="0" data-atin="${k}" ${max ? '' : 'disabled'}><button class="btn small" data-at="${k}" data-n="1" ${free > 0 ? '' : 'disabled'}>+1</button><button class="btn small" data-at="${k}" data-n="10" ${free > 0 ? '' : 'disabled'}>+10</button><button class="btn small" data-at="${k}" data-n="999999" ${free > 0 ? '' : 'disabled'}>Hết</button></div></div>`;
     }).join('');
+    const sug = G.data.attrSuggest && G.data.attrSuggest[br];
     return `<div class="card at-box"><h4>⭐ Điểm tiềm năng <span class="at-free ${free > 0 ? 'on' : ''}">Còn ${free} điểm</span></h4>
-      <div class="small muted">Mỗi lần lên cấp nhận ${5} điểm. Phân điểm rồi bấm Xác nhận.</div>${rows}
-      <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn green" id="at-ok" ${pendSum() ? '' : 'disabled'}>✔ Xác nhận (${pendSum()} điểm)</button>
+      <div class="small muted">Mỗi lần lên cấp nhận ${G.data.attrPerLv || 5} điểm. Gõ số điểm vào ô (hoặc bấm +1 / +10 / Hết) rồi bấm Xác nhận. ${BRN[br] ? `Hệ ${BRN[br]} nên dồn <b>${br === 'noi' ? 'Nội Công' : 'Sức Mạnh'}</b> và Sinh Khí.` : ''}</div>${rows}
+      <div class="row" style="justify-content:flex-start;margin-top:6px;flex-wrap:wrap;gap:6px"><button class="btn green" id="at-ok" ${pendSum() ? '' : 'disabled'}>✔ Xác nhận (${pendSum()} điểm)</button>
+      ${sug && (me.attrFree || 0) > 0 ? `<button class="btn small" id="at-sug" title="${Object.entries(sug).map(([k, v]) => A[k].name + ' ' + Math.round(v * 100) + '%').join(', ')}">✨ Gợi ý theo hệ</button>` : ''}
       <button class="btn small" id="at-cancel" ${pendSum() ? '' : 'disabled'}>Hủy</button>
       <button class="btn small" id="at-reset">♻ Tẩy điểm ${me.attrReset ? '(' + fmt(me.attrReset) + ' 💰)' : '(miễn phí dưới cấp 30)'}</button></div></div>`;
   }
@@ -831,6 +835,24 @@
       attrPend[k] = Math.max(0, (attrPend[k] | 0) + (n > 0 ? Math.min(n, free) : n));
       G.sfx('click'); UI.refreshPanel();
     });
+    // ô nhập nhanh: gõ số rồi Enter hoặc bấm ra ngoài
+    body.querySelectorAll('[data-atin]').forEach(inp => {
+      const apply = () => {
+        const k = inp.dataset.atin, others = pendSum() - (attrPend[k] | 0);
+        attrPend[k] = Math.max(0, Math.min((G.me.attrFree || 0) - others, Math.floor(+inp.value || 0)));
+        inp.blur(); UI.refreshPanel();
+      };
+      inp.onchange = apply;
+      inp.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') apply(); };
+      inp.onfocus = () => inp.select();
+    });
+    const sg = $('at-sug'); if (sg) sg.onclick = () => {
+      const sug = G.data.attrSuggest[G.me.branch], tot = G.me.attrFree || 0;
+      attrPend = {}; let left = tot;
+      const ks = Object.keys(sug);
+      ks.forEach((k, i) => { const n = i === ks.length - 1 ? left : Math.floor(tot * sug[k]); attrPend[k] = n; left -= n; });
+      G.sfx('click'); UI.refreshPanel();
+    };
     const ok = $('at-ok'); if (ok) ok.onclick = () => { emit('attr', { op: 'add', pts: attrPend }); attrPend = {}; };
     const cc = $('at-cancel'); if (cc) cc.onclick = () => { attrPend = {}; UI.refreshPanel(); };
     const rs = $('at-reset'); if (rs) rs.onclick = () => G.modal(`Tẩy toàn bộ điểm tiềm năng để phân lại?${G.me.attrReset ? ' Tốn ' + fmt(G.me.attrReset) + ' lượng.' : ''}`, [{ t: 'Tẩy điểm', cls: 'primary', fn: () => { attrPend = {}; emit('attr', { op: 'reset' }); } }, { t: 'Hủy' }]);
@@ -1117,7 +1139,7 @@
       html += '</div>';
     } else if (tab === 'keys') {
       const selSlot = panelState.slot != null ? panelState.slot : -1;
-      html += `<div class="kb-fixed"><span><b>Phím 1 / Space</b> Đánh thường</span><span><b>Shift / Q</b> Né chiêu</span><span><b>Z / X</b> Bình máu / nội lực</span></div>`;
+      html += `<div class="kb-fixed"><span><b>Phím 1 / Space</b> Đánh thường</span><span><b>Shift / Q</b> Khinh công</span><span><b>Z / X</b> Bình máu / nội lực</span></div>`;
       html += `<p class="small muted">Chọn một ô phím, rồi bấm vào võ công bên dưới để gán. Bấm vào võ công đã gán ở ô khác sẽ đổi chỗ hai ô.${Input.isTouch ? ' Trên điện thoại, ô 1–6 là 6 nút chiêu bên phải màn hình.' : ''}</p><div class="kb-slots">`;
       for (let n = 0; n < 8; n++) {
         const s = hb[n] ? skills[hb[n]] : null;
