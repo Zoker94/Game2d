@@ -4,6 +4,14 @@ const CHANGELOG = [
   {
     date: '20/10/2026',
     items: [
+      'Nhân vật di chuyển 8 hướng: đi xiên thấy dáng chéo (nghiêng 3/4), dừng lại vẫn giữ hướng chéo.',
+      'Thêm dáng chạy: nhân vật chạy khi di chuyển bình thường, đi bộ khi bị làm chậm; bước chân khớp quãng đường, không còn trượt.',
+      'Thêm khung hình cho mượt: đi và chạy 12 khung, đánh và ra chiêu 12 khung, trúng đòn 4, ngã 8; đầu gật và thân nhún theo nhịp bước.'
+    ]
+  },
+  {
+    date: '20/10/2026',
+    items: [
       'Thú cưỡi mới: Hắc Long – rồng đen cánh dơi bay lượn, vỗ cánh che người cưỡi (8000 nguyên bảo tại Mã Phu).',
       'Vẽ lại Ngựa Nâu, Bạch Mã và Ô Truy Hắc Mã: nét hơn, đủ dáng nhìn ngang, trước và sau.',
       'Bản đồ thêm nhiều chi tiết: ruộng rau quanh thành và ngoại ô, chậu cảnh trước nhà và sạp hàng, nấm, gốc cây, khúc gỗ, bụi cây trong rừng; xương rồng mới ở sa mạc, cây khô trắng ở làng hoang và cổ mộ.'

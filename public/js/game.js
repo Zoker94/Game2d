@@ -69,7 +69,7 @@
       const ids = Object.keys(G.data.classes);
       ids.forEach((id, i) => {
         const x = ((i * 64 + splashT * 1.6) % (cv.width + 64)) - 64;
-        if (Assets.has(id)) c.drawImage(Assets.charFrame(id, 2, 'walk', Math.floor(splashT / 5 + i) % 8), Math.round(x) - 16, -12, 96, 96);
+        if (Assets.has(id)) c.drawImage(Assets.charFrame(id, 2, 'run', Math.floor(splashT / 3 + i)), Math.round(x) - 16, -12, 96, 96);
         else c.drawImage(Sprites.playerSprite(id, G.data.classes[id].colors, 2, Math.floor(splashT / 8 + i) % 4, false), Math.round(x), 8);
       });
     }
@@ -228,12 +228,14 @@
       const ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, 128, 128);
       if (Assets.has(cls)) {
-        // xem trước: đứng – đi xuống – đi ngang – đánh – ra chiêu
-        const ph = Math.floor(previewT / 90) % 5;
-        const img = ph === 0 ? Assets.charFrame(cls, 0, 'idle', Math.floor(previewT / 12) % 8)
-          : ph === 1 ? Assets.charFrame(cls, 0, 'walk', Math.floor(previewT / 6) % 8)
-          : ph === 2 ? Assets.charFrame(cls, 2, 'walk', Math.floor(previewT / 6) % 8)
-          : Assets.charFrame(cls, 2, ph === 3 ? 'atk' : 'cast', Math.min(7, Math.floor((previewT % 90) / 6)));
+        // xem trước: đứng – chạy xuống – chạy chéo – chạy ngang – đi ngang – đánh – ra chiêu
+        const ph = Math.floor(previewT / 90) % 7, k = previewT % 90;
+        const img = ph === 0 ? Assets.charFrame(cls, 0, 'idle', Math.floor(previewT / 12))
+          : ph === 1 ? Assets.charFrame(cls, 0, 'run', Math.floor(previewT / 3))
+          : ph === 2 ? Assets.charFrame(cls, 4, 'run', Math.floor(previewT / 3))
+          : ph === 3 ? Assets.charFrame(cls, 2, 'run', Math.floor(previewT / 3))
+          : ph === 4 ? Assets.charFrame(cls, 2, 'walk', Math.floor(previewT / 4))
+          : Assets.charFrame(cls, 2, ph === 5 ? 'atk' : 'cast', Math.min(Assets.frameCount(cls, ph === 5 ? 'atk' : 'cast') - 1, Math.floor(k / 90 * 1.4 * Assets.frameCount(cls, ph === 5 ? 'atk' : 'cast'))));
         ctx.imageSmoothingEnabled = true;
         ctx.drawImage(img, -8, -12, 144, 144);
       } else ctx.drawImage(Sprites.playerSprite(cls, G.data.classes[cls].colors, [0, 1, 3, 2][dir], f), 0, 0, 128, 128);
@@ -1373,21 +1375,55 @@
     ctx.fillStyle = col; ctx.fillRect(x - w / 2, y, w * r, 4);
   }
 
+  // Chuyển động để vẽ 8 hướng: vận tốc làm mượt từ vị trí từng khung hình -> hướng chéo khi đi xiên, tốc độ để chọn đi / chạy,
+  // quãng đường tích luỹ để chọn khung bước. Hướng từ máy chủ (4 hướng) đổi thì theo hướng đó (quay mặt đánh, đổi hướng khi đứng).
+  const RUN_SPEED = 115, RUN_STRIDE = 100, WALK_STRIDE = 54;   // px/giây; px mỗi chu kỳ bước (khớp sải chân trong tools/rig2.py)
+  const OCT_DIR = [2, 4, 0, 5, 1, 7, 3, 6];   // cung 45° (0 = phải, theo chiều kim đồng hồ) -> mã hướng vẽ
+  function motion(e, x, y, dir, moving, now) {
+    const m = e._mo || (e._mo = { x, y, t: now, vx: 0, vy: 0, odo: 0, speed: 0, vdir: dir, sdir: dir });
+    const dt = Math.min(0.1, Math.max(0, (now - m.t) / 1000));
+    if (dt > 0) {
+      const dx = x - m.x, dy = y - m.y, d = Math.hypot(dx, dy);
+      if (d > 120) { m.vx = m.vy = 0; }   // dịch chuyển tức thời
+      else {
+        m.odo += d;
+        const k = Math.min(1, dt * 10);
+        m.vx += (dx / dt - m.vx) * k; m.vy += (dy / dt - m.vy) * k;
+      }
+      m.x = x; m.y = y; m.t = now;
+      m.speed = Math.hypot(m.vx, m.vy);
+    }
+    if (dir !== m.sdir) { m.sdir = dir; m.vdir = dir; }
+    if (moving && m.speed > 20) {
+      // 8 cung 45°: 0 phải, 1 chéo xuống-phải, 2 xuống ... (trục y màn hình hướng xuống)
+      const oct = ((Math.round(Math.atan2(m.vy, m.vx) / (Math.PI / 4)) % 8) + 8) % 8;
+      m.vdir = OCT_DIR[oct];
+    }
+    return m;
+  }
   // Vẽ nhân vật (có thú cưỡi, hào quang cường hóa). Trả về tọa độ y đỉnh đầu để vẽ tên.
   function drawHero(x, y, cls, dir, lastH, moving, atk, ap, dead, seed, now, ent) {
     ap = ap || [];
     const art = Assets.has(cls);
     let state = 'idle', fi = 0;
     if (art) {
+      const mo = ent && !ap[7] ? motion(ent, x, y, dir, moving, now) : null;   // cưỡi thú: giữ 4 hướng như thú cưỡi
       if (dead) state = 'dead';
       else if (atk) {
         state = ent && ent.atkKind === 'skill' ? 'cast' : 'atk';
-        const p = ent && ent.atkStart ? (now - ent.atkStart) / (ent.atkDur || 300) : 0.5;
-        fi = Math.max(0, Math.min(7, Math.floor(p * 8)));
+        const p = ent && ent.atkStart ? (now - ent.atkStart) / (ent.atkDur || 300) : 0.5, n = Assets.frameCount(cls, state);
+        fi = Math.max(0, Math.min(n - 1, Math.floor(p * n)));
       }
-      else if (ent && ent.hitAt && now - ent.hitAt < 300) { state = 'hurt'; fi = Math.min(2, Math.floor((now - ent.hitAt) / 100)); }
-      else if (moving) { state = 'walk'; fi = Math.floor(now / 100 + seed) % 8; }
-      else fi = Math.floor(now / 200 + seed) % 8;
+      else if (ent && ent.hitAt && now - ent.hitAt < 300) { state = 'hurt'; const n = Assets.frameCount(cls, 'hurt'); fi = Math.min(n - 1, Math.floor((now - ent.hitAt) / (300 / n))); }
+      else if (moving && mo) {
+        // chạy khi đủ nhanh, đi bộ khi bị làm chậm / vừa bước; khung theo quãng đường đã đi nên chân không trượt
+        state = mo.speed > RUN_SPEED ? 'run' : 'walk';
+        const n = Assets.frameCount(cls, state);
+        fi = Math.floor(mo.odo / ((state === 'run' ? RUN_STRIDE : WALK_STRIDE) / n)) % n;
+        dir = mo.vdir;
+      }
+      else if (moving) { state = 'walk'; fi = Math.floor(now / 70 + seed) % Assets.frameCount(cls, 'walk'); }
+      else { fi = Math.floor(now / 200 + seed) % Assets.frameCount(cls, 'idle'); if (mo) dir = mo.vdir; }
     }
     const colors = G.data.classes[cls].colors;
     const mountId = ap[7];

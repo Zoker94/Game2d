@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # BẢN THỬ NGHIỆM nhân vật chi tiết cho 9 môn phái (chưa dùng trong game).
-# - Người tỉ lệ thật (~6.3 đầu), khung xương 3D chiếu ra 3 hướng (xuống / lên / phải), ô 144x144.
+# - Người tỉ lệ thật (~6.3 đầu), khung xương 3D chiếu ra 5 hướng (xuống / lên / phải / chéo xuống / chéo lên), ô 144x144.
 # - Vẽ ở độ phân giải gấp 4 rồi thu nhỏ: mỗi bộ phận được tô khối theo pháp tuyến (ánh sáng trên-trái),
 #   có viền trong, đổ bóng lên bộ phận phía sau, rồi viền ngoài theo màu (sel-out).
 # - Tóc dài, đuôi ngựa, dải lụa, vạt áo, tua kiếm, ống tay rộng chuyển động theo mô phỏng lò xo (verlet),
 #   nên khi đi / chạy / ra đòn thì vải và tóc bay theo quán tính.
-# - Hoạt ảnh: đứng thở 8, đi 8, chạy 8, đánh 8, ra chiêu 8, trúng đòn 3, ngã 6 khung.
+# - Hoạt ảnh: đứng thở 8, đi 12, chạy 12, đánh 12, ra chiêu 12, trúng đòn 4, ngã 8 khung; đứng / đi / chạy có thêm 2 hướng chéo.
 # Dùng: python3 tools/rig2.py design/chars2 [mã phái ...]
 import math, os, sys, json
 import numpy as np
@@ -22,6 +22,10 @@ INK = (22, 13, 30)
 SH_HUE = (44, 26, 72)
 LI_HUE = (255, 244, 214)
 VIEWS = ['down', 'up', 'right']
+DIAG = ['dr', 'ur']      # chéo xuống-phải, chéo lên-phải (chéo trái = lật); chỉ cho đứng / đi / chạy
+YAW_V = {'down': 0.0, 'dr': 45.0, 'right': 90.0, 'ur': 135.0, 'up': 180.0}   # góc nhân vật quay so với hướng nhìn thẳng
+DOWNS, UPS = ('down', 'dr'), ('up', 'ur')
+BASEV = {'dr': 'down', 'ur': 'up'}   # đầu / tóc / mũ vẽ 2D: góc chéo dùng nét vẽ của hướng gần nhất (mặt lệch về phía quay)
 GAME_SCALE = 0.68       # vẽ trong game với tỉ lệ này: cao ~72px, cân với NPC / quái hiện có (ô 64)
 
 
@@ -619,9 +623,12 @@ def _anim_pose(L, B, name):
                     P['arm' + k] = (amp * s * sg + (0.15 if run else 0.04), 0.16, (1.45 if run else 0.32) + 0.2 * max(0, s * sg))
             P['twist'] = -(0.16 if run else 0.08) * math.sin(ph)
             P['hipyaw'] = (0.14 if run else 0.1) * math.sin(ph)
-            P['lean'] = 0.26 if run else 0.045
+            c2 = math.cos(2 * ph)   # nhịp nhún: 2 lần mỗi chu kỳ bước
+            P['lean'] = (0.26 + 0.03 * c2) if run else (0.045 + 0.01 * c2)
             P['side'] = 0.02 * math.sin(ph)
-            P['head'] = (-0.12 if run else 0.02, 0.0)
+            # đầu gật nhẹ theo nhịp bước và xoay ngược chiều vai để mắt luôn nhìn thẳng
+            P['head'] = ((-0.12 + 0.04 * c2) if run else (0.02 + 0.025 * c2), (0.06 if run else 0.05) * math.sin(ph))
+            P['breath'] = (0.6 + 0.4 * c2) if run else (0.3 + 0.2 * c2)
             P['root'] = (0.7 * math.sin(ph), 0, 0)
             if run: P['lift'] = 3.0 * max(0, -math.cos(2 * ph))
             return P
@@ -643,12 +650,14 @@ def _anim_pose(L, B, name):
                                  (1.0, dict(fall=1.5))])
     return lambda t: keyed(keys, t)
 
-ANIMS = [('idle', 8, 1.6, True), ('walk', 8, 0.8, True), ('run', 8, 0.56, True), ('attack', 8, 0.62, False),
+ANIMS = [('idle', 8, 1.6, True), ('walk', 12, 0.8, True), ('run', 12, 0.56, True), ('attack', 12, 0.62, False),
          ('ride', 4, 0.44, True), ('ride_attack', 8, 0.62, False), ('ride_cast', 8, 0.9, False), ('ride_hurt', 3, 0.3, False),
-         ('cast', 8, 0.9, False), ('hurt', 3, 0.3, False), ('death', 6, 0.9, False)]
-FRAME_T = {'attack': [0, .16, .3, .42, .5, .6, .76, .9], 'cast': [0, .14, .28, .42, .56, .7, .84, .96],
+         ('cast', 12, 0.9, False), ('hurt', 4, 0.3, False), ('death', 8, 0.9, False)]
+DIAG_ANIMS = {'idle', 'walk', 'run'}   # động tác có thêm 2 hướng chéo
+COLS = 8                               # số cột của sheet; động tác > 8 khung xuống dòng (mỗi hướng ceil(n / 8) hàng)
+FRAME_T = {'attack': [0, .1, .2, .28, .35, .41, .46, .5, .56, .66, .78, .9], 'cast': [0, .08, .16, .24, .32, .4, .48, .56, .64, .74, .84, .96],
            'ride_attack': [0, .16, .3, .42, .5, .6, .76, .9], 'ride_cast': [0, .14, .28, .42, .56, .7, .84, .96], 'ride_hurt': [0, .35, .7],
-           'hurt': [0, .35, .7], 'death': [0, .2, .4, .6, .8, 1.0]}
+           'hurt': [0, .25, .5, .75], 'death': [0, .13, .26, .4, .55, .7, .85, 1.0]}
 
 
 # ================= vải / tóc mô phỏng =================
@@ -765,14 +774,15 @@ def simulate(defs, Js, times, speed, loop, dur):
 
 
 # ================= dựng hình 1 khung =================
-CAM = {'down': V(0, 1, 0.25), 'up': V(0, -1, 0.25), 'right': V(1, 0, 0.25)}
+CAM = {v: V(math.sin(math.radians(a)), math.cos(math.radians(a)), 0.25) for v, a in YAW_V.items()}
 
 def mkproj(view):
+    a = math.radians(YAW_V[view]); ca, sa = math.cos(a), math.sin(a)
+    if abs(ca) < 1e-9: ca = 0.0
+    if abs(sa) < 1e-9: sa = 0.0
     def pr(v):
         x, y, z = v
-        if view == 'down': sx, dp = -x, y
-        elif view == 'up': sx, dp = x, -y
-        else: sx, dp = y, x
+        sx, dp = -x * ca + y * sa, y * ca + x * sa
         return (FX + sx, FY - z + dp * TILT, dp)
     return pr
 
@@ -820,7 +830,7 @@ def build_parts(L, B, J, CH, view, P, gear):
     Rt = J['Rt']
     def facing(v, th=0.1): return np.dot(nrm(v), cam) > th
     front = facing(Rt @ V(0, 1, 0), 0.05)
-    back = view == 'up'
+    back = view in UPS
     D = lambda v: pr(v)[2]
     T3 = lambda *q: J['pelvis'] + Rt @ V(*q)
     tdp = D(J['chest'])
@@ -918,7 +928,7 @@ def build_parts(L, B, J, CH, view, P, gear):
             d.line([(k2[0] - 0.4, k2[1] + 1), (h2[0] - 0.2, h2[1] - 1)], 3, 0.5)
         rp.mark(folds)
         # mép vạt áo trước chạy dọc xuống (vạt trái đè vạt phải)
-        if front and k == ('R' if view == 'down' else 'L') and frac0 is not None and view != 'right':
+        if front and k == ('R' if view in DOWNS else 'L') and frac0 is not None and view != 'right':
             e0 = pr(T3(wc[0] * 0.5, wc[1] + 1.6, 7)); e1 = pr(hc + J['Rp'] @ V(-2.6, 4.2, 0.4))
             rp.mark(lambda d, e0=e0, e1=e1, tc_=trim: (d.line([e0[:2], e1[:2]], tc_, 1.4), d.line([(e0[0] + 1, e0[1]), (e1[0] + 1, e1[1])], 3, 0.5)))
         if motif == 'plum' and not back:
@@ -1051,7 +1061,7 @@ def build_parts(L, B, J, CH, view, P, gear):
     if front and L.get('sash'):
         kc = pr(T3(-1.5, wc[1] + 2.2, 8.8))
         parts.append(Part(bdp + 0.05, L['belt'], sig=1.0, spec=0.2, ol=2).ell(kc, 2.2, 1.7).ell((kc[0] - 2.2, kc[1] + 0.4), 1.6, 1.1).ell((kc[0] + 2.2, kc[1] + 0.4), 1.6, 1.1))
-    if L.get('apron') and view != 'up':   # tạp dề da thợ rèn
+    if L.get('apron') and view not in UPS:   # tạp dề da thợ rèn
         km = (J['knR'] + J['knL']) / 2 + J['Rp'] @ V(0, 6, 3)
         q = [pr(T3(-5.5, B['chest'][1] + 2.2, 23))[:2], pr(T3(5.5, B['chest'][1] + 2.2, 23))[:2], pr(T3(wc[0] + 2.4, wc[1] + 2.6, 8))[:2],
              pr(km + J['Rp'] @ V(6.5, 0, 0))[:2], pr(km + J['Rp'] @ V(-6.5, 0, 0))[:2], pr(T3(-wc[0] - 2.4, wc[1] + 2.6, 8))[:2]]
@@ -1170,7 +1180,7 @@ def build_parts(L, B, J, CH, view, P, gear):
         if d0.get('need') == 'cape' and tier < 3: continue
         p2 = [pr(q) for q in pts3]
         dp = sum(p[2] for p in p2) / len(p2) + 0.2
-        if d0['kind'] == 'hair' and d0['name'] in ('lockR', 'lockL'): dp = D(J['head']) + 2.6 if view != 'up' else D(J['head']) - 4
+        if d0['kind'] == 'hair' and d0['name'] in ('lockR', 'lockL'): dp = D(J['head']) + 2.6 if view not in UPS else D(J['head']) - 4
         if d0['kind'] == 'tassel': dp = D(J['palmR']) - 0.1
         if d0['kind'] == 'cape': dp = min(dp, tdp - 0.5) if not back else max(dp, tdp + 1.5)
         pt = Part(dp, d0['col'], sig=1.2 if d0['kind'] != 'hair' else 1.6, spec=0.5 if d0['kind'] in ('hair', 'braid') else 0.22, ol=2,
@@ -1224,7 +1234,7 @@ def armor_rings(J, pr, Rt, B, wc, tdp, g, w):
 def tasset(J, pr, k, view, depth, col, g, tag, neutral=False, w=7.5):
     """váy giáp: tấm hình thang từ hông xuống giữa đùi, ghép nhiều hàng lá"""
     hp, kn = J['hp' + k], J['kn' + k]
-    fwd = J['Rp'] @ V(0, 1, 0) * (1 if view != 'up' else -1)
+    fwd = J['Rp'] @ V(0, 1, 0) * (1 if view not in UPS else -1)
     q0, q1 = pr(hp + fwd * 6.2 + V(0, 0, 5)), pr(hp + (kn - hp) * 0.58 + fwd * 5.4)
     dx, dy = q1[0] - q0[0], q1[1] - q0[1]; ln = math.hypot(dx, dy) or 1
     nx, ny = -dy / ln, dx / ln
@@ -1256,7 +1266,7 @@ def armor_tier(L, B, J, pr, view, tier, front, tdp, panel_dp, legdp, arm_dp, CH)
     out = []
     Rt = J['Rt']; T3 = lambda *q: J['pelvis'] + Rt @ V(*q)
     D = lambda v: pr(v)[2]
-    wc = B['waist']; back = view == 'up'; sgn = -1 if back else 1
+    wc = B['waist']; back = view in UPS; sgn = -1 if back else 1
     a1r = B['arm'][1]; r1 = B['leg'][1]
     glow = L['glow']
     vest_secs = [(9.5, wc[0] + 2.3, wc[1] + 2.2, 0), (19, B['chest'][0] + 2.1, B['chest'][1] + 2.0, 0.3), (B['torso'] - 4.2, B['sw'] - 0.6, B['chest'][1] * 0.8 + 1.8, 0)]
@@ -1484,7 +1494,7 @@ def helmet_parts(L, B, J, pr, view, ht, cx, cy, hd, helm):
         return p
     def band(col, y0=-4.6, y1=-2.8, tag='helm', neutral=False):
         p = Part(hd + 0.35, col, tag=tag, neutral=neutral, sig=0.8, spec=0.5 if neutral else 0.25, ol=2)
-        if view == 'down': p.poly([(cx - 7.2, cy + y0), (cx + 7.2, cy + y0), (cx + 7.1, cy + y1), (cx - 7.1, cy + y1)])
+        if view in DOWNS: p.poly([(cx - 7.2, cy + y0), (cx + 7.2, cy + y0), (cx + 7.1, cy + y1), (cx - 7.1, cy + y1)])
         elif side: p.poly([(cx - 8.4, cy + y0 + 0.6), (cx + 5.2, cy + y0 - 0.2), (cx + 5.3, cy + y1 - 0.2), (cx - 8.3, cy + y1 + 0.6)])
         else: p.poly([(cx - 7.2, cy + y0 + 0.6), (cx + 7.2, cy + y0 + 0.6), (cx + 7.1, cy + y1 + 0.6), (cx - 7.1, cy + y1 + 0.6)])
         return p
@@ -1520,7 +1530,7 @@ def helmet_parts(L, B, J, pr, view, ht, cx, cy, hd, helm):
         helm.append(band(STEEL, -5.2, -3.0, 'hmetal', True))
         if ht == 2:
             helm.append(HM(0.6).poly([(X(-2.4), cy - 4.6), (X(2.4), cy - 4.6), (X(1.6), cy - 11), (X(0), cy - 12.4), (X(-1.6), cy - 11)]))
-            if not view == 'up': helm.append(HP(0.7, glow, sig=0.5, spec=0.9, ol=2).ell((X(0), cy - 7.4), 1.2, 1.2))
+            if not view in UPS: helm.append(HP(0.7, glow, sig=0.5, spec=0.9, ol=2).ell((X(0), cy - 7.4), 1.2, 1.2))
             return
         # sừng bạc kiểu H'Mông
         hr = HM(0.6, sig=1.2)
@@ -1544,7 +1554,7 @@ def helmet_parts(L, B, J, pr, view, ht, cx, cy, hd, helm):
                 x = (i - (n - 1) / 2) * 2.8
                 h = 5.5 + (2.5 if i == (n - 1) // 2 else 0) + (2 if ht == 3 else 0)
                 p.poly([(X(x - 1.5), cy - 4.2), (X(x + 1.5), cy - 4.2), (X(x + 1.1), cy - 4.2 - h * 0.7), (X(x), cy - 4.2 - h), (X(x - 1.1), cy - 4.2 - h * 0.7)])
-            if view != 'up': p.mark(lambda d: d.ell((X(0), cy - 7.5), 0.9, 0.9, glow))
+            if view not in UPS: p.mark(lambda d: d.ell((X(0), cy - 7.5), 0.9, 0.9, glow))
             helm.append(p)
         if ht == 3 and view != 'right':
             helm.append(HP(-6, GOLD, sig=0.5, spec=0.9, ol=0).ell((cx, cy - 2), 10.5, 10.5).ell((cx, cy - 2), 9.4, 9.4, fill=0))
@@ -1555,14 +1565,14 @@ def helmet_parts(L, B, J, pr, view, ht, cx, cy, hd, helm):
             helm.append(band(STEEL, -8.6, -7.0, 'hmetal', True))
         else:
             helm.append(band(L['trim'], -4.6, -2.9))
-            if view != 'up': helm.append(HM(0.45, sig=0.5).ell((X(0) if not side else cx + 4.6, cy - 3.75), 1.6, 1.3))
+            if view not in UPS: helm.append(HM(0.45, sig=0.5).ell((X(0) if not side else cx + 4.6, cy - 3.75), 1.6, 1.3))
         return
     w, h = (4.6, 5.2) if ht == 2 else (5.2, 6.6)
     helm.append(crown(base, w, h))
     if ht == 2:
         helm.append(HP(0.6, GOLD, sig=0.5, spec=0.9, ol=0).line([(X(-w - 2.6), base - 2.2), (X(w + 2.6), base - 1.8)], 0.9))
         return
-    if view != 'up': helm.append(HP(0.7, glow, sig=0.5, spec=0.9, ol=2).ell((X(0), base - 2.6), 1.3, 1.3))
+    if view not in UPS: helm.append(HP(0.7, glow, sig=0.5, spec=0.9, ol=2).ell((X(0), base - 2.6), 1.3, 1.3))
     wg = HM(0.45, sig=1.0)   # cánh hai bên mão
     for s in ((-1, 1) if not side else (1,)):
         wg.poly([(X(s * w * 0.8), base - 1), (X(s * (w + 5.5)), base - 5.5), (X(s * (w + 6.5)), base - 9), (X(s * (w + 3)), base - 5.4), (X(s * w * 0.6), base - 3.4)])
@@ -1598,17 +1608,19 @@ def head_parts(L, B, J, pr, view, parts, CH, P, ht=0, helm=None):
         for pt in parts[n0 + 1:] + helm: pt.rot = (int(round(hc[0])), int(round(hc[1])), ang)
 
 def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
+    vx = view; view = BASEV.get(view, view)
     hc3 = J['head']; h = pr(hc3)
     cx, cy = int(round(h[0])), int(round(h[1])); dp = h[2]
     skin, hair = L['skin'], L.get('hair') or '#202020'
     fem = B['fem']; st = L['hairstyle']
     fwd = J['Rh'] @ V(0, 1, 0)
-    fs = int(max(-2, min(2, round(-fwd[0] * 4)))) if view == 'down' else 0
+    fs = int(max(-2, min(2, round(-fwd[0] * 4)))) if view in DOWNS else 0
+    if vx == 'dr': fs = min(3, fs + 2)   # mặt 3/4: ngũ quan dồn về phía quay
     # cổ
     nb = pr(J['neck']); nt = pr(hc3 + J['Rh'] @ V(0, 0, -6))
     parts.append(Part(pr(J['chest'])[2] - 0.1, skin, sig=1.6, spec=0.03).cap(nb[:2], nt[:2], 2.7, 2.4))
     hp = Part(dp + 3, skin, sig=2.6, spec=0.05)
-    if view == 'down':
+    if view in DOWNS:
         hp.ell((cx, cy - 1), 6.4, 7.0)
         hp.poly([(cx - 6.3, cy), (cx - 5.4, cy + 4), (cx - 3, cy + 7), (cx - 1, cy + 8.2 - (0.3 if fem else 0)), (cx + 1, cy + 8.2 - (0.3 if fem else 0)), (cx + 3, cy + 7), (cx + 5.4, cy + 4), (cx + 6.3, cy)])
         if st not in ('buns', 'turban'): hp.ell((cx - 6.5, cy + 1.6), 1.3, 2.1).ell((cx + 6.5, cy + 1.6), 1.3, 2.1)
@@ -1663,7 +1675,7 @@ def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
         hp.poly([(cx - 5, cy + 3), (cx + 5, cy + 3), (cx + 3.6, cy + 7.4), (cx - 3.6, cy + 7.4)])
         hp.ell((cx - 6.5, cy + 1.6), 1.3, 2.1).ell((cx + 6.5, cy + 1.6), 1.3, 2.1)
     if st == 'bald':
-        if view == 'down': hp.mark(lambda d: [d.px(cx + x, cy + y, '#9a5a34') for x, y in ((-2, -5), (0, -5), (2, -5), (-1, -3), (1, -3))])
+        if view in DOWNS: hp.mark(lambda d: [d.px(cx + x, cy + y, '#9a5a34') for x, y in ((-2, -5), (0, -5), (2, -5), (-1, -3), (1, -3))])
         elif view == 'right': hp.mark(lambda d: [d.px(cx + x, cy + y, '#9a5a34') for x, y in ((0, -6), (2, -5), (1, -3))])
     parts.append(hp)
     if view == 'right' and st not in ('buns', 'turban', 'bald'):
@@ -1674,7 +1686,7 @@ def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
     hd = dp + 3.5
     def cap(bangs):
         hp2 = Part(hd, hair, sig=2.0, spec=0.55)
-        if view == 'down':
+        if view in DOWNS:
             hp2.ell((cx, cy - 2.2), 7.0, 6.6)
             if bangs == 'part':
                 hp2.erase([(cx - 5.6, cy - 1.5), (cx - 3.2, cy - 3.6), (cx - 0.6, cy - 4.8), (cx, cy - 4.0), (cx + 0.6, cy - 4.8), (cx + 3.2, cy - 3.6), (cx + 5.6, cy - 1.5), (cx + 5.6, cy + 9), (cx - 5.6, cy + 9)])
@@ -1714,24 +1726,24 @@ def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
         for b in buns:
             parts.append(acc(hair, 1.3, 0.6).ell(b, 3.0, 2.8))
             parts.append(acc('#ff8ab8', 0.5, 0.3, 0.3, 0).ell((b[0], b[1] + 2.0), 1.4, 0.9))
-        if view == 'down': parts.append(acc('#ffd0e4', 0.5, 0.5, 0.35, 0).ell((cx, cy - 8.2), 1.2, 1.0))
+        if view in DOWNS: parts.append(acc('#ffd0e4', 0.5, 0.5, 0.35, 0).ell((cx, cy - 8.2), 1.2, 1.0))
     elif st == 'ponytail':
         parts.append(cap('part'))
         if view == 'right': parts.append(acc(hair, 1.0, 0.6).ell((cx - 5.6, cy - 5.6), 2.2, 2.2)); parts.append(acc(L['trim'], 0.6, 0.3, 0.3, 0).line([(cx - 5.6, cy - 7.6), (cx - 5.6, cy - 3.8)], 1.1))
-        elif view == 'up': parts.append(acc(hair, 1.0, 0.6).ell((cx, cy - 4.6), 2.4, 2.2)); parts.append(acc(L['trim'], 0.6, 0.3, 0.3, 0).line([(cx - 2.2, cy - 4.4), (cx + 2.2, cy - 4.4)], 1.1))
+        elif view in UPS: parts.append(acc(hair, 1.0, 0.6).ell((cx, cy - 4.6), 2.4, 2.2)); parts.append(acc(L['trim'], 0.6, 0.3, 0.3, 0).line([(cx - 2.2, cy - 4.4), (cx + 2.2, cy - 4.4)], 1.1))
         else: parts.append(acc(L['trim'], 0.6, 0.3, 0.3, 0).line([(cx - 1.6, cy - 8.6), (cx + 1.6, cy - 8.6)], 1.0))
     elif st == 'warrior':
         parts.append(cap('swept'))
         bx = cx - (1.5 if view == 'right' else 0)
         parts.append(acc(hair, 1.0, 0.6).ell((bx, cy - 8.6), 2.4, 2.1))
         band = acc(L['headband'], 0.8, 0.25, 0.3)
-        if view == 'down': band.poly([(cx - 7.2, cy - 4.6), (cx + 7.2, cy - 4.6), (cx + 7.1, cy - 2.8), (cx - 7.1, cy - 2.8)])
+        if view in DOWNS: band.poly([(cx - 7.2, cy - 4.6), (cx + 7.2, cy - 4.6), (cx + 7.1, cy - 2.8), (cx - 7.1, cy - 2.8)])
         elif view == 'right': band.poly([(cx - 8.4, cy - 4.0), (cx + 5.2, cy - 4.8), (cx + 5.3, cy - 3.0), (cx - 8.3, cy - 2.2)])
         else: band.poly([(cx - 7.2, cy - 4.0), (cx + 7.2, cy - 4.0), (cx + 7.1, cy - 2.2), (cx - 7.1, cy - 2.2)]).ell((cx, cy - 3.1), 1.8, 1.4)
-        if view == 'down': band.mark(lambda d: (d.px(cx - 1, cy - 4, L['metal']), d.px(cx, cy - 4, L['metal'])))
+        if view in DOWNS: band.mark(lambda d: (d.px(cx - 1, cy - 4, L['metal']), d.px(cx, cy - 4, L['metal'])))
         parts.append(band)
         bd = Part(dp + 3.3, hair, sig=1.4, spec=0.35, ol=2)
-        if view == 'down':
+        if view in DOWNS:
             bd.poly([(cx - 6.4, cy + 0.5), (cx - 5.8, cy + 5), (cx - 3.4, cy + 9.6), (cx, cy + 11.2), (cx + 3.4, cy + 9.6), (cx + 5.8, cy + 5), (cx + 6.4, cy + 0.5), (cx + 4.6, cy + 3), (cx + 2.6, cy + 4.6), (cx, cy + 4.4), (cx - 2.6, cy + 4.6), (cx - 4.6, cy + 3)])
             bd.erase([(cx - 1.8, cy + 5.6), (cx + 1.8, cy + 5.6), (cx + 1.2, cy + 7.0), (cx - 1.2, cy + 7.0)])
             bd.mark(lambda d: (d.line([(cx - 2, cy + 8), (cx - 1, cy + 10.4)], 1, 0.5), d.line([(cx + 2, cy + 8), (cx + 1, cy + 10.4)], 1, 0.5)))
@@ -1754,12 +1766,12 @@ def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
         parts.append(ht)
         parts.append(Part(dp + 4.3, '#c8c08a', sig=0.6, spec=0.5, ol=2).ell(tip[:2], 1.2))
         mk = Part(dp + 3.4, L.get('mask') or '#000000', sig=1.4, spec=0.1, ol=2)
-        if view == 'down': mk.poly([(cx - 6.5, cy + 2.8), (cx + 6.5, cy + 2.8), (cx + 5.5, cy + 5), (cx + 3, cy + 7.6), (cx, cy + 8.9), (cx - 3, cy + 7.6), (cx - 5.5, cy + 5)])
+        if view in DOWNS: mk.poly([(cx - 6.5, cy + 2.8), (cx + 6.5, cy + 2.8), (cx + 5.5, cy + 5), (cx + 3, cy + 7.6), (cx, cy + 8.9), (cx - 3, cy + 7.6), (cx - 5.5, cy + 5)])
         elif view == 'right': mk.poly([(cx + 0.2, cy + 2.6), (cx + 7.2, cy + 2.6), (cx + 6.4, cy + 6.2), (cx + 4.6, cy + 8.8), (cx + 0.6, cy + 8.8)])
         if mk.ops and L.get('mask'): parts.append(mk)
     elif st == 'turban':
         tb = Part(hd, '#231a3c', sig=2.0, spec=0.25)
-        if view == 'down':
+        if view in DOWNS:
             tb.ell((cx, cy - 3.2), 7.6, 6.6).erase([(cx - 6.2, cy - 1.8), (cx + 6.2, cy - 1.8), (cx + 6.2, cy + 9), (cx - 6.2, cy + 9)])
         elif view == 'right':
             tb.ell((cx - 1.2, cy - 3.2), 7.8, 6.6).erase([(cx + 0.4, cy - 1.8), (cx + 9, cy - 2.4), (cx + 9, cy + 10), (cx + 0.4, cy + 10)])
@@ -1768,15 +1780,15 @@ def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
         tb.mark(lambda d: [d.line([(cx - 7 + i * 3.4, cy - 8 + i * 0.6), (cx - 4 + i * 3.4, cy - 2)], 1, 0.6) for i in range(4)])
         tb.mark(lambda d: d.line([(cx - 7.4, cy - 2.4), (cx + 7.4, cy - 2.4)], L['trim'], 0.9))
         parts.append(tb)
-        if view != 'up':
-            ox = cx if view == 'down' else cx + 3.2
+        if view not in UPS:
+            ox = cx if view in DOWNS else cx + 3.2
             parts.append(acc(L['silver'], 0.8, 0.9, 0.3).ell((ox, cy - 4.6), 1.9, 1.9))
             parts.append(acc(L['trim'], 0.4, 0.7, 0.4, 0).ell((ox, cy - 4.6), 0.8, 0.8))
             vl = Part(dp + 3.4, L['veil'], sig=1.4, spec=0.1, ol=2)
-            if view == 'down': vl.poly([(cx - 6.4, cy + 4.4), (cx + 6.4, cy + 4.4), (cx + 5.5, cy + 6.2), (cx + 3, cy + 8.6), (cx, cy + 9.8), (cx - 3, cy + 8.6), (cx - 5.5, cy + 6.2)])
+            if view in DOWNS: vl.poly([(cx - 6.4, cy + 4.4), (cx + 6.4, cy + 4.4), (cx + 5.5, cy + 6.2), (cx + 3, cy + 8.6), (cx, cy + 9.8), (cx - 3, cy + 8.6), (cx - 5.5, cy + 6.2)])
             else: vl.poly([(cx + 0.4, cy + 3.2), (cx + 7.2, cy + 3.0), (cx + 6.4, cy + 6.6), (cx + 4.6, cy + 9.4), (cx + 0.8, cy + 9.4)])
             sv = L['silver']
-            vl.mark(lambda d: [d.px(x, cy + 4 if view == 'down' else cy + 3, sv) for x in (range(cx - 5, cx + 6, 2) if view == 'down' else range(cx + 1, cx + 7, 2))])
+            vl.mark(lambda d: [d.px(x, cy + 4 if view in DOWNS else cy + 3, sv) for x in (range(cx - 5, cx + 6, 2) if view in DOWNS else range(cx + 1, cx + 7, 2))])
             parts.append(vl)
     elif st == 'messy':
         hp2 = cap('full')
@@ -1784,14 +1796,14 @@ def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
         for x, y0, y1 in sp: hp2.poly([(cx + x - 2, cy + y0 + 1.5), (cx + x + 2, cy + y0 + 1.5), (cx + x + 0.8 + x * 0.12, cy + y1)])
         parts.append(hp2)
         rag = acc('#6a5a44', 0.8, 0.1, 0.25)
-        if view == 'down': rag.poly([(cx - 7.2, cy - 4.4), (cx + 7.2, cy - 4.4), (cx + 7, cy - 3.0), (cx - 7, cy - 3.0)])
+        if view in DOWNS: rag.poly([(cx - 7.2, cy - 4.4), (cx + 7.2, cy - 4.4), (cx + 7, cy - 3.0), (cx - 7, cy - 3.0)])
         elif view == 'right': rag.poly([(cx - 8.4, cy - 3.8), (cx + 5, cy - 4.6), (cx + 5.1, cy - 3.2), (cx - 8.3, cy - 2.4)])
         else: rag.poly([(cx - 7.2, cy - 3.8), (cx + 7.2, cy - 3.8), (cx + 7, cy - 2.4), (cx - 7, cy - 2.4)])
         parts.append(rag)
     elif st == 'cap':     # mũ quả dưa chưởng quỹ
         parts.append(cap('swept'))
         cp = acc('#1e1a22', 1.6, 0.35, 0.4, 3)
-        if view == 'down': cp.ell((cx, cy - 3.6), 7.3, 5.8).erase([(cx - 8, cy - 2.6), (cx + 8, cy - 2.6), (cx + 8, cy + 6), (cx - 8, cy + 6)])
+        if view in DOWNS: cp.ell((cx, cy - 3.6), 7.3, 5.8).erase([(cx - 8, cy - 2.6), (cx + 8, cy - 2.6), (cx + 8, cy + 6), (cx - 8, cy + 6)])
         elif view == 'right': cp.ell((cx - 1.2, cy - 3.6), 7.4, 5.8).erase([(cx - 9, cy - 2.4), (cx + 8, cy - 3.0), (cx + 8, cy + 6), (cx - 9, cy + 6)])
         else: cp.ell((cx, cy - 3.2), 7.3, 6.0).erase([(cx - 8, cy - 1.8), (cx + 8, cy - 1.8), (cx + 8, cy + 6), (cx - 8, cy + 6)])
         cp.mark(lambda d: [d.line([(cx + x, cy - 9), (cx + x * 1.5, cy - 3)], 1, 0.5) for x in (-3, 0, 3)])
@@ -1801,7 +1813,7 @@ def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
         parts.append(cap('swept'))
         hcol = '#1d1a26'
         hat = acc(hcol, 1.6, 0.35, 0.4, 3)
-        if view == 'down': q = [(cx - 4.8, cy - 6.4), (cx + 4.8, cy - 6.4), (cx + 4.0, cy - 13.6), (cx - 4.0, cy - 13.6)]
+        if view in DOWNS: q = [(cx - 4.8, cy - 6.4), (cx + 4.8, cy - 6.4), (cx + 4.0, cy - 13.6), (cx - 4.0, cy - 13.6)]
         elif view == 'right': q = [(cx - 5.8, cy - 6.0), (cx + 3.0, cy - 6.6), (cx + 2.0, cy - 13.6), (cx - 4.6, cy - 13.2)]
         else: q = [(cx - 4.8, cy - 6.2), (cx + 4.8, cy - 6.2), (cx + 4.0, cy - 13.4), (cx - 4.0, cy - 13.4)]
         hat.poly(q)
@@ -1809,11 +1821,11 @@ def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
         parts.append(hat)
         topc = ((q[2][0] + q[3][0]) / 2, (q[2][1] + q[3][1]) / 2 - 1.4)
         parts.append(acc('#f2c24e', 0.6, 0.9, 0.5).ell(topc, 1.6, 1.4))
-        if view == 'down': parts.append(acc('#e8402a', 0.4, 0.5, 0.5, 0).ell((cx, cy - 9.6), 1.0, 1.0))
-    if L.get('beard') == 'long' and view != 'up':
+        if view in DOWNS: parts.append(acc('#e8402a', 0.4, 0.5, 0.5, 0).ell((cx, cy - 9.6), 1.0, 1.0))
+    if L.get('beard') == 'long' and view not in UPS:
         bc = L.get('beardcol', hair)
         bd = Part(dp + 3.3, bc, sig=1.4, spec=0.45, ol=2)
-        if view == 'down':
+        if view in DOWNS:
             bd.poly([(cx - 5.8, cy + 2.6), (cx - 5.0, cy + 8), (cx - 2.8, cy + 13), (cx, cy + 18), (cx + 2.8, cy + 13), (cx + 5.0, cy + 8), (cx + 5.8, cy + 2.6), (cx + 3.8, cy + 4.6), (cx + 1.4, cy + 5.4), (cx - 1.4, cy + 5.4), (cx - 3.8, cy + 4.6)])
             bd.erase([(cx - 1.6, cy + 5.8), (cx + 1.6, cy + 5.8), (cx + 1.0, cy + 7.0), (cx - 1.0, cy + 7.0)])
             bd.mark(lambda d: (d.line([(cx - 2.4, cy + 9), (cx - 1, cy + 15)], 1, 0.5), d.line([(cx + 2.2, cy + 9), (cx + 0.8, cy + 15)], 1, 0.5), d.line([(cx - 4, cy + 4.8), (cx - 1, cy + 5.2)], 3, 0.6), d.line([(cx + 1, cy + 5.2), (cx + 4, cy + 4.8)], 3, 0.6)))
@@ -1827,7 +1839,7 @@ def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
             specs = [((cx - 2.6, cy - 6.4), [(cx - 6.0, cy - 10.5), (cx - 9.6, cy - 13.0), (cx - 11.2, cy - 17.5)], -0.4),
                      ((cx + 1.6, cy - 6.8), [(cx - 0.6, cy - 11.5), (cx - 3.4, cy - 14.8), (cx - 4.2, cy - 19.5)], 0.4)]
         else:
-            specs = [((cx + sx * 4.4, cy - 5.6), [(cx + sx * 7.8, cy - 9.8), (cx + sx * 9.2, cy - 14.4), (cx + sx * 7.6, cy - 19.0)], 0.5 if view == 'down' else -0.5) for sx in (-1, 1)]
+            specs = [((cx + sx * 4.4, cy - 5.6), [(cx + sx * 7.8, cy - 9.8), (cx + sx * 9.2, cy - 14.4), (cx + sx * 7.6, cy - 19.0)], 0.5 if view in DOWNS else -0.5) for sx in (-1, 1)]
         for b, pts, z in specs:
             hn = Part(hd + z, hcol, sig=1.2, spec=0.55, ol=2).ribbon([b] + pts, 3.6, 0.5)
             hn.mark(lambda d, b=b, pts=pts: [d.line([(b[0] + (pts[0][0] - b[0]) * k, b[1] + (pts[0][1] - b[1]) * k - 1), (b[0] + (pts[0][0] - b[0]) * k + 1.2, b[1] + (pts[0][1] - b[1]) * k)], dark(hcol, 0.45), 0.6) for k in (0.3, 0.7, 1.0)])
@@ -1837,7 +1849,7 @@ def _head_parts(L, B, J, pr, view, parts, CH, P, htier, helm):
 
 def effects(L, B, J, pr, view, anim, t, posefn, fxo, fxu, P):
     glow = L['glow']; w = L['weapon']
-    rnd = np.random.RandomState(int(t * 1000) + len(anim) * 7 + VIEWS.index(view))
+    rnd = np.random.RandomState(int(t * 1000) + len(anim) * 7 + (VIEWS + DIAG).index(view))
     if anim == 'attack':
         # vệt chém theo đường đi của lưỡi
         lo, hi = {'sword': (0.4, 0.68), 'saber': (0.42, 0.72), 'staff': (0.42, 0.74), 'hammer': (0.42, 0.66), 'daggers': (0.34, 0.72)}.get(w, (2, 2))
@@ -1908,7 +1920,7 @@ def effects(L, B, J, pr, view, anim, t, posefn, fxo, fxu, P):
             for i in range(5):
                 ang = i / 5 * TAU + u * 5
                 q = J['pelvis'] + V(math.cos(ang) * 20, math.sin(ang) * 20, 30 + 6 * math.sin(ang * 2 + u * 3))
-                c = pr(q); lay = fxo if math.sin(ang) * (1 if view == 'down' else -1) >= 0 or view == 'right' and math.cos(ang) >= 0 else fxu
+                c = pr(q); lay = fxo if math.sin(ang) * (1 if view in DOWNS else -1) >= 0 or view == 'right' and math.cos(ang) >= 0 else fxu
                 lay.poly([(c[0] - 2, c[1] - 3.5), (c[0] + 2, c[1] - 3.5), (c[0] + 2, c[1] + 3.5), (c[0] - 2, c[1] + 3.5)], '#f4d860', 0.95)
                 lay.line([(c[0], c[1] - 2.5), (c[0], c[1] + 2.5)], '#d02020', 0.95, 0.6)
         if w == 'staff' and u >= 0.35:   # Kim Chung Tráo
@@ -1955,7 +1967,7 @@ def render_layers(L, B, J, CH, view, anim, t, posefn, P):
 
 
 def save_sheet(rows, path):
-    sheet = np.zeros((len(rows) * CELL, 8 * CELL, 4), np.uint8)
+    sheet = np.zeros((len(rows) * CELL, COLS * CELL, 4), np.uint8)
     for r, row in enumerate(rows):
         for c, im in enumerate(row):
             if im is not None: sheet[r * CELL:(r + 1) * CELL, c * CELL:(c + 1) * CELL] = np.clip(im, 0, 255).astype(np.uint8)
@@ -1971,23 +1983,28 @@ def render_sect(key, outdir):
     L = LOOKS[key]; B = BODY[L['body']]
     defs = chains_for(L, B); CHAINS_CACHE[L['name']] = defs
     rows = {k: [] for k in LAYERS}
-    meta = {'cell': CELL, 'foot': [FX, FY], 'gameScale': GAME_SCALE, 'views': VIEWS, 'anims': {}, 'name': L['name'], 'layers': []}
+    meta = {'cell': CELL, 'foot': [FX, FY], 'gameScale': GAME_SCALE, 'views': VIEWS + DIAG, 'cols': COLS, 'anims': {}, 'name': L['name'], 'layers': []}
     nrow = 0
     for name, n, dur, loop in ANIMS:
         f = anim_pose(L, B, name)
         ts = [i / n for i in range(n)] if loop else FRAME_T[name]
         times = [t * dur for t in ts]
         ms = [round((times[i + 1] - times[i]) * 1000) if i + 1 < len(times) else round((dur - times[i]) * 1000 if loop else 220) for i in range(len(times))]
-        meta['anims'][name] = {'row': nrow, 'n': n, 'ms': [max(40, m) for m in ms], 'loop': loop}
+        views = VIEWS + DIAG if name in DIAG_ANIMS else VIEWS
+        rpv = -(-n // COLS)
+        # mỗi hướng chiếm rpv hàng liên tiếp, khung i ở hàng row + chỉ số hướng * rpv + i // COLS, cột i % COLS
+        meta['anims'][name] = {'row': nrow, 'n': n, 'ms': [max(40, m) for m in ms], 'loop': loop, 'views': views, 'rpv': rpv}
         speed = {'walk': 100.0, 'run': 270.0}.get(name, 0.0)
-        for view in VIEWS:
+        for view in views:
             Ps = [f(t) for t in ts]
             for P in Ps: P['fallmode'] = 'back' if view == 'right' else 'side'
             Js = [solve(B, P) for P in Ps]
             CH = simulate(defs, Js, times, speed, loop, dur)
             frames = [render_layers(L, B, J, {nm: CH[nm][i] for nm in CH}, view, name, ts[i], f, Ps[i]) for i, J in enumerate(Js)]
-            for k in LAYERS: rows[k].append([fr[k] for fr in frames])
-            nrow += 1
+            for k in LAYERS:
+                fr = [x[k] for x in frames]
+                for r in range(rpv): rows[k].append(fr[r * COLS:(r + 1) * COLS])
+            nrow += rpv
     for k in LAYERS:
         if save_sheet(rows[k], os.path.join(outdir, '%s_%s.png' % (key, k))): meta['layers'].append(k)
     with open(os.path.join(outdir, key + '.json'), 'w') as fp: json.dump(meta, fp, ensure_ascii=False)

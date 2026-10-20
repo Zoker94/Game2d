@@ -8,7 +8,8 @@
   //   chars/<cls>_am1..am3.png  phần kim loại của áo (xám) -> tô màu theo phẩm chất
   //   chars/<cls>_w0..w2.png    vũ khí (thường / tinh luyện / thần binh), đã trừ sẵn chỗ bị thân che
   //   chars/<cls>_h1..h3.png    mũ, _hm1..hm3 kim loại mũ;  _fxu / _fxo hiệu ứng dưới / trên nhân vật
-  // Mỗi động tác có 3 hàng liên tiếp: nhìn xuống, nhìn lên, nhìn phải (trái = lật).
+  // Mỗi động tác có các hướng (meta anims[].views): xuống, lên, phải, + chéo xuống-phải / chéo lên-phải với đứng, đi, chạy
+  // (trái = lật). Động tác > 8 khung xuống dòng: mỗi hướng chiếm rpv hàng.
   const CLASSES = ['thieulam', 'ngudoc', 'thienvuong', 'caibang', 'vodang', 'ngamy', 'thuyyen', 'conlon', 'duongmon'];
   const SRC = 144, CELL = 96, FOOT_X = 48, FOOT_Y = 86;
   const STATE_ANIM = { idle: 'idle', walk: 'walk', run: 'run', atk: 'attack', cast: 'cast', hurt: 'hurt', dead: 'death',
@@ -51,12 +52,20 @@
   const has = cls => !!(imgs[cls + '_a0'] && META[cls]);
   function layerOf(cls, name) { const m = META[cls]; return m && m.layers.indexOf(name) >= 0 ? need(cls + '_' + name) : null; }
   // (hàng, cột) của khung: trạng thái game -> động tác trong sheet; ngã = khung cuối của động tác ngã
+  // dir: 0 xuống, 1 trái, 2 phải, 3 lên, 4 chéo xuống-phải, 5 chéo xuống-trái, 6 chéo lên-phải, 7 chéo lên-trái (trái = lật)
+  const VIEW_OF = ['down', 'right', 'right', 'up', 'dr', 'dr', 'ur', 'ur'];
+  const FLIP = [false, true, false, false, false, true, false, true];
+  const isFlip = dir => !!FLIP[dir];
   function cellOf(cls, dir, state, i) {
     const m = META[cls], a = m.anims[STATE_ANIM[state] || 'idle'] || m.anims.idle;
     const col = state === 'dead' ? a.n - 1 : ((i % a.n) + a.n) % a.n;
-    return [a.row + (dir === 0 ? 0 : dir === 3 ? 1 : 2), col];
+    const views = a.views || m.views, cols = m.cols || 8, rpv = a.rpv || 1;
+    let vi = views.indexOf(VIEW_OF[dir] || 'down');
+    if (vi < 0) vi = views.indexOf('right');   // động tác không có hướng chéo: dùng nhìn nghiêng
+    return [a.row + vi * rpv + Math.floor(col / cols), col % cols];
   }
   function frameCount(cls, state) { const m = META[cls], a = m && m.anims[STATE_ANIM[state]]; return a ? a.n : 1; }
+  function frameMs(cls, state) { const m = META[cls], a = m && m.anims[STATE_ANIM[state]]; return a ? a.ms : [100]; }
   // ----- trang bị -> kiểu hình -----
   const METAL = ['#a8b0bc', '#4fa3ff', '#b060ff', '#ffb02a'];   // Thường / Hiếm / VIP / Truyền Kỳ
   // ap = [bậc vũ khí, độ hiếm vũ khí, +vũ khí, bậc áo, độ hiếm áo, +áo, bậc nón, thú cưỡi, độ hiếm nón]
@@ -89,7 +98,7 @@
     if (cache[key]) return cache[key];
     const [row, col] = cellOf(cls, dir, state, i);
     const [m, mx] = mk(SRC, SRC);
-    if (dir === 1) { mx.translate(SRC, 0); mx.scale(-1, 1); }
+    if (isFlip(dir)) { mx.translate(SRC, 0); mx.scale(-1, 1); }
     mx.drawImage(im, col * SRC, row * SRC, SRC, SRC, 0, 0, SRC, SRC);
     mx.setTransform(1, 0, 0, 1, 0, 0);
     mx.globalCompositeOperation = 'source-in'; mx.fillStyle = color; mx.fillRect(0, 0, SRC, SRC);
@@ -111,7 +120,7 @@
     const [row, col] = cellOf(cls, dir, state, i), sx = col * SRC, sy = row * SRC;
     const [c, x] = mk(SRC, SRC);
     if (!state.startsWith('ride')) { x.fillStyle = 'rgba(0,0,0,0.3)'; x.beginPath(); x.ellipse(72, 128, state === 'dead' ? 33 : 19, 6, 0, 0, Math.PI * 2); x.fill(); }
-    if (dir === 1) { x.translate(SRC, 0); x.scale(-1, 1); }
+    if (isFlip(dir)) { x.translate(SRC, 0); x.scale(-1, 1); }
     const put2 = im => { if (im) x.drawImage(im, sx, sy, SRC, SRC, 0, 0, SRC, SRC); };
     put2(fxu); put2(body || base);
     if (metal) x.drawImage(tinted(metal, sx, sy, METAL[L.ar]), 0, 0);
@@ -266,5 +275,5 @@
     return `<i class="sk-img" style="background-image:url('${url}');--skc:${s.color || '#ffd76a'}"></i>`;
   }
 
-  window.Assets = { ready, imgs, has, nature, charFrame, frameCount, SRC, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, MONSTERS, skillIconUrl, skillIconHTML };
+  window.Assets = { ready, imgs, has, nature, charFrame, frameCount, frameMs, SRC, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, MONSTERS, skillIconUrl, skillIconHTML };
 })();
