@@ -103,6 +103,9 @@ const MONSTERS = {
   pb1_boss:      { name: 'Hắc Phong Trại Chủ', lv: 26, sprite: 'bandit',   color: '#101820', aggro: true,  speed: 110, range: 80, pb: 1, pbBoss: 1 },
   pb2_boss:      { name: 'Huyền Cung Thi Vương', lv: 46, sprite: 'ghost',  color: '#4a5a30', aggro: true,  speed: 95,  range: 85, pb: 1, pbBoss: 1 },
   pb3_boss:      { name: 'Huyết Ma Cung Chủ',  lv: 72, sprite: 'demon',    color: '#600010', aggro: true,  speed: 110, range: 95, pb: 1, pbBoss: 1 },
+  // Cốt truyện Võ Mục Di Thư: quân Mông Cổ hội quân ở Hắc Phong Cốc, anh hồn Nhạc Gia Quân canh Nhạc Vương Miếu
+  mong_co_ky:   { name: 'Mông Cổ Thiết Kỵ',   lv: 52, sprite: 'bandit',   color: '#5a4a2a', aggro: true,  speed: 120, range: 70 },
+  nhac_gia_quan:{ name: 'Nhạc Gia Quân Hồn',  lv: 74, sprite: 'bandit',   color: '#c8a040', aggro: true,  speed: 115, range: 75 },
   // Cướp tiêu tặc: chỉ xuất hiện khi phục kích xe tiêu
   tieu_tac1:    { name: 'Cướp Tiêu Tặc',      lv: 18, sprite: 'bandit',   color: '#3a1a1a', aggro: true,  speed: 115, range: 60 },
   tieu_tac2:    { name: 'Cướp Tiêu Đầu Lĩnh', lv: 33, sprite: 'bandit',   color: '#5a0a2a', aggro: true,  speed: 120, range: 65 },
@@ -130,8 +133,15 @@ const BOSSES = {
   boss_bang:  { name: 'Băng Cung Cung Chủ', lv: 50, sprite: 'yeti',   color: '#b0e0ff', map: 'bang_cung', every: 120, offset: 50, speed: 100, range: 100 },
   boss_ma:    { name: 'Thiên Ma Giáo Chủ', lv: 62, sprite: 'demon',   color: '#8b0000', map: 'ma_giao',  every: 180, offset: 0, speed: 110, range: 110 },
   boss_conlon: { name: 'Côn Lôn Chưởng Môn', lv: 75, sprite: 'bandit', color: '#e8eef8', map: 'con_lon',  every: 120, offset: 40, speed: 120, range: 110 },
-  boss_huyet:  { name: 'Huyết Ma Lão Tổ',   lv: 92, sprite: 'demon',    color: '#600010', map: 'huyet_ma', every: 180, offset: 90, speed: 112, range: 120 }
+  boss_huyet:  { name: 'Huyết Ma Lão Tổ',   lv: 92, sprite: 'demon',    color: '#600010', map: 'huyet_ma', every: 180, offset: 90, speed: 112, range: 120 },
+  // Quốc sư Mông Cổ – kẻ đưa thiết kỵ tới Hắc Phong Cốc hội quân với Ma Giáo
+  boss_kimluan: { name: 'Kim Luân Pháp Vương', lv: 58, sprite: 'bandit', color: '#b8281e', map: 'hac_phong_coc', every: 120, offset: 70, speed: 115, range: 100, size: 1.35, scroll: 7 },
+  // Boss thế giới tối thượng: anh linh Nhạc Vũ Mục thử thách hậu nhân – cần cả võ lâm (≈30 người cấp 70, 5-10 phút)
+  boss_vumuc: { name: 'Nhạc Vũ Mục Anh Linh', lv: 85, sprite: 'bandit', color: '#d8b040', map: 'nhac_mieu', every: 240, offset: 120, speed: 108, range: 130,
+                size: 1.9, world: true, hpFix: 30000000, atkFix: 1700, defFix: 420, expK: 220, goldK: 400 }
 };
+// boss -> tàn quyển Võ Mục Di Thư rơi ra (Côn Lôn / Huyết Ma / Nhạc Vũ Mục rơi ngẫu nhiên)
+const SCROLL_OF = { boss_soi: 1, boss_truc: 2, boss_hoason: 3, boss_samac: 4, boss_bang: 5, boss_ma: 6, boss_kimluan: 7 };
 for (const id in BOSSES) {
   const b = BOSSES[id];
   b.id = id;
@@ -139,11 +149,12 @@ for (const id in BOSSES) {
   b.boss = true;
   b.aggro = true;
   const s = stats(b.lv, 1);
-  b.hp = Math.round(s.hp * 45 * (1.4 + b.lv / 120));   // boss trâu hơn hẳn ở cấp cao
-  b.atk = Math.round(s.atk * 1.5);
-  b.def = Math.round(s.def * 1.3);
-  b.exp = s.exp * 60;
-  b.gold = s.gold * 80;
+  b.hp = b.hpFix || Math.round(s.hp * 45 * (1.4 + b.lv / 120));   // boss trâu hơn hẳn ở cấp cao
+  b.atk = b.atkFix || Math.round(s.atk * 1.5);
+  b.def = b.defFix || Math.round(s.def * 1.3);
+  b.exp = s.exp * (b.expK || 60);
+  b.gold = s.gold * (b.goldK || 80);
+  b.scroll = SCROLL_OF[id] || 0;
 }
 
-module.exports = { MONSTERS, BOSSES };
+module.exports = { MONSTERS, BOSSES, SCROLL_OF };

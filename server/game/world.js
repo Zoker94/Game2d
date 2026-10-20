@@ -2,6 +2,7 @@
 const { CLASSES, classSkill, PASSIVE_SLOT } = require('../data/classes');
 const { ITEMS, RARITY, equipId } = require('../data/items');
 const { MONSTERS, BOSSES } = require('../data/monsters');
+const VM_IDS = ['vm_tq1', 'vm_tq2', 'vm_tq3', 'vm_tq4', 'vm_tq5', 'vm_tq6', 'vm_tq7'];
 const { MAPS, TILE, isSolidAt, SOLID } = require('../data/maps');
 const { NPCS, TELEPORTS } = require('../data/npcs');
 const { TUTORIAL } = require('../data/quests');
@@ -916,7 +917,27 @@ class World {
         const p = this.players.get(uid);
         if (p) this.giveReward(p, { items: [['boss_chest', 1]], knb: [20, 10, 5][i] }, `Top ${i + 1} sát thương Boss`);
       });
-      const n = U.randInt(4, 7);
+      // tàn quyển Võ Mục Di Thư: top 3 chắc chắn, hạng 4-10 có 40% (boss thế giới: mọi người góp ≥0.5% sát thương)
+      const total = ranking.reduce((a, [, d]) => a + d, 0) || 1;
+      ranking.forEach(([uid, d], i) => {
+        const p = this.players.get(uid);
+        if (!p) return;
+        const sid = tpl.scroll ? 'vm_tq' + tpl.scroll : (tpl.lv >= 70 ? VM_IDS[U.randInt(0, 6)] : null);
+        if (!sid) return;
+        const got = tpl.world ? d / total >= 0.005 : (i < 3 || (i < 10 && Math.random() < 0.4));
+        if (got) this.giveReward(p, { items: [[sid, 1]] }, `Boss ${tpl.name}`);
+      });
+      if (tpl.world) {   // boss thế giới: thưởng lớn theo thứ hạng sát thương
+        ranking.forEach(([uid, d], i) => {
+          const p = this.players.get(uid);
+          if (!p || d / total < 0.005) return;
+          const items = [['stone2', i < 10 ? 3 : 1], ['boss_chest', i < 3 ? 3 : i < 10 ? 2 : 1]];
+          if (i === 0) items.push(['vm_dithu', 1]);
+          if (i < 3) items.push(['insure', 1]);
+          this.giveReward(p, { items, knb: i < 3 ? [200, 120, 80][i] : i < 10 ? 40 : 15 }, `Hạng ${i + 1} đánh ${tpl.name}`);
+        });
+      }
+      const n = U.randInt(4, 7) + (tpl.world ? 10 : 0);
       for (let i = 0; i < n; i++) {
         const r = Math.random();
         const rar = r < 0.06 * dr ? 'legendary' : r < 0.3 * dr ? 'epic' : 'rare';
@@ -1131,6 +1152,27 @@ class World {
         if (mt.rarity === 'epic' || mt.rarity === 'legendary') this.features.announce(`🐉 ${c.name} đã thuần phục thú cưỡi [${mt.name}]!`);
       }
       this.recalc(p); this.db.markDirty();
+      return;
+    }
+    if (e.vmCombine) {   // ghép đủ 7 tàn quyển -> Võ Mục Di Thư
+      const missing = VM_IDS.filter(id => !U.countItem(c, id));
+      if (missing.length) return this.toast(p, `Cần đủ 7 tàn quyển để ghép (đang có ${7 - missing.length}/7). Còn thiếu: ${missing.map(id => ITEMS[id].name.split('· ')[1]).join(', ')}`, 'error');
+      for (const id of VM_IDS) U.removeItemById(c, id, 1);
+      this.giveItem(p, 'vm_dithu', 1);
+      this.toast(p, '📜 Bảy tàn quyển hợp nhất – Võ Mục Di Thư tái hiện nhân gian!', 'reward');
+      this.features.announce(`📜 ${c.name} đã gom đủ 7 tàn quyển, ghép thành [Võ Mục Di Thư]!`);
+      this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y });
+      p.dirtyMe = true; this.db.markDirty();
+      return;
+    }
+    if (e.vmStudy) {   // nghiền ngẫm binh thư: tăng chỉ số vĩnh viễn
+      if ((c.vmb | 0) >= 5) return this.toast(p, 'Bạn đã lĩnh hội trọn vẹn Võ Mục Di Thư (5/5)', 'error');
+      U.removeByUid(c, uid, 1);
+      c.vmb = (c.vmb | 0) + 1;
+      this.recalc(p);
+      this.toast(p, `Lĩnh hội Võ Mục Di Thư tầng ${c.vmb}/5: công, thủ, sinh lực +${c.vmb * 3}%`, 'reward');
+      this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y, small: true });
+      this.db.markDirty();
       return;
     }
     if (e.tieuChest) {

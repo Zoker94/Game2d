@@ -159,7 +159,7 @@ const MAP_DEFS = {
     name: 'Hắc Phong Cốc', theme: 'tomb', w: 44, h: 30, seed: 67, lv: '48-54', tier: 5,
     portals: [{ side: 'W', to: 'bang_cung' }, { side: 'E', to: 'ma_giao' }],
     npcs: [],
-    spawns: [['ma_lang', 8], ['hac_y_ma', 8], ['viem_quy', 7], ['viem_quy', 6]]
+    spawns: [['ma_lang', 8], ['hac_y_ma', 8], ['viem_quy', 7], ['viem_quy', 6], ['mong_co_ky', 7], ['mong_co_ky', 6]]
   },
   ma_giao: {
     name: 'Ma Giáo Cấm Địa', theme: 'demon', w: 48, h: 36, seed: 71, lv: '50+', tier: 5,
@@ -243,7 +243,7 @@ const MAP_DEFS = {
   },
   vo_luong: {
     name: 'Vô Lượng Sơn Cốc', theme: 'bamboo', w: 48, h: 36, seed: 127, lv: '72-80', tier: 7, minLv: 65,
-    portals: [{ side: 'W', to: 'con_lon' }, { side: 'E', to: 'huyet_ma' }],
+    portals: [{ side: 'W', to: 'con_lon' }, { side: 'E', to: 'huyet_ma' }, { side: 'N', to: 'nhac_mieu', at: 0.5 }],
     npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }, { id: 'xa_phu', x: 6, y: 19 }],
     spawns: [['doc_mang', 9], ['doc_mang', 7], ['xich_ho', 8], ['xich_ho', 7], ['vo_luong_kiem', 7], ['vo_luong_kiem', 6]]
   },
@@ -252,6 +252,13 @@ const MAP_DEFS = {
     portals: [{ side: 'W', to: 'vo_luong' }, { side: 'E', to: 'doan_hon' }],
     npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }, { id: 'xa_phu', x: 6, y: 19 }],
     spawns: [['huyet_lang', 9], ['huyet_lang', 7], ['huyet_ma_binh', 8], ['huyet_ma_binh', 7], ['huyet_sat', 7], ['huyet_sat', 6]]
+  },
+  // Nhạc Vương Miếu: sân miếu rộng cho cả võ lâm hợp sức đánh Boss thế giới Nhạc Vũ Mục Anh Linh
+  nhac_mieu: {
+    name: 'Nhạc Vương Miếu', theme: 'arena', w: 52, h: 40, seed: 141, lv: '70+', tier: 7, minLv: 65, temple: true,
+    portals: [{ side: 'S', to: 'vo_luong', at: 0.5 }],
+    npcs: [{ id: 'thuong_nhan', x: 22, y: 34 }],
+    spawns: [['nhac_gia_quan', 5, 10, 30, 3], ['nhac_gia_quan', 5, 41, 30, 3], ['nhac_gia_quan', 4, 10, 10, 3], ['nhac_gia_quan', 4, 41, 10, 3]]
   },
   doan_hon: {
     name: 'Đoạn Hồn Nhai', theme: 'tomb', w: 44, h: 32, seed: 137, lv: '88-99', tier: 8, minLv: 85,
@@ -540,6 +547,13 @@ function generate(id, def = MAP_DEFS[id]) {
   if (def.theme === 'arena') {
     for (let y = 5; y < h - 5; y++) for (let x = 6; x < w - 6; x++) set(x, y, T.FLOOR);
   }
+  if (def.temple) {   // miếu thờ: sân đá trống giữa (chỗ Boss), cờ, đèn đá, lư hương, cây cổ thụ quanh tường
+    for (let y = 4; y < h - 4; y++) for (let x = 5; x < w - 5; x++) set(x, y, T.FLOOR);
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) if ((x < 4 || x > w - 5 || y < 3) && r() < 0.5) set(x, y, T.TREE);
+    props.push({ x: cx, y: 6, k: 'censer' });
+    for (const dx of [-9, -5, 5, 9]) props.push({ x: cx + dx, y: 5, k: 'banner' });
+    for (const [px, py] of [[8, 9], [w - 9, 9], [8, h - 10], [w - 9, h - 10], [cx - 12, cy], [cx + 12, cy]]) props.push({ x: px, y: py, k: 'stonelamp' });
+  }
   if (def.tourney) {   // Đại Hội: sân đá rộng, không chướng ngại, hồ nước bốn góc
     for (let y = 2; y < h - 2; y++) for (let x = 2; x < w - 2; x++) set(x, y, T.FLOOR);
     for (const [qx, qy] of [[4, 4], [w - 7, 4], [4, h - 7], [w - 7, h - 7]]) for (let y = 0; y < 3; y++) for (let x = 0; x < 3; x++) set(qx + x, qy + y, T.WATER);
@@ -627,7 +641,7 @@ function generate(id, def = MAP_DEFS[id]) {
   return {
     id, name: def.name, theme: def.theme, w, h, tiles: g, safe: !!def.safe, pvp: !!def.pvp, tourney: !!def.tourney, minLv: def.minLv || 1, lv: def.lv, tier: def.tier ?? 0, town: !!def.town,
     portals, npcs: def.npcs, spawns, walkable, buildings, props, sect: def.sect || null, noPk: !!def.noPk,
-    boss: { x: bossSpot % w, y: (bossSpot / w) | 0 },
+    boss: def.temple ? { x: cx, y: cy - 4 } : { x: bossSpot % w, y: (bossSpot / w) | 0 },   // miếu: Boss đứng giữa sân
     center: { x: cx, y: cy }
   };
 }

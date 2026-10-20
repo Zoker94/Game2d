@@ -185,7 +185,7 @@ let gamedataCache = null;
 app.get('/api/gamedata', (req, res) => {
   if (!gamedataCache) {
     const mons = {};
-    for (const m of [...Object.values(MONSTERS), ...Object.values(BOSSES)]) mons[m.id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: m.el, art: m.art };
+    for (const m of [...Object.values(MONSTERS), ...Object.values(BOSSES)]) mons[m.id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: m.el, art: m.art, size: m.size, world: m.world };
     mons.chest = { name: 'Bảo Rương', lv: 1, sprite: 'chest', color: '#ffd700' };
     for (const [id, m] of Object.entries(require('./game/daihoi').DH_MONS)) mons[id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: 'kim', art: m.art };
     const maps = {};

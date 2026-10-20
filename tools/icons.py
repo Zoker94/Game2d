@@ -402,6 +402,14 @@ def scroll(ic):
     ic.text('回', 32, 33, 13, '#b01818')
     ic.paint(ic.m_ell(46, 40, 3.5, 3.5), '#e02020', '#801010', edge=0.3, shine=0)
 
+def vm_scroll(ic):   # tàn quyển Võ Mục Di Thư: cuộn giấy cũ rách mép, chữ 武, ấn đỏ
+    paper = ('#f4dca0', '#a07838')
+    ic.paint(ic.m_poly([(12, 18), (50, 18), (54, 26), (48, 32), (53, 40), (47, 47), (12, 47)]), *paper, ang=-70)
+    ic.paint(ic.m_ell(12, 32, 4, 16), *WOOD)
+    for y in (16, 48): ic.paint(ic.m_ell(12, y, 3, 3), *GOLD)
+    ic.text('武', 30, 32, 15, '#3a1a0a')
+    ic.paint(ic.m_ell(43, 41, 3.5, 3.5), '#d82020', '#801010', edge=0.3, shine=0)
+
 def book(ic, cover=('#c03030', '#5a0a10'), glyph='經', glow=None, emblem=None):
     ic.paint(ic.m_poly([(14, 10), (50, 8), (54, 54), (18, 56)]), *cover, ang=-60)
     ic.paint(ic.m_poly([(18, 56), (54, 54), (54, 58), (18, 60)]), '#fff4dc', '#c8b088', edge=0.3, shine=0)   # mép giấy
@@ -497,7 +505,8 @@ def elem_emblem(col, kind):
     return f
 
 SIMPLE = {
-    'scroll': scroll,
+    'scroll': scroll, 'vm_scroll': vm_scroll,
+    'vm_book': lambda ic: book(ic, ('#b01818', '#3a0606'), '岳'),
     'book': lambda ic: book(ic, ('#e8b030', '#7a4a08'), '倍'),
     'skillbook': lambda ic: book(ic, ('#3a5aa0', '#101a40'), '武'),
     'book_fire': lambda ic: book(ic, ('#e04020', '#5a0a08'), '炎', emblem=elem_emblem('#ff5020', 'fire')),
@@ -506,7 +515,7 @@ SIMPLE = {
     'stone': stone, 'stone2': lambda ic: stone(ic, True), 'insure': insure, 'food': food, 'blood': blood,
     'chest': chest, 'chest_gold': lambda ic: chest(ic, True), 'ticket': ticket, 'lantern': lantern, 'saddle': saddle, 'gold': gold_icon,
 }
-SIMPLE_GLOW = {'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040'}
+SIMPLE_GLOW = {'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040'}
 
 def build():
     tiles, index = [], {}

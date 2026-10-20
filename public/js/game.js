@@ -1250,13 +1250,14 @@
     const mf = Assets.monsterFrame(e.type, state, fi, e.dir);
     if (mf) {
       const face = e.face || 2, flip = mf.rig ? e.dir === 1 : face === 1;
-      const half = Math.max(12, mf.half * 0.8);
+      const SZ = e.boss ? (info.size || 1.25) : 1;   // boss thế giới vẽ to hơn
+      const half = Math.max(12, mf.half * 0.8) * SZ, top = mf.top * SZ;
       ctx.save();
       ctx.translate(Math.round(e.x), Math.round(e.y));
       if (e.boss) {
-        const g = ctx.createRadialGradient(0, -mf.top / 2, 10, 0, -mf.top / 2, mf.top);
-        g.addColorStop(0, 'rgba(255,40,40,0.32)'); g.addColorStop(1, 'rgba(255,0,0,0)');
-        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, -mf.top / 2, mf.top, 0, Math.PI * 2); ctx.fill();
+        const g = ctx.createRadialGradient(0, -top / 2, 10, 0, -top / 2, top);   // boss thế giới: hào quang vàng
+        g.addColorStop(0, info.world ? `rgba(255,210,90,${0.38 + Math.sin(now / 300) * 0.08})` : 'rgba(255,40,40,0.32)'); g.addColorStop(1, 'rgba(255,0,0,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, -top / 2, top, 0, Math.PI * 2); ctx.fill();
       }
       ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(0, 0, half, Math.max(4, half * 0.28), 0, 0, Math.PI * 2); ctx.fill();
       if (e.elite) {
@@ -1265,6 +1266,7 @@
       }
       if (e.born && now - e.born < 300) ctx.globalAlpha = (now - e.born) / 300;
       if (e.elite === 1) ctx.scale(1.2, 1.2);   // tinh anh to hơn
+      if (SZ !== 1) ctx.scale(SZ, SZ);
       if (flip) ctx.scale(-1, 1);
       ctx.drawImage(mf.img, mf.sx, mf.sy, mf.w, mf.h, -mf.fx, -mf.fy, mf.w, mf.h);
       if (hit) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.55; ctx.drawImage(mf.img, mf.sx, mf.sy, mf.w, mf.h, -mf.fx, -mf.fy, mf.w, mf.h); }
@@ -1277,7 +1279,7 @@
         ctx.beginPath(); ctx.moveTo(-bw / 3, -bh * 0.8); ctx.lineTo(-bw / 8, -bh * 0.6); ctx.moveTo(bw / 6, -bh * 0.9); ctx.lineTo(bw / 3, -bh * 0.75); ctx.stroke();
       }
       ctx.restore();
-      monsterLabel(e, info, -mf.top * (e.elite === 1 ? 1.2 : 1) - 8);
+      monsterLabel(e, info, -top * (e.elite === 1 ? 1.2 : 1) - 8);
       return;
     }
     const frame = e.moving ? Math.floor(now / 160 + e.x / 70) % 4 : Math.floor(now / 500) % 2;
@@ -1345,7 +1347,7 @@
     const lvDiff = G.me ? info.lv - G.me.level : 0;
     const col = e.boss ? '#ff4040' : lvDiff > 5 ? '#ff7070' : lvDiff < -8 ? '#9a9a9a' : '#ffe9a8';
     if (G.settings.names || e.boss || G.target === e.id) label(e.x, e.y + top - 6, `${e.boss ? '👑 ' : ''}${info.name}${info.lv ? ' Lv' + info.lv : ''}`, col, e.boss ? 14 : 11, true);
-    hpBar(e.x, e.y + top, e.boss ? 90 : 40, e.hp / e.maxHp, e.boss ? '#ff3030' : '#e5484d');
+    hpBar(e.x, e.y + top, e.boss ? (info.world ? 160 : 90) : 40, e.hp / e.maxHp, e.boss ? '#ff3030' : '#e5484d');
   }
 
   function label(x, y, text, color, size = 12, outline) {

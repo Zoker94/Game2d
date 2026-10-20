@@ -1188,6 +1188,11 @@ HUMAN = {
     'thien_ma_ve': (B_('#1a0a14', 'staff', 'warrior', body='heavy', trim='#c040ff', glow='#c060ff', wcol='#d0a0ff'), 3, 3, 2, '#4a3a5a'),
     'pb1_boss': (B_('#101820', 'hammer', 'warrior', body='heavy', beard=True, trim='#e0b040', glow='#ffb040'), 2, 2, 2, '#8a8a96'),
     'boss_conlon': (B_('#e8eef8', 'sword', 'taoist', robe2='#c0d0e8', trim='#4a7ad0', belt='#4a7ad0', hair='#f0f0f8', beard=True, sleeve='wide', hem=6, wcol='#ffffff', glow='#a0d8ff'), 0, 0, 2, None),
+    # cốt truyện Võ Mục Di Thư
+    'mong_co_ky': (B_('#5a4a2a', 'saber', 'turban', body='heavy', beard=True, trim='#c89040', belt='#3a2a14', hair='#2a1a10'), 1, 1, 1, '#8a7a60'),
+    'nhac_gia_quan': (B_('#7a6a44', 'staff', 'warrior', trim='#ffd060', belt='#8a1a14', wcol='#e0e0ea', glow='#ffe080'), 2, 2, 1, '#b8a060'),
+    'boss_kimluan': (B_('#b8281e', 'hammer', 'bald', body='heavy', robe2='#e0a020', trim='#ffd040', belt='#ffd040', sleeve='wide', hem=6, wcol='#ffd040', glow='#ffd040', beads=True), 0, 0, 2, None),
+    'boss_vumuc': (B_('#c8a040', 'staff', 'warrior', body='heavy', robe2='#8a1a14', trim='#ffd060', belt='#ffd060', pants='#3a2a1a', beard=True, wcol='#f0f0f8', glow='#ffd040'), 3, 3, 2, '#d8b040'),
     # boss người
     'boss_hoason': (B_('#3a3a46', 'sword', 'taoist', robe2='#1a1a22', trim='#c8c8d8', belt='#c8c8d8', pants='#22222a', hair='#e8e8f0', beard=True,
                        sleeve='wide', hem=6, wcol='#ffffff', glow='#c0e0ff'), 0, 0, 2, None),
