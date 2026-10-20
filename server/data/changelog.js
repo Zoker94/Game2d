@@ -4,6 +4,12 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Tăng sát thương PK: đánh người chơi khác mạnh hơn khoảng 1,6 lần, cấp cao (70-99) mạnh hơn gần gấp đôi so với trước – không còn cảnh đánh mãi không chết. Hai bên ngang đồ đánh liên tục khoảng 40 giây - 1 phút là phân thắng bại, bên đồ tốt (ví dụ kiếm +15) hạ đối thủ nhanh hơn hẳn.'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Vào game nhanh hơn: nén dữ liệu gửi về máy (gzip), màn hình chờ chỉ đợi phần cần thiết, hình nhân vật các phái khác tải dần trong nền.',
       'Màn hình tải khi qua bản đồ: hiện tên bản đồ, thanh tiến trình và mẹo chơi; tải sẵn hình quái, nhân vật và nền đất quanh mình trước khi vào nên đỡ giật lúc mới sang map.',
       'Thách đấu: khi đồng ý, cả hai được đưa sang bản đồ riêng Lôi Đài Tỷ Võ (hồi đầy máu / nội lực) để đánh, không gây lag cho thành; đấu xong 3 giây tự về đúng chỗ cũ. Thoát game giữa trận cũng được trả về chỗ cũ.',

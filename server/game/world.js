@@ -799,7 +799,7 @@ class World {
       if (!long) t.pvpRampTold = src.pvpRampTold = false;
       t.lastPvp = now; src.lastPvp = now;
       // cấp thấp ít chiêu nên tăng nhẹ, cấp cao nhiều chiêu mạnh nên giảm nhẹ: mọi cấp đều quanh 1,5 phút
-      const lvK = U.clamp(1.35 - (t.c.level + src.c.level) / 2 * 0.0065, 0.7, 1.3);
+      const lvK = U.clamp(1.3 - (t.c.level + src.c.level) / 2 * 0.0035, 0.95, 1.3);
       // chênh lệch trang bị (bậc, độ hiếm, cường hoá, đá khảm): bên đồ tốt hơn đánh mạnh hơn hẳn, bên đồ kém đánh nhẹ hơn
       const powK = U.clamp(Math.pow(((src.stats.gs || 0) + 6) / ((t.stats.gs || 0) + 6), 2), 0.4, 3);
       dmg = Math.max(1, Math.round(dmg * PVP_DMG * lvK * powK * (1 + long / 10000 * 0.35)));
@@ -1890,7 +1890,7 @@ const CAST_LOCK = { basic: 260, skill: 450 };   // đánh xa đứng yên vận 
 const MELEE_GUARD = 0.85;                       // cận chiến nhận 85% sát thương từ người chơi đánh xa
 const STUN_IMMUNE = 3000;
 // PvP: sát thương người chơi lên người chơi, hồi máu khi đang giao tranh, bình máu (hồi chiêu, tối đa % máu mỗi bình)
-const PVP_DMG = 0.0115, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;
+const PVP_DMG = 0.018, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;
 const MED_AFTER = 30000;                        // đứng yên trong thành bao lâu thì ngồi thiền (ms)
 const MED_EXP = 0.0005;                         // mỗi 5 giây ngồi thiền: 0,05% kinh nghiệm cấp hiện tại                       // kháng choáng sau khi hết choáng (ms)
 const FX_STATUS = { firedragon: ['burn', 4000, 1] };
