@@ -11,7 +11,7 @@ const plusMult = plus => 1 + Math.min(plus, 10) * 0.12 + Math.max(0, plus - 10) 
 const MAX_LEVEL = 99;
 const INV_SIZE = 48;
 
-const expNext = L => Math.round(50 * Math.pow(L, 1.8) + 50);
+const expNext = L => Math.round((50 * Math.pow(L, 1.8) + 50) * (1 + L / 60));   // cấp cao cày lâu hơn
 const vnDate = () => new Date(Date.now() + 7 * 3600e3);
 const vnDay = () => vnDate().toISOString().slice(0, 10);
 const vnMinuteOfDay = () => { const d = vnDate(); return d.getUTCHours() * 60 + d.getUTCMinutes(); };

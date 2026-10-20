@@ -1,10 +1,12 @@
 // Quái vật & Boss. sprite: kiểu hình vẽ phía client.
+// Độ khó tăng dần theo cấp: cấp thấp gần như giữ nguyên, cấp càng cao quái càng trâu, đánh càng đau.
+const HP_K = L => 1 + L / 50, ATK_K = L => 1 + L / 70, DEF_K = L => 1 + L / 120, EXP_K = L => 1 + L / 100;
 function stats(level, k = 1) {
   return {
-    hp: Math.round((30 + level * 12 + level * level * 0.8) * k),
-    atk: Math.round((6 + level * 4.2) * (k > 1 ? 1 + (k - 1) * 0.08 : k)),
-    def: Math.round(2 + level * 2.1),
-    exp: Math.round((8 + level * level * 0.9) * k),
+    hp: Math.round((30 + level * 12 + level * level * 0.8) * k * HP_K(level)),
+    atk: Math.round((6 + level * 4.2) * (k > 1 ? 1 + (k - 1) * 0.08 : k) * ATK_K(level)),
+    def: Math.round((2 + level * 2.1) * DEF_K(level)),
+    exp: Math.round((8 + level * level * 0.9) * k * EXP_K(level)),
     gold: Math.round(2 + level * 1.6)
   };
 }
@@ -137,8 +139,8 @@ for (const id in BOSSES) {
   b.boss = true;
   b.aggro = true;
   const s = stats(b.lv, 1);
-  b.hp = s.hp * 45;
-  b.atk = Math.round(s.atk * 1.7);
+  b.hp = Math.round(s.hp * 45 * (1.4 + b.lv / 120));   // boss trâu hơn hẳn ở cấp cao
+  b.atk = Math.round(s.atk * 1.5);
   b.def = Math.round(s.def * 1.3);
   b.exp = s.exp * 60;
   b.gold = s.gold * 80;
