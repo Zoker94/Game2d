@@ -248,7 +248,7 @@
     if (!G.me) return;
     const skills = G.mySkills();
     const hb = G.me.hotbar || [1, 2, 3, 4, 5, 6];
-    const bkey = G.me.cls + ':' + (G.me.dragon || '') + ':' + hb.join(',') + ':' + skills.map(s => s && s.learned ? s.slv : 0).join(',');
+    const bkey = G.me.cls + ':' + (G.me.branch || '') + ':' + (G.me.dragon || '') + ':' + hb.join(',') + ':' + skills.map(s => s && s.learned ? s.slv : 0).join(',');
     if (builtFor === bkey) return;
     builtFor = bkey;
     const bar = $('skillbar');

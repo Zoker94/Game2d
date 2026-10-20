@@ -1250,8 +1250,7 @@
     for (const [e, top] of bubbles) if (!Overhead.drawBubble(ctx, e.x, top, e.bubble, now)) e.bubble = null;
 
     BossArt.drawOver(ctx, now);   // chiêu boss: nổ, gai đá / băng, sét, lốc xoáy đè lên nhân vật
-    WorldArt.ambient(now, cam, vw, vh, fdt);
-    WorldArt.drawAmbient(ctx, now);
+    if (!gfx.lowFx) { WorldArt.ambient(now, cam, vw, vh, fdt); WorldArt.drawAmbient(ctx, now); }   // máy yếu: bỏ hạt bay lơ lửng
     drawFx(now);
     // chữ nổi
     G.floats = G.floats.filter(f => now - f.t0 < 1100);
@@ -1270,7 +1269,7 @@
     WorldMap.drawArrow(ctx, now);
     Dungeon.drawArrow(ctx, now);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    WorldArt.overlay(ctx, canvas.width, canvas.height, gfx.lowFx || Input.isTouch);
+    if (!gfx.lowFx) WorldArt.overlay(ctx, canvas.width, canvas.height, true);   // máy yếu: bỏ lớp ám màu / tối viền
     Weather.draw(ctx, canvas.width, canvas.height, DPR, now, cam, zoom, gfx.fx);
     const fl = FX.flash(now);
     if (fl) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = fl.a; ctx.fillStyle = fl.color; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.globalAlpha = 1; }

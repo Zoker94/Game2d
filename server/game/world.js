@@ -51,18 +51,19 @@ function eliteOf(tpl) {
 
 // Thời tiết: trọng số theo chủ đề bản đồ
 const WEATHER_NAME = { clear: 'Trời quang', rain: 'Mưa', storm: 'Bão giông', wind: 'Gió lớn', snow: 'Tuyết rơi', blizzard: 'Bão tuyết', sun: 'Nắng gắt' };
+// thời tiết: trời quang là chủ yếu (~85%) – mưa / gió / tuyết / nắng gắt chỉ thỉnh thoảng, ngắn, cho đỡ nặng máy
 const WEATHER_TABLE = {
-  plains:   [['clear', 45], ['rain', 18], ['storm', 8], ['wind', 15], ['sun', 14]],
-  town:     [['clear', 50], ['rain', 18], ['storm', 6], ['wind', 12], ['sun', 14]],
-  river:    [['clear', 40], ['rain', 25], ['storm', 12], ['wind', 15], ['sun', 8]],
-  bamboo:   [['clear', 45], ['rain', 25], ['storm', 8], ['wind', 22]],
-  ruins:    [['clear', 45], ['rain', 20], ['storm', 10], ['wind', 15], ['sun', 10]],
-  mountain: [['clear', 40], ['rain', 15], ['storm', 10], ['wind', 20], ['snow', 15]],
-  arena:    [['clear', 50], ['rain', 15], ['storm', 10], ['wind', 10], ['sun', 15]],
-  desert:   [['clear', 30], ['sun', 45], ['wind', 25]],
-  snow:     [['clear', 20], ['snow', 45], ['blizzard', 25], ['wind', 10]],
-  tomb:     [['clear', 55], ['rain', 25], ['wind', 20]],
-  demon:    [['clear', 50], ['storm', 30], ['wind', 20]],
+  plains:   [['clear', 85], ['rain', 6], ['wind', 4], ['sun', 5]],
+  town:     [['clear', 90], ['rain', 5], ['sun', 5]],
+  river:    [['clear', 82], ['rain', 10], ['storm', 3], ['sun', 5]],
+  bamboo:   [['clear', 85], ['rain', 10], ['wind', 5]],
+  ruins:    [['clear', 85], ['rain', 8], ['wind', 4], ['sun', 3]],
+  mountain: [['clear', 82], ['rain', 6], ['wind', 6], ['snow', 6]],
+  arena:    [['clear', 90], ['rain', 5], ['sun', 5]],
+  desert:   [['clear', 80], ['sun', 12], ['wind', 8]],
+  snow:     [['clear', 70], ['snow', 25], ['blizzard', 5]],
+  tomb:     [['clear', 88], ['rain', 8], ['wind', 4]],
+  demon:    [['clear', 85], ['storm', 10], ['wind', 5]],
   cave:     [['clear', 1]]
 };
 
@@ -1509,11 +1510,15 @@ class World {
         if (!U.countItem(c, 'tay_tuy_kinh')) return this.toast(p, `Từ cấp ${BRANCH_FREE_LV} đổi hệ cần 1 Tẩy Tủy Kinh (bán ở Tàng Kinh Các / Kỳ Trân Các)`, 'error');
         U.removeItemById(c, 'tay_tuy_kinh', 1);
       }
+      // chuyển hệ: ô nào đã lĩnh ngộ ở hệ cũ thì chiêu cùng ô ở hệ mới cũng được lĩnh ngộ (không phải mua lại sách)
+      const ob = cl.branches[branchOf(c)], nb = cl.branches[to];
+      ob.skills.forEach((sk, i) => { if (i > 0 && c.skills[sk.id] && nb.skills[i] && !c.skills[nb.skills[i].id]) c.skills[nb.skills[i].id] = 1; });
+      if (c.skills[ob.passive.id] && !c.skills[nb.passive.id]) c.skills[nb.passive.id] = 1;
       c.branch = to;
       this.resetSkillPoints(c);
       this.recalc(p);
       const br = cl.branches[to];
-      this.toast(p, `Đã chuyển sang ${br.kind}: ${br.name}. Điểm võ học đã hoàn lại, hãy học sách võ công của hệ mới tại Tàng Kinh Các.`, 'reward');
+      this.toast(p, `Đã chuyển sang ${br.kind}: ${br.name}. Các chiêu đã lĩnh ngộ được chuyển sang chiêu tương ứng của hệ mới, điểm võ học đã hoàn lại.`, 'reward');
       this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y });
     } else if (a.op === 'upgrade') {
       const idx = a.idx | 0;
@@ -1623,7 +1628,7 @@ class World {
       const tbl = WEATHER_TABLE[this.maps[id].def.theme] || WEATHER_TABLE.plains;
       let r = Math.random() * tbl.reduce((a, x) => a + x[1], 0), k = 'clear';
       for (const [kk, w] of tbl) { if ((r -= w) < 0) { k = kk; break; } }
-      const dur = (k === 'clear' ? 4 : 2.5) * 60000 + Math.random() * 3 * 60000;
+      const dur = k === 'clear' ? (8 + Math.random() * 6) * 60000 : (1.5 + Math.random() * 1.5) * 60000;   // trời quang kéo dài, thời tiết xấu ngắn
       const changed = !cur || cur.k !== k;
       this.weather[id] = { k, until: now + dur };
       if (changed && this.maps[id].players.size) this.io.to('map:' + id).emit('weather', this.weatherOf(id));

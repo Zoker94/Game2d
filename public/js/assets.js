@@ -173,14 +173,9 @@
   let NATURE = null;
   Promise.all([load('nature.png'), fetch(BASE + 'nature.json').then(r => r.ok ? r.json() : null).catch(() => null)])
     .then(([im, j]) => { if (im && j) NATURE = { im, j }; });
-  // bộ cây cối / nông sản / xương rồng / chậu cảnh cắt từ tileset (tools/flora.py), cùng định dạng
-  let FLORA = null;
-  Promise.all([load('flora.png'), fetch(BASE + 'flora.json').then(r => r.ok ? r.json() : null).catch(() => null)])
-    .then(([im, j]) => { if (im && j) FLORA = { im, j }; });
   function nature(name) {
-    let A = NATURE, r = NATURE && NATURE.j[name];
-    if (!r && FLORA) { A = FLORA; r = FLORA.j[name]; }
-    return r ? { img: A.im, sx: r[0], sy: r[1], w: r[2], h: r[3], ax: r[4], ay: r[5] } : null;
+    const r = NATURE && NATURE.j[name];
+    return r ? { img: NATURE.im, sx: r[0], sy: r[1], w: r[2], h: r[3], ax: r[4], ay: r[5] } : null;
   }
   // ----- quái vật (ảnh tools/monsters.py) -----
   // 'side': nhìn ngang quay phải (game tự lật), cột đứng4 đi6 đánh4 trúng1 chết1
