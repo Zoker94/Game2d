@@ -29,6 +29,7 @@ const SNAP_EVERY = 2;       // gửi trạng thái 10 lần/giây
 const PICKUP_R = 56;
 const AGGRO_R = 200;
 const LEASH_R = 650;
+const BOSS_REGEN_DELAY = 30000;   // boss hồi máu sau 30 giây không bị người chơi gây sát thương
 
 let entSeq = 1;
 
@@ -789,6 +790,7 @@ class World {
     } else {
       t.hp -= dmg;
       if (src && src.c) {
+        t.lastPlayerHit = Date.now();   // boss chỉ hồi máu khi 30 giây không bị người chơi đánh
         t.dmgBy.set(src.userId, (t.dmgBy.get(src.userId) || 0) + dmg);
         if (!t.target || Math.random() < 0.15) t.target = src.userId;
       }
@@ -1632,7 +1634,10 @@ class World {
     let target = mon.target ? this.players.get(mon.target) : null;
     if (target && (target.dead || target.mapId !== mon.mapId || Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > LEASH_R)) {
       target = null; mon.target = null;
-      if (Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > LEASH_R) { mon.wander = { x: mon.hx, y: mon.hy }; mon.hp = mon.maxHp; mon.dmgBy.clear(); }
+      if (Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > LEASH_R) {
+        mon.wander = { x: mon.hx, y: mon.hy };
+        if (!mon.boss) { mon.hp = mon.maxHp; mon.dmgBy.clear(); }   // boss: quay về chỗ cũ nhưng giữ nguyên máu
+      }
     }
     if (!target && tpl.aggro && !m.def.safe && this.tickN % 5 === 0) {
       let best = null, bd = AGGRO_R;
@@ -1683,8 +1688,11 @@ class World {
         const arrived = this.moveToward(mon, mon.wander.x, mon.wander.y, spd * 0.5, m.def);
         if (arrived) mon.wander = null;
       }
-      // hồi máu khi không giao chiến
-      if (mon.hp < mon.maxHp && this.tickN % 20 === 0) mon.hp = Math.min(mon.maxHp, mon.hp + Math.ceil(mon.maxHp * 0.03));
+      // hồi máu khi không giao chiến; boss phải 30 giây không ai đánh mới hồi
+      if (mon.hp < mon.maxHp && this.tickN % 20 === 0 && (!mon.boss || now - (mon.lastPlayerHit || 0) >= BOSS_REGEN_DELAY)) {
+        mon.hp = Math.min(mon.maxHp, mon.hp + Math.ceil(mon.maxHp * 0.03));
+        if (mon.boss && mon.hp >= mon.maxHp) mon.dmgBy.clear();   // hồi đầy: bảng sát thương làm lại từ đầu
+      }
     }
   }
 

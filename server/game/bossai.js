@@ -124,6 +124,7 @@ class BossAI {
       }
       this.w.fx(mon.mapId, { t: 'bhit', id: mon.id, vfx: sk.vfx, color: sk.color, s });
       const mult = s.mult || sk.mult;
+      let drained = 0;
       for (const p of m.players) {
         const key = id + ':' + p.userId + ':' + s.at;
         if (p.dead || hitSet.has(key) || !this.hit(s, p)) continue;
@@ -133,8 +134,10 @@ class BossAI {
         this.w.applyDamage(p, dmg, mon, 'hurt');
         const st = s.st || sk.st;
         if (st && !p.dead) this.w.applyStatus(p, st[0], st[1], mon);
-        if (sk.drain) mon.hp = Math.min(mon.maxHp, mon.hp + dmg * sk.drain);
+        if (sk.drain) drained += dmg * sk.drain;
       }
+      // hút máu: mỗi lần chiêu nổ hồi tối đa 0,3% máu tối đa, dù trúng bao nhiêu người
+      if (drained > 0) mon.hp = Math.min(mon.maxHp, mon.hp + Math.min(drained, mon.maxHp * 0.003));
       // chiêu nối tiếp sau phát cuối cùng
       if (sk.then && !mon.pending.some(x => x.id === id)) {
         const t2 = Object.assign({}, sk, sk.then, { then: null, name: sk.name, id: sk.id + '_2' });

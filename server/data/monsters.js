@@ -136,9 +136,9 @@ const BOSSES = {
   boss_huyet:  { name: 'Huyết Ma Lão Tổ',   lv: 92, sprite: 'demon',    color: '#600010', map: 'huyet_ma', every: 180, offset: 90, speed: 112, range: 120 },
   // Quốc sư Mông Cổ – kẻ đưa thiết kỵ tới Hắc Phong Cốc hội quân với Ma Giáo
   boss_kimluan: { name: 'Kim Luân Pháp Vương', lv: 58, sprite: 'bandit', color: '#b8281e', map: 'hac_phong_coc', every: 120, offset: 70, speed: 115, range: 100, size: 1.35, scroll: 7 },
-  // Boss thế giới tối thượng: anh linh Nhạc Vũ Mục thử thách hậu nhân – cần cả võ lâm (≈30 người cấp 70, 5-10 phút)
+  // Boss thế giới tối thượng: anh linh Nhạc Vũ Mục thử thách hậu nhân – cần cả võ lâm (50 triệu máu, ≈30 người cấp 70 đánh ~8-15 phút)
   boss_vumuc: { name: 'Nhạc Vũ Mục Anh Linh', lv: 85, sprite: 'bandit', color: '#d8b040', map: 'nhac_mieu', every: 240, offset: 120, speed: 108, range: 130,
-                size: 1.9, world: true, hpFix: 30000000, atkFix: 1700, defFix: 420, expK: 220, goldK: 400 }
+                size: 1.9, world: true, hpFix: 50000000, atkFix: 1700, defFix: 420, expK: 220, goldK: 400 }
 };
 // boss -> tàn quyển Võ Mục Di Thư rơi ra (Côn Lôn / Huyết Ma / Nhạc Vũ Mục rơi ngẫu nhiên)
 const SCROLL_OF = { boss_soi: 1, boss_truc: 2, boss_hoason: 3, boss_samac: 4, boss_bang: 5, boss_ma: 6, boss_kimluan: 7 };

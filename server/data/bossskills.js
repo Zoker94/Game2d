@@ -32,7 +32,7 @@ const SK = {
   // ---- Thiên Ma Giáo Chủ ----
   ma_giaithe:  { name: 'Thiên Ma Giải Thể', pattern: 'self', r: 280, windup: 1700, mult: 2.0, vfx: 'dark', color: '#c040ff' },
   ma_diem:     { name: 'Ma Diễm Phần Thiên', pattern: 'multi', n: 12, r: 75, spread: 260, windup: 1300, stagger: 90, mult: 1.1, st: ['burn', 4000], vfx: 'fire', color: '#ff6020' },
-  ma_hapt:     { name: 'Hấp Tinh Đại Pháp', pattern: 'line', len: 520, w: 84, windup: 1100, mult: 1.6, drain: 0.5, vfx: 'dark', color: '#a020ff' },
+  ma_hapt:     { name: 'Hấp Tinh Đại Pháp', pattern: 'line', len: 520, w: 84, windup: 1100, mult: 1.6, drain: 0.1, vfx: 'dark', color: '#a020ff' },
   ma_anh:      { name: 'Ma Ảnh Thiểm', pattern: 'dash', len: 360, w: 70, windup: 700, mult: 1.2, vfx: 'dark', color: '#d060ff', then: { pattern: 'star', n: 6, len: 260, w: 44, delay: 450, mult: 1.2 } },
   // ---- Côn Lôn Chưởng Môn ----
   cl_ngulo:    { name: 'Ngũ Lôi Oanh Đỉnh', pattern: 'multi', n: 5, r: 95, spread: 200, windup: 1300, stagger: 220, mult: 1.5, st: ['stun', 1000], vfx: 'thunder', color: '#fff27a' },
@@ -43,7 +43,7 @@ const SK = {
   hm_haithao:  { name: 'Huyết Hải Thao Thiên', pattern: 'waves', rings: [[0, 130], [130, 250], [250, 370]], stagger: 500, windup: 1200, mult: 1.6, st: ['bleed', 4000], vfx: 'blood', color: '#ff2030' },
   hm_trao:     { name: 'Huyết Ma Trảo', pattern: 'cone', r: 270, arc: 110, windup: 900, mult: 1.8, st: ['bleed', 5000], vfx: 'blood', color: '#ff1020' },
   hm_nguyet:   { name: 'Huyết Nguyệt Giáng Thế', pattern: 'multi', n: 14, r: 80, spread: 280, windup: 1400, stagger: 80, mult: 1.2, vfx: 'blood', color: '#ff4040' },
-  hm_dotkich:  { name: 'Huyết Ảnh Đột Kích', pattern: 'dash', len: 360, w: 80, windup: 700, mult: 1.4, drain: 0.3, vfx: 'blood', color: '#ff3050', then: { pattern: 'dash', len: 360, w: 80, delay: 500, mult: 1.4 } },
+  hm_dotkich:  { name: 'Huyết Ảnh Đột Kích', pattern: 'dash', len: 360, w: 80, windup: 700, mult: 1.4, drain: 0.05, vfx: 'blood', color: '#ff3050', then: { pattern: 'dash', len: 360, w: 80, delay: 500, mult: 1.4 } },
   // ---- Kim Luân Pháp Vương (quốc sư Mông Cổ: kim luân + Long Tượng Bàn Nhược Công) ----
   kl_nguluan:  { name: 'Ngũ Luân Đại Pháp', pattern: 'fan', n: 5, spreadDeg: 60, len: 460, w: 48, windup: 950, mult: 1.4, vfx: 'blade', color: '#ffd040' },
   kl_philuan:  { name: 'Kim Luân Phi Chuyển', pattern: 'multi', n: 9, r: 78, spread: 230, windup: 1200, stagger: 120, mult: 1.2, vfx: 'holy', color: '#ffe070' },
