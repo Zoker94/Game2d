@@ -1,9 +1,11 @@
-// Thách đấu (tỷ võ 1-1): mời → đồng ý → đếm ngược 3 giây → giao đấu trong vòng tròn tối đa 2 phút.
+// Thách đấu (tỷ võ 1-1): mời → đồng ý → cả hai sang Lôi Đài Tỷ Võ (bản đồ riêng, đỡ lag chỗ đông người) → đếm ngược
+// 3 giây → giao đấu trong vòng tròn tối đa 2 phút → đưa hai người về đúng chỗ cũ.
 // Không chết, không mất kinh nghiệm, không tăng sát khí: ai cạn máu (còn 1) hoặc bước ra khỏi vòng là thua.
 // Đánh được nhau cả trong thành và bất kể chế độ PK.
 const U = require('./util');
 
-const REQ_TTL = 20000, COUNT = 3000, FIGHT = 120000, RADIUS = 360, COOLDOWN = 10000;
+const REQ_TTL = 20000, COUNT = 4000, FIGHT = 150000, RADIUS = 360, COOLDOWN = 10000;
+const ARENA = 'ty_vo_dai', BACK_DELAY = 3000;   // bản đồ tỷ võ; chờ bao lâu sau khi phân thắng bại thì đưa về
 
 class Duel {
   constructor(world) {
@@ -31,6 +33,8 @@ class Duel {
     if (o.duel) return this.toast(p, `${o.c.name} đang thách đấu với người khác`, 'error');
     if (o.mapId !== p.mapId || U.dist(o, p) > 400) return this.toast(p, 'Hãy đứng gần người kia để thách đấu', 'error');
     if (this.w.maps[p.mapId].def.pvp) return this.toast(p, 'Đang ở lôi đài, cứ thế mà đánh!', 'error');
+    if (this.w.maps[p.mapId].def.duelArena) return this.toast(p, 'Đang ở Lôi Đài Tỷ Võ', 'error');
+    if (this.w.maps[p.mapId].def.instance) return this.toast(p, 'Không thể thách đấu trong phó bản', 'error');
     if (p.duelCd > now) return this.toast(p, `Đợi ${Math.ceil((p.duelCd - now) / 1000)} giây nữa mới thách đấu tiếp được`, 'error');
     const old = this.reqs.get(o.userId);
     if (old && old.from === p.userId && now - old.t < REQ_TTL) return this.toast(p, 'Đã gửi lời thách đấu, hãy chờ trả lời', 'info');
@@ -47,17 +51,31 @@ class Duel {
     if (!o || Date.now() - r.t > REQ_TTL) return this.toast(p, 'Lời thách đấu đã hết hạn', 'error');
     if (!ok) return this.toast(o, `${p.c.name} đã từ chối lời thách đấu`, 'error');
     if (p.duel || o.duel) return this.toast(p, 'Một bên đang trong trận thách đấu khác', 'error');
-    if (p.dead || o.dead || o.mapId !== p.mapId || U.dist(o, p) > 500) return this.toast(p, 'Hai bên phải đứng gần nhau', 'error');
+    if (p.dead || o.dead || o.mapId !== p.mapId || U.dist(o, p) > 600) return this.toast(p, 'Hai bên phải ở gần nhau', 'error');
     this.start(o, p);
   }
   start(a, b) {
-    const now = Date.now();
-    const d = { a, b, mapId: a.mapId, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, r: RADIUS, state: 'count', at: now + COUNT, until: now + COUNT + FIGHT };
+    const now = Date.now(), from = this.w.maps[a.mapId].def.name;
+    // đưa hai người sang lôi đài; mỗi trận một khu riêng trên lôi đài để các trận không chồng lên nhau
+    const M = this.w.maps[ARENA].def, TILE = 64, slot = this.slotSeq = ((this.slotSeq || 0) + 1) % 4;
+    const cx = (M.w * (slot % 2 ? 0.7 : 0.3)) * TILE, cy = (M.h * (slot < 2 ? 0.32 : 0.68)) * TILE;
+    for (const p of [a, b]) p.duelHome = { map: p.mapId, x: p.x, y: p.y };
+    const spot = dx => this.w.randomSpotNear(M, (cx + dx) / TILE, cy / TILE, 0.6);   // tránh ô vướng
+    const sa = spot(-130), sb = spot(130);
+    this.w.enterMap(a, ARENA, sa.x, sa.y);
+    this.w.enterMap(b, ARENA, sb.x, sb.y);
+    const d = { a, b, mapId: ARENA, cx, cy, r: RADIUS, state: 'count', at: now + COUNT, until: now + COUNT + FIGHT };
     a.duel = b.duel = d;
     this.list.add(d);
-    for (const p of [a, b]) { p.st = {}; p.dots = []; this.sync(p); }
-    this.w.features.announce(`⚔️ ${a.c.name} và ${b.c.name} bắt đầu tỷ võ tại ${this.w.maps[a.mapId].def.name}!`, 'map:' + a.mapId);
-    this.w.io.to('map:' + a.mapId).emit('duelRing', { a: a.id, b: b.id, cx: d.cx, cy: d.cy, r: d.r, on: 1 });
+    for (const p of [a, b]) { p.st = {}; p.dots = []; p.c.hp = p.stats.maxHp; p.c.mp = p.stats.maxMp; p.dirtyMe = true; this.sync(p); }
+    this.w.features.announce(`⚔️ ${a.c.name} và ${b.c.name} lên Lôi Đài Tỷ Võ (từ ${from})!`);
+    this.w.io.to('map:' + ARENA).emit('duelRing', { a: a.id, b: b.id, cx: d.cx, cy: d.cy, r: d.r, on: 1 });
+  }
+  // đấu xong: đưa về chỗ cũ (đang ở lôi đài thì mới đưa)
+  sendHome(p) {
+    const h = p.duelHome; p.duelHome = null;
+    if (!h || !this.w.players.has(p.userId) || p.mapId !== ARENA) return;
+    this.w.enterMap(p, this.w.maps[h.map] ? h.map : 'tuong_duong', h.x, h.y);
   }
   sync(p) {
     const d = p.duel;
@@ -72,7 +90,7 @@ class Duel {
     const loser = winner ? this.other(d, winner) : null;
     for (const p of [d.a, d.b]) {
       p.duel = null; p.duelCd = now + COOLDOWN; p.st = {}; p.dots = [];
-      if (!p.dead && p.c.hp < 1) p.c.hp = 1;
+      if (!p.dead) p.c.hp = Math.max(p.c.hp, Math.round(p.stats.maxHp * 0.5));   // đấu xong hồi lại nửa máu
       p.dirtyMe = true;
       const res = !winner ? 'draw' : p === winner ? 'win' : 'lose';
       if (res === 'win') p.c.duelWin = (p.c.duelWin || 0) + 1;
@@ -80,6 +98,7 @@ class Duel {
       if (p.socket) p.socket.emit('duel', { st: 'end', res, reason, name: this.other(d, p).c.name, win: p.c.duelWin || 0, lose: p.c.duelLose || 0 });
     }
     this.w.io.to('map:' + d.mapId).emit('duelRing', { a: d.a.id, b: d.b.id, on: 0 });
+    for (const p of [d.a, d.b]) setTimeout(() => this.sendHome(p), BACK_DELAY);
     if (winner) this.w.features.announce(`🏆 ${winner.c.name} đã thắng ${loser.c.name} trong trận tỷ võ! (${reason})`, 'map:' + d.mapId);
     else this.w.features.announce(`🤝 Trận tỷ võ giữa ${d.a.c.name} và ${d.b.c.name} bất phân thắng bại. (${reason})`, 'map:' + d.mapId);
     this.w.db.markDirty();

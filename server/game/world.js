@@ -149,6 +149,7 @@ class World {
     U.migrateItems(c);
     this.recalc(p);
     if (!MAPS[c.map]) c.map = (c.pbReturn && MAPS[c.pbReturn]) ? c.pbReturn : 'tuong_duong';   // phó bản cũ đã đóng
+    if (MAPS[c.map].duelArena) { c.map = 'tuong_duong'; c.x = c.y = 0; }   // lôi đài tỷ võ chỉ vào khi đang thách đấu
     const map = MAPS[c.map];
     let x = c.x, y = c.y;
     if (!x || !y || isSolidAt(map, x, y)) { x = (map.center.x + 0.5) * TILE; y = (map.center.y + 1.5) * TILE; }
@@ -168,6 +169,7 @@ class World {
     if (!this.players.has(p.userId) || this.players.get(p.userId) !== p) return;
     const c = p.c;
     c.x = p.x; c.y = p.y; c.map = p.mapId;
+    if (p.duelHome) { c.map = p.duelHome.map; c.x = p.duelHome.x; c.y = p.duelHome.y; }   // thoát game lúc đang ở lôi đài tỷ võ
     if (MAPS[p.mapId] && MAPS[p.mapId].instance) { c.map = c.pbReturn || 'tuong_duong'; c.x = c.y = 0; if (this.dungeon) this.dungeon.onQuit(p); }   // thoát game trong phó bản
     c.playTime = (c.playTime || 0) + Math.round((Date.now() - p.joinAt) / 1000);
     p.user.lastSeen = Date.now();
@@ -798,7 +800,9 @@ class World {
       t.lastPvp = now; src.lastPvp = now;
       // cấp thấp ít chiêu nên tăng nhẹ, cấp cao nhiều chiêu mạnh nên giảm nhẹ: mọi cấp đều quanh 1,5 phút
       const lvK = U.clamp(1.35 - (t.c.level + src.c.level) / 2 * 0.0065, 0.7, 1.3);
-      dmg = Math.max(1, Math.round(dmg * PVP_DMG * lvK * (1 + long / 10000 * 0.35)));
+      // chênh lệch trang bị (bậc, độ hiếm, cường hoá, đá khảm): bên đồ tốt hơn đánh mạnh hơn hẳn, bên đồ kém đánh nhẹ hơn
+      const powK = U.clamp(Math.pow(((src.stats.gs || 0) + 6) / ((t.stats.gs || 0) + 6), 2), 0.4, 3);
+      dmg = Math.max(1, Math.round(dmg * PVP_DMG * lvK * powK * (1 + long / 10000 * 0.35)));
     }
     if (t.c && src && src.c && isRanged(src) && !isRanged(t)) dmg = Math.max(1, Math.round(dmg * MELEE_GUARD));   // cận chiến: hộ thể trước đòn đánh xa
     // phòng thủ từ trang bị (chỉ với đòn đánh trực tiếp, không áp cho độc/bỏng)
@@ -1886,7 +1890,7 @@ const CAST_LOCK = { basic: 260, skill: 450 };   // đánh xa đứng yên vận 
 const MELEE_GUARD = 0.85;                       // cận chiến nhận 85% sát thương từ người chơi đánh xa
 const STUN_IMMUNE = 3000;
 // PvP: sát thương người chơi lên người chơi, hồi máu khi đang giao tranh, bình máu (hồi chiêu, tối đa % máu mỗi bình)
-const PVP_DMG = 0.0095, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;
+const PVP_DMG = 0.0115, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;
 const MED_AFTER = 30000;                        // đứng yên trong thành bao lâu thì ngồi thiền (ms)
 const MED_EXP = 0.0005;                         // mỗi 5 giây ngồi thiền: 0,05% kinh nghiệm cấp hiện tại                       // kháng choáng sau khi hết choáng (ms)
 const FX_STATUS = { firedragon: ['burn', 4000, 1] };

@@ -196,6 +196,15 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
   for (const k of ['maxHp', 'maxMp', 'atk', 'def']) s[k] = Math.round(s[k]);
   s.crit = Math.round(s.crit * 10) / 10;
   s.power = Math.round(s.atk * 3 + s.def * 2 + s.maxHp / 4 + s.maxMp / 8 + s.crit * 12);
+  // điểm trang bị (không phụ thuộc phái): bậc, độ hiếm, cường hoá, đá khảm – dùng so chênh lệch đồ khi PK
+  let gs = 0;
+  for (const slot in c.equip) {
+    const e = c.equip[slot], it = e && ITEMS[e.id];
+    if (!it) continue;
+    gs += (it.tier + 1) * ({ common: 1, rare: 1.3, epic: 1.7, legendary: 2.2 }[it.rarity] || 1) * (1 + (e.plus || 0) * 0.12);
+    for (const g of e.gems || []) if (g) gs += 0.6 * (+String(g).slice(-1) || 1);
+  }
+  s.gs = Math.round(gs * 10) / 10;
   return s;
 }
 

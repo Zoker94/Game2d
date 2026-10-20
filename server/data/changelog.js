@@ -4,6 +4,15 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Vào game nhanh hơn: nén dữ liệu gửi về máy (gzip), màn hình chờ chỉ đợi phần cần thiết, hình nhân vật các phái khác tải dần trong nền.',
+      'Màn hình tải khi qua bản đồ: hiện tên bản đồ, thanh tiến trình và mẹo chơi; tải sẵn hình quái, nhân vật và nền đất quanh mình trước khi vào nên đỡ giật lúc mới sang map.',
+      'Thách đấu: khi đồng ý, cả hai được đưa sang bản đồ riêng Lôi Đài Tỷ Võ (hồi đầy máu / nội lực) để đánh, không gây lag cho thành; đấu xong 3 giây tự về đúng chỗ cũ. Thoát game giữa trận cũng được trả về chỗ cũ.',
+      'Cân bằng PK: trang bị nay tạo chênh lệch rõ rệt – đồ cường hóa cao (ví dụ kiếm +15), bậc / phẩm chất tốt và khảm ngọc đánh đau hơn hẳn đối thủ đồ kém; hai bên ngang đồ vẫn đánh khoảng 1-2 phút.'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Cân bằng PK: đánh nhau với người chơi ngang cấp, ngang đồ nay kéo dài khoảng 1-2 phút thay vì chết sau 1 chiêu (sát thương giữa người chơi giảm mạnh, đánh quái không đổi).',
       'Khi đang giao tranh với người chơi: hồi máu từ chiêu, hút máu và hồi phục còn 25%; bình máu hồi chiêu 10 giây, mỗi bình hồi tối đa 6% máu. Bình nội lực không bị ảnh hưởng.',
       'Giao tranh kéo dài quá 60 giây: sát thương hai bên tăng dần (+35% mỗi 10 giây) để trận đấu luôn có kết quả.',

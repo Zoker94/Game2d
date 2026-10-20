@@ -206,8 +206,13 @@ app.get('/api/gamedata', (req, res) => {
       branchFreeLv: require('./data/branches').BRANCH_FREE_LV, dragons: require('./data/dragons').DRAGONS, mounts: M.MOUNTS, mountMax: M.MOUNT_MAX, mountExp, classes: CLASSES, story: require('./data/story'), gems: require('./data/gems').clientConfig(), attrs: require('./data/attrs').ATTRS, items: ITEMS, rarity: RARITY, slots: Object.fromEntries(Object.entries(SLOTS).map(([k, v]) => [k, v.name])), monsters: mons, maps, npcs,
       elements: require('./data/affixes').ELEMENTS, affixes: Object.fromEntries(Object.entries(require('./data/affixes').AFFIX).map(([k, a]) => [k, { name: a.name, text: a.text }])), khac: require('./data/affixes').KHAC };
   }
-  res.set('Cache-Control', 'no-cache').json(gamedataCache);
+  // nén gzip một lần rồi giữ lại (dữ liệu ~260KB -> ~40KB)
+  if (!gamedataGz) gamedataGz = require('zlib').gzipSync(JSON.stringify(gamedataCache), { level: 9 });
+  res.set('Cache-Control', 'no-cache');
+  if (/\bgzip\b/.test(req.headers['accept-encoding'] || '')) res.set({ 'Content-Encoding': 'gzip', Vary: 'Accept-Encoding' }).type('json').send(gamedataGz);
+  else res.json(gamedataCache);
 });
+let gamedataGz = null;
 
 app.get('/api/leaderboard', (req, res) => {
   if (!features.lb.level) features.computeLeaderboard();
@@ -242,6 +247,22 @@ function sendHtml(res, file) {
 }
 app.get(['/', '/index.html'], (req, res) => sendHtml(res, 'index.html'));
 app.get(['/admin', '/admin/', '/admin/index.html'], (req, res) => sendHtml(res, 'admin/index.html'));
+// nén gzip file mã (js / css / json) – nén một lần, giữ trong bộ nhớ theo thời điểm sửa file
+const gzCache = new Map();
+app.use((req, res, next) => {
+  if (req.method !== 'GET' || !/\.(js|css|json)$/.test(req.path) || !/\bgzip\b/.test(req.headers['accept-encoding'] || '')) return next();
+  const fp = path.join(PUBLIC_DIR, path.normalize(decodeURIComponent(req.path)).replace(/^(\.\.[\/\\])+/, ''));
+  if (!fp.startsWith(PUBLIC_DIR)) return next();
+  fs.stat(fp, (err, st) => {
+    if (err || !st.isFile()) return next();
+    const tag = '"gz-' + st.size.toString(36) + '-' + Math.round(st.mtimeMs).toString(36) + '"';
+    res.set({ 'Cache-Control': req.query.v ? 'public, max-age=31536000, immutable' : 'no-cache', ETag: tag, Vary: 'Accept-Encoding' });
+    if (req.headers['if-none-match'] === tag) return res.status(304).end();
+    let c = gzCache.get(fp);
+    if (!c || c.tag !== tag) { c = { tag, buf: require('zlib').gzipSync(fs.readFileSync(fp), { level: 9 }) }; gzCache.set(fp, c); }
+    res.set('Content-Encoding', 'gzip').type(path.extname(fp)).send(c.buf);
+  });
+});
 app.use(express.static(PUBLIC_DIR, {
   extensions: ['html'], cacheControl: false,
   setHeaders: (res) => res.set('Cache-Control', res.req && res.req.query && res.req.query.v ? 'public, max-age=31536000, immutable' : 'no-cache')

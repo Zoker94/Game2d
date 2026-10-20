@@ -340,6 +340,13 @@ const MAP_DEFS = {
     npcs: [{ id: 'xa_phu', x: 36, y: 17 }],
     spawns: [['khoang_ma', 9], ['huyen_hat', 8], ['hong_mang', 8], ['khoang_ma', 6]]
   },
+  // lôi đài riêng cho thách đấu 1-1: không cổng, không quái; chỉ vào được khi thách đấu, đấu xong tự đưa về chỗ cũ
+  ty_vo_dai: {
+    name: 'Lôi Đài Tỷ Võ', theme: 'arena', w: 30, h: 22, seed: 95, lv: '1+', safe: true, duelArena: true, minLv: 1,
+    portals: [],
+    npcs: [],
+    spawns: []
+  },
   chien_truong: {
     name: 'Lôi Đài Hoa Sơn (PK)', theme: 'arena', w: 32, h: 24, seed: 81, lv: '10+', pvp: true, minLv: 10,
     portals: [{ side: 'S', to: 'tuong_duong' }],

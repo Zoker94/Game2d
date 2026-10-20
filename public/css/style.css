@@ -1525,3 +1525,14 @@ body.touch #update-gate .ug-box { padding: 16px 14px; }
 #ult-banner.play { animation: ultBan 1.7s ease-out forwards; }
 @keyframes ultBan { 0% { opacity: 0; transform: translateX(-40%) skewX(-12deg) scale(1.3); } 14% { opacity: 1; transform: translateX(0) skewX(0) scale(1); } 75% { opacity: 1; transform: translateX(2%); } 100% { opacity: 0; transform: translateX(14%); } }
 .cs-br { margin: 6px 0 2px; }
+
+/* ---- màn hình chờ chuyển bản đồ ---- */
+#map-loading { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at center, #241a30 0%, #0b0810 75%); transition: opacity .3s; }
+#map-loading.hidden { display: none; }
+#map-loading.out { opacity: 0; }
+#map-loading .ml-box { width: min(440px, 86vw); text-align: center; }
+#map-loading .ml-name { font-family: serif; font-size: clamp(24px, 4.5vw, 38px); letter-spacing: 4px; color: #ffe8b0; text-shadow: 0 0 14px rgba(255, 190, 90, .55), 0 2px 0 #000; }
+#map-loading .ml-sub { margin-top: 4px; color: #c8b890; font-size: 13px; letter-spacing: 3px; }
+#map-loading .ml-bar { margin: 18px auto 12px; height: 8px; border-radius: 6px; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 215, 120, .35); overflow: hidden; }
+#map-loading .ml-bar i { display: block; height: 100%; width: 10%; background: linear-gradient(90deg, #b8741e, #ffd76a); box-shadow: 0 0 8px #ffb84a; transition: width .25s; }
+#map-loading .ml-tip { color: #a89a80; font-size: 13px; line-height: 1.5; min-height: 2.6em; }

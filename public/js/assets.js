@@ -34,16 +34,21 @@
     return null;
   }
   const jobs = [];
-  for (const c of CLASSES) {
-    jobs.push(fetch(BASE + 'chars/' + c + '.json').then(r => r.ok ? r.json() : null).then(j => { if (j) META[c] = j; }).catch(() => { }));
-    jobs.push(need(c + '_a0') || loading[c + '_a0']);
-    if (c !== 'caibang') jobs.push(need(c + '_w0') || loading[c + '_w0']);
-  }
+  // màn chờ chỉ đợi dữ liệu khung hình (nhẹ); ảnh nhân vật các phái (~4MB) tải ngầm sau khi vào, vẽ tạm hình cũ tới khi xong
+  for (const c of CLASSES) jobs.push(fetch(BASE + 'chars/' + c + '.json').then(r => r.ok ? r.json() : null).then(j => { if (j) META[c] = j; }).catch(() => { }));
   // biểu tượng vật phẩm vẽ mới (tools/icons.py)
   let ICONS = null;
   jobs.push(Promise.all([load('icons.png'), fetch(BASE + 'icons.json').then(r => r.ok ? r.json() : null).catch(() => null)]).then(([im, j]) => { if (im && j) ICONS = { im, j }; }));
   for (const n of MONSTERS) jobs.push(load('monsters/' + n + '.png').then(im => { if (im) imgs['m:' + n] = im; }));
   const ready = Promise.all(jobs);
+  // phái của tài khoản đang đăng nhập (nếu nhớ) tải trước, các phái còn lại tải sau
+  ready.then(() => {
+    let mine = null; try { mine = localStorage.getItem('vl_cls'); } catch (e) { }
+    const order = mine && CLASSES.includes(mine) ? [mine, ...CLASSES.filter(c => c !== mine)] : CLASSES;
+    order.forEach((c, i) => setTimeout(() => { need(c + '_a0'); if (c !== 'caibang') need(c + '_w0'); }, i ? 300 + i * 150 : 0));
+  });
+  // chờ ảnh của một phái (dùng khi vào game)
+  function loadClass(cls) { need(cls + '_a0'); if (cls !== 'caibang') need(cls + '_w0'); return Promise.all([loading[cls + '_a0'], loading[cls + '_w0']].filter(Boolean)); }
 
   const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; return [c, x]; };
   // bộ nhớ đệm khung đã ghép: đầy thì bỏ dần khung cũ nhất (không xoá sạch một lần gây khựng hình)
@@ -186,6 +191,13 @@
   const MON_N = { idle: 4, walk: 6, atk: 4, cast: 4, hurt: 1, dead: 1 };
   // quái sự kiện mượn hình vẽ có sẵn (G.data.monsters[id].art)
   const artOf = id => (window.G && G.data && G.data.monsters && G.data.monsters[id] && G.data.monsters[id].art) || id;
+  // tải trước ảnh quái (màn hình chờ chuyển bản đồ)
+  function loadMonster(id) {
+    id = artOf(id);
+    if (monImgs[id] || !MON_META || !MON_META.mon[id]) return Promise.resolve();
+    if (!monLoading[id]) monLoading[id] = load('monsters/' + id + '.png').then(im => { if (im) monImgs[id] = im; });
+    return monLoading[id];
+  }
   function monsterFrame(id, state, i, dir) {
     id = artOf(id);
     const m = MON_META && MON_META.mon[id];
@@ -275,5 +287,5 @@
     return `<i class="sk-img" style="background-image:url('${url}');--skc:${s.color || '#ffd76a'}"></i>`;
   }
 
-  window.Assets = { ready, imgs, has, nature, charFrame, frameCount, frameMs, SRC, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, MONSTERS, skillIconUrl, skillIconHTML };
+  window.Assets = { ready, loadClass, loadMonster, imgs, has, nature, charFrame, frameCount, frameMs, SRC, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, MONSTERS, skillIconUrl, skillIconHTML };
 })();

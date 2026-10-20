@@ -76,21 +76,7 @@
     if (splashT % 200 === 1) { $('splash-tip').textContent = TIPS[tipI++ % TIPS.length]; }
     requestAnimationFrame(splashAnim);
   }
-  const yieldFrame = () => new Promise(r => setTimeout(r, 0));
   // Vẽ trước sprite để vào game không bị giật
-  async function prewarm(from, to) {
-    const jobs = [];
-    for (const [id, cl] of Object.entries(G.data.classes)) for (let d = 0; d < 4; d++) for (let f = 0; f < 8; f++) jobs.push(() => Sprites.playerSprite(id, cl.colors, d, f, false));
-    for (const [id, m] of Object.entries(G.data.monsters)) for (let f = 0; f < 2; f++) jobs.push(() => Sprites.monsterSprite(id, m, f, 2));
-    for (const [id, m] of Object.entries(G.data.mounts)) for (let f = 0; f < 4; f++) jobs.push(() => Sprites.mountSprite(id, m, f, false));
-    for (const k of ['elder', 'smith', 'lady', 'merchant', 'doctor', 'rich', 'driver', 'guard', 'official']) jobs.push(() => Sprites.npcSprite(k, null, 0));
-    for (let t = 0; t <= 17; t++) for (let v = 0; v < 3; v++) jobs.push(() => { Sprites.groundTile(t, v, v * 7, 0); if (Sprites.TALL.has(t)) Sprites.tallTile(t, v, v * 5); });
-    for (let i = 0; i < jobs.length; i++) {
-      jobs[i]();
-      if (i % 12 === 0) { splashProgress(from + (to - from) * i / jobs.length, 'Đang vẽ nhân vật, quái vật, bản đồ...'); await yieldFrame(); }
-    }
-  }
-
   async function boot() {
     Input.applyLayout();
     requestAnimationFrame(splashAnim);
@@ -101,10 +87,9 @@
       G.data = await api('/api/gamedata');
     } catch (e) { G.modal('Không thể kết nối máy chủ. Vui lòng thử lại.', [{ t: 'Tải lại', fn: () => location.reload() }]); return; }
     $('online-count').textContent = G.config.online;
-    splashProgress(40, 'Đang tải hình ảnh nhân vật...');
+    splashProgress(40, 'Đang tải hình ảnh...');
     await Assets.ready;
-    splashProgress(45);
-    await prewarm(45, 92);
+    splashProgress(92);
     splashProgress(95, 'Đang kiểm tra phiên đăng nhập...');
     let hasSession = false;
     if (G.token) {
@@ -305,6 +290,7 @@
       // máy chủ đã cập nhật bản mới: chặn chơi tiếp, bắt buộc tải lại trang để nhận bản mới
       if (d.build && window.BUILD && d.build !== window.BUILD) { showUpdateGate(d.news); return; }
       G.user = d.user;
+      try { if (d.user.character) localStorage.setItem('vl_cls', d.user.character.cls); } catch (e) { }
       if (G.inGame) { if (d.user.hasChar) s.emit('enter'); return; }
       if (!d.user.hasChar) showCreate(); else showEnter();
       requestAnimationFrame(animPreview);
@@ -417,6 +403,36 @@
     minimapBase = cv; G.mapBase = cv;
     UI.closePanel(); if (window.BigMap) BigMap.close(); if (window.WorldMap) { WorldMap.close(); WorldMap.onEnterMap(); }
     sfx('portal');
+    mapLoading(m);
+  }
+  // màn hình chờ chuyển bản đồ: tải sẵn ảnh nhân vật phái mình, ảnh quái trên bản đồ, dựng sẵn nền quanh nhân vật
+  const MAP_TIPS = ['Đứng yên trong thành 30 giây sẽ tự ngồi thiền, hồi phục nhanh và lĩnh ngộ kinh nghiệm.', 'Bảng Võ Công → Hệ phái: chọn Nội công hoặc Ngoại công.',
+    'Tuyệt kỹ (chiêu cấp 50) làm rung và nứt màn hình đối thủ.', 'Thợ Rèn khảm đá vào trang bị để tăng chỉ số.', 'Thách đấu sẽ đưa hai người sang Lôi Đài để tỉ thí.',
+    'Đang giao tranh với người chơi, bình máu hồi chiêu 10 giây.', 'Tẩy Tủy Kinh tẩy điểm võ học, Tẩy Tiềm Năng Đan tẩy điểm tiềm năng.'];
+  let mapLoadSeq = 0;
+  async function mapLoading(m) {
+    const seq = ++mapLoadSeq, el = $('map-loading'), t0 = performance.now();
+    el.querySelector('.ml-name').textContent = m.name;
+    el.querySelector('.ml-sub').textContent = m.pvp ? 'Khu vực PK' : m.safe ? 'Khu vực an toàn' : 'Cấp ' + m.lv;
+    el.querySelector('.ml-tip').textContent = '💡 ' + MAP_TIPS[Math.floor(Math.random() * MAP_TIPS.length)];
+    const bar = el.querySelector('.ml-bar i'); bar.style.width = '10%';
+    el.classList.remove('hidden', 'out');
+    const steps = [];
+    if (G.me) steps.push(Assets.loadClass(G.me.cls));
+    await new Promise(r => setTimeout(r, 120));   // chờ gói trạng thái đầu tiên để biết quái / người chơi trên bản đồ
+    bar.style.width = '35%';
+    for (const mo of G.monsters.values()) steps.push(Assets.loadMonster(mo.type));
+    for (const p of G.players.values()) if (p.cls) steps.push(Assets.loadClass(p.cls));
+    try { WorldArt.prebuild(G.self.x, G.self.y, W / zoom, H / zoom); } catch (e) { }
+    bar.style.width = '60%';
+    await Promise.race([Promise.all(steps), new Promise(r => setTimeout(r, 5000))]);   // mạng chậm: tối đa 5 giây
+    if (seq !== mapLoadSeq) return;
+    bar.style.width = '100%';
+    const left = 450 - (performance.now() - t0);
+    if (left > 0) await new Promise(r => setTimeout(r, left));
+    if (seq !== mapLoadSeq) return;
+    el.classList.add('out');
+    setTimeout(() => { if (seq === mapLoadSeq) el.classList.add('hidden'); }, 300);
   }
 
   function onSnap(d) {

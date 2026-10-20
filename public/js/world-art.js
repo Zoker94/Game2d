@@ -476,6 +476,12 @@
     chunks = new Map(); amb.length = 0;
     buildDecos(); indexDecos();
   }
+  // dựng sẵn các mảng nền quanh một điểm (màn hình chờ chuyển bản đồ) để vào map không phải dựng dần
+  function prebuild(cx0, cy0, vw, vh) {
+    const c0 = Math.max(0, Math.floor((cx0 - vw) / CPX)), r0 = Math.max(0, Math.floor((cy0 - vh) / CPX));
+    const c1 = Math.min(Math.ceil(map.w / CH) - 1, Math.floor((cx0 + vw) / CPX)), r1 = Math.min(Math.ceil(map.h / CH) - 1, Math.floor((cy0 + vh) / CPX));
+    for (let cy = r0; cy <= r1; cy++) for (let cx = c0; cx <= c1; cx++) { const key = cx + ',' + cy; if (!chunks.has(key)) chunks.set(key, renderChunk(cx, cy)); }
+  }
   function drawGround(ctx, cam, vw, vh, now) {
     const c0 = Math.max(0, Math.floor(cam.x / CPX)), r0 = Math.max(0, Math.floor(cam.y / CPX));
     const c1 = Math.min(Math.ceil(map.w / CH) - 1, Math.floor((cam.x + vw) / CPX)), r1 = Math.min(Math.ceil(map.h / CH) - 1, Math.floor((cam.y + vh) / CPX));
@@ -619,7 +625,7 @@
     } else ctx.drawImage(img, tx * TILE, by - img.height);
   }
 
-  window.WorldArt = { setMap, drawGround, visibleDecos, drawDeco, drawTall, ambient, drawAmbient, overlay, get theme() { return theme; } };
+  window.WorldArt = { setMap, prebuild, drawGround, visibleDecos, drawDeco, drawTall, ambient, drawAmbient, overlay, get theme() { return theme; } };
 })();
 // giữ hàm vẽ vật thể cao cũ cho nhà, đá, trúc, xương rồng...
 Sprites.tallTileOld = Sprites.tallTile;
