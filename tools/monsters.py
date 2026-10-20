@@ -1,3 +1,6 @@
+# BẢN CŨ: nay chỉ còn dùng cho mộc nhân (moc_nhan). Quái / boss hiện tại vẽ bằng tools/monsters2.py (hình người, ma)
+# và tools/beasts3.py (thú), cài vào game bằng tools/install_monsters.py. Chạy file này không kèm mã quái sẽ ghi đè hình mới.
+#
 # Vẽ lại toàn bộ quái vật & boss (pixel, có đổ bóng theo khối, viền, hoạt ảnh).
 # - Quái hình người (thổ phỉ, kiếm khách, đệ tử Băng Cung, Ma Giáo binh, cướp tiêu, 3 boss người):
 #   dựng bằng khung xương nhân vật (tools/rig.py) -> đủ 4 hướng, đánh, ra chiêu, trúng đòn, ngã.
