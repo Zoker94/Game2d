@@ -448,7 +448,7 @@
   UI.fitMenu = () => { menuFitKey = ''; fitMenu(); };
 
   // đang giao tranh với người chơi: thu gọn thông báo, ẩn khung phụ để thấy rõ đối thủ
-  UI.pvpOn = () => (G.pvpUntil || 0) > performance.now();
+  UI.pvpOn = () => !!G._duelWith || (G.pvpUntil || 0) > performance.now();
   UI.frame = function (now) {
     { const on = UI.pvpOn(); if (on !== UI._pvpCls) { UI._pvpCls = on; document.body.classList.toggle('pvp-on', on); } }
     // hồi khinh công

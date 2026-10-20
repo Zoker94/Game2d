@@ -1553,3 +1553,15 @@ body.pvp-on #announce { opacity: 0; }
 body.pvp-on #tutorial-box, body.pvp-on #story-box, body.pvp-on #daily-box { opacity: 0; pointer-events: none; transition: opacity .25s; }
 body.pvp-on #duel-banner { top: 22%; font-size: 30px; }
 body.pvp-on #duel-banner small { font-size: 12px; }
+/* đang PK / tỷ võ: thanh tỷ võ thu gọn thành viên nhỏ (bỏ chữ, chỉ còn giờ + nút xin thua), khung mục tiêu nhỏ lại,
+   chat thu gọn không hiện tin nhắn đè lên sân đấu */
+body.pvp-on #duel-hud { gap: 6px !important; padding: 2px 4px 2px 10px !important; font-size: 12px !important; min-height: 0 !important; }
+body.pvp-on #duel-hud .dh-t { display: none; }
+body.pvp-on #duel-hud .dh-time { min-width: 40px; }
+body.pvp-on #duel-hud .btn { padding: 2px 8px !important; font-size: 11px !important; min-height: 0 !important; }
+body.pvp-on #target-frame { transform: translateX(-50%) scale(.82); transform-origin: 50% 0; }
+body.touch.pvp-on #duel-hud { top: auto !important; bottom: 6px; }
+body.touch.pvp-on #duel-hud.edge::after { top: auto; bottom: 100%; margin: 0 0 4px; }
+body.pvp-on #chat.collapsed #chat-log { display: none; }
+body.touch.pvp-on #chat.collapsed { display: none; }
+body.touch.pvp-on #toasts { top: auto; bottom: 44px; flex-direction: column-reverse; }

@@ -4,6 +4,12 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Tỷ võ / PK trên điện thoại thoáng hơn: thanh tỷ võ thu gọn thành viên nhỏ ở mép dưới (chỉ còn giờ và nút Xin thua), khung mục tiêu nhỏ lại, khung chat thu gọn ẩn đi, thông báo chuyển xuống mép dưới – giữa màn hình không còn bảng nào che đối thủ. Chế độ gọn bật suốt trận tỷ võ, kể cả lúc đếm ngược.'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Sửa giật / khựng khi di chuyển (rõ nhất ở Tương Dương): nền đất nay được vẽ trước theo từng phần nhỏ ở vùng sắp đi tới thay vì vẽ cả mảng lớn ngay lúc bước vào; nhớ được nhiều vùng hơn nên đi qua đi lại không phải vẽ lại.',
       'Nhân vật chạy không còn rung 1 điểm ảnh; khi máy chậm một nhịp nhân vật vẫn đi đúng quãng, không bị hãm lại.',
       'Phái đánh xa: vừa chạy vừa ra chiêu không còn bị kéo giật về chỗ cũ, không mất điểm đích đang đi tới.'
