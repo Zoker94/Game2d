@@ -1645,3 +1645,20 @@ body.meditating #btn-med, body.meditating #med-sk { box-shadow: 0 0 0 2px #9ff0d
 .inh-box { margin-top: 10px; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(255,215,106,.45); background: rgba(255,215,106,.07); }
 .inh-arrow { font-size: 13px; margin-bottom: 4px; } .inh-arrow span { color: #ffd76a; margin: 0 6px; }
 .inv-tools { display: flex; gap: 6px; margin-bottom: 6px; }
+/* lịch sử cập nhật */
+.cl-top { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+.cl-top input { flex: 1; min-width: 180px; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(201,154,58,.45); background: rgba(0,0,0,.35); color: #fff; font: inherit; }
+.cl-list { display: flex; flex-direction: column; gap: 6px; }
+.cl-card { border: 1px solid rgba(201,154,58,.35); border-radius: 10px; background: rgba(0,0,0,.22); padding: 0 10px; }
+.cl-card[open] { background: rgba(255,215,106,.05); border-color: rgba(255,215,106,.55); }
+.cl-card summary { cursor: pointer; padding: 8px 0; list-style: none; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cl-card summary::-webkit-details-marker { display: none; }
+.cl-card summary::before { content: '▸'; color: #ffd76a; transition: transform .15s; }
+.cl-card[open] summary::before { transform: rotate(90deg); }
+.cl-card summary b { color: #ffe9b0; }
+.cl-date { color: #a89a80; font-size: 12px; }
+.cl-new { background: #c0402a; color: #fff; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 6px; }
+.cl-n { margin-left: auto; color: #a89a80; font-size: 11px; }
+.cl-card ul { margin: 0 0 10px; padding-left: 18px; }
+.cl-card li { margin: 4px 0; line-height: 1.5; font-size: 13px; color: #f0e2c0; }
+.cl-card mark { background: #ffd76a; color: #2a1a00; border-radius: 3px; padding: 0 2px; }

@@ -4,6 +4,12 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Cài đặt → 📜 Lịch sử cập nhật: xem lại toàn bộ các bản cập nhật từ ngày ra mắt, có ô tìm kiếm (vd: thú cưỡi, PK, cường hóa) – người mới vào có thể đọc lại mọi thay đổi.'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Sửa hiệu ứng trang bị khi PK: Phản Chấn trước đây gần như không phản được gì (bị giảm sát thương PK hai lần) – nay phản đúng % sát thương nhận vào và hiện chữ "Phản …" trên đầu kẻ ra đòn; Hút Máu trước đây hồi gấp nhiều lần sát thương gây ra – nay hồi đúng theo sát thương thật.',
       'Lưu ý: Bạo Liệt (+% sát thương bạo kích) chỉ tăng sát thương của đòn bạo kích, tỉ lệ ra bạo kích vẫn theo chỉ số Chí mạng.',
       'Bớt thông báo làm trôi kênh chat: chỉ khoe trang bị Truyền Kỳ (không còn báo nhặt đá, nguyên liệu, đồ VIP), cường hoá từ +12, tối đa 4 tin khoe mỗi phút. Tin hệ thống chỉ hiện ở tab Tất cả – tab Thế giới chỉ còn người chơi nói chuyện.',
@@ -161,6 +167,55 @@ const CHANGELOG = [
       'Vẽ lại toàn bộ quái và boss: quái hình người theo nhân vật mới, thú đúng giải phẫu, boss oai vệ hơn.',
       'Boss chỉ hồi máu khi 30 giây không bị đánh; giảm mạnh chiêu hút máu. Nhạc Vũ Mục Anh Linh tăng lên 50 triệu máu.',
       'Sửa danh sách "Chọn mục tiêu" không cuộn được trên điện thoại.'
+    ]
+  },
+  // ---- các bản trước khi có bảng "Phiên bản mới" (tổng hợp lại từ lịch sử phát triển) ----
+  {
+    date: '20/10/2026',
+    items: [
+      'Giao diện pixel mới, nhà cửa trong thành vẽ lại; Thành Tương Dương có bố cục mới tự nhiên hơn; bản đồ cỏ và hang động vẽ lại, mỗi nơi một vẻ.',
+      'Quái và boss vẽ mới theo phong cách nhân vật; chiêu của boss có hình ảnh thật thay vì chỉ vùng cảnh báo.',
+      'Cốt truyện thêm boss và vật phẩm: tàn quyển Võ Mục Di Thư, Kim Luân Pháp Vương, Nhạc Vũ Mục Anh Linh (boss thế giới 50 triệu máu). Boss chỉ hồi máu khi 30 giây không bị đánh.',
+      'Quái cấp cao và boss trâu hơn; dùng nhiều vật phẩm trong một lần bấm.'
+    ]
+  },
+  {
+    date: '19/10/2026',
+    items: [
+      'Thêm thành mới, Xa Phu ở các bản đồ, Phù Về Làng, bản đồ cấp cao 60-99, quái tinh anh và phó bản tổ đội.',
+      'Thêm 9 bản đồ môn phái, nhiệm vụ môn phái (cống hiến, cấp bậc) và kiến trúc riêng từng phái.',
+      'Nhân vật 9 môn phái vẽ mới chi tiết (trang phục, lớp trang bị); vẽ lại toàn bộ NPC và thú cưỡi; mọi thú cưỡi có hiệu ứng theo cấp, độ hiếm càng cao càng đẹp.',
+      'Mỗi boss có bộ chiêu riêng với vùng cảnh báo và chiêu định hướng; thú cưng thử nghiệm Hồng Long Ấu Thú.',
+      'Thẻ Đổi Tên (lần mua đầu miễn phí); so sánh trang bị bằng khung nổi; tối ưu cho điện thoại, nút thu gọn menu; cập nhật game không cần xoá bộ nhớ đệm trình duyệt.'
+    ]
+  },
+  {
+    date: '19/10/2026',
+    items: [
+      'Điểm tiềm năng: mỗi cấp 5 điểm, 4 thuộc tính (Sức Mạnh, Thân Pháp, Sinh Khí, Nội Công).',
+      'Sự kiện Đại Hội Võ Lâm tranh ngôi Võ Lâm Minh Chủ; bản đồ thế giới, dẫn đường; bấm bản đồ nhỏ để mở bản đồ lớn; tổ đội cùng luyện công.',
+      'Thách đấu tỷ võ 1-1; bảng chọn mục tiêu (phím V); Long Ấn thành tuyệt kỹ có rung màn hình, hồi chiêu 45 giây.',
+      'Giao diện kiểu võ lâm, icon võ học và vật phẩm vẽ lại, âm thanh hiệu ứng thiết kế lại; thêm thú cưỡi Phượng Hoàng, Kim Quy, Kim Ngưu, vẽ lại Thanh Long và Hỏa Kỳ Lân.',
+      'Tử trận chọn Về thành hoặc Hồi sinh tại chỗ; Bán nhanh ở cửa hàng; nút tham gia nhóm Zalo cộng đồng.'
+    ]
+  },
+  {
+    date: '18/10/2026',
+    items: [
+      'Cốt truyện chính "Võ Mục Di Thư": mở đầu và 7 chương; mục Gift Code riêng.',
+      'Võ công buff chủ động và nội công bị động, bảng võ công gán phím; nhặt đồ: đi qua tự nhặt tiền, vật phẩm bấm nhặt hoặc bật tự động nhặt.',
+      'Vẽ lại toàn bộ quái vật và boss có hoạt ảnh đánh / trúng đòn / ngã; biểu tượng vật phẩm kiểu tả thực; NPC vẽ lại; thêm Né chiêu (lướt) có bóng mờ.',
+      'Chế độ PK (Luyện công / Đeo cờ PK / Đồ sát), Vận tiêu, Cướp tiêu và truy nã kẻ cướp.',
+      'Thời tiết, thú cưỡi vẽ lại có tư thế ngồi cưỡi, Tiền Trang; vũ khí riêng từng phái, trang bị ngũ hành có hiệu ứng đặc biệt, so sánh trang bị, bản đồ rẽ nhánh.',
+      'Ngoại hình nhân vật theo áo / mũ / vũ khí đang mặc; vòng phù văn cường hoá dưới chân; nhìn tên biết người mạnh yếu; bong bóng chat, hiệu ứng trạng thái, số bạo kích; cài đặt Tự động (tự nhặt, tự bơm máu).'
+    ]
+  },
+  {
+    date: '17/10/2026',
+    items: [
+      '🎉 Võ Lâm Pixel ra mắt: webgame 2D pixel giang hồ – 9 môn phái, cày cấp đánh quái, mỗi phái 6 võ công có hiệu ứng riêng.',
+      'Cường hoá trang bị tới +15 có Bảo Hiểm Phù, thú cưỡi, Long Ấn ngũ hành (Hỏa / Thủy / Băng) cho mọi phái.',
+      'Tài khoản tên đăng nhập / mật khẩu, sách võ công và nâng cấp võ công, gán phím; nhạc nền và âm thanh võ hiệp; cảnh vật chi tiết liền mạch.'
     ]
   }
 ];

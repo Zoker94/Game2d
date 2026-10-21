@@ -234,6 +234,8 @@ const BUILD = (() => {
   try { walk(PUBLIC_DIR); walk(__dirname); } catch (e) { h.update(String(Date.now())); }
   return h.digest('hex').slice(0, 10);
 })();
+// lịch sử cập nhật cho mục Cài đặt (người mới xem lại các bản cập nhật trước)
+app.get('/api/changelog', (req, res) => { res.set('Cache-Control', 'no-cache'); res.json({ build: BUILD, list: CHANGELOG }); });
 const htmlCache = {};
 function sendHtml(res, file) {
   let html = htmlCache[file];

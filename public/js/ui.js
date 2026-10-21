@@ -578,6 +578,27 @@
     inp.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') done(true); if (e.key === 'Escape') done(false); };
   };
   UI.registerPanel = (name, title, render, onOpen) => { UI.extraPanels[name] = { title, render, onOpen }; };
+
+  // ---------- Lịch sử cập nhật (Cài đặt → 📜) ----------
+  let newsData = null, newsQ = '';
+  UI.registerPanel('changelog', '📜 Lịch sử cập nhật', body => {
+    if (!newsData) { body.innerHTML = '<p class="muted">Đang tải...</p>'; return; }
+    const q = newsQ.trim().toLowerCase(), list = newsData.list, N = list.length;
+    const cards = list.map((e, i) => {
+      const items = q ? e.items.filter(t => t.toLowerCase().includes(q)) : e.items;
+      if (!items.length) return '';
+      const hl = t => { const s = esc(t); if (!q) return s; const k = s.toLowerCase().indexOf(esc(q).toLowerCase()); return k < 0 ? s : s.slice(0, k) + '<mark>' + s.slice(k, k + esc(q).length) + '</mark>' + s.slice(k + esc(q).length); };
+      return `<details class="cl-card" ${i === 0 || q ? 'open' : ''}><summary><b>Bản cập nhật #${N - i}</b> <span class="cl-date">${esc(e.date)}</span>${i === 0 ? ' <span class="cl-new">MỚI NHẤT</span>' : ''}<span class="cl-n">${items.length} mục</span></summary>
+        <ul>${items.map(t => `<li>${hl(t)}</li>`).join('')}</ul></details>`;
+    }).join('');
+    body.innerHTML = `<div class="cl-top"><input id="cl-q" placeholder="🔍 Tìm trong lịch sử (vd: thú cưỡi, PK, cường hóa...)" value="${esc(newsQ)}"><span class="small muted">${N} bản cập nhật</span></div>
+      <div class="cl-list">${cards || '<p class="muted">Không tìm thấy nội dung phù hợp.</p>'}</div>`;
+    const inp = $('cl-q');
+    inp.oninput = () => { newsQ = inp.value; const pos = inp.selectionStart; UI.refreshPanel(); const n = $('cl-q'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } };
+  }, () => {
+    if (newsData) return;
+    fetch('/api/changelog').then(r => r.json()).then(d => { newsData = d; if (UI.panelName() === 'changelog') UI.refreshPanel(); }).catch(() => {});
+  });
   UI.panelName = () => panel;
   UI.pmTo = name => { UI.closePanel(); $('chat-ch').value = 'pm'; $('chat-to').value = name; $('chat-to').classList.remove('hidden'); UI.focusChat(); };
   UI.togglePanel = function (name) { if (panel === name) UI.closePanel(); else UI.openPanel(name); };
@@ -1111,7 +1132,7 @@
         <div class="row gfx-row" style="justify-content:flex-start;margin-top:6px;align-items:center">🖥️ Đồ họa
           ${[['auto', 'Tự động'], ['high', 'Cao'], ['medium', 'Vừa'], ['low', 'Thấp (mượt nhất)']].map(([k, n]) => `<button class="btn small ${(s.gfx || 'auto') === k ? 'primary' : ''}" data-gfx="${k}">${n}</button>`).join('')}
           <span class="small muted">Độ nét hiện tại: ${Math.round(G.gfx.scale * 100)}%${G.gfx.lowFx ? ' · tiết kiệm hiệu ứng' : ''}</span></div>
-        <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn small" id="set-fs">⛶ Toàn màn hình</button><button class="btn small" id="set-online">👥 Người chơi online</button>${G.user && G.user.owner ? '<button class="btn small primary" id="set-admin">🛡️ Trang quản trị</button>' : ''}</div></div>
+        <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn small" id="set-fs">⛶ Toàn màn hình</button><button class="btn small" id="set-online">👥 Người chơi online</button><button class="btn small" id="set-news">📜 Lịch sử cập nhật</button>${G.user && G.user.owner ? '<button class="btn small primary" id="set-admin">🛡️ Trang quản trị</button>' : ''}</div></div>
       <div class="card small"><h4>Điều khiển</h4>
         <div><b>PC:</b> WASD/mũi tên di chuyển · Nhấp chuột để đi/chọn mục tiêu · 1/Space đánh · 2–7 các ô kỹ năng (tự gán trong bảng Võ Công, phím K) · Z/X thuốc · T cưỡi thú · Tab đổi mục tiêu · F nói chuyện NPC · R tự động · Enter chat · I/C/M/J/G/O/L mở bảng · Esc đóng</div>
         <div><b>Mobile:</b> Joystick trái để di chuyển · Nút ⚔️ (giữ để đánh liên tục) · 3 nút kỹ năng · ❤️💧 thuốc · 🎯 đổi mục tiêu · Chạm NPC/quái để tương tác</div>
@@ -1128,6 +1149,7 @@
     $('au-mvol').oninput = e => GameAudio.set('musicVol', +e.target.value);
     $('au-svol').oninput = e => { GameAudio.set('sfxVol', +e.target.value); GameAudio.sfx('coin', 150); };
     $('set-online').onclick = () => UI.openPanel('online');
+    $('set-news').onclick = () => UI.openPanel('changelog');
     const sa = $('set-admin'); if (sa) sa.onclick = () => emit('adminPanel');
     $('set-logout').onclick = () => G.logout();
     const pc = $('pw-change');
