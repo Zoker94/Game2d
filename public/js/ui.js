@@ -176,7 +176,7 @@
   function restoreCmp() { if (cmpKey) showKey(cmpKey); else hideCmp(); }
 
   // hệ trang bị: Ngoại công (+Sức Mạnh) / Nội công (+Nội Công) – công thức trùng server/data/items.js brPoints
-  const BR_INFO = { ngoai: { name: 'Ngoại công', attr: 'str', an: 'Sức Mạnh', ch: '外' }, noi: { name: 'Nội công', attr: 'ene', an: 'Nội Công', ch: '內' } };
+  const BR_INFO = { ngoai: { name: 'Ngoại công', attr: 'str', an: 'Sức Mạnh', ch: 'Ngoại' }, noi: { name: 'Nội công', attr: 'ene', an: 'Nội Công', ch: 'Nội' } };
   const brPts = (it, plus) => Math.round((1 + it.tier * 1.2) * G.data.rarity[it.rarity].mult * (1 + (plus || 0) * 0.04));
   function brLine(it, inst, plus) {
     if (it.type !== 'equip') return '';

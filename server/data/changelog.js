@@ -4,7 +4,14 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
-      'Trang bị chia hai hệ: ⚔️ Ngoại công (cộng Sức Mạnh) và 🔮 Nội công (cộng Nội Công). Mặc đúng hệ đang tu, điểm này còn tăng % sát thương võ công như điểm tiềm năng; bậc, phẩm chất và cấp cường hóa càng cao cộng càng nhiều (bộ 6 món Truyền Kỳ +15 ≈ +210 điểm). Ô đồ có nhãn 外 / 內.',
+      'PK cân bằng hơn cho phái cận chiến (Thiếu Lâm, Thiên Vương, Thúy Yên, Cái Bang): khi đánh người chơi gây thêm 15% sát thương, nhận ít hơn 15% sát thương (bị đánh xa còn được hộ thể thêm – tổng chỉ nhận ~72%), bị choáng / đóng băng / làm chậm từ người chơi ngắn hơn 30% để dễ áp sát.',
+      'Nhãn hệ trên ô trang bị đổi sang chữ Việt: "Ngoại" / "Nội".'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
+      'Trang bị chia hai hệ: ⚔️ Ngoại công (cộng Sức Mạnh) và 🔮 Nội công (cộng Nội Công). Mặc đúng hệ đang tu, điểm này còn tăng % sát thương võ công như điểm tiềm năng; bậc, phẩm chất và cấp cường hóa càng cao cộng càng nhiều (bộ 6 món Truyền Kỳ +15 ≈ +210 điểm). Ô đồ có nhãn Ngoại / Nội.',
       'Mua trang bị ở tiệm được chọn hệ (mặc định theo hệ đang tu); đồ rơi ra phần lớn hợp hệ của người nhặt. Đồ đang có tự nhận hệ theo hệ bạn đang tu.',
       'Thợ Rèn: nút 🔄 Đổi hệ trang bị (tab Cường hóa) để chuyển một món giữa Ngoại công và Nội công.'
     ]

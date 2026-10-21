@@ -743,6 +743,7 @@ class World {
     const fromPlayer = !!(src && src.c);
     if (kind === 'stun' && t.c && now < (t.stunImmune || 0)) return;    // vừa hết choáng: kháng choáng một lúc (chống khoá choáng liên tục)
     if (t.boss && (kind === 'stun' || kind === 'freeze')) ms *= 0.35;   // boss kháng khống chế
+    if (t.c && fromPlayer && !isRanged(t) && (kind === 'stun' || kind === 'freeze' || kind === 'slow')) ms *= MELEE_PVP_CC;   // cận chiến: bị khống chế ngắn hơn để áp sát được
     if (t.c && (kind === 'freeze' || (kind === 'stun' && !fromPlayer))) ms *= 0.6;   // quái / boss khống chế người chơi ngắn hơn
     if (t.c && t.stats.fx && t.stats.fx.ccres && (kind === 'stun' || kind === 'freeze' || kind === 'slow')) ms *= 1 - t.stats.fx.ccres / 100;
     if (ms < 150) return;
@@ -816,7 +817,12 @@ class World {
       const powK = U.clamp(Math.pow(((src.stats.gs || 0) + 6) / ((t.stats.gs || 0) + 6), 2), 0.4, 3);
       dmg = Math.max(1, Math.round(dmg * PVP_DMG * lvK * powK * (1 + long / 10000 * 0.35)));
     }
-    if (t.c && src && src.c && !reflected && isRanged(src) && !isRanged(t)) dmg = Math.max(1, Math.round(dmg * MELEE_GUARD));   // cận chiến: hộ thể trước đòn đánh xa
+    if (t.c && src && src.c && !reflected && t !== src) {
+      // PK cân bằng: phái cận chiến (phải áp sát mới đánh được) đánh đau hơn, trâu hơn; còn được hộ thể thêm trước đòn đánh xa
+      if (!isRanged(src)) dmg *= MELEE_PVP_ATK;
+      if (!isRanged(t)) dmg *= MELEE_PVP_DEF * (isRanged(src) ? MELEE_GUARD : 1);
+      dmg = Math.max(1, Math.round(dmg));
+    }
     // phòng thủ từ trang bị (chỉ với đòn đánh trực tiếp, không áp cho độc/bỏng)
     if (t.c && src && (kind === 'hit' || kind === 'crit' || kind === 'hurt')) {
       const fx = t.stats.fx || {};
@@ -2046,7 +2052,8 @@ const SKILL_STATUS = {
 // ---------- Cân bằng cận chiến / đánh xa ----------
 const isRanged = p => classRange(p.c.cls, branchOf(p.c)) >= 200;   // theo hệ đang tu
 const CAST_LOCK = { basic: 260, skill: 450 };   // đánh xa đứng yên vận chiêu (ms)
-const MELEE_GUARD = 0.85;                       // cận chiến nhận 85% sát thương từ người chơi đánh xa
+const MELEE_GUARD = 0.85;                       // cận chiến nhận thêm chỉ 85% sát thương từ người chơi đánh xa
+const MELEE_PVP_ATK = 1.15, MELEE_PVP_DEF = 0.85, MELEE_PVP_CC = 0.7;   // PK: cận chiến gây +15% sát thương, nhận 85% sát thương, bị khống chế 70% thời gian
 const STUN_IMMUNE = 3000;
 // PvP: sát thương người chơi lên người chơi, hồi máu khi đang giao tranh, bình máu (hồi chiêu, tối đa % máu mỗi bình)
 const PVP_DMG = 0.0205, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;
