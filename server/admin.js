@@ -336,7 +336,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   });
   app.get('/api/admin/chatlogs', auth, (req, res) => {
     const q = String(req.query.q || '').toLowerCase();
-    let l = db.data.chatLogs;
+    let l = db.chatLogs;
     if (q) l = l.filter(x => (x.from || '').toLowerCase().includes(q) || (x.text || '').toLowerCase().includes(q));
     res.json(l.slice(-300).reverse());
   });
