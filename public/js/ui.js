@@ -1457,6 +1457,10 @@
         ${tg('potAlways', 'Luôn tự bơm, kể cả khi không bật Tự động')}
         ${tg('townLow', 'Hết bình máu thì dùng Hồi Thành Phù về thành')}${sl('townPct', 5, 50, 'Khi sinh lực dưới')}
         <p class="small ${totalHp < 10 ? 'warn' : 'muted'}">Còn ${totalHp} bình máu · ${totalMp} bình nội lực${totalHp < 10 ? ' — sắp hết, hãy mua thêm ở Hiệu Thuốc!' : ''}</p></div>
+      <div class="au-box"><h4>🗡️ PK tự động</h4>
+        ${tg('pvpBack', 'Tự đánh trả người chơi vừa tấn công mình')}
+        ${tg('pvpAuto', 'Tự tấn công người chơi thù địch ở gần (theo chế độ PK)')}
+        <p class="small muted">Chọn một người chơi làm mục tiêu rồi bật Tự động: nhân vật tự đuổi theo và ra chiêu (rất tiện cho phái cận chiến). Khi tỷ võ, Tự động luôn đánh đối thủ. Không bao giờ đánh người không thể tấn công (cùng bang, bản đồ an toàn, chế độ PK không cho phép).</p></div>
       <div class="au-box"><h4>⚔️ Đánh quái</h4>
         ${tg('skills', 'Dùng võ công (tắt = chỉ đánh thường)')}
         <div class="au-row"><span>Phạm vi tìm quái</span><select data-s="range">${[[400, 'Gần'], [700, 'Vừa'], [1000, 'Xa']].map(([v, n]) => `<option value="${v}" ${+c.range === v ? 'selected' : ''}>${n}</option>`).join('')}</select></div>

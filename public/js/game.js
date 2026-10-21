@@ -610,6 +610,7 @@
   }
 
   function onDmg(d) {
+    if (d.s && d.id === G.you) G.lastAttacker = { id: d.s, t: performance.now() };   // người chơi vừa đánh mình
     const e = entityById(d.id);
     if (!e) return;
     const x = e.x, y = e.y - 70, near = Math.hypot(e.x - G.self.x, e.y - G.self.y);
@@ -799,7 +800,7 @@
     const b = $('btn-auto');
     b.classList.toggle('on', on);
     b.title = on ? 'Tắt tự động đánh (R)' : 'Bật tự động đánh (R)';
-    if (on && G.map && G.map.safe) UI.toast('Hãy ra bãi luyện công để dùng tự động đánh', 'error');
+    if (on && G.map && G.map.safe && !G._duelWith) UI.toast('Hãy ra bãi luyện công để dùng tự động đánh', 'error');
     G.autoHome = on ? { x: G.self.x, y: G.self.y } : null;
   }
   G.setAuto = setAuto;
@@ -1031,7 +1032,7 @@
   }
 
   // ===== Cài đặt tự động =====
-  const AUTO_DEF = { pickup: true, pickGold: true, pickMin: 'common', pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, potAlways: true, townLow: false, townPct: 15, skills: true, range: 700 };
+  const AUTO_DEF = { pvpBack: true, pvpAuto: false, pickup: true, pickGold: true, pickMin: 'common', pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, potAlways: true, townLow: false, townPct: 15, skills: true, range: 700 };
   function autoCfg() { return Object.assign({}, AUTO_DEF, G.autoCfg); }
   G.autoCfgGet = autoCfg;
   G.autoCfgSet = (k, v) => { G.autoCfg[k] = v; try { localStorage.setItem('vl_auto', JSON.stringify(G.autoCfg)); } catch (e) {} };
@@ -1073,10 +1074,47 @@
   }
 
   // Tự động đánh quái (auto)
+  // PK tự động: đối thủ tỷ võ > người chơi đang chọn làm mục tiêu > kẻ vừa đánh mình > (tuỳ chọn) người chơi thù địch gần nhất
+  function pvpTarget(now, cfg) {
+    const s = G.self, ok = p => p && !p.dead && Escort.canHarm(p) && Math.hypot(p.x - s.x, p.y - s.y) < 1300;
+    if (G._duelWith) { const p = G.players.get(G._duelWith); if (ok(p)) return p; }
+    const cur = G.target && G.players.get(G.target);
+    if (ok(cur)) return cur;
+    if (cfg.pvpBack && G.lastAttacker && now - G.lastAttacker.t < 8000) { const p = G.players.get(G.lastAttacker.id); if (ok(p)) return p; }
+    if (cfg.pvpAuto) {
+      let best = null, bd = cfg.range;
+      for (const p of G.players.values()) { if (!ok(p)) continue; const d = Math.hypot(p.x - s.x, p.y - s.y); if (d < bd) { bd = d; best = p; } }
+      return best;
+    }
+    return null;
+  }
+  // ra chiêu vào mục tiêu: buff -> kỹ năng mạnh -> đánh thường; ngoài tầm thì đuổi theo
+  function autoAttack(t, cfg) {
+    const me = G.me, s = G.self, st = me.stats, skills = mySkills();
+    const order = cfg.skills ? [7, 6, 5, 3, 4, 2, 1, 0] : [0];
+    for (const i of order) {
+      const sk = skills[i];
+      if (!sk || !sk.learned || me.level < sk.lv || !skillReady(i) || me.mp < sk.mp) continue;
+      if (sk.type === 'buff') { if (!me.buffs.some(b => b.name === sk.name)) { useSkill(i); return; } continue; }
+      if (sk.type === 'heal') { if (me.hp < st.maxHp * 0.6) { useSkill(i); return; } continue; }
+      const range = (sk.type === 'aoe' && !sk.range ? sk.radius : (sk.range || G.myRange())) * 0.85;
+      const d = Math.hypot(t.x - s.x, t.y - s.y);
+      if (d > range) { if (i === 0) G.moveTo = { x: t.x, y: t.y }; continue; }
+      G.moveTo = null;
+      useSkill(i);
+      return;
+    }
+  }
   function autoPlay(now) {
     const me = G.me, s = G.self;
+    const cfg = autoCfg();
+    const foe = pvpTarget(now, cfg);
+    if (foe) {   // đang PK: bám theo đối thủ, không nhặt đồ, chỗ đứng mới thành tâm tự động
+      G.target = foe.id; G.autoDrop = null; G.autoHome = { x: s.x, y: s.y };
+      return autoAttack(foe, cfg);
+    }
     if (G.map.safe) return;
-    const st = me.stats, cfg = autoCfg();
+    const st = me.stats;
     const home = G.autoHome || s;
     // tự nhặt đồ
     if (cfg.pickup) {
@@ -1102,21 +1140,7 @@
       if (Math.hypot(home.x - s.x, home.y - s.y) > 60) G.moveTo = { x: home.x, y: home.y };
       return;
     }
-    const skills = mySkills();
-    // ưu tiên buff -> kỹ năng mạnh -> đánh thường
-    const order = cfg.skills ? [7, 6, 5, 3, 4, 2, 1, 0] : [0];
-    for (const i of order) {
-      const sk = skills[i];
-      if (!sk || !sk.learned || me.level < sk.lv || !skillReady(i) || me.mp < sk.mp) continue;
-      if (sk.type === 'buff') { if (!me.buffs.some(b => b.name === sk.name)) { useSkill(i); return; } continue; }
-      if (sk.type === 'heal') { if (me.hp < st.maxHp * 0.6) { useSkill(i); return; } continue; }
-      const range = (sk.type === 'aoe' && !sk.range ? sk.radius : (sk.range || G.myRange())) * 0.85;
-      const d = Math.hypot(t.x - s.x, t.y - s.y);
-      if (d > range) { if (i === 0) G.moveTo = { x: t.x, y: t.y }; continue; }
-      G.moveTo = null;
-      useSkill(i);
-      return;
-    }
+    autoAttack(t, cfg);
   }
 
   // ================== Vẽ ==================

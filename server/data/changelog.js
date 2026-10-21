@@ -4,6 +4,12 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Tự động nay hỗ trợ PK (tiện cho phái cận chiến): chọn một người chơi làm mục tiêu rồi bật Tự động – nhân vật tự đuổi theo và ra chiêu; khi tỷ võ luôn tự đánh đối thủ (kể cả trên Lôi Đài); mặc định tự đánh trả người chơi vừa tấn công mình. Tuỳ chọn thêm trong bảng Tự động: tự tấn công người chơi thù địch ở gần. Không bao giờ đánh người không thể tấn công (cùng bang, bản đồ an toàn, chế độ PK không cho phép).'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Kế thừa trang bị (Thợ Rèn → tab ♻️ Kế thừa): chuyển cấp cường hóa từ trang bị cũ sang trang bị mới cùng loại, bậc bằng hoặc cao hơn – lên cấp đổi đồ mới không phải đập lại từ đầu. Có thể chuyển cả đá khảm. Không tốn đá, không thất bại; phí bằng 20% số lượng đã tốn để cường hóa tới cấp đó. Món cũ về +0.'
     ]
   },

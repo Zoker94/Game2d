@@ -827,7 +827,9 @@ class World {
       }
     }
     if (t.dead) return;
-    this.io.to('map:' + (t.mapId)).emit('dmg', ek ? { id: t.id, v: dmg, k: kind, e: ek } : { id: t.id, v: dmg, k: kind });
+    const dm = ek ? { id: t.id, v: dmg, k: kind, e: ek } : { id: t.id, v: dmg, k: kind };
+    if (t.c && src && src.c && src !== t) dm.s = src.id;   // người chơi đánh người chơi: cho biết ai ra tay (tự động đánh trả)
+    this.io.to('map:' + (t.mapId)).emit('dmg', dm);
     if (t.c) { // người chơi
       if (this.duel.onDamage(t, dmg, src)) return;   // đòn kết liễu trong trận thách đấu: dừng ở 1 máu
       t.c.hp -= dmg; t.lastCombat = Date.now(); t.dirtyMe = true;
