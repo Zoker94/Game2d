@@ -4,6 +4,12 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Tăng độc khi PK (Ngũ Độc và mọi hiệu ứng độc / bỏng / chảy máu từ người chơi): trước đây độc bị giảm theo sát thương PK nên gần như không thấm (~0,2% máu mỗi giây). Nay mỗi nhịp độc trừ theo % sinh lực tối đa của đối thủ (0,7%, chiêu độc chuyên như Xuyên Tâm Độc 0,9%), mạnh hơn khi trang bị tốt hơn đối thủ – độc cộng dồn từ nhiều chiêu mài máu rõ rệt.'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Sửa tự nhặt không nhặt bình máu, đá: bộ lọc "Chỉ nhặt từ Hiếm / VIP trở lên" nay chỉ áp dụng cho trang bị. Bình máu / nội lực và đá, nguyên liệu, rương có tùy chọn nhặt riêng trong bảng Tự động (mặc định bật).'
     ]
   },

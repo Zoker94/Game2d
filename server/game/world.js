@@ -722,17 +722,25 @@ class World {
   addDot(p, t, sk, kind = 'poison') {
     if (t.cart) return;
     const ticks = sk.ticks || sk.dotTicks || 3;
+    if (t.c && p.c && t !== p) {   // PK: độc tính theo % sinh lực tối đa của đối thủ (không bị giảm sát thương PK như đòn đánh) để độc thật sự "thấm"
+      return this.addDotRaw(t, p, this.pvpDotDmg(p, t, sk.type === 'dot' ? POISON_PVP * 1.3 : POISON_PVP), ticks, kind, sk.id, true);
+    }
     this.addDotRaw(t, p, Math.max(1, Math.round(p.stats.atk * 0.7)), ticks, kind, sk.id);
   }
-  addDotRaw(t, owner, dmg, ticks, kind, src) {
+  // mỗi nhịp độc / bỏng / chảy máu giữa người chơi: % máu tối đa, mạnh / yếu theo chênh lệch trang bị
+  pvpDotDmg(src, t, pct) {
+    const gk = U.clamp(((src.stats.gs || 0) + 6) / ((t.stats.gs || 0) + 6), 0.6, 1.6);
+    return Math.max(1, Math.round(t.stats.maxHp * pct * gk));
+  }
+  addDotRaw(t, owner, dmg, ticks, kind, src, pvpPct = false) {
     if (!t.dots) t.dots = [];
     t.dots = t.dots.filter(d => d.src !== src || d.owner !== owner);
-    t.dots.push({ src, owner, dmg, left: ticks, next: Date.now() + 1000, kind });
+    t.dots.push({ src, owner, dmg, left: ticks, next: Date.now() + 1000, kind, pvpPct });
   }
   tickDots(t, now) {
     if (!t.dots || !t.dots.length) return;
     for (const d of t.dots) {
-      if (now >= d.next && d.left > 0) { d.left--; d.next = now + 1000; this.applyDamage(t, d.dmg, d.owner || null, d.kind || 'dot'); if (t.dead) { t.dots = []; return; } }
+      if (now >= d.next && d.left > 0) { d.left--; d.next = now + 1000; this.applyDamage(t, d.dmg, d.owner || null, d.kind || 'dot', 0, d.pvpPct); if (t.dead) { t.dots = []; return; } }
     }
     t.dots = t.dots.filter(d => d.left > 0);
   }
@@ -756,7 +764,8 @@ class World {
     if (DOT_KINDS.has(kind)) {
       const base = src ? (src.stats ? src.stats.atk : (src.tpl ? src.tpl.atk : 10)) : 10;
       const mult = kind === 'burn' ? 0.55 : kind === 'bleed' ? 0.45 : 0.6;
-      this.addDotRaw(t, src, Math.max(1, Math.round(base * mult * (t.c ? 0.5 : 1))), Math.max(1, Math.round(ms / 1000)), kind, 'st:' + kind);
+      if (t.c && src && src.c && t !== src) this.addDotRaw(t, src, this.pvpDotDmg(src, t, POISON_PVP * (kind === 'burn' ? 0.8 : 0.6)), Math.max(1, Math.round(ms / 1000)), kind, 'st:' + kind, true);
+      else this.addDotRaw(t, src, Math.max(1, Math.round(base * mult * (t.c ? 0.5 : 1))), Math.max(1, Math.round(ms / 1000)), kind, 'st:' + kind);
     }
     this.io.to('map:' + t.mapId).emit('status', { id: t.id, k: kind, ms: Math.round(ms) });
     if (t.c) t.dirtyMe = true;
@@ -799,12 +808,13 @@ class World {
     }
   }
 
-  applyDamage(t, dmg, src, kind, ek = 0) {
+  applyDamage(t, dmg, src, kind, ek = 0, preScaled = false) {
     if (src && src.c && t && !t.c && !t.cart) src.lastHitMon = Date.now();   // thú cưng biết chủ đang giao chiến
     if (t.dead) return 0;
     if (t.c && src && t.dodgeUntil > Date.now()) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return 0; }   // đang lướt né
     const reflected = kind === 'reflect';   // sát thương phản đòn đã tính xong ở phía người bị đánh: không giảm thêm lần nữa
-    if (t.c && src && src.c && t !== src && !reflected) {   // người chơi đánh người chơi: giảm mạnh để trận đấu kéo dài 1-2 phút
+    if (t.c && src && src.c && t !== src && preScaled) { t.lastPvp = src.lastPvp = Date.now(); }   // độc PK (đã tính theo % máu): vẫn tính là đang giao tranh
+    if (t.c && src && src.c && t !== src && !reflected && !preScaled) {   // người chơi đánh người chơi: giảm mạnh để trận đấu kéo dài 1-2 phút
       const now = Date.now();
       // giao tranh kéo dài quá 60 giây: sát thương tăng dần (+35% mỗi 10 giây) để trận đấu không kéo dài mãi
       for (const e of [t, src]) if (now - (e.lastPvp || 0) > PVP_COMBAT) e.pvpSince = now;
@@ -2138,6 +2148,7 @@ const SKILL_STATUS = {
 const isRanged = p => classRange(p.c.cls, branchOf(p.c)) >= 200;   // theo hệ đang tu
 const CAST_LOCK = { basic: 260, skill: 450 };   // đánh xa đứng yên vận chiêu (ms)
 const MELEE_GUARD = 0.85;                       // cận chiến nhận thêm chỉ 85% sát thương từ người chơi đánh xa
+const POISON_PVP = 0.007;                        // PK: mỗi nhịp độc trừ 0,7% sinh lực tối đa (chiêu độc chuyên 'dot' 0,9%), mạnh / yếu theo chênh lệch trang bị
 const MELEE_PVP_ATK = 1.15, MELEE_PVP_DEF = 0.85, MELEE_PVP_CC = 0.7;   // PK: cận chiến gây +15% sát thương, nhận 85% sát thương, bị khống chế 70% thời gian
 const STUN_IMMUNE = 3000;
 // PvP: sát thương người chơi lên người chơi, hồi máu khi đang giao tranh, bình máu (hồi chiêu, tối đa % máu mỗi bình)
