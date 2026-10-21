@@ -1090,7 +1090,7 @@
   }
 
   // ===== Cài đặt tự động =====
-  const AUTO_DEF = { pvpBack: true, pvpAuto: false, pickup: true, pickGold: true, pickMin: 'common', pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, potAlways: true, townLow: false, townPct: 15, skills: true, range: 700 };
+  const AUTO_DEF = { pvpBack: true, pvpAuto: false, pickPots: true, pickMats: true, pickup: true, pickGold: true, pickMin: 'common', pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, potAlways: true, townLow: false, townPct: 15, skills: true, range: 700 };
   function autoCfg() { return Object.assign({}, AUTO_DEF, G.autoCfg); }
   G.autoCfgGet = autoCfg;
   G.autoCfgSet = (k, v) => { G.autoCfg[k] = v; try { localStorage.setItem('vl_auto', JSON.stringify(G.autoCfg)); } catch (e) {} };
@@ -1106,9 +1106,12 @@
       if ((G.dropSkip.get(dr.id) || 0) > now) continue;                      // không tới được
       if (dr.gold) { if (!cfg.pickGold) continue; }
       else {
-        const it = G.data.items[dr.item]; if (!it) continue;
-        const isBook = /^sk_|^book_/.test(dr.item);
-        if ((RANK[it.rarity] || 0) < (RANK[cfg.pickMin] || 0) && !(isBook && cfg.pickBooks)) continue;
+        const it = G.data.items[UI.resolveId ? UI.resolveId(dr.item) : dr.item] || G.data.items[dr.item]; if (!it) continue;
+        const isBook = /^sk_|^book_/.test(dr.item) || !!(it.effect && it.effect.learn);
+        if (it.type === 'equip') { if ((RANK[it.rarity] || 0) < (RANK[cfg.pickMin] || 0)) continue; }   // lọc phẩm chất chỉ áp cho trang bị
+        else if (isBook) { if (!cfg.pickBooks) continue; }
+        else if (it.type === 'use' && it.effect && (it.effect.hp || it.effect.mp || it.effect.hpPct || it.effect.mpPct)) { if (!cfg.pickPots) continue; }   // bình máu / nội lực
+        else if (!cfg.pickMats) continue;   // đá, nguyên liệu, rương, vật phẩm khác
         if (invFull && !(it.type !== 'equip' && G.me.inv.some(x => x.id === dr.item))) continue;
       }
       if (Math.hypot(dr.x - home.x, dr.y - home.y) > cfg.range) continue;

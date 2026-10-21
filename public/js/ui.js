@@ -1507,7 +1507,9 @@
       <div class="au-box"><h4>🎒 Tự nhặt đồ</h4>
         ${tg('pickup', 'Tự nhặt vật phẩm rơi ra')}
         ${tg('pickGold', 'Nhặt ngân lượng')}
-        <div class="au-row"><span>Chỉ nhặt đồ từ</span><select data-s="pickMin">
+        ${tg('pickPots', 'Nhặt bình máu / nội lực')}
+        ${tg('pickMats', 'Nhặt đá, nguyên liệu, rương và vật phẩm khác')}
+        <div class="au-row"><span>Chỉ nhặt trang bị từ</span><select data-s="pickMin">
           ${[['common', 'Tất cả'], ['rare', 'Hiếm trở lên'], ['epic', 'VIP trở lên'], ['legendary', 'Truyền Kỳ']].map(([v, n]) => `<option value="${v}" ${c.pickMin === v ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
         ${tg('pickBooks', 'Luôn nhặt sách võ công / bí kíp')}
         <p class="small muted">Không nhặt đồ đang thuộc quyền người khác. Túi đầy thì chỉ nhặt vật phẩm cộng dồn được.</p></div>

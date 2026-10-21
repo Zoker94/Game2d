@@ -4,6 +4,12 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Sửa tự nhặt không nhặt bình máu, đá: bộ lọc "Chỉ nhặt từ Hiếm / VIP trở lên" nay chỉ áp dụng cho trang bị. Bình máu / nội lực và đá, nguyên liệu, rương có tùy chọn nhặt riêng trong bảng Tự động (mặc định bật).'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Tự động / bấm đi tới: nhân vật biết tìm đường vòng qua tường, cây, nhà thay vì đâm vào vật cản rồi đứng kẹt; đuổi quái và chạy tới nhặt đồ phía sau vật cản được.',
       'Sửa tự nhặt đồ: túi đã mở rộng (trên 48 ô) vẫn nhặt bình thường; món nhặt không được (đồ của người khác, túi đầy) sẽ được bỏ qua thay vì đứng nhặt mãi; túi đầy thì có thông báo.'
     ]
