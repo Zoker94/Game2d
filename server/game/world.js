@@ -995,7 +995,7 @@ class World {
           const p = this.players.get(uid);
           if (!p || d / total < 0.005) return;
           const items = [['stone2', i < 10 ? 3 : 1], ['boss_chest', i < 3 ? 3 : i < 10 ? 2 : 1]];
-          if (i < 3 && tpl.id === 'boss_vumuc') items.push(['vm_tamphap', 1]);   // anh linh Nhạc Vũ Mục truyền Tâm Pháp (cách học Di Thư), không rơi thẳng Di Thư
+          if (i === 0 && tpl.id === 'boss_vumuc') items.push(['vm_tamphap', 1]);   // chỉ top 1 sát thương: anh linh Nhạc Vũ Mục truyền Tâm Pháp (cách học Di Thư), không rơi thẳng Di Thư
           if (i < 3) items.push(['insure', 1]);
           this.giveReward(p, { items, knb: i < 3 ? [200, 120, 80][i] : i < 10 ? 40 : 15 }, `Hạng ${i + 1} đánh ${tpl.name}`);
         });

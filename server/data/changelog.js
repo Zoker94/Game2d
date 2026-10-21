@@ -4,7 +4,7 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
-      'Boss thế giới Nhạc Vũ Mục Anh Linh không còn rơi thẳng Võ Mục Di Thư. Thay vào đó top 3 sát thương nhận Võ Mục Tâm Pháp – bí quyết lĩnh hội Di Thư. Mỗi lần nghiền ngẫm Di Thư cần tiêu hao 1 Tâm Pháp (vẫn tối đa 5 lần mỗi nhân vật). Di Thư vẫn có được bằng cách gom đủ 7 tàn quyển.'
+      'Boss thế giới Nhạc Vũ Mục Anh Linh không còn rơi thẳng Võ Mục Di Thư. Thay vào đó chỉ người gây sát thương cao nhất (top 1) nhận Võ Mục Tâm Pháp – bí quyết lĩnh hội Di Thư. Mỗi lần nghiền ngẫm Di Thư cần tiêu hao 1 Tâm Pháp (vẫn tối đa 5 lần mỗi nhân vật). Di Thư vẫn có được bằng cách gom đủ 7 tàn quyển.'
     ]
   },
   {
