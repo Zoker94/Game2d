@@ -1148,7 +1148,8 @@
         <div class="row gfx-row" style="justify-content:flex-start;margin-top:6px;align-items:center">🖥️ Đồ họa
           ${[['auto', 'Tự động'], ['high', 'Cao'], ['medium', 'Vừa'], ['low', 'Thấp (mượt nhất)']].map(([k, n]) => `<button class="btn small ${(s.gfx || 'auto') === k ? 'primary' : ''}" data-gfx="${k}">${n}</button>`).join('')}
           <span class="small muted">Độ nét hiện tại: ${Math.round(G.gfx.scale * 100)}%${G.gfx.lowFx ? ' · tiết kiệm hiệu ứng' : ''}</span></div>
-        <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn small" id="set-fs">⛶ Toàn màn hình</button><button class="btn small" id="set-online">👥 Người chơi online</button><button class="btn small" id="set-news">📜 Lịch sử cập nhật</button>${G.user && G.user.owner ? '<button class="btn small primary" id="set-admin">🛡️ Trang quản trị</button>' : ''}</div></div>
+        <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn small" id="set-fs">⛶ Toàn màn hình</button><button class="btn small" id="set-online">👥 Người chơi online</button><button class="btn small" id="set-news">📜 Lịch sử cập nhật</button></div>
+        <div class="row" style="justify-content:flex-start;margin-top:6px;align-items:center;gap:6px"><span class="small">Giao diện:</span>${[['auto', 'Tự động'], ['pc', '🖥️ Máy tính'], ['mobile', '📱 Điện thoại']].map(([k, n]) => `<button class="btn small ${Input.uiPref === k ? 'primary' : ''}" data-uipref="${k}">${n}</button>`).join('')}${G.user && G.user.owner ? '<button class="btn small primary" id="set-admin">🛡️ Trang quản trị</button>' : ''}</div></div>
       <div class="card small"><h4>Điều khiển</h4>
         <div><b>PC:</b> WASD/mũi tên di chuyển · Nhấp chuột để đi/chọn mục tiêu · 1/Space đánh · 2–7 các ô kỹ năng (tự gán trong bảng Võ Công, phím K) · Z/X thuốc · T cưỡi thú · Tab đổi mục tiêu · F nói chuyện NPC · R tự động · Enter chat · I/C/M/J/G/O/L mở bảng · Esc đóng</div>
         <div><b>Mobile:</b> Joystick trái để di chuyển · Nút ⚔️ (giữ để đánh liên tục) · 3 nút kỹ năng · ❤️💧 thuốc · 🎯 đổi mục tiêu · Chạm NPC/quái để tương tác</div>
@@ -1166,6 +1167,7 @@
     $('au-svol').oninput = e => { GameAudio.set('sfxVol', +e.target.value); GameAudio.sfx('coin', 150); };
     $('set-online').onclick = () => UI.openPanel('online');
     $('set-news').onclick = () => UI.openPanel('changelog');
+    body.querySelectorAll('[data-uipref]').forEach(b => b.onclick = () => { if (b.dataset.uipref === Input.uiPref) return; try { localStorage.setItem('vl_ui', b.dataset.uipref); } catch (e) {} location.reload(); });
     const sa = $('set-admin'); if (sa) sa.onclick = () => emit('adminPanel');
     $('set-logout').onclick = () => G.logout();
     const pc = $('pw-change');

@@ -4,6 +4,13 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Quái không còn kẹt map: biết tìm đường vòng qua tường, cây, nhà khi đuổi người chơi và khi quay về chỗ cũ; lang thang qua lại quanh bãi; tự gỡ khi bị kẹt lâu.',
+      'Sửa lỗi máy tính (nhất là máy có màn cảm ứng / bút) bị hiện giao diện điện thoại: nay nhận diện theo thiết bị trỏ chính. Nếu vẫn nhận nhầm, game sẽ hỏi chuyển khi thấy bạn dùng chuột; hoặc tự chọn ở Cài đặt → Giao diện (Tự động / Máy tính / Điện thoại).'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Boss thế giới Nhạc Vũ Mục Anh Linh không còn rơi thẳng Võ Mục Di Thư. Thay vào đó chỉ người gây sát thương cao nhất (top 1) nhận Võ Mục Tâm Pháp – bí quyết lĩnh hội Di Thư. Mỗi lần nghiền ngẫm Di Thư cần tiêu hao 1 Tâm Pháp (vẫn tối đa 5 lần mỗi nhân vật). Di Thư vẫn có được bằng cách gom đủ 7 tàn quyển.'
     ]
   },

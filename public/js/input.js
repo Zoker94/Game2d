@@ -1,14 +1,31 @@
 // Điều khiển: bàn phím, joystick ảo cảm ứng, tay cầm (Gamepad API), xoay ngang trên mobile.
 (function () {
-  const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || matchMedia('(pointer: coarse)').matches;
+  // giao diện điện thoại hay máy tính: theo thiết bị trỏ CHÍNH (máy tính có màn cảm ứng / bút nhưng dùng chuột vẫn là giao diện máy tính).
+  // Người chơi có thể ép chọn trong Cài đặt (vl_ui: auto | pc | mobile).
+  let uiPref = 'auto'; try { uiPref = localStorage.getItem('vl_ui') || 'auto'; } catch (e) {}
+  const mobileUA = /Android|iPhone|iPad|iPod|Mobile|Silk|Kindle/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const autoTouch = mobileUA || matchMedia('(pointer: coarse)').matches || (navigator.maxTouchPoints > 0 && !matchMedia('(any-pointer: fine)').matches);
+  const isTouch = uiPref === 'mobile' || (uiPref !== 'pc' && autoTouch);
   if (isTouch) document.body.classList.add('touch');
+  // tự nhận ra đang dùng chuột trên giao diện điện thoại: hỏi một lần có muốn chuyển sang giao diện máy tính
+  if (isTouch && uiPref === 'auto') {
+    let mv = 0;
+    const onMouse = e => {
+      if (e.pointerType !== 'mouse' || ++mv < 25) return;
+      window.removeEventListener('pointermove', onMouse);
+      if (window.G && G.modal) G.modal('Bạn đang dùng chuột – chuyển sang giao diện máy tính cho gọn?\n(Có thể đổi lại trong Cài đặt → Giao diện)', [
+        { t: '🖥️ Chuyển', cls: 'primary', fn: () => { try { localStorage.setItem('vl_ui', 'pc'); } catch (e2) {} location.reload(); } },
+        { t: 'Giữ nguyên', fn: () => { try { localStorage.setItem('vl_ui', 'mobile'); } catch (e2) {} } }]);
+    };
+    window.addEventListener('pointermove', onMouse);
+  }
 
   const app = document.getElementById('app');
   const listeners = {};
   const emit = (ev, ...a) => (listeners[ev] || []).forEach(f => f(...a));
 
   const Input = {
-    isTouch,
+    isTouch, uiPref,
     rotated: false,
     inGame: false,
     keys: {},

@@ -23,6 +23,7 @@ const { Story } = require('./story');
 const { Duel } = require('./duel');
 const { DaiHoi, DAIHOI_MAP } = require('./daihoi');
 const { isOwner } = require('../owner');
+const SOLID_SET = new Set(require('../data/maps').SOLID);
 const { SOCKETS: GEM_SOCKETS, parseGem } = require('../data/gems');
 // tổng điểm tiềm năng / võ học: theo cấp + điểm quản trị viên tặng thêm (c.attrBonus, c.spBonus)
 const attrTotalOf = c => attrTotal(c.level) + Math.max(0, c.attrBonus | 0);
@@ -1907,6 +1908,17 @@ class World {
     this.tickDots(mon, now);
     if (mon.dead) return;
     if (isCC(mon, now)) { mon.moving = false; return; }
+    // chống kẹt: 3 giây muốn đi mà không nhích được -> bỏ mục tiêu, tìm đường về; kẹt lâu nữa thì đặt lại về chỗ sinh
+    if (this.tickN % 10 === 0) {
+      const lp = mon._lp || (mon._lp = { x: mon.x, y: mon.y, t: now, n: 0 });
+      if (Math.hypot(mon.x - lp.x, mon.y - lp.y) > 6 || (!mon.target && !mon.wander)) { lp.x = mon.x; lp.y = mon.y; lp.t = now; lp.n = 0; }
+      else if (now - lp.t > 3000) {
+        lp.t = now; lp.n++;
+        mon.path = null; mon.target = null;
+        if (lp.n >= 3 && !mon.boss && mon.sp) { const pos = this.randomSpotNear(m.def, mon.sp.x + 0.5, mon.sp.y + 0.5, mon.sp.r); mon.x = mon.hx = pos.x; mon.y = mon.hy = pos.y; mon.wander = null; lp.n = 0; }
+        else mon.wander = { x: mon.hx, y: mon.hy };
+      }
+    }
     const slowed = mon.st && (mon.st.slow || 0) > now;
     const tpl = mon.tpl;
     let target = mon.target ? this.players.get(mon.target) : null;
@@ -1935,7 +1947,7 @@ class World {
     if (target) {
       const d = U.dist(target, mon);
       const range = tpl.range || 60;
-      if (d > range * 0.85) this.moveToward(mon, target.x, target.y, spd, m.def);
+      if (d > range * 0.85) this.navigate(mon, target.x, target.y, spd, m.def, now);
       if (d <= range + 10 && now >= mon.nextAtk) {
         mon.nextAtk = now + (mon.boss ? 1100 : 1300) * (slowed ? 1.4 : 1);
         let { dmg, crit } = this.calcDamage(tpl.atk, mon.boss ? 10 : 3, target.stats.def, 1, 0.5);
@@ -1958,12 +1970,19 @@ class World {
       mon.dir = Math.abs(dx) > Math.abs(target.y - mon.y) ? (dx > 0 ? 2 : 1) : (target.y > mon.y ? 0 : 3);
     } else {
       if (!mon.wander && now > mon.nextWander) {
+        // lang thang qua lại quanh chỗ sinh: chọn điểm trống, đi thẳng tới được (thử vài lần)
         const r = (mon.sp ? mon.sp.r : 3) * TILE;
-        mon.wander = { x: mon.hx + U.rand(-r, r), y: mon.hy + U.rand(-r, r) };
-        mon.nextWander = now + U.rand(2500, 6000);
+        for (let k = 0; k < 6 && !mon.wander; k++) {
+          const wx = mon.hx + U.rand(-r, r), wy = mon.hy + U.rand(-r, r);
+          if (!isSolidAt(m.def, wx, wy) && this.clearLine(m.def, mon.x, mon.y, wx, wy)) mon.wander = { x: wx, y: wy };
+        }
+        if (!mon.wander && Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > TILE) mon.wander = { x: mon.hx, y: mon.hy };   // không có chỗ thoáng: về chỗ sinh
+        mon.nextWander = now + U.rand(2000, 5000);
       }
       if (mon.wander) {
-        const arrived = this.moveToward(mon, mon.wander.x, mon.wander.y, spd * 0.5, m.def);
+        const home = mon.wander.x === mon.hx && mon.wander.y === mon.hy;
+        const arrived = home ? this.navigate(mon, mon.wander.x, mon.wander.y, spd * (Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > LEASH_R * 0.5 ? 1 : 0.5), m.def, now)
+          : this.moveToward(mon, mon.wander.x, mon.wander.y, spd * 0.5, m.def);
         if (arrived) mon.wander = null;
       }
       // hồi máu khi không giao chiến; boss phải 30 giây không ai đánh mới hồi
@@ -1972,6 +1991,70 @@ class World {
         if (mon.boss && mon.hp >= mon.maxHp) mon.dmgBy.clear();   // hồi đầy: bảng sát thương làm lại từ đầu
       }
     }
+  }
+
+  // ---------- Quái tìm đường: đi thẳng nếu không vướng, vướng thì tìm đường vòng (BFS trên lưới ô) ----------
+  clearLine(map, x0, y0, x1, y1) {
+    const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 16);
+    for (let i = 1; i <= n; i++) { const t = i / n; if (isSolidAt(map, x0 + (x1 - x0) * t, y0 + (y1 - y0) * t)) return false; }
+    return true;
+  }
+  findPath(map, x0, y0, x1, y1, maxNodes = 3000) {
+    const W = map.w, H = map.h, N = W * H, T = map.tiles;
+    const free = (x, y) => x >= 0 && y >= 0 && x < W && y < H && !SOLID_SET.has(T[y * W + x]);
+    const sx = Math.floor(x0 / TILE), sy = Math.floor(y0 / TILE);
+    let gx = Math.floor(x1 / TILE), gy = Math.floor(y1 / TILE);
+    if (!free(gx, gy)) {   // đích nằm trong vật cản: lấy ô trống gần nhất
+      let best = null;
+      for (let r = 1; r <= 2 && !best; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (!best && free(gx + dx, gy + dy)) best = [gx + dx, gy + dy];
+      if (!best) return null;
+      [gx, gy] = best;
+    }
+    if (!map._nav || map._nav.prev.length !== N) map._nav = { prev: new Int32Array(N), seen: new Uint32Array(N), gen: 0 };
+    const nav = map._nav, gen = ++nav.gen, start = sy * W + sx, goal = gy * W + gx;
+    const q = [start]; nav.seen[start] = gen; nav.prev[start] = -1;
+    const D = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+    let found = false;
+    for (let h = 0; h < q.length && h < maxNodes; h++) {
+      const cur = q[h];
+      if (cur === goal) { found = true; break; }
+      const cx = cur % W, cy = (cur - cx) / W;
+      for (const [dx, dy] of D) {
+        const nx = cx + dx, ny = cy + dy;
+        if (!free(nx, ny) || (dx && dy && (!free(cx + dx, cy) || !free(cx, cy + dy)))) continue;   // không cắt góc tường
+        const ni = ny * W + nx;
+        if (nav.seen[ni] === gen) continue;
+        nav.seen[ni] = gen; nav.prev[ni] = cur; q.push(ni);
+      }
+    }
+    if (!found) return null;
+    const pts = [];
+    for (let i = goal; i !== start && i >= 0; i = nav.prev[i]) pts.push({ x: (i % W + 0.5) * TILE, y: (Math.floor(i / W) + 0.5) * TILE });
+    pts.reverse();
+    // kéo thẳng đường: bỏ các điểm giữa khi nhìn thấy điểm sau
+    const out = []; let fx = x0, fy = y0;
+    for (let i = 0; i < pts.length; i++) {
+      if (i + 1 < pts.length && this.clearLine(map, fx, fy, pts[i + 1].x, pts[i + 1].y)) continue;
+      out.push(pts[i]); fx = pts[i].x; fy = pts[i].y;
+    }
+    return out;
+  }
+  // đi tới (tx, ty): trả về true khi tới nơi hoặc không còn đường
+  navigate(mon, tx, ty, spd, map, now) {
+    if (this.clearLine(map, mon.x, mon.y, tx, ty)) { mon.path = null; return this.moveToward(mon, tx, ty, spd, map); }
+    const gk = Math.floor(tx / TILE) + ',' + Math.floor(ty / TILE);
+    if (!mon.path || !mon.path.length || mon.pathGoal !== gk || now - mon.pathAt > 1500) {
+      if (now < (mon.pathRetry || 0)) return this.moveToward(mon, tx, ty, spd, map);
+      mon.path = this.findPath(map, mon.x, mon.y, tx, ty); mon.pathGoal = gk; mon.pathAt = now;
+      if (!mon.path) { mon.pathRetry = now + 2000; return true; }
+    }
+    while (mon.path.length > 1 && this.clearLine(map, mon.x, mon.y, mon.path[1].x, mon.path[1].y)) mon.path.shift();
+    const wp = mon.path[0];
+    if (Math.hypot(wp.x - mon.x, wp.y - mon.y) < 8) { mon.path.shift(); if (!mon.path.length) return this.moveToward(mon, tx, ty, spd, map); }
+    const w = mon.path[0], wander = mon.wander;
+    this.moveToward(mon, w.x, w.y, spd, map);
+    mon.wander = wander;   // moveToward xoá điểm lang thang khi bị chặn – đang đi theo đường vòng thì giữ lại
+    return false;
   }
 
   moveToward(mon, tx, ty, spd, map) {
