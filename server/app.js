@@ -374,6 +374,7 @@ io.on('connection', socket => {
   on('sellMany', inGame(d => world.sellMany(player, d && d.uids)));
   on('enhance', inGame(d => world.enhance(player, d || {})));
   on('gem', inGame(d => world.gems.action(player, d)));
+  on('inherit', inGame(d => world.inherit(player, d || {})));
   on('mount', inGame(d => d && world.mountAction(player, d)));
   on('dragon', inGame(d => d && world.selectDragon(player, d.el)));
   on('skillOp', inGame(d => d && world.skillAction(player, d)));

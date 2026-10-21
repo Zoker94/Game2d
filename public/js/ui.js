@@ -1294,6 +1294,39 @@
     $('panel-title').textContent = d.name;
     UI.refreshPanel();
   };
+  // ---------- Kế thừa trang bị (Thợ Rèn) ----------
+  function inheritCost(plus, tier) {
+    const E = G.data.enhance; let g = 0;
+    for (let k = 0; k < plus; k++) g += E.cost[k][tier].gold;
+    return Math.round(g * 0.2 / 100) * 100;
+  }
+  function inheritHtml() {
+    const me = G.me, IT = G.data.items, SK = (G.data.gems && G.data.gems.sockets) || {};
+    const all = [...Object.values(me.equip).filter(Boolean).map(e => Object.assign({ equipped: 1 }, e)), ...me.inv.filter(s => IT[s.id] && IT[s.id].type === 'equip')];
+    const src = all.find(x => x.uid === panelState.inhFrom), dst = src && all.find(x => x.uid === panelState.inhTo);
+    const gemsOf = s => (s.gems || []).filter(Boolean);
+    const row = (s, attr, on, note) => `<button class="inh-it ${on ? 'on' : ''}" ${attr}="${s.uid}"><img src="${iconUrl(s.id)}" width="34" height="34"><span class="inh-n">${itemName(s.id)}${s.plus ? ` <b class="inh-p">+${s.plus}</b>` : ''}${gemsOf(s).length ? ` <small>💎${gemsOf(s).length}</small>` : ''}<small>${note}</small></span></button>`;
+    const slotName = s => (G.data.slots[IT[s.id].slot] || '');
+    const srcs = all.filter(s => (s.plus || 0) > 0 || gemsOf(s).length);
+    let h = `<div class="small muted">Chuyển cấp cường hóa (và đá khảm) từ trang bị cũ sang trang bị mới <b>cùng loại</b>, bậc bằng hoặc cao hơn. Không tốn đá, không thất bại; phí bằng 20% số lượng đã tốn để cường hóa tới cấp đó. Món cũ về +0.</div>`;
+    h += `<h4 class="inh-h">① Trang bị cũ (cho)</h4><div class="inh-list">${srcs.map(s => row(s, 'data-inh-from', src && s.uid === src.uid, `${slotName(s)} · Bậc ${IT[s.id].tier}${s.equipped ? ' · đang mặc' : ''}`)).join('') || '<span class="muted small">Chưa có trang bị nào đã cường hóa / khảm đá.</span>'}</div>`;
+    if (src) {
+      const is = IT[src.id];
+      const dsts = all.filter(s => s.uid !== src.uid && IT[s.id].slot === is.slot && IT[s.id].tier >= is.tier);
+      h += `<h4 class="inh-h">② Trang bị mới (nhận) – ${esc(slotName(src))}</h4><div class="inh-list">${dsts.map(s => row(s, 'data-inh-to', dst && s.uid === dst.uid, `Bậc ${IT[s.id].tier} · Cấp ${IT[s.id].lv || 1}${s.equipped ? ' · đang mặc' : ''}`)).join('') || '<span class="muted small">Không có trang bị cùng loại, bậc bằng hoặc cao hơn trong túi.</span>'}</div>`;
+    }
+    if (src && dst) {
+      const id = IT[dst.id], pa = src.plus || 0, pb = dst.plus || 0, plusMove = pa > pb;
+      const useGems = panelState.inhGems !== false && gemsOf(src).length > 0;
+      const holes = SK[id.rarity] || 1, free = holes - gemsOf(dst).length;
+      const cost = plusMove ? inheritCost(pa, id.tier) : 0, ok = (plusMove || useGems) && me.gold >= cost;
+      h += `<div class="inh-box"><div class="inh-arrow">${itemName(src.id)} <b class="inh-p">+${pa}</b> <span>➜</span> ${itemName(dst.id)} <b class="inh-p">+${plusMove ? pa : pb}</b></div>
+        <div class="small">${plusMove ? `Món mới: +${pb} → <b>+${pa}</b> · Món cũ: +${pa} → +0` : `<span class="warn">Món mới đã có cường hóa ≥ +${pa}, chỉ chuyển đá khảm.</span>`}</div>
+        ${gemsOf(src).length ? `<label class="small"><input type="checkbox" id="inh-gems" ${panelState.inhGems !== false ? 'checked' : ''}> Chuyển cả ${gemsOf(src).length} viên đá khảm (món mới còn ${Math.max(0, free)}/${holes} lỗ trống, mỗi loại 1 viên – viên không vừa ở lại món cũ)</label>` : ''}
+        <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn green" id="inh-go" ${ok ? '' : 'disabled'}>♻️ Kế thừa${cost ? ` (${fmt(cost)} 💰)` : ''}</button>${me.gold < cost ? '<span class="warn small">Không đủ lượng</span>' : ''}</div></div>`;
+    }
+    return h;
+  }
   function renderNpc(body) {
     const d = npcData;
     if (!d) return;
@@ -1302,7 +1335,7 @@
     const tl = [];
     if (d.shop) tl.push(['buy', '🛒 Mua'], ['sell', '💰 Bán']);
     if (d.knbShop) tl.push(['knb', '💎 Kỳ Trân'], ['sell', '💰 Bán']);
-    if (d.enhance) tl.push(['enhance', '🔨 Cường hóa'], ['gem', '💎 Khảm đá'], ['gemup', '🔥 Luyện đá']);
+    if (d.enhance) tl.push(['enhance', '🔨 Cường hóa'], ['inherit', '♻️ Kế thừa'], ['gem', '💎 Khảm đá'], ['gemup', '🔥 Luyện đá']);
     if (tl.length) html += tabs(tl, tab);
     if (tab === 'buy' || tab === 'knb') {
       const list = tab === 'buy' ? d.shop.map(x => ({ id: x.id, price: x.price })) : d.knbShop.map(x => ({ id: x.id, knb: x.knb }));
@@ -1324,6 +1357,8 @@
         invGrid(body, { filter: s => G.data.items[s.id].type === 'equip' }) + gemSocketBox();
     } else if (tab === 'gemup') {
       html += gemTutHtml() + gemUpgradeHtml();
+    } else if (tab === 'inherit') {
+      html += inheritHtml();
     } else if (d.teleports) {
       // nhóm: thành trấn rồi bãi luyện công; chưa đủ cấp thì mờ đi
       const row = t => { const lock = G.me.level < (t.minLv || 1); return `<div class="li ${lock ? 'locked' : ''}"><div class="grow"><b>${t.town ? '🏯 ' : ''}${esc(t.name)}</b><div class="sub">${t.sect ? esc(t.lv) + (t.mine ? ' · Bổn phái' : '') : 'Cấp ' + t.lv}${t.minLv > 1 ? ` · <span class="${lock ? 'warn' : ''}">Yêu cầu cấp ${t.minLv}</span>` : ''}</div></div><button class="btn small green" data-tp="${t.map}" ${G.map.id === t.map || lock ? 'disabled' : ''}>${t.price ? fmt(t.price) + ' 💰' : 'Miễn phí'}</button></div>`; };
@@ -1343,6 +1378,10 @@
     body.querySelectorAll('[data-gem-sock]').forEach(b => b.onclick = () => { const s = selectedItem(); if (s) emit('gem', { op: 'socket', uid: s.uid, gem: b.dataset.gemSock, npc: d.id }); });
     body.querySelectorAll('[data-gem-unsock]').forEach(b => b.onclick = () => { const s = selectedItem(); if (s) emit('gem', { op: 'unsocket', uid: s.uid, idx: +b.dataset.gemUnsock, npc: d.id }); });
     body.querySelectorAll('[data-gem-up]').forEach(b => b.onclick = () => emit('gem', { op: 'upgrade', gem: b.dataset.gemUp, n: +b.dataset.n || 1, npc: d.id }));
+    body.querySelectorAll('[data-inh-from]').forEach(b => b.onclick = () => { panelState.inhFrom = b.dataset.inhFrom; panelState.inhTo = null; G.sfx('click'); UI.refreshPanel(); });
+    body.querySelectorAll('[data-inh-to]').forEach(b => b.onclick = () => { panelState.inhTo = b.dataset.inhTo; G.sfx('click'); UI.refreshPanel(); });
+    { const g = $('inh-gems'); if (g) g.onchange = () => { panelState.inhGems = g.checked; UI.refreshPanel(); }; }
+    { const go = $('inh-go'); if (go) go.onclick = () => { emit('inherit', { from: panelState.inhFrom, to: panelState.inhTo, npc: d.id, gems: panelState.inhGems !== false }); panelState.inhFrom = panelState.inhTo = null; }; }
     if (tab === 'sell') bindQuickSell(body);
   }
   // ---------- Bán nhanh: lọc theo phẩm chất hoặc chọn nhiều món rồi bán một lần ----------

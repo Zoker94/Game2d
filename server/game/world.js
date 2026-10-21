@@ -23,6 +23,7 @@ const { Story } = require('./story');
 const { Duel } = require('./duel');
 const { DaiHoi, DAIHOI_MAP } = require('./daihoi');
 const { isOwner } = require('../owner');
+const { SOCKETS: GEM_SOCKETS, parseGem } = require('../data/gems');
 // tổng điểm tiềm năng / võ học: theo cấp + điểm quản trị viên tặng thêm (c.attrBonus, c.spBonus)
 const attrTotalOf = c => attrTotal(c.level) + Math.max(0, c.attrBonus | 0);
 const spTotalOf = c => skillPointsTotal(c.level) + Math.max(0, c.spBonus | 0);
@@ -1521,6 +1522,55 @@ class World {
     p.socket.emit('enhanceResult', { uid, plus: target.plus || 0, result });
     this.fx(p.mapId, { t: result === 'ok' ? 'levelup' : 'death', id: p.id, x: p.x, y: p.y, small: true });
     this.db.log('enhance', `${c.name} cường hóa ${it.name} +${plus}→+${target.plus} (${result})`, { user: p.userId });
+    this.db.markDirty();
+  }
+
+  // ---------- Kế thừa trang bị: chuyển cấp cường hoá (và đá khảm) từ món cũ sang món mới cùng loại ----------
+  // Phí = 20% số lượng đã tốn để cường hoá tới cấp đó (tính theo bậc của món mới), không tốn đá, không thất bại.
+  inheritCost(plus, tier) {
+    let g = 0;
+    for (let k = 0; k < plus; k++) g += enhanceCost(k, tier).gold;
+    return Math.round(g * 0.2 / 100) * 100;
+  }
+  inherit(p, { from, to, npc: npcId, gems: moveGems } = {}) {
+    const npc = this.nearNpc(p, npcId || 'tho_ren');
+    if (!npc || !npc.enhance) return this.toast(p, 'Hãy đến gặp Thợ Rèn để kế thừa trang bị', 'error');
+    if (p.trade) return this.toast(p, 'Đang giao dịch, không thể kế thừa', 'error');
+    const c = p.c, find = uid => typeof uid === 'string' && (c.inv.find(x => x.uid === uid) || Object.values(c.equip).find(e => e && e.uid === uid));
+    const a = find(from), b = find(to);
+    if (!a || !b || a === b) return;
+    const ia = ITEMS[a.id], ib = ITEMS[b.id];
+    if (!ia || !ib || ia.type !== 'equip' || ib.type !== 'equip') return;
+    if (ia.slot !== ib.slot) return this.toast(p, 'Chỉ kế thừa giữa hai trang bị cùng loại (vũ khí sang vũ khí, giáp sang giáp...)', 'error');
+    if (ib.tier < ia.tier) return this.toast(p, 'Món nhận kế thừa phải cùng bậc hoặc bậc cao hơn món cũ', 'error');
+    const pa = a.plus || 0, pb = b.plus || 0, plusMove = pa > pb;
+    const freeGems = (a.gems || []).filter(Boolean);
+    const gemMove = !!moveGems && freeGems.length > 0;
+    if (!plusMove && !gemMove) return this.toast(p, 'Món cũ không có gì để kế thừa (cấp cường hoá phải cao hơn món mới)', 'error');
+    const cost = plusMove ? this.inheritCost(pa, ib.tier) : 0;
+    if (c.gold < cost) return this.toast(p, `Cần ${cost.toLocaleString('vi-VN')} lượng`, 'error');
+    c.gold -= cost;
+    const parts = [];
+    if (plusMove) { b.plus = pa; a.plus = 0; parts.push(`cường hoá +${pa}`); }
+    if (gemMove) {
+      // đá khảm: chuyển vào lỗ trống của món mới, mỗi loại 1 viên; viên không vừa giữ lại trên món cũ
+      const n = GEM_SOCKETS[ib.rarity] || 1, tg = (b.gems || []).slice(0, n);
+      while (tg.length < n) tg.push(null);
+      const keep = [];
+      let moved = 0;
+      for (const g of a.gems || []) {
+        if (!g) continue;
+        const ty = parseGem(g) && parseGem(g).type, idx = tg.indexOf(null);
+        if (idx >= 0 && !tg.some(x => x && parseGem(x).type === ty)) { tg[idx] = g; moved++; } else keep.push(g);
+      }
+      b.gems = tg; a.gems = keep;
+      if (moved) parts.push(`${moved} viên đá khảm`);
+    }
+    this.recalc(p); p.dirtyMe = true;
+    this.toast(p, `♻️ Kế thừa thành công: ${ib.name} nhận ${parts.join(' và ') || 'không thay đổi'}${cost ? ` (−${cost.toLocaleString('vi-VN')} lượng)` : ''}`, 'reward');
+    if (plusMove && pa >= 12) this.features.announce(`♻️ ${c.name} kế thừa cường hoá +${pa} sang [${ib.name}]!`);
+    this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y, small: true });
+    this.db.log('enhance', `${c.name} kế thừa ${ia.name} +${pa} → ${ib.name} (${parts.join(', ')}, ${cost} lượng)`, { user: p.userId });
     this.db.markDirty();
   }
 

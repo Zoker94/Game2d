@@ -4,6 +4,12 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Kế thừa trang bị (Thợ Rèn → tab ♻️ Kế thừa): chuyển cấp cường hóa từ trang bị cũ sang trang bị mới cùng loại, bậc bằng hoặc cao hơn – lên cấp đổi đồ mới không phải đập lại từ đầu. Có thể chuyển cả đá khảm. Không tốn đá, không thất bại; phí bằng 20% số lượng đã tốn để cường hóa tới cấp đó. Món cũ về +0.'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Phông chữ mới Be Vietnam Pro hiển thị dấu tiếng Việt sắc nét cho toàn bộ giao diện, tên nhân vật, số sát thương; tiêu đề dùng phông có chân Playfair Display.',
       'Bong bóng lời thoại trên đầu nhân vật vẽ lại như truyện tranh: nền giấy kem, đuôi cong chỉ vào người nói, bật nảy khi xuất hiện, chữ hiện dần như đang nói, nhãn kênh (Thế giới / Bang / Mật); nhiều người nói cùng lúc thì bong bóng xếp chồng, không đè nhau.',
       'Nút Ngồi thiền (phím Y, trên điện thoại là nút cạnh nút cưỡi thú): ngồi ngay ở bất cứ đâu khi không giao chiến – hồi máu / nội lực nhanh hơn; trong thành vẫn lĩnh ngộ thêm kinh nghiệm. Di chuyển, ra chiêu hoặc bị tấn công sẽ đứng dậy.',
