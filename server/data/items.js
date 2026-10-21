@@ -30,6 +30,11 @@ function slotStats(slot, t) {
   return {};
 }
 
+// Hệ trang bị (mỗi món một hệ, gắn khi nhận đồ): Ngoại công cộng Sức Mạnh, Nội công cộng Nội Công.
+// Mặc đúng hệ đang tu thì điểm này còn tăng % sát thương võ công của hệ (như điểm tiềm năng).
+const BR_ATTR = { ngoai: 'str', noi: 'ene' };
+const brPoints = (it, plus) => Math.round((1 + it.tier * 1.2) * RARITY[it.rarity].mult * (1 + (plus || 0) * 0.04));
+
 const ITEMS = {};
 
 // Trang bị
@@ -152,4 +157,4 @@ for (const g of require('./gems').gemItems()) ITEMS[g.id] = g;
 
 function equipId(slot, t, rarity) { return `${slot}_${t}_${rarity}`; }
 
-module.exports = { ITEMS, RARITY, SLOTS, TIERS, equipId, CLASS_WEAPON };
+module.exports = { ITEMS, RARITY, SLOTS, TIERS, equipId, CLASS_WEAPON, BR_ATTR, brPoints };

@@ -777,7 +777,7 @@ class World {
     const isPlayer = !!t.c, fx = p.stats.fx || {};
     // hệ võ công: điểm thuộc tính chính tăng sát thương võ công; nội công xuyên một phần phòng thủ
     const bb = p.c ? BRANCH_BONUS[branchOf(p.c)] : null;
-    if (bb) mult *= 1 + ((p.c.attr && p.c.attr[bb.attr]) | 0) * bb.per;
+    if (bb) mult *= 1 + (((p.c.attr && p.c.attr[bb.attr]) | 0) + ((p.stats.gearAttr && p.stats.gearAttr[bb.attr]) | 0)) * bb.per;   // điểm tiềm năng + điểm từ trang bị cùng hệ
     const def = (isPlayer ? t.stats.def : t.tpl.def) * (1 - (fx.pierce || 0) / 100) * (1 - (bb ? bb.pierce : 0));
     let { dmg, crit } = this.calcDamage(p.stats.atk * 1.6, p.stats.crit, def, mult, 0.35, 1.75 + (fx.critdmg || 0) / 100);
     const [em, ek] = elemMult(p.stats.el, isPlayer ? t.stats.del : t.tpl.el);
@@ -1305,8 +1305,8 @@ class World {
     if (it.cls && it.cls !== c.cls) return this.toast(p, `${it.name} là vũ khí của ${CLASSES[it.cls].name}, không dùng được`, 'error');
     c.inv.splice(i, 1);
     const prev = c.equip[it.slot];
-    c.equip[it.slot] = { uid: s.uid, id: s.id, plus: s.plus || 0, el: s.el, fx: s.fx, gems: s.gems };
-    if (prev) c.inv.push({ uid: prev.uid, id: prev.id, qty: 1, plus: prev.plus || 0, el: prev.el, fx: prev.fx, gems: prev.gems });
+    c.equip[it.slot] = { uid: s.uid, id: s.id, plus: s.plus || 0, el: s.el, fx: s.fx, gems: s.gems, br: s.br };
+    if (prev) c.inv.push({ uid: prev.uid, id: prev.id, qty: 1, plus: prev.plus || 0, el: prev.el, fx: prev.fx, gems: prev.gems, br: prev.br });
     this.recalc(p);
     if (it.slot === 'weapon') { this.progressTutorial(p, 'equip'); this.story.on(p, 'equip'); }
     this.db.markDirty();
@@ -1316,7 +1316,7 @@ class World {
     if (!e || !e.id) return;
     if (U.freeSlots(c) < 1) return this.toast(p, 'Túi đồ đầy', 'error');
     delete c.equip[slot];
-    c.inv.push({ uid: e.uid, id: e.id, qty: 1, plus: e.plus || 0, el: e.el, fx: e.fx, gems: e.gems });
+    c.inv.push({ uid: e.uid, id: e.id, qty: 1, plus: e.plus || 0, el: e.el, fx: e.fx, gems: e.gems, br: e.br });
     this.recalc(p);
   }
   discard(p, uid) {
@@ -1427,7 +1427,7 @@ class World {
     p.dirtyMe = true;
   }
 
-  buy(p, { npc: npcId, id, qty, knb }) {
+  buy(p, { npc: npcId, id, qty, knb, br }) {
     const npc = this.nearNpc(p, npcId);
     if (!npc) return this.toast(p, 'Hãy lại gần NPC hơn', 'error');
     qty = U.clamp(qty | 0, 1, 999);
@@ -1441,6 +1441,12 @@ class World {
       this.toast(p, '🎁 Nhận Thẻ Đổi Tên miễn phí (lần đầu). Vào túi đồ → Sử dụng để đổi tên.', 'reward');
       p.dirtyMe = true; this.db.markDirty(); return;
     }
+    // trang bị mua ở tiệm: chọn hệ Ngoại công / Nội công (mặc định theo hệ đang tu)
+    if (it.type === 'equip') c._brPick = br === 'noi' || br === 'ngoai' ? br : branchOf(c);
+    try { this.buyPay(p, npc, it, id, qty, knb); } finally { delete c._brPick; }
+  }
+  buyPay(p, npc, it, id, qty, knb) {
+    const c = p.c;
     if (knb) {
       const entry = (npc.knbShop || []).find(x => x.id === id);
       if (!entry) return;
@@ -1563,6 +1569,23 @@ class World {
     this.fx(p.mapId, { t: result === 'ok' ? 'levelup' : 'death', id: p.id, x: p.x, y: p.y, small: true });
     this.db.log('enhance', `${c.name} cường hóa ${it.name} +${plus}→+${target.plus} (${result})`, { user: p.userId });
     this.db.markDirty();
+  }
+
+  // đổi hệ trang bị (Ngoại công <-> Nội công) tại Thợ Rèn: phí theo giá món đồ
+  flipBranchCost(it) { return Math.max(500, Math.round(it.price * 0.25 / 100) * 100); }
+  flipBranch(p, { uid, npc: npcId } = {}) {
+    const npc = this.nearNpc(p, npcId || 'tho_ren');
+    if (!npc || !npc.enhance) return this.toast(p, 'Hãy đến gặp Thợ Rèn để đổi hệ trang bị', 'error');
+    if (p.trade) return;
+    const c = p.c, s = typeof uid === 'string' && (c.inv.find(x => x.uid === uid) || Object.values(c.equip).find(e => e && e.uid === uid));
+    const it = s && ITEMS[s.id];
+    if (!it || it.type !== 'equip') return;
+    const cost = this.flipBranchCost(it);
+    if (c.gold < cost) return this.toast(p, `Cần ${cost.toLocaleString('vi-VN')} lượng`, 'error');
+    c.gold -= cost;
+    s.br = s.br === 'noi' ? 'ngoai' : 'noi';
+    this.recalc(p); p.dirtyMe = true; this.db.markDirty();
+    this.toast(p, `🔄 ${it.name} đổi sang hệ ${s.br === 'noi' ? 'Nội công' : 'Ngoại công'} (−${cost.toLocaleString('vi-VN')} lượng)`, 'reward');
   }
 
   // ---------- Kế thừa trang bị: chuyển cấp cường hoá (và đá khảm) từ món cũ sang món mới cùng loại ----------

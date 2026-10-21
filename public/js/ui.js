@@ -175,13 +175,24 @@
   }, true);
   function restoreCmp() { if (cmpKey) showKey(cmpKey); else hideCmp(); }
 
+  // hệ trang bị: Ngoại công (+Sức Mạnh) / Nội công (+Nội Công) – công thức trùng server/data/items.js brPoints
+  const BR_INFO = { ngoai: { name: 'Ngoại công', attr: 'str', an: 'Sức Mạnh', ch: '外' }, noi: { name: 'Nội công', attr: 'ene', an: 'Nội Công', ch: '內' } };
+  const brPts = (it, plus) => Math.round((1 + it.tier * 1.2) * G.data.rarity[it.rarity].mult * (1 + (plus || 0) * 0.04));
+  function brLine(it, inst, plus) {
+    if (it.type !== 'equip') return '';
+    const b = inst && BR_INFO[inst.br];
+    if (!b) return '<div class="small muted">Hệ: Ngoại công hoặc Nội công (chọn khi mua ở tiệm)</div>';
+    const match = inst.br === G.me.branch;
+    return `<div class="small br-line br-${inst.br}">${inst.br === 'noi' ? '🔮' : '⚔️'} Hệ ${b.name}: <b>+${brPts(it, plus)} ${b.an}</b> <span class="${match ? 'ok' : 'muted'}">${match ? '· hợp hệ đang tu (tăng % sát thương võ công)' : '· khác hệ đang tu (chỉ cộng chỉ số)'}</span></div>`;
+  }
+  const brBadge = s => { const b = s && BR_INFO[s.br]; return b ? `<span class="brb brb-${s.br}" title="Hệ ${b.name}">${b.ch}</span>` : ''; };
   function itemDesc(id, plus, inst) {
     const it = G.data.items[resolveId(id)];
     const rar = G.data.rarity[it.rarity];
     const clsLine = it.cls ? `<div class="small" style="color:${it.cls === G.me.cls ? '#4ade80' : '#ff6a6a'}">${it.wtype} · Chỉ dành cho ${G.data.classes[it.cls].name}</div>` : it.generic ? '<div class="small muted">Nhặt / mua sẽ thành vũ khí môn phái của bạn</div>' : '';
     return `<h4>${itemName(id, plus)}</h4>
       <div class="muted small">${it.type === 'equip' ? G.data.slots[it.slot] + ' · ' : ''}<span style="color:${rar.color}">${rar.name}</span> · Yêu cầu cấp ${it.lv || 1}</div>${clsLine}
-      ${statsHtml(it, plus)}${elemFxHtml(it, inst)}${it.desc ? `<div class="small">${esc(it.desc)}</div>` : ''}
+      ${statsHtml(it, plus)}${brLine(it, inst, plus)}${elemFxHtml(it, inst)}${it.desc ? `<div class="small">${esc(it.desc)}</div>` : ''}
       <div class="small muted">Giá bán: ${fmt(Math.floor(it.price * 0.3 * (1 + (plus || 0) * 0.2)))} lượng</div>`;
   }
 
@@ -651,7 +662,7 @@
         const e = me.equip[s];
         const it = e && G.data.items[e.id];
         const ph = !it && placeholderIcon(s);
-        html += `<div class="slot ${it ? 'r-' + it.rarity : 'empty-eq'} ${panelState.sel === 'eq:' + s ? 'sel' : ''}" data-eq="${s}">${it ? `${plusRing(e.plus | 0)}<img src="${iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}` : `${ph ? `<img src="${ph}" class="ic ph" alt="">` : ''}<span class="lbl">${G.data.slots[s]}</span>`}</div>`;
+        html += `<div class="slot ${it ? 'r-' + it.rarity : 'empty-eq'} ${panelState.sel === 'eq:' + s ? 'sel' : ''}" data-eq="${s}">${it ? `${plusRing(e.plus | 0)}<img src="${iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}${brBadge(e)}` : `${ph ? `<img src="${ph}" class="ic ph" alt="">` : ''}<span class="lbl">${G.data.slots[s]}</span>`}</div>`;
       }
       html += '</div>';
     }
@@ -660,7 +671,7 @@
     for (const s of inv) {
       const it = G.data.items[s.id];
       const cant = it.lv > me.level;
-      html += `<div class="slot r-${it.rarity} ${cant ? 'cant' : ''} ${panelState.sel === s.uid ? 'sel' : ''} ${opts.mark && opts.mark.has(s.uid) ? 'marked' : ''}" data-uid="${s.uid}">${plusRing(s.plus | 0)}<img src="${iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}</div>`;
+      html += `<div class="slot r-${it.rarity} ${cant ? 'cant' : ''} ${panelState.sel === s.uid ? 'sel' : ''} ${opts.mark && opts.mark.has(s.uid) ? 'marked' : ''}" data-uid="${s.uid}">${plusRing(s.plus | 0)}<img src="${iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}${it.type === 'equip' ? brBadge(s) : ''}</div>`;
     }
     for (let i = me.inv.length; i < (me.invMax || 48) && !opts.filter; i++) html += '<div class="slot" style="opacity:.35"></div>';
     html += '</div></div>';
@@ -718,7 +729,11 @@
     if (!s.equipped && (s.id.startsWith('hp') || s.id.startsWith('mp'))) btns += `<button class="btn small" data-act="quick">Đặt thuốc nhanh</button>`;
     if (ctx.shop && !s.equipped) btns += `<button class="btn small" data-act="sell">Bán (${fmt(Math.floor(it.price * 0.3 * (1 + (s.plus || 0) * 0.2)) * s.qty)})</button>`;
     let extra = '';
-    if (ctx.enhance && it.type === 'equip') extra = enhanceBox(s, it);
+    if (ctx.enhance && it.type === 'equip') {
+      extra = enhanceBox(s, it);
+      const to = s.br === 'noi' ? 'ngoai' : 'noi', fc = Math.max(500, Math.round(it.price * 0.25 / 100) * 100);   // trùng World.flipBranchCost
+      btns += `<button class="btn small" data-act="flipbr" title="Đổi hệ trang bị">🔄 Đổi sang ${BR_INFO[to].name} (${fmt(fc)} 💰)</button>`;
+    }
     if (!s.equipped) btns += `<button class="btn small" data-act="discard">Vứt bỏ</button>`;
     return `<div class="item-detail">${itemDesc(s.id, s.plus, s)}${compareMini(s)}${s.qty > 1 ? `<div class="small">Số lượng: ${s.qty}</div>` : ''}<div class="row" style="justify-content:flex-start;margin-top:6px">${btns}</div>${extra}</div>`;
   }
@@ -819,6 +834,7 @@
       if (a === 'usen') { const inp = body.querySelector('#use-n'), n = Math.max(1, Math.min(200, s.qty, +inp.value || 1)); panelState.useN = n; emit('useItem', { uid: s.uid, n }); }
       if (a === 'useall') emit('useItem', { uid: s.uid, n: Math.min(200, s.qty) });
       if (a === 'unequip') emit('unequip', { slot: s.slot });
+      else if (a === 'flipbr') emit('flipBranch', { uid: s.uid, npc: npcData && npcData.id });
       if (a === 'quick') emit('setQuick', { kind: s.id.startsWith('mp') ? 'mp' : 'hp', id: s.id });
       if (a === 'sell') emit('sell', { uid: s.uid, qty: s.qty });
       if (a === 'enhance') { emit('enhance', { uid: s.uid, npc: npcData && npcData.id, insure: !!panelState.insure }); return; }
@@ -875,10 +891,10 @@
     const A = G.data.attrs; if (!A) return '';
     const free = (me.attrFree || 0) - pendSum(), br = me.branch, BRN = { noi: 'Nội công', ngoai: 'Ngoại công' };
     const rows = Object.entries(A).map(([k, a]) => {
-      const cur = (me.attr && me.attr[k]) | 0, pd = attrPend[k] | 0, max = pd + free;
+      const cur = (me.attr && me.attr[k]) | 0, pd = attrPend[k] | 0, max = pd + free, gear = (me.stats.gearAttr && me.stats.gearAttr[k]) | 0;
       // thuộc tính hợp hệ: thêm % sát thương võ công
-      const bl = a.branch ? `<div class="sub ${a.branch === br ? 'at-on' : 'muted'}">+${(a.skill * 100).toLocaleString('vi-VN')}% sát thương võ công khi tu ${BRN[a.branch]}${a.branch === br ? ` · hiện tại <b>+${Math.round((cur + pd) * a.skill * 100)}%</b>` : ' (bạn đang tu ' + BRN[br] + ')'}</div>` : '';
-      return `<div class="at-row"><div class="at-ic">${a.icon}</div><div class="at-main"><b>${a.name}</b> <span class="at-val">${cur}${pd ? ` <i>+${pd}</i>` : ''}</span><div class="sub">Mỗi điểm: ${a.desc}</div>${bl}</div>
+      const bl = a.branch ? `<div class="sub ${a.branch === br ? 'at-on' : 'muted'}">+${(a.skill * 100).toLocaleString('vi-VN')}% sát thương võ công khi tu ${BRN[a.branch]}${a.branch === br ? ` · hiện tại <b>+${Math.round((cur + pd + gear) * a.skill * 100)}%</b>` : ' (bạn đang tu ' + BRN[br] + ')'}</div>` : '';
+      return `<div class="at-row"><div class="at-ic">${a.icon}</div><div class="at-main"><b>${a.name}</b> <span class="at-val">${cur}${pd ? ` <i>+${pd}</i>` : ''}${gear ? ` <small class="at-gear">+${gear} từ trang bị</small>` : ''}</span><div class="sub">Mỗi điểm: ${a.desc}</div>${bl}</div>
         <div class="at-btns"><button class="btn small" data-at="${k}" data-n="-1" ${pd ? '' : 'disabled'}>−</button><input class="at-in" type="number" inputmode="numeric" min="0" max="${max}" value="${pd || ''}" placeholder="0" data-atin="${k}" ${max ? '' : 'disabled'}><button class="btn small" data-at="${k}" data-n="1" ${free > 0 ? '' : 'disabled'}>+1</button><button class="btn small" data-at="${k}" data-n="10" ${free > 0 ? '' : 'disabled'}>+10</button><button class="btn small" data-at="${k}" data-n="999999" ${free > 0 ? '' : 'disabled'}>Hết</button></div></div>`;
     }).join('');
     const sug = G.data.attrSuggest && G.data.attrSuggest[br];
@@ -1380,6 +1396,8 @@
     if (tl.length) html += tabs(tl, tab);
     if (tab === 'buy' || tab === 'knb') {
       const list = tab === 'buy' ? d.shop.map(x => ({ id: x.id, price: x.price })) : d.knbShop.map(x => ({ id: x.id, knb: x.knb }));
+      const hasEq = list.some(x => G.data.items[x.id] && G.data.items[x.id].type === 'equip'), bbr = panelState.buyBr || G.me.branch;
+      if (hasEq) html += `<div class="buy-br">Mua trang bị hệ: <button class="${bbr === 'ngoai' ? 'on' : ''}" data-bbr="ngoai">⚔️ Ngoại công (+Sức Mạnh)</button><button class="${bbr === 'noi' ? 'on' : ''}" data-bbr="noi">🔮 Nội công (+Nội Công)</button></div>`;
       html += `<div class="small muted">💰 ${fmt(G.me.gold)} · 💎 ${fmt(G.me.knb)}</div><div class="list">` + list.map(x => {
         const it = G.data.items[x.id];
         const cant = it.lv > G.me.level;
@@ -1412,9 +1430,10 @@
     bindTabs(body);
     body.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => {
       const q = body.querySelector(`[data-qty="${b.dataset.buy}"]`);
-      emit('buy', { npc: d.id, id: b.dataset.buy, qty: q ? +q.value : 1, knb: tab === 'knb' });
+      emit('buy', { npc: d.id, id: b.dataset.buy, qty: q ? +q.value : 1, knb: tab === 'knb', br: panelState.buyBr || G.me.branch });
     });
     body.querySelectorAll('[data-tp]').forEach(b => b.onclick = () => emit('teleport', { map: b.dataset.tp }));
+    body.querySelectorAll('[data-bbr]').forEach(b => b.onclick = () => { panelState.buyBr = b.dataset.bbr; G.sfx('click'); UI.refreshPanel(); });
     if (tab === 'sell' || tab === 'enhance' || tab === 'gem') bindInv(body, { shop: tab === 'sell', enhance: tab === 'enhance' });
     body.querySelectorAll('[data-gem-sock]').forEach(b => b.onclick = () => { const s = selectedItem(); if (s) emit('gem', { op: 'socket', uid: s.uid, gem: b.dataset.gemSock, npc: d.id }); });
     body.querySelectorAll('[data-gem-unsock]').forEach(b => b.onclick = () => { const s = selectedItem(); if (s) emit('gem', { op: 'unsocket', uid: s.uid, idx: +b.dataset.gemUnsock, npc: d.id }); });

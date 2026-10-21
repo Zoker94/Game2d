@@ -1,6 +1,6 @@
 const { CLASSES, branchOf } = require('../data/classes');
 const { scaleSkill } = require('../data/skillbooks');
-const { ITEMS } = require('../data/items');
+const { ITEMS, BR_ATTR, brPoints } = require('../data/items');
 const { mountStats } = require('../data/mounts');
 const { rollAffixes, elementBonus, CAP } = require('../data/affixes');
 const { ATTRS } = require('../data/attrs');
@@ -62,6 +62,12 @@ function newCharacter(name, cls) {
   return c;
 }
 
+// hệ của trang bị mới nhận: mua ở tiệm thì theo lựa chọn (c._brPick), rơi ra thì 65% hợp hệ đang tu
+function rollBranch(c) {
+  if (c && BR_ATTR[c._brPick]) return c._brPick;
+  const mine = c && c.cls ? branchOf(c) : 'ngoai';
+  return Math.random() < 0.65 ? mine : (mine === 'noi' ? 'ngoai' : 'noi');
+}
 function isStack(id) { const it = ITEMS[id]; return it && it.type !== 'equip'; }
 
 // binh khí chung -> vũ khí môn phái của nhân vật
@@ -78,6 +84,7 @@ function migrateItems(c) {
     if (nid !== s.id) s.id = nid;
     const it = ITEMS[s.id];
     if (it && it.type === 'equip' && !s.el) Object.assign(s, rollAffixes(it));
+    if (it && it.type === 'equip' && !BR_ATTR[s.br]) s.br = branchOf(c);   // đồ cũ chưa có hệ: theo hệ chủ nhân đang tu
   };
   (c.inv || []).forEach(fix);
   Object.values(c.equip || {}).forEach(fix);
@@ -95,7 +102,11 @@ function addItem(c, id, qty = 1, plus = 0, extra = null) {
     return true;
   }
   if (c.inv.length + qty > invSize(c)) return false;
-  for (let i = 0; i < qty; i++) c.inv.push(Object.assign({ uid: newUid(), id, qty: 1, plus }, extra || rollAffixes(it)));
+  for (let i = 0; i < qty; i++) {
+    const s = Object.assign({ uid: newUid(), id, qty: 1, plus }, extra || rollAffixes(it));
+    if (it.type === 'equip' && !BR_ATTR[s.br]) s.br = rollBranch(c);
+    c.inv.push(s);
+  }
   return true;
 }
 function freeSlots(c) { return invSize(c) - c.inv.length; }
@@ -144,6 +155,7 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
     }
   }
   const addStat = (k, v) => { if (k === 'hp') s.maxHp += v; else if (k === 'mp') s.maxMp += v; else s[k] += v; };
+  const gearAttr = {};
   for (const slot in c.equip) {
     const e = c.equip[slot];
     const it = e && ITEMS[e.id];
@@ -153,6 +165,9 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
     // ngũ hành: mỗi món cộng chỉ số theo hệ
     if (e.el) { elCount[e.el] = (elCount[e.el] || 0) + 1; const eb = elementBonus(e.el, it.tier); for (const k in eb) addStat(k, eb[k]); }
     for (const [k, v] of e.fx || []) fx[k] = (fx[k] || 0) + v;
+    // hệ trang bị: cộng điểm Sức Mạnh / Nội Công như điểm tiềm năng
+    const ba = BR_ATTR[e.br];
+    if (ba) { const n = brPoints(it, e.plus); gearAttr[ba] = (gearAttr[ba] || 0) + n; for (const [sk, v] of Object.entries(ATTRS[ba].per)) addStat(sk === 'dodge' ? 'crit' : sk, sk === 'dodge' ? 0 : v * n); }
     // đá khảm: cộng chỉ số, đá cấp 4-5 thêm dòng hiệu ứng
     for (const gid of e.gems || []) {
       const gb = gid && gemBonus(gid);
@@ -170,7 +185,7 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
     else if (setEl === 'thuy') { s.maxMp *= 1 + bonus; s.def *= 1 + bonus / 2; } else if (setEl === 'hoa') s.crit += bonus * 50; else if (setEl === 'tho') s.def *= 1 + bonus;
   }
   for (const k in fx) fx[k] = Math.round(Math.min(CAP[k] || 100, fx[k]) * 10) / 10;
-  s.fx = fx; s.set = setN >= 3 ? { el: setEl, n: setN } : null;
+  s.fx = fx; s.set = setN >= 3 ? { el: setEl, n: setN } : null; s.gearAttr = gearAttr;
   s.el = c.equip.weapon && c.equip.weapon.el || null;      // hệ tấn công
   s.del = c.equip.armor && c.equip.armor.el || null;       // hệ phòng thủ
   if (fx.regen) s.regen += fx.regen / 100;
