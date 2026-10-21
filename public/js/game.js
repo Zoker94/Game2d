@@ -940,6 +940,58 @@
   }
   function blocked(x, y) { return solidAt(x - 12, y - 6) || solidAt(x + 12, y - 6) || solidAt(x - 12, y + 6) || solidAt(x + 12, y + 6) || solidAt(x, y); }
 
+  // ---------- Tìm đường cho nhân vật (bấm đi tới, tự động đánh, tự nhặt đồ): vướng vật cản thì đi vòng ----------
+  function clearPath(x0, y0, x1, y1) {
+    const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 12);
+    for (let i = 1; i <= n; i++) { const t = i / n; if (blocked(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t)) return false; }
+    return true;
+  }
+  let navBuf = null;
+  function findPath(x0, y0, x1, y1) {
+    const m = G.map, W = m.w, H = m.h, N = W * H;
+    const free = (x, y) => x >= 0 && y >= 0 && x < W && y < H && !G.solid.has(m.tiles[y * W + x]);
+    const sx = Math.floor(x0 / TILE), sy = Math.floor(y0 / TILE);
+    let gx = Math.floor(x1 / TILE), gy = Math.floor(y1 / TILE);
+    if (!free(gx, gy)) {
+      let best = null;
+      for (let r = 1; r <= 2 && !best; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (!best && free(gx + dx, gy + dy)) best = [gx + dx, gy + dy];
+      if (!best) return null; [gx, gy] = best;
+    }
+    if (!navBuf || navBuf.prev.length !== N) navBuf = { prev: new Int32Array(N), seen: new Uint32Array(N), gen: 0 };
+    const gen = ++navBuf.gen, start = sy * W + sx, goal = gy * W + gx, q = [start];
+    navBuf.seen[start] = gen; navBuf.prev[start] = -1;
+    let found = false;
+    for (let h = 0; h < q.length && h < 6000; h++) {
+      const cur = q[h]; if (cur === goal) { found = true; break; }
+      const cx = cur % W, cy = (cur - cx) / W;
+      for (let k = 0; k < 8; k++) {
+        const dx = [1, -1, 0, 0, 1, 1, -1, -1][k], dy = [0, 0, 1, -1, 1, -1, 1, -1][k], nx = cx + dx, ny = cy + dy;
+        if (!free(nx, ny) || (dx && dy && (!free(cx + dx, cy) || !free(cx, cy + dy)))) continue;
+        const ni = ny * W + nx; if (navBuf.seen[ni] === gen) continue;
+        navBuf.seen[ni] = gen; navBuf.prev[ni] = cur; q.push(ni);
+      }
+    }
+    if (!found) return null;
+    const pts = [];
+    for (let i = goal; i !== start && i >= 0; i = navBuf.prev[i]) pts.push({ x: (i % W + 0.5) * TILE, y: (Math.floor(i / W) + 0.5) * TILE });
+    return pts.reverse();
+  }
+  const nav = { key: null, pts: null, t: 0 };
+  // điểm cần hướng tới lúc này để đi tới goal (điểm trung gian của đường vòng, hoặc chính goal nếu đi thẳng được)
+  function steer(goal, now) {
+    const s = G.self;
+    if (clearPath(s.x, s.y, goal.x, goal.y)) { nav.pts = null; return goal; }
+    const key = Math.floor(goal.x / TILE) + ',' + Math.floor(goal.y / TILE);
+    if (!nav.pts || nav.key !== key || now - nav.t > 1200) {
+      if (nav.key === key && nav.fail && now - nav.t < 1500) return goal;   // vừa tìm không ra: đừng tìm lại liên tục
+      nav.pts = findPath(s.x, s.y, goal.x, goal.y); nav.key = key; nav.t = now; nav.fail = !nav.pts;
+      if (!nav.pts) return goal;
+    }
+    while (nav.pts.length > 1 && clearPath(s.x, s.y, nav.pts[1].x, nav.pts[1].y)) nav.pts.shift();
+    if (nav.pts.length && Math.hypot(nav.pts[0].x - s.x, nav.pts[0].y - s.y) < 10) nav.pts.shift();
+    return nav.pts[0] || goal;
+  }
+
   function update(dt) {
     Input.pollGamepad();
     const now = performance.now();
@@ -982,9 +1034,9 @@
     if ((Input.attackHeld || Input.padAttack) && !dead && !cc) useSkill(0);
 
     if (!manual && G.moveTo && !cc) {
-      const dx = G.moveTo.x - s.x, dy = G.moveTo.y - s.y, d = Math.hypot(dx, dy);
-      if (d < 8) { G.moveTo = null; }
-      else v = { x: dx / d, y: dy / d };
+      const d = Math.hypot(G.moveTo.x - s.x, G.moveTo.y - s.y);
+      if (d < 8) { G.moveTo = null; nav.pts = null; }
+      else { const w = steer(G.moveTo, now), wx = w.x - s.x, wy = w.y - s.y, wd = Math.hypot(wx, wy) || 1; v = { x: wx / wd, y: wy / wd }; }
     }
     if (G.npcGoal) {
       const nx = (G.npcGoal.x + 0.5) * TILE, ny = (G.npcGoal.y + 0.5) * TILE;
@@ -994,7 +1046,12 @@
     if (pg && now - (G._pickT || 0) > 350) {
       const dr = G.drops.get(pg);
       if (!dr) { if (G.pickGoal === pg) G.pickGoal = null; }
-      else if (Math.hypot(dr.x - s.x, dr.y - s.y) < 44 && !dr.gold) { G.socket.emit('pickup', { id: pg }); G._pickT = now; if (G.pickGoal === pg) { G.pickGoal = null; G.moveTo = null; v = { x: 0, y: 0 }; } }
+      else if (Math.hypot(dr.x - s.x, dr.y - s.y) < 44 && !dr.gold) {
+        // đã gọi nhặt mà 1,5 giây sau vẫn còn (đồ của người khác, túi đầy...) thì bỏ qua món này một lúc, không đứng nhặt mãi
+        if (G._pickTry && G._pickTry.id === pg && now - G._pickTry.t > 1500) { G.dropSkip.set(pg, now + 20000); G._pickTry = null; if (G.autoDrop === pg) { G.autoDrop = null; G.moveTo = null; } }
+        else { if (!G._pickTry || G._pickTry.id !== pg) G._pickTry = { id: pg, t: now }; G.socket.emit('pickup', { id: pg }); G._pickT = now; }
+        if (G.pickGoal === pg) { G.pickGoal = null; G.moveTo = null; v = { x: 0, y: 0 }; }
+      }
     }
     if (manual) G.pickGoal = null;
     const casting = G.castLockUntil && performance.now() < G.castLockUntil;   // đánh xa: đứng yên lúc vận chiêu
@@ -1041,7 +1098,8 @@
   const RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
   G.dropSkip = new Map();
   function pickableDrop(now, home, cfg) {
-    const s = G.self, invFull = G.me.inv.length >= 48;
+    const s = G.self, invFull = G.me.inv.length >= (G.me.invMax || 48);   // túi đã mở rộng thì tính theo số ô thật
+    if (invFull && now - (G._fullWarn || 0) > 90000) { G._fullWarn = now; UI.toast('🎒 Túi đồ đầy – tự động chỉ nhặt ngân lượng và vật phẩm cộng dồn được. Hãy bán / vứt bớt đồ.', 'error'); }
     let best = null, bd = 460;
     for (const dr of G.drops.values()) {
       if (dr.o && dr.o !== G.user.id && dr.ownUntil > now) continue;          // đồ của người khác

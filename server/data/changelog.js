@@ -4,6 +4,13 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Tự động / bấm đi tới: nhân vật biết tìm đường vòng qua tường, cây, nhà thay vì đâm vào vật cản rồi đứng kẹt; đuổi quái và chạy tới nhặt đồ phía sau vật cản được.',
+      'Sửa tự nhặt đồ: túi đã mở rộng (trên 48 ô) vẫn nhặt bình thường; món nhặt không được (đồ của người khác, túi đầy) sẽ được bỏ qua thay vì đứng nhặt mãi; túi đầy thì có thông báo.'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Quái không còn kẹt map: biết tìm đường vòng qua tường, cây, nhà khi đuổi người chơi và khi quay về chỗ cũ; lang thang qua lại quanh bãi; tự gỡ khi bị kẹt lâu.',
       'Sửa lỗi máy tính (nhất là máy có màn cảm ứng / bút) bị hiện giao diện điện thoại: nay nhận diện theo thiết bị trỏ chính. Nếu vẫn nhận nhầm, game sẽ hỏi chuyển khi thấy bạn dùng chuột; hoặc tự chọn ở Cài đặt → Giao diện (Tự động / Máy tính / Điện thoại).'
     ]
