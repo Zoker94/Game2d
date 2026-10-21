@@ -995,7 +995,7 @@ class World {
           const p = this.players.get(uid);
           if (!p || d / total < 0.005) return;
           const items = [['stone2', i < 10 ? 3 : 1], ['boss_chest', i < 3 ? 3 : i < 10 ? 2 : 1]];
-          if (i === 0) items.push(['vm_dithu', 1]);
+          if (i < 3 && tpl.id === 'boss_vumuc') items.push(['vm_tamphap', 1]);   // anh linh Nhạc Vũ Mục truyền Tâm Pháp (cách học Di Thư), không rơi thẳng Di Thư
           if (i < 3) items.push(['insure', 1]);
           this.giveReward(p, { items, knb: i < 3 ? [200, 120, 80][i] : i < 10 ? 40 : 15 }, `Hạng ${i + 1} đánh ${tpl.name}`);
         });
@@ -1260,7 +1260,9 @@ class World {
     }
     if (e.vmStudy) {   // nghiền ngẫm binh thư: tăng chỉ số vĩnh viễn
       if ((c.vmb | 0) >= 5) return this.toast(p, 'Bạn đã lĩnh hội trọn vẹn Võ Mục Di Thư (5/5)', 'error');
+      if (!U.countItem(c, 'vm_tamphap')) return this.toast(p, 'Cần 1 Võ Mục Tâm Pháp mới lĩnh hội được Di Thư – hạ boss thế giới Nhạc Vũ Mục Anh Linh để nhận', 'error');
       U.removeByUid(c, uid, 1);
+      U.removeItemById(c, 'vm_tamphap', 1);
       c.vmb = (c.vmb | 0) + 1;
       this.recalc(p);
       this.toast(p, `Lĩnh hội Võ Mục Di Thư tầng ${c.vmb}/5: công, thủ, sinh lực +${c.vmb * 3}%`, 'reward');

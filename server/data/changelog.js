@@ -4,6 +4,12 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Boss thế giới Nhạc Vũ Mục Anh Linh không còn rơi thẳng Võ Mục Di Thư. Thay vào đó top 3 sát thương nhận Võ Mục Tâm Pháp – bí quyết lĩnh hội Di Thư. Mỗi lần nghiền ngẫm Di Thư cần tiêu hao 1 Tâm Pháp (vẫn tối đa 5 lần mỗi nhân vật). Di Thư vẫn có được bằng cách gom đủ 7 tàn quyển.'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Võ Mục Di Thư: mỗi nhân vật chỉ lĩnh hội tối đa 5 lần (mỗi lần +3% công / thủ / sinh lực, tổng +15%); học đủ thì sách thừa không bị trừ, có thể bán hoặc giao dịch. Số lần đã học hiện trong bảng Nhân vật và khi xem sách.'
     ]
   },

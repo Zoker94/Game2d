@@ -192,7 +192,7 @@
     const clsLine = it.cls ? `<div class="small" style="color:${it.cls === G.me.cls ? '#4ade80' : '#ff6a6a'}">${it.wtype} · Chỉ dành cho ${G.data.classes[it.cls].name}</div>` : it.generic ? '<div class="small muted">Nhặt / mua sẽ thành vũ khí môn phái của bạn</div>' : '';
     return `<h4>${itemName(id, plus)}</h4>
       <div class="muted small">${it.type === 'equip' ? G.data.slots[it.slot] + ' · ' : ''}<span style="color:${rar.color}">${rar.name}</span> · Yêu cầu cấp ${it.lv || 1}</div>${clsLine}
-      ${statsHtml(it, plus)}${brLine(it, inst, plus)}${elemFxHtml(it, inst)}${it.effect && it.effect.vmStudy ? `<div class="small ${(G.me.vmb | 0) >= 5 ? 'warn' : 'ok-t'}">📜 Đã lĩnh hội ${G.me.vmb | 0}/5 lần${(G.me.vmb | 0) >= 5 ? ' – đã đạt tối đa, không thể học thêm (có thể bán / giao dịch cho người khác)' : ''}</div>` : ''}${it.desc ? `<div class="small">${esc(it.desc)}</div>` : ''}
+      ${statsHtml(it, plus)}${brLine(it, inst, plus)}${elemFxHtml(it, inst)}${it.effect && it.effect.vmStudy ? `<div class="small ${(G.me.vmb | 0) >= 5 ? 'warn' : 'ok-t'}">📜 Đã lĩnh hội ${G.me.vmb | 0}/5 lần${(G.me.vmb | 0) >= 5 ? ' – đã đạt tối đa, không thể học thêm (có thể bán / giao dịch cho người khác)' : ''}</div>${(G.me.vmb | 0) < 5 ? (() => { const n = G.me.inv.filter(x => x.id === 'vm_tamphap').reduce((a, x) => a + x.qty, 0); return `<div class="small ${n ? 'ok-t' : 'warn'}">Cần 1 Võ Mục Tâm Pháp mỗi lần học (đang có ${n})</div>`; })() : ''}` : ''}${it.desc ? `<div class="small">${esc(it.desc)}</div>` : ''}
       <div class="small muted">Giá bán: ${fmt(Math.floor(it.price * 0.3 * (1 + (plus || 0) * 0.2)))} lượng</div>`;
   }
 
