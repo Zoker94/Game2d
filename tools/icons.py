@@ -463,6 +463,15 @@ def ticket(ic):
     ic.paint(ic.m_line([(40, 20), (40, 44)], 1.2), '#7a2010', None, edge=0, shine=0, alpha=0.7)
     ic.paint(ic.m_ell(24, 32, 8, 8), '#fff2a8', '#d09020'); ic.text('福', 24, 32, 9, '#b01818')
 
+def bag(ic):   # Thẻ Mở Rộng Hành Trang: túi gấm buộc dây, thêu chữ 囊 và dấu cộng
+    ic.paint(ic.m_poly([(14, 26), (50, 26), (56, 40), (54, 54), (44, 60), (20, 60), (10, 54), (8, 40)]), '#c0402a', '#4a0a08', ang=-60)
+    ic.paint(ic.m_poly([(20, 14), (44, 14), (50, 26), (14, 26)]), '#e06040', '#6a1a10', ang=-70)
+    ic.paint(ic.m_line([(14, 26), (50, 26)], 2.2), '#ffd040', '#a06010', edge=0, shine=0)
+    ic.paint(ic.m_line([(30, 26), (24, 34)], 1.4), '#ffd040', None, edge=0, shine=0)
+    ic.paint(ic.m_line([(34, 26), (40, 34)], 1.4), '#ffd040', None, edge=0, shine=0)
+    ic.paint(ic.m_ell(32, 44, 10, 10), '#fff2a8', '#c08a20'); ic.text('囊', 32, 44, 11, '#8a1010')
+    ic.paint(ic.m_ell(50, 16, 8, 8), '#5ad06a', '#0a5a1a'); ic.text('+', 50, 15.5, 12, '#ffffff')
+
 def lantern(ic):
     ic.paint(ic.m_line([(32, 2), (32, 10)], 1.4), '#3a2010', None, edge=0, shine=0)
     ic.paint(ic.m_rect(26, 9, 38, 13), *GOLD)
@@ -550,8 +559,9 @@ SIMPLE = {
     'book_ice': lambda ic: book(ic, ('#7ac8e8', '#1a4a6a'), '冰', emblem=elem_emblem('#9ae0ff', 'ice')),
     'stone': stone, 'stone2': lambda ic: stone(ic, True), 'insure': insure, 'food': food, 'blood': blood,
     'chest': chest, 'chest_gold': lambda ic: chest(ic, True), 'ticket': ticket, 'lantern': lantern, 'saddle': saddle, 'gold': gold_icon,
+    'bag': bag,
 }
-SIMPLE_GLOW = {'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040'}
+SIMPLE_GLOW = {'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'bag': '#ffd040'}
 
 def build():
     tiles, index = [], {}

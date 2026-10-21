@@ -615,6 +615,7 @@
     if (!e) return;
     const x = e.x, y = e.y - 70, near = Math.hypot(e.x - G.self.x, e.y - G.self.y);
     if (d.k === 'miss') { Overhead.add(x, y, 'Né!', 'status', '#bfe8ff'); return; }
+    if (d.k === 'reflect') { Overhead.add(x, y, 'Phản ' + d.v, 'status', '#e39bff'); e.hitAt = performance.now(); return; }   // sát thương phản đòn
     if (d.e === 1) Overhead.add(x, y - 16, 'Khắc!', 'status', '#ffd84a');
     else if (d.e === -1 && (d.id === G.you || near < 300)) Overhead.add(x, y - 16, 'Bị khắc', 'status', '#a0a0a0');
     if (d.k === 'heal' || d.k === 'mana') Overhead.add(x, y, d.v, d.k);

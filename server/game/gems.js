@@ -45,7 +45,7 @@ class Gems {
     gems[idx] = gem; t.gems = gems;
     this.w.recalc(p);
     this.w.toast(p, `💎 Đã khảm ${ITEMS[gem].name} vào ${it.name}`, 'reward');
-    if (g.lv >= 5) this.w.features.announce(`💎 ${c.name} khảm thành công ${ITEMS[gem].name} vào [${it.name}]!`);
+    if (g.lv >= 5) this.w.features.brag(`💎 ${c.name} khảm thành công ${ITEMS[gem].name} vào [${it.name}]!`);
     this.w.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y, small: true });
     if ((c.gemTut | 0) === 1) this.tutStep(p, 2);
     p.socket.emit('gemResult', { op: 'socket', ok: true });
@@ -91,7 +91,7 @@ class Gems {
     if (!ok && !fail) { if (U.countItem(c, gem) < need) this.w.toast(p, `Cần ${need} viên ${ITEMS[gem].name} để luyện`, 'error'); return; }
     const nx = ITEMS[G.gemId(g.type, g.lv + 1)];
     this.w.toast(p, ok ? `🔥 Luyện thành công ${ok} viên ${nx.name}${fail ? ` · thất bại ${fail} lần (vỡ ${fail} viên)` : ''}` : `💢 Luyện thất bại ${fail} lần, vỡ ${fail} viên ${ITEMS[gem].name}`, ok ? 'reward' : 'error');
-    if (ok && g.lv + 1 >= 5) this.w.features.announce(`🔥 ${c.name} luyện thành công ${nx.name}!`);
+    if (ok && g.lv + 1 >= 5) this.w.features.brag(`🔥 ${c.name} luyện thành công ${nx.name}!`);
     this.w.fx(p.mapId, { t: ok ? 'levelup' : 'death', id: p.id, x: p.x, y: p.y, small: true });
     if (ok && (c.gemTut | 0) === 2) this.tutStep(p, 3);
     p.socket.emit('gemResult', { op: 'upgrade', ok: ok > 0, n: ok, fail });

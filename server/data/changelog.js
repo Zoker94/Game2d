@@ -4,6 +4,16 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Sửa hiệu ứng trang bị khi PK: Phản Chấn trước đây gần như không phản được gì (bị giảm sát thương PK hai lần) – nay phản đúng % sát thương nhận vào và hiện chữ "Phản …" trên đầu kẻ ra đòn; Hút Máu trước đây hồi gấp nhiều lần sát thương gây ra – nay hồi đúng theo sát thương thật.',
+      'Lưu ý: Bạo Liệt (+% sát thương bạo kích) chỉ tăng sát thương của đòn bạo kích, tỉ lệ ra bạo kích vẫn theo chỉ số Chí mạng.',
+      'Bớt thông báo làm trôi kênh chat: chỉ khoe trang bị Truyền Kỳ (không còn báo nhặt đá, nguyên liệu, đồ VIP), cường hoá từ +12, tối đa 4 tin khoe mỗi phút. Tin hệ thống chỉ hiện ở tab Tất cả – tab Thế giới chỉ còn người chơi nói chuyện.',
+      'Túi đồ: nút 🧹 Sắp xếp (gộp chồng, trang bị tốt lên đầu) và 🗑️ Vứt nhanh (chạm chọn nhiều món, vứt một lần).',
+      'Vật phẩm mới: Thẻ Mở Rộng Hành Trang (+8 ô túi, tối đa 96 ô) – bán ở Kỳ Trân Các 50 💎.'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'Tự động nay hỗ trợ PK (tiện cho phái cận chiến): chọn một người chơi làm mục tiêu rồi bật Tự động – nhân vật tự đuổi theo và ra chiêu; khi tỷ võ luôn tự đánh đối thủ (kể cả trên Lôi Đài); mặc định tự đánh trả người chơi vừa tấn công mình. Tuỳ chọn thêm trong bảng Tự động: tự tấn công người chơi thù địch ở gần. Không bao giờ đánh người không thể tấn công (cùng bang, bản đồ an toàn, chế độ PK không cho phép).'
     ]
   },

@@ -86,6 +86,14 @@ class Features {
   get cfg() { return this.db.data.config; }
 
   // ---------------- Thông báo ----------------
+  // thông báo khoe thành tích (nhặt / mở rương / cường hoá…): tối đa 4 tin mỗi phút toàn máy chủ để kênh chat không bị trôi
+  brag(text) {
+    const now = Date.now();
+    this._brag = (this._brag || []).filter(t => now - t < 60000);
+    if (this._brag.length >= 4) return;
+    this._brag.push(now);
+    this.announce(text);
+  }
   announce(text, room) {
     const msg = { ch: 'sys', from: 'Hệ Thống', text, t: Date.now() };
     (room ? this.io.to(room) : this.io).emit('chat', msg);
@@ -268,7 +276,7 @@ class Features {
       this.w.giveReward(killer, reward, 'Bảo Rương');
       const e = this.events.treasure;
       if (e) e.chests--;
-      if (reward.items && ITEMS[reward.items[0][0]].rarity === 'epic') this.announce(`💰 ${killer.c.name} mở Bảo Rương nhận được [${ITEMS[reward.items[0][0]].name}]!`);
+      if (reward.items && ITEMS[reward.items[0][0]].rarity === 'legendary') this.brag(`💰 ${killer.c.name} mở Bảo Rương nhận được [${ITEMS[reward.items[0][0]].name}]!`);
     }
   }
 
@@ -347,7 +355,7 @@ class Features {
         const slots = ['weapon', 'helmet', 'armor', 'boots', 'ring', 'amulet'];
         const id = equipId(slots[U.randInt(0, 5)], Math.min(6, Math.floor(p.c.level / 10)), 'epic');
         this.w.giveReward(p, { items: [[id, 1]] }, 'Vòng Quay');
-        this.announce(`🎡 ${p.c.name} quay trúng [${ITEMS[id].name}] tại Vòng Quay May Mắn!`);
+        this.brag(`🎡 ${p.c.name} quay trúng [${ITEMS[id].name}] tại Vòng Quay May Mắn!`);
       } else this.w.giveReward(p, prize.r, 'Vòng Quay');
     }, 4200);
     this.questProgress(p, 'wheel', 1);

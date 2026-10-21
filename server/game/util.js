@@ -10,7 +10,8 @@ const { gemBonus } = require('../data/gems');
 const plusMult = plus => 1 + Math.min(plus, 10) * 0.12 + Math.max(0, plus - 10) * 0.25;
 
 const MAX_LEVEL = 99;
-const INV_SIZE = 48;
+const INV_SIZE = 48, INV_EXTRA_MAX = 48;   // túi gốc 48 ô, Thẻ Mở Rộng Hành Trang thêm tối đa 48 ô
+const invSize = c => INV_SIZE + Math.max(0, Math.min(INV_EXTRA_MAX, c.invExtra | 0));
 
 // kinh nghiệm lên cấp = KN một con quái cùng cấp × số quái cần hạ. Số quái tăng mạnh sau cấp 30 vì cấp cao
 // quái đông, chiêu diện rộng hạ rất nhanh (đo mô phỏng: ~200 con/giờ ở cấp 15-45, 1.500-3.700 con/giờ từ cấp 60).
@@ -89,15 +90,15 @@ function addItem(c, id, qty = 1, plus = 0, extra = null) {
   if (isStack(id)) {
     const s = c.inv.find(x => x.id === id);
     if (s) { s.qty += qty; return true; }
-    if (c.inv.length >= INV_SIZE) return false;
+    if (c.inv.length >= invSize(c)) return false;
     c.inv.push({ uid: newUid(), id, qty });
     return true;
   }
-  if (c.inv.length + qty > INV_SIZE) return false;
+  if (c.inv.length + qty > invSize(c)) return false;
   for (let i = 0; i < qty; i++) c.inv.push(Object.assign({ uid: newUid(), id, qty: 1, plus }, extra || rollAffixes(it)));
   return true;
 }
-function freeSlots(c) { return INV_SIZE - c.inv.length; }
+function freeSlots(c) { return invSize(c) - c.inv.length; }
 function countItem(c, id) { return c.inv.filter(x => x.id === id).reduce((s, x) => s + x.qty, 0); }
 function removeItemById(c, id, qty) {
   if (countItem(c, id) < qty) return false;
@@ -223,6 +224,6 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
 }
 
 module.exports = {
-  MAX_LEVEL, INV_SIZE, expNext, levelGapK, vnDate, vnDay, vnMinuteOfDay, rand, randInt, dist, clamp, newUid,
+  MAX_LEVEL, INV_SIZE, INV_EXTRA_MAX, invSize, expNext, levelGapK, vnDate, vnDay, vnMinuteOfDay, rand, randInt, dist, clamp, newUid,
   plusMult, newCharacter, addItem, resolveItem, migrateItems, freeSlots, countItem, removeItemById, removeByUid, calcStats, isStack
 };

@@ -534,8 +534,9 @@
   UI.chatMsg = function (m) {
     chatLog.push(m);
     if (chatLog.length > 200) chatLog.shift();
-    if (m.ch === 'sys' && /Boss|xuất hiện|Sự kiện|nhặt được|quay trúng|Đố Vui|Quản Trị|Top/.test(m.text)) UI.announce(m.text);
-    if (chatFilter === 'all' || chatFilter === m.ch || (m.ch === 'sys')) appendChat(m);
+    if (m.ch === 'sys' && chatLog.filter(x => x.ch === 'sys').length > 60) chatLog.splice(chatLog.findIndex(x => x.ch === 'sys'), 1);   // tin hệ thống không đẩy mất tin người chơi
+    if (m.ch === 'sys' && /Boss|xuất hiện|Sự kiện|Đố Vui|Quản Trị|Top/.test(m.text)) UI.announce(m.text);
+    if (chatFilter === 'all' || chatFilter === m.ch) appendChat(m);   // tin hệ thống chỉ hiện ở tab Tất cả, không làm trôi tab Thế giới
     if (m.ch === 'pm' && m.from !== (G.me && G.me.name)) UI.toast(`💌 ${m.from}: ${m.text}`, 'info');
   };
   function appendChat(m) {
@@ -549,7 +550,7 @@
     while (log.children.length > 150) log.firstChild.remove();
     if (atBottom || $('chat').classList.contains('collapsed')) log.scrollTop = log.scrollHeight;
   }
-  function renderChat() { $('chat-log').innerHTML = ''; chatLog.filter(m => chatFilter === 'all' || m.ch === chatFilter || m.ch === 'sys').forEach(appendChat); }
+  function renderChat() { $('chat-log').innerHTML = ''; chatLog.filter(m => chatFilter === 'all' || m.ch === chatFilter).forEach(appendChat); }
   UI.focusChat = function () { $('chat').classList.remove('collapsed'); $('chat-input').focus(); };
 
   UI.onEvents = function (d) {
@@ -640,7 +641,7 @@
       const cant = it.lv > me.level;
       html += `<div class="slot r-${it.rarity} ${cant ? 'cant' : ''} ${panelState.sel === s.uid ? 'sel' : ''} ${opts.mark && opts.mark.has(s.uid) ? 'marked' : ''}" data-uid="${s.uid}">${plusRing(s.plus | 0)}<img src="${iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}</div>`;
     }
-    for (let i = me.inv.length; i < 48 && !opts.filter; i++) html += '<div class="slot" style="opacity:.35"></div>';
+    for (let i = me.inv.length; i < (me.invMax || 48) && !opts.filter; i++) html += '<div class="slot" style="opacity:.35"></div>';
     html += '</div></div>';
     return html;
   }
@@ -651,13 +652,31 @@
     const s = me.inv.find(x => x.uid === sel);
     return s ? Object.assign({ equipped: false }, s) : null;
   }
+  // vứt nhanh: chạm chọn nhiều món rồi vứt một lần
+  const dropMark = new Set();
+  let dropMode = false;
   function renderInventory(body) {
     const me = G.me;
-    let html = `<div class="small muted" style="margin-bottom:6px">💰 ${fmt(me.gold)} lượng · 💎 ${fmt(me.knb)} Nguyên Bảo · Túi ${me.inv.length}/48 · Lực chiến <b style="color:#ffd76a">${fmt(me.stats.power)}</b></div>`;
-    html += invGrid(body);
-    html += itemActions();
+    for (const u of [...dropMark]) if (!me.inv.some(s => s.uid === u)) dropMark.delete(u);
+    let html = `<div class="small muted" style="margin-bottom:6px">💰 ${fmt(me.gold)} lượng · 💎 ${fmt(me.knb)} Nguyên Bảo · Túi ${me.inv.length}/${me.invMax || 48} · Lực chiến <b style="color:#ffd76a">${fmt(me.stats.power)}</b></div>`;
+    html += `<div class="inv-tools"><button class="btn small" id="inv-sort">🧹 Sắp xếp</button><button class="btn small ${dropMode ? 'red' : ''}" id="inv-drop">${dropMode ? '✕ Thoát vứt nhanh' : '🗑️ Vứt nhanh'}</button></div>`;
+    if (dropMode) html += `<div class="qs-box"><div class="small muted">Chạm vào các món muốn vứt để đánh dấu ✔. Đồ đang mặc không bị vứt. <a href="#" id="dm-common">Chọn đồ Thường</a> · <a href="#" id="dm-none">Bỏ chọn</a></div>
+      <button class="btn red qs-go" id="dm-go" ${dropMark.size ? '' : 'disabled'}>🗑️ Vứt ${dropMark.size} món</button></div>`;
+    html += invGrid(body, dropMode ? { mark: dropMark } : {});
+    if (!dropMode) html += itemActions();
     body.innerHTML = html;
     bindInv(body);
+    $('inv-sort').onclick = () => { emit('sortInv'); panelState.sel = null; G.sfx('click'); };
+    $('inv-drop').onclick = () => { dropMode = !dropMode; dropMark.clear(); panelState.sel = null; UI.refreshPanel(); };
+    if (!dropMode) return;
+    body.querySelectorAll('.inv-grid [data-uid]').forEach(el => el.onclick = () => { const u = el.dataset.uid; dropMark.has(u) ? dropMark.delete(u) : dropMark.add(u); G.sfx('click'); UI.refreshPanel(); });
+    $('dm-common').onclick = e => { e.preventDefault(); me.inv.forEach(s => { const it = G.data.items[s.id]; if (it.type === 'equip' && it.rarity === 'common' && !s.plus) dropMark.add(s.uid); }); UI.refreshPanel(); };
+    $('dm-none').onclick = e => { e.preventDefault(); dropMark.clear(); UI.refreshPanel(); };
+    $('dm-go').onclick = () => {
+      const list = me.inv.filter(s => dropMark.has(s.uid));
+      const rare = list.filter(s => { const it = G.data.items[s.id]; return it.rarity === 'epic' || it.rarity === 'legendary' || (s.plus || 0) >= 5; }).length;
+      G.modal(`Vứt bỏ ${list.length} món? Vật phẩm bị vứt sẽ mất hẳn.${rare ? `\n⚠️ Có ${rare} món VIP / Truyền Kỳ / đã cường hóa cao!` : ''}`, [{ t: '🗑️ Vứt', cls: 'primary', fn: () => { emit('discardMany', { uids: list.map(s => s.uid) }); dropMark.clear(); } }, { t: 'Hủy' }]);
+    };
   }
   function itemActions(ctx = {}) {
     const s = selectedItem();

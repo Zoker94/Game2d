@@ -229,7 +229,7 @@ class Escort {
     if (tier === 'vang') { const x = Math.random(); rare = x < 0.04 ? 'legendary' : x < 0.3 ? 'epic' : 'rare'; if (Math.random() < 0.2) reward.knb = 10; }
     if (rare) reward.items.push([equipId(slot, lvTier, rare), 1]);
     this.w.giveReward(p, reward, ITEMS['tieu_chest_' + tier].name);
-    if (rare === 'epic' || rare === 'legendary') this.w.features.announce(`🎁 ${p.c.name} mở ${ITEMS['tieu_chest_' + tier].name} nhận được [${ITEMS[equipId(slot, lvTier, rare)].name}]!`);
+    if (rare === 'legendary') this.w.features.brag(`🎁 ${p.c.name} mở ${ITEMS['tieu_chest_' + tier].name} nhận được [${ITEMS[equipId(slot, lvTier, rare)].name}]!`);
   }
 
   // ---------- đổi bản đồ: xe đi theo khi chủ qua cổng cùng xe ----------

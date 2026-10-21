@@ -231,7 +231,7 @@ class World {
     return {
       name: c.name, cls: c.cls, level: c.level, exp: c.exp, expNext: U.expNext(c.level),
       gold: c.gold, knb: c.knb, hp: c.hp, mp: c.mp, stats: p.stats,
-      inv: c.inv, equip: c.equip, kills: c.kills, pvpKills: c.pvpKills, bossKills: c.bossKills,
+      inv: c.inv, invMax: U.invSize(c), equip: c.equip, kills: c.kills, pvpKills: c.pvpKills, bossKills: c.bossKills,
       tutorial: this.tutorialView(c), gemTut: c.gemTut | 0, guild: g ? { id: g.id, name: g.name, role: g.members[p.userId] } : null,
       expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, owner: isOwner(p.user) ? 1 : 0, dead: p.dead,
@@ -350,7 +350,7 @@ class World {
       this.toast(p, `⭐ Có ${attrTotalOf(c) - attrUsed(c.attr)} điểm tiềm năng chưa cộng (bảng Nhân vật – phím C)`, 'reward');
       const unlocked = CLASSES[c.cls].skills.filter(s => s.lv === c.level);
       for (const s of unlocked) this.toast(p, `Lĩnh ngộ võ công mới: ${s.name}`, 'reward');
-      if (c.level % 10 === 0) this.features.announce(`⚔️ ${c.name} (${CLASSES[c.cls].name}) đã đạt cấp ${c.level}!`);
+      if (c.level % 10 === 0 && c.level >= 30) this.features.brag(`⚔️ ${c.name} (${CLASSES[c.cls].name}) đã đạt cấp ${c.level}!`);
       this.progressTutorial(p, 'level');
       this.story.on(p, 'level');
     }
@@ -783,12 +783,12 @@ class World {
     const [em, ek] = elemMult(p.stats.el, isPlayer ? t.stats.del : t.tpl.el);
     dmg *= em;
     dmg = Math.max(1, Math.round(dmg));
-    this.applyDamage(t, dmg, p, crit ? 'crit' : 'hit', ek);
+    const dealt = this.applyDamage(t, dmg, p, crit ? 'crit' : 'hit', ek) || 0;   // sát thương thật (sau giảm PK, né, giảm sát thương)
     if (t.dead || p.dead) return;
     // hiệu ứng trang bị khi đánh trúng
     for (const k of PROC_KEYS) if (fx[k] && Math.random() * 100 < fx[k]) this.applyStatus(t, AFFIX[k].st[0], AFFIX[k].st[1], p);
     if (fx.lifesteal) {
-      const heal = Math.round(dmg * fx.lifesteal / 100 * this.healMul(p));
+      const heal = Math.round(dealt * fx.lifesteal / 100 * this.healMul(p));   // hút máu theo sát thương thật, không theo số gốc trước khi giảm PK
       if (heal > 0 && p.c.hp < p.stats.maxHp) { p.c.hp = Math.min(p.stats.maxHp, p.c.hp + heal); p.dirtyMe = true; if (heal >= 5) this.io.to('map:' + p.mapId).emit('dmg', { id: p.id, v: heal, k: 'heal' }); }
     }
     if (fx.double && Math.random() * 100 < fx.double) {
@@ -799,9 +799,10 @@ class World {
 
   applyDamage(t, dmg, src, kind, ek = 0) {
     if (src && src.c && t && !t.c && !t.cart) src.lastHitMon = Date.now();   // thú cưng biết chủ đang giao chiến
-    if (t.dead) return;
-    if (t.c && src && t.dodgeUntil > Date.now()) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return; }   // đang lướt né
-    if (t.c && src && src.c && t !== src) {   // người chơi đánh người chơi: giảm mạnh để trận đấu kéo dài 1-2 phút
+    if (t.dead) return 0;
+    if (t.c && src && t.dodgeUntil > Date.now()) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return 0; }   // đang lướt né
+    const reflected = kind === 'reflect';   // sát thương phản đòn đã tính xong ở phía người bị đánh: không giảm thêm lần nữa
+    if (t.c && src && src.c && t !== src && !reflected) {   // người chơi đánh người chơi: giảm mạnh để trận đấu kéo dài 1-2 phút
       const now = Date.now();
       // giao tranh kéo dài quá 60 giây: sát thương tăng dần (+35% mỗi 10 giây) để trận đấu không kéo dài mãi
       for (const e of [t, src]) if (now - (e.lastPvp || 0) > PVP_COMBAT) e.pvpSince = now;
@@ -815,23 +816,24 @@ class World {
       const powK = U.clamp(Math.pow(((src.stats.gs || 0) + 6) / ((t.stats.gs || 0) + 6), 2), 0.4, 3);
       dmg = Math.max(1, Math.round(dmg * PVP_DMG * lvK * powK * (1 + long / 10000 * 0.35)));
     }
-    if (t.c && src && src.c && isRanged(src) && !isRanged(t)) dmg = Math.max(1, Math.round(dmg * MELEE_GUARD));   // cận chiến: hộ thể trước đòn đánh xa
+    if (t.c && src && src.c && !reflected && isRanged(src) && !isRanged(t)) dmg = Math.max(1, Math.round(dmg * MELEE_GUARD));   // cận chiến: hộ thể trước đòn đánh xa
     // phòng thủ từ trang bị (chỉ với đòn đánh trực tiếp, không áp cho độc/bỏng)
     if (t.c && src && (kind === 'hit' || kind === 'crit' || kind === 'hurt')) {
       const fx = t.stats.fx || {};
-      if (fx.dodge && Math.random() * 100 < fx.dodge) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return; }
+      if (fx.dodge && Math.random() * 100 < fx.dodge) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return 0; }
       if (fx.dmgred) dmg = Math.max(1, Math.round(dmg * (1 - fx.dmgred / 100)));
-      if (fx.reflect && !t._reflecting && !src.dead && src.mapId === t.mapId) {
+      if (fx.reflect && !src.dead && src.mapId === t.mapId) {
+        // phản đòn: tính trên sát thương thật đã nhận (sau giảm PK, giảm sát thương), trả thẳng cho kẻ ra tay
         const back = Math.round(dmg * fx.reflect / 100);
-        if (back > 0) { src._reflecting = true; this.applyDamage(src, back, t, 'hit'); src._reflecting = false; }
+        if (back > 0) this.applyDamage(src, back, t, 'reflect');
       }
     }
-    if (t.dead) return;
+    if (t.dead) return 0;
     const dm = ek ? { id: t.id, v: dmg, k: kind, e: ek } : { id: t.id, v: dmg, k: kind };
     if (t.c && src && src.c && src !== t) dm.s = src.id;   // người chơi đánh người chơi: cho biết ai ra tay (tự động đánh trả)
     this.io.to('map:' + (t.mapId)).emit('dmg', dm);
     if (t.c) { // người chơi
-      if (this.duel.onDamage(t, dmg, src)) return;   // đòn kết liễu trong trận thách đấu: dừng ở 1 máu
+      if (this.duel.onDamage(t, dmg, src)) return dmg;   // đòn kết liễu trong trận thách đấu: dừng ở 1 máu
       t.c.hp -= dmg; t.lastCombat = Date.now(); t.dirtyMe = true;
       if (t.recall) this.cancelRecall(t, 'Bị tấn công');
       if (t.c.hp <= 0) this.killPlayer(t, src);
@@ -849,6 +851,7 @@ class World {
       }
       if (t.hp <= 0) this.killMonster(t, src);
     }
+    return dmg;
   }
 
   killPlayer(t, src) {
@@ -1102,7 +1105,8 @@ class World {
     const it = ITEMS[U.resolveItem(p.c, dr.itemId)];
     this.toast(p, `Nhặt được ${it.name}${dr.qty > 1 ? ' x' + dr.qty : ''}`, 'item:' + it.rarity);
     if (it.rarity === 'epic' || it.rarity === 'legendary') {
-      this.features.announce(`✨ ${p.c.name} nhặt được [${it.name}] (${RARITY[it.rarity].name}) tại ${m.def.name}!`);
+      // chỉ khoe trang bị Truyền Kỳ (đá, nguyên liệu VIP rơi nhiều làm trôi kênh Thế Giới)
+      if (it.type === 'equip' && it.rarity === 'legendary') this.features.brag(`✨ ${p.c.name} nhặt được [${it.name}] (${RARITY[it.rarity].name}) tại ${m.def.name}!`);
       this.db.log('drop', `${p.c.name} nhặt ${it.name}`, { user: p.userId });
     }
     p.dirtyMe = true;
@@ -1175,6 +1179,13 @@ class World {
       this.toast(p, c.pet ? `🐉 Đã triệu hồi ${it.name}` : `Đã thu hồi ${it.name}`, c.pet ? 'reward' : 'info');
       p.dirtyMe = true; return;
     }
+    if (e.invExpand) {
+      if ((c.invExtra | 0) >= U.INV_EXTRA_MAX) return this.toast(p, `Túi đồ đã mở rộng tối đa ${U.INV_SIZE + U.INV_EXTRA_MAX} ô`, 'error');
+      U.removeByUid(c, uid, 1);
+      c.invExtra = Math.min(U.INV_EXTRA_MAX, (c.invExtra | 0) + e.invExpand);
+      this.toast(p, `🎒 Túi đồ mở rộng lên ${U.invSize(c)} ô`, 'reward');
+      p.dirtyMe = true; this.db.markDirty(); return;
+    }
     if (e.expBuff) { c.expBuffUntil = Math.max(Date.now(), c.expBuffUntil || 0) + e.expBuff; this.toast(p, 'Nhân đôi kinh nghiệm 30 phút!', 'reward'); }
     if (e.wheel) { c.wheel.extra = (c.wheel.extra || 0) + 1; this.toast(p, 'Nhận thêm 1 lượt Vòng Quay', 'reward'); }
     if (e.resetSkill) {
@@ -1225,7 +1236,7 @@ class World {
         c.mounts[mt.id] = { lv: 1, exp: 0 };
         if (!c.mount) c.mount = mt.id;
         this.toast(p, `Thuần phục thành công ${mt.name}! Nhấn T hoặc nút 🐎 để cưỡi.`, 'reward');
-        if (mt.rarity === 'epic' || mt.rarity === 'legendary') this.features.announce(`🐉 ${c.name} đã thuần phục thú cưỡi [${mt.name}]!`);
+        if (mt.rarity === 'legendary') this.features.brag(`🐉 ${c.name} đã thuần phục thú cưỡi [${mt.name}]!`);
       }
       this.recalc(p); this.db.markDirty();
       return;
@@ -1281,7 +1292,7 @@ class World {
     const reward = { items: [[id, 1]], gold: U.randInt(100, 500) * (tier + 1) * kind };
     if (Math.random() < 0.3) reward.items.push(['stone', U.randInt(1, 3)]);
     this.giveReward(p, reward, kind === 2 ? 'Rương Thủ Lĩnh' : 'Rương Bí Ẩn');
-    if (rar === 'epic' || rar === 'legendary') this.features.announce(`🎁 ${p.c.name} mở rương nhận được [${ITEMS[id].name}]!`);
+    if (rar === 'legendary') this.features.brag(`🎁 ${p.c.name} mở rương nhận được [${ITEMS[id].name}]!`);
   }
 
   equip(p, uid) {
@@ -1310,6 +1321,33 @@ class World {
   }
   discard(p, uid) {
     if (U.removeByUid(p.c, uid, (p.c.inv.find(x => x.uid === uid) || {}).qty || 1)) p.dirtyMe = true;
+  }
+  // vứt nhiều món một lần (đồ đang mặc không nằm trong túi nên không bị vứt)
+  discardMany(p, uids) {
+    if (!Array.isArray(uids) || p.trade) return;
+    let n = 0;
+    for (const uid of new Set(uids.slice(0, 200))) {
+      const s = typeof uid === 'string' && p.c.inv.find(x => x.uid === uid);
+      if (s && U.removeByUid(p.c, uid, s.qty)) n++;
+    }
+    if (!n) return;
+    this.toast(p, `🗑️ Đã vứt ${n} món`, 'info');
+    p.dirtyMe = true; this.db.markDirty();
+  }
+  // sắp xếp túi: trang bị (phẩm chất, bậc, cường hoá cao trước) → vật phẩm dùng → nguyên liệu; gộp các chồng cùng loại
+  sortInv(p) {
+    if (p.trade) return this.toast(p, 'Đang giao dịch, không thể sắp xếp túi', 'error');
+    const c = p.c, RK = { legendary: 0, epic: 1, rare: 2, common: 3 }, TK = { equip: 0, use: 1 };
+    const merged = [], byId = new Map();
+    for (const s of c.inv) {
+      const it = ITEMS[s.id]; if (!it) { merged.push(s); continue; }
+      if (U.isStack(s.id)) { const o = byId.get(s.id); if (o) { o.qty += s.qty; continue; } byId.set(s.id, s); }
+      merged.push(s);
+    }
+    const key = s => { const it = ITEMS[s.id] || {}; return [TK[it.type] ?? 2, RK[it.rarity] ?? 4, -(it.tier || 0), -(s.plus || 0), it.slot || '', s.id]; };
+    merged.sort((a, b) => { const x = key(a), y = key(b); for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i] < y[i] ? -1 : 1; return 0; });
+    c.inv = merged;
+    p.dirtyMe = true; this.db.markDirty();
   }
 
   // ---------- NPC ----------
@@ -1509,12 +1547,12 @@ class World {
       target.plus = plus + 1;
       result = 'ok';
       this.toast(p, `Cường hóa thành công! ${it.name} +${target.plus}`, 'reward');
-      if (target.plus >= 9) this.features.announce(`🔨 ${c.name} cường hóa thành công [${it.name}] lên +${target.plus}!`);
+      if (target.plus >= 12) this.features.brag(`🔨 ${c.name} cường hóa thành công [${it.name}] lên +${target.plus}!`);
     } else if (risky && !useInsure) {
       target.plus = 1;
       result = 'drop';
       this.toast(p, `Cường hóa thất bại! Không có bảo hiểm, ${it.name} rớt về +1`, 'error');
-      if (plus >= 12) this.features.announce(`💥 ${c.name} cường hóa [${it.name}] +${plus + 1} thất bại, rớt về +1!`);
+      if (plus >= 12) this.features.brag(`💥 ${c.name} cường hóa [${it.name}] +${plus + 1} thất bại, rớt về +1!`);
     } else {
       if (useInsure) U.removeItemById(c, 'insure', 1);
       result = useInsure ? 'insured' : 'fail';
