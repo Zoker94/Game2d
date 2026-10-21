@@ -4,6 +4,12 @@ const CHANGELOG = [
   {
     date: '21/10/2026',
     items: [
+      'Võ Mục Di Thư: mỗi nhân vật chỉ lĩnh hội tối đa 5 lần (mỗi lần +3% công / thủ / sinh lực, tổng +15%); học đủ thì sách thừa không bị trừ, có thể bán hoặc giao dịch. Số lần đã học hiện trong bảng Nhân vật và khi xem sách.'
+    ]
+  },
+  {
+    date: '21/10/2026',
+    items: [
       'PK cân bằng hơn cho phái cận chiến (Thiếu Lâm, Thiên Vương, Thúy Yên, Cái Bang): khi đánh người chơi gây thêm 15% sát thương, nhận ít hơn 15% sát thương (bị đánh xa còn được hộ thể thêm – tổng chỉ nhận ~72%), bị choáng / đóng băng / làm chậm từ người chơi ngắn hơn 30% để dễ áp sát.',
       'Nhãn hệ trên ô trang bị đổi sang chữ Việt: "Ngoại" / "Nội".'
     ]

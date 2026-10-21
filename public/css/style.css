@@ -1672,3 +1672,4 @@ body.meditating #btn-med, body.meditating #med-sk { box-shadow: 0 0 0 2px #9ff0d
 .buy-br { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; font-size: 12.5px; }
 .buy-br button { padding: 4px 9px; border-radius: 8px; border: 1px solid rgba(201,154,58,.45); background: rgba(0,0,0,.3); color: #e8d8b0; cursor: pointer; font: inherit; }
 .buy-br button.on { border-color: #ffd76a; background: rgba(255,215,106,.18); color: #fff; box-shadow: 0 0 8px rgba(255,215,106,.35); }
+.ok-t { color: #4ade80; }

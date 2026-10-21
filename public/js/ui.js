@@ -192,7 +192,7 @@
     const clsLine = it.cls ? `<div class="small" style="color:${it.cls === G.me.cls ? '#4ade80' : '#ff6a6a'}">${it.wtype} · Chỉ dành cho ${G.data.classes[it.cls].name}</div>` : it.generic ? '<div class="small muted">Nhặt / mua sẽ thành vũ khí môn phái của bạn</div>' : '';
     return `<h4>${itemName(id, plus)}</h4>
       <div class="muted small">${it.type === 'equip' ? G.data.slots[it.slot] + ' · ' : ''}<span style="color:${rar.color}">${rar.name}</span> · Yêu cầu cấp ${it.lv || 1}</div>${clsLine}
-      ${statsHtml(it, plus)}${brLine(it, inst, plus)}${elemFxHtml(it, inst)}${it.desc ? `<div class="small">${esc(it.desc)}</div>` : ''}
+      ${statsHtml(it, plus)}${brLine(it, inst, plus)}${elemFxHtml(it, inst)}${it.effect && it.effect.vmStudy ? `<div class="small ${(G.me.vmb | 0) >= 5 ? 'warn' : 'ok-t'}">📜 Đã lĩnh hội ${G.me.vmb | 0}/5 lần${(G.me.vmb | 0) >= 5 ? ' – đã đạt tối đa, không thể học thêm (có thể bán / giao dịch cho người khác)' : ''}</div>` : ''}${it.desc ? `<div class="small">${esc(it.desc)}</div>` : ''}
       <div class="small muted">Giá bán: ${fmt(Math.floor(it.price * 0.3 * (1 + (plus || 0) * 0.2)))} lượng</div>`;
   }
 
@@ -865,7 +865,7 @@
         <div>Lực chiến <b>${fmt(st.power)}</b></div><div>Sinh lực <b>${fmt(me.hp)}/${fmt(st.maxHp)}</b></div><div>Nội lực <b>${fmt(me.mp)}/${fmt(st.maxMp)}</b></div>
         <div>Tấn công <b>${fmt(st.atk)}</b></div><div>Phòng thủ <b>${fmt(st.def)}</b></div><div>Chí mạng <b>${st.crit}%</b></div>
         <div>Tốc độ <b>${Math.round(st.spd)}</b></div><div>Kinh nghiệm <b>${fmt(me.exp)}/${fmt(me.expNext)}</b></div><div>Tầm đánh <b>${cl.range}</b></div>
-        <div>Quái đã diệt <b>${fmt(me.kills)}</b></div><div>Hạ người chơi <b>${fmt(me.pvpKills)}</b></div><div>Boss đã đánh <b>${fmt(me.bossKills)}</b></div>
+        <div>Võ Mục Di Thư <b>${me.vmb | 0}/5</b>${me.vmb ? ` <span class="small muted">(+${(me.vmb | 0) * 3}% công/thủ/máu)</span>` : ''}</div><div>Quái đã diệt <b>${fmt(me.kills)}</b></div><div>Hạ người chơi <b>${fmt(me.pvpKills)}</b></div><div>Boss đã đánh <b>${fmt(me.bossKills)}</b></div>
       </div>
       ${attrPanel(me)}
       ${elemPanel(st)}

@@ -231,7 +231,7 @@ class World {
     return {
       name: c.name, cls: c.cls, level: c.level, exp: c.exp, expNext: U.expNext(c.level),
       gold: c.gold, knb: c.knb, hp: c.hp, mp: c.mp, stats: p.stats,
-      inv: c.inv, invMax: U.invSize(c), equip: c.equip, kills: c.kills, pvpKills: c.pvpKills, bossKills: c.bossKills,
+      inv: c.inv, invMax: U.invSize(c), vmb: Math.min(5, c.vmb | 0), equip: c.equip, kills: c.kills, pvpKills: c.pvpKills, bossKills: c.bossKills,
       tutorial: this.tutorialView(c), gemTut: c.gemTut | 0, guild: g ? { id: g.id, name: g.name, role: g.members[p.userId] } : null,
       expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, owner: isOwner(p.user) ? 1 : 0, dead: p.dead,
