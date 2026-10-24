@@ -1586,7 +1586,6 @@ class World {
     this.recalc(p);
     p.socket.emit('enhanceResult', { uid, plus: target.plus || 0, result });
     this.fx(p.mapId, { t: result === 'ok' ? 'levelup' : 'death', id: p.id, x: p.x, y: p.y, small: true });
-    this.db.log('enhance', `${c.name} cường hóa ${it.name} +${plus}→+${target.plus} (${result})`, { user: p.userId });
     this.db.markDirty();
   }
 
@@ -1652,7 +1651,6 @@ class World {
     this.toast(p, `♻️ Kế thừa thành công: ${ib.name} nhận ${parts.join(' và ') || 'không thay đổi'}${cost ? ` (−${cost.toLocaleString('vi-VN')} lượng)` : ''}`, 'reward');
     if (plusMove && pa >= 12) this.features.announce(`♻️ ${c.name} kế thừa cường hoá +${pa} sang [${ib.name}]!`);
     this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y, small: true });
-    this.db.log('enhance', `${c.name} kế thừa ${ia.name} +${pa} → ${ib.name} (${parts.join(', ')}, ${cost} lượng)`, { user: p.userId });
     this.db.markDirty();
   }
 

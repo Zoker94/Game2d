@@ -100,9 +100,7 @@ class Features {
     this.pushChatLog(msg);
   }
   pushChatLog(msg) {
-    const logs = this.db.data.chatLogs;
-    logs.push(msg);
-    if (logs.length > 1500) logs.splice(0, logs.length - 1500);
+    this.db.pushChatLog(msg);
   }
 
   // ---------------- Vòng lặp ----------------

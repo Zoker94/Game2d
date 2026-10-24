@@ -21,9 +21,13 @@ const defaults = () => ({
     autoEvents: true
   },
   logs: [],           // nhật ký quản trị / hệ thống
-  chatLogs: [],
   stats: { created: Date.now(), peakOnline: 0 }
 });
+
+const LOG_MAX = 500;
+const CHAT_LOG_MAX = 300;
+// nhật ký chat chỉ giữ trong RAM, không lưu xuống DB
+const chatLogs = [];
 
 let data = defaults();
 let dirty = false;
@@ -40,6 +44,8 @@ function parseLoaded(raw) {
   const d = defaults();
   const out = Object.assign(d, raw);
   out.config = Object.assign(defaults().config, raw.config || {});
+  delete out.chatLogs;
+  if (out.logs.length > LOG_MAX) out.logs = out.logs.slice(-LOG_MAX);
   return out;
 }
 
@@ -158,14 +164,19 @@ function verifyPassword(password, rec) {
 
 function log(type, text, extra) {
   data.logs.push({ t: Date.now(), type, text, ...(extra || {}) });
-  if (data.logs.length > 2000) data.logs.splice(0, data.logs.length - 2000);
+  if (data.logs.length > LOG_MAX) data.logs.splice(0, data.logs.length - LOG_MAX);
   dirty = true;
+}
+
+function pushChatLog(msg) {
+  chatLogs.push(msg);
+  if (chatLogs.length > CHAT_LOG_MAX) chatLogs.splice(0, chatLogs.length - CHAT_LOG_MAX);
 }
 
 const newId = () => crypto.randomBytes(8).toString('hex');
 const newToken = () => crypto.randomBytes(24).toString('hex');
 
 module.exports = {
-  get data() { return data; },
+  get data() { return data; }, chatLogs, pushChatLog,
   init, load, save, flush, markDirty, get usingDatabase() { return !!pool; }, hashPassword, verifyPassword, log, newId, newToken
 };
