@@ -2,23 +2,21 @@ name: Deploy to VPS
 
 on:
   push:
-    branches: [ ccr-5439a7cc-q4h8lm ] # Nhánh hiện tại của bạn trên GitHub
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to VPS via SSH
-        uses: appleboy/ssh-action@master
+      - name: SSH and deploy
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
+          username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /var/www/Game2d/server
-            git pull origin ccr-5439a7cc-q4h8lm
-            npm install
-            pm2 restart index
+            cd /var/www/Game2d
+            git pull origin main
+            cd server
+            npm install --omit=dev
+            pm2 restart all
