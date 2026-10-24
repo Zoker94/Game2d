@@ -19,4 +19,4 @@ jobs:
             git pull origin ccr-5439a7cc-q4h8lm
             cd server
             npm install --omit=dev
-            pm2 restart ecosystem.config.js --update-env
+               pm2 restart volampixel --update-env
