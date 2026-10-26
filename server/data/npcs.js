@@ -119,6 +119,8 @@ const TELEPORTS = [
   { map: 'con_lon', price: 7000 },
   { map: 'vo_luong', price: 9000 },
   { map: 'huyet_ma', price: 12000 },
+  { map: 'thien_ngoai', price: 16000 },
+  { map: 'cuu_u', price: 20000 },
   { map: 'bao_thach_dong', price: 2500 },
   { map: 'huyen_tinh_canh', price: 10000 },
   { map: 'chien_truong', price: 100 }

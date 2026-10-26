@@ -9,7 +9,7 @@ const { gemBonus } = require('../data/gems');
 // Hệ số chỉ số theo cấp cường hóa: +1..+10 mỗi cấp 12%, +11..+15 mỗi cấp 25%
 const plusMult = plus => 1 + Math.min(plus, 10) * 0.12 + Math.max(0, plus - 10) * 0.25;
 
-const MAX_LEVEL = 99;
+const MAX_LEVEL = 120;
 const INV_SIZE = 48, INV_EXTRA_MAX = 48;   // túi gốc 48 ô, Thẻ Mở Rộng Hành Trang thêm tối đa 48 ô
 const invSize = c => INV_SIZE + Math.max(0, Math.min(INV_EXTRA_MAX, c.invExtra | 0));
 

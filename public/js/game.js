@@ -45,7 +45,7 @@
   const TIPS = [
     'Mẹo: Nhấn nút 🤖 Tự động để nhân vật tự đánh quái quanh khu vực.',
     'Mẹo: Từ +10 trở lên, cường hóa thất bại mà không có Bảo Hiểm Phù sẽ rớt về +1!',
-    'Mẹo: Boss thế giới xuất hiện theo giờ, top 3 sát thương nhận Rương Thủ Lĩnh.',
+    'Mẹo: Boss xuất hiện theo giờ, có cơ hội rơi trang bị Truyền Kỳ cho người gây sát thương cao nhất.',
     'Mẹo: Thú cưỡi tăng tốc độ di chuyển và chỉ số. Cho ăn Mã Linh Đan để lên cấp.',
     'Mẹo: Long Ấn (phím 7) – rồng lửa, rồng nước, rồng băng – môn phái nào cũng học được.',
     'Mẹo: Điểm danh mỗi ngày và quay Vòng Quay May Mắn miễn phí tại Lễ Quan.',

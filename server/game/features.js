@@ -119,7 +119,7 @@ class Features {
     }
     for (const id in this.bosses) {
       const b = this.bosses[id];
-      if (b.mon && !b.mon.dead && now - b.spawnedAt > 25 * 60000) {
+      if (b.mon && !b.mon.dead && now - b.spawnedAt > (b.mon.tpl.world ? 180 : 25) * 60000) {   // Boss thế giới 500 triệu máu ở lại 3 giờ
         this.w.maps[b.mon.mapId].monsters.delete(b.mon.id);
         this.announce(`💨 Boss ${b.mon.tpl.name} đã rời khỏi ${MAPS[b.mon.mapId].name}.`);
         delete this.bosses[id];

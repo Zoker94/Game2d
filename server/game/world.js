@@ -15,7 +15,7 @@ const { KHAC, AFFIX, PROC_KEYS } = require('../data/affixes');
 // ngũ hành tương khắc: khắc +20% sát thương, bị khắc -15%
 function elemMult(ae, de) { if (!ae || !de) return [1, 0]; if (KHAC[ae] === de) return [1.2, 1]; if (KHAC[de] === ae) return [0.85, -1]; return [1, 0]; }
 const { ENHANCE_MAX, ENHANCE_SAFE, ENHANCE_RATE, enhanceCost } = require('../data/enhance');
-const { rollGemDrop, gemId, GEM_KEYS } = require('../data/gems');
+const { rollGemDrop } = require('../data/gems');
 const U = require('./util');
 const { levelGapK } = U;
 const { Escort } = require('./escort');
@@ -833,6 +833,15 @@ class World {
     return o;
   }
 
+  // Boss đánh theo % sinh lực tối đa của người chơi: nhiều máu hay ít máu đều chịu số đòn như nhau.
+  // Đánh thường: Boss thế giới 5%, Boss dã ngoại 3,5%, Boss phó bản 3%; chiêu: 4-5% × hệ số chiêu. Thủ cao giảm tối đa 30%.
+  bossPctDmg(mon, p, mult, skill) {
+    const tpl = mon.tpl, def = p.stats.def || 0;
+    const pct = skill ? (tpl.world ? 0.05 : 0.04) : tpl.world ? 0.05 : tpl.pbBoss ? 0.03 : 0.035;
+    const cut = Math.min(0.3, def / (def + tpl.atk * 2));
+    return Math.max(1, Math.round(p.stats.maxHp * pct * mult * U.rand(0.9, 1.1) * (1 - cut)));
+  }
+
   calcDamage(atk, crit, def, mult, defK = 0.35, critMult = 1.75) {
     let dmg = atk * mult * U.rand(0.9, 1.1) - def * defK;
     dmg = Math.max(1, dmg);
@@ -1043,45 +1052,37 @@ class World {
     const drops = [];
     const rslot = () => DROP_SLOTS[U.randInt(0, DROP_SLOTS.length - 1)];
     if (mon.boss) {
+      // Boss ngoài bản đồ chỉ rơi trang bị Truyền Kỳ ngẫu nhiên, tỉ lệ thấp (tàn quyển Võ Mục nay rơi từ Boss phó bản).
+      // Boss dã ngoại: 8% (cấp 10) → 17% (cấp 90+) rơi 1 món, thuộc về người gây sát thương cao nhất.
+      // Boss thế giới (500 triệu máu, 4 giờ / lần): hạng 1 chắc chắn, hạng 2-3 35%, hạng 4-10 10%, ai góp ≥0,5% sát thương 2%.
       const ranking = [...mon.dmgBy.entries()].sort((a, b) => b[1] - a[1]);
-      ranking.slice(0, 3).forEach(([uid], i) => {
-        const p = this.players.get(uid);
-        if (p) this.giveReward(p, { items: [['boss_chest', 1]], knb: [20, 10, 5][i] }, `Top ${i + 1} sát thương Boss`);
-      });
-      // tàn quyển Võ Mục Di Thư: top 3 chắc chắn, hạng 4-10 có 40% (boss thế giới: mọi người góp ≥0.5% sát thương)
       const total = ranking.reduce((a, [, d]) => a + d, 0) || 1;
-      ranking.forEach(([uid, d], i) => {
-        const p = this.players.get(uid);
-        if (!p) return;
-        const sid = tpl.scroll ? 'vm_tq' + tpl.scroll : (tpl.lv >= 70 ? VM_IDS[U.randInt(0, 6)] : null);
-        if (!sid) return;
-        const got = tpl.world ? d / total >= 0.005 : (i < 3 || (i < 10 && Math.random() < 0.4));
-        if (got) this.giveReward(p, { items: [[sid, 1]] }, `Boss ${tpl.name}`);
-      });
-      if (tpl.world) {   // boss thế giới: thưởng lớn theo thứ hạng sát thương
+      const legend = p => {
+        const id = equipId(rslot(), tier, 'legendary');
+        this.giveReward(p, { items: [[id, 1]] }, `Boss ${tpl.name}`);
+        const it = ITEMS[U.resolveItem(p.c, id)] || ITEMS[id];
+        this.features.brag(`🌟 ${p.c.name} nhận được trang bị Truyền Kỳ [${it.name}] từ Boss ${tpl.name}!`);
+      };
+      if (tpl.world) {
         ranking.forEach(([uid, d], i) => {
           const p = this.players.get(uid);
           if (!p || d / total < 0.005) return;
-          const items = [['stone2', i < 10 ? 3 : 1], ['boss_chest', i < 3 ? 3 : i < 10 ? 2 : 1]];
-          if (i === 0 && tpl.id === 'boss_vumuc') items.push(['vm_tamphap', 1]);   // chỉ top 1 sát thương: anh linh Nhạc Vũ Mục truyền Tâm Pháp (cách học Di Thư), không rơi thẳng Di Thư
-          if (i < 3) items.push(['insure', 1]);
+          const chance = i === 0 ? 1 : i < 3 ? 0.35 : i < 10 ? 0.1 : 0.02;
+          if (Math.random() < chance * dr) legend(p);
+          const items = i === 0 && tpl.id === 'boss_vumuc' ? [['vm_tamphap', 1]] : [];   // chỉ top 1 sát thương: anh linh Nhạc Vũ Mục truyền Tâm Pháp (cách học Di Thư)
           this.giveReward(p, { items, knb: i < 3 ? [200, 120, 80][i] : i < 10 ? 40 : 15 }, `Hạng ${i + 1} đánh ${tpl.name}`);
         });
+      } else {
+        ranking.slice(0, 3).forEach(([uid], i) => {
+          const p = this.players.get(uid);
+          if (p) this.giveReward(p, { knb: [20, 10, 5][i] }, `Top ${i + 1} sát thương Boss`);
+        });
+        const topP = ranking[0] && this.players.get(ranking[0][0]);
+        if (Math.random() < Math.min(0.17, 0.07 + tier * 0.011) * dr) {
+          if (topP && topP.mapId === mon.mapId) legend(topP);
+          else drops.push(equipId(rslot(), tier, 'legendary'));
+        }
       }
-      const n = U.randInt(4, 7) + (tpl.world ? 10 : 0);
-      for (let i = 0; i < n; i++) {
-        const r = Math.random();
-        const rar = r < 0.01 * dr ? 'legendary' : r < 0.2 * dr ? 'epic' : 'rare';
-        drops.push(equipId(rslot(), tier, rar));
-      }
-      drops.push('stone', 'stone', 'stone', 'lucky_chest', 'mount_food', 'mount_food', 'thien_tam_ti', 'thien_tam_ti');
-      if (Math.random() < 0.5 * dr) drops.push('stone2');
-      if (Math.random() < 0.25 * dr) drops.push('insure');
-      if (Math.random() < 0.3 * dr) drops.push('mount_stone');
-      // boss: 2-4 viên đá khảm cấp 2-3 (boss thế giới cấp 3-4)
-      for (let i = 0, k = U.randInt(2, 4) + (tpl.world ? 6 : 0); i < k; i++) drops.push(gemId(GEM_KEYS[U.randInt(0, GEM_KEYS.length - 1)], tpl.world ? (Math.random() < 0.25 ? 4 : 3) : (Math.random() < 0.3 ? 3 : 2)));
-      if (Math.random() < 0.04 * dr) { const pool = tier >= 4 ? ['mount_hoa_ky_lan', 'mount_phuong_hoang'] : ['mount_bach_ho', 'mount_kim_nguu', 'mount_kim_quy']; drops.push(pool[U.randInt(0, pool.length - 1)]); }
-      if (tpl.lv >= 20 && Math.random() < 0.1 * dr) drops.push(['book_fire', 'book_water', 'book_ice'][U.randInt(0, 2)]);
       const top = ranking[0] && this.players.get(ranking[0][0]);
       this.features.announce(`👑 Boss ${tpl.name} đã bị tiêu diệt! ${top ? top.c.name + ' gây sát thương cao nhất.' : ''}`);
       this.features.onBossKilled(mon);
@@ -1811,7 +1812,7 @@ class World {
       if (lv >= SKILL_MAX) return this.toast(p, 'Võ công đã đạt cảnh giới tối đa', 'error');
       const cost = upgradeCost(idx === DRAGON_SLOT ? 5 : idx, lv);
       const sp = spTotalOf(c) - (c.spSpent || 0);
-      if (sp < cost.sp) return this.toast(p, `Cần ${cost.sp} điểm võ học (mỗi cấp nhân vật nhận 1 điểm)`, 'error');
+      if (sp < cost.sp) return this.toast(p, `Cần ${cost.sp} điểm võ học (mỗi cấp nhân vật nhận ~3,4 điểm)`, 'error');
       if (c.gold < cost.gold) return this.toast(p, `Cần ${cost.gold.toLocaleString('vi-VN')} lượng`, 'error');
       c.gold -= cost.gold; c.spSpent = (c.spSpent || 0) + cost.sp;
       c.skills[base.id] = lv + 1;
@@ -2115,7 +2116,9 @@ class World {
       if (d > range * 0.85) this.navigate(mon, target.x, target.y, spd, m.def, now);
       if (d <= range + 10 && now >= mon.nextAtk) {
         mon.nextAtk = now + (mon.boss ? 1100 : 1300) * (slowed ? 1.4 : 1);
-        let { dmg, crit } = this.calcDamage(tpl.atk, mon.boss ? 10 : 3, target.stats.def, 1, 0.5);
+        let dmg, crit;
+        if (mon.boss || tpl.pbBoss) { crit = Math.random() < 0.1; dmg = this.bossPctDmg(mon, target, crit ? 1.5 : 1, false); }
+        else ({ dmg, crit } = this.calcDamage(tpl.atk, 3, target.stats.def, 1, 0.5));
         const [mem, mek] = elemMult(tpl.el, target.stats.del); dmg = Math.max(1, Math.round(dmg * mem));
         if (tpl.ranged || mon.boss) this.fx(mon.mapId, { t: 'bolt', from: mon.id, x: mon.x, y: mon.y, tx: target.x, ty: target.y, color: mon.boss ? '#ff3030' : '#c080ff' });
         else this.fx(mon.mapId, { t: 'bite', from: mon.id, x: target.x, y: target.y });

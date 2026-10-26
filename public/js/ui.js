@@ -1107,7 +1107,7 @@
         ${e.q ? `<div style="color:#ffd76a">❓ ${esc(e.q)}</div>` : ''}${e.chests != null ? `<div class="small">Còn ${e.chests} Bảo Rương</div>` : ''}
         ${e.top ? `<div class="small">${e.top.slice(0, 5).map((t, i) => `${i + 1}. ${esc(t.name)} (${t.n})`).join(' · ') || 'Chưa có ai'}</div>` : ''}</div></div>`).join('') : '') + '</div>';
     } else if (tab === 'boss') {
-      html += '<table class="tbl"><tr><th>Boss</th><th>Cấp</th><th>Bản đồ</th><th>Trạng thái</th></tr>' + (ev ? ev.bosses.map(b => `<tr><td>👑 ${esc(b.name)}</td><td>${b.lv}</td><td>${esc(b.mapName)}</td><td>${b.alive ? `<span style="color:#ff6060">Đang xuất hiện! (${Math.round(b.hp / b.maxHp * 100)}% máu)</span>` : `Xuất hiện sau ~${b.next} phút`}</td></tr>`).join('') : '') + '</table><p class="small muted">Boss xuất hiện theo giờ cố định, tồn tại 25 phút. Top 3 sát thương nhận Rương Thủ Lĩnh + Nguyên Bảo. Boss rơi nhiều đồ Hiếm/VIP/Truyền Kỳ!</p>';
+      html += '<table class="tbl"><tr><th>Boss</th><th>Cấp</th><th>Bản đồ</th><th>Trạng thái</th></tr>' + (ev ? ev.bosses.map(b => `<tr><td>👑 ${esc(b.name)}</td><td>${b.lv}</td><td>${esc(b.mapName)}</td><td>${b.alive ? `<span style="color:#ff6060">Đang xuất hiện! (${Math.round(b.hp / b.maxHp * 100)}% máu)</span>` : `Xuất hiện sau ~${b.next} phút`}</td></tr>`).join('') : '') + '</table><p class="small muted">Boss xuất hiện theo giờ cố định, tồn tại 25 phút (Boss thế giới 3 giờ). Boss đánh theo % sinh lực. Top 3 sát thương nhận Nguyên Bảo; Boss chỉ rơi trang bị Truyền Kỳ ngẫu nhiên, tỉ lệ thấp (người gây sát thương cao nhất nhận).</p>';
     } else if (tab === 'wheel') {
       const w = evPanel && evPanel.wheel;
       html += `<div class="wheel-wrap"><canvas id="wheel-canvas" width="480" height="480"></canvas><div><p>Lượt miễn phí hôm nay: <b>${w ? w.free : '-'}</b><br>Lượt thêm (vé): <b>${w ? w.extra : '-'}</b></p><button class="btn primary big" id="wheel-spin" ${wheelSpinning ? 'disabled' : ''}>QUAY</button><p class="small muted">Mua Vé Vòng Quay tại Tạp Hóa hoặc Kỳ Trân Các.</p><p id="wheel-res" style="color:#ffd76a"></p></div></div>`;
@@ -1270,7 +1270,7 @@
     const br = G.myBranch(), cl = G.data.classes[me.cls];
     const baseOf = i => i === 6 ? G.data.dragons[me.dragon] : i === 7 ? cl.extra[0] : i === 8 ? br.passive : br.skills[i];
     const ico = (s, i) => Assets.skillIconHTML(me.cls, s) || (i === 0 ? '⚔️' : i === 6 ? '🐉' : '✦');
-    let html = `<div class="sk-head"><div>📜 Điểm võ học: <b style="color:#ffd76a">${me.sp}</b> <span class="small muted">(mỗi cấp nhân vật +1 điểm)</span></div><div class="small">Hệ: <b class="br-tag br-${br.key}">${br.kind || ''} · ${esc(br.name || '')}</b></div><div class="small muted">Sách võ công bán tại <b>Tàng Kinh Các</b> – Tương Dương</div></div>`;
+    let html = `<div class="sk-head"><div>📜 Điểm võ học: <b style="color:#ffd76a">${me.sp}</b> <span class="small muted">(mỗi cấp nhân vật +3,4 điểm · cấp 120 đủ tối đa)</span></div><div class="small">Hệ: <b class="br-tag br-${br.key}">${br.kind || ''} · ${esc(br.name || '')}</b></div><div class="small muted">Sách võ công bán tại <b>Tàng Kinh Các</b> – Tương Dương</div></div>`;
     html += tabs([['branch', '🔀 Hệ phái'], ['keys', '⌨️ Gán phím'], ['attack', '⚔️ Chiêu thức'], ['support', '✨ Hỗ trợ'], ['passive', '☯ Nội công'], ['dragon', '🐉 Long Ấn']], tab);
     if (tab === 'branch' && cl.branches) {
       const freeLv = G.data.branchFreeLv || 20, wash = (me.inv || []).filter(x => x.id === 'tay_tuy_kinh').reduce((a, x) => a + x.qty, 0);

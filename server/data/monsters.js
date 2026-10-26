@@ -1,10 +1,17 @@
 // Quái vật & Boss. sprite: kiểu hình vẽ phía client.
 // Độ khó tăng dần theo cấp: cấp thấp gần như giữ nguyên, cấp càng cao quái càng trâu, đánh càng đau.
 const HP_K = L => 1 + L / 50, ATK_K = L => 1 + L / 70, DEF_K = L => 1 + L / 120, EXP_K = L => 1 + L / 100;
-// Từ cấp 15 quái / boss trâu dần: máu +1,3%/cấp, thủ +0,7%/cấp (cấp 99: máu x2,1, thủ x1,6); lực đánh giữ nguyên.
+// Từ cấp 15 quái / boss trâu dần: máu +1,3%/cấp, thủ +0,7%/cấp (cấp 99: máu x2,1, thủ x1,6); lực đánh giữ nguyên. Trên cấp 99 tăng chậm lại (xem SOFT_FROM).
 // Dưới cấp 15 giữ nguyên để người mới cày dễ.
 const HARD_FROM = 15, HARD = (L, per) => L < HARD_FROM ? 1 : 1 + (L - HARD_FROM + 1) * per;
+// Trên cấp 99 (trang bị cao nhất vẫn là bậc 90): công / máu / thủ lấy mốc cấp 99 rồi tăng nhẹ mỗi cấp, KN và ngân lượng vẫn theo cấp thật
+const SOFT_FROM = 99;
 function stats(level, k = 1) {
+  if (level > SOFT_FROM) {
+    const b = stats(SOFT_FROM, k), x = level - SOFT_FROM;
+    return { hp: Math.round(b.hp * (1 + x * 0.015)), atk: Math.round(b.atk * (1 + x * 0.008)), def: Math.round(b.def * (1 + x * 0.008)),
+      exp: Math.round((8 + level * level * 0.9) * k * EXP_K(level)), gold: Math.round(2 + level * 1.6) };
+  }
   return {
     hp: Math.round((30 + level * 12 + level * level * 0.8) * k * HP_K(level) * HARD(level, 0.013)),
     atk: Math.round((6 + level * 4.2) * (k > 1 ? 1 + (k - 1) * 0.08 : k) * ATK_K(level)),
@@ -93,6 +100,15 @@ const MONSTERS = {
   doan_hon_thi:  { name: 'Đoạn Hồn Thi Vương', lv: 90, sprite: 'ghost',    color: '#6a6a50', aggro: true,  speed: 95,  range: 70 },
   quy_vuong:     { name: 'Quỷ Ảnh Vương',      lv: 94, sprite: 'ghost',    color: '#3a1a5a', aggro: true,  speed: 125, range: 190, ranged: true },
   thien_ma_ve:   { name: 'Thiên Ma Hộ Vệ',     lv: 97, sprite: 'bandit',   color: '#1a0a14', aggro: true,  speed: 120, range: 75 },
+  // ---- vùng cấp 100-120 (art: mượn hình quái có sẵn) ----
+  thien_lang:    { name: 'Thiên Ngoại Thần Lang', lv: 101, sprite: 'wolf',  color: '#dfe8ff', aggro: true,  speed: 135, range: 55, art: 'tuyet_lang' },
+  thanh_thu:     { name: 'Tuyết Vực Thánh Thú',   lv: 104, sprite: 'tiger', color: '#f0f8ff', aggro: true,  speed: 128, range: 60, art: 'tuyet_ho' },
+  thien_binh:    { name: 'Thiên Đình Thần Binh',  lv: 107, sprite: 'bandit', color: '#e8eef8', aggro: true, speed: 118, range: 72, art: 'con_lon_kiem' },
+  thien_nu:      { name: 'Cửu Thiên Huyền Nữ',    lv: 109, sprite: 'bandit', color: '#e0f4ff', aggro: true, speed: 115, range: 200, ranged: true, art: 'tuyet_nu' },
+  cuu_u_lang:    { name: 'Cửu U Ma Lang',         lv: 111, sprite: 'wolf',  color: '#7a0010', aggro: true,  speed: 138, range: 55, art: 'huyet_lang' },
+  ma_vuc_tuong:  { name: 'Ma Vực Quỷ Tướng',      lv: 114, sprite: 'demon', color: '#4a0010', aggro: true,  speed: 112, range: 80, art: 'diem_la' },
+  cuu_u_hon:     { name: 'Cửu U Ma Hồn',          lv: 117, sprite: 'ghost', color: '#2a0a4a', aggro: true,  speed: 125, range: 195, ranged: true, art: 'u_minh_quy' },
+  thien_ma_tuong:{ name: 'Thiên Ma Đại Tướng',    lv: 119, sprite: 'bandit', color: '#100008', aggro: true, speed: 122, range: 78, art: 'thien_ma_ve' },
   // ---- quái khoáng động (rơi nhiều đá khảm) ----
   khoang_tac:    { name: 'Khoáng Tặc',          lv: 26, sprite: 'bandit',   color: '#5a4a3a', aggro: true,  speed: 100, range: 65 },
   tinh_hat:      { name: 'Tinh Thạch Hạt',      lv: 29, sprite: 'scorpion', color: '#7a4ab0', aggro: true,  speed: 95,  range: 60 },
@@ -144,14 +160,14 @@ const BOSSES = {
   boss_ma:    { name: 'Thiên Ma Giáo Chủ', lv: 62, sprite: 'demon',   color: '#8b0000', map: 'ma_giao',  every: 180, offset: 0, speed: 110, range: 110 },
   boss_conlon: { name: 'Côn Lôn Chưởng Môn', lv: 75, sprite: 'bandit', color: '#e8eef8', map: 'con_lon',  every: 120, offset: 40, speed: 120, range: 110 },
   boss_huyet:  { name: 'Huyết Ma Lão Tổ',   lv: 92, sprite: 'demon',    color: '#600010', map: 'huyet_ma', every: 180, offset: 90, speed: 112, range: 120 },
+  boss_cuuu:   { name: 'Cửu U Ma Tôn',      lv: 118, sprite: 'demon',    color: '#2a0018', map: 'cuu_u',    every: 180, offset: 150, speed: 112, range: 125, size: 1.5, art: 'boss_ma' },
+  boss_thienngoai: { name: 'Thiên Ngoại Kiếm Thánh', lv: 108, sprite: 'bandit', color: '#f0f4ff', map: 'thien_ngoai', every: 180, offset: 60, speed: 120, range: 115, size: 1.4, art: 'boss_conlon' },
   // Quốc sư Mông Cổ – kẻ đưa thiết kỵ tới Hắc Phong Cốc hội quân với Ma Giáo
-  boss_kimluan: { name: 'Kim Luân Pháp Vương', lv: 58, sprite: 'bandit', color: '#b8281e', map: 'hac_phong_coc', every: 120, offset: 70, speed: 115, range: 100, size: 1.35, scroll: 7 },
-  // Boss thế giới tối thượng: anh linh Nhạc Vũ Mục thử thách hậu nhân – cần cả võ lâm (50 triệu máu, ≈30 người cấp 70 đánh ~8-15 phút)
+  boss_kimluan: { name: 'Kim Luân Pháp Vương', lv: 58, sprite: 'bandit', color: '#b8281e', map: 'hac_phong_coc', every: 120, offset: 70, speed: 115, range: 100, size: 1.35 },
+  // Boss thế giới tối thượng: anh linh Nhạc Vũ Mục thử thách hậu nhân – cần cả võ lâm (500 triệu máu, ở lại tối đa 3 giờ)
   boss_vumuc: { name: 'Nhạc Vũ Mục Anh Linh', lv: 85, sprite: 'bandit', color: '#d8b040', map: 'nhac_mieu', every: 240, offset: 120, speed: 108, range: 130,
-                size: 1.9, world: true, hpFix: 50000000, atkFix: 1700, defFix: 420, expK: 220, goldK: 400 }
+                size: 1.9, world: true, hpFix: 500000000, atkFix: 1700, defFix: 420, expK: 220, goldK: 400 }
 };
-// boss -> tàn quyển Võ Mục Di Thư rơi ra (Côn Lôn / Huyết Ma / Nhạc Vũ Mục rơi ngẫu nhiên)
-const SCROLL_OF = { boss_soi: 1, boss_truc: 2, boss_hoason: 3, boss_samac: 4, boss_bang: 5, boss_ma: 6, boss_kimluan: 7 };
 for (const id in BOSSES) {
   const b = BOSSES[id];
   b.id = id;
@@ -164,7 +180,6 @@ for (const id in BOSSES) {
   b.def = b.defFix || Math.round(s.def * 1.3);
   b.exp = s.exp * (b.expK || 60);
   b.gold = s.gold * (b.goldK || 80);
-  b.scroll = SCROLL_OF[id] || 0;
 }
 
-module.exports = { MONSTERS, BOSSES, SCROLL_OF };
+module.exports = { MONSTERS, BOSSES };

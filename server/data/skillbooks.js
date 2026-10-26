@@ -32,8 +32,9 @@ function upgradeCost(idx, lv) {
   const w = idx === 7 ? 4 : idx === 8 ? 5 : idx;
   return { sp: lv, gold: Math.round(400 * lv * lv * (w + 1)) };
 }
-// Điểm võ học: mỗi cấp nhân vật +1
-const skillPointsTotal = level => Math.max(0, level - 1);
+// Điểm võ học: mỗi cấp nhân vật ~3,4 điểm (cấp 120 = 405 điểm, vừa đủ nâng mọi võ công lên tối đa)
+const SP_PER_LV = 3.4;
+const skillPointsTotal = level => Math.max(0, Math.round((level - 1) * SP_PER_LV));
 
 const BOOKS = {};       // itemId -> { cls, skillId, idx }
 for (const [cls, cl] of Object.entries(CLASSES)) {

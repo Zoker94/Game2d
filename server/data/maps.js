@@ -262,9 +262,22 @@ const MAP_DEFS = {
   },
   doan_hon: {
     name: 'Đoạn Hồn Nhai', theme: 'tomb', w: 44, h: 32, seed: 137, lv: '88-99', tier: 8, minLv: 85,
-    portals: [{ side: 'W', to: 'huyet_ma' }],
+    portals: [{ side: 'W', to: 'huyet_ma' }, { side: 'E', to: 'thien_ngoai' }],
     npcs: [],
     spawns: [['doan_hon_thi', 8], ['quy_vuong', 8], ['quy_vuong', 6], ['thien_ma_ve', 7]]
+  },
+  // ---- Vùng cấp 100-120 sau Đoạn Hồn Nhai ----
+  thien_ngoai: {
+    name: 'Thiên Ngoại Thiên', theme: 'snow', w: 48, h: 36, seed: 151, lv: '100-110', tier: 9, minLv: 98,
+    portals: [{ side: 'W', to: 'doan_hon' }, { side: 'E', to: 'cuu_u' }],
+    npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }, { id: 'xa_phu', x: 6, y: 19 }],
+    spawns: [['thien_lang', 9], ['thien_lang', 7], ['thanh_thu', 8], ['thanh_thu', 7], ['thien_binh', 7], ['thien_nu', 6]]
+  },
+  cuu_u: {
+    name: 'Cửu U Ma Vực', theme: 'demon', w: 48, h: 36, seed: 157, lv: '110-120', tier: 9, minLv: 108,
+    portals: [{ side: 'W', to: 'thien_ngoai' }],
+    npcs: [{ id: 'thuong_nhan', x: 5, y: 15 }, { id: 'xa_phu', x: 6, y: 19 }],
+    spawns: [['cuu_u_lang', 9], ['cuu_u_lang', 7], ['ma_vuc_tuong', 8], ['ma_vuc_tuong', 7], ['cuu_u_hon', 7], ['thien_ma_tuong', 6]]
   },
   // ---- Bản đồ môn phái: đi bằng Xa Phu; Trưởng Môn giao nhiệm vụ môn phái ----
   thieu_lam_tu: {

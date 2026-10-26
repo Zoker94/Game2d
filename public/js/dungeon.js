@@ -18,7 +18,7 @@
       const lock = G.me.level < d.minLv, none = d.left <= 0;
       return `<div class="pb-card ${lock ? 'locked' : ''}"><div class="pb-h"><b>${UI.esc(d.name)}</b><span class="small">Cấp ${d.lv} · ${UI.esc(d.party)} · ${d.min} phút</span></div>
         <div class="small">${UI.esc(d.desc)}</div>
-        <div class="small pb-rw">🎁 ${fmt(d.exp)} KN · ${fmt(d.gold)} 💰 · ${d.knb} 💎 · 1 trang bị hiếm/VIP/Truyền Kỳ · Rương Thủ Lĩnh · Huyền Tinh Thạch</div>
+        <div class="small pb-rw">🎁 ${fmt(d.exp)} KN · ${fmt(d.gold)} 💰 · ${d.knb} 💎 · 1 trang bị hiếm/VIP/Truyền Kỳ · Rương Thủ Lĩnh · Huyền Tinh Thạch · có cơ hội rơi Võ Mục Tàn Quyển</div>
         <div class="row" style="justify-content:space-between;align-items:center;margin-top:5px"><span class="small ${none ? 'warn' : ''}">Lượt hôm nay: ${d.left}/${d.daily}</span>
           <button class="btn small primary" data-pb="${d.id}" ${lock || none || (pt && !pt.leader) ? 'disabled' : ''}>${lock ? `🔒 Cần cấp ${d.minLv}` : pt && pt.leader ? `⚔️ Dẫn đội vào (${pt.n})` : '⚔️ Vào phó bản'}</button></div></div>`;
     }).join('');

@@ -130,7 +130,7 @@ class BossAI {
         if (p.dead || hitSet.has(key) || !this.hit(s, p)) continue;
         hitSet.add(key);
         if (p.dodgeUntil > now) continue;   // đang lướt: né được
-        const { dmg } = this.w.calcDamage(mon.tpl.atk, 0, p.stats.def, mult * (mon.enraged ? 1.15 : 1), 0.45);
+        const dmg = this.w.bossPctDmg(mon, p, mult * (mon.enraged ? 1.15 : 1), true);   // theo % máu người trúng
         this.w.applyDamage(p, dmg, mon, 'hurt');
         const st = s.st || sk.st;
         if (st && !p.dead) this.w.applyStatus(p, st[0], st[1], mon);

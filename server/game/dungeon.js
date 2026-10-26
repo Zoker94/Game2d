@@ -163,6 +163,13 @@ class Dungeon {
       if (Math.random() < 0.35) items.push(['stone2', 1]);
       if (Math.random() < 0.2) items.push(['mount_stone', 1]);
       if (fast) items.push(['lucky_chest', 1]);
+      // Boss phó bản: 25% (vượt thần tốc 30%) rơi 1 Võ Mục Tàn Quyển ngẫu nhiên 1-7; quyển Thất (Truyền Kỳ) hiếm gấp 3 lần quyển khác
+      if (Math.random() < (fast ? 0.3 : 0.25)) {
+        let k = Math.random() * 19, i = 0;
+        while (i < 6 && (k -= 3) >= 0) i++;
+        items.push(['vm_tq' + (i + 1), 1]);
+        if (i === 6) this.w.features.brag(`📜 ${q.c.name} nhận được Võ Mục Tàn Quyển · Thất từ ${MONSTERS[def.boss].name}!`);
+      }
       if (this.w.sect) this.w.sect.onDungeon(q);
       this.w.giveReward(q, { exp: Math.round(def.exp * mult), gold: Math.round(def.gold * mult), knb: def.knb, items }, `🏆 Vượt ${def.name}${fast ? ' (thần tốc)' : ''}`);
     }
