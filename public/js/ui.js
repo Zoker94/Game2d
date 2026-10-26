@@ -443,7 +443,7 @@
     if (top !== trTop) { trTop = top; tr.style.top = top + 'px'; }
   }
   // đặt lại khi khung nhân vật đổi cỡ (ResizeObserver) thay vì đo bố cục mỗi 0,5 giây; vẫn dò thưa phòng hờ
-  if (window.ResizeObserver) { const ro = new ResizeObserver(() => placeTracker()); const hs0 = $('hud-status'); if (hs0) ro.observe(hs0); }
+  if (window.ResizeObserver) { const ro = new ResizeObserver(() => { if (typeof G !== 'undefined') placeTracker(); }); const hs0 = $('hud-status'); if (hs0) ro.observe(hs0); }
   setInterval(() => { if (!document.hidden) placeTracker(); }, window.ResizeObserver ? 3000 : 500);
   window.addEventListener('resize', () => setTimeout(placeTracker, 50));
 
@@ -476,8 +476,8 @@
     mb.classList.remove('mb-tiny'); mb.style.maxWidth = '';
     $('btn-menu-min').click();   // vẫn đè: thu gọn (người chơi bấm ☰ để mở lại)
   }
-  // chạy lại khi cụm nút menu / nút hành động đổi cỡ; dò thưa phòng hờ (mỗi lần dò phải đo bố cục mọi nút)
-  if (window.ResizeObserver) { const ro = new ResizeObserver(() => fitMenu()); for (const id of ['menu-buttons', 'action-pad']) { const e = $(id); if (e) ro.observe(e); } }
+  // chạy lại khi cụm nút menu / nút hành động đổi cỡ (có thể báo trước khi game.js khai báo G); dò thưa phòng hờ
+  if (window.ResizeObserver) { const ro = new ResizeObserver(() => { if (typeof G !== 'undefined') fitMenu(); }); for (const id of ['menu-buttons', 'action-pad']) { const e = $(id); if (e) ro.observe(e); } }
   setInterval(() => { if (!document.hidden) fitMenu(); }, window.ResizeObserver ? 4000 : 1000);
   window.addEventListener('resize', () => { menuFitKey = ''; setTimeout(fitMenu, 120); });
   UI.fitMenu = () => { menuFitKey = ''; fitMenu(); };
