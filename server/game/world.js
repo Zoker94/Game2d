@@ -1461,10 +1461,9 @@ class World {
   // ---------- NPC ----------
   nearNpc(p, npcId) {
     const map = MAPS[p.mapId];
-    const n = map.npcs.find(x => x.id === npcId);
-    if (!n) return null;
-    const d = Math.hypot((n.x + 0.5) * TILE - p.x, (n.y + 0.5) * TILE - p.y);
-    return d < TILE * 3 ? NPCS[npcId] : null;
+    // cùng loại NPC có thể đứng nhiều chỗ (Bia Chuyển Khu cạnh mỗi cổng): chỉ cần gần một cái
+    const near = map.npcs.some(n => n.id === npcId && Math.hypot((n.x + 0.5) * TILE - p.x, (n.y + 0.5) * TILE - p.y) < TILE * 3);
+    return near ? NPCS[npcId] : null;
   }
 
   talkNpc(p, npcId) {
@@ -1486,6 +1485,7 @@ class World {
     if (npc.action === 'escort' || npc.action === 'escortDest') { out.routes = this.escort.routeView(); out.escort = this.escort.meView(p); }
     if (npc.action === 'daihoi') Object.assign(out, this.daihoi.npcView(p));
     if (npc.action === 'cloak') out.cloak = this.cloakView(p);
+    if (npc.action === 'channel') out.channels = this.channelsView(p);
     if (npc.action === 'teleport') {
       out.teleports = TELEPORTS.map(t => ({ ...t, name: MAPS[t.map].name, lv: MAPS[t.map].lv, minLv: MAPS[t.map].minLv }));
       // môn phái: về phái mình miễn phí, thăm phái khác 300 lượng
@@ -1578,7 +1578,8 @@ class World {
     if (id === 'rename_card' && !c.renameFree && ((npc.shop || []).includes(id) || (npc.knbShop || []).some(x => x.id === id))) {   // thẻ đổi tên: lần mua đầu miễn phí
       if (!U.addItem(c, id, 1)) return this.toast(p, 'Túi đồ đầy', 'error');
       c.renameFree = 1;
-      this.toast(p, '🎁 Nhận Thẻ Đổi Tên miễn phí (lần đầu). Vào túi đồ → Sử dụng để đổi tên.', 'reward');
+      this.toast(p, '🎁 Nhận Thẻ Đổi Tên miễn phí (lần đầu). Vào túi đồ → Sử dụng để đổi tên. Lần sau phải mua bằng giá thường.', 'reward');
+      p.socket.emit('renameFreeUsed');   // máy khách đổi nút "Miễn phí" thành giá thường (trước đây nút vẫn ghi miễn phí, bấm là bị trừ tiền)
       p.dirtyMe = true; this.db.markDirty(); return;
     }
     // trang bị mua ở tiệm: chọn hệ Ngoại công / Nội công (mặc định theo hệ đang tu)
@@ -2308,7 +2309,7 @@ const POISON_PVP = 0.007;                        // PK: mỗi nhịp độc tr�
 const MELEE_PVP_ATK = 1.15, MELEE_PVP_DEF = 0.85, MELEE_PVP_CC = 0.7;   // PK: cận chiến gây +15% sát thương, nhận 85% sát thương, bị khống chế 70% thời gian
 const STUN_IMMUNE = 3000;
 // PvP: sát thương người chơi lên người chơi, hồi máu khi đang giao tranh, bình máu (hồi chiêu, tối đa % máu mỗi bình)
-const PVP_DMG = 0.0205, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;
+const PVP_DMG = 0.03, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;
 const MED_AFTER = 30000;                        // đứng yên trong thành bao lâu thì ngồi thiền (ms)
 const MED_EXP = 0.00001;                        // mỗi 5 giây ngồi thiền: 0,001% kinh nghiệm cấp hiện tại (≈0,7%/giờ)                       // kháng choáng sau khi hết choáng (ms)
 const FX_STATUS = { firedragon: ['burn', 4000, 1] };

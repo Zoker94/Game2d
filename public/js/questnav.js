@@ -90,11 +90,45 @@
     if (st.map) return { map: st.map };
     return null;
   }
+  function sectGoal(q) {
+    if (!q || q.have >= q.need) return null;
+    if (q.type === 'letter' && q.map) return { map: q.map, npc: q.npc };
+    if (q.type === 'kill' && q.mon) return { map: q.map || mapOfMon([q.mon]), mons: [q.mon] };
+    if (q.type === 'elite') { const m = bestField(); return m ? { map: m, field: true } : null; }
+    return null;
+  }
   function dailyGoal(q) {
     if (!q || q.done) return null;
     if (q.type === 'kill' && q.mon) { const m = mapOfMon([q.mon]); return m ? { map: m, mons: [q.mon] } : null; }
     if (q.type === 'killAny' || q.type === 'gold') { const m = bestField(); return m ? { map: m, field: true } : null; }
     return null;
   }
-  window.QuestNav = { go, cancel, onEnterMap, storyGoal, dailyGoal, mapOfMon, bestField, get active() { return !!cur; } };
+  // Tự làm nhiệm vụ: nhận nhiệm vụ môn phái mới hoặc cốt truyện sang bước mới thì tự đi tới nơi làm
+  // (Cài đặt → "Tự đi làm nhiệm vụ khi nhận", mặc định bật). Không chen ngang lúc đang tỷ võ / PK / chết.
+  const autoOn = () => G.settings.questAuto !== false;
+  let lastStory = null, lastSect = null;
+  setInterval(() => {
+    const me = G.me;
+    if (!me || !G.map || !G.inGame) return;
+    const st = me.story, sk = st && !st.done ? st.ch + ':' + st.st : 'done';
+    const sq = me.sect && me.sect.cur, qk = sq ? sq.text : '';
+    const busy = me.dead || G._duelWith || (UI.pvpOn && UI.pvpOn()) || (window.Story && Story.open);
+    if (lastStory !== null && sk !== lastStory && sk !== 'done' && autoOn() && !busy) { const g = storyGoal(st); if (g && st.type !== 'level') go(g); }
+    if (lastSect !== null && qk && qk !== lastSect && autoOn() && !busy) { const g = sectGoal(sq); if (g) go(g); }
+    lastStory = sk; lastSect = qk;
+  }, 600);
+  // dòng "đang tự đi" + nút Dừng (cả lúc đang chạy qua các cổng)
+  function stopAll() { cur = null; WorldMap.stop(); G.moveTo = null; G.npcGoal = null; UI.toast('⏹ Đã dừng tự đi làm nhiệm vụ', 'info'); }
+  setInterval(() => {
+    let el = document.getElementById('qn-hint');
+    const on = G.inGame && (cur || WorldMap.navigating);
+    if (!on) { if (el) el.remove(); return; }
+    if (!el) {
+      el = document.createElement('div'); el.id = 'qn-hint';
+      el.innerHTML = '<span>🧭 Đang tự đi làm nhiệm vụ…</span><button class="btn small">⏹ Dừng</button>';
+      el.querySelector('button').onclick = e => { e.stopPropagation(); stopAll(); };
+      (document.getElementById('hud-top') || document.body).appendChild(el);
+    }
+  }, 400);
+  window.QuestNav = { go, cancel, stop: stopAll, onEnterMap, storyGoal, sectGoal, dailyGoal, mapOfMon, bestField, get active() { return !!cur; } };
 })();

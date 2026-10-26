@@ -350,10 +350,11 @@
     s.on('toast', d => UI.toast(d.text, d.type));
     s.on('notice', d => G.modal((d.type === 'admin' ? '📢 Thông báo từ quản trị viên:\n' : '') + d.text));
     // chọn khu: mỗi bản đồ luyện công có 5 khu, mỗi khu tối đa 10 người
-    s.on('channels', d => {
-      if (!d.list.length) return;
+    s.on('channels', d => showChannels(d));
+    function showChannels(d) {
+      if (!d || !d.list.length) return UI.toast('Bản đồ này không chia khu', 'info');
       G.modal(`${d.name} – chọn khu (mỗi khu tối đa ${d.list[0].cap} người)`, d.list.map(c => ({ t: `${c.cur ? '📍 ' : ''}Khu ${c.ch} · ${c.n}/${c.cap}${c.n >= c.cap ? ' (đầy)' : ''}`, fn: () => { if (!c.cur) G.socket.emit('channel', { ch: c.ch }); } })).concat([{ t: 'Đóng' }]));
-    });
+    }
     s.on('autoSrvReport', r => {
       const why = r.why === 'dead' ? ' Nhân vật bị hạ gục nên đã dừng.' : r.why === 'time' ? ' Đã đủ 8 giờ nên tự dừng.' : '';
       const text = `🤖 Máy chủ đã treo máy hộ ${r.mins} phút${r.offline ? ' lúc bạn thoát' : ''}: hạ ${r.kills} quái, ${r.gold >= 0 ? '+' : ''}${(r.gold || 0).toLocaleString('vi-VN')} lượng${r.lv > 0 ? `, lên ${r.lv} cấp (cấp ${r.lvNow})` : ''}.${why}`;
@@ -386,7 +387,8 @@
     s.on('dropAdd', d => { if (d.om) d.ownUntil = performance.now() + d.om; G.drops.set(d.id, d); });
     s.on('noPot', d => { const now = performance.now(); if (!G.noPot[d.kind] || G.noPot[d.kind] < now) UI.toast(d.kind === 'mp' ? '⚠️ Hết bình nội lực! Hãy mua thêm ở Hiệu Thuốc.' : '⚠️ Hết bình máu! Hãy mua thêm ở Hiệu Thuốc.', 'error'); G.noPot[d.kind] = now + 20000; });
     s.on('dropDel', id => G.drops.delete(id));
-    s.on('npc', d => UI.openNpc(d));
+    s.on('npc', d => { if (d.action === 'channel') return showChannels(d.channels); UI.openNpc(d); });   // Bia Chuyển Khu: mở thẳng bảng chọn khu
+    s.on('renameFreeUsed', () => UI.renameFreeUsed());
     s.on('guild', d => UI.onGuild(d));
     s.on('lb', d => UI.onLeaderboard(d));
     s.on('eventPanel', d => UI.onEventPanel(d));
@@ -1349,9 +1351,13 @@
         const n = it.n, nx = (n.x + 0.5) * TILE, ny = (n.y + 0.5) * TILE;
         const dxp = G.self.x - nx, dyp = G.self.y - (ny + 20);
         const near = Math.hypot(dxp, dyp) < TILE * 3.5, side = near && Math.abs(dxp) > Math.abs(dyp) * 1.2;
-        const nf = Assets.npcFrame(n.id, Math.floor(now / 320 + n.x) % 4, side);
+        const nf = n.id === 'khu_bia' ? null : Assets.npcFrame(n.id, Math.floor(now / 320 + n.x) % 4, side);
         let ntop = ny - 50;
-        if (nf) {
+        if (n.id === 'khu_bia') {   // bia đá chuyển khu (vẽ sẵn một lần)
+          const st = steleSprite();
+          ctx.drawImage(st, nx - st.width / 4, ny + 22 - st.height / 2, st.width / 2, st.height / 2);
+          ntop = ny + 22 - st.height / 2 - 6;
+        } else if (nf) {
           const fy = ny + 20;
           ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(nx, fy, 14, 4.5, 0, 0, Math.PI * 2); ctx.fill();
           ctx.save(); ctx.translate(nx, fy); if (side && dxp < 0) ctx.scale(-1, 1);
@@ -1359,7 +1365,7 @@
           ctx.restore();
           ntop = fy - 76;
         } else ctx.drawImage(Sprites.npcSprite(n.sprite, n.color, 0), nx - 32, ny - 44);
-        label(nx, ntop, n.name, '#7fffd4', 12, true);
+        label(nx, ntop, n.id === 'khu_bia' ? `Chuyển Khu (đang Khu ${G.map.ch || 1})` : n.name, n.id === 'khu_bia' ? '#9fe3ff' : '#7fffd4', 12, true);
         const tut = G.me && G.me.tutorial;
         if (Story.wantsNpc(n.id) || (tut && !tut.done && ((tut.type === 'talk' && tut.npc === n.id) || (tut.type === 'buy' && n.action === 'shop') || (tut.type === 'daily' && n.id === 'su_gia')))) {
           const by = Math.sin(now / 200) * 4;
@@ -1446,6 +1452,26 @@
     if (now - lastMini > 200) { lastMini = now; drawMinimap(); const pb = $('btn-pick'); if (pb) pb.classList.toggle('hidden', !(G.me && !G.me.dead && nearItem(150))); }
   }
 
+  // Bia Chuyển Khu: bia đá xám đặt trên bệ, mái ngói nhỏ, chữ "KHU" mạ vàng – vẽ ở độ phân giải gấp đôi rồi thu nhỏ
+  let steleCv = null;
+  function steleSprite() {
+    if (steleCv) return steleCv;
+    const c = document.createElement('canvas'); c.width = 88; c.height = 140; const x = c.getContext('2d');
+    x.fillStyle = 'rgba(0,0,0,0.32)'; x.beginPath(); x.ellipse(44, 130, 36, 8, 0, 0, Math.PI * 2); x.fill();   // bóng
+    const g1 = x.createLinearGradient(0, 108, 0, 132); g1.addColorStop(0, '#8a8478'); g1.addColorStop(1, '#4a463e');
+    x.fillStyle = g1; x.fillRect(8, 110, 72, 20); x.fillStyle = '#a49e90'; x.fillRect(8, 108, 72, 4);   // bệ đá
+    const g2 = x.createLinearGradient(14, 0, 74, 0); g2.addColorStop(0, '#b4b0a8'); g2.addColorStop(0.5, '#8e8a84'); g2.addColorStop(1, '#5e5a56');
+    x.fillStyle = g2; x.beginPath(); x.moveTo(16, 110); x.lineTo(16, 34); x.quadraticCurveTo(44, 22, 72, 34); x.lineTo(72, 110); x.closePath(); x.fill();   // thân bia
+    x.strokeStyle = '#2e2a28'; x.lineWidth = 3; x.stroke();
+    x.fillStyle = '#5a2a1a'; x.beginPath(); x.moveTo(6, 32); x.quadraticCurveTo(44, 6, 82, 32); x.lineTo(76, 38); x.quadraticCurveTo(44, 18, 12, 38); x.closePath(); x.fill();   // mái ngói
+    x.strokeStyle = '#2a1008'; x.lineWidth = 2; x.stroke();
+    x.fillStyle = '#c8a050'; x.fillRect(42, 6, 4, 8);   // chóp
+    x.strokeStyle = 'rgba(40,36,34,0.7)'; x.lineWidth = 2; x.strokeRect(24, 42, 40, 62);   // khung khắc
+    x.fillStyle = '#ffd76a'; x.strokeStyle = '#4a2e08'; x.lineWidth = 3; x.textAlign = 'center'; x.font = '900 18px "Be Vietnam Pro", system-ui, sans-serif';
+    for (const [t, y] of [['K', 60], ['H', 80], ['U', 100]]) { x.strokeText(t, 44, y); x.fillText(t, 44, y); }
+    x.fillStyle = 'rgba(255,255,255,0.18)'; x.fillRect(18, 40, 4, 66);   // vệt sáng
+    return (steleCv = c);
+  }
   function inViewXY(x, y) { return x > cam.x - 150 && x < cam.x + W / zoom + 150 && y > cam.y - 150 && y < cam.y + H / zoom + 200; }
   function inView(e) { return inViewXY(e.x, e.y); }
   const drawList = [];

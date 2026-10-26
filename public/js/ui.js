@@ -1208,6 +1208,7 @@
           <span class="small muted">Độ nét hiện tại: ${Math.round(G.gfx.scale * 100)}%${G.gfx.lowFx ? ' · tiết kiệm hiệu ứng' : ''}</span></div>
         <label><input type="checkbox" id="set-battery" ${G.battery() ? 'checked' : ''}> 🔋 Tiết kiệm pin: 30 FPS, độ nét tối đa 150%, để yên lâu thì vẽ thưa hơn, hiệu ứng trang trí trên giao diện đứng yên (tắt để chạy 60 FPS)</label><br>
         <button class="btn small" id="set-black" style="margin:4px 0">🌙 Tắt màn hình (màn đen, máy chủ treo hộ khi bật Tự động)</button><br>
+        <label><input type="checkbox" id="set-qauto" ${s.questAuto !== false ? 'checked' : ''}> 🧭 Tự đi làm nhiệm vụ khi nhận nhiệm vụ mới (cốt truyện, môn phái)</label><br>
         <label><input type="checkbox" id="set-lowfx" ${s.lowfx ? 'checked' : ''}> ✨ Giảm hiệu ứng nặng (hạt, thời tiết, hoạt ảnh lặp trên giao diện)</label>
         <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn small" id="set-fs">⛶ Toàn màn hình</button><button class="btn small" id="set-online">👥 Người chơi online</button><button class="btn small" id="set-news">📜 Lịch sử cập nhật</button></div>
         <div class="row" style="justify-content:flex-start;margin-top:6px;align-items:center;gap:6px"><span class="small">Giao diện:</span>${[['auto', 'Tự động'], ['pc', '🖥️ Máy tính'], ['mobile', '📱 Điện thoại']].map(([k, n]) => `<button class="btn small ${Input.uiPref === k ? 'primary' : ''}" data-uipref="${k}">${n}</button>`).join('')}${G.user && G.user.owner ? '<button class="btn small primary" id="set-admin">🛡️ Trang quản trị</button>' : ''}</div></div>
@@ -1222,6 +1223,7 @@
     body.querySelectorAll('[data-set]').forEach(c => c.onchange = () => { G.settings[c.dataset.set] = c.checked; G.saveSettings(); });
     body.querySelectorAll('[data-gfx]').forEach(b => b.onclick = () => { G.setGfx(b.dataset.gfx); UI.refreshPanel(); });
     $('set-battery').onchange = e => { G.setBattery(e.target.checked); UI.refreshPanel(); };
+    $('set-qauto').onchange = e => { G.settings.questAuto = e.target.checked; G.saveSettings(); };
     $('set-black').onclick = () => { UI.closePanel(); G.setBlackout(true); };
     $('set-lowfx').onchange = e => { G.setLowFx(e.target.checked); UI.refreshPanel(); };
     $('set-fs').onclick = () => Input.toggleFullscreen();
@@ -1467,6 +1469,7 @@
     }
     return h + '</div>';
   }
+  UI.renameFreeUsed = () => { if (npcData) { npcData.freeRename = false; if (panel === 'npc') UI.refreshPanel(); } };
   function renderNpc(body) {
     const d = npcData;
     if (!d) return;

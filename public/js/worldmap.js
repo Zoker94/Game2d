@@ -176,5 +176,5 @@
     nav.to = id; nav.auto = !!auto; UI.toast(`🧭 Dẫn đường tới ${G.data.maps[id].name}${auto ? ' (tự chạy)' : ''}`, 'info'); step();
     return true;
   }
-  window.WorldMap = { navTo, open, close, toggle: () => isOpen() ? close() : open(), drawArrow, onEnterMap, stop, get open_() { return isOpen(); } };
+  window.WorldMap = { navTo, open, close, toggle: () => isOpen() ? close() : open(), drawArrow, onEnterMap, stop, get open_() { return isOpen(); }, get navigating() { return !!(nav.to && nav.auto); } };
 })();

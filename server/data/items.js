@@ -51,6 +51,7 @@ const brPoints = (it, plus) => Math.round((1 + it.tier * 1.2) * RARITY[it.rarity
 
 const ITEMS = {};
 const ITEM_K = 0.65;   // hệ số chỉ số trang bị (giảm 35% để quái / boss không quá yếu)
+const ITEM_HP_K = 1.3;  // sinh lực từ trang bị: nhiều hơn bản gốc 30% (đồ thiên về trâu máu, công / thủ giữ ở 0,65)
 const CRIT_MAX = 5;    // chí mạng trên 1 món tối đa 5% (nhẫn / dây chuyền Truyền Kỳ bậc cao nhất)
 
 // Trang bị
@@ -66,7 +67,7 @@ Object.keys(SLOTS).forEach(slot => {
         stats.hp = Math.round((stats.hp || 0) + 30 + t * 40);
       }
       if (rk === 'legendary') stats.atk = Math.round((stats.atk || 0) + 5 + t * 6);
-      for (const k in stats) if (k !== 'spd') stats[k] = Math.round(stats[k] * ITEM_K * 10) / 10;   // chỉ số trang bị đã giảm (trừ tốc độ chạy)
+      for (const k in stats) if (k !== 'spd') stats[k] = Math.round(stats[k] * (k === 'hp' ? ITEM_HP_K : ITEM_K) * 10) / 10;   // công / thủ đã giảm; máu tăng (trừ tốc độ chạy)
       if (stats.crit) stats.crit = Math.min(CRIT_MAX, Math.round(stats.crit * 0.25 * 10) / 10);
       const id = `${slot}_${t}_${rk}`;
       const prefix = rk === 'common' ? TIER_PREFIX[t] : rk === 'rare' ? 'Tinh Luyện' : rk === 'epic' ? 'Bảo' : 'Thần';

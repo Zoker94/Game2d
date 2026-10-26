@@ -692,10 +692,23 @@ function isSolidAt(map, px, py) {
 // Khu 1 giữ id gốc (dữ liệu cũ không đổi), khu n là "<id>~n". Thành, môn phái, lôi đài, chiến trường, Đại Hội chỉ có 1 khu.
 const CHANNELS = 5, CH_CAP = 10;
 const hasChannels = m => !m.town && !m.safe && !m.pvp && !m.sect && !m.duelArena && !m.instance && !m.tourney && m.id !== 'dai_hoi' && (m.spawns || []).length > 0;
+// Bia Chuyển Khu: đặt cạnh mỗi cổng của bản đồ có khu (ô trống gần nhất, lùi vào trong 2 ô, lệch sang 2 ô)
+function placeKhuBia(m) {
+  const free = (x, y) => x > 0 && y > 0 && x < m.w - 1 && y < m.h - 1 && !SOLID.has(m.tiles[y * m.w + x]) && !m.npcs.some(n => Math.abs(n.x - x) + Math.abs(n.y - y) < 2) && !m.portals.some(p => Math.abs(p.x - x) + Math.abs(p.y - y) < 2);
+  const npcs = m.npcs.slice();
+  for (const p of m.portals) {
+    const [ix, iy] = { E: [-1, 0], W: [1, 0], N: [0, 1], S: [0, -1] }[p.side] || [0, 0];
+    const tx = p.x + ix * 2 + (iy ? 2 : 0), ty = p.y + iy * 2 + (ix ? 2 : 0);
+    let best = null;
+    for (let r = 0; r <= 4 && !best; r++) for (let dy = -r; dy <= r && !best; dy++) for (let dx = -r; dx <= r; dx++) if (free(tx + dx, ty + dy)) { best = { x: tx + dx, y: ty + dy }; break; }
+    if (best) { npcs.push({ id: 'khu_bia', x: best.x, y: best.y }); m.npcs = npcs; }
+  }
+}
 for (const id of Object.keys(MAPS)) {
   const m = MAPS[id];
   if (!hasChannels(m)) continue;
   m.chs = CHANNELS;
+  placeKhuBia(m);
   for (let n = 2; n <= CHANNELS; n++) MAPS[id + '~' + n] = Object.assign({}, m, { id: id + '~' + n, base: id, ch: n });
 }
 const baseOf = id => (MAPS[id] && MAPS[id].base) || id;     // id bản đồ gốc (để so với dữ liệu: cốt truyện, áp tiêu, cổng...)
