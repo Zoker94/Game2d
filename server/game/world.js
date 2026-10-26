@@ -247,6 +247,18 @@ class World {
     };
   }
 
+  // túi / rương / trang bị chiếm phần lớn gói 'me' (~8KB) mà ít khi đổi: chỉ gửi khi khác lần trước,
+  // các khóa không gửi liệt kê trong _k để client giữ bản cũ (gói đầu tiên của mỗi kết nối luôn đủ)
+  meDelta(p, v) {
+    const sent = p._meSent || (p._meSent = {}), keep = [];
+    for (const k of ['inv', 'bank', 'equip']) {
+      const j = JSON.stringify(v[k]);
+      if (sent[k] === j) { delete v[k]; keep.push(k); } else sent[k] = j;
+    }
+    if (keep.length) v._k = keep;
+    return v;
+  }
+
   tutorialView(c) {
     // hướng dẫn tân thủ đã gộp vào chương 1 cốt truyện (data/story.js): khung hướng dẫn riêng không còn hiện
     if (MERGED_TUTORIAL) return { done: true };
@@ -1874,7 +1886,7 @@ class World {
     if (this.tickN % 4 === 0) {
       for (const p of this.players.values()) {
         if (p.buffs.length && p.buffs.some(b => b.until <= now)) this.recalc(p);
-        if (p.dirtyMe) { p.dirtyMe = false; p.socket.emit('me', this.meView(p)); }
+        if (p.dirtyMe) { p.dirtyMe = false; p.socket.emit('me', this.meDelta(p, this.meView(p))); }
       }
     }
     if (this.features) this.features.tick(now);

@@ -364,6 +364,7 @@ io.on('connection', socket => {
   on('sell', inGame(d => world.sell(player, d || {})));
   on('attr', inGame(d => world.attrAction(player, d)));
   on('meditate', inGame(() => world.toggleMeditate(player)));
+  on('meFull', inGame(() => { player._meSent = null; player.dirtyMe = true; }));   // client mất bản cũ: gửi lại đủ
   on('party', inGame(d => world.party.action(player, d)));
   on('recall', inGame(() => world.startRecall(player)));
   on('rename', inGame(d => world.renameChar(player, d)));
