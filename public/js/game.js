@@ -1786,7 +1786,31 @@
     return 1000 / 30;
   }
   // quay lại tab: bỏ khoảng thời gian ẩn khỏi đo đạc (rAF tự dừng khi tab ẩn nên không tốn pin lúc đó)
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) { last = performance.now(); gfx.win = []; G.lastInput = last; } });
+  // Tab ẩn: trình duyệt dừng requestAnimationFrame và hãm setTimeout của trang (sau vài phút chỉ còn ~1 lần/phút),
+  // nên tự động (chạy trong vòng vẽ) bị đứng. Lúc đó lấy nhịp 100ms từ một Web Worker (không bị hãm)
+  // để chạy phần logic update() – không vẽ gì, quay lại tab thì tắt và vòng vẽ chạy tiếp như cũ.
+  let bgWorker = null, bgLast = 0;
+  function bgStart() {
+    if (bgWorker || !G.inGame) return;
+    try {
+      const url = URL.createObjectURL(new Blob(['setInterval(function(){postMessage(0)},100)'], { type: 'text/javascript' }));
+      bgWorker = new Worker(url); URL.revokeObjectURL(url);
+    } catch (e) { bgWorker = null; return; }
+    bgLast = performance.now();
+    bgWorker.onmessage = () => {
+      if (!document.hidden || !G.inGame) return bgStop();
+      const now = performance.now(), dt = Math.min(0.1, (now - bgLast) / 1000);
+      bgLast = now;
+      if (!G.auto) return;   // chỉ chạy khi đang bật tự động
+      try { update(dt); } catch (e) { console.error(e); }
+    };
+  }
+  function bgStop() { if (bgWorker) { bgWorker.terminate(); bgWorker = null; } }
+  G.bgActive = () => !!bgWorker;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { bgStart(); return; }
+    bgStop(); last = performance.now(); gfx.win = []; G.lastInput = last;
+  });
   function loop(now) {
     const budget = frameBudget(now);
     if (budget && now - last < budget - 4) { if (G.inGame) requestAnimationFrame(loop); return; }   // bỏ khung (màn 60/120Hz)
