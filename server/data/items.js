@@ -55,12 +55,14 @@ const BR_STAT = {
   ngoai: { atk: 1.06, def: 1.1,  crit: 1.2, hp: 1,    mp: 0.5, mpAdd: 0 },
   noi:   { atk: 1,    def: 0.95, crit: 0.8, hp: 1.08, mp: 1.8, mpAdd: 1 }
 };
-function brStats(it, br) {
+// Mặc đồ khác hệ đang tu (đồ Nội trên người tu Ngoại và ngược lại): chỉ số gốc chỉ còn 70%
+const BR_OFF_K = 0.7;
+function brStats(it, br, wearer) {
   const k = BR_STAT[br];
   if (!k || !it.stats) return it.stats;
-  const o = {};
-  for (const s in it.stats) o[s] = s === 'spd' ? it.stats[s] : Math.round(it.stats[s] * (k[s] || 1) * 10) / 10;
-  if (k.mpAdd) o.mp = Math.round(((o.mp || 0) + (6 + it.tier * 10) * RARITY[it.rarity].mult) * 10) / 10;
+  const off = wearer && wearer !== br ? BR_OFF_K : 1, o = {};
+  for (const s in it.stats) o[s] = s === 'spd' ? it.stats[s] : Math.round(it.stats[s] * (k[s] || 1) * off * 10) / 10;
+  if (k.mpAdd) o.mp = Math.round(((o.mp || 0) + (6 + it.tier * 10) * RARITY[it.rarity].mult * off) * 10) / 10;
   if (o.mp === 0) delete o.mp;
   if (o.crit) o.crit = Math.min(CRIT_MAX, o.crit);
   return o;
@@ -196,4 +198,4 @@ for (const g of require('./gems').gemItems()) ITEMS[g.id] = g;
 
 function equipId(slot, t, rarity) { return `${slot}_${t}_${rarity}`; }
 
-module.exports = { ITEMS, RARITY, SLOTS, TIERS, TIER_MAX, tierOfLv, DROP_SLOTS, EQUIP_SLOTS, SLOT_TYPE, equipId, CLASS_WEAPON, BR_ATTR, brPoints, BR_STAT, brStats };
+module.exports = { ITEMS, RARITY, SLOTS, TIERS, TIER_MAX, tierOfLv, DROP_SLOTS, EQUIP_SLOTS, SLOT_TYPE, equipId, CLASS_WEAPON, BR_ATTR, brPoints, BR_STAT, BR_OFF_K, brStats };

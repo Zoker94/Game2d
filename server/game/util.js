@@ -62,11 +62,11 @@ function newCharacter(name, cls) {
   return c;
 }
 
-// hệ của trang bị mới nhận: mua ở tiệm thì theo lựa chọn (c._brPick), rơi ra thì 65% hợp hệ đang tu
+// hệ của trang bị mới nhận: mua ở tiệm thì theo lựa chọn (c._brPick), rơi ra thì 80% hợp hệ đang tu
 function rollBranch(c) {
   if (c && BR_ATTR[c._brPick]) return c._brPick;
   const mine = c && c.cls ? branchOf(c) : 'ngoai';
-  return Math.random() < 0.65 ? mine : (mine === 'noi' ? 'ngoai' : 'noi');
+  return Math.random() < 0.8 ? mine : (mine === 'noi' ? 'ngoai' : 'noi');
 }
 function isStack(id) { const it = ITEMS[id]; return it && it.type !== 'equip'; }
 
@@ -92,6 +92,12 @@ function migrateItems(c) {
   if ((c.fxv | 0) < 2) {
     for (const s of [...(c.inv || []), ...Object.values(c.equip || {}), ...((c.bank && c.bank.items) || [])]) if (s && Array.isArray(s.fx)) s.fx = rescaleFx(s.fx);
     c.fxv = 2;
+  }
+  // một lần: đồ khác hệ giờ bị giảm 30% chỉ số – đồ ĐANG MẶC được đổi miễn phí sang hệ đang tu
+  if ((c.brv | 0) < 1) {
+    const my = branchOf(c);
+    for (const s of Object.values(c.equip || {})) if (s && BR_ATTR[s.br]) s.br = my;
+    c.brv = 1;
   }
 }
 
@@ -161,13 +167,13 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
     }
   }
   const addStat = (k, v) => { if (k === 'hp') s.maxHp += v; else if (k === 'mp') s.maxMp += v; else s[k] += v; };
-  const gearAttr = {};
+  const gearAttr = {}, myBr = branchOf(c);
   for (const slot in c.equip) {
     const e = c.equip[slot];
     const it = e && ITEMS[e.id];
     if (!it) continue;
     const m = plusMult(e.plus || 0);
-    const ist = brStats(it, e.br);   // chỉ số gốc theo hệ Nội / Ngoại của món
+    const ist = brStats(it, e.br, myBr);   // chỉ số gốc theo hệ Nội / Ngoại của món; khác hệ đang tu thì chỉ còn 70%
     for (const k in ist) addStat(k, ist[k] * (k === 'crit' || k === 'spd' ? 1 : m));
     // ngũ hành: mỗi món cộng chỉ số theo hệ
     if (e.el) { elCount[e.el] = (elCount[e.el] || 0) + 1; const eb = elementBonus(e.el, it.tier); for (const k in eb) addStat(k, eb[k]); }

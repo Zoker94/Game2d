@@ -1669,6 +1669,7 @@ body.meditating #btn-med, body.meditating #med-sk { box-shadow: 0 0 0 2px #9ff0d
 .slot .brb { position: absolute; left: 1px; bottom: 1px; z-index: 3; font-size: 8px; line-height: 11px; font-weight: 800; padding: 0 3px; border-radius: 3px; color: #fff; text-shadow: 0 1px 0 #000; letter-spacing: -.1px; }
 .brb-ngoai { background: rgba(200,70,30,.9); }
 .brb-noi { background: rgba(70,90,210,.9); }
+.brb-off { background: rgba(80,80,80,.92); color: #ff8a8a; outline: 1px solid #ff5050; }
 .br-line.br-ngoai b { color: #ff9a5a; } .br-line.br-noi b { color: #8ab4ff; }
 .br-line .ok { color: #4ade80; }
 .at-gear { color: #8fe0a0; font-size: 11px; }

@@ -1797,10 +1797,11 @@ class World {
       ob.skills.forEach((sk, i) => { if (i > 0 && c.skills[sk.id] && nb.skills[i] && !c.skills[nb.skills[i].id]) c.skills[nb.skills[i].id] = 1; });
       if (c.skills[ob.passive.id] && !c.skills[nb.passive.id]) c.skills[nb.passive.id] = 1;
       c.branch = to;
+      for (const e of Object.values(c.equip || {})) if (e && e.br) e.br = to;   // đồ đang mặc đổi theo hệ mới (khác hệ thì chỉ số gốc giảm 30%)
       this.resetSkillPoints(c);
       this.recalc(p);
       const br = cl.branches[to];
-      this.toast(p, `Đã chuyển sang ${br.kind}: ${br.name}. Các chiêu đã lĩnh ngộ được chuyển sang chiêu tương ứng của hệ mới, điểm võ học đã hoàn lại.`, 'reward');
+      this.toast(p, `Đã chuyển sang ${br.kind}: ${br.name}. Các chiêu đã lĩnh ngộ được chuyển sang chiêu tương ứng của hệ mới, điểm võ học đã hoàn lại, trang bị đang mặc đổi sang hệ mới.`, 'reward');
       this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y });
     } else if (a.op === 'upgrade') {
       const idx = a.idx | 0;

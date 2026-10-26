@@ -44,12 +44,13 @@
   UI.hideTip = () => hideTip();
   function itemName(id, plus) { const it = G.data.items[resolveId(id)]; return `<span class="r-${it.rarity}-t">${esc(it.name)}${plus ? ' +' + plus : ''}</span>`; }
   // chỉ số gốc theo hệ Nội / Ngoại của món (trùng server/data/items.js brStats)
+  // khác hệ đang tu: chỉ số gốc chỉ còn G.data.brOffK (70%)
   function brSt(it, br) {
     const k = G.data.brStat && G.data.brStat[br];
     if (!k || !it || !it.stats || it.type !== 'equip') return it && it.stats;
-    const o = {};
-    for (const s in it.stats) o[s] = s === 'spd' ? it.stats[s] : Math.round(it.stats[s] * (k[s] || 1) * 10) / 10;
-    if (k.mpAdd) o.mp = Math.round(((o.mp || 0) + (6 + it.tier * 10) * G.data.rarity[it.rarity].mult) * 10) / 10;
+    const off = G.me && G.me.branch && G.me.branch !== br ? (G.data.brOffK || 0.7) : 1, o = {};
+    for (const s in it.stats) o[s] = s === 'spd' ? it.stats[s] : Math.round(it.stats[s] * (k[s] || 1) * off * 10) / 10;
+    if (k.mpAdd) o.mp = Math.round(((o.mp || 0) + (6 + it.tier * 10) * G.data.rarity[it.rarity].mult * off) * 10) / 10;
     if (o.mp === 0) delete o.mp;
     if (o.crit) o.crit = Math.min(G.data.critMax || 5, o.crit);
     return o;
@@ -197,9 +198,9 @@
     const b = inst && BR_INFO[inst.br];
     if (!b) return '<div class="small muted">Hệ: Ngoại công hoặc Nội công (chọn khi mua ở tiệm)</div>';
     const match = inst.br === G.me.branch;
-    return `<div class="small br-line br-${inst.br}">${inst.br === 'noi' ? '🔮' : '⚔️'} Hệ ${b.name}: <b>+${brPts(it, plus)} ${b.an}</b> <span class="${match ? 'ok' : 'muted'}">${match ? '· hợp hệ đang tu (tăng % sát thương võ công)' : '· khác hệ đang tu (chỉ cộng chỉ số)'}</span><div class="muted">${inst.br === 'noi' ? 'Đồ Nội: nhiều nội lực, sinh lực cao hơn' : 'Đồ Ngoại: công, thủ, chí mạng cao hơn'}</div></div>`;
+    return `<div class="small br-line br-${inst.br}">${inst.br === 'noi' ? '🔮' : '⚔️'} Hệ ${b.name}: <b>+${brPts(it, plus)} ${b.an}</b> <span class="${match ? 'ok' : 'muted'}">${match ? '· hợp hệ đang tu (tăng % sát thương võ công)' : `· <b class="warn">KHÁC HỆ đang tu: chỉ số gốc chỉ còn ${Math.round((G.data.brOffK || 0.7) * 100)}%, không tăng sát thương võ công</b>`}</span><div class="muted">${inst.br === 'noi' ? 'Đồ Nội: nhiều nội lực, sinh lực cao hơn' : 'Đồ Ngoại: công, thủ, chí mạng cao hơn'}</div></div>`;
   }
-  const brBadge = s => { const b = s && BR_INFO[s.br]; return b ? `<span class="brb brb-${s.br}" title="Hệ ${b.name}">${b.ch}</span>` : ''; };
+  const brBadge = s => { const b = s && BR_INFO[s.br]; if (!b) return ''; const off = G.me && G.me.branch && s.br !== G.me.branch; return `<span class="brb brb-${s.br}${off ? ' brb-off' : ''}" title="Hệ ${b.name}${off ? ' – khác hệ đang tu, chỉ số giảm' : ''}">${b.ch}${off ? '✗' : ''}</span>`; };
   function itemDesc(id, plus, inst) {
     const it = G.data.items[resolveId(id)];
     const rar = G.data.rarity[it.rarity];
