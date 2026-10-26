@@ -72,13 +72,14 @@
     return soft.has(tj) ? tj : te;
   }
 
+  const clampTmp = new Uint8ClampedArray(3), LE = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
   // Mảng nền dựng theo từng phần (job): mỗi khung chỉ làm vài hàng trong ngân sách thời gian để không khựng khi di chuyển.
   function chunkJob(cx, cy) {
     const c = document.createElement('canvas'); c.width = CPX; c.height = CPX;
     const g = c.getContext('2d');
     const img = g.createImageData(CPX, CPX);
     const ox = cx * CB - 3, oy = cy * CB - 3, W2 = CB + 6;
-    return { cx, cy, c, g, img, d: img.data, ox, oy, W2, types: new Int8Array(W2 * W2), phase: 0, row: 0 };
+    return { cx, cy, c, g, img, d: img.data, u: new Uint32Array(img.data.buffer), ox, oy, W2, types: new Int8Array(W2 * W2), phase: 0, row: 0 };
   }
   function renderChunk(cx, cy) { const j = chunkJob(cx, cy); stepJob(j, Infinity); return j.c; }
   // chạy job tới khi xong (true) hoặc hết giờ (false)
@@ -96,17 +97,17 @@
     }
     j.g.putImageData(j.img, 0, 0);
     decorateChunk(j.g, j.cx, j.cy);
-    j.img = j.d = j.types = null;
+    j.img = j.d = j.u = j.types = null;
     return true;
   }
   function chunkRow(j, y) {
-    const { cx, cy, d, types, W2 } = j;
+    const { cx, cy, u, types, W2 } = j;
     const tAt = (x, y) => types[(y + 3) * W2 + (x + 3)];
+    // ghi cả điểm ảnh 2x2 bằng số 32 bit (nhanh hơn ghi từng kênh); làm tròn màu qua Uint8ClampedArray như trước
     const put = (x, y, col) => {
-      for (let yy = 0; yy < BS; yy++) for (let xx = 0; xx < BS; xx++) {
-        const i = ((y * BS + yy) * CPX + (x * BS + xx)) * 4;
-        d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2]; d[i + 3] = 255;
-      }
+      clampTmp[0] = col[0]; clampTmp[1] = col[1]; clampTmp[2] = col[2];
+      const v = LE ? (0xff000000 | (clampTmp[2] << 16) | (clampTmp[1] << 8) | clampTmp[0]) >>> 0 : ((clampTmp[0] << 24) | (clampTmp[1] << 16) | (clampTmp[2] << 8) | 0xff) >>> 0;
+      for (let yy = 0; yy < BS; yy++) { const i = (y * BS + yy) * CPX + x * BS; for (let xx = 0; xx < BS; xx++) u[i + xx] = v; }
     };
     const shadeC = (col, k) => [Math.max(0, Math.min(255, col[0] * k)), Math.max(0, Math.min(255, col[1] * k)), Math.max(0, Math.min(255, col[2] * k))];
     for (let x = 0; x < CB; x++) {
@@ -483,16 +484,37 @@
     theme = THEME_OF[m.id] || ALIAS[m.theme] || m.theme || 'plains';
     flora = m.theme === 'river' || m.theme === 'ruins' ? m.theme : theme;
     icy = theme === 'cave' && (/bang|ice|tuyet/.test(m.id) || m.weather === 'snow');
-    chunks = new Map(); jobs = new Map(); amb.length = 0;
+    chunks = new Map(); jobs = new Map(); amb.length = 0; mapGen++;
     buildDecos(); indexDecos();
   }
   // dựng sẵn các mảng nền quanh một điểm (màn hình chờ chuyển bản đồ) để vào map không phải dựng dần
-  function prebuild(cx0, cy0, vw, vh) {
+  // Chia nhỏ theo lát ~12ms rồi nhường luồng chính (trước đây làm một mạch 0,5-3 giây làm đơ trang, nhất là trên điện thoại).
+  // Trả về Promise; onProgress(0..1) để cập nhật thanh tải. Đổi map giữa chừng thì dừng.
+  let mapGen = 0;
+  function prebuild(cx0, cy0, vw, vh, onProgress) {
+    const gen = mapGen;
     const c0 = Math.max(0, Math.floor((cx0 - vw) / CPX)), r0 = Math.max(0, Math.floor((cy0 - vh) / CPX));
     const c1 = Math.min(Math.ceil(map.w / CH) - 1, Math.floor((cx0 + vw) / CPX)), r1 = Math.min(Math.ceil(map.h / CH) - 1, Math.floor((cy0 + vh) / CPX));
-    for (let cy = r0; cy <= r1; cy++) for (let cx = c0; cx <= c1; cx++) { const key = cx + ',' + cy; if (!chunks.has(key)) putChunk(key, renderChunk(cx, cy)); }
+    const order = [];
+    for (let cy = r0; cy <= r1; cy++) for (let cx = c0; cx <= c1; cx++) order.push([cx, cy, Math.hypot((cx + 0.5) * CPX - cx0, (cy + 0.5) * CPX - cy0)]);
+    order.sort((a, b) => a[2] - b[2]);   // gần nhân vật trước
     // dựng sẵn hình công trình quanh điểm vào map
-    if (window.Buildings) for (const b of map.buildings || []) if (Math.abs((b.x + b.w / 2) * TILE - cx0) < vw * 1.5 && Math.abs((b.y + b.h / 2) * TILE - cy0) < vh * 1.5) Buildings.sprite(b);
+    const blds = window.Buildings ? (map.buildings || []).filter(b => Math.abs((b.x + b.w / 2) * TILE - cx0) < vw * 1.5 && Math.abs((b.y + b.h / 2) * TILE - cy0) < vh * 1.5) : [];
+    const total = order.length + blds.length || 1;
+    return new Promise(resolve => {
+      const step = () => {
+        if (gen !== mapGen) return resolve(false);
+        const deadline = performance.now() + 12;
+        pump(order, deadline);
+        let done = 0; for (const o of order) if (chunks.has(o[0] + ',' + o[1])) done++;
+        if (done === order.length) while (blds.length && performance.now() < deadline) { try { Buildings.sprite(blds.shift()); } catch (e) { } }
+        const left = order.length - done + blds.length;
+        if (onProgress) onProgress(1 - left / total);
+        if (!left) return resolve(true);
+        setTimeout(step, 0);
+      };
+      step();
+    });
   }
   const FALLBACK = { town: '#6a645e', plains: '#3e7b2b', bamboo: '#3e7b2b', mountain: '#7c5833', desert: '#d8b574', snow: '#e3ecf6', demon: '#3c2a37', arena: '#7c5833', cave: '#2c2938' };
   const CHUNK_MAX = 48;

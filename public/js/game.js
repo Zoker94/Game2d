@@ -424,6 +424,8 @@
     el.querySelector('.ml-tip').textContent = '💡 ' + MAP_TIPS[Math.floor(Math.random() * MAP_TIPS.length)];
     const bar = el.querySelector('.ml-bar i'); bar.style.width = '10%';
     el.classList.remove('hidden', 'out');
+    G._mlCover = true;   // màn chờ che kín: tạm không vẽ cảnh, dành CPU dựng nền
+    setTimeout(() => { if (seq === mapLoadSeq) G._mlCover = false; }, 12000);   // phòng hờ: không bao giờ kẹt màn đen
     const steps = [];
     if (G.me) steps.push(Assets.loadClass(G.me.cls));
     await new Promise(r => setTimeout(r, 120));   // chờ gói trạng thái đầu tiên để biết quái / người chơi trên bản đồ
@@ -431,7 +433,8 @@
     for (const mo of G.monsters.values()) steps.push(Assets.loadMonster(mo.type));
     for (const p of G.players.values()) if (p.cls) steps.push(Assets.loadClass(p.cls));
     const tb = performance.now();
-    try { WorldArt.prebuild(G.self.x, G.self.y, W / zoom, H / zoom); } catch (e) { }
+    try { await WorldArt.prebuild(G.self.x, G.self.y, W / zoom, H / zoom, f => { if (seq === mapLoadSeq) bar.style.width = (35 + f * 25).toFixed(0) + '%'; }); } catch (e) { }
+    if (seq !== mapLoadSeq) return;
     if (window.PerfHud) PerfHud.mark('dựng nền map', performance.now() - tb);
     bar.style.width = '60%';
     await Promise.race([Promise.all(steps), new Promise(r => setTimeout(r, 5000))]);   // mạng chậm: tối đa 5 giây
@@ -441,6 +444,7 @@
     const left = 450 - (performance.now() - t0);
     if (left > 0) await new Promise(r => setTimeout(r, left));
     if (seq !== mapLoadSeq) return;
+    G._mlCover = false;
     el.classList.add('out');
     setTimeout(() => { if (seq === mapLoadSeq) el.classList.add('hidden'); }, 300);
   }
@@ -1748,9 +1752,9 @@
 
   function loop(now) {
     const dt = Math.min(0.1, (now - last) / 1000);   // khung chậm vẫn đi đúng quãng (trước giới hạn 0,05 làm nhân vật như bị hãm lại)
-    gfxTick(now - last, now);
+    if (!G._mlCover) gfxTick(now - last, now);   // khung chậm lúc tải map không tính vào tự hạ độ nét
     last = now;
-    try { update(dt); draw(now); UI.frame(now); } catch (e) { console.error(e); }
+    try { update(dt); if (!G._mlCover) draw(now); UI.frame(now); } catch (e) { console.error(e); }
     PerfHud.frame(now);
     if (G.inGame) requestAnimationFrame(loop);
   }
