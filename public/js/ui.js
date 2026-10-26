@@ -590,6 +590,31 @@
   };
   UI.registerPanel = (name, title, render, onOpen) => { UI.extraPanels[name] = { title, render, onOpen }; };
 
+  // ---------- Đổi môn phái (dùng Chuyển Phái Lệnh) ----------
+  UI.pickClass = function (d) {
+    let box = $('cls-box'); if (box) box.remove();
+    box = document.createElement('div'); box.id = 'cls-box';
+    const me = G.me, C = G.data.classes;
+    const cards = Object.entries(C).filter(([k]) => k !== me.cls).map(([k, c]) => `<button class="cls-card" data-cls="${k}" style="--cc:${(c.colors && (c.colors.main || c.colors[0])) || '#ffd76a'}">
+        <canvas width="72" height="72" data-cv="${k}"></canvas><b>${esc(c.name)}</b><small>${esc(c.role || '')}${/xa|cận/i.test(c.role || '') ? '' : ` · ${c.range >= 200 ? 'Đánh xa' : 'Cận chiến'}`}</small></button>`).join('');
+    box.innerHTML = `<div class="cls-in"><div class="cls-h">🔄 Chuyển môn phái <span class="cls-x">✕</span></div>
+      <div class="small muted">Đang ở <b>${esc(C[me.cls].name)}</b>. Giữ nguyên cấp, trang bị, điểm tiềm năng và hệ (${me.branch === 'noi' ? 'Nội công' : 'Ngoại công'}); võ công đã lĩnh ngộ chuyển sang chiêu cùng ô của phái mới (về tầng 1, hoàn điểm võ học); vũ khí môn phái đổi thành vũ khí phái mới cùng bậc. Cống hiến môn phái cũ không mang theo. Mỗi 3 ngày đổi một lần.</div>
+      <div class="cls-grid">${cards}</div></div>`;
+    $('screen-game').appendChild(box);
+    box.querySelector('.cls-x').onclick = () => box.remove();
+    box.addEventListener('pointerdown', e => { if (e.target === box) box.remove(); });
+    box.querySelectorAll('[data-cv]').forEach(cv => { const k = cv.dataset.cv, x = cv.getContext('2d'); const draw = () => { if (Assets.has(k)) { x.imageSmoothingEnabled = true; x.drawImage(Assets.charFrame(k, 0, 'idle', 0), 12, 18, 120, 120, 0, 0, 72, 72); } }; if (Assets.has(k)) draw(); else if (Assets.loadClass) Assets.loadClass(k).then(draw).catch(() => {}); });
+    box.querySelectorAll('[data-cls]').forEach(b => b.onclick = () => {
+      const k = b.dataset.cls;
+      G.modal(`Chuyển từ ${C[me.cls].name} sang ${C[k].name}?\nTiêu hao 1 Chuyển Phái Lệnh. 3 ngày sau mới đổi lại được.`, [
+        { t: '🔄 Chuyển phái', cls: 'primary', fn: () => { emit('changeClass', { cls: k, uid: d && d.uid }); box.remove(); } }, { t: 'Hủy' }]);
+    });
+  };
+  UI.classChanged = function (d) {
+    UI.toast(`🔄 Đã gia nhập ${d.name}! Đang tải lại giao diện võ công...`, 'reward');
+    setTimeout(() => location.reload(), 2500);
+  };
+
   // ---------- Lịch sử cập nhật (Cài đặt → 📜) ----------
   let newsData = null, newsQ = '';
   UI.registerPanel('changelog', '📜 Lịch sử cập nhật', body => {
@@ -719,7 +744,7 @@
     else if (it.type === 'equip') btns += `<button class="btn small green" data-act="equip">Trang bị</button>`;
     else if (it.type === 'use') {
       btns += `<button class="btn small green" data-act="use">Sử dụng</button>`;
-      const e = it.effect || {}, multi = !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.rename || e.pet || e.learn || e.dragon || e.resetSkill || e.resetAttr);
+      const e = it.effect || {}, multi = !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.rename || e.pet || e.learn || e.dragon || e.resetSkill || e.resetAttr || e.changeClass || e.invExpand);
       if (multi && s.qty > 1) {   // dùng nhiều cái một lần (rương, bùa, vé quay...)
         const def = Math.min(s.qty, panelState.useN || 10);
         btns += `<span class="use-multi"><input type="number" id="use-n" min="1" max="${Math.min(200, s.qty)}" value="${def}"><button class="btn small green" data-act="usen">Dùng</button></span>`;

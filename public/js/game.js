@@ -316,6 +316,8 @@
     s.on('me', d => { if (G.me && d.riding !== G.me.riding) GameAudio.sfx('mount'); G.me = d; if (d.pvp) G.pvpUntil = performance.now() + 8000; UI.updateHud(); $('dead-overlay').classList.toggle('hidden', !d.dead); });
     s.on('pos', d => { const far = Math.hypot(d.x - G.self.x, d.y - G.self.y) > 64; G.self.x = d.x; G.self.y = d.y; if (far || d.dash) G.moveTo = null; });   // lệch ít: giữ đích đang đi tới
     s.on('weather', w => Weather.set(w));
+    s.on('pickClass', d => UI.pickClass(d));
+    s.on('classChanged', d => UI.classChanged(d));
     s.on('cartGone', id => { G.carts.delete(id); if (G.target === id) G.target = null; });
     s.on('fx', onFx);
     s.on('ultHit', onUltHit);

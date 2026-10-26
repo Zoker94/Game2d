@@ -2,6 +2,12 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '26/10/2026',
+    items: [
+      'Đổi môn phái: vật phẩm mới Chuyển Phái Lệnh (Kỳ Trân Các, 300 💎) – dùng để chọn phái mới (từ cấp 10, mỗi 3 ngày một lần). Giữ nguyên cấp, trang bị, điểm tiềm năng và hệ Nội / Ngoại công; võ công đã lĩnh ngộ chuyển sang chiêu cùng ô của phái mới (về tầng 1, hoàn điểm võ học); vũ khí môn phái (kể cả cường hóa, đá khảm) đổi thành vũ khí phái mới cùng bậc. Cống hiến môn phái cũ không mang theo.'
+    ]
+  },
+  {
     date: '21/10/2026',
     items: [
       'Tăng độc khi PK (Ngũ Độc và mọi hiệu ứng độc / bỏng / chảy máu từ người chơi): trước đây độc bị giảm theo sát thương PK nên gần như không thấm (~0,2% máu mỗi giây). Nay mỗi nhịp độc trừ theo % sinh lực tối đa của đối thủ (0,7%, chiêu độc chuyên như Xuyên Tâm Độc 0,9%), mạnh hơn khi trang bị tốt hơn đối thủ – độc cộng dồn từ nhiều chiêu mài máu rõ rệt.'

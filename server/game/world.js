@@ -1,5 +1,5 @@
 // Lõi thế giới game: bản đồ, người chơi, quái vật, chiến đấu, rơi đồ, NPC.
-const { CLASSES, classSkill, classRange, branchOf, PASSIVE_SLOT } = require('../data/classes');
+const { CLASSES, classSkill, classRange, branchOf, PASSIVE_SLOT, ACTIVE_BUFF_SLOT } = require('../data/classes');
 const { BRANCH_BONUS, BRANCH_FREE_LV } = require('../data/branches');
 const { ITEMS, RARITY, equipId } = require('../data/items');
 const { MONSTERS, BOSSES } = require('../data/monsters');
@@ -1196,6 +1196,7 @@ class World {
       this.toast(p, c.pet ? `🐉 Đã triệu hồi ${it.name}` : `Đã thu hồi ${it.name}`, c.pet ? 'reward' : 'info');
       p.dirtyMe = true; return;
     }
+    if (e.changeClass) { p.socket.emit('pickClass', { uid }); return; }   // máy khách mở bảng chọn phái, chọn xong gửi 'changeClass'
     if (e.invExpand) {
       if ((c.invExtra | 0) >= U.INV_EXTRA_MAX) return this.toast(p, `Túi đồ đã mở rộng tối đa ${U.INV_SIZE + U.INV_EXTRA_MAX} ô`, 'error');
       U.removeByUid(c, uid, 1);
@@ -1731,6 +1732,38 @@ class World {
     return d;
   }
 
+  // ---------- Đổi môn phái (Chuyển Phái Lệnh) ----------
+  changeClass(p, { cls, uid } = {}) {
+    const c = p.c, now = Date.now();
+    if (typeof cls !== 'string' || !Object.prototype.hasOwnProperty.call(CLASSES, cls) || cls === c.cls) return;
+    const card = c.inv.find(x => x.uid === uid && x.id === 'doi_phai') || c.inv.find(x => x.id === 'doi_phai');
+    if (!card) return this.toast(p, 'Cần 1 Chuyển Phái Lệnh (bán ở Kỳ Trân Các)', 'error');
+    if (p.dead || p.trade || p.duel || this.maps[p.mapId].def.instance) return this.toast(p, 'Không thể đổi phái lúc này', 'error');
+    if (c.level < CLASS_CHANGE_LV) return this.toast(p, `Cần đạt cấp ${CLASS_CHANGE_LV} mới đổi được phái`, 'error');
+    if (now - (c.clsChangedAt || 0) < CLASS_CHANGE_CD) return this.toast(p, `Vừa đổi phái, ${Math.ceil((CLASS_CHANGE_CD - (now - c.clsChangedAt)) / 3600000)} giờ nữa mới đổi tiếp được`, 'error');
+    const old = c.cls, oldName = CLASSES[old].name, newName = CLASSES[cls].name;
+    // võ công: ô nào đã lĩnh ngộ ở phái cũ (cả hai hệ, chiêu buff, nội công bị động) thì ô đó ở phái mới cũng lĩnh ngộ, về tầng 1 (hoàn điểm)
+    const slots = [0, 1, 2, 3, 4, 5, ACTIVE_BUFF_SLOT, PASSIVE_SLOT], learned = {};
+    for (const br of ['noi', 'ngoai']) for (const i of slots) { const a = classSkill(old, i, br), b = classSkill(cls, i, br); if (a && b && c.skills[a.id]) learned[b.id] = 1; }
+    const keep = {};
+    for (const id in c.skills) if (!slots.some(i => ['noi', 'ngoai'].some(br => { const a = classSkill(old, i, br); return a && a.id === id; }))) keep[id] = 1;   // võ công không thuộc phái cũ (Long Ấn...) giữ nguyên
+    c.skills = Object.assign(keep, learned);
+    c.spSpent = 0;
+    // vũ khí môn phái (túi, đang cầm, kho) -> vũ khí phái mới cùng bậc / độ hiếm
+    const fixW = s => { if (s && ITEMS[s.id] && ITEMS[s.id].cls === old) { const nid = s.id.slice(0, -old.length) + cls; if (ITEMS[nid]) s.id = nid; } };
+    c.inv.forEach(fixW); Object.values(c.equip).forEach(fixW); ((c.bank && c.bank.items) || []).forEach(fixW);
+    // môn phái mới: cống hiến / cấp bậc làm lại từ đầu
+    if (c.sect) Object.assign(c.sect, { pts: 0, total: 0, cur: null });
+    U.removeByUid(c, card.uid, 1);
+    c.cls = cls; c.clsChangedAt = now;
+    if (c.riding) c.riding = false;
+    this.recalc(p); c.hp = p.stats.maxHp; c.mp = p.stats.maxMp;
+    p.dirtyMe = true; this.db.markDirty();
+    this.db.log('class', `${c.name} đổi phái ${oldName} → ${newName}`, { user: p.userId });
+    this.features.announce(`🔄 ${c.name} đã rời ${oldName}, gia nhập ${newName}!`);
+    p.socket.emit('classChanged', { cls, name: newName });
+  }
+
   selectDragon(p, el) {
     if (!p.c.dragons || !Object.prototype.hasOwnProperty.call(p.c.dragons, el) || !DRAGONS[el]) return;
     p.c.dragon = el;
@@ -2147,6 +2180,7 @@ const SKILL_STATUS = {
 // ---------- Cân bằng cận chiến / đánh xa ----------
 const isRanged = p => classRange(p.c.cls, branchOf(p.c)) >= 200;   // theo hệ đang tu
 const CAST_LOCK = { basic: 260, skill: 450 };   // đánh xa đứng yên vận chiêu (ms)
+const CLASS_CHANGE_LV = 10, CLASS_CHANGE_CD = 3 * 24 * 3600 * 1000;   // đổi phái: từ cấp 10, mỗi 3 ngày một lần
 const MELEE_GUARD = 0.85;                       // cận chiến nhận thêm chỉ 85% sát thương từ người chơi đánh xa
 const POISON_PVP = 0.007;                        // PK: mỗi nhịp độc trừ 0,7% sinh lực tối đa (chiêu độc chuyên 'dot' 0,9%), mạnh / yếu theo chênh lệch trang bị
 const MELEE_PVP_ATK = 1.15, MELEE_PVP_DEF = 0.85, MELEE_PVP_CC = 0.7;   // PK: cận chiến gây +15% sát thương, nhận 85% sát thương, bị khống chế 70% thời gian

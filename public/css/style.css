@@ -1673,3 +1673,12 @@ body.meditating #btn-med, body.meditating #med-sk { box-shadow: 0 0 0 2px #9ff0d
 .buy-br button { padding: 4px 9px; border-radius: 8px; border: 1px solid rgba(201,154,58,.45); background: rgba(0,0,0,.3); color: #e8d8b0; cursor: pointer; font: inherit; }
 .buy-br button.on { border-color: #ffd76a; background: rgba(255,215,106,.18); color: #fff; box-shadow: 0 0 8px rgba(255,215,106,.35); }
 .ok-t { color: #4ade80; }
+/* bảng chọn phái mới */
+#cls-box { position: absolute; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.55); }
+#cls-box .cls-in { width: min(680px, 94vw); max-height: 90vh; overflow-y: auto; background: rgba(18,12,20,.97); border: 1px solid var(--gold, #c99a3a); border-radius: 12px; padding: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.6); }
+#cls-box .cls-h { font-weight: 800; color: #ffd76a; display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 15px; }
+#cls-box .cls-x { cursor: pointer; padding: 0 6px; color: #ccc; }
+#cls-box .cls-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-top: 10px; }
+#cls-box .cls-card { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px; border-radius: 10px; border: 1px solid rgba(201,154,58,.4); background: rgba(255,255,255,.04); color: #f0e2c0; cursor: pointer; font: inherit; }
+#cls-box .cls-card:hover { border-color: var(--cc); box-shadow: 0 0 10px var(--cc); background: rgba(255,215,106,.08); }
+#cls-box .cls-card b { font-size: 14px; color: #fff; } #cls-box .cls-card small { color: #a89a80; font-size: 11px; text-align: center; }
