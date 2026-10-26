@@ -110,12 +110,13 @@
     if (!box) {
       box = document.createElement('div'); box.id = 'story-box';
       const tut = $('tutorial-box'); tut.parentNode.insertBefore(box, tut);
-      box.onclick = () => UI.openPanel('quests', { tab: 'story' });
+      // bấm vào nhiệm vụ: tự đi tới nơi cần làm; nút 📖 mở bảng cốt truyện
+      box.onclick = e => { if (e.target.closest('.sb-open')) return UI.openPanel('quests', { tab: 'story' }); const g = QuestNav.storyGoal(G.me.story); if (g) QuestNav.go(g); else UI.openPanel('quests', { tab: 'story' }); };
     }
     const prog = st.need > 1 ? ` <b>${st.have}/${st.need}</b>` : '';
     const where = st.map && G.map && st.map !== G.map.id && st.type !== 'level' ? `<div class="small muted">📍 ${UI.esc(st.mapName)}</div>` : '';
     const hint = st.hint ? `<div class="sb-hint">💡 ${UI.esc(st.hint)}</div>` : '';
-    const html = `<h4>📜 Chương ${st.ch + 1}: ${UI.esc(st.chName)} <span class="small muted">(${st.st + 1}/${st.steps})</span></h4><div>${UI.esc(fill(st.text))}${prog}</div>${where}${hint}`;
+    const html = `<h4>📜 Chương ${st.ch + 1}: ${UI.esc(st.chName)} <span class="small muted">(${st.st + 1}/${st.steps})</span><span class="sb-open" title="Xem cốt truyện">📖</span></h4><div>${UI.esc(fill(st.text))}${prog}</div>${where}${hint}<div class="qn-go">🧭 Chạm để tự đi tới</div>`;
     if (box._h !== html) { box.innerHTML = html; box._h = html; }
   }
   // mũi tên dẫn đường cốt truyện
@@ -160,6 +161,7 @@
       html += `<div class="story-ch ${done ? 'done' : now ? 'now' : 'locked'}"><div class="sc-head"><b>Chương ${i + 1}: ${UI.esc(ch.name)}</b> <span class="small muted">Cấp ${ch.lv}+</span> ${done ? '<span class="sc-tag ok">✔ Hoàn thành</span>' : now ? '<span class="sc-tag cur">Đang làm</span>' : '<span class="sc-tag">🔒</span>'}</div>
         ${locked ? '' : `<p class="small">${UI.esc(fill(ch.desc))}</p>`}`;
       if (now) {
+        if (QuestNav.storyGoal(st)) html += '<button class="btn small green" data-qgo="story">🧭 Tự đi tới nơi làm nhiệm vụ</button>';
         html += '<div class="sc-steps">' + ch.steps.map((s, k) => `<div class="sc-step ${k < st.st ? 'ok' : k === st.st ? 'cur' : ''}">${k < st.st ? '✔' : k === st.st ? '➤' : '○'} ${UI.esc(fill(s.text))}${k === st.st && st.need > 1 ? ` <b>(${st.have}/${st.need})</b>` : ''}${k === st.st && s.hint ? `<div class="sc-hint">💡 ${UI.esc(s.hint)}</div>` : ''}</div>`).join('') + '</div>';
       }
       if (!locked) html += `<button class="btn small" data-replay="${i}">▶ Xem lại hội thoại</button>`;
@@ -169,6 +171,7 @@
     return html;
   }
   function bindTab(body) {
+    body.querySelectorAll('[data-qgo="story"]').forEach(b => b.onclick = () => { const g = QuestNav.storyGoal(G.me.story); if (g) { UI.closePanel(); QuestNav.go(g); } });
     body.querySelectorAll('[data-replay]').forEach(b => b.onclick = () => {
       const S = G.data.story, k = b.dataset.replay;
       UI.closePanel();

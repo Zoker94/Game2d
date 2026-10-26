@@ -4,7 +4,9 @@ const CHANGELOG = [
   {
     date: '28/10/2026',
     items: [
-      '⚖️ Cân bằng lại: chỉ số trang bị giảm 20% (trừ tốc độ chạy), võ công đánh quái / boss giảm 15%. Từ cấp 15 quái và boss trâu dần theo cấp: máu và phòng thủ cao hơn (cấp 90 khoảng gấp 2 lần máu). Dưới cấp 15 vẫn dễ cày như cũ. PK giữ nguyên cân bằng.'
+      '⚖️ Cân bằng lại: chỉ số trang bị giảm 20% (trừ tốc độ chạy), võ công đánh quái / boss giảm 15%. Từ cấp 15 quái và boss trâu dần theo cấp: máu và phòng thủ cao hơn (cấp 90 khoảng gấp 2 lần máu). Dưới cấp 15 vẫn dễ cày như cũ. PK giữ nguyên cân bằng.',
+      '🧭 Chạm vào nhiệm vụ để tự đi tới nơi làm: khung cốt truyện, nhiệm vụ ngày (dòng có 🧭), nhiệm vụ môn phái và nút "🧭 Đi" trong bảng Nhiệm vụ. Nhân vật tự chạy qua các cổng, tới NPC thì mở hội thoại, tới bãi quái thì bật Tự động đánh. Di chuyển tay là thôi dẫn đường. Không có đường đi bộ thì dẫn tới Xa Phu.',
+      'Sửa lỗi máy chủ có thể bị sập khi quái tìm đường.'
     ]
   },
   {

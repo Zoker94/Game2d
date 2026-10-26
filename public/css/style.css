@@ -1703,3 +1703,9 @@ body.blackout > *:not(#blackout) { visibility: hidden !important; }
 /* khu của bản đồ (bấm để đổi) */
 #ch-tag { cursor: pointer; pointer-events: auto; color: #9fe3ff; font-size: 12px; padding: 0 4px; border-radius: 8px; background: rgba(80,160,220,.18); }
 #ch-tag:hover { background: rgba(80,160,220,.35); }
+
+/* dẫn đường nhiệm vụ: chạm vào nhiệm vụ để tự đi tới */
+#story-box .qn-go { margin-top: 3px; font-size: 11px; color: #7fe0a8; }
+#story-box .sb-open { float: right; cursor: pointer; padding: 0 4px; opacity: .85; }
+#daily-box .q.can-go { cursor: pointer; }
+#daily-box .q.can-go:hover span { color: #9fffc8; }

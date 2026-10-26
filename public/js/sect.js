@@ -58,7 +58,9 @@
   // dẫn đường theo nhiệm vụ
   function nav(q) {
     if (!q) return;
-    if (q.map && G.map && q.map === G.map.id) return UI.toast('Mục tiêu ở ngay bản đồ này', 'info');
+    if (q.type === 'letter' && q.map) return QuestNav.go({ map: q.map, npc: q.npc });
+    if (q.type === 'kill' && q.mon) return QuestNav.go({ map: q.map || QuestNav.mapOfMon([q.mon]), mons: [q.mon] });
+    if (q.type === 'elite') { const m = QuestNav.bestField(); if (m) return QuestNav.go({ map: m, field: true }); }
     if (q.map && WorldMap.navTo(q.map, true)) return;
     if (q.map) return UI.toast(`Hãy đi Xa Phu tới ${G.data.maps[q.map] ? G.data.maps[q.map].name : 'nơi cần đến'}`, 'info');
     UI.toast(q.type === 'elite' ? 'Quái ⭐ Tinh Anh xuất hiện ngẫu nhiên ở các bãi luyện công' : 'Gặp Phó Bản Sứ Giả trong thành', 'info');

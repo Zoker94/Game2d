@@ -423,7 +423,7 @@
     for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) { ctx.fillStyle = COL[m.tiles[y * m.w + x]] || '#000'; ctx.fillRect(x * 3, y * 3, 3, 3); }
     m.portals.forEach(p => { ctx.fillStyle = '#7fd4ff'; ctx.fillRect(p.x * 3 - 2, p.y * 3 - 2, 7, 7); });
     minimapBase = cv; G.mapBase = cv;
-    UI.closePanel(); if (window.BigMap) BigMap.close(); if (window.WorldMap) { WorldMap.close(); WorldMap.onEnterMap(); }
+    UI.closePanel(); if (window.BigMap) BigMap.close(); if (window.WorldMap) { WorldMap.close(); WorldMap.onEnterMap(); } if (window.QuestNav) QuestNav.onEnterMap();
     sfx('portal');
     mapLoading(m);
     if (G.auto) sendAutoSrv();   // vào lại / đổi map: báo lại máy chủ trạng thái tự động
@@ -867,7 +867,7 @@
   Input.on('bigmap', () => { BigMap.close(); WorldMap.toggle(); });
   Input.on('escape', () => { if (WorldMap.open_) WorldMap.close(); else if (BigMap.open_) BigMap.close(); else if (Targets.open_) Targets.close(); else UI.closePanel(); });
   Input.on('chat', () => UI.focusChat());
-  Input.on('joymove', () => { G.moveTo = null; G.npcGoal = null; G.chase = null; });
+  Input.on('joymove', () => { G.moveTo = null; G.npcGoal = null; G.chase = null; QuestNav.cancel(); });
   Input.on('toast', t => UI.toast(t));
   Input.on('resize', resize);
 
@@ -1050,7 +1050,7 @@
     }
     let v = dead || cc ? { x: 0, y: 0 } : Input.vector();
     const manual = Math.hypot(v.x, v.y) > 0.01;
-    if (manual) { G.moveTo = null; G.npcGoal = null; G.chase = null; }
+    if (manual) { G.moveTo = null; G.npcGoal = null; G.chase = null; QuestNav.cancel(); }
 
     // Đuổi theo mục tiêu để đánh
     if (!manual && G.chase && !dead && !cc) {

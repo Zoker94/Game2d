@@ -48,7 +48,7 @@ class Story {
     const have = step.type === 'level' ? c.level : s.n;
     return {
       ch: s.ch, st: s.st, steps: CHAPTERS[s.ch].steps.length, total: CHAPTERS.length, chName: CHAPTERS[s.ch].name,
-      type: step.type, text: step.text, hint: step.hint || null, tut: !!step.tut, have: Math.min(have, need), need, npc: step.npc || STEP_NPC[step.type] || null,
+      type: step.type, text: step.text, hint: step.hint || null, tut: !!step.tut, have: Math.min(have, need), need, npc: step.npc || STEP_NPC[step.type] || null, mons: step.mons || null,
       map: tm, mapName: tm ? MAPS[tm].name : null, next: tm && tm !== baseOf(p.mapId) ? this.w.escort.nextMap(p.mapId, tm) : null,
       eid: p.storyElite && !p.storyElite.dead ? p.storyElite.id : null, seen: !!s.seen
     };

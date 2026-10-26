@@ -239,7 +239,11 @@
       if (n) { $('chat-ch').value = 'pm'; $('chat-to').value = n; $('chat-to').classList.remove('hidden'); $('chat-input').focus(); }
     });
     $('tutorial-box').onclick = () => { const t = G.me && G.me.tutorial; if (t && t.complete) emit('tutorialClaim'); else UI.openPanel('quests'); };
-    $('daily-box').onclick = () => UI.openPanel('quests', { tab: 'daily' });
+    // bấm vào một nhiệm vụ ngày: tự đi tới bãi quái; bấm chỗ khác: mở bảng nhiệm vụ
+    $('daily-box').onclick = e => {
+      const el = e.target.closest('[data-qid]'), q = el && G.daily && G.daily.list.find(x => x.id === el.dataset.qid), g = q && QuestNav.dailyGoal(q);
+      if (g) QuestNav.go(g); else UI.openPanel('quests', { tab: 'daily' });
+    };
     if (Input.isTouch) document.body.classList.add('show-tracker');
     // nút thu gọn cụm nút menu cạnh bản đồ mini, và thu gọn khung nhiệm vụ (nhớ trên máy)
     const lsGet = k => { try { return localStorage.getItem(k) === '1'; } catch (e) { return false; } };
@@ -403,7 +407,7 @@
     if (!d) return;
     const done = d.list.filter(q => q.claimed).length;
     const html = `<h4>📅 Nhiệm vụ ngày (${done}/${d.list.length})</h4>` + d.list.filter(q => !q.claimed).slice(0, 3).map(q =>
-      `<div class="q ${q.done ? 'done' : ''}"><span>${esc(q.text)}</span><b>${q.done ? '✔' : q.progress + '/' + q.n}</b></div>`).join('') +
+      `<div class="q ${q.done ? 'done' : ''} ${!q.done && QuestNav.dailyGoal(q) ? 'can-go' : ''}" data-qid="${q.id}"><span>${!q.done && QuestNav.dailyGoal(q) ? '🧭 ' : ''}${esc(q.text)}</span><b>${q.done ? '✔' : q.progress + '/' + q.n}</b></div>`).join('') +
       (d.list.some(q => q.done && !q.claimed) ? '<div class="small" style="color:#ffd76a">Có phần thưởng chờ nhận!</div>' : '');
     if (html !== lastDailyHtml) { $('daily-box').innerHTML = html; lastDailyHtml = html; }
     if (panel === 'quests') UI.refreshPanel(true);
@@ -1023,7 +1027,7 @@
       if (!d) html += '<p class="muted">Đang tải...</p>';
       else {
         html += '<div class="list">' + d.list.map(q => `<div class="li ${q.done ? 'done' : ''}"><div class="grow"><b>${esc(q.text)}</b><div class="sub">Thưởng: ${rewardText(q.reward)}</div><div class="progress"><i style="width:${q.progress / q.n * 100}%"></i></div></div>
-          <div>${q.claimed ? '<span class="muted">Đã nhận</span>' : q.done ? `<button class="btn small green" data-claim="${q.id}">Nhận</button>` : `${q.progress}/${q.n}`}</div></div>`).join('') + '</div>';
+          <div>${q.claimed ? '<span class="muted">Đã nhận</span>' : q.done ? `<button class="btn small green" data-claim="${q.id}">Nhận</button>` : `${q.progress}/${q.n}${QuestNav.dailyGoal(q) ? ` <button class="btn small" data-qgo="${q.id}">🧭 Đi</button>` : ''}`}</div></div>`).join('') + '</div>';
         const allDone = d.list.every(q => q.claimed);
         html += `<div class="card" style="margin-top:8px"><h4>🎁 Thưởng hoàn thành tất cả</h4><div class="small">${rewardText(d.bonus)}</div>${d.bonusClaimed ? '<span class="muted">Đã nhận</span>' : `<button class="btn small green" data-claim="bonus" ${allDone ? '' : 'disabled'}>Nhận</button>`}</div>
           <p class="small muted">Nhiệm vụ làm mới lúc 0:00 mỗi ngày (giờ Việt Nam).</p>`;
@@ -1033,6 +1037,7 @@
     bindTabs(body);
     const tc = $('tut-claim'); if (tc) tc.onclick = () => emit('tutorialClaim');
     body.querySelectorAll('[data-claim]').forEach(b => b.onclick = () => emit('dailyClaim', { id: b.dataset.claim }));
+    body.querySelectorAll('[data-qgo]').forEach(b => b.onclick = () => { const q = G.daily && G.daily.list.find(x => x.id === b.dataset.qgo), g = q && QuestNav.dailyGoal(q); if (g) { UI.closePanel(); QuestNav.go(g); } });
   }
 
   // ---------- Bang hội ----------

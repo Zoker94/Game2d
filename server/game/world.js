@@ -210,7 +210,7 @@ class World {
       you: p.id,
       // id: bản đồ gốc (máy khách tra dữ liệu theo id này); key: id thật của khu; ch / chs: khu hiện tại / số khu
       map: { id: baseOf(d.id), key: d.id, ch: chOf(d.id), chs: d.chs || 1, name: d.name, theme: d.theme, w: d.w, h: d.h, tiles: d.tiles, safe: d.safe, pvp: d.pvp, lv: d.lv,
-        weather: this.weatherOf(mapId), portals: d.portals, buildings: d.buildings || [], props: d.props || [], sect: d.sect || null, npcs: d.npcs.map(n => ({ ...n, name: NPCS[n.id].name, sprite: NPCS[n.id].sprite, color: NPCS[n.id].color, action: NPCS[n.id].action })) },
+        weather: this.weatherOf(mapId), spawns: (d.spawns || []).map(s => [s.mon, s.x, s.y]), portals: d.portals, buildings: d.buildings || [], props: d.props || [], sect: d.sect || null, npcs: d.npcs.map(n => ({ ...n, name: NPCS[n.id].name, sprite: NPCS[n.id].sprite, color: NPCS[n.id].color, action: NPCS[n.id].action })) },
       x, y, solid: SOLID, tile: TILE,
       drops: [...m.drops.values()].map(dr => this.dropView(dr))
     });
