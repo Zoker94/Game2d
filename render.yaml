@@ -5,7 +5,7 @@ services:
   - type: web
     name: vo-lam-pixel
     runtime: node
-    plan: free
+    plan: starter
     region: singapore
     branch: ccr-5439a7cc-q4h8lm
     buildCommand: npm install
