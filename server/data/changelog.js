@@ -2,31 +2,19 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
-    date: '28/10/2026',
-    items: [
-      '⚖️ Cân bằng lại: chỉ số trang bị giảm 20% (trừ tốc độ chạy), võ công đánh quái / boss giảm 15%. Từ cấp 15 quái và boss trâu dần theo cấp: máu và phòng thủ cao hơn (cấp 90 khoảng gấp 2 lần máu). Dưới cấp 15 vẫn dễ cày như cũ. PK giữ nguyên cân bằng.',
-      '🧭 Chạm vào nhiệm vụ để tự đi tới nơi làm: khung cốt truyện, nhiệm vụ ngày (dòng có 🧭), nhiệm vụ môn phái và nút "🧭 Đi" trong bảng Nhiệm vụ. Nhân vật tự chạy qua các cổng, tới NPC thì mở hội thoại, tới bãi quái thì bật Tự động đánh. Di chuyển tay là thôi dẫn đường. Không có đường đi bộ thì dẫn tới Xa Phu.',
-      'Sửa lỗi máy chủ có thể bị sập khi quái tìm đường.'
-    ]
-  },
-  {
-    date: '27/10/2026',
-    items: [
-      '🗺️ Chia khu: mỗi bản đồ luyện công có 5 khu, mỗi khu tối đa 10 người, quái và đồ rơi riêng từng khu. Bấm "Khu n ▾" cạnh tên bản đồ để đổi khu (không đổi được khi đang giao chiến). Qua cổng sẽ giữ số khu nếu còn chỗ. Thành, môn phái, chiến trường vẫn chung một khu. Boss thế giới xuất hiện ở Khu 1.',
-      '📉 Giảm đồ rơi để bãi quái không ngập đồ: quái thường chỉ rơi ngân lượng khoảng 1/3 số lần (mỗi lần nhiều hơn), ít bình thuốc, đá, trang bị và ngọc hơn. Trang bị Truyền Kỳ giờ cực hiếm ở mọi nguồn (quái, tinh anh, boss, rương, phó bản, áp tiêu).',
-      '⚔️ Trang bị cấp 70, 80, 90 (Tiên Phẩm, Thánh Phẩm, Chí Tôn) cho mọi loại trang bị và vũ khí môn phái – rơi từ quái cấp 70 trở lên, bán ở tiệm theo cấp.',
-      '🧤 Thêm ô trang bị: Găng tay, Quần, và 2 ô Nhẫn (tay trái / tay phải – chọn khi đeo). Găng tay, quần rơi từ quái và bán ở Hiệu May.',
-      '🧥 Áo choàng: chỉ chế tạo được ở bản đồ môn phái của mình, gặp Chưởng Phi Phong (cạnh Hộ Pháp). Cần ngân lượng, Huyền Tinh Thạch, điểm cống hiến môn phái và Thiên Tàm Ti (rơi ít từ quái, nhiều hơn ở tinh anh / Boss, hoặc đổi bằng cống hiến ở Hộ Pháp). Kết quả ngẫu nhiên Thường → Truyền Kỳ (0,5%).'
-    ]
-  },
-  {
     date: '26/10/2026',
     items: [
-      '🤖 Treo máy trên máy chủ: bật Tự động ở bãi luyện rồi thoát ra màn hình chính, tắt màn hình điện thoại, chuyển tab hay mất mạng – máy chủ vẫn đánh quái quanh chỗ treo, nhặt đồ và bơm máu theo cài đặt Tự động. Mất kết nối thì treo tối đa 8 giờ. Vào lại sẽ thấy báo cáo số quái, ngân lượng, cấp đã lên. Không tự PK; chết hoặc về thành thì dừng.',
-      '🌙 Nút Tắt màn (cạnh nút toàn màn hình, hoặc trong Cài đặt): màn hình đen hoàn toàn, game ngừng vẽ để tiết kiệm pin, máy chủ treo hộ. Chạm 2 lần để bật lại.',
-      'Sửa lỗi tự động chạy mãi tới đồ / tiền rơi vào chỗ kẹt (đá, cây, nước) mà không nhặt được, không đánh quái: đồ rơi giờ luôn nằm ở chỗ đứng tới được; món nào đuổi quá lâu thì bỏ qua; quái đứng chỗ không tới được cũng bỏ qua.',
-      'Tối ưu điện thoại: chuyển bản đồ không còn đơ màn hình; chỉ tải hình môn phái khi cần (bớt tốn RAM, mạng). Cài đặt → 🔋 Tiết kiệm pin (mặc định bật trên điện thoại): 30 FPS, độ nét tối đa 150%, để yên lâu thì vẽ thưa hơn – tắt đi nếu muốn 60 FPS. ✨ Giảm hiệu ứng nặng cho máy yếu. Gõ /fps trong khung chat để xem bảng đo khung hình.',
-      'Đổi môn phái: vật phẩm mới Chuyển Phái Lệnh (Kỳ Trân Các, 300 💎) – dùng để chọn phái mới (từ cấp 10, mỗi 3 ngày một lần). Giữ nguyên cấp, trang bị, điểm tiềm năng và hệ Nội / Ngoại công; võ công đã lĩnh ngộ chuyển sang chiêu cùng ô của phái mới (về tầng 1, hoàn điểm võ học); vũ khí môn phái (kể cả cường hóa, đá khảm) đổi thành vũ khí phái mới cùng bậc. Cống hiến môn phái cũ không mang theo.'
+      '🗺️ CHIA KHU: mỗi bãi luyện công có 5 khu, tối đa 10 người/khu, quái và đồ rơi riêng. Bấm "Khu n ▾" cạnh tên bản đồ để đổi khu (không đổi khi đang giao chiến). Thành, môn phái, chiến trường vẫn chung. Boss thế giới ở Khu 1.',
+      '⚖️ CÂN BẰNG: chỉ số trang bị −20% (trừ tốc độ chạy), võ công đánh quái −15%. Từ cấp 15 quái và boss trâu dần (cấp 90 khoảng gấp đôi máu, thủ cao hơn). Dưới cấp 15 vẫn dễ cày. PK giữ nguyên.',
+      '📉 ĐỒ RƠI: bãi quái không còn ngập đồ – ngân lượng chỉ rơi khoảng 1/3 số lần (mỗi lần nhiều hơn), ít thuốc, đá, trang bị, ngọc hơn. Trang bị Truyền Kỳ giờ cực hiếm ở mọi nguồn.',
+      '⚔️ TRANG BỊ MỚI: bậc cấp 70 / 80 / 90 (Tiên Phẩm, Thánh Phẩm, Chí Tôn) cho mọi loại đồ và vũ khí môn phái. Thêm ô Găng tay, Quần và 2 ô Nhẫn (tay trái / tay phải). Găng tay, quần rơi từ quái và bán ở Hiệu May.',
+      '🧥 ÁO CHOÀNG: chỉ chế tạo ở bản đồ môn phái của mình – gặp Chưởng Phi Phong (cạnh Hộ Pháp). Cần ngân lượng, Huyền Tinh Thạch, điểm cống hiến và Thiên Tàm Ti (rơi từ quái / tinh anh / boss, hoặc đổi cống hiến ở Hộ Pháp). Ra ngẫu nhiên Thường → Truyền Kỳ.',
+      '🧭 CHẠM VÀO NHIỆM VỤ ĐỂ TỰ ĐI: khung cốt truyện, nhiệm vụ ngày (dòng có 🧭), nhiệm vụ môn phái. Nhân vật tự chạy qua cổng, tới NPC thì mở hội thoại, tới bãi quái thì bật Tự động. Di chuyển tay là thôi.',
+      '🤖 TREO MÁY TRÊN MÁY CHỦ: bật Tự động ở bãi luyện rồi thoát ra màn hình chính, tắt màn hình, chuyển tab hay mất mạng – máy chủ vẫn đánh quái, nhặt đồ, bơm máu hộ (mất mạng: tối đa 8 giờ). Vào lại sẽ có báo cáo. Không tự PK; chết hoặc về thành thì dừng.',
+      '🌙 TẮT MÀN & TIẾT KIỆM PIN: nút 🌙 Tắt màn (cạnh nút toàn màn hình) cho màn đen hoàn toàn, máy chủ treo hộ, chạm 2 lần để bật lại. Cài đặt → 🔋 Tiết kiệm pin (mặc định bật trên điện thoại, 30 FPS) và ✨ Giảm hiệu ứng nặng cho máy yếu.',
+      '📱 MƯỢT HƠN TRÊN ĐIỆN THOẠI: chuyển bản đồ không còn đơ màn hình, bớt tốn RAM và mạng. Gõ /fps trong chat để xem bảng đo khung hình.',
+      '🔄 ĐỔI MÔN PHÁI: Chuyển Phái Lệnh (Kỳ Trân Các, 300 💎) – từ cấp 10, mỗi 3 ngày một lần. Giữ cấp, trang bị, tiềm năng; võ công chuyển sang chiêu cùng ô của phái mới, vũ khí môn phái đổi theo.',
+      '🛠️ SỬA LỖI: tự động chạy mãi tới đồ / tiền rơi vào chỗ kẹt mà không nhặt được, không đánh quái; tự động vẫn chạy khi chuyển tab; máy chủ có thể bị sập khi quái tìm đường.'
     ]
   },
   {
