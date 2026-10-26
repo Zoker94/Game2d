@@ -41,8 +41,9 @@
       let x = 0, y = 0;
       const k = this.keys;
       if (!this.typing()) {
-        if (k.KeyA || k.ArrowLeft) x -= 1; if (k.KeyD || k.ArrowRight) x += 1;
-        if (k.KeyW || k.ArrowUp) y -= 1; if (k.KeyS || k.ArrowDown) y += 1;
+        const on = id => (binds.keys[id] || []).some(c => k[c]);
+        if (on('left')) x -= 1; if (on('right')) x += 1;
+        if (on('up')) y -= 1; if (on('down')) y += 1;
       }
       if (this.joy.active) { x += this.joy.x; y += this.joy.y; }
       x += this.pad.x; y += this.pad.y;
@@ -52,11 +53,81 @@
     }
   };
 
+  // ---------- Gán phím (bàn phím + tay cầm) – người chơi tự đổi trong Cài đặt → Cài đặt phím ----------
+  // [mã, tên, sự kiện, tham số, phím mặc định (tối đa 2), nút tay cầm mặc định]
+  const ACTIONS = [
+    ['up', 'Đi lên', null, null, ['KeyW', 'ArrowUp']], ['down', 'Đi xuống', null, null, ['KeyS', 'ArrowDown']],
+    ['left', 'Đi sang trái', null, null, ['KeyA', 'ArrowLeft']], ['right', 'Đi sang phải', null, null, ['KeyD', 'ArrowRight']],
+    ['attack', 'Đánh thường', 'skill', 0, ['Digit1', 'Space'], 0],
+    ['slot1', 'Ô kỹ năng 1', 'slot', 1, ['Digit2'], 2], ['slot2', 'Ô kỹ năng 2', 'slot', 2, ['Digit3'], 3], ['slot3', 'Ô kỹ năng 3', 'slot', 3, ['Digit4'], 1],
+    ['slot4', 'Ô kỹ năng 4', 'slot', 4, ['Digit5'], 6], ['slot5', 'Ô kỹ năng 5', 'slot', 5, ['Digit6'], 7], ['slot6', 'Ô kỹ năng 6', 'slot', 6, ['Digit7']],
+    ['slot7', 'Ô kỹ năng 7', 'slot', 7, ['Digit8']], ['slot8', 'Ô kỹ năng 8', 'slot', 8, ['Digit9']],
+    ['dodge', 'Khinh công', 'dodge', null, ['ShiftLeft', 'KeyQ']],
+    ['hp', 'Bình máu', 'potion', 'hp', ['KeyZ'], 4], ['mp', 'Bình nội lực', 'potion', 'mp', ['KeyX'], 5],
+    ['target', 'Đổi mục tiêu', 'target', null, ['Tab'], 11], ['interact', 'Nói chuyện / nhặt đồ', 'interact', null, ['KeyF']],
+    ['auto', 'Bật / tắt tự động', 'auto', null, ['KeyR'], 9], ['mount', 'Cưỡi thú', 'mount', null, ['KeyT'], 10],
+    ['meditate', 'Ngồi thiền', 'meditate', null, ['KeyY']], ['recall', 'Về thành', 'recall', null, ['KeyH']],
+    ['inventory', 'Túi đồ', 'panel', 'inventory', ['KeyI'], 8], ['character', 'Nhân vật', 'panel', 'character', ['KeyC']],
+    ['skills', 'Võ công', 'panel', 'skills', ['KeyK']], ['quests', 'Nhiệm vụ', 'panel', 'quests', ['KeyJ']],
+    ['mountp', 'Thú cưỡi', 'panel', 'mount', ['KeyM']], ['guild', 'Bang hội', 'panel', 'guild', ['KeyG']],
+    ['friends', 'Bạn bè', 'panel', 'friends', ['KeyB']], ['events', 'Sự kiện', 'panel', 'events', ['KeyO']],
+    ['leaderboard', 'Xếp hạng', 'panel', 'leaderboard', ['KeyL']], ['giftcode', 'Gift code', 'panel', 'giftcode', ['KeyU']],
+    ['tlist', 'Danh sách mục tiêu', 'tlist', null, ['KeyV']], ['bigmap', 'Bản đồ', 'bigmap', null, ['KeyN']],
+    ['chat', 'Mở khung chat', 'chat', null, ['Enter']]
+  ];
+  const ACT = Object.fromEntries(ACTIONS.map(a => [a[0], a]));
+  const defaults = () => ({ keys: Object.fromEntries(ACTIONS.map(a => [a[0], a[4].slice()])), pad: Object.fromEntries(ACTIONS.map(a => [a[0], a[5] == null ? null : a[5]])) });
+  let binds = defaults(), KEYMAP = {}, PADMAP = {};
+  try {   // cấu hình đã lưu (thiếu hành động mới thì lấy mặc định)
+    const sv = JSON.parse(localStorage.getItem('vl_keybind') || 'null');
+    if (sv) for (const id in ACT) { if (Array.isArray(sv.keys && sv.keys[id])) binds.keys[id] = sv.keys[id].slice(0, 2); if (sv.pad && id in sv.pad) binds.pad[id] = sv.pad[id]; }
+  } catch (e) { }
+  function rebuild() {
+    KEYMAP = { Escape: ['escape'] };   // Esc luôn để đóng bảng, không cho gán
+    PADMAP = {};
+    for (const [id, , ev, arg] of ACTIONS) {
+      if (!ev) continue;
+      for (const c of binds.keys[id] || []) KEYMAP[c] = [ev, arg, id];
+      if (binds.pad[id] != null) PADMAP[binds.pad[id]] = [ev, arg, id];
+    }
+    Input.bindVer = (Input.bindVer || 0) + 1;
+  }
+  const KEY_NAME = { Space: 'Space', ShiftLeft: 'Shift', ShiftRight: 'Shift phải', ControlLeft: 'Ctrl', ControlRight: 'Ctrl phải', AltLeft: 'Alt', AltRight: 'Alt phải', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Enter: 'Enter', Tab: 'Tab', Backquote: '`', Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/', Backslash: '\\', CapsLock: 'Caps' };
+  const keyName = c => !c ? '' : KEY_NAME[c] || (c.startsWith('Key') ? c.slice(3) : c.startsWith('Digit') ? c.slice(5) : c.startsWith('Numpad') ? 'Num ' + c.slice(6) : c);
+  const PAD_NAME = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 'Back', 'Start', 'L3', 'R3', 'D↑', 'D↓', 'D←', 'D→', 'Home'];
+  const padName = i => i == null ? '' : PAD_NAME[i] || 'Nút ' + i;
+  Input.binds = {
+    ACTIONS, keyName, padName,
+    get: () => binds,
+    // gán phím / nút; trùng với hành động khác thì gỡ khỏi hành động đó (trả về tên hành động bị gỡ)
+    set(id, kind, i, v) {
+      let moved = null;
+      if (kind === 'key') {
+        if (v) for (const o in binds.keys) { const k = binds.keys[o].indexOf(v); if (k >= 0 && !(o === id && k === i)) { binds.keys[o].splice(k, 1); if (o !== id) moved = ACT[o][1]; } }
+        const arr = binds.keys[id] = (binds.keys[id] || []).slice(); if (v) arr[i] = v; else arr.splice(i, 1);
+        binds.keys[id] = arr.filter(Boolean).slice(0, 2);
+      } else {
+        if (v != null) for (const o in binds.pad) if (o !== id && binds.pad[o] === v) { binds.pad[o] = null; moved = ACT[o][1]; }
+        binds.pad[id] = v;
+      }
+      try { localStorage.setItem('vl_keybind', JSON.stringify(binds)); } catch (e) { }
+      rebuild(); emit('bindsChanged');
+      return moved;
+    },
+    reset() { binds = defaults(); try { localStorage.removeItem('vl_keybind'); } catch (e) { } rebuild(); emit('bindsChanged'); },
+    label(id) { const k = (binds.keys[id] || []).map(keyName).join('/'); return k || padName(binds.pad[id]); },
+    capture: null,       // hàm nhận mã phím kế tiếp (bảng cài đặt phím đang chờ)
+    padCapture: null     // hàm nhận nút tay cầm kế tiếp
+  };
+  rebuild();
+
   // ---------- Bàn phím ----------
-  const KEYMAP = { Digit1: ['skill', 0], Space: ['skill', 0], Digit2: ['slot', 1], Digit3: ['slot', 2], Digit4: ['slot', 3], Digit5: ['slot', 4], Digit6: ['slot', 5], Digit7: ['slot', 6], Digit8: ['slot', 7], Digit9: ['slot', 8], KeyT: ['mount'], KeyY: ['meditate'], ShiftLeft: ['dodge'], ShiftRight: ['dodge'], KeyQ: ['dodge'],
-    KeyZ: ['potion', 'hp'], KeyX: ['potion', 'mp'], Tab: ['target'], KeyF: ['interact'], KeyR: ['auto'], KeyH: ['recall'],
-    KeyI: ['panel', 'inventory'], KeyC: ['panel', 'character'], KeyJ: ['panel', 'quests'], KeyG: ['panel', 'guild'], KeyB: ['panel', 'friends'],
-    KeyO: ['panel', 'events'], KeyL: ['panel', 'leaderboard'], KeyM: ['panel', 'mount'], KeyK: ['panel', 'skills'], KeyU: ['panel', 'giftcode'], KeyV: ['tlist'], KeyN: ['bigmap'], Escape: ['escape'], Enter: ['chat'] };
+  // bảng cài đặt phím đang chờ: bắt phím trước mọi xử lý khác (pha capture), không để phím đó kích hoạt hành động
+  window.addEventListener('keydown', e => {
+    if (!Input.binds.capture) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    const f = Input.binds.capture; Input.binds.capture = null; f(e.code);
+  }, true);
   window.addEventListener('keydown', e => {
     if (!Input.inGame) return;
     if (Input.typing()) {
@@ -66,9 +137,9 @@
     Input.keys[e.code] = true;
     const m = KEYMAP[e.code];
     if (m) { e.preventDefault(); if (!e.repeat || m[0] === 'skill') emit(m[0], m[1]); }
-    if (e.code === 'Space') Input.attackHeld = true;
+    if (m && m[2] === 'attack') Input.attackHeld = true;   // giữ phím đánh thường: đánh liên tục
   });
-  window.addEventListener('keyup', e => { Input.keys[e.code] = false; if (e.code === 'Space') Input.attackHeld = false; });
+  window.addEventListener('keyup', e => { Input.keys[e.code] = false; const m = KEYMAP[e.code]; if (m && m[2] === 'attack') Input.attackHeld = false; });
   window.addEventListener('blur', () => { Input.keys = {}; Input.attackHeld = false; });
 
   // ---------- Joystick ảo ----------
@@ -138,7 +209,6 @@
 
   // ---------- Tay cầm (Gamepad) ----------
   const prevBtn = {};
-  const PADMAP = { 0: ['skill', 0], 2: ['slot', 1], 3: ['slot', 2], 1: ['slot', 3], 4: ['potion', 'hp'], 5: ['potion', 'mp'], 6: ['slot', 4], 7: ['slot', 5], 8: ['panel', 'inventory'], 9: ['auto'], 10: ['mount'], 11: ['target'] };
   Input.pollGamepad = function () {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     let gp = null;
@@ -150,10 +220,14 @@
     const b = i => gp.buttons[i] && gp.buttons[i].pressed;
     if (b(14)) x = -1; if (b(15)) x = 1; if (b(12)) y = -1; if (b(13)) y = 1;
     this.pad.x = x; this.pad.y = y;
-    this.padAttack = b(0);
-    for (const i in PADMAP) {
-      const pressed = b(+i);
-      if (pressed && !prevBtn[i]) emit(PADMAP[i][0], PADMAP[i][1]);
+    if (Input.binds.padCapture) {   // bảng cài đặt phím đang chờ một nút tay cầm
+      for (let i = 0; i < gp.buttons.length; i++) { const pr = b(i); if (pr && !prevBtn[i]) { const f = Input.binds.padCapture; Input.binds.padCapture = null; prevBtn[i] = pr; f(i); return; } prevBtn[i] = pr; }
+      this.pad.x = 0; this.pad.y = 0; return;
+    }
+    this.padAttack = binds.pad.attack != null && b(binds.pad.attack);
+    for (let i = 0; i < gp.buttons.length; i++) {
+      const pressed = b(i);
+      if (pressed && !prevBtn[i] && PADMAP[i]) emit(PADMAP[i][0], PADMAP[i][1]);
       prevBtn[i] = pressed;
     }
   };

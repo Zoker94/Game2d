@@ -13,6 +13,7 @@ const CHANGELOG = [
       '🤖 TREO MÁY TRÊN MÁY CHỦ: bật Tự động ở bãi luyện rồi thoát ra màn hình chính, tắt màn hình, chuyển tab hay mất mạng – máy chủ vẫn đánh quái, nhặt đồ, bơm máu hộ (mất mạng: tối đa 8 giờ). Vào lại sẽ có báo cáo. Không tự PK; chết hoặc về thành thì dừng.',
       '🌙 TẮT MÀN & TIẾT KIỆM PIN: nút 🌙 Tắt màn (cạnh nút toàn màn hình) cho màn đen hoàn toàn, máy chủ treo hộ, chạm 2 lần để bật lại. Cài đặt → 🔋 Tiết kiệm pin (mặc định bật trên điện thoại, 30 FPS) và ✨ Giảm hiệu ứng nặng cho máy yếu.',
       '📱 MƯỢT HƠN TRÊN ĐIỆN THOẠI: chuyển bản đồ không còn đơ màn hình, bớt tốn RAM và mạng. Gõ /fps trong chat để xem bảng đo khung hình.',
+      '⌨️ TỰ CÀI PHÍM: Cài đặt → ⌨️ Cài đặt phím – đổi phím cho di chuyển, đánh, 8 ô kỹ năng, khinh công, thuốc, tự động, mở bảng… Mỗi việc 2 phím bàn phím + 1 nút tay cầm. Thanh kỹ năng hiện đúng phím đã gán; có nút Khôi phục mặc định.',
       '🔄 ĐỔI MÔN PHÁI: Chuyển Phái Lệnh (Kỳ Trân Các, 300 💎) – từ cấp 10, mỗi 3 ngày một lần. Giữ cấp, trang bị, tiềm năng; võ công chuyển sang chiêu cùng ô của phái mới, vũ khí môn phái đổi theo.',
       '🛠️ SỬA LỖI: Thẻ Đổi Tên chỉ miễn phí đúng 1 lần (trước đây nút vẫn ghi miễn phí nhưng bấm là bị trừ 50.000 lượng); tự động chạy mãi tới đồ / tiền rơi vào chỗ kẹt mà không nhặt được, không đánh quái; tự động vẫn chạy khi chuyển tab; máy chủ có thể bị sập khi quái tìm đường.'
     ]

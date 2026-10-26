@@ -266,7 +266,7 @@
     if (!G.me) return;
     const skills = G.mySkills();
     const hb = G.me.hotbar || [1, 2, 3, 4, 5, 6];
-    const bkey = G.me.cls + ':' + (G.me.branch || '') + ':' + (G.me.dragon || '') + ':' + hb.join(',') + ':' + skills.map(s => s && s.learned ? s.slv : 0).join(',');
+    const bkey = G.me.cls + ':' + (G.me.branch || '') + ':' + (G.me.dragon || '') + ':' + hb.join(',') + ':' + skills.map(s => s && s.learned ? s.slv : 0).join(',') + ':' + Input.bindVer;   // đổi phím: dựng lại nhãn phím
     if (builtFor === bkey) return;
     builtFor = bkey;
     const bar = $('skillbar');
@@ -283,12 +283,12 @@
       d.onmouseleave = hideTip;
       bar.appendChild(d);
     };
-    mk(skills[0], '1/␣', () => G.useSkill(0));
-    hb.forEach((idx, n) => mk(idx ? skills[idx] : null, SLOT_KEYS[n], () => G.useSlot(n + 1)));
+    mk(skills[0], Input.binds.label('attack'), () => G.useSkill(0));
+    hb.forEach((idx, n) => mk(idx ? skills[idx] : null, Input.binds.label('slot' + (n + 1)), () => G.useSlot(n + 1)));
     {   // nút khinh công
       const d = document.createElement('div');
       d.className = 'skill dodge-sk'; d.id = 'dodge-sk';
-      d.innerHTML = `<i class="sk-img" style="background-image:url('/assets/skills/ui_dodge.png')"></i><span class="key">⇧/Q</span><div class="cdo"></div><div class="cdt"></div>`;
+      d.innerHTML = `<i class="sk-img" style="background-image:url('/assets/skills/ui_dodge.png')"></i><span class="key">${Input.binds.label('dodge')}</span><div class="cdo"></div><div class="cdt"></div>`;
       d.onclick = () => Input.emit('dodge');
       d.onmouseenter = e => tip(e, '<b>Khinh công</b><br>Tung mình nhảy vọt theo hướng đang đi rồi đáp xuống, né mọi đòn đánh khi đang trên không và để lại bóng mờ.<br>Phím Shift hoặc Q · Hồi 5 giây');
       d.onmouseleave = hideTip;
@@ -330,6 +330,7 @@
   // ghi DOM chỉ khi giá trị đổi: gán lại cùng giá trị vẫn làm trình duyệt tính lại bố cục / vẽ lại
   const setTxt = (el, v) => { if (el && el._t !== v) { el.textContent = v; el._t = v; } };
   const setW = (el, v) => { if (el && el._w !== v) { el.style.width = v; el._w = v; } };
+  Input.on('bindsChanged', () => { if (G.me) UI.updateHud(); });   // đổi phím: vẽ lại nhãn phím trên thanh kỹ năng ngay
   UI.updateHud = function () {
     const me = G.me;
     if (!me) return;
@@ -1210,9 +1211,10 @@
         <button class="btn small" id="set-black" style="margin:4px 0">🌙 Tắt màn hình (màn đen, máy chủ treo hộ khi bật Tự động)</button><br>
         <label><input type="checkbox" id="set-qauto" ${s.questAuto !== false ? 'checked' : ''}> 🧭 Tự đi làm nhiệm vụ khi nhận nhiệm vụ mới (cốt truyện, môn phái)</label><br>
         <label><input type="checkbox" id="set-lowfx" ${s.lowfx ? 'checked' : ''}> ✨ Giảm hiệu ứng nặng (hạt, thời tiết, hoạt ảnh lặp trên giao diện)</label>
-        <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn small" id="set-fs">⛶ Toàn màn hình</button><button class="btn small" id="set-online">👥 Người chơi online</button><button class="btn small" id="set-news">📜 Lịch sử cập nhật</button></div>
+        <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn small primary" id="set-keys">⌨️ Cài đặt phím (bàn phím / tay cầm)</button><button class="btn small" id="set-fs">⛶ Toàn màn hình</button><button class="btn small" id="set-online">👥 Người chơi online</button><button class="btn small" id="set-news">📜 Lịch sử cập nhật</button></div>
         <div class="row" style="justify-content:flex-start;margin-top:6px;align-items:center;gap:6px"><span class="small">Giao diện:</span>${[['auto', 'Tự động'], ['pc', '🖥️ Máy tính'], ['mobile', '📱 Điện thoại']].map(([k, n]) => `<button class="btn small ${Input.uiPref === k ? 'primary' : ''}" data-uipref="${k}">${n}</button>`).join('')}${G.user && G.user.owner ? '<button class="btn small primary" id="set-admin">🛡️ Trang quản trị</button>' : ''}</div></div>
       <div class="card small"><h4>Điều khiển</h4>
+        <div class="small" style="color:#9fe3ff">Phím dưới đây là mặc định – đổi tùy ý ở nút ⌨️ Cài đặt phím phía trên (cả tay cầm).</div>
         <div><b>PC:</b> WASD/mũi tên di chuyển · Nhấp chuột để đi/chọn mục tiêu · 1/Space đánh · 2–7 các ô kỹ năng (tự gán trong bảng Võ Công, phím K) · Z/X thuốc · T cưỡi thú · Tab đổi mục tiêu · F nói chuyện NPC · R tự động · Enter chat · I/C/M/J/G/O/L mở bảng · Esc đóng</div>
         <div><b>Mobile:</b> Joystick trái để di chuyển · Nút ⚔️ (giữ để đánh liên tục) · 3 nút kỹ năng · ❤️💧 thuốc · 🎯 đổi mục tiêu · Chạm NPC/quái để tương tác</div>
         <div><b>Tay cầm:</b> Cần trái/D-pad di chuyển · A đánh · X/Y/B kỹ năng · LB/RB thuốc · LT đổi mục tiêu · RT nói chuyện NPC · Back mở túi · Start tự động ${pad ? `<br><span style="color:#4ade80">🎮 Đã kết nối: ${esc(pad.id.slice(0, 40))}</span>` : '<br><span class="muted">Chưa phát hiện tay cầm (nhấn một nút bất kỳ để kết nối)</span>'}</div></div>
@@ -1227,6 +1229,7 @@
     $('set-black').onclick = () => { UI.closePanel(); G.setBlackout(true); };
     $('set-lowfx').onchange = e => { G.setLowFx(e.target.checked); UI.refreshPanel(); };
     $('set-fs').onclick = () => Input.toggleFullscreen();
+    $('set-keys').onclick = () => UI.openPanel('keys');
     $('au-music').onchange = e => { GameAudio.set('music', e.target.checked); UI.updateMusicBtn(); };
     $('au-sfx').onchange = e => GameAudio.set('sfx', e.target.checked);
     $('au-mvol').oninput = e => GameAudio.set('musicVol', +e.target.value);
@@ -1288,7 +1291,7 @@
       html += `<p class="small muted">Chọn một ô phím, rồi bấm vào võ công bên dưới để gán. Bấm vào võ công đã gán ở ô khác sẽ đổi chỗ hai ô.${Input.isTouch ? ' Trên điện thoại, ô 1–6 là 6 nút chiêu bên phải màn hình.' : ''}</p><div class="kb-slots">`;
       for (let n = 0; n < 8; n++) {
         const s = hb[n] ? skills[hb[n]] : null;
-        const key = Input.isTouch ? (n < 6 ? 'Nút ' + (n + 1) : 'Phím ' + SLOT_KEYS[n]) : 'Phím ' + SLOT_KEYS[n];
+        const key = Input.isTouch ? (n < 6 ? 'Nút ' + (n + 1) : 'Phím ' + Input.binds.label('slot' + (n + 1))) : 'Phím ' + Input.binds.label('slot' + (n + 1));
         html += `<div class="kb-slot ${selSlot === n ? 'sel' : ''} ${s ? '' : 'empty'} ${s && !s.learned ? 'unl' : ''}" data-kslot="${n}"><span class="kb-key">${key}</span>
           <div class="kb-ico">${s ? ico(s, hb[n]) : '＋'}</div><div class="kb-name">${s ? esc(s.name) + (s.learned ? '' : '<br><span class="warn small">(chưa học)</span>') : 'Trống'}</div>${s ? `<button class="kb-x" data-kclear="${n}" title="Bỏ gán">✕</button>` : ''}</div>`;
       }

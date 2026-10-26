@@ -1712,3 +1712,11 @@ body.blackout > *:not(#blackout) { visibility: hidden !important; }
 
 #qn-hint { margin-top: 4px; display: inline-flex; align-items: center; gap: 8px; padding: 3px 6px 3px 12px; border-radius: 12px; background: rgba(10,40,24,.85); border: 1px solid #4affa0; color: #c8ffe0; font-size: 12px; pointer-events: auto; }
 #qn-hint .btn { padding: 2px 10px; }
+
+/* bảng cài đặt phím */
+.kb-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.kb-tbl th { text-align: left; color: #ffd76a; font-weight: 700; padding: 4px; border-bottom: 1px solid rgba(255,215,106,.25); }
+.kb-tbl td { padding: 3px 4px; border-bottom: 1px solid rgba(255,255,255,.05); }
+.kb-cell { min-width: 74px; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(201,154,58,.5); background: rgba(0,0,0,.35); color: #ffe9b0; font: inherit; font-weight: 700; cursor: pointer; }
+.kb-cell.empty { color: #776; font-weight: 400; }
+.kb-cell.wait { border-color: #4affa0; color: #4affa0; animation: blink 1s infinite; }
