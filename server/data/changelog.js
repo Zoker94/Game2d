@@ -4,6 +4,11 @@ const CHANGELOG = [
   {
     date: '26/10/2026',
     items: [
+      '⬆️ MỞ GIỚI HẠN CẤP 120: điểm võ học nay ~3,4 điểm mỗi cấp (tính lại cho mọi nhân vật, không cần làm gì) – cấp 99 có 333 điểm, cấp 120 có 405 điểm, vừa đủ nâng mọi võ công lên tầng tối đa.',
+      '🗺️ BẢN ĐỒ MỚI: Thiên Ngoại Thiên (cấp 100-110, đi tiếp từ cổng Đông Đoạn Hồn Nhai) và Cửu U Ma Vực (cấp 110-120), 8 loại quái mới, Boss Thiên Ngoại Kiếm Thánh và Cửu U Ma Tôn. Xa Phu đã có đường tới cả hai.',
+      '👑 BOSS: đánh theo % sinh lực tối đa của người trúng (nhiều máu hay ít máu đều chịu số đòn như nhau, thủ cao giảm tối đa 30%; lướt né chiêu vẫn tránh được). Nhạc Vũ Mục Anh Linh tăng lên 500 triệu máu, ở lại 3 giờ. Boss ngoài bản đồ nay chỉ rơi trang bị Truyền Kỳ ngẫu nhiên, tỉ lệ thấp: Boss thường 8-17% mỗi lần hạ (người gây sát thương cao nhất nhận); Nhạc Vũ Mục: hạng 1 chắc chắn, hạng 2-3 35%, hạng 4-10 10%, còn lại 2% – vẫn có Nguyên Bảo theo hạng, hạng 1 vẫn nhận Võ Mục Tâm Pháp.',
+      '📜 VÕ MỤC TÀN QUYỂN: nay rơi từ Boss phó bản – mỗi người 25% (vượt thần tốc 30%) nhận 1 quyển ngẫu nhiên từ Nhất đến Thất, quyển Thất hiếm nhất. Boss ngoài bản đồ không còn rơi tàn quyển.',
+      '⌨️ TỰ CÀI PHÍM: Cài đặt → ⌨️ Cài đặt phím – đổi phím cho di chuyển, đánh, 8 ô kỹ năng, khinh công, thuốc, tự động, mở bảng… Mỗi việc 2 phím bàn phím + 1 nút tay cầm. Thanh kỹ năng hiện đúng phím đã gán; có nút Khôi phục mặc định.',
       '🗺️ CHIA KHU: mỗi bãi luyện công có 5 khu, tối đa 10 người/khu, quái và đồ rơi riêng. Chạm Bia Chuyển Khu (bia đá cạnh mỗi cổng) hoặc "Khu n ▾" cạnh tên bản đồ để đổi khu (không đổi khi đang giao chiến). Thành, môn phái, chiến trường vẫn chung. Boss thế giới ở Khu 1.',
       '⚖️ CÂN BẰNG: công và thủ của trang bị −35%, riêng sinh lực từ trang bị tăng (+30% so với trước – đồ thiên về trâu máu), võ công đánh quái −15%. Bạo kích trên mỗi món tối đa 5%; mọi hiệu ứng % của trang bị (phản đòn, né, hút máu, xuyên giáp, sát thương bạo kích, choáng, đóng băng…) mỗi món tối đa 5% – đồ đang có cũng được quy đổi theo. Từ cấp 15 quái và boss trâu dần (cấp 90 khoảng gấp đôi máu, thủ cao hơn). Dưới cấp 15 vẫn dễ cày. PK giữ nguyên.',
       '📉 ĐỒ RƠI: bãi quái không còn ngập đồ – ngân lượng chỉ rơi khoảng 1/3 số lần (mỗi lần nhiều hơn), ít thuốc, đá, trang bị, ngọc hơn. Trang bị Truyền Kỳ giờ cực hiếm ở mọi nguồn.',
@@ -13,12 +18,7 @@ const CHANGELOG = [
       '🤖 TREO MÁY TRÊN MÁY CHỦ: bật Tự động ở bãi luyện rồi thoát ra màn hình chính, tắt màn hình, chuyển tab hay mất mạng – máy chủ vẫn đánh quái, nhặt đồ, bơm máu hộ (mất mạng: tối đa 8 giờ). Vào lại sẽ có báo cáo. Không tự PK; chết hoặc về thành thì dừng.',
       '🌙 TẮT MÀN & TIẾT KIỆM PIN: nút 🌙 Tắt màn (cạnh nút toàn màn hình) cho màn đen hoàn toàn, máy chủ treo hộ, chạm 2 lần để bật lại. Cài đặt → 🔋 Tiết kiệm pin (mặc định bật trên điện thoại, 30 FPS) và ✨ Giảm hiệu ứng nặng cho máy yếu.',
       '📱 MƯỢT HƠN TRÊN ĐIỆN THOẠI: chuyển bản đồ không còn đơ màn hình, bớt tốn RAM và mạng. Gõ /fps trong chat để xem bảng đo khung hình.',
-      '⌨️ TỰ CÀI PHÍM: Cài đặt → ⌨️ Cài đặt phím – đổi phím cho di chuyển, đánh, 8 ô kỹ năng, khinh công, thuốc, tự động, mở bảng… Mỗi việc 2 phím bàn phím + 1 nút tay cầm. Thanh kỹ năng hiện đúng phím đã gán; có nút Khôi phục mặc định.',
       '🔄 ĐỔI MÔN PHÁI: Chuyển Phái Lệnh (Kỳ Trân Các, 300 💎) – từ cấp 10, mỗi 3 ngày một lần. Giữ cấp, trang bị, tiềm năng; võ công chuyển sang chiêu cùng ô của phái mới, vũ khí môn phái đổi theo.',
-      '⬆️ MỞ GIỚI HẠN CẤP 120: điểm võ học nay ~3,4 điểm mỗi cấp (tính lại cho mọi nhân vật, không cần làm gì) – cấp 99 có 333 điểm, cấp 120 có 405 điểm, vừa đủ nâng mọi võ công lên tầng tối đa.',
-      '🗺️ BẢN ĐỒ MỚI: Thiên Ngoại Thiên (cấp 100-110, đi tiếp từ cổng Đông Đoạn Hồn Nhai) và Cửu U Ma Vực (cấp 110-120), 8 loại quái mới, Boss Thiên Ngoại Kiếm Thánh và Cửu U Ma Tôn. Xa Phu đã có đường tới cả hai.',
-      '👑 BOSS: đánh theo % sinh lực tối đa của người trúng (nhiều máu hay ít máu đều chịu số đòn như nhau, thủ cao giảm tối đa 30%; lướt né chiêu vẫn tránh được). Nhạc Vũ Mục Anh Linh tăng lên 500 triệu máu, ở lại 3 giờ. Boss ngoài bản đồ nay chỉ rơi trang bị Truyền Kỳ ngẫu nhiên, tỉ lệ thấp: Boss thường 8-17% mỗi lần hạ (người gây sát thương cao nhất nhận); Nhạc Vũ Mục: hạng 1 chắc chắn, hạng 2-3 35%, hạng 4-10 10%, còn lại 2% – vẫn có Nguyên Bảo theo hạng, hạng 1 vẫn nhận Võ Mục Tâm Pháp.',
-      '📜 VÕ MỤC TÀN QUYỂN: nay rơi từ Boss phó bản – mỗi người 25% (vượt thần tốc 30%) nhận 1 quyển ngẫu nhiên từ Nhất đến Thất, quyển Thất hiếm nhất. Boss ngoài bản đồ không còn rơi tàn quyển.',
       '🛠️ SỬA LỖI: Thẻ Đổi Tên chỉ miễn phí đúng 1 lần (trước đây nút vẫn ghi miễn phí nhưng bấm là bị trừ 50.000 lượng); tự động chạy mãi tới đồ / tiền rơi vào chỗ kẹt mà không nhặt được, không đánh quái; tự động vẫn chạy khi chuyển tab; máy chủ có thể bị sập khi quái tìm đường.'
     ]
   },
