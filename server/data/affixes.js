@@ -50,7 +50,10 @@ const SLOT_POOL = {
   helmet: ['reflect', 'dodge', 'ccres', 'dmgred', 'regen'],
   boots:  ['dodge', 'ccres', 'regen', 'reflect'],
   ring:   ['critdmg', 'lifesteal', 'pierce', 'double', 'expup', 'goldup'],
-  amulet: ['expup', 'goldup', 'regen', 'ccres', 'critdmg']
+  amulet: ['expup', 'goldup', 'regen', 'ccres', 'critdmg'],
+  gloves: ['critdmg', 'pierce', 'double', 'lifesteal', 'bleed'],
+  pants:  ['dodge', 'ccres', 'dmgred', 'regen'],
+  cloak:  ['dmgred', 'reflect', 'ccres', 'regen', 'expup']
 };
 // hiệu ứng có giới hạn để không quá mạnh khi cộng dồn nhiều món
 const CAP = { freeze: 25, stun: 25, poison: 60, burn: 60, bleed: 60, slow: 60, lifesteal: 25, critdmg: 150, pierce: 60, double: 40, reflect: 40, dodge: 30, ccres: 70, dmgred: 40, regen: 3, expup: 100, goldup: 150 };

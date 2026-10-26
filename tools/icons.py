@@ -352,7 +352,64 @@ def amulet(ic, rar, g):
     # tua dưới
     ic.paint(ic.m_line([(32, 56), (31, 62)], 2.4), *RED, shine=0)
 
-GEAR = {'helmet': helmet, 'armor': armor, 'boots': boots, 'ring': ring, 'amulet': amulet}
+def gloves(ic, rar, g):   # ô Găng tay: đôi bao tay (ngón rời, bao cổ tay loe), khác với hộ thủ vũ khí Cái Bang
+    m1, m2 = METAL[rar]
+    base = LEATHER if g == 0 else ('#9a6a46', '#3a1c0c')
+    for dx, dy, back in ((-11, -3, True), (7, 3, False)):
+        c1, c2 = (dark(base[0], 0.28), dark(base[1], 0.2)) if back else base
+        for k, (x, top) in enumerate(((17, 12), (22.5, 8), (28, 9), (33, 13))):   # bốn ngón
+            ic.paint(ic.m_line([(x + dx, top + dy), (x + dx + 0.5, 27 + dy)], 5.2), c1, c2, ang=-75, edge=0.35, shine=0.25)
+        ic.paint(ic.m_line([(36 + dx, 30 + dy), (41 + dx, 21 + dy)], 5.4), c1, c2, edge=0.35, shine=0.2)   # ngón cái
+        ic.paint(ic.m_poly([(14 + dx, 22 + dy), (36 + dx, 22 + dy), (38 + dx, 34 + dy), (35 + dx, 40 + dy), (15 + dx, 40 + dy)]), c1, c2, ang=-70)   # lòng bàn tay
+        cuff = (m1, m2) if g >= 1 else ('#e8dcc8', '#8a7a62')
+        if back: cuff = (dark(cuff[0], 0.25), dark(cuff[1], 0.15))
+        ic.paint(ic.m_poly([(14 + dx, 39 + dy), (36 + dx, 39 + dy), (41 + dx, 56 + dy), (9 + dx, 56 + dy)]), *cuff, ang=-60)   # bao cổ tay loe
+        if not back:
+            for y in (44, 50): ic.paint(ic.m_line([(13 + dx, y + dy), (38 + dx, y + dy)], 1.1), *GOLD, edge=0, shine=0, alpha=0.85 if g else 0.5)
+            if g >= 1:
+                for x in (17, 22.5, 28, 33): ic.paint(ic.m_ell(x + dx, 24 + dy, 2.6, 2.2), m1, m2, edge=0.5, shine=0.4)   # đinh giáp đốt tay
+                ic.paint(ic.m_poly([(17 + dx, 29 + dy), (34 + dx, 29 + dy), (33 + dx, 36 + dy), (18 + dx, 36 + dy)]), m1, m2, edge=0.45, shine=0.3)   # giáp mu
+            if g == 2:
+                ic.gem(25.5 + dx, 32.5 + dy, 2.8, '#ff3050')
+                ic.paint(ic.m_poly([(41 + dx, 44 + dy), (49 + dx, 40 + dy), (43 + dx, 52 + dy)]), *GOLD)   # vây cổ tay
+    ic.spec([(19, 18), (17, 34)], 1.1, 0.45)
+
+def pants(ic, rar, g):   # ô Quần: quần võ, đai lưng; bậc cao thêm giáp đùi / ống
+    m1, m2 = METAL[rar]
+    cl = ('#7a6a90', '#2a2038') if g == 0 else ('#4a4a5a', '#16141c')
+    ic.paint(ic.m_poly([(14, 12), (50, 12), (54, 58), (36, 58), (32, 26), (28, 58), (10, 58)]), *cl, ang=-70)
+    ic.paint(ic.m_line([(32, 18), (32, 26)], 1.2), dark(cl[1], 0.3), None, edge=0, shine=0, alpha=0.7)
+    for (x0, x1) in ((10, 28), (36, 54)): ic.paint(ic.m_rect(x0, 52, x1, 58), '#e8dcc8', '#8a7a62', edge=0.3, shine=0.1)   # xà cạp ống
+    belt = GOLD if g else LEATHER
+    ic.paint(ic.m_rect(12, 10, 52, 17), *belt, edge=0.4, shine=0.3)   # đai lưng
+    ic.paint(ic.m_rect(28, 9, 36, 18), m1, m2, edge=0.5, shine=0.3)   # khóa đai
+    if g >= 1:   # giáp đùi
+        for x in (19, 45):
+            ic.paint(ic.m_poly([(x - 8, 20), (x + 8, 20), (x + 7, 34), (x, 38), (x - 7, 34)]), m1, m2, edge=0.45, shine=0.3)
+    if g == 2:
+        for x in (19, 45): ic.paint(ic.m_poly([(x - 7, 40), (x + 7, 40), (x + 6, 50), (x - 6, 50)]), m1, m2, edge=0.45, shine=0.25)   # giáp ống
+        ic.gem(32, 13.5, 2.6, '#ff3050')
+        ic.paint(ic.m_poly([(26, 17), (38, 17), (35, 30), (29, 30)]), *RED, shine=0.1)   # vạt đỏ giữa
+    ic.spec([(16, 22), (14, 48)], 1.1, 0.4)
+
+def cloak(ic, rar, g):   # ô Áo choàng: chế tạo ở bản đồ môn phái; tà áo bay, cổ áo + móc cài
+    m1, m2 = METAL[rar]
+    fab = {'common': ('#a8a0b8', '#3a3448'), 'rare': ('#6aa8ff', '#183a7a'), 'epic': ('#c080ff', '#3a1470'), 'legendary': ('#ff8a3a', '#7a1a08')}[rar]
+    ic.paint(ic.m_poly([(20, 10), (44, 10), (54, 30), (58, 56), (46, 52), (36, 58), (26, 52), (14, 58), (8, 52), (12, 30)]), *fab, ang=-70)   # tà áo
+    for x0, x1 in ((24, 22), (32, 32), (40, 44)):
+        ic.paint(ic.m_line([(x0, 16), (x1, 54)], 1.4), dark(fab[1], 0.25), None, edge=0, shine=0, alpha=0.55)   # nếp vải
+    ic.paint(ic.m_poly([(14, 52), (26, 50), (36, 56), (46, 50), (58, 54), (58, 57), (46, 53), (36, 59), (26, 53), (14, 59)]), *GOLD, edge=0.2, shine=0.1, alpha=0.9 if g else 0.45)   # viền tà
+    collar = ('#f4ecdc', '#9a8a70') if g == 0 else ('#2a2028', '#0c080c')
+    ic.paint(ic.m_poly([(16, 12), (32, 6), (48, 12), (44, 20), (32, 15), (20, 20)]), *collar, edge=0.4, shine=0.3)   # cổ áo / lông
+    ic.paint(ic.m_ell(32, 16, 4.2, 4.2), m1, m2, edge=0.5, shine=0.4)   # móc cài
+    if g >= 1:
+        for x in (24, 40): ic.paint(ic.m_line([(x, 16), (32, 16)], 1.2), *GOLD, edge=0, shine=0)
+    if g == 2:
+        ic.gem(32, 16, 2.6, '#ff3050')
+        for (x, y) in ((22, 36), (42, 34), (32, 44)): ic.paint(ic.m_poly([(x, y - 3), (x + 2, y), (x, y + 3), (x - 2, y)]), *GOLD, edge=0, shine=0)   # hoa văn thêu
+    ic.spec([(18, 26), (14, 48)], 1.2, 0.45)
+
+GEAR = {'helmet': helmet, 'armor': armor, 'boots': boots, 'ring': ring, 'amulet': amulet, 'gloves': gloves, 'pants': pants, 'cloak': cloak}
 
 # =====================================================================
 # Vật phẩm dùng
@@ -547,7 +604,17 @@ def gem_icon(ic, kind, L):
             s_ = 3 + L * 0.8 * k
             ic.paint(ic.m_poly([(x, y - s_), (x + s_ * 0.25, y - s_ * 0.25), (x + s_, y), (x + s_ * 0.25, y + s_ * 0.25), (x, y + s_), (x - s_ * 0.25, y + s_ * 0.25), (x - s_, y), (x - s_ * 0.25, y - s_ * 0.25)]), '#ffffff', light(c1, 0.5), edge=0, shine=0)
 
+def silk(ic):   # Thiên Tàm Ti: ống chỉ gỗ quấn tơ trắng óng, sợi tơ buông
+    ic.paint(ic.m_rect(16, 12, 48, 18), *WOOD, edge=0.4, shine=0.3)
+    ic.paint(ic.m_rect(16, 46, 48, 52), *WOOD, edge=0.4, shine=0.3)
+    ic.paint(ic.m_rect(20, 17, 44, 47), '#fffaf0', '#c8b8e0', ang=-60)
+    for y in range(20, 46, 4): ic.paint(ic.m_line([(20, y), (44, y + 1.5)], 0.9), '#e0d0f0', None, edge=0, shine=0, alpha=0.7)
+    ic.paint(ic.m_line([(44, 30), (52, 40), (48, 54), (54, 60)], 1.4), '#fffaf0', '#c8b8e0', edge=0, shine=0)
+    ic.spec([(24, 22), (24, 42)], 1.4, 0.8)
+    for (x, y) in ((12, 26), (54, 20), (10, 44)): ic.dot(x, y, 1.4, '#fff8d0', 0.9)
+
 SIMPLE = {
+    'silk': silk,
     'scroll': scroll, 'vm_scroll': vm_scroll,
     'vm_book': lambda ic: book(ic, ('#b01818', '#3a0606'), '岳'),
     'book': lambda ic: book(ic, ('#e8b030', '#7a4a08'), '倍'),
@@ -561,7 +628,7 @@ SIMPLE = {
     'chest': chest, 'chest_gold': lambda ic: chest(ic, True), 'ticket': ticket, 'lantern': lantern, 'saddle': saddle, 'gold': gold_icon,
     'bag': bag,
 }
-SIMPLE_GLOW = {'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'bag': '#ffd040'}
+SIMPLE_GLOW = {'silk': '#e0c8ff', 'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'bag': '#ffd040'}
 
 def build():
     tiles, index = [], {}

@@ -1,7 +1,7 @@
 // Tính năng xã hội & sự kiện: nhiệm vụ hàng ngày, boss theo giờ, sự kiện, bang hội,
 // trò chuyện, bảng xếp hạng, vòng quay, điểm danh, gift code.
 const { CLASSES } = require('../data/classes');
-const { ITEMS, equipId } = require('../data/items');
+const { ITEMS, equipId, tierOfLv, DROP_SLOTS } = require('../data/items');
 const { MONSTERS, BOSSES } = require('../data/monsters');
 const { MAPS, TILE, isSolidAt, chId } = require('../data/maps');
 const { makeDaily, DAILY_ALL_BONUS } = require('../data/quests');
@@ -269,7 +269,7 @@ class Features {
     if (mon.event === 'treasure' && killer && killer.c) {
       const r = Math.random();
       const lv = killer.c.level;
-      const reward = r < 0.05 ? { items: [[equipId(['weapon', 'armor', 'ring'][U.randInt(0, 2)], Math.min(6, Math.floor(lv / 10)), 'epic'), 1]] }
+      const reward = r < 0.05 ? { items: [[equipId(['weapon', 'armor', 'ring'][U.randInt(0, 2)], tierOfLv(lv), 'epic'), 1]] }
         : r < 0.25 ? { knb: U.randInt(3, 10) }
         : r < 0.5 ? { items: [['lucky_chest', 1]] }
         : { gold: U.randInt(200, 800) * (1 + Math.floor(lv / 10)), items: [['stone', 1]] };
@@ -352,8 +352,7 @@ class Features {
     setTimeout(() => {
       if (!this.w.players.has(p.userId)) { this.giveOffline(p.c, prize.r.vip ? {} : prize.r); return; }
       if (prize.r.vip) {
-        const slots = ['weapon', 'helmet', 'armor', 'boots', 'ring', 'amulet'];
-        const id = equipId(slots[U.randInt(0, 5)], Math.min(6, Math.floor(p.c.level / 10)), 'epic');
+        const id = equipId(DROP_SLOTS[U.randInt(0, DROP_SLOTS.length - 1)], tierOfLv(p.c.level), 'epic');
         this.w.giveReward(p, { items: [[id, 1]] }, 'Vòng Quay');
         this.brag(`🎡 ${p.c.name} quay trúng [${ITEMS[id].name}] tại Vòng Quay May Mắn!`);
       } else this.w.giveReward(p, prize.r, 'Vòng Quay');
@@ -439,7 +438,7 @@ class Features {
     const findPlayer = name => [...w.players.values()].find(o => o.c.name.toLowerCase() === String(name || '').toLowerCase());
     switch (c) {
       case 'help': case 'lenh':
-        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: 'Lệnh admin: /admin (mở trang quản trị) · /tb <nội dung> · /tp <bản đồ> · /level <cấp> · /gold <số> · /knb <số> · /give <mã vật phẩm> [số lượng] [+cường hóa] · /heal · /boss <mã boss> · /event <mã sự kiện> [phút] · /kick <tên> · /goto <tên> · /keo <tên> · /tiemnang <tên> <số> · /kynang <tên> <số> · /online · /thoitiet <clear|rain|storm|wind|snow|blizzard|sun> [phút] · /cottruyen <chương> [bước] | reset · /tusat' });
+        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: 'Lệnh admin: /admin (mở trang quản trị) · /tb <nội dung> · /tp <bản đồ> · /level <cấp> · /gold <số> · /knb <số> · /give <mã vật phẩm> [số lượng] [+cường hóa] · /heal · /boss <mã boss> · /event <mã sự kiện> [phút] · /kick <tên> · /goto <tên> · /keo <tên> · /tiemnang <tên> <số> · /kynang <tên> <số> · /conghien <số> · /online · /thoitiet <clear|rain|storm|wind|snow|blizzard|sun> [phút] · /cottruyen <chương> [bước] | reset · /tusat' });
         break;
       case 'tb': case 'thongbao': {
         const msg = args.join(' ');
@@ -462,6 +461,7 @@ class Features {
         w.giveItem(p, id, U.clamp(+args[1] || 1, 1, 9999), U.clamp(+String(args[2] || '0').replace('+', '') | 0, 0, 15));
         ok('Đã nhận ' + ITEMS[id].name); break;
       }
+      case 'conghien': { const sd = w.sect.data(p); sd.pts = Math.max(0, (sd.pts | 0) + (+args[0] | 0)); ok('Điểm cống hiến môn phái: ' + sd.pts); p.dirtyMe = true; break; }   // /conghien <số> (âm để trừ)
       case 'heal': p.dead = false; p.c.hp = p.stats.maxHp; p.c.mp = p.stats.maxMp; ok('Hồi đầy'); break;
       case 'boss': if (!this.spawnBoss(args[0])) err('Mã boss: ' + Object.keys(BOSSES).join(', ')); break;
       case 'event': if (!this.startEvent(args[0], +args[1] || 30)) err('Mã sự kiện: ' + Object.keys(EVENT_INFO).join(', ')); break;

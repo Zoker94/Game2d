@@ -3,7 +3,7 @@
 // "Đồng Tâm Hiệp Lực" +8% công / thủ cho mỗi đồng đội (tối đa +40%) và thưởng kinh nghiệm +10% mỗi người.
 const { MAPS, TILE, generateInstance } = require('../data/maps');
 const { MONSTERS } = require('../data/monsters');
-const { equipId } = require('../data/items');
+const { equipId, tierOfLv, DROP_SLOTS } = require('../data/items');
 const U = require('./util');
 
 const DUNGEONS = {
@@ -155,12 +155,11 @@ class Dungeon {
   complete(I) {
     I.done = true; I.closeAt = Date.now() + CLOSE_MS;
     const def = I.def, players = [...this.w.maps[I.id].players], n = players.length;
-    const tier = Math.min(6, Math.floor(def.rLv / 10)), mult = 1 + 0.1 * Math.max(0, n - 1);
+    const tier = tierOfLv(def.rLv), mult = 1 + 0.1 * Math.max(0, n - 1);
     const fast = Date.now() - I.startAt < def.time * 0.5;   // vượt nhanh hơn nửa thời gian: thưởng thêm
     for (const q of players) {
       const r = Math.random(), rar = r < 0.02 ? 'legendary' : r < 0.35 ? 'epic' : 'rare';
-      const slots = ['weapon', 'helmet', 'armor', 'boots', 'ring', 'amulet'];
-      const items = [[equipId(slots[U.randInt(0, 5)], tier, rar), 1], ['boss_chest', 1], ['stone', 3 + (fast ? 2 : 0)]];
+      const items = [[equipId(DROP_SLOTS[U.randInt(0, DROP_SLOTS.length - 1)], tier, rar), 1], ['boss_chest', 1], ['stone', 3 + (fast ? 2 : 0)]];
       if (Math.random() < 0.35) items.push(['stone2', 1]);
       if (Math.random() < 0.2) items.push(['mount_stone', 1]);
       if (fast) items.push(['lucky_chest', 1]);

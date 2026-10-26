@@ -203,7 +203,7 @@ app.get('/api/gamedata', (req, res) => {
     for (let l = 1; l <= M.MOUNT_MAX; l++) mountExp[l] = M.mountExpNext(l);
     gamedataCache = { enhance: { max: E.ENHANCE_MAX, safe: E.ENHANCE_SAFE, rate: E.ENHANCE_RATE, cost: Array.from({ length: 15 }, (_, p) => [0, 1, 2, 3, 4, 5, 6].map(t => E.enhanceCost(p, t))) },
       skillMax: require('./data/skillbooks').SKILL_MAX,
-      branchFreeLv: require('./data/branches').BRANCH_FREE_LV, dragons: require('./data/dragons').DRAGONS, mounts: M.MOUNTS, mountMax: M.MOUNT_MAX, mountExp, classes: CLASSES, story: require('./data/story'), gems: require('./data/gems').clientConfig(), attrs: require('./data/attrs').ATTRS, attrSuggest: require('./data/attrs').ATTR_SUGGEST, attrPerLv: require('./data/attrs').ATTR_PER_LEVEL, items: ITEMS, rarity: RARITY, slots: Object.fromEntries(Object.entries(SLOTS).map(([k, v]) => [k, v.name])), monsters: mons, maps, npcs,
+      branchFreeLv: require('./data/branches').BRANCH_FREE_LV, dragons: require('./data/dragons').DRAGONS, mounts: M.MOUNTS, mountMax: M.MOUNT_MAX, mountExp, classes: CLASSES, story: require('./data/story'), gems: require('./data/gems').clientConfig(), attrs: require('./data/attrs').ATTRS, attrSuggest: require('./data/attrs').ATTR_SUGGEST, attrPerLv: require('./data/attrs').ATTR_PER_LEVEL, items: ITEMS, rarity: RARITY, slots: Object.assign(Object.fromEntries(Object.entries(SLOTS).map(([k, v]) => [k, v.name])), { ring2: 'Nhẫn' }), monsters: mons, maps, npcs,
       elements: require('./data/affixes').ELEMENTS, affixes: Object.fromEntries(Object.entries(require('./data/affixes').AFFIX).map(([k, a]) => [k, { name: a.name, text: a.text }])), khac: require('./data/affixes').KHAC };
   }
   // nén gzip một lần rồi giữ lại (dữ liệu ~260KB -> ~40KB)
@@ -347,7 +347,7 @@ io.on('connection', socket => {
     const kind = d && d.kind === 'mp' ? 'mp' : 'hp';
     if (!world.quickUse(player, kind, d && d.auto)) { if (d && d.auto) socket.emit('noPot', { kind }); else world.toast(player, 'Không còn thuốc!', 'error'); }
   }));
-  on('equip', inGame(d => world.equip(player, d && d.uid)));
+  on('equip', inGame(d => world.equip(player, d && d.uid, d && d.side)));
   on('unequip', inGame(d => world.unequip(player, d && d.slot)));
   on('discard', inGame(d => world.discard(player, d && d.uid)));
   on('discardMany', inGame(d => world.discardMany(player, d && d.uids)));
@@ -364,6 +364,7 @@ io.on('connection', socket => {
   on('away', inGame(d => world.autoSrv.setAway(player, d && d.v)));
   on('channels', inGame(() => socket.emit('channels', world.channelsView(player))));   // danh sách khu của bản đồ đang đứng
   on('channel', inGame(d => world.switchChannel(player, d && d.ch)));
+  on('craftCloak', inGame(d => world.craftCloak(player, d)));   // áo choàng ở bản đồ môn phái
   on('meFull', inGame(() => { player._meSent = null; player.dirtyMe = true; }));   // client mất bản cũ: gửi lại đủ
   on('party', inGame(d => world.party.action(player, d)));
   on('recall', inGame(() => world.startRecall(player)));

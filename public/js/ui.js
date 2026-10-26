@@ -31,6 +31,8 @@
   const iconUrlCache = {};
   // bóng mờ món đồ cho ô trang bị đang trống
   const phCache = {};
+  // ô sẽ bị thay khi mặc món này (nhẫn: còn ô trống thì không so; đủ cả hai thì so với nhẫn trái)
+  const eqSlotOf = it => it.slot !== 'ring' ? it.slot : (G.me.equip.ring && G.me.equip.ring2 ? 'ring' : null);
   function placeholderIcon(slot) {
     if (slot in phCache) return phCache[slot];
     const it = Object.values(G.data.items).find(x => x.type === 'equip' && x.slot === slot && x.rarity === 'common');
@@ -95,7 +97,7 @@
   function compareMini(s) {
     const it = G.data.items[s.id];
     if (!it || it.type !== 'equip' || s.equipped) return '';
-    const cur = G.me.equip[it.slot], cit = cur && G.data.items[cur.id];
+    const cur = G.me.equip[eqSlotOf(it)], cit = cur && G.data.items[cur.id];
     const dp = Math.round(powerOf(itemTotals(it, s)) - powerOf(itemTotals(cit, cur)));
     return `<div class="cmp-mini">⚖️ ${cit ? 'So với đồ đang mặc' : 'Ô ' + G.data.slots[it.slot] + ' đang trống'}: Lực chiến <b class="${dp > 0 ? 'up' : dp < 0 ? 'down' : ''}">${dp > 0 ? '▲ +' : dp < 0 ? '▼ ' : ''}${dp || '='}</b>
       <span class="muted">· ${Input.isTouch ? 'bấm giữ' : 'rê chuột vào'} ô đồ để so sánh</span></div>`;
@@ -114,7 +116,7 @@
         ${(inst.fx || []).map(([k, v]) => `<div class="cp-fx">✦ ${fxText(k, v)}</div>`).join('')}</div>`;
     };
     if (it.type !== 'equip') return `<div class="cp-one"><div class="cp-name"><img src="${iconUrl(s.id)}" width="26" height="26">${itemName(s.id, s.plus)}</div>${statsHtml(it, s.plus)}${it.desc ? `<div class="small muted">${esc(it.desc)}</div>` : ''}</div>`;
-    const cur = !s.equipped && G.me.equip[it.slot], cit = cur && G.data.items[cur.id];
+    const cur = !s.equipped && G.me.equip[eqSlotOf(it)], cit = cur && G.data.items[cur.id];
     if (!cit) return `<div class="cp-cols">${col(s, it, s.equipped ? 'Đang mặc' : `Ô ${G.data.slots[it.slot]} đang trống`)}</div>`;
     const a = itemTotals(cit, cur), b = itemTotals(it, s);
     const keys = [...new Set([...Object.keys(a), ...Object.keys(b)])];
@@ -701,15 +703,18 @@
   UI.plusRing = plusRing;
   function invGrid(body, opts = {}) {
     const me = G.me;
-    const slotsOrder = ['helmet', 'amulet', 'weapon', 'armor', 'ring', 'boots'];
+    // 10 ô, lưới 3 cột: nón · dây chuyền · áo choàng / vũ khí · áo · găng / nhẫn trái · quần · nhẫn phải / – giày –
+    const slotsOrder = ['helmet', 'amulet', 'cloak', 'weapon', 'armor', 'gloves', 'ring', 'pants', 'ring2', null, 'boots'];
     let html = '<div class="inv-wrap">';
     if (!opts.noEquip) {
       html += '<div class="equip-grid">';
       for (const s of slotsOrder) {
+        if (!s) { html += '<div></div>'; continue; }
         const e = me.equip[s];
         const it = e && G.data.items[e.id];
-        const ph = !it && placeholderIcon(s);
-        html += `<div class="slot ${it ? 'r-' + it.rarity : 'empty-eq'} ${panelState.sel === 'eq:' + s ? 'sel' : ''}" data-eq="${s}">${it ? `${plusRing(e.plus | 0)}<img src="${iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}${brBadge(e)}` : `${ph ? `<img src="${ph}" class="ic ph" alt="">` : ''}<span class="lbl">${G.data.slots[s]}</span>`}</div>`;
+        const ph = !it && placeholderIcon(s === 'ring2' ? 'ring' : s);
+        const lbl = s === 'ring' ? 'Nhẫn trái' : s === 'ring2' ? 'Nhẫn phải' : G.data.slots[s];
+        html += `<div class="slot ${it ? 'r-' + it.rarity : 'empty-eq'} ${panelState.sel === 'eq:' + s ? 'sel' : ''}" data-eq="${s}">${it ? `${plusRing(e.plus | 0)}<img src="${iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}${brBadge(e)}` : `${ph ? `<img src="${ph}" class="ic ph" alt="">` : ''}<span class="lbl">${lbl}</span>`}</div>`;
       }
       html += '</div>';
     }
@@ -763,6 +768,7 @@
     const it = G.data.items[s.id];
     let btns = '';
     if (s.equipped) btns += `<button class="btn small" data-act="unequip">Tháo</button>`;
+    else if (it.type === 'equip' && it.slot === 'ring') btns += `<button class="btn small green" data-act="equip" data-side="ring">Đeo tay trái</button><button class="btn small green" data-act="equip" data-side="ring2">Đeo tay phải</button>`;
     else if (it.type === 'equip') btns += `<button class="btn small green" data-act="equip">Trang bị</button>`;
     else if (it.type === 'use') {
       btns += `<button class="btn small green" data-act="use">Sử dụng</button>`;
@@ -876,7 +882,7 @@
     body.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
       const s = selectedItem(); if (!s) return;
       const a = b.dataset.act;
-      if (a === 'equip') emit('equip', { uid: s.uid });
+      if (a === 'equip') emit('equip', { uid: s.uid, side: b.dataset.side });
       if (a === 'use') emit('useItem', { uid: s.uid });
       if (a === 'usen') { const inp = body.querySelector('#use-n'), n = Math.max(1, Math.min(200, s.qty, +inp.value || 1)); panelState.useN = n; emit('useItem', { uid: s.uid, n }); }
       if (a === 'useall') emit('useItem', { uid: s.uid, n: Math.min(200, s.qty) });
@@ -1439,6 +1445,23 @@
     }
     return h;
   }
+  // Chưởng Phi Phong (bản đồ môn phái): dệt áo choàng theo bậc
+  function cloakHtml(k) {
+    const me = G.me, bbr = panelState.buyBr || me.branch, pct = v => (v * 100).toFixed(v < 0.01 ? 1 : 0) + '%';
+    const need = (have, n, label) => `<span class="${have >= n ? 'ok-t' : 'warn'}">${label} ${fmt(have)}/${fmt(n)}</span>`;
+    let h = `<div class="small muted">Đang có: 💰 ${fmt(k.gold)} · 🧵 Thiên Tàm Ti ${k.silk} · 💠 Huyền Tinh Thạch ${k.stone} · 🏮 Cống hiến ${k.pts}</div>`;
+    if (!k.mine) h += `<div class="warn small" style="margin:4px 0">Chỉ đệ tử bổn môn mới được dệt áo choàng. Hãy về ${esc(k.home)} (Xa Phu đưa về phái mình miễn phí).</div>`;
+    h += `<div class="small muted">Kết quả ngẫu nhiên: Truyền Kỳ ${pct(k.odds.legendary)} · VIP ${pct(k.odds.epic)} · Hiếm ${pct(k.odds.rare)} · còn lại Thường.</div>`;
+    h += `<div class="buy-br">Hệ áo choàng: <button class="${bbr === 'ngoai' ? 'on' : ''}" data-bbr="ngoai">⚔️ Ngoại công</button><button class="${bbr === 'noi' ? 'on' : ''}" data-bbr="noi">🔮 Nội công</button></div><div class="list">`;
+    for (const r of k.list) {
+      const it = G.data.items[r.id], lvOk = me.level >= r.lv;
+      const ok = k.mine && lvOk && k.gold >= r.gold && k.silk >= r.silk && k.stone >= r.stone && k.pts >= r.pts;
+      h += `<div class="li ${lvOk ? '' : 'locked'}"><img src="${iconUrl(r.id)}" class="ic" width="36" height="36"><div class="grow"><b>${esc(it.name)}</b> <span class="small ${lvOk ? 'muted' : 'warn'}">Cấp ${r.lv}</span>
+        <div class="sub">${need(k.gold, r.gold, '💰')} · ${need(k.silk, r.silk, '🧵')} · ${need(k.stone, r.stone, '💠')} · ${need(k.pts, r.pts, '🏮')}</div></div>
+        <button class="btn small green" data-cloak="${r.t}" ${ok ? '' : 'disabled'}>Dệt</button></div>`;
+    }
+    return h + '</div>';
+  }
   function renderNpc(body) {
     const d = npcData;
     if (!d) return;
@@ -1473,6 +1496,8 @@
       html += gemTutHtml() + gemUpgradeHtml();
     } else if (tab === 'inherit') {
       html += inheritHtml();
+    } else if (d.cloak) {
+      html += cloakHtml(d.cloak);
     } else if (d.teleports) {
       // nhóm: thành trấn rồi bãi luyện công; chưa đủ cấp thì mờ đi
       const row = t => { const lock = G.me.level < (t.minLv || 1); return `<div class="li ${lock ? 'locked' : ''}"><div class="grow"><b>${t.town ? '🏯 ' : ''}${esc(t.name)}</b><div class="sub">${t.sect ? esc(t.lv) + (t.mine ? ' · Bổn phái' : '') : 'Cấp ' + t.lv}${t.minLv > 1 ? ` · <span class="${lock ? 'warn' : ''}">Yêu cầu cấp ${t.minLv}</span>` : ''}</div></div><button class="btn small green" data-tp="${t.map}" ${G.map.id === t.map || lock ? 'disabled' : ''}>${t.price ? fmt(t.price) + ' 💰' : 'Miễn phí'}</button></div>`; };
@@ -1488,6 +1513,7 @@
       emit('buy', { npc: d.id, id: b.dataset.buy, qty: q ? +q.value : 1, knb: tab === 'knb', br: panelState.buyBr || G.me.branch });
     });
     body.querySelectorAll('[data-tp]').forEach(b => b.onclick = () => emit('teleport', { map: b.dataset.tp }));
+    body.querySelectorAll('[data-cloak]').forEach(b => b.onclick = () => emit('craftCloak', { t: +b.dataset.cloak, br: panelState.buyBr || G.me.branch }));
     body.querySelectorAll('[data-bbr]').forEach(b => b.onclick = () => { panelState.buyBr = b.dataset.bbr; G.sfx('click'); UI.refreshPanel(); });
     if (tab === 'sell' || tab === 'enhance' || tab === 'gem') bindInv(body, { shop: tab === 'sell', enhance: tab === 'enhance' });
     body.querySelectorAll('[data-gem-sock]').forEach(b => b.onclick = () => { const s = selectedItem(); if (s) emit('gem', { op: 'socket', uid: s.uid, gem: b.dataset.gemSock, npc: d.id }); });

@@ -5,7 +5,10 @@ const CHANGELOG = [
     date: '27/10/2026',
     items: [
       '🗺️ Chia khu: mỗi bản đồ luyện công có 5 khu, mỗi khu tối đa 10 người, quái và đồ rơi riêng từng khu. Bấm "Khu n ▾" cạnh tên bản đồ để đổi khu (không đổi được khi đang giao chiến). Qua cổng sẽ giữ số khu nếu còn chỗ. Thành, môn phái, chiến trường vẫn chung một khu. Boss thế giới xuất hiện ở Khu 1.',
-      '📉 Giảm đồ rơi để bãi quái không ngập đồ: quái thường chỉ rơi ngân lượng khoảng 1/3 số lần (mỗi lần nhiều hơn), ít bình thuốc, đá, trang bị và ngọc hơn. Trang bị Truyền Kỳ giờ cực hiếm ở mọi nguồn (quái, tinh anh, boss, rương, phó bản, áp tiêu).'
+      '📉 Giảm đồ rơi để bãi quái không ngập đồ: quái thường chỉ rơi ngân lượng khoảng 1/3 số lần (mỗi lần nhiều hơn), ít bình thuốc, đá, trang bị và ngọc hơn. Trang bị Truyền Kỳ giờ cực hiếm ở mọi nguồn (quái, tinh anh, boss, rương, phó bản, áp tiêu).',
+      '⚔️ Trang bị cấp 70, 80, 90 (Tiên Phẩm, Thánh Phẩm, Chí Tôn) cho mọi loại trang bị và vũ khí môn phái – rơi từ quái cấp 70 trở lên, bán ở tiệm theo cấp.',
+      '🧤 Thêm ô trang bị: Găng tay, Quần, và 2 ô Nhẫn (tay trái / tay phải – chọn khi đeo). Găng tay, quần rơi từ quái và bán ở Hiệu May.',
+      '🧥 Áo choàng: chỉ chế tạo được ở bản đồ môn phái của mình, gặp Chưởng Phi Phong (cạnh Hộ Pháp). Cần ngân lượng, Huyền Tinh Thạch, điểm cống hiến môn phái và Thiên Tàm Ti (rơi ít từ quái, nhiều hơn ở tinh anh / Boss, hoặc đổi bằng cống hiến ở Hộ Pháp). Kết quả ngẫu nhiên Thường → Truyền Kỳ (0,5%).'
     ]
   },
   {

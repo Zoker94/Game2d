@@ -4,7 +4,7 @@
 const U = require('./util');
 const { MAPS, TILE, isSolidAt, baseOf } = require('../data/maps');
 const { MONSTERS } = require('../data/monsters');
-const { ITEMS, equipId } = require('../data/items');
+const { ITEMS, equipId, tierOfLv, DROP_SLOTS } = require('../data/items');
 
 const ROUTES = {
   dong: { name: 'Tiêu Đồng', lv: 15, dest: 'thuy_trai', deposit: 2000,  gold: 7000,  exp: 0.05, hp: 2600,  def: 30,  time: 12, robber: 'tieu_tac1', color: '#c87a3a' },
@@ -224,7 +224,7 @@ class Escort {
   openChest(p, tier) {
     const R = { dong: [550, 900, 1, 2], bac: [2800, 4000, 2, 3], vang: [7000, 9500, 3, 5] }[tier] || [500, 800, 1, 1];
     const reward = { gold: U.randInt(R[0], R[1]), items: [['stone', U.randInt(R[2], R[3])]] };
-    const lvTier = Math.min(6, Math.floor(p.c.level / 10)), slot = ['weapon', 'helmet', 'armor', 'boots', 'ring', 'amulet'][U.randInt(0, 5)];
+    const lvTier = tierOfLv(p.c.level), slot = DROP_SLOTS[U.randInt(0, DROP_SLOTS.length - 1)];
     let rare = null;
     if (tier === 'bac' && Math.random() < 0.15) rare = 'rare';
     if (tier === 'vang') { const x = Math.random(); rare = x < 0.01 ? 'legendary' : x < 0.25 ? 'epic' : 'rare'; if (Math.random() < 0.2) reward.knb = 10; }

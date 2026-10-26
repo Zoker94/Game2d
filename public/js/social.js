@@ -52,7 +52,7 @@
   }
 
   // ---------- xem thông tin ----------
-  const SLOT_ORDER = ['helmet', 'amulet', 'weapon', 'armor', 'ring', 'boots'];
+  const SLOT_ORDER = ['helmet', 'amulet', 'cloak', 'weapon', 'armor', 'gloves', 'ring', 'pants', 'ring2', 'boots'];
   UI.registerPanel('inspect', '👤 Thông Tin Đại Hiệp', body => {
     const d = inspectData;
     if (!d) { body.innerHTML = '<p class="muted">Đang tải...</p>'; return; }

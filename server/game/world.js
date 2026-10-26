@@ -1,7 +1,7 @@
 // Lõi thế giới game: bản đồ, người chơi, quái vật, chiến đấu, rơi đồ, NPC.
 const { CLASSES, classSkill, classRange, branchOf, PASSIVE_SLOT, ACTIVE_BUFF_SLOT } = require('../data/classes');
 const { BRANCH_BONUS, BRANCH_FREE_LV } = require('../data/branches');
-const { ITEMS, RARITY, equipId } = require('../data/items');
+const { ITEMS, RARITY, TIERS, equipId, tierOfLv, DROP_SLOTS } = require('../data/items');
 const { MONSTERS, BOSSES } = require('../data/monsters');
 const VM_IDS = ['vm_tq1', 'vm_tq2', 'vm_tq3', 'vm_tq4', 'vm_tq5', 'vm_tq6', 'vm_tq7'];
 const { MAPS, TILE, isSolidAt, SOLID, CHANNELS, CH_CAP, baseOf, chOf, chId } = require('../data/maps');
@@ -36,7 +36,8 @@ const DODGE_DIST = 190, DODGE_CD = 5000, DODGE_AIR = 460;   // khinh công: quã
 const TICK = 50;            // 20 tick/giây
 const SNAP_EVERY = 2;       // gửi trạng thái 10 lần/giây
 const PICKUP_R = 56;
-const GOLD_DROP_CHANCE = 0.35;   // quái thường rơi ngân lượng 35% số lần (gấp đôi lượng mỗi lần)
+const GOLD_DROP_CHANCE = 0.35;
+const CLOAK_ODDS = { legendary: 0.005, epic: 0.06, rare: 0.3 };   // chế tạo áo choàng: còn lại là Thường   // quái thường rơi ngân lượng 35% số lần (gấp đôi lượng mỗi lần)
 const AGGRO_R = 200;
 const LEASH_R = 650;
 const MERGED_TUTORIAL = true;   // hướng dẫn tân thủ nằm trong chương 1 cốt truyện
@@ -1035,11 +1036,10 @@ class World {
 
     // Rơi đồ
     const owner = killer && killer.c ? killer.userId : null;
-    const tier = Math.min(6, Math.floor(tpl.lv / 10));
+    const tier = tierOfLv(tpl.lv);
     const dr = cfg.dropRate || 1;
     const drops = [];
-    const slots = ['weapon', 'helmet', 'armor', 'boots', 'ring', 'amulet'];
-    const rslot = () => slots[U.randInt(0, slots.length - 1)];
+    const rslot = () => DROP_SLOTS[U.randInt(0, DROP_SLOTS.length - 1)];
     if (mon.boss) {
       const ranking = [...mon.dmgBy.entries()].sort((a, b) => b[1] - a[1]);
       ranking.slice(0, 3).forEach(([uid], i) => {
@@ -1072,7 +1072,7 @@ class World {
         const rar = r < 0.01 * dr ? 'legendary' : r < 0.2 * dr ? 'epic' : 'rare';
         drops.push(equipId(rslot(), tier, rar));
       }
-      drops.push('stone', 'stone', 'stone', 'lucky_chest', 'mount_food', 'mount_food');
+      drops.push('stone', 'stone', 'stone', 'lucky_chest', 'mount_food', 'mount_food', 'thien_tam_ti', 'thien_tam_ti');
       if (Math.random() < 0.5 * dr) drops.push('stone2');
       if (Math.random() < 0.25 * dr) drops.push('insure');
       if (Math.random() < 0.3 * dr) drops.push('mount_stone');
@@ -1092,10 +1092,11 @@ class World {
         if (r() < 0.08 * dr) drops.push('stone2');
         if (r() < 0.12) drops.push('mount_food');
         if (r() < 0.04 * dr) drops.push('lucky_chest');
+        if (r() < 0.15 * dr) drops.push('thien_tam_ti');
         if (killer && killer.c) this.toast(killer, `⭐ Hạ quái tinh anh ${tpl.name}!`, 'reward');
       }
       // quái thường (đã giảm để bãi quái không ngập đồ; Truyền Kỳ ~1/20.000 con)
-      if (r() < 0.04) drops.push(tier >= 6 ? (r() < 0.5 ? 'hp4' : 'mp4') : tier >= 4 ? (r() < 0.5 ? 'hp3' : 'mp3') : tier >= 2 ? (r() < 0.5 ? 'hp2' : 'mp2') : (r() < 0.5 ? 'hp1' : 'mp1'));
+      if (r() < 0.04) drops.push(tier >= 7 ? (r() < 0.5 ? 'hp5' : 'mp5') : tier >= 5 ? (r() < 0.5 ? 'hp4' : 'mp4') : tier >= 4 ? (r() < 0.5 ? 'hp3' : 'mp3') : tier >= 2 ? (r() < 0.5 ? 'hp2' : 'mp2') : (r() < 0.5 ? 'hp1' : 'mp1'));
       if (r() < 0.015 * dr) drops.push('stone');
       if (r() < 0.015 * dr) drops.push(equipId(rslot(), tier, 'common'));
       if (r() < 0.005 * dr) drops.push(equipId(rslot(), tier, 'rare'));
@@ -1109,6 +1110,7 @@ class World {
       if (tpl.lv >= 30 && r() < 0.0008 * dr) drops.push('insure');
       if (tpl.lv >= 20 && r() < 0.0005 * dr) drops.push('mount_stone');
       if (this.features.isActive('lantern') && r() < 0.3) drops.push('event_token');
+      if (tpl.lv >= 10 && r() < 0.006 * dr) drops.push('thien_tam_ti');   // nguyên liệu áo choàng
     }
     drops.forEach((id, i) => {
       const a = (i / Math.max(1, drops.length)) * Math.PI * 2;
@@ -1383,9 +1385,8 @@ class World {
   }
 
   openChest(p, kind) {
-    const tier = Math.min(6, Math.floor(p.c.level / 10));
-    const slots = ['weapon', 'helmet', 'armor', 'boots', 'ring', 'amulet'];
-    const slot = slots[U.randInt(0, 5)];
+    const tier = tierOfLv(p.c.level);
+    const slot = DROP_SLOTS[U.randInt(0, DROP_SLOTS.length - 1)];
     const r = Math.random();
     let rar;
     if (kind === 2) rar = r < 0.015 ? 'legendary' : r < 0.3 ? 'epic' : 'rare';
@@ -1397,7 +1398,8 @@ class World {
     if (rar === 'legendary') this.features.brag(`🎁 ${p.c.name} mở rương nhận được [${ITEMS[id].name}]!`);
   }
 
-  equip(p, uid) {
+  // side: 'ring' (nhẫn trái) / 'ring2' (nhẫn phải) cho nhẫn; không chọn thì đeo vào ô nhẫn còn trống, đủ cả hai thì thay nhẫn trái
+  equip(p, uid, side) {
     const c = p.c;
     const i = c.inv.findIndex(x => x.uid === uid);
     if (i < 0) return;
@@ -1405,9 +1407,11 @@ class World {
     if (it.type !== 'equip') return;
     if (c.level < it.lv) return this.toast(p, `Cần đạt cấp ${it.lv} để trang bị`, 'error');
     if (it.cls && it.cls !== c.cls) return this.toast(p, `${it.name} là vũ khí của ${CLASSES[it.cls].name}, không dùng được`, 'error');
+    let slot = it.slot;
+    if (slot === 'ring') slot = side === 'ring' || side === 'ring2' ? side : !c.equip.ring ? 'ring' : !c.equip.ring2 ? 'ring2' : 'ring';
     c.inv.splice(i, 1);
-    const prev = c.equip[it.slot];
-    c.equip[it.slot] = { uid: s.uid, id: s.id, plus: s.plus || 0, el: s.el, fx: s.fx, gems: s.gems, br: s.br };
+    const prev = c.equip[slot];
+    c.equip[slot] = { uid: s.uid, id: s.id, plus: s.plus || 0, el: s.el, fx: s.fx, gems: s.gems, br: s.br };
     if (prev) c.inv.push({ uid: prev.uid, id: prev.id, qty: 1, plus: prev.plus || 0, el: prev.el, fx: prev.fx, gems: prev.gems, br: prev.br });
     this.recalc(p);
     if (it.slot === 'weapon') { this.progressTutorial(p, 'equip'); this.story.on(p, 'equip'); }
@@ -1479,6 +1483,7 @@ class World {
     out.freeRename = !p.c.renameFree;
     if (npc.action === 'escort' || npc.action === 'escortDest') { out.routes = this.escort.routeView(); out.escort = this.escort.meView(p); }
     if (npc.action === 'daihoi') Object.assign(out, this.daihoi.npcView(p));
+    if (npc.action === 'cloak') out.cloak = this.cloakView(p);
     if (npc.action === 'teleport') {
       out.teleports = TELEPORTS.map(t => ({ ...t, name: MAPS[t.map].name, lv: MAPS[t.map].lv, minLv: MAPS[t.map].minLv }));
       // môn phái: về phái mình miễn phí, thăm phái khác 300 lượng
@@ -1486,6 +1491,37 @@ class World {
       out.teleports.sort((a, b) => (b.mine || 0) - (a.mine || 0));
     }
     p.socket.emit('npc', out);
+  }
+
+  // ---------- Áo choàng: chỉ chế tạo ở bản đồ môn phái của mình (NPC Chưởng Phi Phong) ----------
+  cloakRecipe(t) { return { t, lv: TIERS[t], gold: 3000 * (t + 1) * (t + 1), silk: 3 + t * 2, stone: 2 + t, pts: 20 + t * 15 }; }
+  cloakView(p) {
+    const c = p.c, sd = this.sect ? this.sect.data(p) : { pts: 0 };
+    return { mine: SECT_MAP[c.cls] === p.mapId, home: MAPS[SECT_MAP[c.cls]].name, pts: sd.pts | 0, gold: c.gold, silk: U.countItem(c, 'thien_tam_ti'), stone: U.countItem(c, 'stone'),
+      odds: CLOAK_ODDS, list: TIERS.map((_, t) => Object.assign(this.cloakRecipe(t), { id: equipId('cloak', t, 'common') })) };
+  }
+  craftCloak(p, d) {
+    const c = p.c, t = d && d.t | 0, npc = this.nearNpc(p, 'phi_phong');
+    if (!npc) return this.toast(p, 'Hãy đến gặp Chưởng Phi Phong ở bản đồ môn phái', 'error');
+    if (SECT_MAP[c.cls] !== p.mapId) return this.toast(p, `Chỉ được chế tạo áo choàng ở môn phái của mình (${MAPS[SECT_MAP[c.cls]].name})`, 'error');
+    if (t < 0 || t >= TIERS.length) return;
+    const r = this.cloakRecipe(t), sd = this.sect.data(p);
+    if (c.level < r.lv) return this.toast(p, `Cần đạt cấp ${r.lv}`, 'error');
+    if (c.gold < r.gold) return this.toast(p, `Cần ${r.gold.toLocaleString('vi-VN')} lượng`, 'error');
+    if (U.countItem(c, 'thien_tam_ti') < r.silk) return this.toast(p, `Cần ${r.silk} Thiên Tàm Ti`, 'error');
+    if (U.countItem(c, 'stone') < r.stone) return this.toast(p, `Cần ${r.stone} Huyền Tinh Thạch`, 'error');
+    if ((sd.pts | 0) < r.pts) return this.toast(p, `Cần ${r.pts} điểm cống hiến môn phái (làm nhiệm vụ Trưởng Môn)`, 'error');
+    if (U.freeSlots(c) < 1) return this.toast(p, 'Túi đồ đầy', 'error');
+    c.gold -= r.gold; sd.pts -= r.pts;
+    U.removeItemById(c, 'thien_tam_ti', r.silk); U.removeItemById(c, 'stone', r.stone);
+    const x = Math.random(), rar = x < CLOAK_ODDS.legendary ? 'legendary' : x < CLOAK_ODDS.legendary + CLOAK_ODDS.epic ? 'epic' : x < CLOAK_ODDS.legendary + CLOAK_ODDS.epic + CLOAK_ODDS.rare ? 'rare' : 'common';
+    const id = equipId('cloak', t, rar);
+    c._brPick = d && (d.br === 'noi' || d.br === 'ngoai') ? d.br : branchOf(c);
+    try { this.giveItem(p, id, 1); } finally { delete c._brPick; }
+    this.toast(p, `🧥 Chế tạo thành công: ${ITEMS[id].name} (${RARITY[rar].name})`, rar === 'common' ? 'info' : 'item:' + rar);
+    if (rar === 'legendary') this.features.brag(`🧥 ${c.name} dệt được [${ITEMS[id].name}] tại ${MAPS[p.mapId].name}!`);
+    p.socket.emit('npc', Object.assign({ id: npc.id, name: npc.name, talk: npc.talk, action: 'cloak', sprite: npc.sprite, color: npc.color }, { cloak: this.cloakView(p) }));
+    this.db.markDirty();
   }
 
   // Tiền trang: cất / rút vật phẩm và ngân lượng

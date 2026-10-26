@@ -270,55 +270,55 @@ const MAP_DEFS = {
   thieu_lam_tu: {
     name: 'Thiếu Lâm Tự', theme: 'mountain', w: 44, h: 34, seed: 201, lv: '1+', sect: 'thieulam', noPk: true, arch: { left: 'tower', right: 'pavilion', centre: 'censer' },
     portals: [],
-    npcs: [{ id: 'chuong_mon_thieulam', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    npcs: [{ id: 'chuong_mon_thieulam', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'phi_phong', x: 31, y: 12 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
     spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
   },
   thien_vuong_dao: {
     name: 'Thiên Vương Đảo', theme: 'river', w: 44, h: 34, seed: 203, lv: '1+', sect: 'thienvuong', noPk: true, arch: { water: 1, left: 'tower', right: 'pavilion', centre: 'brazier' },
     portals: [],
-    npcs: [{ id: 'chuong_mon_thienvuong', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    npcs: [{ id: 'chuong_mon_thienvuong', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'phi_phong', x: 31, y: 12 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
     spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
   },
   duong_gia_bao: {
     name: 'Đường Gia Bảo', theme: 'bamboo', w: 44, h: 34, seed: 205, lv: '1+', sect: 'duongmon', noPk: true, arch: { left: 'tower', right: 'pavilion', centre: 'brazier' },
     portals: [],
-    npcs: [{ id: 'chuong_mon_duongmon', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    npcs: [{ id: 'chuong_mon_duongmon', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'phi_phong', x: 31, y: 12 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
     spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
   },
   van_doc_coc: {
     name: 'Vạn Độc Cốc', theme: 'tomb', w: 44, h: 34, seed: 207, lv: '1+', sect: 'ngudoc', noPk: true, arch: { left: 'hut', right: 'hut', centre: 'cauldron' },
     portals: [],
-    npcs: [{ id: 'chuong_mon_ngudoc', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    npcs: [{ id: 'chuong_mon_ngudoc', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'phi_phong', x: 31, y: 12 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
     spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
   },
   nga_my_son: {
     name: 'Nga My Sơn', theme: 'plains', w: 44, h: 34, seed: 209, lv: '1+', sect: 'ngamy', noPk: true, arch: { water: 1, left: 'tower', right: 'pavilion', centre: 'censer' },
     portals: [],
-    npcs: [{ id: 'chuong_mon_ngamy', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    npcs: [{ id: 'chuong_mon_ngamy', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'phi_phong', x: 31, y: 12 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
     spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
   },
   thuy_yen_mon: {
     name: 'Thúy Yên Môn', theme: 'river', w: 44, h: 34, seed: 211, lv: '1+', sect: 'thuyyen', noPk: true, arch: { water: 1, left: 'pavilion', right: 'pavilion', centre: 'fountain' },
     portals: [],
-    npcs: [{ id: 'chuong_mon_thuyyen', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    npcs: [{ id: 'chuong_mon_thuyyen', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'phi_phong', x: 31, y: 12 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
     spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
   },
   cai_bang_da: {
     name: 'Cái Bang Tổng Đà', theme: 'ruins', w: 44, h: 34, seed: 213, lv: '1+', sect: 'caibang', noPk: true, arch: { left: 'hut', right: 'hut', centre: 'bonfire' },
     portals: [],
-    npcs: [{ id: 'chuong_mon_caibang', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    npcs: [{ id: 'chuong_mon_caibang', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'phi_phong', x: 31, y: 12 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
     spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
   },
   vo_dang_son: {
     name: 'Võ Đang Sơn', theme: 'mountain', w: 44, h: 34, seed: 215, lv: '1+', sect: 'vodang', noPk: true, arch: { left: 'pavilion', right: 'tower', centre: 'taiji' },
     portals: [],
-    npcs: [{ id: 'chuong_mon_vodang', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    npcs: [{ id: 'chuong_mon_vodang', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'phi_phong', x: 31, y: 12 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
     spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
   },
   con_lon_phai: {
     name: 'Côn Lôn Phái', theme: 'snow', w: 44, h: 34, seed: 217, lv: '1+', sect: 'conlon', noPk: true, arch: { left: 'tower', right: 'pavilion', centre: 'brazier' },
     portals: [],
-    npcs: [{ id: 'chuong_mon_conlon', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
+    npcs: [{ id: 'chuong_mon_conlon', x: 22, y: 10 }, { id: 'truyen_cong', x: 17, y: 11 }, { id: 'sect_ho_phap', x: 27, y: 11 }, { id: 'phi_phong', x: 31, y: 12 }, { id: 'xa_phu', x: 19, y: 28 }, { id: 'duoc_diem', x: 25, y: 28 }],
     spawns: [['moc_nhan', 4, 17, 20, 2], ['moc_nhan', 4, 26, 20, 2]]
   },
   dai_hoi: {

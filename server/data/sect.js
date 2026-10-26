@@ -16,6 +16,6 @@ function sectRank(c) {
 const SECT_SHOP = [
   { id: 'scroll_town', cost: 2, rank: 0 }, { id: 'stone', cost: 8, rank: 0 }, { id: 'mount_food', cost: 4, rank: 0 }, { id: 'exp_x2', cost: 25, rank: 0 },
   { id: 'lucky_chest', cost: 30, rank: 1 }, { id: 'stone2', cost: 80, rank: 2 }, { id: 'mount_stone', cost: 60, rank: 2 }, { id: 'insure', cost: 100, rank: 3 },
-  { id: 'boss_chest', cost: 150, rank: 4 }
+  { id: 'boss_chest', cost: 150, rank: 4 }, { id: 'thien_tam_ti', cost: 15, rank: 0 }
 ];
 module.exports = { SECT_MAP, SECT_RANKS, SECT_DAILY, SECT_SHOP, sectRank };

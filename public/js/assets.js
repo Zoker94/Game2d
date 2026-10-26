@@ -262,7 +262,7 @@
   };
 
   const procIcon = Sprites.itemIcon;
-  const GEAR_ICON = new Set(['weapon', 'w_sword', 'w_saber', 'w_staff', 'w_mace', 'w_dart', 'w_dual', 'w_glove', 'w_talisman', 'helmet', 'armor', 'boots', 'ring', 'amulet']);
+  const GEAR_ICON = new Set(['weapon', 'w_sword', 'w_saber', 'w_staff', 'w_mace', 'w_dart', 'w_dual', 'w_glove', 'w_talisman', 'helmet', 'armor', 'boots', 'ring', 'amulet', 'gloves', 'pants', 'cloak']);
   Sprites.itemIcon = function (icon, rarity, rcolor, tier) {
     if (!ICONS) return procIcon.apply(this, arguments);
     let key = icon;
