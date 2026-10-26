@@ -158,7 +158,7 @@ class Dungeon {
     const tier = Math.min(6, Math.floor(def.rLv / 10)), mult = 1 + 0.1 * Math.max(0, n - 1);
     const fast = Date.now() - I.startAt < def.time * 0.5;   // vượt nhanh hơn nửa thời gian: thưởng thêm
     for (const q of players) {
-      const r = Math.random(), rar = r < 0.08 ? 'legendary' : r < 0.45 ? 'epic' : 'rare';
+      const r = Math.random(), rar = r < 0.02 ? 'legendary' : r < 0.35 ? 'epic' : 'rare';
       const slots = ['weapon', 'helmet', 'armor', 'boots', 'ring', 'amulet'];
       const items = [[equipId(slots[U.randInt(0, 5)], tier, rar), 1], ['boss_chest', 1], ['stone', 3 + (fast ? 2 : 0)]];
       if (Math.random() < 0.35) items.push(['stone2', 1]);

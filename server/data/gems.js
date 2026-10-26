@@ -45,7 +45,7 @@ function gemItems() {
 }
 // rơi đá: mine = 1 (Bảo Thạch Khoáng Động), 2 (Huyền Tinh Mật Cảnh), 0 nơi khác
 function rollGemDrop(mine, monLv, rnd = Math.random) {
-  const chance = mine === 2 ? 0.07 : mine === 1 ? 0.06 : (monLv >= 15 ? 0.004 : 0);
+  const chance = mine === 2 ? 0.03 : mine === 1 ? 0.025 : (monLv >= 15 ? 0.002 : 0);   // đã giảm: bãi quái không ngập ngọc
   if (rnd() >= chance) return null;
   const x = rnd();
   const L = mine === 2 ? (x < 0.01 ? 4 : x < 0.15 ? 3 : x < 0.65 ? 2 : 1) : mine === 1 ? (x < 0.15 ? 2 : 1) : 1;

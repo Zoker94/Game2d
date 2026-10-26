@@ -36,6 +36,7 @@ const DODGE_DIST = 190, DODGE_CD = 5000, DODGE_AIR = 460;   // khinh công: quã
 const TICK = 50;            // 20 tick/giây
 const SNAP_EVERY = 2;       // gửi trạng thái 10 lần/giây
 const PICKUP_R = 56;
+const GOLD_DROP_CHANCE = 0.35;   // quái thường rơi ngân lượng 35% số lần (gấp đôi lượng mỗi lần)
 const AGGRO_R = 200;
 const LEASH_R = 650;
 const MERGED_TUTORIAL = true;   // hướng dẫn tân thủ nằm trong chương 1 cốt truyện
@@ -1012,7 +1013,7 @@ class World {
       const gained = this.gainExp(p, exp);
       const gold = Math.round(tpl.gold * U.rand(0.7, 1.3) * (cfg.goldRate || 1) * (mon.boss ? share : 1));
       if (mon.boss) { p.c.gold += gold; this.features.questProgress(p, 'gold', gold); }
-      else this.createGoldDrop(mon.mapId, mon.x + U.rand(-14, 14), mon.y + U.rand(-8, 8), gold, p.userId);
+      else if (Math.random() < GOLD_DROP_CHANCE) this.createGoldDrop(mon.mapId, mon.x + U.rand(-14, 14), mon.y + U.rand(-8, 8), Math.round(gold * 2), p.userId);   // không rơi mỗi con: đỡ kín màn (≈70% ngân lượng cũ)
       p.c.kills = (p.c.kills || 0) + (mon.boss ? 0 : 1);
       p.socket.emit('gain', { exp: gained, gold: mon.boss ? gold : 0, x: mon.x, y: mon.y });
       if (mon.boss) {
@@ -1068,7 +1069,7 @@ class World {
       const n = U.randInt(4, 7) + (tpl.world ? 10 : 0);
       for (let i = 0; i < n; i++) {
         const r = Math.random();
-        const rar = r < 0.06 * dr ? 'legendary' : r < 0.3 * dr ? 'epic' : 'rare';
+        const rar = r < 0.01 * dr ? 'legendary' : r < 0.2 * dr ? 'epic' : 'rare';
         drops.push(equipId(rslot(), tier, rar));
       }
       drops.push('stone', 'stone', 'stone', 'lucky_chest', 'mount_food', 'mount_food');
@@ -1087,25 +1088,26 @@ class World {
       const r = Math.random;
       if (tpl.elite) {   // tinh anh: chắc chắn 1 trang bị (hiếm trở lên) + đá cường hóa
         const x = r();
-        drops.push(equipId(rslot(), tier, x < 0.03 * dr ? 'legendary' : x < 0.25 * dr ? 'epic' : 'rare'), 'stone', 'stone');
-        if (r() < 0.15 * dr) drops.push('stone2');
-        if (r() < 0.25) drops.push('mount_food');
-        if (r() < 0.08 * dr) drops.push('lucky_chest');
+        drops.push(equipId(rslot(), tier, x < 0.002 * dr ? 'legendary' : x < 0.12 * dr ? 'epic' : 'rare'), 'stone');
+        if (r() < 0.08 * dr) drops.push('stone2');
+        if (r() < 0.12) drops.push('mount_food');
+        if (r() < 0.04 * dr) drops.push('lucky_chest');
         if (killer && killer.c) this.toast(killer, `⭐ Hạ quái tinh anh ${tpl.name}!`, 'reward');
       }
-      if (r() < 0.10) drops.push(tier >= 6 ? (r() < 0.5 ? 'hp4' : 'mp4') : tier >= 4 ? (r() < 0.5 ? 'hp3' : 'mp3') : tier >= 2 ? (r() < 0.5 ? 'hp2' : 'mp2') : (r() < 0.5 ? 'hp1' : 'mp1'));
-      if (r() < 0.03 * dr) drops.push('stone');
-      if (r() < 0.04 * dr) drops.push(equipId(rslot(), tier, 'common'));
-      if (r() < 0.012 * dr) drops.push(equipId(rslot(), tier, 'rare'));
-      if (r() < (cfg.vipDropBase || 0.004) * dr) drops.push(equipId(rslot(), tier, 'epic'));
-      if (r() < 0.0004 * dr) drops.push(equipId(rslot(), tier, 'legendary'));
-      if (r() < 0.003 * dr) drops.push('lucky_chest');
-      if (r() < 0.02 * dr) drops.push('mount_food');
-      if (tpl.lv >= 25 && r() < 0.002 * dr * (1 + tier)) drops.push('stone2');
+      // quái thường (đã giảm để bãi quái không ngập đồ; Truyền Kỳ ~1/20.000 con)
+      if (r() < 0.04) drops.push(tier >= 6 ? (r() < 0.5 ? 'hp4' : 'mp4') : tier >= 4 ? (r() < 0.5 ? 'hp3' : 'mp3') : tier >= 2 ? (r() < 0.5 ? 'hp2' : 'mp2') : (r() < 0.5 ? 'hp1' : 'mp1'));
+      if (r() < 0.015 * dr) drops.push('stone');
+      if (r() < 0.015 * dr) drops.push(equipId(rslot(), tier, 'common'));
+      if (r() < 0.005 * dr) drops.push(equipId(rslot(), tier, 'rare'));
+      if (r() < (cfg.vipDropBase || 0.004) * 0.5 * dr) drops.push(equipId(rslot(), tier, 'epic'));   // sử thi: một nửa mức cấu hình
+      if (r() < 0.00005 * dr) drops.push(equipId(rslot(), tier, 'legendary'));
+      if (r() < 0.0015 * dr) drops.push('lucky_chest');
+      if (r() < 0.01 * dr) drops.push('mount_food');
+      if (tpl.lv >= 25 && r() < 0.001 * dr * (1 + tier)) drops.push('stone2');
       const gem = rollGemDrop(map.def.gemMine | 0, tpl.lv, r);   // đá khảm: nhiều ở khoáng động
       if (gem) drops.push(gem);
-      if (tpl.lv >= 30 && r() < 0.0015 * dr) drops.push('insure');
-      if (tpl.lv >= 20 && r() < 0.001 * dr) drops.push('mount_stone');
+      if (tpl.lv >= 30 && r() < 0.0008 * dr) drops.push('insure');
+      if (tpl.lv >= 20 && r() < 0.0005 * dr) drops.push('mount_stone');
       if (this.features.isActive('lantern') && r() < 0.3) drops.push('event_token');
     }
     drops.forEach((id, i) => {
@@ -1386,8 +1388,8 @@ class World {
     const slot = slots[U.randInt(0, 5)];
     const r = Math.random();
     let rar;
-    if (kind === 2) rar = r < 0.08 ? 'legendary' : r < 0.4 ? 'epic' : 'rare';
-    else rar = r < 0.01 ? 'legendary' : r < 0.08 ? 'epic' : r < 0.35 ? 'rare' : 'common';
+    if (kind === 2) rar = r < 0.015 ? 'legendary' : r < 0.3 ? 'epic' : 'rare';
+    else rar = r < 0.002 ? 'legendary' : r < 0.05 ? 'epic' : r < 0.3 ? 'rare' : 'common';
     const id = equipId(slot, tier, rar);
     const reward = { items: [[id, 1]], gold: U.randInt(100, 500) * (tier + 1) * kind };
     if (Math.random() < 0.3) reward.items.push(['stone', U.randInt(1, 3)]);

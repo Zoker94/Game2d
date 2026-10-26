@@ -227,7 +227,7 @@ class Escort {
     const lvTier = Math.min(6, Math.floor(p.c.level / 10)), slot = ['weapon', 'helmet', 'armor', 'boots', 'ring', 'amulet'][U.randInt(0, 5)];
     let rare = null;
     if (tier === 'bac' && Math.random() < 0.15) rare = 'rare';
-    if (tier === 'vang') { const x = Math.random(); rare = x < 0.04 ? 'legendary' : x < 0.3 ? 'epic' : 'rare'; if (Math.random() < 0.2) reward.knb = 10; }
+    if (tier === 'vang') { const x = Math.random(); rare = x < 0.01 ? 'legendary' : x < 0.25 ? 'epic' : 'rare'; if (Math.random() < 0.2) reward.knb = 10; }
     if (rare) reward.items.push([equipId(slot, lvTier, rare), 1]);
     this.w.giveReward(p, reward, ITEMS['tieu_chest_' + tier].name);
     if (rare === 'legendary') this.w.features.brag(`🎁 ${p.c.name} mở ${ITEMS['tieu_chest_' + tier].name} nhận được [${ITEMS[equipId(slot, lvTier, rare)].name}]!`);
