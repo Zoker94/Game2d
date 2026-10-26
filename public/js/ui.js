@@ -40,12 +40,24 @@
   }
   function iconUrl(itemId) { const id = resolveId(itemId); return iconUrlCache[id] || (iconUrlCache[id] = iconCanvas(id).toDataURL()); }
   UI.iconUrl = id => iconUrl(id); UI.esc = esc; UI.itemName = (id, plus) => itemName(id, plus);
-  UI.itemTip = (e, id, plus, inst) => tip(e, `<b>${itemName(id, plus)}</b>${statsHtml(G.data.items[resolveId(id)], plus)}${elemFxHtml(G.data.items[resolveId(id)], inst)}`);
+  UI.itemTip = (e, id, plus, inst) => tip(e, `<b>${itemName(id, plus)}</b>${statsHtml(G.data.items[resolveId(id)], plus, inst && inst.br)}${elemFxHtml(G.data.items[resolveId(id)], inst)}`);
   UI.hideTip = () => hideTip();
   function itemName(id, plus) { const it = G.data.items[resolveId(id)]; return `<span class="r-${it.rarity}-t">${esc(it.name)}${plus ? ' +' + plus : ''}</span>`; }
-  function statsHtml(it, plus) {
-    if (!it.stats) return '';
-    return Object.entries(it.stats).map(([k, v]) => {
+  // chỉ số gốc theo hệ Nội / Ngoại của món (trùng server/data/items.js brStats)
+  function brSt(it, br) {
+    const k = G.data.brStat && G.data.brStat[br];
+    if (!k || !it || !it.stats || it.type !== 'equip') return it && it.stats;
+    const o = {};
+    for (const s in it.stats) o[s] = s === 'spd' ? it.stats[s] : Math.round(it.stats[s] * (k[s] || 1) * 10) / 10;
+    if (k.mpAdd) o.mp = Math.round(((o.mp || 0) + (6 + it.tier * 10) * G.data.rarity[it.rarity].mult) * 10) / 10;
+    if (o.mp === 0) delete o.mp;
+    if (o.crit) o.crit = Math.min(G.data.critMax || 5, o.crit);
+    return o;
+  }
+  function statsHtml(it, plus, br) {
+    const st = brSt(it, br);
+    if (!st) return '';
+    return Object.entries(st).map(([k, v]) => {
       const val = (k === 'crit' || k === 'spd') ? v : Math.round(v * plusMult(plus || 0));
       return `<div class="st">${STAT_NAME[k]}: +${val}${k === 'crit' ? '%' : ''}</div>`;
     }).join('');
@@ -87,7 +99,7 @@
   function itemTotals(it, inst) {
     const o = {};
     if (!it) return o;
-    for (const [k, v] of Object.entries(it.stats || {})) o[k] = (o[k] || 0) + ((k === 'crit' || k === 'spd') ? v : v * plusMult((inst && inst.plus) || 0));
+    for (const [k, v] of Object.entries(brSt(it, inst && inst.br) || {})) o[k] = (o[k] || 0) + ((k === 'crit' || k === 'spd') ? v : v * plusMult((inst && inst.plus) || 0));
     if (inst && inst.el) for (const [k, v] of Object.entries(elemBonus(inst.el, it.tier))) o[k] = (o[k] || 0) + v;
     for (const gid of (inst && inst.gems) || []) { const g = gid && G.data.items[gid]; if (g) for (const [k, v] of Object.entries(g.gemStats || {})) o[k] = (o[k] || 0) + v; }
     return o;
@@ -185,7 +197,7 @@
     const b = inst && BR_INFO[inst.br];
     if (!b) return '<div class="small muted">Hệ: Ngoại công hoặc Nội công (chọn khi mua ở tiệm)</div>';
     const match = inst.br === G.me.branch;
-    return `<div class="small br-line br-${inst.br}">${inst.br === 'noi' ? '🔮' : '⚔️'} Hệ ${b.name}: <b>+${brPts(it, plus)} ${b.an}</b> <span class="${match ? 'ok' : 'muted'}">${match ? '· hợp hệ đang tu (tăng % sát thương võ công)' : '· khác hệ đang tu (chỉ cộng chỉ số)'}</span></div>`;
+    return `<div class="small br-line br-${inst.br}">${inst.br === 'noi' ? '🔮' : '⚔️'} Hệ ${b.name}: <b>+${brPts(it, plus)} ${b.an}</b> <span class="${match ? 'ok' : 'muted'}">${match ? '· hợp hệ đang tu (tăng % sát thương võ công)' : '· khác hệ đang tu (chỉ cộng chỉ số)'}</span><div class="muted">${inst.br === 'noi' ? 'Đồ Nội: nhiều nội lực, sinh lực cao hơn' : 'Đồ Ngoại: công, thủ, chí mạng cao hơn'}</div></div>`;
   }
   const brBadge = s => { const b = s && BR_INFO[s.br]; return b ? `<span class="brb brb-${s.br}" title="Hệ ${b.name}">${b.ch}</span>` : ''; };
   function itemDesc(id, plus, inst) {
@@ -194,7 +206,7 @@
     const clsLine = it.cls ? `<div class="small" style="color:${it.cls === G.me.cls ? '#4ade80' : '#ff6a6a'}">${it.wtype} · Chỉ dành cho ${G.data.classes[it.cls].name}</div>` : it.generic ? '<div class="small muted">Nhặt / mua sẽ thành vũ khí môn phái của bạn</div>' : '';
     return `<h4>${itemName(id, plus)}</h4>
       <div class="muted small">${it.type === 'equip' ? G.data.slots[it.slot] + ' · ' : ''}<span style="color:${rar.color}">${rar.name}</span> · Yêu cầu cấp ${it.lv || 1}</div>${clsLine}
-      ${statsHtml(it, plus)}${brLine(it, inst, plus)}${elemFxHtml(it, inst)}${it.effect && it.effect.vmStudy ? `<div class="small ${(G.me.vmb | 0) >= 5 ? 'warn' : 'ok-t'}">📜 Đã lĩnh hội ${G.me.vmb | 0}/5 lần${(G.me.vmb | 0) >= 5 ? ' – đã đạt tối đa, không thể học thêm (có thể bán / giao dịch cho người khác)' : ''}</div>${(G.me.vmb | 0) < 5 ? (() => { const n = G.me.inv.filter(x => x.id === 'vm_tamphap').reduce((a, x) => a + x.qty, 0); return `<div class="small ${n ? 'ok-t' : 'warn'}">Cần 1 Võ Mục Tâm Pháp mỗi lần học (đang có ${n})</div>`; })() : ''}` : ''}${it.desc ? `<div class="small">${esc(it.desc)}</div>` : ''}
+      ${statsHtml(it, plus, inst && inst.br)}${brLine(it, inst, plus)}${elemFxHtml(it, inst)}${it.effect && it.effect.vmStudy ? `<div class="small ${(G.me.vmb | 0) >= 5 ? 'warn' : 'ok-t'}">📜 Đã lĩnh hội ${G.me.vmb | 0}/5 lần${(G.me.vmb | 0) >= 5 ? ' – đã đạt tối đa, không thể học thêm (có thể bán / giao dịch cho người khác)' : ''}</div>${(G.me.vmb | 0) < 5 ? (() => { const n = G.me.inv.filter(x => x.id === 'vm_tamphap').reduce((a, x) => a + x.qty, 0); return `<div class="small ${n ? 'ok-t' : 'warn'}">Cần 1 Võ Mục Tâm Pháp mỗi lần học (đang có ${n})</div>`; })() : ''}` : ''}${it.desc ? `<div class="small">${esc(it.desc)}</div>` : ''}
       <div class="small muted">Giá bán: ${fmt(Math.floor(it.price * 0.3 * (1 + (plus || 0) * 0.2)))} lượng</div>`;
   }
 
@@ -804,7 +816,7 @@
     const risky = plus >= E.safe, ins = have('insure');
     const ok = have('stone') >= cost.stone && have('stone2') >= cost.stone2 && me.gold >= cost.gold && (!risky || !panelState.insure || ins > 0);
     const bar = Array.from({ length: E.max }, (_, i) => `<i class="${i < plus ? 'on' : ''} ${i >= E.safe ? 'risk' : ''}"></i>`).join('');
-    const nextStats = it.stats ? Object.entries(it.stats).filter(([k]) => k !== 'crit' && k !== 'spd').map(([k, v]) => `${STAT_NAME[k]} ${Math.round(v * plusMult(plus))} → <b style="color:#4ade80">${Math.round(v * plusMult(plus + 1))}</b>`).join(' · ') : '';
+    const nextStats = it.stats ? Object.entries(brSt(it, s.br)).filter(([k]) => k !== 'crit' && k !== 'spd').map(([k, v]) => `${STAT_NAME[k]} ${Math.round(v * plusMult(plus))} → <b style="color:#4ade80">${Math.round(v * plusMult(plus + 1))}</b>`).join(' · ') : '';
     return `<div class="enh-box">
       <div class="enh-bar">${bar}</div>
       <div class="small">+${plus} → <b style="color:#ffd76a">+${plus + 1}</b> · Tỉ lệ thành công: <b style="color:${rate >= 60 ? '#4ade80' : rate >= 20 ? '#ffd76a' : '#ff5050'}">${rate}%</b></div>
@@ -1490,7 +1502,7 @@
       html += `<div class="small muted">💰 ${fmt(G.me.gold)} · 💎 ${fmt(G.me.knb)}</div><div class="list">` + list.map(x => {
         const it = G.data.items[x.id];
         const cant = it.lv > G.me.level;
-        const stats = it.stats ? Object.entries(it.stats).map(([k, v]) => `${STAT_NAME[k]} +${v}`).join(', ') : (it.desc || '');
+        const stats = it.stats ? Object.entries(brSt(it, bbr)).map(([k, v]) => `${STAT_NAME[k]} +${v}`).join(', ') : (it.desc || '');
         return `<div class="li"><img src="${iconUrl(x.id)}" class="ic" width="36" height="36"><div class="grow">${itemName(x.id)} <span class="small ${cant ? 'warn' : 'muted'}">Cấp ${it.lv || 1}</span><div class="sub">${esc(stats)}</div></div>
           ${it.type !== 'equip' ? `<input type="number" min="1" max="999" value="${it.type === 'use' && x.price < 100 ? 10 : 1}" style="width:58px" data-qty="${x.id}">` : ''}
           <button class="btn small ${tab === 'knb' ? 'primary' : 'green'}" data-buy="${x.id}">${x.id === 'rename_card' && d.freeRename ? '🎁 Miễn phí (lần đầu)' : x.knb ? x.knb + ' 💎' : fmt(x.price) + ' 💰'}</button></div>`;

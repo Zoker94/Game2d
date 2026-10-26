@@ -1,6 +1,6 @@
 const { CLASSES, branchOf } = require('../data/classes');
 const { scaleSkill } = require('../data/skillbooks');
-const { ITEMS, BR_ATTR, brPoints } = require('../data/items');
+const { ITEMS, BR_ATTR, brPoints, brStats } = require('../data/items');
 const { mountStats } = require('../data/mounts');
 const { rollAffixes, elementBonus, CAP, GEAR_CAP, rescaleFx } = require('../data/affixes');
 const { ATTRS } = require('../data/attrs');
@@ -167,7 +167,8 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
     const it = e && ITEMS[e.id];
     if (!it) continue;
     const m = plusMult(e.plus || 0);
-    for (const k in it.stats) addStat(k, it.stats[k] * (k === 'crit' || k === 'spd' ? 1 : m));
+    const ist = brStats(it, e.br);   // chỉ số gốc theo hệ Nội / Ngoại của món
+    for (const k in ist) addStat(k, ist[k] * (k === 'crit' || k === 'spd' ? 1 : m));
     // ngũ hành: mỗi món cộng chỉ số theo hệ
     if (e.el) { elCount[e.el] = (elCount[e.el] || 0) + 1; const eb = elementBonus(e.el, it.tier); for (const k in eb) addStat(k, eb[k]); }
     for (const [k, v] of e.fx || []) fx[k] = (fx[k] || 0) + v;

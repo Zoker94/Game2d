@@ -48,6 +48,23 @@ function slotStats(slot, t) {
 // Mặc đúng hệ đang tu thì điểm này còn tăng % sát thương võ công của hệ (như điểm tiềm năng).
 const BR_ATTR = { ngoai: 'str', noi: 'ene' };
 const brPoints = (it, plus) => Math.round((1 + it.tier * 1.2) * RARITY[it.rarity].mult * (1 + (plus || 0) * 0.04));
+// Chỉ số gốc theo hệ của món đồ (trước đây đồ Nội và đồ Ngoại giống hệt nhau, chỉ khác dòng điểm hệ):
+// Ngoại công (binh khí, cận chiến): công, thủ, chí mạng cao hơn, ít nội lực.
+// Nội công (vận khí, đánh tầm xa): nhiều nội lực (mọi món đều có), sinh lực cao hơn, thủ / chí mạng thấp hơn (hệ Nội đã có xuyên thủ 20%).
+const BR_STAT = {
+  ngoai: { atk: 1.06, def: 1.1,  crit: 1.2, hp: 1,    mp: 0.5, mpAdd: 0 },
+  noi:   { atk: 1,    def: 0.95, crit: 0.8, hp: 1.08, mp: 1.8, mpAdd: 1 }
+};
+function brStats(it, br) {
+  const k = BR_STAT[br];
+  if (!k || !it.stats) return it.stats;
+  const o = {};
+  for (const s in it.stats) o[s] = s === 'spd' ? it.stats[s] : Math.round(it.stats[s] * (k[s] || 1) * 10) / 10;
+  if (k.mpAdd) o.mp = Math.round(((o.mp || 0) + (6 + it.tier * 10) * RARITY[it.rarity].mult) * 10) / 10;
+  if (o.mp === 0) delete o.mp;
+  if (o.crit) o.crit = Math.min(CRIT_MAX, o.crit);
+  return o;
+}
 
 const ITEMS = {};
 const ITEM_K = 0.65;   // hệ số chỉ số trang bị (giảm 35% để quái / boss không quá yếu)
@@ -179,4 +196,4 @@ for (const g of require('./gems').gemItems()) ITEMS[g.id] = g;
 
 function equipId(slot, t, rarity) { return `${slot}_${t}_${rarity}`; }
 
-module.exports = { ITEMS, RARITY, SLOTS, TIERS, TIER_MAX, tierOfLv, DROP_SLOTS, EQUIP_SLOTS, SLOT_TYPE, equipId, CLASS_WEAPON, BR_ATTR, brPoints };
+module.exports = { ITEMS, RARITY, SLOTS, TIERS, TIER_MAX, tierOfLv, DROP_SLOTS, EQUIP_SLOTS, SLOT_TYPE, equipId, CLASS_WEAPON, BR_ATTR, brPoints, BR_STAT, brStats };
