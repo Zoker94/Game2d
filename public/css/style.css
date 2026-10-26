@@ -757,8 +757,10 @@ body.touch #duel-banner.go { font-size: 38px; }
 .qb i { font-style: normal; font-size: 15px; }
 .qb span { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .qb:hover { border-color: var(--gold); }
-#btn-auto.on { background: #1f5a2a; border-color: #8fdc8f; color: #eaffea; box-shadow: 0 0 8px rgba(120,230,120,.55); animation: qbPulse 1.6s ease-in-out infinite; }
-@keyframes qbPulse { 50% { box-shadow: 0 0 14px rgba(120,230,120,.85); } }
+#btn-auto.on { background: #1f5a2a; border-color: #8fdc8f; color: #eaffea; box-shadow: 0 0 8px rgba(120,230,120,.55); }
+/* nhịp sáng: vẽ sẵn quầng sáng rồi chỉ đổi độ mờ (trình duyệt ghép trên GPU, không vẽ lại bóng mỗi khung) */
+#btn-auto.on::before { content: ''; position: absolute; inset: -1px; border-radius: inherit; box-shadow: 0 0 14px rgba(120,230,120,.85); opacity: 0; pointer-events: none; animation: glowFade 1.6s ease-in-out infinite; }
+@keyframes glowFade { 50% { opacity: 1; } }
 #btn-tlist.on { border-color: #ff6a5a; box-shadow: 0 0 8px rgba(255,90,70,.5); }
 #btn-pk.pk-on { border-color: #ff6a3a; box-shadow: 0 0 8px rgba(255,80,40,.5); }
 body.touch #minimap { width: 128px; height: 98px; }
@@ -895,7 +897,7 @@ table.tbl th { background: linear-gradient(#3a2418, #24160f); }
 #menu-buttons .admin-btn { background: linear-gradient(180deg, #6a3010, #2a1408); border-color: #ff9b2f; }
 .qb i { filter: drop-shadow(0 1px 1px rgba(0,0,0,.8)); }
 .dot { border: 1px solid #fff2; animation: dotPulse 1.4s ease-in-out infinite; }
-@keyframes dotPulse { 50% { box-shadow: 0 0 10px #ff2020; transform: scale(1.15); } }
+@keyframes dotPulse { 50% { transform: scale(1.15); } }   /* chỉ phóng to (ghép GPU); bóng đỏ tĩnh ở .dot */
 
 /* ---------- thanh kỹ năng (PC) ---------- */
 #skillbar { gap: 6px; padding: 6px 8px; border-radius: 14px; border: 1px solid #8a6424;
@@ -910,6 +912,7 @@ table.tbl th { background: linear-gradient(#3a2418, #24160f); }
 .skill .mpc { z-index: 2; bottom: 2px; right: 2px; background: rgba(6,10,24,.82); color: #a8d8ff; border-radius: 5px; padding: 0 3px; line-height: 11px; }
 .skill .slv { z-index: 2; top: 2px; right: 2px; background: rgba(40,20,4,.85); border-radius: 5px; padding: 0 3px; line-height: 11px; }
 .skill .cnt { z-index: 2; bottom: 2px; right: 2px; background: rgba(8,4,6,.82); border-radius: 5px; padding: 0 3px; line-height: 12px; font-weight: 800; }
+.skill .cdo, .act .cdo { top: 0; height: 100%; transform: translateY(100%); visibility: hidden; will-change: transform; }   /* ui.js cdSet */
 .skill .cdo, .act .cdo { z-index: 3; background: linear-gradient(rgba(6,3,8,.62), rgba(6,3,8,.82)); border-top: 1px solid rgba(255,220,140,.75); box-shadow: 0 -2px 8px rgba(255,200,100,.35); }
 .skill .cdt, .act .cdt { z-index: 4; font-weight: 900; color: #fff; text-shadow: 0 0 4px #000, 0 1px 0 #000; }
 .skill.empty { border-style: solid; opacity: .6; background: rgba(10,6,8,.6) padding-box, repeating-linear-gradient(45deg, #6a4a20 0 4px, #2a1a0c 4px 8px) border-box; }
@@ -1627,7 +1630,7 @@ body.meditating #btn-med, body.meditating #med-sk { box-shadow: 0 0 0 2px #9ff0d
     radial-gradient(ellipse farthest-corner at 50% 50%, rgba(120,50,0,0) 45%, rgba(120,50,0,.22) 100%),
     radial-gradient(circle at 85% -8%, rgba(255,250,210,.55) 0, rgba(255,210,120,.2) 22%, rgba(255,180,80,0) 70%),
     rgba(255,170,60,.1); }
-#wx-layer.wx-sun::before { content: ''; position: absolute; inset: 0;
+#wx-layer.wx-sun::before { content: ''; position: absolute; inset: 0; will-change: opacity;
   background: repeating-conic-gradient(from 200deg at 85% -8%, rgba(255,240,190,.09) 0deg 2.2deg, rgba(255,240,190,0) 2.2deg 8deg);
   -webkit-mask-image: radial-gradient(circle at 85% -8%, #000 0, rgba(0,0,0,.6) 45%, transparent 85%); mask-image: radial-gradient(circle at 85% -8%, #000 0, rgba(0,0,0,.6) 45%, transparent 85%);
   animation: sunRays 6s ease-in-out infinite; }
@@ -1682,3 +1685,10 @@ body.meditating #btn-med, body.meditating #med-sk { box-shadow: 0 0 0 2px #9ff0d
 #cls-box .cls-card { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px; border-radius: 10px; border: 1px solid rgba(201,154,58,.4); background: rgba(255,255,255,.04); color: #f0e2c0; cursor: pointer; font: inherit; }
 #cls-box .cls-card:hover { border-color: var(--cc); box-shadow: 0 0 10px var(--cc); background: rgba(255,215,106,.08); }
 #cls-box .cls-card b { font-size: 14px; color: #fff; } #cls-box .cls-card small { color: #a89a80; font-size: 11px; text-align: center; }
+
+/* Tiết kiệm pin / Giảm hiệu ứng (body.calm): dừng các hoạt ảnh lặp vô hạn chỉ để trang trí. Chúng chạy 60 khung/giây
+   độc lập với canvas (kể cả khi game khóa 30 FPS) và nhiều cái vẽ lại bóng / nền mỗi khung. Cảnh báo nhấp nháy vẫn giữ. */
+body.calm #btn-auto.on::before, body.calm .dot, body.calm .act.pick, body.calm #wanted-hud, body.calm .gc-box,
+body.calm .slot.r-legendary::after, body.calm .slot.r-epic::after, body.calm .slot .pfx, body.calm .slot .pfx-glow, body.calm .slot .pfx-spark, body.calm .slot .pfx-aura,
+body.calm .from.gm, body.calm.meditating #btn-med, body.calm.meditating #med-sk, body.calm #wx-layer.wx-sun::before,
+body.calm .at-free.on, body.calm .wm-here, body.calm .splash .logo { animation: none !important; }

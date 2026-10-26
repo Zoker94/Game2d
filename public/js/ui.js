@@ -321,6 +321,9 @@
     return `${t}${s.mult ? ' · x' + s.mult + ' sát thương' : ''}`;
   }
 
+  // ghi DOM chỉ khi giá trị đổi: gán lại cùng giá trị vẫn làm trình duyệt tính lại bố cục / vẽ lại
+  const setTxt = (el, v) => { if (el && el._t !== v) { el.textContent = v; el._t = v; } };
+  const setW = (el, v) => { if (el && el._w !== v) { el.style.width = v; el._w = v; } };
   UI.updateHud = function () {
     const me = G.me;
     if (!me) return;
@@ -328,14 +331,14 @@
     const st = me.stats;
     setBar(document.querySelector('#hud-status .bar.hp'), me.hp, st.maxHp);
     setBar(document.querySelector('#hud-status .bar.mp'), me.mp, st.maxMp);
-    $('hud-name').textContent = me.name;
-    $('hud-class').textContent = G.data.classes[me.cls].name;
-    $('hud-level').textContent = me.level;
-    $('hud-gold').textContent = fmt(me.gold);
-    $('hud-knb').textContent = fmt(me.knb);
+    setTxt($('hud-name'), me.name);
+    setTxt($('hud-class'), G.data.classes[me.cls].name);
+    setTxt($('hud-level'), String(me.level));
+    setTxt($('hud-gold'), fmt(me.gold));
+    setTxt($('hud-knb'), fmt(me.knb));
     const ep = me.expNext ? me.exp / me.expNext : 0;
-    $('exp-bar').querySelector('i').style.width = (ep * 100).toFixed(2) + '%';
-    $('exp-bar').querySelector('span').textContent = `Cấp ${me.level} · KN ${fmt(me.exp)}/${fmt(me.expNext)} (${(ep * 100).toFixed(1)}%)`;
+    setW($('exp-bar').querySelector('i'), (ep * 100).toFixed(2) + '%');
+    setTxt($('exp-bar').querySelector('span'), `Cấp ${me.level} · KN ${fmt(me.exp)}/${fmt(me.expNext)} (${(ep * 100).toFixed(1)}%)`);
     const avKey = me.cls + ':' + (me.ap || []).join(',');
     if (UI._avatarCls !== avKey || UI._avatarRetry > 0) {
       UI._avatarRetry = UI._avatarCls !== avKey ? 20 : UI._avatarRetry - 1;   // vẽ lại vài lần khi ảnh trang bị mới tải xong
@@ -361,19 +364,26 @@
         if (!el.querySelector('.ico-pot')) el.innerHTML = '<i class="ico-pot"></i><span class="cnt"></span>';
         const ic = el.querySelector('.ico-pot');
         if (ic._u !== url) { ic.style.backgroundImage = `url('${url}')`; ic._u = url; }
-        el.querySelector('.cnt').textContent = n;
+        setTxt(el.querySelector('.cnt'), String(n));
       }
     }
     updateTutorial();
     const sk = JSON.stringify(me.story);
     if (sk !== UI._storyKey) { UI._storyKey = sk; if (panel === 'quests' && panelState.tab === 'story') UI.refreshPanel(true); }
     { const b = document.querySelector('#menu-buttons [data-panel="character"]'); if (b) { let d = b.querySelector('.dot'); if (!d) { d = document.createElement('i'); d.className = 'dot'; b.appendChild(d); } d.classList.toggle('hidden', !(me.attrFree > 0)); } }
-    if (panel === 'inventory' || panel === 'character' || panel === 'mount' || panel === 'skills' || panel === 'bank' || panel === 'escort' || (panel === 'npc' && npcData)) UI.refreshPanel(true);
+    // bảng đang mở: chỉ dựng lại khi dữ liệu nhân vật đổi (bỏ qua máu / nội lực / kinh nghiệm nhảy liên tục).
+    // Trước đây dựng lại toàn bộ innerHTML (cả túi 40-90 ô) tới 5 lần/giây mỗi khi nhận gói 'me'.
+    if (panel === 'inventory' || panel === 'character' || panel === 'mount' || panel === 'skills' || panel === 'bank' || panel === 'escort' || (panel === 'npc' && npcData)) {
+      const key = panel + '|' + JSON.stringify(me, (k, v) => k === 'hp' || k === 'mp' || k === 'exp' ? undefined : v);
+      const now = performance.now();
+      // bảng nhân vật có hiện máu / kinh nghiệm: vẫn cập nhật mỗi giây
+      if (key !== UI._panelKey || (panel === 'character' && now - (UI._panelT || 0) > 1000)) { UI._panelKey = key; UI._panelT = now; UI.refreshPanel(true); }
+    }
   };
   function setBar(el, v, max) {
     if (!el) return;
-    el.querySelector('i').style.width = Math.max(0, Math.min(100, v / max * 100)) + '%';
-    el.querySelector('span').textContent = `${fmt(Math.max(0, Math.round(v)))}/${fmt(max)}`;
+    setW(el.querySelector('i'), Math.max(0, Math.min(100, v / max * 100)) + '%');
+    setTxt(el.querySelector('span'), `${fmt(Math.max(0, Math.round(v)))}/${fmt(max)}`);
   }
 
   function updateTutorial() {
@@ -432,7 +442,9 @@
     const top = Math.round((hs.getBoundingClientRect().bottom - pr.top) / sc + 6);
     if (top !== trTop) { trTop = top; tr.style.top = top + 'px'; }
   }
-  setInterval(placeTracker, 500);
+  // đặt lại khi khung nhân vật đổi cỡ (ResizeObserver) thay vì đo bố cục mỗi 0,5 giây; vẫn dò thưa phòng hờ
+  if (window.ResizeObserver) { const ro = new ResizeObserver(() => placeTracker()); const hs0 = $('hud-status'); if (hs0) ro.observe(hs0); }
+  setInterval(() => { if (!document.hidden) placeTracker(); }, window.ResizeObserver ? 3000 : 500);
   window.addEventListener('resize', () => setTimeout(placeTracker, 50));
 
   // điện thoại: cụm nút menu không được đè lên bình thuốc / nút kỹ năng. Đè thì dàn thêm nút mỗi hàng
@@ -464,11 +476,20 @@
     mb.classList.remove('mb-tiny'); mb.style.maxWidth = '';
     $('btn-menu-min').click();   // vẫn đè: thu gọn (người chơi bấm ☰ để mở lại)
   }
-  setInterval(fitMenu, 1000);
+  // chạy lại khi cụm nút menu / nút hành động đổi cỡ; dò thưa phòng hờ (mỗi lần dò phải đo bố cục mọi nút)
+  if (window.ResizeObserver) { const ro = new ResizeObserver(() => fitMenu()); for (const id of ['menu-buttons', 'action-pad']) { const e = $(id); if (e) ro.observe(e); } }
+  setInterval(() => { if (!document.hidden) fitMenu(); }, window.ResizeObserver ? 4000 : 1000);
   window.addEventListener('resize', () => { menuFitKey = ''; setTimeout(fitMenu, 120); });
   UI.fitMenu = () => { menuFitKey = ''; fitMenu(); };
 
   // đang giao tranh với người chơi: thu gọn thông báo, ẩn khung phụ để thấy rõ đối thủ
+  // lớp phủ hồi chiêu: trượt bằng transform (chỉ ghép hình trên GPU) thay vì đổi height (tính lại bố cục mỗi khung)
+  function cdSet(o, pct) {
+    if (o._h === pct) return;
+    o._h = pct;
+    o.style.transform = 'translateY(' + (100 - pct) + '%)';
+    o.style.visibility = pct ? '' : 'hidden';
+  }
   UI.pvpOn = () => !!G._duelWith || (G.pvpUntil || 0) > performance.now();
   UI.frame = function (now) {
     { const on = UI.pvpOn(); if (on !== UI._pvpCls) { UI._pvpCls = on; document.body.classList.toggle('pvp-on', on); } }
@@ -483,7 +504,7 @@
       document.querySelectorAll('#skillbar .skill[data-idx], .act.sk[data-idx]').forEach(el => (UI._fc.sk[el.dataset.idx] = UI._fc.sk[el.dataset.idx] || []).push([el, el.querySelector('.cdo'), el.querySelector('.cdt')]));
     }
     for (const [el, o, t] of UI._fc.dodge) {
-      if (o) { const hh = (dc && dc.pending ? 0 : Math.round(dr * 100)) + '%'; if (o._h !== hh) { o.style.height = hh; o._h = hh; } }
+      if (o) cdSet(o, dc && dc.pending ? 0 : Math.round(dr * 100));
       if (t && t._t !== dtx) { t.textContent = dtx; t._t = dtx; }
       if (el._r !== !dr) { el.classList.toggle('ready', !dr); el._r = !dr; }
     }
@@ -493,7 +514,7 @@
       const r = cd ? Math.max(0, (cd.until - now) / cd.total) : 0;
       const txt = cd && cd.until > now && cd.total > 1000 ? Math.ceil((cd.until - now) / 1000) : '';
       for (const [, o, t] of UI._fc.sk[i] || []) {
-        if (o) { const hh = Math.round(r * 100) + '%'; if (o._h !== hh) { o.style.height = hh; o._h = hh; } }   // chỉ ghi khi đổi: đỡ vẽ lại DOM mỗi khung
+        if (o) cdSet(o, Math.round(r * 100));   // chỉ ghi khi đổi
         if (t && t._t !== txt) { t.textContent = txt; t._t = txt; }
       }
     });

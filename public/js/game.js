@@ -872,7 +872,8 @@
     const mode = G.settings.gfx || 'auto';
     gfx.lowFx = mode === 'low' || (mode === 'auto' && gfx.scale <= 1.25) || !!G.settings.lowfx;
     gfx.fx = mode === 'low' || G.settings.lowfx ? 0.4 : gfx.lowFx ? 0.55 : mode === 'high' ? 1 : (Input.isTouch ? 0.8 : 1);
-    document.body.classList.toggle('lowfx', !!G.settings.lowfx);   // tắt hoạt ảnh CSS lặp vô hạn (style.css)
+    document.body.classList.toggle('lowfx', !!G.settings.lowfx);
+    document.body.classList.toggle('calm', !!G.settings.lowfx || battery());   // dừng hoạt ảnh CSS lặp trang trí (cuối style.css)
     resize();
   }
   G.setGfx = mode => {
