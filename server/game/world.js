@@ -2210,6 +2210,7 @@ class World {
       mon.path = this.findPath(map, mon.x, mon.y, tx, ty); mon.pathGoal = gk; mon.pathAt = now;
       if (!mon.path) { mon.pathRetry = now + 2000; return true; }
     }
+    if (!mon.path.length) { mon.path = null; return this.moveToward(mon, tx, ty, spd, map); }   // đã ở ô đích (đường rỗng): đi thẳng – trước đây đọc path[0] rỗng làm sập máy chủ
     while (mon.path.length > 1 && this.clearLine(map, mon.x, mon.y, mon.path[1].x, mon.path[1].y)) mon.path.shift();
     const wp = mon.path[0];
     if (Math.hypot(wp.x - mon.x, wp.y - mon.y) < 8) { mon.path.shift(); if (!mon.path.length) return this.moveToward(mon, tx, ty, spd, map); }
