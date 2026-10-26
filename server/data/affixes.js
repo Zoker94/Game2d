@@ -17,7 +17,7 @@ function elementBonus(el, t) {
     case 'kim': return { atk: 2 + t * 3 };
     case 'moc': return { hp: 15 + t * 25 };
     case 'thuy': return { mp: 12 + t * 18, def: 1 + t };
-    case 'hoa': return { crit: Math.round((0.5 + t * 0.3) * 10) / 10 };
+    case 'hoa': return { crit: Math.round((0.2 + t * 0.08) * 10) / 10 };   // tối đa ~0,9% mỗi món
     case 'tho': return { def: 2 + t * 3 };
   }
   return {};
@@ -55,7 +55,16 @@ const SLOT_POOL = {
   pants:  ['dodge', 'ccres', 'dmgred', 'regen'],
   cloak:  ['dmgred', 'reflect', 'ccres', 'regen', 'expup']
 };
-// hiệu ứng có giới hạn để không quá mạnh khi cộng dồn nhiều món
+// Mỗi hiệu ứng trên 1 món tối đa FX_MAX (5%): món Truyền Kỳ bậc cao nhất roll tốt nhất mới chạm 5%, bậc thấp ít hơn.
+// FX_K quy đổi thang giá trị gốc (base + step * bậc) về thang mới; Hồi Xuân vốn nhỏ (<1%/giây) giữ nguyên.
+const FX_MAX = 5;
+const FX_K = Object.fromEntries(Object.entries(AFFIX).map(([k, a]) => [k, k === 'regen' ? 1 : FX_MAX / ((a.base + a.step * 9) * 1.25)]));
+const fxVal = (k, v) => Math.max(0.1, Math.round(Math.min(k === 'regen' ? 3 : FX_MAX, v * FX_K[k]) * 10) / 10);
+// đồ cũ (thang giá trị gốc) -> thang mới; gọi một lần cho mỗi nhân vật (c.fxv)
+const rescaleFx = fx => fx.map(([k, v]) => [k, AFFIX[k] ? fxVal(k, v) : v]);
+// trần khi cộng dồn hiệu ứng từ trang bị (+ đá khảm) của cả bộ
+const GEAR_CAP = { freeze: 10, stun: 10, poison: 15, burn: 15, bleed: 15, slow: 15, lifesteal: 10, critdmg: 25, pierce: 20, double: 12, reflect: 15, dodge: 10, ccres: 25, dmgred: 15, regen: 3, expup: 25, goldup: 40 };
+// trần sau khi cộng cả nội công bị động / buff
 const CAP = { freeze: 25, stun: 25, poison: 60, burn: 60, bleed: 60, slow: 60, lifesteal: 25, critdmg: 150, pierce: 60, double: 40, reflect: 40, dodge: 30, ccres: 70, dmgred: 40, regen: 3, expup: 100, goldup: 150 };
 
 // Gieo hệ + hiệu ứng cho 1 món trang bị mới
@@ -67,9 +76,9 @@ function rollAffixes(it) {
   for (let i = 0; i < n && pool.length; i++) {
     const k = pool.splice(Math.floor(Math.random() * pool.length), 1)[0], a = AFFIX[k];
     const v = (a.base + a.step * it.tier) * (it.rarity === 'legendary' ? 1.25 : 1) * (0.85 + Math.random() * 0.3);
-    fx.push([k, Math.round(v * 10) / 10]);
+    fx.push([k, fxVal(k, v)]);
   }
   return fx.length ? { el, fx } : { el };
 }
 
-module.exports = { ELEMENTS, EL_KEYS, KHAC, elementBonus, AFFIX, PROC_KEYS, SLOT_POOL, CAP, rollAffixes };
+module.exports = { ELEMENTS, EL_KEYS, KHAC, elementBonus, AFFIX, PROC_KEYS, SLOT_POOL, CAP, GEAR_CAP, FX_MAX, rollAffixes, rescaleFx };

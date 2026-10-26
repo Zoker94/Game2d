@@ -5,7 +5,7 @@ const CHANGELOG = [
     date: '26/10/2026',
     items: [
       '🗺️ CHIA KHU: mỗi bãi luyện công có 5 khu, tối đa 10 người/khu, quái và đồ rơi riêng. Bấm "Khu n ▾" cạnh tên bản đồ để đổi khu (không đổi khi đang giao chiến). Thành, môn phái, chiến trường vẫn chung. Boss thế giới ở Khu 1.',
-      '⚖️ CÂN BẰNG: chỉ số trang bị −20% (trừ tốc độ chạy), võ công đánh quái −15%. Từ cấp 15 quái và boss trâu dần (cấp 90 khoảng gấp đôi máu, thủ cao hơn). Dưới cấp 15 vẫn dễ cày. PK giữ nguyên.',
+      '⚖️ CÂN BẰNG: chỉ số trang bị −35% (trừ tốc độ chạy), võ công đánh quái −15%. Bạo kích trên mỗi món tối đa 5%; mọi hiệu ứng % của trang bị (phản đòn, né, hút máu, xuyên giáp, sát thương bạo kích, choáng, đóng băng…) mỗi món tối đa 5% – đồ đang có cũng được quy đổi theo. Từ cấp 15 quái và boss trâu dần (cấp 90 khoảng gấp đôi máu, thủ cao hơn). Dưới cấp 15 vẫn dễ cày. PK giữ nguyên.',
       '📉 ĐỒ RƠI: bãi quái không còn ngập đồ – ngân lượng chỉ rơi khoảng 1/3 số lần (mỗi lần nhiều hơn), ít thuốc, đá, trang bị, ngọc hơn. Trang bị Truyền Kỳ giờ cực hiếm ở mọi nguồn.',
       '⚔️ TRANG BỊ MỚI: bậc cấp 70 / 80 / 90 (Tiên Phẩm, Thánh Phẩm, Chí Tôn) cho mọi loại đồ và vũ khí môn phái. Thêm ô Găng tay, Quần và 2 ô Nhẫn (tay trái / tay phải). Găng tay, quần rơi từ quái và bán ở Hiệu May.',
       '🧥 ÁO CHOÀNG: chỉ chế tạo ở bản đồ môn phái của mình – gặp Chưởng Phi Phong (cạnh Hộ Pháp). Cần ngân lượng, Huyền Tinh Thạch, điểm cống hiến và Thiên Tàm Ti (rơi từ quái / tinh anh / boss, hoặc đổi cống hiến ở Hộ Pháp). Ra ngẫu nhiên Thường → Truyền Kỳ.',

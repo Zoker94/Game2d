@@ -5,7 +5,7 @@ const GEM_TYPES = {
   emerald:  { name: 'Lục Bảo',    color: '#3ee07a', stat: 'Sinh lực',          stats: L => ({ hp: [30, 75, 160, 300, 500][L - 1] }),                             fx: ['regen', [0.1, 0.2]] },
   sapphire: { name: 'Lam Ngọc',   color: '#4aa8ff', stat: 'Nội lực & phòng thủ', stats: L => ({ mp: [20, 50, 110, 200, 340][L - 1], def: [2, 4, 8, 14, 22][L - 1] }), fx: ['dmgred', [1.5, 3]] },
   topaz:    { name: 'Hoàng Ngọc', color: '#ffc640', stat: 'Phòng thủ',         stats: L => ({ def: [3, 7, 14, 25, 40][L - 1] }),                                 fx: ['reflect', [2, 4]] },
-  amethyst: { name: 'Tử Tinh',    color: '#c070ff', stat: 'Chí mạng',          stats: L => ({ crit: [0.3, 0.6, 1.0, 1.6, 2.4][L - 1] }),                         fx: ['critdmg', [6, 10]] }
+  amethyst: { name: 'Tử Tinh',    color: '#c070ff', stat: 'Chí mạng',          stats: L => ({ crit: [0.3, 0.6, 1.0, 1.6, 2.4][L - 1] }),                         fx: ['critdmg', [3, 5]] }
 };
 const GEM_KEYS = Object.keys(GEM_TYPES);
 const GEM_MAX = 5;

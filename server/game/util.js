@@ -2,7 +2,7 @@ const { CLASSES, branchOf } = require('../data/classes');
 const { scaleSkill } = require('../data/skillbooks');
 const { ITEMS, BR_ATTR, brPoints } = require('../data/items');
 const { mountStats } = require('../data/mounts');
-const { rollAffixes, elementBonus, CAP } = require('../data/affixes');
+const { rollAffixes, elementBonus, CAP, GEAR_CAP, rescaleFx } = require('../data/affixes');
 const { ATTRS } = require('../data/attrs');
 const { gemBonus } = require('../data/gems');
 
@@ -41,7 +41,7 @@ const newUid = () => (++uidSeq).toString(36);
 function newCharacter(name, cls) {
   const cl = CLASSES[cls];
   const c = {
-    name, cls, level: 1, exp: 0, gold: 100, knb: 0,
+    name, cls, level: 1, exp: 0, gold: 100, knb: 0, fxv: 2,
     hp: cl.base.hp, mp: cl.base.mp,
     map: 'tuong_duong', x: 0, y: 0,
     inv: [], equip: {},
@@ -88,9 +88,15 @@ function migrateItems(c) {
   };
   (c.inv || []).forEach(fix);
   Object.values(c.equip || {}).forEach(fix);
+  // một lần cho mỗi nhân vật: hiệu ứng % của đồ cũ quy về thang mới (mỗi món tối đa 5%)
+  if ((c.fxv | 0) < 2) {
+    for (const s of [...(c.inv || []), ...Object.values(c.equip || {}), ...((c.bank && c.bank.items) || [])]) if (s && Array.isArray(s.fx)) s.fx = rescaleFx(s.fx);
+    c.fxv = 2;
+  }
 }
 
 function addItem(c, id, qty = 1, plus = 0, extra = null) {
+  if ((c.fxv | 0) < 2) migrateItems(c);   // quà gửi lúc nhân vật offline: quy đổi đồ cũ trước, đồ mới đã theo thang mới
   id = resolveItem(c, id);
   const it = ITEMS[id];
   if (!it || qty <= 0) return false;
@@ -184,7 +190,7 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
     if (setEl === 'kim') s.atk *= 1 + bonus; else if (setEl === 'moc') s.maxHp *= 1 + bonus;
     else if (setEl === 'thuy') { s.maxMp *= 1 + bonus; s.def *= 1 + bonus / 2; } else if (setEl === 'hoa') s.crit += bonus * 50; else if (setEl === 'tho') s.def *= 1 + bonus;
   }
-  for (const k in fx) fx[k] = Math.round(Math.min(CAP[k] || 100, fx[k]) * 10) / 10;
+  for (const k in fx) fx[k] = Math.round(Math.min(GEAR_CAP[k] || CAP[k] || 100, fx[k]) * 10) / 10;   // trần riêng cho cả bộ trang bị
   s.fx = fx; s.set = setN >= 3 ? { el: setEl, n: setN } : null; s.gearAttr = gearAttr;
   s.el = c.equip.weapon && c.equip.weapon.el || null;      // hệ tấn công
   s.del = c.equip.armor && c.equip.armor.el || null;       // hệ phòng thủ
