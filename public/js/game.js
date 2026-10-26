@@ -349,6 +349,11 @@
     s.on('cd', d => { const sk = mySkills()[d.idx]; if (sk) { G.cds[sk.id] = G.cds[d.idx] = { until: performance.now() + d.until, total: d.until, id: sk.id }; } G.pending[d.idx] = 0; });
     s.on('toast', d => UI.toast(d.text, d.type));
     s.on('notice', d => G.modal((d.type === 'admin' ? '📢 Thông báo từ quản trị viên:\n' : '') + d.text));
+    s.on('autoSrvReport', r => {
+      const why = r.why === 'dead' ? ' Nhân vật bị hạ gục nên đã dừng.' : r.why === 'time' ? ' Đã đủ 8 giờ nên tự dừng.' : '';
+      const text = `🤖 Máy chủ đã treo máy hộ ${r.mins} phút${r.offline ? ' lúc bạn thoát' : ''}: hạ ${r.kills} quái, ${r.gold >= 0 ? '+' : ''}${(r.gold || 0).toLocaleString('vi-VN')} lượng${r.lv > 0 ? `, lên ${r.lv} cấp (cấp ${r.lvNow})` : ''}.${why}`;
+      UI.toast(text, 'reward'); UI.chatMsg({ ch: 'sys', from: 'Hệ Thống', text, t: Date.now() });
+    });
     s.on('chat', d => {
       if (d.pid && Social.blocked(d.from)) return;
       UI.chatMsg(d);
@@ -415,6 +420,7 @@
     UI.closePanel(); if (window.BigMap) BigMap.close(); if (window.WorldMap) { WorldMap.close(); WorldMap.onEnterMap(); }
     sfx('portal');
     mapLoading(m);
+    if (G.auto) sendAutoSrv();   // vào lại / đổi map: báo lại máy chủ trạng thái tự động
   }
   // màn hình chờ chuyển bản đồ: tải sẵn ảnh nhân vật phái mình, ảnh quái trên bản đồ, dựng sẵn nền quanh nhân vật
   const MAP_TIPS = ['Đứng yên trong thành 30 giây sẽ tự ngồi thiền, hồi phục nhanh và lĩnh ngộ kinh nghiệm.', 'Bảng Võ Công → Hệ phái: chọn Nội công hoặc Ngoại công.',
@@ -824,6 +830,7 @@
     b.title = on ? 'Tắt tự động đánh (R)' : 'Bật tự động đánh (R)';
     if (on && G.map && G.map.safe && !G._duelWith) UI.toast('Hãy ra bãi luyện công để dùng tự động đánh', 'error');
     G.autoHome = on ? { x: G.self.x, y: G.self.y } : null;
+    sendAutoSrv();
   }
   G.setAuto = setAuto;
   $('btn-auto').onclick = () => setAuto(!G.auto);
@@ -1122,7 +1129,7 @@
   const AUTO_DEF = { pvpBack: true, pvpAuto: false, pickPots: true, pickMats: true, pickup: true, pickGold: true, pickMin: 'common', pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, potAlways: true, townLow: false, townPct: 15, skills: true, range: 700 };
   function autoCfg() { return Object.assign({}, AUTO_DEF, G.autoCfg); }
   G.autoCfgGet = autoCfg;
-  G.autoCfgSet = (k, v) => { G.autoCfg[k] = v; try { localStorage.setItem('vl_auto', JSON.stringify(G.autoCfg)); } catch (e) {} };
+  G.autoCfgSet = (k, v) => { G.autoCfg[k] = v; try { localStorage.setItem('vl_auto', JSON.stringify(G.autoCfg)); } catch (e) {} sendAutoSrv(); };
   G.noPot = {};
   const RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
   G.dropSkip = new Map();
@@ -1193,6 +1200,7 @@
       if (d > range) { if (i === 0) G.moveTo = { x: t.x, y: t.y }; continue; }
       G.moveTo = null;
       useSkill(i);
+      if (G._monChase) G._monChase.t = performance.now();   // đã ra đòn: còn đánh được
       return;
     }
   }
@@ -1210,7 +1218,12 @@
     // tự nhặt đồ
     if (cfg.pickup) {
       const dr = pickableDrop(now, home, cfg);
-      if (dr) { G.autoDrop = dr.id; G.moveTo = { x: dr.x, y: dr.y }; return; }
+      if (dr) {
+        // đuổi theo một món quá lâu (kẹt góc, đi vòng mãi, đứng sát mà không nhặt được): bỏ qua món đó 1 phút
+        if (!G._dropChase || G._dropChase.id !== dr.id) G._dropChase = { id: dr.id, t: now, lim: 2500 + Math.hypot(dr.x - s.x, dr.y - s.y) / (st.spd || 150) * 2000 };
+        else if (now - G._dropChase.t > G._dropChase.lim) { G.dropSkip.set(dr.id, now + 60000); G._dropChase = null; G.autoDrop = null; G.moveTo = null; return; }
+        G.autoDrop = dr.id; G.moveTo = { x: dr.x, y: dr.y }; return;
+      }
     }
     G.autoDrop = null;
     let t = validTarget();
@@ -1231,6 +1244,9 @@
       if (Math.hypot(home.x - s.x, home.y - s.y) > 60) G.moveTo = { x: home.x, y: home.y };
       return;
     }
+    // đuổi một con quái 8 giây mà chưa ra đòn được (đứng chỗ không tới được): bỏ qua nó 30 giây
+    if (!G._monChase || G._monChase.id !== t.id) G._monChase = { id: t.id, t: now };
+    else if (now - G._monChase.t > 8000) { G.autoBlacklist = { id: t.id, until: now + 30000 }; G.target = null; G.moveTo = null; G._monChase = null; return; }
     autoAttack(t, cfg);
   }
 
@@ -1786,32 +1802,54 @@
     return 1000 / 30;
   }
   // quay lại tab: bỏ khoảng thời gian ẩn khỏi đo đạc (rAF tự dừng khi tab ẩn nên không tốn pin lúc đó)
-  // Tab ẩn: trình duyệt dừng requestAnimationFrame và hãm setTimeout của trang (sau vài phút chỉ còn ~1 lần/phút),
-  // nên tự động (chạy trong vòng vẽ) bị đứng. Lúc đó lấy nhịp 100ms từ một Web Worker (không bị hãm)
-  // để chạy phần logic update() – không vẽ gì, quay lại tab thì tắt và vòng vẽ chạy tiếp như cũ.
-  let bgWorker = null, bgLast = 0;
-  function bgStart() {
-    if (bgWorker || !G.inGame) return;
-    try {
-      const url = URL.createObjectURL(new Blob(['setInterval(function(){postMessage(0)},100)'], { type: 'text/javascript' }));
-      bgWorker = new Worker(url); URL.revokeObjectURL(url);
-    } catch (e) { bgWorker = null; return; }
-    bgLast = performance.now();
-    bgWorker.onmessage = () => {
-      if (!document.hidden || !G.inGame) return bgStop();
-      const now = performance.now(), dt = Math.min(0.1, (now - bgLast) / 1000);
-      bgLast = now;
-      if (!G.auto) return;   // chỉ chạy khi đang bật tự động
-      try { update(dt); } catch (e) { console.error(e); }
-    };
+  // Rời trang (chuyển tab, điện thoại thoát ra màn hình chính / tắt màn hình) hoặc bật màn đen: trình duyệt dừng
+  // vòng lặp của trang, nên giao tự động cho máy chủ treo hộ (server/game/autosrv.js). Quay lại thì máy chủ trả lái
+  // và gửi vị trí thật (sự kiện 'pos'). Mất kết nối khi đang tự động: máy chủ vẫn treo hộ tối đa 8 giờ.
+  function sendAutoSrv() {
+    if (!G.socket || !G.inGame || !G.map) return;
+    const h = G.autoHome || G.self;
+    G.socket.emit('autoSrv', { on: !!G.auto, cfg: autoCfg(), hx: h.x, hy: h.y });
   }
-  function bgStop() { if (bgWorker) { bgWorker.terminate(); bgWorker = null; } }
-  G.bgActive = () => !!bgWorker;
+  G.sendAutoSrv = sendAutoSrv;
+  function setAway(v) { if (!G.socket || !G.inGame) return; if (v) sendAutoSrv(); G.socket.emit('away', { v: v ? 1 : 0 }); }
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { bgStart(); return; }
-    bgStop(); last = performance.now(); gfx.win = []; G.lastInput = last;
+    if (document.hidden) { setAway(true); return; }
+    if (!G.blackout) setAway(false);
+    last = performance.now(); gfx.win = []; G.lastInput = last;
   });
+  // Màn đen tiết kiệm pin: phủ đen cả màn hình (màn OLED tắt hẳn điểm ảnh), dừng vẽ và dừng vòng lặp,
+  // máy chủ treo hộ nếu đang bật tự động. Chạm 2 lần (hoặc Esc) để bật lại.
+  let boTimer = 0, loopParked = false;
+  function boInfo() {
+    const el = $('blackout'), me = G.me;
+    if (!el || !me) return;
+    const ep = me.expNext ? (me.exp / me.expNext * 100).toFixed(1) : '0';
+    el.style.transform = `translate(${(Math.random() - 0.5) * 120 | 0}px, ${(Math.random() - 0.5) * 160 | 0}px)`;   // dịch chữ: màn OLED không lưu ảnh khi treo lâu
+    el.querySelector('.bo-info').textContent = `${me.name} · Cấp ${me.level} (${ep}%)\nSinh lực ${Math.max(0, Math.round(me.hp)).toLocaleString('vi-VN')}/${me.stats.maxHp.toLocaleString('vi-VN')}${me.dead ? ' – ĐÃ BỊ HẠ' : ''}\n💰 ${me.gold.toLocaleString('vi-VN')} lượng\n🤖 Tự động: ${G.auto ? (G.map && G.map.safe ? 'bật (đang ở thành – không đánh)' : 'bật – máy chủ đang treo hộ') : 'tắt'}`;
+  }
+  G.setBlackout = on => {
+    on = !!on;
+    if (on === !!G.blackout || (on && !G.inGame)) return;
+    G.blackout = on;
+    let el = $('blackout');
+    if (!el) {
+      el = document.createElement('div'); el.id = 'blackout'; el.className = 'hidden';
+      el.innerHTML = '<div class="bo-info"></div><div class="bo-hint">Chạm 2 lần để bật lại màn hình</div>';
+      document.body.appendChild(el);
+      let tap = 0;
+      el.addEventListener('pointerdown', e => { e.preventDefault(); const t = performance.now(); if (t - tap < 450) G.setBlackout(false); tap = t; });
+    }
+    el.classList.toggle('hidden', !on);
+    document.body.classList.toggle('blackout', on);
+    clearInterval(boTimer);
+    if (on) { G.moveTo = null; boInfo(); boTimer = setInterval(boInfo, 3000); setAway(true); return; }
+    setAway(false);
+    last = performance.now(); gfx.win = []; G.lastInput = last;
+    if (loopParked) { loopParked = false; requestAnimationFrame(loop); }
+  };
+  document.addEventListener('keydown', e => { if (G.blackout && e.code === 'Escape') G.setBlackout(false); });
   function loop(now) {
+    if (G.blackout) { loopParked = true; return; }   // màn đen: dừng hẳn vòng lặp, bật lại thì chạy tiếp
     const budget = frameBudget(now);
     if (budget && now - last < budget - 4) { if (G.inGame) requestAnimationFrame(loop); return; }   // bỏ khung (màn 60/120Hz)
     const dt = Math.min(0.1, (now - last) / 1000);   // khung chậm vẫn đi đúng quãng (trước giới hạn 0,05 làm nhân vật như bị hãm lại)

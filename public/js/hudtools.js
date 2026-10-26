@@ -74,6 +74,7 @@
     if (!row) { row = document.createElement('div'); row.id = 'qb-row'; pk.parentNode.insertBefore(row, pk); }
     if (pk.parentNode !== row) row.appendChild(pk);
     if (fsOk && !$('btn-fs')) { const b = document.createElement('button'); b.id = 'btn-fs'; b.className = 'qb sq'; b.onclick = e => { e.stopPropagation(); toggleFs(); }; fsIcon(b); row.insertBefore(b, pk); }
+    if (!$('btn-black')) { const b = document.createElement('button'); b.id = 'btn-black'; b.className = 'qb sq'; b.title = 'Tắt màn hình (tiết kiệm pin, máy chủ treo hộ khi bật Tự động)'; b.innerHTML = '<i>🌙</i><span>Tắt màn</span>'; b.onclick = e => { e.stopPropagation(); G.setBlackout(true); }; row.insertBefore(b, pk); }
     let tp = $('btn-tp');
     if (G.me.owner && !tp) { tp = document.createElement('button'); tp.id = 'btn-tp'; tp.className = 'qb sq'; tp.title = 'Dịch chuyển nhanh (quản trị) – phím `'; tp.innerHTML = '<i>🧭</i><span>Bay</span>'; tp.onclick = e => { e.stopPropagation(); openTp(); }; row.insertBefore(tp, row.firstChild); }
     else if (!G.me.owner && tp) tp.remove();

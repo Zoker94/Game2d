@@ -332,6 +332,7 @@ io.on('connection', socket => {
       if (!db.usingDatabase) socket.emit('notice', { text: '⚠ CẢNH BÁO: Máy chủ chưa cấu hình DATABASE_URL. Dữ liệu đang lưu vào file tạm và SẼ MẤT mỗi lần cập nhật / khởi động lại trên Render. Hãy thêm DATABASE_URL (Neon) trong Render → Environment.', type: 'admin' });
     }
     world.story.onJoin(player);
+    world.autoSrv.greet(player);
     if (!user.character.tutorial.done) socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', text: 'Mẹo: Làm theo khung Hướng Dẫn Tân Thủ ở góc trái để nhận quà!', t: Date.now() });
   });
 
@@ -343,13 +344,8 @@ io.on('connection', socket => {
   on('pickup', inGame(d => world.pickupItem(player, d && typeof d.id === 'string' ? d.id : null)));
   on('useItem', inGame(d => world.useItem(player, d && d.uid, d && d.n)));
   on('quickUse', inGame(d => {
-    const id = d && d.kind === 'mp' ? player.c.quickMp : player.c.quickHp;
-    const pref = d && d.kind === 'mp' ? ['mp5', 'mp4', 'mp6', 'mp3', 'mp2', 'mp1'] : ['hp5', 'hp4', 'hp6', 'hp3', 'hp2', 'hp1'];
-    const order = [id, ...pref].filter(x => ITEMS[x] && player.c.level >= (ITEMS[x].lv || 1));
-    const s = order.map(x => player.c.inv.find(i => i.id === x)).find(Boolean);
-    if (!s) return d && d.auto ? socket.emit('noPot', { kind: d.kind === 'mp' ? 'mp' : 'hp' }) : world.toast(player, 'Không còn thuốc!', 'error');
-    player._autoUse = !!(d && d.auto);   // tự bơm: không báo hồi chiêu mỗi lần thử
-    try { world.useItem(player, s.uid); } finally { player._autoUse = false; }
+    const kind = d && d.kind === 'mp' ? 'mp' : 'hp';
+    if (!world.quickUse(player, kind, d && d.auto)) { if (d && d.auto) socket.emit('noPot', { kind }); else world.toast(player, 'Không còn thuốc!', 'error'); }
   }));
   on('equip', inGame(d => world.equip(player, d && d.uid)));
   on('unequip', inGame(d => world.unequip(player, d && d.slot)));
@@ -364,6 +360,8 @@ io.on('connection', socket => {
   on('sell', inGame(d => world.sell(player, d || {})));
   on('attr', inGame(d => world.attrAction(player, d)));
   on('meditate', inGame(() => world.toggleMeditate(player)));
+  on('autoSrv', inGame(d => world.autoSrv.setState(player, d)));   // trạng thái tự động để máy chủ treo hộ khi rời trang
+  on('away', inGame(d => world.autoSrv.setAway(player, d && d.v)));
   on('meFull', inGame(() => { player._meSent = null; player.dirtyMe = true; }));   // client mất bản cũ: gửi lại đủ
   on('party', inGame(d => world.party.action(player, d)));
   on('recall', inGame(() => world.startRecall(player)));
@@ -418,7 +416,13 @@ io.on('connection', socket => {
   on('duel', inGame(d => world.duel.action(player, d)));
   on('ginvite', inGame(d => d && social.guildInvite(player, d)));
 
-  socket.on('disconnect', () => { if (player) { social.leave(player); world.removePlayer(player); } });
+  socket.on('disconnect', () => {
+    if (!player) return;
+    social.leave(player);
+    // đang bật tự động ở bãi luyện: máy chủ giữ nhân vật lại treo hộ (tối đa 8 giờ), vào lại là nhận lại
+    if (world.players.get(user.id) === player && world.autoSrv.canOffline(player)) world.autoSrv.goOffline(player);
+    else world.removePlayer(player);
+  });
 });
 
 // Lưu định kỳ

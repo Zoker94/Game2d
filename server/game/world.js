@@ -86,6 +86,7 @@ class World {
     this.story = new Story(this);
     this.gems = new (require('./gems').Gems)(this);
     this.duel = new Duel(this);
+    this.autoSrv = new (require('./autosrv').AutoSrv)(this);
     this.bossAI = new (require('./bossai').BossAI)(this);
     for (const id in MAPS) {
       this.maps[id] = { def: MAPS[id], players: new Set(), monsters: new Map(), drops: new Map() };
@@ -136,7 +137,8 @@ class World {
   addPlayer(user, socket) {
     const c = user.character;
     const old = this.players.get(user.id);
-    if (old) { old.socket.emit('notice', { text: 'Tài khoản đăng nhập ở nơi khác.', type: 'error' }); this.removePlayer(old); old.socket.disconnect(true); }
+    if (old && old.offline) this.autoSrv.endOffline(old, 'back');   // đang được máy chủ treo hộ: vào lại thì nhận lại nhân vật
+    else if (old) { old.socket.emit('notice', { text: 'Tài khoản đăng nhập ở nơi khác.', type: 'error' }); this.removePlayer(old); old.socket.disconnect(true); }
     const p = {
       id: 'p' + (entSeq++), userId: user.id, user, c, socket,
       mapId: null, x: 0, y: 0, dir: 0, moving: false,
@@ -377,6 +379,8 @@ class World {
     const x = +data.x, y = +data.y;
     if (!Number.isFinite(x) || !Number.isFinite(y)) return;
     const now = Date.now();
+    p.lastClientMove = now;
+    if (this.autoSrv.handBack(p)) { p.lastMove = now; return; }   // máy chủ vừa treo hộ: gói cũ của máy khách bỏ qua, gửi vị trí thật
     const dt = Math.min(1000, now - p.lastMove);
     p.lastMove = now;
     const map = MAPS[p.mapId];
@@ -1074,8 +1078,21 @@ class World {
   }
 
   // ---------- Vật phẩm rơi ----------
+  // chỗ rơi phải đứng tới được: rơi trúng đá / cây / nước thì dời ra điểm trống gần nhất
+  // (trước đây nhân vật tự động chạy tới mãi không nhặt được, kẹt luôn không đánh quái)
+  dropSpot(mapId, x, y) {
+    const map = MAPS[mapId];
+    const free = (px, py) => !isSolidAt(map, px, py) && !isSolidAt(map, px - 12, py) && !isSolidAt(map, px + 12, py) && !isSolidAt(map, px, py - 6) && !isSolidAt(map, px, py + 6);
+    if (free(x, y)) return [x, y];
+    for (let r = 12; r <= 192; r += 12) for (let k = 0; k < 16; k++) {
+      const a = k / 16 * Math.PI * 2, px = x + Math.cos(a) * r, py = y + Math.sin(a) * r;
+      if (free(px, py)) return [px, py];
+    }
+    return [x, y];
+  }
   createDrop(mapId, x, y, itemId, qty = 1, owner = null, plus = 0, ownMs = 15000) {
     const m = this.maps[mapId];
+    [x, y] = this.dropSpot(mapId, x, y);
     const dr = { id: 'd' + (entSeq++), itemId, qty, plus, x, y, owner, ownerUntil: Date.now() + ownMs, expire: Date.now() + 120000 };
     m.drops.set(dr.id, dr);
     this.io.to('map:' + mapId).emit('dropAdd', this.dropView(dr));
@@ -1083,6 +1100,7 @@ class World {
   }
   createGoldDrop(mapId, x, y, gold, owner) {
     const m = this.maps[mapId];
+    [x, y] = this.dropSpot(mapId, x, y);
     const dr = { id: 'd' + (entSeq++), gold, x, y, owner, ownerUntil: Date.now() + 20000, expire: Date.now() + 90000 };
     m.drops.set(dr.id, dr);
     this.io.to('map:' + mapId).emit('dropAdd', this.dropView(dr));
@@ -1139,6 +1157,18 @@ class World {
       this.db.log('drop', `${p.c.name} nhặt ${it.name}`, { user: p.userId });
     }
     p.dirtyMe = true;
+  }
+
+  // bình máu / nội lực nhanh (nút ❤️💧, tự bơm, treo máy trên máy chủ). false: không còn bình
+  quickUse(p, kind, auto) {
+    const c = p.c, mp = kind === 'mp', id = mp ? c.quickMp : c.quickHp;
+    const pref = mp ? ['mp5', 'mp4', 'mp6', 'mp3', 'mp2', 'mp1'] : ['hp5', 'hp4', 'hp6', 'hp3', 'hp2', 'hp1'];
+    const order = [id, ...pref].filter(x => ITEMS[x] && c.level >= (ITEMS[x].lv || 1));
+    const s = order.map(x => c.inv.find(i => i.id === x)).find(Boolean);
+    if (!s) return false;
+    p._autoUse = !!auto;   // tự bơm: không báo hồi chiêu mỗi lần thử
+    try { this.useItem(p, s.uid); } finally { p._autoUse = false; }
+    return true;
   }
 
   // ---------- Túi đồ / trang bị ----------
@@ -1869,6 +1899,7 @@ class World {
     const sec = this.tickN % 20 === 0;
     if (sec) { this.rollWeather(now); this.story.tick(); }
     this.escort.tick(now, TICK);
+    this.autoSrv.tick(now);
     if (this.tickN % 5 === 0) this.duel.tick(now);
     for (const id in this.maps) {
       const m = this.maps[id];
@@ -1886,7 +1917,7 @@ class World {
     if (this.tickN % 4 === 0) {
       for (const p of this.players.values()) {
         if (p.buffs.length && p.buffs.some(b => b.until <= now)) this.recalc(p);
-        if (p.dirtyMe) { p.dirtyMe = false; p.socket.emit('me', this.meDelta(p, this.meView(p))); }
+        if (p.dirtyMe && !p.offline) { p.dirtyMe = false; p.socket.emit('me', this.meDelta(p, this.meView(p))); }
       }
     }
     if (this.features) this.features.tick(now);

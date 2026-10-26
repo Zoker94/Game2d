@@ -1692,3 +1692,10 @@ body.calm #btn-auto.on::before, body.calm .dot, body.calm .act.pick, body.calm #
 body.calm .slot.r-legendary::after, body.calm .slot.r-epic::after, body.calm .slot .pfx, body.calm .slot .pfx-glow, body.calm .slot .pfx-spark, body.calm .slot .pfx-aura,
 body.calm .from.gm, body.calm.meditating #btn-med, body.calm.meditating #med-sk, body.calm #wx-layer.wx-sun::before,
 body.calm .at-free.on, body.calm .wm-here, body.calm .splash .logo { animation: none !important; }
+
+/* màn đen tiết kiệm pin (game.js G.setBlackout): nền đen tuyệt đối để màn OLED tắt điểm ảnh, ẩn mọi thứ phía sau */
+#blackout { position: fixed; inset: 0; z-index: 100000; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; touch-action: none; user-select: none; -webkit-user-select: none; }
+#blackout.hidden { display: none; }
+#blackout .bo-info { white-space: pre-line; text-align: center; line-height: 1.7; font-size: 13px; color: #4a4a4a; }
+#blackout .bo-hint { margin-top: 16px; font-size: 12px; color: #2c2c2c; }
+body.blackout > *:not(#blackout) { visibility: hidden !important; }
