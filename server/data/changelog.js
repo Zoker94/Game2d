@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '26/10/2026',
     items: [
+      'Tối ưu điện thoại: chuyển bản đồ không còn đơ màn hình; chỉ tải hình môn phái khi cần (bớt tốn RAM, mạng). Cài đặt → 🔋 Tiết kiệm pin (mặc định bật trên điện thoại): 30 FPS, độ nét tối đa 150%, để yên lâu thì vẽ thưa hơn – tắt đi nếu muốn 60 FPS. ✨ Giảm hiệu ứng nặng cho máy yếu. Gõ /fps trong khung chat để xem bảng đo khung hình.',
       'Đổi môn phái: vật phẩm mới Chuyển Phái Lệnh (Kỳ Trân Các, 300 💎) – dùng để chọn phái mới (từ cấp 10, mỗi 3 ngày một lần). Giữ nguyên cấp, trang bị, điểm tiềm năng và hệ Nội / Ngoại công; võ công đã lĩnh ngộ chuyển sang chiêu cùng ô của phái mới (về tầng 1, hoàn điểm võ học); vũ khí môn phái (kể cả cường hóa, đá khảm) đổi thành vũ khí phái mới cùng bậc. Cống hiến môn phái cũ không mang theo.'
     ]
   },

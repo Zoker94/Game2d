@@ -861,13 +861,18 @@
   const GFX_FIXED = { high: 2, medium: 1.5, low: 1 };
   const gfx = { scale: 1.5, lowFx: false, win: [], since: 0, fail: {} };
   G.gfx = gfx;
-  function gfxCap() { return Math.min(window.devicePixelRatio || 1, 2); }
+  // Tiết kiệm pin (mặc định bật trên thiết bị cảm ứng): khóa 30 FPS, độ nét tối đa 1,5x, 20 FPS khi để yên lâu.
+  // Không đổi cách chơi: di chuyển / hồi chiêu tính theo thời gian thật, chỉ vẽ ít khung hơn.
+  const battery = () => G.settings.battery == null ? Input.isTouch : !!G.settings.battery;
+  G.battery = battery;
+  function gfxCap() { return Math.min(window.devicePixelRatio || 1, battery() ? 1.5 : 2); }
   function gfxApply(scale) {
     gfx.scale = Math.max(1, Math.min(gfxCap(), scale));
     // hiệu ứng tiết kiệm: ít hạt thời tiết / hiệu ứng, bỏ lớp ám màu kiểu 'overlay'
     const mode = G.settings.gfx || 'auto';
-    gfx.lowFx = mode === 'low' || (mode === 'auto' && gfx.scale <= 1.25);
-    gfx.fx = mode === 'low' ? 0.4 : gfx.lowFx ? 0.55 : mode === 'high' ? 1 : (Input.isTouch ? 0.8 : 1);
+    gfx.lowFx = mode === 'low' || (mode === 'auto' && gfx.scale <= 1.25) || !!G.settings.lowfx;
+    gfx.fx = mode === 'low' || G.settings.lowfx ? 0.4 : gfx.lowFx ? 0.55 : mode === 'high' ? 1 : (Input.isTouch ? 0.8 : 1);
+    document.body.classList.toggle('lowfx', !!G.settings.lowfx);   // tắt hoạt ảnh CSS lặp vô hạn (style.css)
     resize();
   }
   G.setGfx = mode => {
@@ -875,6 +880,8 @@
     gfx.fail = {}; gfx.win = []; gfx.since = performance.now();
     gfxApply(GFX_FIXED[mode] || (Input.isTouch ? 1.5 : 2));
   };
+  G.setBattery = on => { G.settings.battery = !!on; G.saveSettings(); gfx.fail = {}; gfx.win = []; gfx.since = performance.now(); gfxApply(GFX_FIXED[G.settings.gfx] || (Input.isTouch ? 1.5 : 2)); };
+  G.setLowFx = on => { G.settings.lowfx = !!on; G.saveSettings(); gfxApply(gfx.scale); };
   // gọi mỗi khung hình với thời gian khung (ms)
   function gfxTick(ms, now) {
     if ((G.settings.gfx || 'auto') !== 'auto' || document.hidden) return;
@@ -882,11 +889,11 @@
     if (gfx.win.length < 90) return;          // ~1,5 giây mỗi lần đánh giá
     const w = gfx.win.slice().sort((a, b) => a - b), med = w[w.length >> 1], p90 = w[Math.floor(w.length * 0.9)];
     gfx.win = [];
-    const i = GFX_STEPS.findIndex(v => v <= gfx.scale + 1e-6);
-    if ((med > 22 || p90 > 40) && gfx.scale > 1) {            // dưới ~45 FPS: hạ một bậc
+    const i = GFX_STEPS.findIndex(v => v <= gfx.scale + 1e-6), k = gfx.k || 1;   // k: khóa 30 FPS thì ngưỡng x2
+    if ((med > 22 * k || p90 > 40 * k) && gfx.scale > 1) {            // dưới ~45 FPS: hạ một bậc
       gfx.fail[gfx.scale] = (gfx.fail[gfx.scale] || 0) + 1;
       gfx.since = now; gfxApply(GFX_STEPS[Math.min(GFX_STEPS.length - 1, i + 1)]);
-    } else if (med < 17.5 && p90 < 22 && i > 0 && now - gfx.since > 12000) {   // mượt liên tục 12 giây: thử nâng
+    } else if (med < 17.5 * k && p90 < 22 * k && i > 0 && now - gfx.since > 12000) {   // mượt liên tục 12 giây: thử nâng
       const up = GFX_STEPS[i - 1];
       if (up <= gfxCap() && (gfx.fail[up] || 0) < 2) { gfx.since = now; gfxApply(up); }
     }
@@ -1754,9 +1761,25 @@
     mctx.strokeRect(ox + cam.x / TILE * sc, oy + cam.y / TILE * sc, W / zoom / TILE * sc, H / zoom / TILE * sc);
   }
 
+  // lần chạm / phím gần nhất: để yên lâu thì (khi tiết kiệm pin) vẽ thưa hơn nữa
+  G.lastInput = performance.now();
+  for (const ev of ['pointerdown', 'keydown', 'touchstart', 'wheel']) window.addEventListener(ev, () => { G.lastInput = performance.now(); }, { passive: true, capture: true });
+  let idlePx = 0, idlePy = 0;
+  function frameBudget(now) {
+    if (!battery()) return 0;
+    // còn di chuyển (kể cả giữ cần điều khiển), vừa ra đòn, hoặc quanh mình có hiệu ứng giao tranh: coi như đang chơi
+    if (G.self.x !== idlePx || G.self.y !== idlePy || (G.self.atkUntil || 0) > now - 1000 || G.fx.length) { idlePx = G.self.x; idlePy = G.self.y; G.lastInput = Math.max(G.lastInput, now); }
+    if (!G.auto && now - G.lastInput > 45000) return 50;   // để yên 45 giây: 20 FPS
+    return 1000 / 30;
+  }
+  // quay lại tab: bỏ khoảng thời gian ẩn khỏi đo đạc (rAF tự dừng khi tab ẩn nên không tốn pin lúc đó)
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { last = performance.now(); gfx.win = []; G.lastInput = last; } });
   function loop(now) {
+    const budget = frameBudget(now);
+    if (budget && now - last < budget - 4) { if (G.inGame) requestAnimationFrame(loop); return; }   // bỏ khung (màn 60/120Hz)
     const dt = Math.min(0.1, (now - last) / 1000);   // khung chậm vẫn đi đúng quãng (trước giới hạn 0,05 làm nhân vật như bị hãm lại)
-    if (!G._mlCover) gfxTick(now - last, now);   // khung chậm lúc tải map không tính vào tự hạ độ nét
+    gfx.k = budget ? budget / 16.67 : 1;
+    if (!G._mlCover && budget !== 50) gfxTick(now - last, now);   // khung chậm lúc tải map / lúc vẽ thưa khi để yên không tính vào tự hạ độ nét
     last = now;
     try { update(dt); if (!G._mlCover) draw(now); UI.frame(now); } catch (e) { console.error(e); }
     PerfHud.frame(now);
