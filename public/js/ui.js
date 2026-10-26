@@ -214,6 +214,7 @@
       e.preventDefault();
       const text = $('chat-input').value.trim();
       if (!text) { $('chat-input').blur(); return; }
+      if (/^\/fps$/i.test(text)) { UI.toast(PerfHud.toggle() ? 'Bật bảng đo hiệu năng' : 'Tắt bảng đo hiệu năng'); $('chat-input').value = ''; return; }   // chỉ trên máy mình
       let ch = $('chat-ch').value, to = $('chat-to').value.trim(), t = text;
       const m = text.match(/^\/(w|m|pm)\s+(\S+)\s+(.+)/i);
       if (m) { ch = 'pm'; to = m[2]; t = m[3]; }

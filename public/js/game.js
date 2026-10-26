@@ -430,11 +430,14 @@
     bar.style.width = '35%';
     for (const mo of G.monsters.values()) steps.push(Assets.loadMonster(mo.type));
     for (const p of G.players.values()) if (p.cls) steps.push(Assets.loadClass(p.cls));
+    const tb = performance.now();
     try { WorldArt.prebuild(G.self.x, G.self.y, W / zoom, H / zoom); } catch (e) { }
+    if (window.PerfHud) PerfHud.mark('dựng nền map', performance.now() - tb);
     bar.style.width = '60%';
     await Promise.race([Promise.all(steps), new Promise(r => setTimeout(r, 5000))]);   // mạng chậm: tối đa 5 giây
     if (seq !== mapLoadSeq) return;
     bar.style.width = '100%';
+    if (window.PerfHud) PerfHud.mark('chuyển map', performance.now() - t0);
     const left = 450 - (performance.now() - t0);
     if (left > 0) await new Promise(r => setTimeout(r, left));
     if (seq !== mapLoadSeq) return;
@@ -1748,6 +1751,7 @@
     gfxTick(now - last, now);
     last = now;
     try { update(dt); draw(now); UI.frame(now); } catch (e) { console.error(e); }
+    PerfHud.frame(now);
     if (G.inGame) requestAnimationFrame(loop);
   }
 
