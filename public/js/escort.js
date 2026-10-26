@@ -223,7 +223,7 @@
     if (!h) { h = document.createElement('div'); h.id = 'escort-hud'; $('screen-game').appendChild(h); h.onclick = () => UI.openPanel('escort'); }
     const left = Math.max(0, Math.round((es.until - Date.now()) / 1000));
     const T = TIER[es.tier] || {};
-    const away = G.map && es.map !== G.map.id;
+    const away = G.map && es.map !== (G.map.key || G.map.id);
     const nextName = es.next && G.map && (G.map.portals.find(p => p.to === es.next) || {}).toName;
     const step = away ? `<span class="warn">⚠ Xe đang ở ${UI.esc(es.mapName)} – hãy quay lại!</span>`
       : es.map === es.dest ? '➡ Đưa xe tới Phân Đà Tiêu Cục' : `➡ Đi qua cổng: <b>${UI.esc(nextName || es.next || '')}</b>`;

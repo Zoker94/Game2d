@@ -4,7 +4,7 @@ const { BRANCH_BONUS, BRANCH_FREE_LV } = require('../data/branches');
 const { ITEMS, RARITY, equipId } = require('../data/items');
 const { MONSTERS, BOSSES } = require('../data/monsters');
 const VM_IDS = ['vm_tq1', 'vm_tq2', 'vm_tq3', 'vm_tq4', 'vm_tq5', 'vm_tq6', 'vm_tq7'];
-const { MAPS, TILE, isSolidAt, SOLID } = require('../data/maps');
+const { MAPS, TILE, isSolidAt, SOLID, CHANNELS, CH_CAP, baseOf, chOf, chId } = require('../data/maps');
 const { NPCS, TELEPORTS } = require('../data/npcs');
 const { TUTORIAL } = require('../data/quests');
 const { MOUNTS, MOUNT_MAX, mountExpNext, isBreakLevel } = require('../data/mounts');
@@ -205,7 +205,8 @@ class World {
     const d = m.def;
     p.socket.emit('init', {
       you: p.id,
-      map: { id: d.id, name: d.name, theme: d.theme, w: d.w, h: d.h, tiles: d.tiles, safe: d.safe, pvp: d.pvp, lv: d.lv,
+      // id: bản đồ gốc (máy khách tra dữ liệu theo id này); key: id thật của khu; ch / chs: khu hiện tại / số khu
+      map: { id: baseOf(d.id), key: d.id, ch: chOf(d.id), chs: d.chs || 1, name: d.name, theme: d.theme, w: d.w, h: d.h, tiles: d.tiles, safe: d.safe, pvp: d.pvp, lv: d.lv,
         weather: this.weatherOf(mapId), portals: d.portals, buildings: d.buildings || [], props: d.props || [], sect: d.sect || null, npcs: d.npcs.map(n => ({ ...n, name: NPCS[n.id].name, sprite: NPCS[n.id].sprite, color: NPCS[n.id].color, action: NPCS[n.id].action })) },
       x, y, solid: SOLID, tile: TILE,
       drops: [...m.drops.values()].map(dr => this.dropView(dr))
@@ -213,8 +214,45 @@ class World {
     p.dirtyMe = true;
     this.escort.onEnterMap(p, prev, viaPortal);
     for (const r of this.duel.ringsOn(mapId)) p.socket.emit('duelRing', r);
-    this.progressTutorial(p, 'map', { map: mapId });
-    this.story.on(p, 'map', { map: mapId });
+    this.progressTutorial(p, 'map', { map: baseOf(mapId) });
+    this.story.on(p, 'map', { map: baseOf(mapId) });
+  }
+
+  // ---------- Khu ----------
+  // khu để vào bản đồ base: ưu tiên khu pref nếu chưa đủ CH_CAP người, không thì khu thấp nhất còn chỗ,
+  // tất cả đều đầy thì khu vắng nhất
+  pickChannel(base, pref = 1) {
+    base = baseOf(base);
+    const def = MAPS[base];
+    if (!def || !def.chs) return base;
+    const n = id => (this.maps[id] ? this.maps[id].players.size : 0);
+    const want = chId(base, pref);
+    if (n(want) < CH_CAP) return want;
+    let best = base;
+    for (let i = 1; i <= def.chs; i++) { const id = chId(base, i); if (n(id) < CH_CAP) return id; if (n(id) < n(best)) best = id; }
+    return best;
+  }
+  channelsView(p) {
+    const base = baseOf(p.mapId), def = MAPS[base];
+    if (!def || !def.chs) return { base, list: [] };
+    const list = [];
+    for (let i = 1; i <= def.chs; i++) list.push({ ch: i, n: this.maps[chId(base, i)].players.size, cap: CH_CAP, cur: chOf(p.mapId) === i });
+    return { base, name: def.name, list };
+  }
+  switchChannel(p, ch) {
+    ch = ch | 0;
+    const base = baseOf(p.mapId), def = MAPS[base], now = Date.now();
+    if (!def || !def.chs) return this.toast(p, 'Bản đồ này không chia khu', 'error');
+    if (ch < 1 || ch > def.chs || ch === chOf(p.mapId)) return;
+    if (p.dead || p.duel || p.trade) return this.toast(p, 'Không thể đổi khu lúc này', 'error');
+    if (now - (p.lastCombat || 0) < 8000) return this.toast(p, 'Đang giao chiến, đợi 8 giây rồi đổi khu', 'error');
+    if (now < (p.chCd || 0)) return this.toast(p, `Đợi ${Math.ceil((p.chCd - now) / 1000)} giây nữa mới đổi khu được`, 'error');
+    if (this.escort.carts.has(p.userId)) return this.toast(p, 'Đang áp tiêu, không thể đổi khu', 'error');
+    const id = chId(base, ch);
+    if (this.maps[id].players.size >= CH_CAP) return this.toast(p, `Khu ${ch} đã đủ ${CH_CAP} người`, 'error');
+    p.chCd = now + 10000;
+    this.enterMap(p, id, p.x, p.y);
+    this.toast(p, `Đã chuyển sang ${def.name} – Khu ${ch}`, 'info');
   }
 
   recalc(p) {
@@ -414,7 +452,7 @@ class World {
           p.socket.emit('pos', { x: p.x, y: p.y });
           return;
         }
-        this.enterMap(p, pt.to, (pt.tx + 0.5) * TILE, (pt.ty + 0.5) * TILE, true);
+        this.enterMap(p, this.pickChannel(pt.to, chOf(p.mapId)), (pt.tx + 0.5) * TILE, (pt.ty + 0.5) * TILE, true);   // qua cổng: giữ số khu nếu còn chỗ
         return;
       }
     }
@@ -508,7 +546,7 @@ class World {
     if (!map) return;
     if (p.c.level < (map.minLv || 1)) return this.toast(p, `Cần đạt cấp ${map.minLv}`, 'error');
     const s = this.randomSpotNear(map, map.center.x + 0.5, map.center.y + 1.5, 1);
-    this.enterMap(p, mapId, s.x, s.y);
+    this.enterMap(p, map.base ? mapId : this.pickChannel(mapId, 1), s.x, s.y);   // tên gốc: vào khu còn chỗ
   }
 
   // boss cốt truyện: thưởng kinh nghiệm / ngân lượng cho chủ nhân (không rơi đồ boss thật)
@@ -1903,7 +1941,7 @@ class World {
     if (this.tickN % 5 === 0) this.duel.tick(now);
     for (const id in this.maps) {
       const m = this.maps[id];
-      if (m.players.size === 0 && !sec) continue; // bản đồ trống: cập nhật thưa
+      if (m.players.size === 0 && (!sec || m.def.base)) continue; // bản đồ trống: cập nhật thưa; khu phụ trống thì đứng yên (có người vào là chạy tiếp)
       for (const mon of m.monsters.values()) this.updateMonster(mon, m, now, m.players.size === 0 ? 1000 : TICK);
       for (const dr of m.drops.values()) if (dr.expire < now) { m.drops.delete(dr.id); this.io.to('map:' + id).emit('dropDel', dr.id); }
       for (const p of m.players) {

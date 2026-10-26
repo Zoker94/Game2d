@@ -343,6 +343,6 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
 
   // ----- Dữ liệu tham chiếu -----
   app.get('/api/admin/items', auth, (req, res) => res.json(Object.values(ITEMS).map(i => ({ id: i.id, name: i.name, type: i.type, rarity: i.rarity, lv: i.lv, slot: i.slot, price: i.price }))));
-  app.get('/api/admin/maps', auth, (req, res) => res.json(Object.values(MAPS).map(m => ({ id: m.id, name: m.name, lv: m.lv, online: world.maps[m.id].players.size, monsters: [...world.maps[m.id].monsters.values()].filter(x => !x.dead).length }))));
+  app.get('/api/admin/maps', auth, (req, res) => res.json(Object.values(MAPS).filter(m => world.maps[m.id]).map(m => ({ id: m.id, name: m.name + (m.base ? ' · Khu ' + m.ch : m.chs ? ' · Khu 1' : ''), lv: m.lv, online: world.maps[m.id].players.size, monsters: [...world.maps[m.id].monsters.values()].filter(x => !x.dead).length }))));
   app.post('/api/admin/save', auth, (req, res) => { db.markDirty(); db.save(); act(req, 'Lưu dữ liệu thủ công'); res.json({ ok: true }); });
 };

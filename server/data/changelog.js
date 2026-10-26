@@ -2,6 +2,12 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '27/10/2026',
+    items: [
+      '🗺️ Chia khu: mỗi bản đồ luyện công có 5 khu, mỗi khu tối đa 10 người, quái và đồ rơi riêng từng khu. Bấm "Khu n ▾" cạnh tên bản đồ để đổi khu (không đổi được khi đang giao chiến). Qua cổng sẽ giữ số khu nếu còn chỗ. Thành, môn phái, chiến trường vẫn chung một khu. Boss thế giới xuất hiện ở Khu 1.'
+    ]
+  },
+  {
     date: '26/10/2026',
     items: [
       '🤖 Treo máy trên máy chủ: bật Tự động ở bãi luyện rồi thoát ra màn hình chính, tắt màn hình điện thoại, chuyển tab hay mất mạng – máy chủ vẫn đánh quái quanh chỗ treo, nhặt đồ và bơm máu theo cài đặt Tự động. Mất kết nối thì treo tối đa 8 giờ. Vào lại sẽ thấy báo cáo số quái, ngân lượng, cấp đã lên. Không tự PK; chết hoặc về thành thì dừng.',

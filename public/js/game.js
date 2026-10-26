@@ -349,6 +349,11 @@
     s.on('cd', d => { const sk = mySkills()[d.idx]; if (sk) { G.cds[sk.id] = G.cds[d.idx] = { until: performance.now() + d.until, total: d.until, id: sk.id }; } G.pending[d.idx] = 0; });
     s.on('toast', d => UI.toast(d.text, d.type));
     s.on('notice', d => G.modal((d.type === 'admin' ? '📢 Thông báo từ quản trị viên:\n' : '') + d.text));
+    // chọn khu: mỗi bản đồ luyện công có 5 khu, mỗi khu tối đa 10 người
+    s.on('channels', d => {
+      if (!d.list.length) return;
+      G.modal(`${d.name} – chọn khu (mỗi khu tối đa ${d.list[0].cap} người)`, d.list.map(c => ({ t: `${c.cur ? '📍 ' : ''}Khu ${c.ch} · ${c.n}/${c.cap}${c.n >= c.cap ? ' (đầy)' : ''}`, fn: () => { if (!c.cur) G.socket.emit('channel', { ch: c.ch }); } })).concat([{ t: 'Đóng' }]));
+    });
     s.on('autoSrvReport', r => {
       const why = r.why === 'dead' ? ' Nhân vật bị hạ gục nên đã dừng.' : r.why === 'time' ? ' Đã đủ 8 giờ nên tự dừng.' : '';
       const text = `🤖 Máy chủ đã treo máy hộ ${r.mins} phút${r.offline ? ' lúc bạn thoát' : ''}: hạ ${r.kills} quái, ${r.gold >= 0 ? '+' : ''}${(r.gold || 0).toLocaleString('vi-VN')} lượng${r.lv > 0 ? `, lên ${r.lv} cấp (cấp ${r.lvNow})` : ''}.${why}`;
@@ -408,7 +413,8 @@
     WorldArt.setMap(d.map); G._camSnap = true;
     d.drops.forEach(x => { if (x.om) x.ownUntil = performance.now() + x.om; G.drops.set(x.id, x); });
     const m = d.map;
-    $('map-name').innerHTML = `${m.name} <span class="${m.pvp ? 'pvp' : m.safe ? 'safe' : 'muted'}">${m.pvp ? '[PK]' : m.safe ? '[An toàn]' : '[Cấp ' + m.lv + ']'}</span>`;
+    $('map-name').innerHTML = `${m.name} <span class="${m.pvp ? 'pvp' : m.safe ? 'safe' : 'muted'}">${m.pvp ? '[PK]' : m.safe ? '[An toàn]' : '[Cấp ' + m.lv + ']'}</span>${m.chs > 1 ? ` <b id="ch-tag" title="Đổi khu">Khu ${m.ch} ▾</b>` : ''}`;
+    const ct = $('ch-tag'); if (ct) ct.onclick = e => { e.stopPropagation(); G.socket.emit('channels'); };
     Weather.set(m.weather, WorldArt.theme, true);
     // nền minimap
     const cv = document.createElement('canvas'); cv.width = m.w * 3; cv.height = m.h * 3;

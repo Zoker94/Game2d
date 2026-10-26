@@ -3,7 +3,7 @@
 const { CLASSES } = require('../data/classes');
 const { ITEMS, equipId } = require('../data/items');
 const { MONSTERS, BOSSES } = require('../data/monsters');
-const { MAPS, TILE, isSolidAt } = require('../data/maps');
+const { MAPS, TILE, isSolidAt, chId } = require('../data/maps');
 const { makeDaily, DAILY_ALL_BONUS } = require('../data/quests');
 const U = require('./util');
 const { isOwner } = require('../owner');
@@ -209,7 +209,7 @@ class Features {
         for (let i = 0; i < 5; i++) {
           const idx = map.walkable[U.randInt(0, map.walkable.length - 1)];
           const pos = { x: (idx % map.w + 0.5) * TILE, y: (Math.floor(idx / map.w) + 0.5) * TILE };
-          this.w.spawnMonster(mid, tpl, { x: idx % map.w, y: Math.floor(idx / map.w), r: 0 }, { pos, event: 'treasure' });
+          this.w.spawnMonster(chId(mid, U.randInt(1, map.chs || 1)), tpl, { x: idx % map.w, y: Math.floor(idx / map.w), r: 0 }, { pos, event: 'treasure' });   // rải đều các khu
           e.chests++;
         }
       }

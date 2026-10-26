@@ -190,7 +190,7 @@ app.get('/api/gamedata', (req, res) => {
     for (const [id, m] of Object.entries(require('./game/daihoi').DH_MONS)) mons[id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: 'kim', art: m.art };
     const maps = {};
     for (const id in MAPS) {
-      if (MAPS[id].instance) continue;   // bản đồ phó bản tạm thời
+      if (MAPS[id].instance || MAPS[id].base) continue;   // bản đồ phó bản tạm thời, bản sao của khu
       const m = MAPS[id], boss = Object.values(BOSSES).find(b => b.map === id);
       maps[id] = { name: m.name, lv: m.lv, pvp: m.pvp, safe: m.safe, theme: m.theme, minLv: m.minLv, tourney: m.tourney, town: m.town, sect: m.sect, duel: !!m.duelArena,
         portals: m.portals.map(p => ({ to: p.to, side: p.side })), boss: boss ? boss.name : null, mons: [...new Set((m.spawns || []).map(s => s[0]))] };
@@ -362,6 +362,8 @@ io.on('connection', socket => {
   on('meditate', inGame(() => world.toggleMeditate(player)));
   on('autoSrv', inGame(d => world.autoSrv.setState(player, d)));   // trạng thái tự động để máy chủ treo hộ khi rời trang
   on('away', inGame(d => world.autoSrv.setAway(player, d && d.v)));
+  on('channels', inGame(() => socket.emit('channels', world.channelsView(player))));   // danh sách khu của bản đồ đang đứng
+  on('channel', inGame(d => world.switchChannel(player, d && d.ch)));
   on('meFull', inGame(() => { player._meSent = null; player.dirtyMe = true; }));   // client mất bản cũ: gửi lại đủ
   on('party', inGame(d => world.party.action(player, d)));
   on('recall', inGame(() => world.startRecall(player)));

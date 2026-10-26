@@ -22,7 +22,7 @@
     // gọn: mỗi thành viên 1 dòng (vương miện, tên, cấp) + vạch máu mỏng
     const html = `<div class="pf-h">👥 <span>${pt.members.length}/6</span><button data-act="leave" title="Rời tổ đội">Rời</button></div>` +
       pt.members.map(m => {
-        const me = m.uid === pt.you, far = m.on && G.map && m.map !== G.map.id;
+        const me = m.uid === pt.you, far = m.on && G.map && m.map !== (G.map.key || G.map.id);
         return `<div class="pf-m${me ? ' me' : ''}${m.dead ? ' dead' : ''}${m.on ? '' : ' off'}" data-uid="${m.uid}" title="${esc(m.name)}${m.on ? ' · cấp ' + m.level : ' · ngoại tuyến'}">
           <div class="pf-n">${m.uid === pt.leader ? '<i>👑</i>' : ''}<b>${esc(m.name)}</b>${m.on ? `<small>${m.level}</small>` : ''}${m.dead ? '<em>💀</em>' : far ? '<em title="Ở bản đồ khác">🗺</em>' : !m.on ? '<em>⚪</em>' : ''}</div>
           <div class="pf-b"><i class="hp" style="width:${pct(m.hp, m.maxHp)}%"></i><i class="mp" style="width:${pct(m.mp, m.maxMp)}%"></i></div></div>`;
@@ -40,7 +40,7 @@
     const m = pt.members.find(x => x.uid === row.dataset.uid);
     if (!m || m.uid === pt.you) return;
     const btns = [];
-    if (m.on && m.id && G.map && m.map === G.map.id) btns.push({ t: G.follow === m.id ? '🚶 Thôi đi theo' : '🚶 Đi theo', fn: () => { G.follow = G.follow === m.id ? null : m.id; } });
+    if (m.on && m.id && G.map && m.map === (G.map.key || G.map.id)) btns.push({ t: G.follow === m.id ? '🚶 Thôi đi theo' : '🚶 Đi theo', fn: () => { G.follow = G.follow === m.id ? null : m.id; } });
     if (m.on) btns.push({ t: '💌 Nhắn riêng', fn: () => UI.pmTo(m.name) });
     if (leaderMe()) {
       btns.push({ t: '👑 Nhường đội trưởng', fn: () => emit('party', { op: 'promote', uid: m.uid }) });

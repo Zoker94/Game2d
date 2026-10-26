@@ -688,4 +688,18 @@ function isSolidAt(map, px, py) {
   return SOLID.has(map.tiles[ty * map.w + tx]);
 }
 
-module.exports = { MAPS, MAP_DEFS, TILE, T, SOLID: [...SOLID], isSolidAt, generateInstance };
+// Khu: mỗi bản đồ luyện công có CHANNELS bản sao chạy độc lập (quái, đồ rơi, người chơi riêng), dùng chung địa hình.
+// Khu 1 giữ id gốc (dữ liệu cũ không đổi), khu n là "<id>~n". Thành, môn phái, lôi đài, chiến trường, Đại Hội chỉ có 1 khu.
+const CHANNELS = 5, CH_CAP = 10;
+const hasChannels = m => !m.town && !m.safe && !m.pvp && !m.sect && !m.duelArena && !m.instance && !m.tourney && m.id !== 'dai_hoi' && (m.spawns || []).length > 0;
+for (const id of Object.keys(MAPS)) {
+  const m = MAPS[id];
+  if (!hasChannels(m)) continue;
+  m.chs = CHANNELS;
+  for (let n = 2; n <= CHANNELS; n++) MAPS[id + '~' + n] = Object.assign({}, m, { id: id + '~' + n, base: id, ch: n });
+}
+const baseOf = id => (MAPS[id] && MAPS[id].base) || id;     // id bản đồ gốc (để so với dữ liệu: cốt truyện, áp tiêu, cổng...)
+const chOf = id => (MAPS[id] && MAPS[id].ch) || 1;
+const chId = (base, n) => (n > 1 && MAPS[base + '~' + n]) ? base + '~' + n : base;
+
+module.exports = { MAPS, MAP_DEFS, TILE, T, SOLID: [...SOLID], isSolidAt, generateInstance, CHANNELS, CH_CAP, baseOf, chOf, chId };

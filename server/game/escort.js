@@ -2,7 +2,7 @@
 // ở bản đồ đích để nhận thưởng lớn. Dọc đường có Cướp Tiêu Tặc phục kích; người chơi đeo cờ PK / đồ sát
 // có thể cướp tiêu (nhận một phần tiền thưởng). Xe chỉ đi theo chủ khi qua cổng dịch chuyển cùng chủ.
 const U = require('./util');
-const { MAPS, TILE, isSolidAt } = require('../data/maps');
+const { MAPS, TILE, isSolidAt, baseOf } = require('../data/maps');
 const { MONSTERS } = require('../data/monsters');
 const { ITEMS, equipId } = require('../data/items');
 
@@ -41,6 +41,7 @@ class Escort {
   }
   // đường đi ngắn nhất qua các cổng (BFS) -> bản đồ kế tiếp
   nextMap(from, to) {
+    from = baseOf(from); to = baseOf(to);   // khu: đường đi tính trên bản đồ gốc
     if (from === to) return null;
     const prev = { [from]: null }, q = [from];
     while (q.length) {
@@ -282,7 +283,7 @@ class Escort {
         }
         // tới Phân Đà
         const r = ROUTES[cart.tier];
-        if (cart.mapId === r.dest) {
+        if (baseOf(cart.mapId) === r.dest) {
           const n = map.npcs.find(x => x.id === DEST_NPC);
           if (n && Math.hypot((n.x + 0.5) * TILE - cart.x, (n.y + 0.5) * TILE - cart.y) < TILE * 3) { this.complete(cart, p); continue; }
         }

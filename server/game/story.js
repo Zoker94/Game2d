@@ -1,7 +1,7 @@
 // Cốt truyện chính: theo dõi tiến độ từng người, phát hội thoại, sinh boss cốt truyện riêng.
 const U = require('./util');
 const { PROLOGUE, CHAPTERS, CH1_V1_MAP } = require('../data/story');
-const { MAPS, TILE, isSolidAt } = require('../data/maps');
+const { MAPS, TILE, isSolidAt, baseOf } = require('../data/maps');
 const { MONSTERS, BOSSES } = require('../data/monsters');
 const { NPCS } = require('../data/npcs');
 const { ITEMS } = require('../data/items');
@@ -49,7 +49,7 @@ class Story {
     return {
       ch: s.ch, st: s.st, steps: CHAPTERS[s.ch].steps.length, total: CHAPTERS.length, chName: CHAPTERS[s.ch].name,
       type: step.type, text: step.text, hint: step.hint || null, tut: !!step.tut, have: Math.min(have, need), need, npc: step.npc || STEP_NPC[step.type] || null,
-      map: tm, mapName: tm ? MAPS[tm].name : null, next: tm && tm !== p.mapId ? this.w.escort.nextMap(p.mapId, tm) : null,
+      map: tm, mapName: tm ? MAPS[tm].name : null, next: tm && tm !== baseOf(p.mapId) ? this.w.escort.nextMap(p.mapId, tm) : null,
       eid: p.storyElite && !p.storyElite.dead ? p.storyElite.id : null, seen: !!s.seen
     };
   }
@@ -96,7 +96,7 @@ class Story {
     if (step.tut && t && (t.done || t.step > step.tut)) { this.advance(p, true); return; }   // đã học ở hướng dẫn tân thủ kiểu cũ
     if (step.type === 'equip' && p.c.equip.weapon) this.advance(p);
     else if (step.type === 'level' && p.c.level >= step.n) this.advance(p);
-    else if (step.type === 'map' && p.mapId === step.map) this.advance(p);
+    else if (step.type === 'map' && baseOf(p.mapId) === step.map) this.advance(p);
   }
   advance(p, skip) {
     const c = p.c, s = this.state(c), ch = CHAPTERS[s.ch], step = ch.steps[s.st];
@@ -143,7 +143,7 @@ class Story {
       const step = this.step(p.c);
       const el = p.storyElite;
       if (el && (el.dead || el.mapId !== p.mapId || !step || step.type !== 'elite')) { this.removeElite(p); continue; }
-      if (!step || step.type !== 'elite' || p.mapId !== step.map || p.dead || el) continue;
+      if (!step || step.type !== 'elite' || baseOf(p.mapId) !== step.map || p.dead || el) continue;
       if (MAPS[p.mapId].safe) continue;
       this.spawnElite(p, step);
     }
