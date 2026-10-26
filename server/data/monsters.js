@@ -1,11 +1,14 @@
 // Quái vật & Boss. sprite: kiểu hình vẽ phía client.
 // Độ khó tăng dần theo cấp: cấp thấp gần như giữ nguyên, cấp càng cao quái càng trâu, đánh càng đau.
 const HP_K = L => 1 + L / 50, ATK_K = L => 1 + L / 70, DEF_K = L => 1 + L / 120, EXP_K = L => 1 + L / 100;
+// Từ cấp 15 quái / boss trâu dần: máu +1,3%/cấp, thủ +0,7%/cấp (cấp 99: máu x2,1, thủ x1,6); lực đánh giữ nguyên.
+// Dưới cấp 15 giữ nguyên để người mới cày dễ.
+const HARD_FROM = 15, HARD = (L, per) => L < HARD_FROM ? 1 : 1 + (L - HARD_FROM + 1) * per;
 function stats(level, k = 1) {
   return {
-    hp: Math.round((30 + level * 12 + level * level * 0.8) * k * HP_K(level)),
+    hp: Math.round((30 + level * 12 + level * level * 0.8) * k * HP_K(level) * HARD(level, 0.013)),
     atk: Math.round((6 + level * 4.2) * (k > 1 ? 1 + (k - 1) * 0.08 : k) * ATK_K(level)),
-    def: Math.round((2 + level * 2.1) * DEF_K(level)),
+    def: Math.round((2 + level * 2.1) * DEF_K(level) * HARD(level, 0.007)),
     exp: Math.round((8 + level * level * 0.9) * k * EXP_K(level)),
     gold: Math.round(2 + level * 1.6)
   };

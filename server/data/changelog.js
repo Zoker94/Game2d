@@ -2,6 +2,12 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '28/10/2026',
+    items: [
+      '⚖️ Cân bằng lại: chỉ số trang bị giảm 20% (trừ tốc độ chạy), võ công đánh quái / boss giảm 15%. Từ cấp 15 quái và boss trâu dần theo cấp: máu và phòng thủ cao hơn (cấp 90 khoảng gấp 2 lần máu). Dưới cấp 15 vẫn dễ cày như cũ. PK giữ nguyên cân bằng.'
+    ]
+  },
+  {
     date: '27/10/2026',
     items: [
       '🗺️ Chia khu: mỗi bản đồ luyện công có 5 khu, mỗi khu tối đa 10 người, quái và đồ rơi riêng từng khu. Bấm "Khu n ▾" cạnh tên bản đồ để đổi khu (không đổi được khi đang giao chiến). Qua cổng sẽ giữ số khu nếu còn chỗ. Thành, môn phái, chiến trường vẫn chung một khu. Boss thế giới xuất hiện ở Khu 1.',

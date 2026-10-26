@@ -36,8 +36,9 @@ const DODGE_DIST = 190, DODGE_CD = 5000, DODGE_AIR = 460;   // khinh công: quã
 const TICK = 50;            // 20 tick/giây
 const SNAP_EVERY = 2;       // gửi trạng thái 10 lần/giây
 const PICKUP_R = 56;
-const GOLD_DROP_CHANCE = 0.35;
-const CLOAK_ODDS = { legendary: 0.005, epic: 0.06, rare: 0.3 };   // chế tạo áo choàng: còn lại là Thường   // quái thường rơi ngân lượng 35% số lần (gấp đôi lượng mỗi lần)
+const GOLD_DROP_CHANCE = 0.35;   // quái thường rơi ngân lượng 35% số lần (gấp đôi lượng mỗi lần)
+const CLOAK_ODDS = { legendary: 0.005, epic: 0.06, rare: 0.3 };   // chế tạo áo choàng: còn lại là Thường
+const PVE_SKILL_K = 0.85;   // hệ số sát thương võ công lên quái / boss
 const AGGRO_R = 200;
 const LEASH_R = 650;
 const MERGED_TUTORIAL = true;   // hướng dẫn tân thủ nằm trong chương 1 cốt truyện
@@ -845,6 +846,7 @@ class World {
     // hệ võ công: điểm thuộc tính chính tăng sát thương võ công; nội công xuyên một phần phòng thủ
     const bb = p.c ? BRANCH_BONUS[branchOf(p.c)] : null;
     if (bb) mult *= 1 + (((p.c.attr && p.c.attr[bb.attr]) | 0) + ((p.stats.gearAttr && p.stats.gearAttr[bb.attr]) | 0)) * bb.per;   // điểm tiềm năng + điểm từ trang bị cùng hệ
+    if (!isPlayer) mult *= PVE_SKILL_K;   // đánh quái / boss: võ công giảm (PK giữ cân bằng riêng)
     const def = (isPlayer ? t.stats.def : t.tpl.def) * (1 - (fx.pierce || 0) / 100) * (1 - (bb ? bb.pierce : 0));
     let { dmg, crit } = this.calcDamage(p.stats.atk * 1.6, p.stats.crit, def, mult, 0.35, 1.75 + (fx.critdmg || 0) / 100);
     const [em, ek] = elemMult(p.stats.el, isPlayer ? t.stats.del : t.tpl.el);

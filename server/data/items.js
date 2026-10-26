@@ -50,6 +50,7 @@ const BR_ATTR = { ngoai: 'str', noi: 'ene' };
 const brPoints = (it, plus) => Math.round((1 + it.tier * 1.2) * RARITY[it.rarity].mult * (1 + (plus || 0) * 0.04));
 
 const ITEMS = {};
+const ITEM_K = 0.8;   // hệ số chỉ số trang bị (giảm 20% để quái / boss không quá yếu)
 
 // Trang bị
 Object.keys(SLOTS).forEach(slot => {
@@ -64,6 +65,7 @@ Object.keys(SLOTS).forEach(slot => {
         stats.hp = Math.round((stats.hp || 0) + 30 + t * 40);
       }
       if (rk === 'legendary') stats.atk = Math.round((stats.atk || 0) + 5 + t * 6);
+      for (const k in stats) if (k !== 'spd') stats[k] = Math.round(stats[k] * ITEM_K * 10) / 10;   // chỉ số trang bị đã giảm (trừ tốc độ chạy)
       const id = `${slot}_${t}_${rk}`;
       const prefix = rk === 'common' ? TIER_PREFIX[t] : rk === 'rare' ? 'Tinh Luyện' : rk === 'epic' ? 'Bảo' : 'Thần';
       ITEMS[id] = {
