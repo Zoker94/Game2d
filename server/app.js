@@ -193,7 +193,7 @@ app.get('/api/gamedata', (req, res) => {
       if (MAPS[id].instance) continue;   // bản đồ phó bản tạm thời
       const m = MAPS[id], boss = Object.values(BOSSES).find(b => b.map === id);
       maps[id] = { name: m.name, lv: m.lv, pvp: m.pvp, safe: m.safe, theme: m.theme, minLv: m.minLv, tourney: m.tourney, town: m.town, sect: m.sect, duel: !!m.duelArena,
-        portals: m.portals.map(p => ({ to: p.to, side: p.side })), boss: boss ? boss.name : null };
+        portals: m.portals.map(p => ({ to: p.to, side: p.side })), boss: boss ? boss.name : null, mons: [...new Set((m.spawns || []).map(s => s[0]))] };
     }
     const npcs = {};
     for (const id in NPCS) npcs[id] = { name: NPCS[id].name, sprite: NPCS[id].sprite, color: NPCS[id].color };

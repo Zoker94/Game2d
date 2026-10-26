@@ -22,7 +22,10 @@
   function load(path) {
     return new Promise(res => {
       const im = new Image();
-      im.onload = () => res(im); im.onerror = () => res(null);
+      im.decoding = 'async';
+      // giải mã ảnh ngoài luồng chính trước khi dùng: lần vẽ đầu không bị khựng vì giải mã sheet lớn
+      im.onload = () => (im.decode ? im.decode().catch(() => { }) : Promise.resolve()).then(() => res(im));
+      im.onerror = () => res(null);
       im.src = BASE + path;
     });
   }
@@ -41,25 +44,31 @@
   jobs.push(Promise.all([load('icons.png'), fetch(BASE + 'icons.json').then(r => r.ok ? r.json() : null).catch(() => null)]).then(([im, j]) => { if (im && j) ICONS = { im, j }; }));
   for (const n of MONSTERS) jobs.push(load('monsters/' + n + '.png').then(im => { if (im) imgs['m:' + n] = im; }));
   const ready = Promise.all(jobs);
-  // phái của tài khoản đang đăng nhập (nếu nhớ) tải trước, các phái còn lại tải sau
+  // chỉ tải trước phái của tài khoản đang đăng nhập (nếu nhớ); phái khác tải khi thật sự cần vẽ (gặp người chơi phái đó,
+  // màn tạo nhân vật). Trước đây tải cả 9 phái (~18 ảnh, mỗi ảnh ~38MB khi giải mã) làm tốn RAM/pin trên điện thoại.
   ready.then(() => {
     let mine = null; try { mine = localStorage.getItem('vl_cls'); } catch (e) { }
-    const order = mine && CLASSES.includes(mine) ? [mine, ...CLASSES.filter(c => c !== mine)] : CLASSES;
-    order.forEach((c, i) => setTimeout(() => { need(c + '_a0'); if (c !== 'caibang') need(c + '_w0'); }, i ? 300 + i * 150 : 0));
+    if (mine && CLASSES.includes(mine)) loadClass(mine);
   });
   // chờ ảnh của một phái (dùng khi vào game)
   function loadClass(cls) { need(cls + '_a0'); if (cls !== 'caibang') need(cls + '_w0'); return Promise.all([loading[cls + '_a0'], loading[cls + '_w0']].filter(Boolean)); }
 
   const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; return [c, x]; };
   // bộ nhớ đệm khung đã ghép: đầy thì bỏ dần khung cũ nhất (không xoá sạch một lần gây khựng hình)
-  const cacheMap = new Map(), CACHE_MAX = 900;   // mỗi khung 144x144 ~ 83KB
+  // điện thoại giữ ít hơn (400 khung ~ 33MB thay vì 900 ~ 75MB)
+  const cacheMap = new Map(), CACHE_MAX = matchMedia('(pointer: coarse)').matches ? 400 : 900;   // mỗi khung 144x144 ~ 83KB
   const put = (k, v) => {
     cacheMap.set(k, v);
     if (cacheMap.size > CACHE_MAX) { const it = cacheMap.keys(); for (let i = 0; i < 200; i++) cacheMap.delete(it.next().value); }
     return v;
   };
   const hitOf = k => { const v = cacheMap.get(k); if (v) { cacheMap.delete(k); cacheMap.set(k, v); } return v; };   // dùng lại thì đưa lên cuối hàng
-  const has = cls => !!(imgs[cls + '_a0'] && META[cls]);
+  // chưa có ảnh thì bắt đầu tải (vẽ tạm hình cũ tới khi xong); noLoad: chỉ hỏi, không tải (màn chờ đầu game)
+  const has = (cls, noLoad) => {
+    if (imgs[cls + '_a0'] && META[cls]) return true;
+    if (!noLoad && META[cls]) loadClass(cls);
+    return false;
+  };
   function layerOf(cls, name) { const m = META[cls]; return m && m.layers.indexOf(name) >= 0 ? need(cls + '_' + name) : null; }
   // (hàng, cột) của khung: trạng thái game -> động tác trong sheet; ngã = khung cuối của động tác ngã
   // dir: 0 xuống, 1 trái, 2 phải, 3 lên, 4 chéo xuống-phải, 5 chéo xuống-trái, 6 chéo lên-phải, 7 chéo lên-trái (trái = lật)
@@ -227,6 +236,11 @@
     const c = NPC_META.cell, k = NPC_META.scale || 1;   // NPC vẽ mới: ô 144 thu về x2/3 cho cân với nhân vật
     return { img, sx: (i % 4) * c, sy: side ? c : 0, w: c, h: c, dw: c * k, dh: c * k, fx: NPC_META.foot[0] * k, fy: NPC_META.foot[1] * k, k };
   }
+  // đổi map: bỏ ảnh quái không còn trên map mới cho trình duyệt thu hồi bộ nhớ (cần lại thì tải lại từ cache HTTP)
+  function retainMonsters(ids) {
+    const keep = new Set([...ids].map(artOf));
+    for (const id of Object.keys(monImgs)) if (!keep.has(id)) { delete monImgs[id]; delete monLoading[id]; }
+  }
   function monsterReady(id) { id = artOf(id); return !!(MON_META && MON_META.mon[id]); }
   function monsterTop(id) { id = artOf(id); const m = MON_META && MON_META.mon[id]; return m && monImgs[id] ? m.top : 0; }
   // ảnh đại diện lấy khuôn mặt làm tâm (mũ cao như nón lá, mũ giáp bị cắt bớt phần chóp)
@@ -242,7 +256,7 @@
   const procPlayer = Sprites.playerSprite;
   // tương thích chỗ cũ: frame > 0 khi đang đi; atk: true/'atk'/'skill'/'hurt'/'dead'
   Sprites.playerSprite = function (cls, colors, dir, frame, atk, ap) {
-    if (!has(cls)) return procPlayer.call(this, cls, colors, dir, frame, !!atk, ap);
+    if (!has(cls, true)) return procPlayer.call(this, cls, colors, dir, frame, !!atk, ap);   // hình thủ tục; nơi gọi tự quyết định có tải ảnh không
     const state = atk === 'skill' ? 'cast' : atk === true ? 'atk' : typeof atk === 'string' ? atk : frame > 0 ? 'walk' : 'idle';
     return charFrame(cls, dir, state, frame || 0, ap);
   };
@@ -287,5 +301,5 @@
     return `<i class="sk-img" style="background-image:url('${url}');--skc:${s.color || '#ffd76a'}"></i>`;
   }
 
-  window.Assets = { ready, loadClass, loadMonster, imgs, has, nature, charFrame, frameCount, frameMs, SRC, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, MONSTERS, skillIconUrl, skillIconHTML };
+  window.Assets = { ready, loadClass, loadMonster, retainMonsters, imgs, has, nature, charFrame, frameCount, frameMs, SRC, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, MONSTERS, skillIconUrl, skillIconHTML };
 })();

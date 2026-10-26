@@ -485,6 +485,7 @@
     flora = m.theme === 'river' || m.theme === 'ruins' ? m.theme : theme;
     icy = theme === 'cave' && (/bang|ice|tuyet/.test(m.id) || m.weather === 'snow');
     chunks = new Map(); jobs = new Map(); amb.length = 0; mapGen++;
+    if (window.Buildings && Buildings.retain) Buildings.retain(new Set((m.buildings || []).map(b => b.style)));
     buildDecos(); indexDecos();
   }
   // dựng sẵn các mảng nền quanh một điểm (màn hình chờ chuyển bản đồ) để vào map không phải dựng dần

@@ -69,7 +69,7 @@
       const ids = Object.keys(G.data.classes);
       ids.forEach((id, i) => {
         const x = ((i * 64 + splashT * 1.6) % (cv.width + 64)) - 64;
-        if (Assets.has(id)) c.drawImage(Assets.charFrame(id, 2, 'run', Math.floor(splashT / 3 + i)), Math.round(x) - 16, -12, 96, 96);
+        if (Assets.has(id, true)) c.drawImage(Assets.charFrame(id, 2, 'run', Math.floor(splashT / 3 + i)), Math.round(x) - 16, -12, 96, 96);
         else c.drawImage(Sprites.playerSprite(id, G.data.classes[id].colors, 2, Math.floor(splashT / 8 + i) % 4, false), Math.round(x), 8);
       });
     }
@@ -184,8 +184,11 @@
 
   // ================== Tạo nhân vật ==================
   let selCls = 'thieulam', previewT = 0;
+  let createLoad = null;
   function showCreate() {
     show('screen-create');
+    // màn tạo nhân vật cần hình cả 9 phái: tải lúc này rồi vẽ lại lưới một lần
+    if (!createLoad) createLoad = Promise.all(Assets.CLASSES.map(c => Assets.loadClass(c))).then(() => { if ($('screen-create').classList.contains('active')) showCreate(); });
     const grid = $('class-grid');
     grid.innerHTML = '';
     for (const [id, cl] of Object.entries(G.data.classes)) {
@@ -439,6 +442,7 @@
     bar.style.width = '60%';
     await Promise.race([Promise.all(steps), new Promise(r => setTimeout(r, 5000))]);   // mạng chậm: tối đa 5 giây
     if (seq !== mapLoadSeq) return;
+    Assets.retainMonsters([...G.monsters.values()].map(mo => mo.type).concat((G.data.maps[m.id] || {}).mons || []));
     bar.style.width = '100%';
     if (window.PerfHud) PerfHud.mark('chuyển map', performance.now() - t0);
     const left = 450 - (performance.now() - t0);

@@ -316,5 +316,7 @@
     cache.set(k, out);
     return out;
   }
-  window.Buildings = { sprite, STY };
+  // đổi map: chỉ giữ hình công trình của các kiểu kiến trúc map mới dùng
+  function retain(styles) { for (const k of [...cache.keys()]) if (!styles.has(k.slice(0, k.indexOf(':')))) cache.delete(k); }
+  window.Buildings = { sprite, STY, retain };
 })();
