@@ -700,8 +700,15 @@
   // hệ võ công đang tu (Nội công / Ngoại công): bộ chiêu, nội công bị động, tầm đánh thường
   G.myBranch = () => { const cl = G.data.classes[G.me.cls]; return (cl.branches && (cl.branches[G.me.branch] || cl.branches[cl.defBranch])) || { skills: cl.skills, passive: cl.extra && cl.extra[1], range: cl.range }; };
   G.myRange = () => G.myBranch().range;
+  // gọi nhiều lần mỗi khung (thanh kỹ năng, hồi chiêu, tự động): chỉ dựng lại khi có gói 'me' mới hoặc dữ liệu mới
+  let skMemo = null, skMe = null, skData = null;
   function mySkills() {
     if (!G.me) return [];
+    if (skMe === G.me && skData === G.data) return skMemo;
+    skMe = G.me; skData = G.data;
+    return (skMemo = buildSkills());
+  }
+  function buildSkills() {
     const learnedMap = G.me.skills || {};
     const br = G.myBranch();
     const list = br.skills.map((s, i) => Object.assign(scaleSkill(s, learnedMap[s.id] || 1), { idx: i, slv: learnedMap[s.id] || 1, learned: i === 0 || !!learnedMap[s.id] }));
@@ -1255,11 +1262,13 @@
     // Cổng
     for (const p of m.portals) {
       const px = (p.x + 0.5) * TILE, py = (p.y + 0.5) * TILE;
+      if (!inViewXY(px, py)) continue;   // ngoài màn hình: bỏ
       ctx.drawImage(Sprites.portalSprite(Math.floor(now / 120)), px - 32, py - 72);
       label(px, py - 78, '➜ ' + p.toName, '#9fe3ff', 11);
     }
     // Vật phẩm rơi
     for (const d of G.drops.values()) {
+      if (!inViewXY(d.x, d.y)) continue;
       const bob = Math.sin(now / 300 + d.x) * 3;
       const col = { common: '#ffffff', rare: '#4fa3ff', epic: '#c060ff', legendary: '#ff9b2f' }[d.rarity];
       if (d.rarity !== 'common' || d.gold) {
@@ -1276,13 +1285,13 @@
     if (G.clickMark && now - G.clickMark.t0 < 500) { const a = 1 - (now - G.clickMark.t0) / 500; ctx.strokeStyle = `rgba(255,215,106,${a})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(G.clickMark.x, G.clickMark.y, 14 * (1.5 - a), 6 * (1.5 - a), 0, 0, Math.PI * 2); ctx.stroke(); }
 
     // Thực thể sắp xếp theo y
-    const list = [];
+    const list = drawList; list.length = 0;   // dùng lại mảng mỗi khung (đỡ rác bộ nhớ)
     for (let y = Math.max(0, y0 - 1); y <= Math.min(m.h - 1, y1 + 4); y++) for (let x = Math.max(0, x0 - 8); x <= Math.min(m.w - 1, x1 + 1); x++) {   // lùi 8 ô: công trình rộng neo ở góc trái
       const t = m.tiles[y * m.w + x];
       if (Sprites.TALL.has(t)) list.push({ y: (y + 1) * TILE - 2, k: 'tall', t, tx: x, ty: y });
     }
-    for (const n of m.npcs) list.push({ y: (n.y + 0.5) * TILE + 20, k: 'npc', n });
-    G.corpses = G.corpses.filter(c => now - c.t0 < 1500);
+    for (const n of m.npcs) if (inViewXY((n.x + 0.5) * TILE, (n.y + 0.5) * TILE)) list.push({ y: (n.y + 0.5) * TILE + 20, k: 'npc', n });   // trước đây vẽ mọi NPC của map
+    if (G.corpses.length) G.corpses = G.corpses.filter(c => now - c.t0 < 1500);
     for (const c of G.corpses) list.push({ y: c.y - 1, k: 'corpse', c });
     for (const e of G.monsters.values()) if (inView(e)) list.push({ y: e.y, k: 'mon', e });
     for (const e of G.players.values()) if (inView(e)) list.push({ y: e.y, k: 'pl', e });
@@ -1389,7 +1398,7 @@
     if (!gfx.lowFx) { WorldArt.ambient(now, cam, vw, vh, fdt); WorldArt.drawAmbient(ctx, now); }   // máy yếu: bỏ hạt bay lơ lửng
     drawFx(now);
     // chữ nổi
-    G.floats = G.floats.filter(f => now - f.t0 < 1100);
+    if (G.floats.length) G.floats = G.floats.filter(f => now - f.t0 < 1100);
     for (const f of G.floats) {
       const p = (now - f.t0) / 1100;
       ctx.globalAlpha = 1 - p * p;
@@ -1414,7 +1423,9 @@
     if (now - lastMini > 200) { lastMini = now; drawMinimap(); const pb = $('btn-pick'); if (pb) pb.classList.toggle('hidden', !(G.me && !G.me.dead && nearItem(150))); }
   }
 
-  function inView(e) { return e.x > cam.x - 150 && e.x < cam.x + W / zoom + 150 && e.y > cam.y - 150 && e.y < cam.y + H / zoom + 200; }
+  function inViewXY(x, y) { return x > cam.x - 150 && x < cam.x + W / zoom + 150 && y > cam.y - 150 && y < cam.y + H / zoom + 200; }
+  function inView(e) { return inViewXY(e.x, e.y); }
+  const drawList = [];
 
   // trạng thái hoạt ảnh của quái: đánh / trúng đòn / đi / đứng
   function monsterAnim(e, now, info) {
