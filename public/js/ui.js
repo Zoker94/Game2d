@@ -96,6 +96,42 @@
     }
     return h;
   }
+  // chấm ngọc trên góc ô trang bị: mỗi lỗ khảm 1 chấm, có ngọc thì tô màu loại ngọc (số = cấp ngọc)
+  function gemDots(it, inst) {
+    const n = socketCount(it); if (!n) return '';
+    let h = '<span class="gem-dots">';
+    for (let i = 0; i < n; i++) {
+      const gid = inst && inst.gems && inst.gems[i], g = gid && G.data.items[gid];
+      h += g ? `<i style="--gc:${G.data.gems.types[g.gem.type].color}">${g.gem.lv}</i>` : '<i class="e"></i>';
+    }
+    return h + '</span>';
+  }
+  // bảng tổng hợp ngọc đã khảm trên toàn bộ trang bị đang mặc (bảng Nhân vật, xem thông tin người khác)
+  function gemSummary(equip) {
+    const C = G.data.gems; if (!C) return '';
+    const order = ['weapon', 'helmet', 'armor', 'cloak', 'gloves', 'pants', 'boots', 'amulet', 'ring', 'ring2'];
+    const tot = {}, fx = {}; let rows = '', cnt = 0, holes = 0;
+    for (const slot of order) {
+      const e = equip && equip[slot], it = e && G.data.items[e.id];
+      if (!it) continue;
+      const n = socketCount(it); holes += n;
+      const gs = [];
+      for (let i = 0; i < n; i++) {
+        const gid = e.gems && e.gems[i], g = gid && G.data.items[gid];
+        if (!g) { gs.push('<span class="gs-g e">◇ trống</span>'); continue; }
+        cnt++;
+        for (const [k, v] of Object.entries(g.gemStats || {})) tot[k] = (tot[k] || 0) + v;
+        if (g.gemFx) fx[g.gemFx[0]] = (fx[g.gemFx[0]] || 0) + g.gemFx[1];
+        gs.push(`<span class="gs-g" style="--gc:${C.types[g.gem.type].color}" title="${esc(g.name)}"><img src="${iconUrl(gid)}" width="18" height="18">${esc(C.types[g.gem.type].name)} ${g.gem.lv}<small>${gemStatText(g)}${g.gemFx ? ' · ' + fxText(g.gemFx[0], g.gemFx[1]).replace(/<[^>]+>/g, '') : ''}</small></span>`);
+      }
+      rows += `<div class="gs-row"><img src="${iconUrl(e.id)}" class="ic" width="30" height="30"><div class="gs-main"><div class="gs-name">${itemName(e.id, e.plus)} <span class="muted small">· ${slot === 'ring' ? 'Nhẫn trái' : slot === 'ring2' ? 'Nhẫn phải' : G.data.slots[slot]}</span></div><div class="gs-gems">${gs.join('') || '<span class="muted small">Không có lỗ khảm</span>'}</div></div></div>`;
+    }
+    if (!rows) return '<div class="card gs-box"><h4>💎 Ngọc đã khảm</h4><p class="muted small">Chưa mặc trang bị nào.</p></div>';
+    const sum = Object.entries(tot).map(([k, v]) => `${STAT_NAME[k]} <b>+${Math.round(v * 10) / 10}${k === 'crit' ? '%' : ''}</b>`).concat(Object.entries(fx).map(([k, v]) => fxText(k, Math.round(v * 10) / 10))).join(' · ');
+    return `<div class="card gs-box"><h4>💎 Ngọc đã khảm <span class="gs-cnt">${cnt}/${holes} lỗ</span></h4>
+      ${sum ? `<div class="gs-sum">Tổng từ ngọc: ${sum}</div>` : '<div class="gs-sum muted">Chưa khảm viên ngọc nào – khảm ở Thợ Rèn (thẻ 💎 Khảm đá).</div>'}${rows}</div>`;
+  }
+  UI.gemDots = gemDots; UI.gemSummary = gemSummary;
   // tổng chỉ số của 1 món (gồm cường hóa + ngũ hành) để so sánh
   function itemTotals(it, inst) {
     const o = {};
@@ -732,7 +768,7 @@
         const it = e && G.data.items[e.id];
         const ph = !it && placeholderIcon(s === 'ring2' ? 'ring' : s);
         const lbl = s === 'ring' ? 'Nhẫn trái' : s === 'ring2' ? 'Nhẫn phải' : G.data.slots[s];
-        html += `<div class="slot ${it ? 'r-' + it.rarity : 'empty-eq'} ${panelState.sel === 'eq:' + s ? 'sel' : ''}" data-eq="${s}">${it ? `${plusRing(e.plus | 0)}<img src="${iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}${brBadge(e)}` : `${ph ? `<img src="${ph}" class="ic ph" alt="">` : ''}<span class="lbl">${lbl}</span>`}</div>`;
+        html += `<div class="slot ${it ? 'r-' + it.rarity : 'empty-eq'} ${panelState.sel === 'eq:' + s ? 'sel' : ''}" data-eq="${s}">${it ? `${plusRing(e.plus | 0)}<img src="${iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}${brBadge(e)}${gemDots(it, e)}` : `${ph ? `<img src="${ph}" class="ic ph" alt="">` : ''}<span class="lbl">${lbl}</span>`}</div>`;
       }
       html += '</div>';
     }
@@ -741,7 +777,7 @@
     for (const s of inv) {
       const it = G.data.items[s.id];
       const cant = it.lv > me.level;
-      html += `<div class="slot r-${it.rarity} ${cant ? 'cant' : ''} ${panelState.sel === s.uid ? 'sel' : ''} ${opts.mark && opts.mark.has(s.uid) ? 'marked' : ''}" data-uid="${s.uid}">${plusRing(s.plus | 0)}<img src="${iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}${it.type === 'equip' ? brBadge(s) : ''}</div>`;
+      html += `<div class="slot r-${it.rarity} ${cant ? 'cant' : ''} ${panelState.sel === s.uid ? 'sel' : ''} ${opts.mark && opts.mark.has(s.uid) ? 'marked' : ''}" data-uid="${s.uid}">${plusRing(s.plus | 0)}<img src="${iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}${it.type === 'equip' ? brBadge(s) + gemDots(it, s) : ''}</div>`;
     }
     for (let i = me.inv.length; i < (me.invMax || 48) && !opts.filter; i++) html += '<div class="slot" style="opacity:.35"></div>';
     html += '</div></div>';
@@ -938,6 +974,7 @@
         <div>Tốc độ <b>${Math.round(st.spd)}</b></div><div>Kinh nghiệm <b>${fmt(me.exp)}/${fmt(me.expNext)}</b></div><div>Tầm đánh <b>${cl.range}</b></div>
         <div>Võ Mục Di Thư <b>${me.vmb | 0}/5</b>${me.vmb ? ` <span class="small muted">(+${(me.vmb | 0) * 3}% công/thủ/máu)</span>` : ''}</div><div>Quái đã diệt <b>${fmt(me.kills)}</b></div><div>Hạ người chơi <b>${fmt(me.pvpKills)}</b></div><div>Boss đã đánh <b>${fmt(me.bossKills)}</b></div>
       </div>
+      ${gemSummary(me.equip)}
       ${attrPanel(me)}
       ${elemPanel(st)}
       <h4 style="color:#ffd76a">Võ công</h4>

@@ -1732,3 +1732,20 @@ body.blackout > *:not(#blackout) { visibility: hidden !important; }
 #tp-box .gm-note { grid-column: 1 / -1; color: #a89a80; font-size: 11.5px; line-height: 1.4; }
 /* cảnh báo đồ sát ở NPC */
 .outlaw-warn { margin: 4px 0 8px; padding: 6px 8px; border-radius: 6px; background: rgba(120,10,10,.45); border: 1px solid #ff5050; color: #ffd0d0; font-size: 12px; }
+/* chấm ngọc trên ô trang bị + bảng ngọc đã khảm */
+.slot .gem-dots { position: absolute; right: 1px; top: 1px; z-index: 3; display: flex; gap: 1px; pointer-events: none; }
+.slot .gem-dots i { width: 9px; height: 9px; border-radius: 50%; font-style: normal; font-size: 7px; line-height: 9px; text-align: center; font-weight: 900; color: #fff; text-shadow: 0 0 2px #000;
+  background: radial-gradient(circle at 35% 30%, #fff 0 12%, var(--gc) 45%, color-mix(in srgb, var(--gc) 60%, #000)); box-shadow: 0 0 0 1px rgba(0,0,0,.7), 0 0 4px var(--gc); }
+.slot .gem-dots i.e { background: rgba(0,0,0,.55); box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
+.gs-box h4 { display: flex; align-items: center; gap: 8px; }
+.gs-cnt { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: rgba(255,255,255,.08); color: #e8d8b0; }
+.gs-sum { font-size: 12px; margin: 4px 0 8px; padding: 6px 8px; border-radius: 8px; background: rgba(0,0,0,.3); line-height: 1.6; }
+.gs-sum b { color: #4ade80; }
+.gs-row { display: flex; gap: 8px; align-items: flex-start; padding: 5px 0; border-top: 1px solid rgba(255,255,255,.06); }
+.gs-row .ic { flex: none; }
+.gs-main { flex: 1; min-width: 0; }
+.gs-name { font-size: 12.5px; }
+.gs-gems { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.gs-g { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px 2px 3px; border-radius: 999px; font-size: 11.5px; font-weight: 700; color: var(--gc); background: color-mix(in srgb, var(--gc) 14%, rgba(0,0,0,.4)); border: 1px solid color-mix(in srgb, var(--gc) 45%, transparent); }
+.gs-g small { font-weight: 500; color: #e8dcc0; margin-left: 2px; }
+.gs-g.e { color: #8a7a68; background: rgba(0,0,0,.3); border-color: rgba(255,255,255,.12); padding: 2px 8px; }

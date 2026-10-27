@@ -71,9 +71,9 @@
       <h4 class="sk-title">Trang bị</h4><div class="insp-eq">`;
     for (const slot of SLOT_ORDER) {
       const e = d.equip[slot], it = e && G.data.items[e.id];
-      html += `<div class="slot ${it ? 'r-' + it.rarity : ''}" ${it ? `data-eqid="${e.id}" data-plus="${e.plus}" data-slot="${slot}"` : ''}>${it ? `<img src="${UI.iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}` : `<span class="lbl">${G.data.slots[slot]}</span>`}</div>`;
+      html += `<div class="slot ${it ? 'r-' + it.rarity : ''}" ${it ? `data-eqid="${e.id}" data-plus="${e.plus}" data-slot="${slot}"` : ''}>${it ? `<img src="${UI.iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}${UI.gemDots(it, e)}` : `<span class="lbl">${G.data.slots[slot]}</span>`}</div>`;
     }
-    html += `</div>${d.mount && G.data.mounts[d.mount] ? `<div class="small">🐎 Thú cưỡi: <b class="r-${G.data.mounts[d.mount].rarity}-t">${esc(G.data.mounts[d.mount].name)}</b></div>` : ''}
+    html += `</div>${UI.gemSummary(d.equip)}${d.mount && G.data.mounts[d.mount] ? `<div class="small">🐎 Thú cưỡi: <b class="r-${G.data.mounts[d.mount].rarity}-t">${esc(G.data.mounts[d.mount].name)}</b></div>` : ''}
       <div class="row insp-btns">
         ${d.friend ? '<span class="small" style="color:#4ade80">🤝 Bằng hữu</span>' : '<button class="btn small" data-act="friend">🤝 Kết bạn</button>'}
         <button class="btn small" data-act="pm">💌 Nhắn riêng</button><button class="btn small green" data-act="trade">🔄 Giao dịch</button></div></div></div>`;

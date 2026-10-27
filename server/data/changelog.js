@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '27/10/2026',
     items: [
+      '💎 XEM NGỌC ĐÃ KHẢM: ô trang bị (đang mặc, trong túi, khi xem thông tin người khác) có chấm màu cho từng lỗ khảm – màu theo loại ngọc, số là cấp ngọc, chấm xám là lỗ trống. Bảng Nhân vật và bảng Thông tin Đại Hiệp có mục "Ngọc đã khảm": ngọc trên từng món cùng chỉ số, hiệu ứng, và tổng chỉ số nhận được từ ngọc.',
       '🎨 GIAO DIỆN MỚI HOÀN TOÀN trước khi vào game: nền động núi non lớp lớp, trăng, chùa tháp, rặng thông, hạc bay, hoa đào rơi; màn tải với thanh kiếm sáng dần và cuộn giấy mẹo; màn đăng nhập / đăng ký mới; màn vào game mới.',
       '🧭 TẠO NHÂN VẬT CHI TIẾT HƠN: biểu đồ NGŨ GIÁC (Tấn công · Phòng thủ · Sinh lực · Thân pháp · Tầm đánh) cho biết phái thiên công hay thiên thủ, so với hệ còn lại; CHỌN HỆ NỘI CÔNG / NGOẠI CÔNG ngay khi tạo nhân vật; thẻ Tiểu sử (lời môn phái, tổng đà, lịch sử, lối chơi từng hệ) và thẻ Võ công (chiêu thức, tuyệt kỹ, nội công bị động của hệ đã chọn); nút 🎲 tên ngẫu nhiên.',
       '🎮 TAY CẦM TỰ GÁN NÚT ĐẦY ĐỦ (Cài đặt → ⌨️ Cài đặt phím): mỗi việc gán được 2 nút tay cầm; gán được TỔ HỢP – giữ 1 nút rồi bấm thêm nút khác (vd LB+A) – nên đủ nút cho mọi việc. Mặc định: LB+A khinh công, LB+X nói chuyện / nhặt đồ, LB+B / LB+Y ô kỹ năng 6 / 7, RB+A thiền, RB+B về thành, RB+X ô 8, RB+Y danh sách mục tiêu (LB / RB bấm riêng vẫn là bình máu / nội lực, chạy khi thả nút). Nút D-pad gán việc khác thì thôi dùng để đi. Chỉ cần tay cầm: Back+Start mở bảng cài đặt, D-pad chọn ô, A gán, X xoá, B đóng.',
