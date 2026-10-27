@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '27/10/2026',
     items: [
+      '🧥 PHI PHONG HIỆN TRÊN NHÂN VẬT: mặc áo choàng là nhân vật khoác phi phong – nhìn trước thấy vạt áo hai bên và khuy cài vai, quay lưng thấy cả tấm phi phong, chạy / ra đòn thì vạt áo tung bay phía sau, cưỡi thú vẫn khoác. Mỗi bậc một màu vải (Bố, Bì, Ngân Văn, Kim Tuyến, Huyền Vũ, Long Văn, Thiên Tàm, Tử Hà, Cửu Long, Hỗn Nguyên); viền theo độ hiếm (Hiếm xanh, VIP tím, Truyền Kỳ vàng có ánh sáng); từ Long Văn trở lên có hoa văn sau lưng. Người khác cũng nhìn thấy.',
       '📱 TREO MÁY ĐIỆN THOẠI ỔN ĐỊNH HƠN: (1) Khi bật Tự động, game giữ sáng màn hình – điện thoại không tự tắt màn nữa (tắt ở Cài đặt → ☀️ Giữ sáng màn hình; kết hợp nút 🌙 Tắt màn để màn đen đỡ tốn pin). (2) Nếu màn vẫn tắt / khoá máy / thoát ra ngoài, máy chủ nhận ra sau khoảng 8 giây và tự treo hộ ngay (trước đây có máy phải chờ mất kết nối mới treo, hoặc không treo), mở lại là nhận lại nhân vật kèm báo cáo.',
       '🏆 BẢNG XẾP HẠNG: bấm vào bất kỳ ai để xem lực chiến, chỉ số, trang bị, ngọc đã khảm – kể cả người đang ngoại tuyến; có nút ◀ quay lại bảng xếp hạng.',
       '🖱️ KÉO THẢ (chuột trên PC, ngón tay trên điện thoại): kéo đồ trong túi thả vào ô trang bị để mặc, kéo đồ đang mặc thả vào túi để tháo (ô thả được sáng viền xanh). Điện thoại: chạm giữ ô đồ một chút rồi kéo – vuốt nhanh vẫn là cuộn danh sách.',

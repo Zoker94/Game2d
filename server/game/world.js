@@ -2289,14 +2289,15 @@ class World {
     for (const p of m.players) p.socket.emit('snap', this.isGm(p) ? all : pub);
   }
 
-  // Ngoại hình: [bậc vũ khí, độ hiếm vũ khí, +vũ khí, bậc áo, độ hiếm áo, +áo, bậc nón, thú cưỡi đang cưỡi, độ hiếm nón]
+  // Ngoại hình: [bậc vũ khí, độ hiếm vũ khí, +vũ khí, bậc áo, độ hiếm áo, +áo, bậc nón, thú cưỡi đang cưỡi, độ hiếm nón, cấp thú, thú cưng, bậc áo choàng, độ hiếm áo choàng]
   appearance(c) {
-    const e = c.equip, w = e.weapon && ITEMS[e.weapon.id], a = e.armor && ITEMS[e.armor.id], h = e.helmet && ITEMS[e.helmet.id];
+    const e = c.equip, w = e.weapon && ITEMS[e.weapon.id], a = e.armor && ITEMS[e.armor.id], h = e.helmet && ITEMS[e.helmet.id], k = e.cloak && ITEMS[e.cloak.id];
     return [w ? w.tier : -1, w ? RARITY_IDX[w.rarity] : 0, w ? e.weapon.plus || 0 : 0,
       a ? a.tier : -1, a ? RARITY_IDX[a.rarity] : 0, a ? e.armor.plus || 0 : 0,
       h ? h.tier : -1, c.riding && c.mount ? c.mount : '', h ? RARITY_IDX[h.rarity] : 0,
       c.riding && c.mount && c.mounts && c.mounts[c.mount] ? c.mounts[c.mount].lv || 1 : 0,   // cấp thú cưỡi: hiệu ứng mạnh dần
-      c.pet && U.countItem(c, 'pet_' + c.pet) ? c.pet : ''];   // thú cưng đang theo
+      c.pet && U.countItem(c, 'pet_' + c.pet) ? c.pet : '',   // thú cưng đang theo
+      k ? k.tier : -1, k ? RARITY_IDX[k.rarity] : 0];   // áo choàng: vẽ phi phong trên nhân vật
   }
 
   fx(mapId, data) { this.io.to('map:' + mapId).emit('fx', data); }

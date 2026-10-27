@@ -94,8 +94,95 @@
     return {
       a: at < 2 ? 0 : at < 4 ? 1 : at < 6 ? 2 : 3, ar: ap[4] || 0,
       h: ht < 0 ? 0 : ht < 3 ? 1 : ht < 5 ? 2 : 3, hr: ap[8] || 0,
-      w: wt < 3 ? 0 : wt < 5 ? 1 : 2
+      w: wt < 3 ? 0 : wt < 5 ? 1 : 2,
+      c: ap[11] == null ? -1 : ap[11], cr: ap[12] || 0   // áo choàng: bậc (-1 = không mặc), độ hiếm
     };
+  }
+  // ----- phi phong (áo choàng) vẽ bằng code, gắn theo vai của từng khung hình -----
+  // màu vải theo bậc: Bố, Bì, Ngân Văn, Kim Tuyến, Huyền Vũ, Long Văn, Thiên Tàm, Tử Hà, Cửu Long, Hỗn Nguyên
+  const CAPE = [['#8a7a60', '#5e523f'], ['#7a4a2a', '#4e2c16'], ['#4e5e78', '#2e3a4e'], ['#8e1e1e', '#561010'], ['#1e2a3c', '#0e1622'],
+    ['#6e1212', '#3e0808'], ['#e6e0d0', '#a8a090'], ['#5a2a8e', '#341656'], ['#c4921c', '#7a5608'], ['#1a1622', '#08060c']];
+  const CAPE_TRIM = ['#c8b48a', '#4fa3ff', '#c060ff', '#ffb02a'];
+  // khung thân (không tính vũ khí) của ô trong sheet: đỉnh đầu, chân, tâm và bề rộng vai – đo một lần rồi nhớ
+  const boxCache = {};
+  const [bcv, bcx] = mk(SRC, SRC);
+  function bodyBox(cls, im, row, col) {
+    const k = cls + ':' + row + ':' + col;
+    if (boxCache[k]) return boxCache[k];
+    bcx.clearRect(0, 0, SRC, SRC); bcx.drawImage(im, col * SRC, row * SRC, SRC, SRC, 0, 0, SRC, SRC);
+    const d = bcx.getImageData(0, 0, SRC, SRC).data, A = (x, y) => d[(y * SRC + x) * 4 + 3] > 40;
+    let top = -1, bot = -1;
+    for (let y = 0; y < SRC && top < 0; y++) for (let x = 0; x < SRC; x++) if (A(x, y)) { top = y; break; }
+    for (let y = SRC - 1; y >= 0 && bot < 0; y--) for (let x = 0; x < SRC; x++) if (A(x, y)) { bot = y; break; }
+    if (top < 0) return (boxCache[k] = null);
+    const h = bot - top, sy = Math.round(top + h * 0.21);
+    let l = SRC, r = 0;
+    for (let y = sy; y < sy + Math.max(3, h * 0.06); y++) for (let x = 0; x < SRC; x++) if (A(x, y)) { if (x < l) l = x; if (x > r) r = x; }
+    if (r < l) { l = 66; r = 78; }
+    const sw = Math.max(10, Math.min(30, r - l));
+    return (boxCache[k] = { top, bot, h, sy, cx: (l + r) / 2, sw });
+  }
+  // part: 'back' (vẽ dưới thân) | 'front' (vẽ đè lên thân: lưng khi quay đi, quai cài khi nhìn trước)
+  function drawCape(x, view, b, state, i, L, part) {
+    if (!b || L.c < 0 || state === 'dead') return;
+    const [main, dark] = CAPE[Math.max(0, Math.min(9, L.c))], trim = CAPE_TRIM[L.cr] || CAPE_TRIM[0];
+    const move = state === 'run' ? 1 : state === 'walk' ? 0.55 : state === 'atk' || state === 'cast' ? 0.7 : 0;
+    const ride = state.startsWith('ride'), sit = state === 'med' || ride;
+    const len = b.h * (sit ? 0.42 : 0.6), w = b.sw, ph = i * 1.3, wv = Math.sin(ph) * (1.5 + move * 2.5);
+    const sy = b.sy, cx = b.cx;
+    const back = view === 'up' || view === 'ur';
+    if (part === 'front' && !back) {   // nhìn trước / nghiêng: chỉ thấy quai cài trên vai
+      if (view === 'down' || view === 'dr') {
+        x.strokeStyle = dark; x.lineWidth = 2.2; x.beginPath(); x.moveTo(cx - w * 0.48, sy - 1); x.quadraticCurveTo(cx, sy + 5, cx + w * 0.48, sy - 1); x.stroke();
+        x.fillStyle = trim; x.beginPath(); x.arc(cx + (view === 'dr' ? 2 : 0), sy + 3.2, 2.1, 0, 6.3); x.fill();
+      } else { x.fillStyle = trim; x.fillRect(cx + w * 0.12, sy, 2, 2); }
+      return;
+    }
+    if (part === 'back' && back) return;
+    const g = x.createLinearGradient(0, sy, 0, sy + len);
+    g.addColorStop(0, main); g.addColorStop(1, dark);
+    x.save();
+    if (L.cr === 3) { x.shadowColor = trim; x.shadowBlur = 6; }   // Truyền Kỳ: viền sáng
+    x.fillStyle = g; x.strokeStyle = trim; x.lineWidth = L.cr ? 1.6 : 1;
+    x.beginPath();
+    if (view === 'right' || view === 'dr') {
+      // nhìn nghiêng (quay phải): vạt áo buông sau lưng, chạy thì tung về phía sau
+      const fl = move * w * 1.25, by = sy + len * (1 - move * 0.28), tail = cx - w * 0.8 - fl;
+      x.moveTo(cx + w * (view === 'dr' ? 0.3 : 0.12), sy - 1);
+      x.quadraticCurveTo(cx + w * 0.35, sy + len * 0.5, cx + w * 0.25 + wv * 0.4, sy + len * 0.95);
+      x.quadraticCurveTo((cx + tail) / 2, by + 4 + wv, tail + wv, by - move * 6);
+      x.quadraticCurveTo(cx - w * 0.85 - fl * 0.5, sy + len * 0.35, cx - w * 0.38, sy - 1);
+      x.closePath(); x.fill();
+      // mặt lót tối + nếp gấp
+      x.fillStyle = 'rgba(0,0,0,.28)'; x.beginPath(); x.moveTo(cx - w * 0.3, sy); x.quadraticCurveTo(cx - w * 0.55 - fl * 0.5, sy + len * 0.4, tail + wv, by - move * 6); x.lineTo(tail + wv + 4, by - move * 6 + 2); x.quadraticCurveTo(cx - w * 0.3 - fl * 0.3, sy + len * 0.45, cx - w * 0.15, sy); x.fill();
+      x.beginPath(); x.moveTo(cx + w * 0.25 + wv * 0.4, sy + len * 0.95); x.quadraticCurveTo((cx + tail) / 2, by + 4 + wv, tail + wv, by - move * 6); x.stroke();
+    } else {
+      // nhìn trước (sau lưng thân) hoặc nhìn sau (phủ lưng)
+      const tw = w * (back ? 0.46 : 0.5), bw = w * (back ? 0.85 : 0.95) + move * 3, sh = view === 'ur' ? -w * 0.18 : 0, by = sy + len;
+      x.moveTo(cx - tw + sh, sy - (back ? 2 : 0));
+      if (back) x.quadraticCurveTo(cx + sh, sy - 6, cx + tw + sh, sy - 2);   // cổ áo tròn theo vai
+      else x.lineTo(cx + tw + sh, sy);
+      x.quadraticCurveTo(cx + bw * 0.9 + sh, sy + len * 0.5, cx + bw + sh + wv, by);
+      for (let k = 1; k <= 4; k++) { const t = k / 4, hx = cx + bw + sh - 2 * bw * t + wv * (1 - 2 * t); x.quadraticCurveTo(hx + bw * 0.25, by + (k % 2 ? 3 : -1) + Math.sin(ph + k) * move * 2, hx, by + (k % 2 ? 0 : 2)); }
+      x.quadraticCurveTo(cx - bw * 0.9 + sh, sy + len * 0.5, cx - tw + sh, sy - (back ? 2 : 0));
+      x.closePath(); x.fill();
+      if (back) {
+        x.shadowBlur = 0;
+        x.strokeStyle = 'rgba(0,0,0,.25)'; x.lineWidth = 1.2;   // nếp gấp dọc
+        for (const f of [-0.45, 0, 0.45]) { x.beginPath(); x.moveTo(cx + sh + f * tw, sy + 4); x.quadraticCurveTo(cx + sh + f * bw * 0.9 + wv * 0.5, sy + len * 0.6, cx + sh + f * bw + wv, by - 2); x.stroke(); }
+        if (L.c >= 5) {   // bậc cao: hoa văn sau lưng
+          const ey = sy + len * 0.36, r = w * 0.22, ex = cx + sh + wv * 0.3;
+          x.fillStyle = trim; x.globalAlpha = 0.9;
+          for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2; x.beginPath(); x.ellipse(ex + Math.cos(a) * r * 0.55, ey + Math.sin(a) * r * 0.55, r * 0.5, r * 0.26, a, 0, 6.3); x.fill(); }   // hoa 4 cánh
+          x.globalAlpha = 1; x.fillStyle = dark; x.beginPath(); x.arc(ex, ey, r * 0.24, 0, 6.3); x.fill();
+        }
+        x.strokeStyle = trim; x.lineWidth = L.cr ? 1.8 : 1; x.beginPath(); x.moveTo(cx - tw + sh, sy - 2); x.quadraticCurveTo(cx + sh, sy - 6, cx + tw + sh, sy - 2); x.stroke();   // cổ áo
+      }
+      // viền gấu áo
+      x.strokeStyle = trim; x.lineWidth = L.cr ? 1.6 : 1;
+      x.beginPath(); x.moveTo(cx + bw + sh + wv, by); for (let k = 1; k <= 4; k++) { const t = k / 4, hx = cx + bw + sh - 2 * bw * t + wv * (1 - 2 * t); x.quadraticCurveTo(hx + bw * 0.25, by + (k % 2 ? 3 : -1) + Math.sin(ph + k) * move * 2, hx, by + (k % 2 ? 0 : 2)); } x.stroke();
+    }
+    x.restore();
   }
   // tô màu phẩm chất lên lớp kim loại xám (chế độ hòa 'color': giữ sáng tối, lấy sắc màu phẩm chất)
   const [tcv, tcx] = mk(SRC, SRC);
@@ -134,15 +221,19 @@
     const helm = L.h ? layerOf(cls, 'h' + L.h) : null;
     const metal = L.a && L.ar ? layerOf(cls, 'am' + L.a) : null, hmetal = L.h && L.hr ? layerOf(cls, 'hm' + L.h) : null;
     const fxu = layerOf(cls, 'fxu'), fxo = layerOf(cls, 'fxo');
-    const key = cls + ':' + dir + ':' + state + ':' + i + ':' + (body ? L.a + '.' + L.ar + (metal ? 'm' : '') : 'x') + ':' + (wpn ? L.w : 'x') + ':' + (helm ? L.h + '.' + L.hr + (hmetal ? 'm' : '') : 0) + (fxo ? 'f' : '');
+    const key = cls + ':' + dir + ':' + state + ':' + i + ':' + (body ? L.a + '.' + L.ar + (metal ? 'm' : '') : 'x') + ':' + (wpn ? L.w : 'x') + ':' + (helm ? L.h + '.' + L.hr + (hmetal ? 'm' : '') : 0) + (fxo ? 'f' : '') + (L.c >= 0 ? ':c' + L.c + '.' + L.cr : '');
     { const hit = hitOf(key); if (hit) return hit; }
     const [row, col] = cellOf(cls, dir, state, i), sx = col * SRC, sy = row * SRC;
     const [c, x] = mk(SRC, SRC);
     if (!state.startsWith('ride')) { x.fillStyle = 'rgba(0,0,0,0.3)'; x.beginPath(); x.ellipse(72, 128, state === 'dead' ? 33 : 19, 6, 0, 0, Math.PI * 2); x.fill(); }
     if (isFlip(dir)) { x.translate(SRC, 0); x.scale(-1, 1); }
     const put2 = im => { if (im) x.drawImage(im, sx, sy, SRC, SRC, 0, 0, SRC, SRC); };
-    put2(fxu); put2(body || base);
+    const cb = L.c >= 0 && base ? bodyBox(cls, base, row, col) : null, cview = VIEW_OF[dir] || 'down';
+    put2(fxu);
+    drawCape(x, cview, cb, state, i, L, 'back');   // phi phong sau lưng (nhìn trước / nghiêng)
+    put2(body || base);
     if (metal) x.drawImage(tinted(metal, sx, sy, METAL[L.ar]), 0, 0);
+    drawCape(x, cview, cb, state, i, L, 'front');  // quay lưng: phi phong phủ lên thân; nhìn trước: quai cài vai
     put2(wpn);
     if (helm) { put2(helm); if (hmetal) x.drawImage(tinted(hmetal, sx, sy, METAL[L.hr]), 0, 0); }
     put2(fxo);
