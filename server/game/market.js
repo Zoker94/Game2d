@@ -74,7 +74,8 @@ class Market {
     const s = p.c.inv.find(x => x.uid === uid);
     if (!s) return;
     const it = ITEMS[s.id];
-    if (!it || s.id === TOKEN || it.quest || it.bind || s.bind) return this.toast(p, 'Vật phẩm này không bán được', 'error');
+    if (s.bd) return this.toast(p, '🔒 Đồ khoá (mua ở NPC / thưởng nhiệm vụ) không bán ở chợ được', 'error');
+    if (!it || s.id === TOKEN || it.quest || it.noTrade) return this.toast(p, 'Vật phẩm này không bán được', 'error');
     qty = U.clamp(qty | 0 || 1, 1, s.qty);
     const snap = Object.assign({}, s, { qty });
     if (!U.removeByUid(p.c, uid, qty)) return;

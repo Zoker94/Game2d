@@ -358,7 +358,7 @@ class World {
     if (!this.tutorialComplete(c, s)) return this.toast(p, 'Chưa hoàn thành bước hướng dẫn này', 'error');
     t.step++; t.progress = 0;
     if (t.step >= TUTORIAL.length) t.done = true;
-    this.giveReward(p, s.reward, 'Hướng dẫn tân thủ');
+    this.giveReward(p, s.reward, 'Hướng dẫn tân thủ', { bind: true });
     if (t.done) this.features.announce(`🎉 Chúc mừng ${c.name} đã hoàn thành Hướng Dẫn Tân Thủ, chính thức xuất sư!`);
     // Bước kế tiếp có thể đã hoàn thành sẵn (VD: đang ở bản đồ yêu cầu)
     const nx = TUTORIAL[t.step];
@@ -368,7 +368,9 @@ class World {
   }
 
   // ---------- Phần thưởng / kinh nghiệm ----------
-  giveReward(p, r, source) {
+  // opts.bind: đồ thưởng là đồ khoá (thưởng nhiệm vụ)
+  giveReward(p, r, source, opts) {
+    const bind = !!(opts && opts.bind);
     if (!r) return;
     const B = p._batch;
     if (B) {   // đang dùng hàng loạt: cộng dồn, báo một lần ở cuối
@@ -377,7 +379,7 @@ class World {
       if (r.knb) { p.c.knb += r.knb; B.knb += r.knb; }
       for (let [id, qty] of (r.items || [])) {
         if (id === '@book1') id = 'sk_' + classSkill(p.c.cls, 1, branchOf(p.c)).id;
-        this.giveItem(p, id, qty);
+        this.giveItem(p, id, qty, 0, bind);
         B.items.set(id, (B.items.get(id) || 0) + qty);
       }
       p.dirtyMe = true; this.db.markDirty();
@@ -389,16 +391,18 @@ class World {
     if (r.knb) { p.c.knb += r.knb; parts.push(`${r.knb} Nguyên Bảo`); }
     for (let [id, qty] of (r.items || [])) {
       if (id === '@book1') id = 'sk_' + classSkill(p.c.cls, 1, branchOf(p.c)).id;
-      this.giveItem(p, id, qty);
+      this.giveItem(p, id, qty, 0, bind);
       parts.push(`${ITEMS[id] ? ITEMS[id].name : id} x${qty}`);
     }
     if (parts.length) this.toast(p, `${source ? source + ': ' : ''}Nhận ${parts.join(', ')}`, 'reward');
     p.dirtyMe = true;
     this.db.markDirty();
   }
-  giveItem(p, id, qty = 1, plus = 0) {
-    if (!U.addItem(p.c, id, qty, plus)) {
-      this.createDrop(p.mapId, p.x, p.y, id, qty, p.userId, plus);
+  giveItem(p, id, qty = 1, plus = 0, bind = false) {
+    bind = bind || !!p._bindUse;   // vật phẩm mở ra từ rương / túi khoá cũng là đồ khoá
+    if (!U.addItem(p.c, id, qty, plus, null, bind)) {
+      const dr = this.createDrop(p.mapId, p.x, p.y, id, qty, p.userId, plus, bind ? 120000 : 15000);
+      if (bind) dr.bd = 1;   // đồ khoá rơi ra: chỉ chủ nhặt được
       this.toast(p, 'Túi đồ đầy! Vật phẩm rơi dưới chân.', 'error');
     }
     p.dirtyMe = true;
@@ -1241,7 +1245,8 @@ class World {
     if (!dr || dr.gold) return;
     if (Math.hypot(dr.x - p.x, dr.y - p.y) > reach) return this.toast(p, 'Hãy lại gần vật phẩm hơn', 'error');
     if (dr.owner && dr.owner !== p.userId && dr.ownerUntil > now) return this.toast(p, `Vật phẩm của người khác, ${Math.ceil((dr.ownerUntil - now) / 1000)} giây nữa mới nhặt được`, 'error');
-    if (!U.addItem(p.c, dr.itemId, dr.qty, dr.plus)) return this.toast(p, 'Túi đồ đã đầy!', 'error');
+    if (dr.bd && dr.owner !== p.userId) return this.toast(p, 'Đồ khoá của người khác, không nhặt được', 'error');
+    if (!U.addItem(p.c, dr.itemId, dr.qty, dr.plus, null, !!dr.bd)) return this.toast(p, 'Túi đồ đã đầy!', 'error');
     m.drops.delete(dr.id);
     this.io.to('map:' + p.mapId).emit('dropDel', dr.id);
     const it = ITEMS[U.resolveItem(p.c, dr.itemId)];
@@ -1304,6 +1309,12 @@ class World {
     return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.pardon || e.rename || e.pet || e.learn || e.dragon || e.resetSkill || e.resetAttr);
   }
   useOne(p, uid) {
+    const s = p.c.inv.find(x => x.uid === uid);
+    if (!s) return;
+    p._bindUse = !!s.bd;
+    try { return this.useOneRaw(p, uid); } finally { p._bindUse = false; }
+  }
+  useOneRaw(p, uid) {
     const c = p.c;
     const s = c.inv.find(x => x.uid === uid);
     if (!s) return;
@@ -1394,7 +1405,7 @@ class World {
       const mt = MOUNTS[e.mount];
       c.mounts = c.mounts || {};
       U.removeByUid(c, uid, 1);
-      if (c.mounts[mt.id]) { U.addItem(c, 'mount_food', 30); this.toast(p, `Đã sở hữu ${mt.name}, đổi thành 30 Mã Linh Đan`, 'reward'); }
+      if (c.mounts[mt.id]) { U.addItem(c, 'mount_food', 30, 0, null, !!s.bd); this.toast(p, `Đã sở hữu ${mt.name}, đổi thành 30 Mã Linh Đan`, 'reward'); }
       else {
         c.mounts[mt.id] = { lv: 1, exp: 0 };
         if (!c.mount) c.mount = mt.id;
@@ -1472,8 +1483,8 @@ class World {
     if (slot === 'ring') slot = side === 'ring' || side === 'ring2' ? side : !c.equip.ring ? 'ring' : !c.equip.ring2 ? 'ring2' : 'ring';
     c.inv.splice(i, 1);
     const prev = c.equip[slot];
-    c.equip[slot] = { uid: s.uid, id: s.id, plus: s.plus || 0, el: s.el, fx: s.fx, gems: s.gems, br: s.br };
-    if (prev) c.inv.push({ uid: prev.uid, id: prev.id, qty: 1, plus: prev.plus || 0, el: prev.el, fx: prev.fx, gems: prev.gems, br: prev.br });
+    c.equip[slot] = { uid: s.uid, id: s.id, plus: s.plus || 0, el: s.el, fx: s.fx, gems: s.gems, br: s.br, bd: s.bd };
+    if (prev) c.inv.push({ uid: prev.uid, id: prev.id, qty: 1, plus: prev.plus || 0, el: prev.el, fx: prev.fx, gems: prev.gems, br: prev.br, bd: prev.bd });
     this.recalc(p);
     if (it.slot === 'weapon') { this.progressTutorial(p, 'equip'); this.story.on(p, 'equip'); }
     this.db.markDirty();
@@ -1483,7 +1494,7 @@ class World {
     if (!e || !e.id) return;
     if (U.freeSlots(c) < 1) return this.toast(p, 'Túi đồ đầy', 'error');
     delete c.equip[slot];
-    c.inv.push({ uid: e.uid, id: e.id, qty: 1, plus: e.plus || 0, el: e.el, fx: e.fx, gems: e.gems, br: e.br });
+    c.inv.push({ uid: e.uid, id: e.id, qty: 1, plus: e.plus || 0, el: e.el, fx: e.fx, gems: e.gems, br: e.br, bd: e.bd });
     this.recalc(p);
   }
   discard(p, uid) {
@@ -1508,7 +1519,7 @@ class World {
     const merged = [], byId = new Map();
     for (const s of c.inv) {
       const it = ITEMS[s.id]; if (!it) { merged.push(s); continue; }
-      if (U.isStack(s.id)) { const o = byId.get(s.id); if (o) { o.qty += s.qty; continue; } byId.set(s.id, s); }
+      if (U.isStack(s.id)) { const k = s.id + (s.bd ? '#bd' : ''), o = byId.get(k); if (o) { o.qty += s.qty; continue; } byId.set(k, s); }   // đồ khoá không gộp với đồ thường
       merged.push(s);
     }
     const key = s => { const it = ITEMS[s.id] || {}; return [TK[it.type] ?? 2, RK[it.rarity] ?? 4, -(it.tier || 0), -(s.plus || 0), it.slot || '', s.id]; };
@@ -1576,11 +1587,11 @@ class World {
     if ((sd.pts | 0) < r.pts) return this.toast(p, `Cần ${r.pts} điểm cống hiến môn phái (làm nhiệm vụ Trưởng Môn)`, 'error');
     if (U.freeSlots(c) < 1) return this.toast(p, 'Túi đồ đầy', 'error');
     c.gold -= r.gold; sd.pts -= r.pts;
-    U.removeItemById(c, 'thien_tam_ti', r.silk); U.removeItemById(c, 'stone', r.stone);
+    const bd = U.removeItemById(c, 'thien_tam_ti', r.silk).bound | U.removeItemById(c, 'stone', r.stone).bound;   // dùng nguyên liệu khoá thì áo choàng cũng khoá
     const x = Math.random(), rar = x < CLOAK_ODDS.legendary ? 'legendary' : x < CLOAK_ODDS.legendary + CLOAK_ODDS.epic ? 'epic' : x < CLOAK_ODDS.legendary + CLOAK_ODDS.epic + CLOAK_ODDS.rare ? 'rare' : 'common';
     const id = equipId('cloak', t, rar);
     c._brPick = d && (d.br === 'noi' || d.br === 'ngoai') ? d.br : branchOf(c);
-    try { this.giveItem(p, id, 1); } finally { delete c._brPick; }
+    try { this.giveItem(p, id, 1, 0, !!bd); } finally { delete c._brPick; }
     this.toast(p, `🧥 Chế tạo thành công: ${ITEMS[id].name} (${RARITY[rar].name})`, rar === 'common' ? 'info' : 'item:' + rar);
     if (rar === 'legendary') this.features.brag(`🧥 ${c.name} dệt được [${ITEMS[id].name}] tại ${MAPS[p.mapId].name}!`);
     p.socket.emit('npc', Object.assign({ id: npc.id, name: npc.name, talk: npc.talk, action: 'cloak', sprite: npc.sprite, color: npc.color }, { cloak: this.cloakView(p) }));
@@ -1599,10 +1610,11 @@ class World {
       if (!s) return;
       const n = qtyOf(s);
       if (U.isStack(s.id)) {
-        const ex = b.items.find(x => x.id === s.id);
+        const ex = b.items.find(x => x.id === s.id && !x.bd === !s.bd);
         if (!ex && b.items.length >= BANK) return this.toast(p, 'Kho đã đầy', 'error');
+        const bd = s.bd;
         U.removeByUid(c, s.uid, n);
-        if (ex) ex.qty += n; else b.items.push({ uid: U.newUid(), id: s.id, qty: n });
+        if (ex) ex.qty += n; else b.items.push(bd ? { uid: U.newUid(), id: s.id, qty: n, bd: 1 } : { uid: U.newUid(), id: s.id, qty: n });
       } else {
         if (b.items.length >= BANK) return this.toast(p, 'Kho đã đầy', 'error');
         c.inv.splice(c.inv.indexOf(s), 1);
@@ -1613,7 +1625,7 @@ class World {
       if (i < 0) return;
       const s = b.items[i], n = qtyOf(s);
       if (U.isStack(s.id)) {
-        if (!U.addItem(c, s.id, n)) return this.toast(p, 'Túi đồ đầy', 'error');
+        if (!U.addItem(c, s.id, n, 0, null, !!s.bd)) return this.toast(p, 'Túi đồ đầy', 'error');
         s.qty -= n; if (s.qty <= 0) b.items.splice(i, 1);
       } else {
         if (U.freeSlots(c) <= 0) return this.toast(p, 'Túi đồ đầy', 'error');
@@ -1638,7 +1650,7 @@ class World {
     const c = p.c;
     if (id !== 'pk_pardon' && this.outlawBlock(p, 'mua bán với NPC')) return;
     if (id === 'rename_card' && !c.renameFree && ((npc.shop || []).includes(id) || (npc.knbShop || []).some(x => x.id === id))) {   // thẻ đổi tên: lần mua đầu miễn phí
-      if (!U.addItem(c, id, 1)) return this.toast(p, 'Túi đồ đầy', 'error');
+      if (!U.addItem(c, id, 1, 0, null, true)) return this.toast(p, 'Túi đồ đầy', 'error');
       c.renameFree = 1;
       this.toast(p, '🎁 Nhận Thẻ Đổi Tên miễn phí (lần đầu). Vào túi đồ → Sử dụng để đổi tên. Lần sau phải mua bằng giá thường.', 'reward');
       p.socket.emit('renameFreeUsed');   // máy khách đổi nút "Miễn phí" thành giá thường (trước đây nút vẫn ghi miễn phí, bấm là bị trừ tiền)
@@ -1661,14 +1673,14 @@ class World {
       if (!entry) return;
       const cost = entry.knb * qty;
       if (c.knb < cost) return this.toast(p, 'Không đủ Nguyên Bảo', 'error');
-      if (!U.addItem(c, id, qty)) return this.toast(p, 'Túi đồ đầy', 'error');
+      if (!U.addItem(c, id, qty, 0, null, true)) return this.toast(p, 'Túi đồ đầy', 'error');   // đồ mua ở NPC là đồ khoá
       c.knb -= cost;
     } else {
       if (!(npc.shop || []).includes(id)) return;
       if (it.cls && it.cls !== c.cls) return this.toast(p, 'Sách này không thuộc môn phái của bạn', 'error');
       const cost = it.price * qty;
       if (c.gold < cost) return this.toast(p, 'Không đủ ngân lượng', 'error');
-      if (!U.addItem(c, id, qty)) return this.toast(p, 'Túi đồ đầy', 'error');
+      if (!U.addItem(c, id, qty, 0, null, true)) return this.toast(p, 'Túi đồ đầy', 'error');   // đồ mua ở NPC là đồ khoá
       c.gold -= cost;
     }
     this.toast(p, `Đã mua ${it.name} x${qty}`, 'reward');
@@ -1826,6 +1838,7 @@ class World {
     c.gold -= cost;
     const parts = [];
     if (plusMove) { b.plus = pa; a.plus = 0; parts.push(`cường hoá +${pa}`); }
+    if (a.bd) b.bd = 1;   // kế thừa từ đồ khoá: món nhận cũng thành đồ khoá
     if (gemMove) {
       // đá khảm: chuyển vào lỗ trống của món mới, mỗi loại 1 viên; viên không vừa giữ lại trên món cũ
       const n = GEM_SOCKETS[ib.rarity] || 1, tg = (b.gems || []).slice(0, n);

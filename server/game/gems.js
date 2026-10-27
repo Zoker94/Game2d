@@ -40,9 +40,14 @@ class Gems {
     if (gems.some(x => x && G.parseGem(x).type === g.type)) return this.w.toast(p, `Mỗi món chỉ khảm được 1 viên ${G.GEM_TYPES[g.type].name}`, 'error');
     const cost = G.socketCost(g.lv);
     if (c.gold < cost) return this.w.toast(p, `Cần ${cost.toLocaleString('vi-VN')} lượng`, 'error');
-    if (!U.removeItemById(c, gem, 1)) return this.w.toast(p, 'Không có viên đá này', 'error');
+    // dùng viên thường trước; chỉ còn viên khoá thì trang bị khảm vào cũng thành đồ khoá
+    const src = c.inv.find(x => x.id === gem && !x.bd) || c.inv.find(x => x.id === gem);
+    if (!src) return this.w.toast(p, 'Không có viên đá này', 'error');
+    const bound = !!src.bd;
+    U.removeByUid(c, src.uid, 1);
     c.gold -= cost;
     gems[idx] = gem; t.gems = gems;
+    if (bound) t.bd = 1;
     this.w.recalc(p);
     this.w.toast(p, `💎 Đã khảm ${ITEMS[gem].name} vào ${it.name}`, 'reward');
     if (g.lv >= 5) this.w.features.brag(`💎 ${c.name} khảm thành công ${ITEMS[gem].name} vào [${it.name}]!`);
@@ -59,7 +64,7 @@ class Gems {
     const gem = t.gems[idx | 0], g = G.parseGem(gem);
     const cost = G.unsocketCost(g.lv);
     if (c.gold < cost) return this.w.toast(p, `Tháo đá cần ${cost.toLocaleString('vi-VN')} lượng`, 'error');
-    if (!U.addItem(c, gem, 1)) return this.w.toast(p, 'Túi đồ đầy', 'error');
+    if (!U.addItem(c, gem, 1, 0, null, !!t.bd)) return this.w.toast(p, 'Túi đồ đầy', 'error');   // tháo từ đồ khoá: đá cũng là đồ khoá
     c.gold -= cost;
     t.gems[idx | 0] = null;
     if (!t.gems.some(Boolean)) delete t.gems;
@@ -84,7 +89,9 @@ class Gems {
       const next = G.gemId(g.type, g.lv + 1);
       c.gold -= gold;
       if (Math.random() < rate) {
-        if (!U.addItem(c, next, 1)) { c.gold += gold; this.w.toast(p, 'Túi đồ đầy', 'error'); break; }
+        // đá luyện từ đá khoá thì thành đá khoá
+        const bd = c.inv.filter(x => x.id === gem && !x.bd).reduce((a, x) => a + x.qty, 0) < need;
+        if (!U.addItem(c, next, 1, 0, null, bd)) { c.gold += gold; this.w.toast(p, 'Túi đồ đầy', 'error'); break; }
         U.removeItemById(c, gem, need); ok++;
       } else { U.removeItemById(c, gem, 1); fail++; }   // thất bại: vỡ 1 viên
     }
@@ -110,7 +117,7 @@ class Gems {
     c.gemTut = st;
     const smith = 'npc:tho_ren';
     if (st === 1) {
-      this.w.giveReward(p, { items: TUT_GIFT }, 'Thợ Rèn Vương tặng');
+      this.w.giveReward(p, { items: TUT_GIFT }, 'Thợ Rèn Vương tặng', { bind: true });
       p.socket.emit('storyScene', { title: 'Thợ Rèn Vương – Thuật Khảm Đá', kind: 'talk', lines: [
         [smith, 'Này {name}! Võ công tiến bộ rồi đấy, nhưng binh khí mà trơn tru thế kia thì phí lắm.'],
         [smith, 'Trên mỗi món trang bị đều có lỗ khảm: đồ Thường và Hiếm 1 lỗ, đồ VIP 2 lỗ, đồ Truyền Kỳ 3 lỗ.'],
@@ -122,13 +129,13 @@ class Gems {
         [smith, 'Khéo tay lắm! Thấy chỉ số tăng chưa?'],
         [smith, 'Đá cấp thấp thì yếu. Gom đủ 3 viên cùng loại cùng cấp, lão sẽ luyện thành 1 viên cấp cao hơn. Đá có 5 cấp, cấp càng cao càng khó luyện, thất bại sẽ vỡ mất 1 viên.'],
         [smith, 'Ngươi còn 2 viên Hồng Ngọc… thiếu 1 viên. Lão bù cho ngươi một viên – thử luyện đi!']] });
-      this.w.giveReward(p, { items: [['gem_ruby_1', 1]] }, 'Thợ Rèn Vương tặng');
+      this.w.giveReward(p, { items: [['gem_ruby_1', 1]] }, 'Thợ Rèn Vương tặng', { bind: true });
     } else if (st === 3) {
       p.socket.emit('storyScene', { title: 'Thợ Rèn Vương – Thuật Khảm Đá', kind: 'talk', lines: [
         [smith, 'Thành rồi! Ngươi đã nắm được thuật khảm đá.'],
         [smith, 'Đá khảm rơi rải rác từ quái khắp nơi, nhưng nhiều nhất là ở Bảo Thạch Khoáng Động (cấp 25+) và Huyền Tinh Mật Cảnh sâu dưới lòng đất (cấp 55+). Xa Phu sẽ đưa ngươi tới.'],
         [smith, 'Đá khảm rồi vẫn tháo ra được, chỉ tốn chút phí. Đổi đồ mới thì nhớ mang đá theo nhé!']] });
-      this.w.giveReward(p, { gold: 5000, items: [['gem_topaz_1', 2], ['gem_sapphire_1', 2], ['gem_amethyst_1', 2]] }, 'Hoàn thành hướng dẫn khảm đá');
+      this.w.giveReward(p, { gold: 5000, items: [['gem_topaz_1', 2], ['gem_sapphire_1', 2], ['gem_amethyst_1', 2]] }, 'Hoàn thành hướng dẫn khảm đá', { bind: true });
     }
     p.dirtyMe = true; this.w.db.markDirty();
   }

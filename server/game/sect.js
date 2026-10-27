@@ -85,7 +85,7 @@ class Sect {
       const r = this.reward(p, d.cur, d.n);
       d.cur = null; d.pts += r.pts;
       const before = sectRank(p.c); d.total += r.pts;
-      this.w.giveReward(p, { exp: r.exp, gold: r.gold, items: r.items }, `📜 Nhiệm vụ môn phái ${d.n}/${SECT_DAILY} (+${r.pts} cống hiến)`);
+      this.w.giveReward(p, { exp: r.exp, gold: r.gold, items: r.items }, `📜 Nhiệm vụ môn phái ${d.n}/${SECT_DAILY} (+${r.pts} cống hiến)`, { bind: true });
       const after = sectRank(p.c);
       if (after > before) { this.w.recalc(p); this.toast(p, `🎖️ Thăng cấp môn phái: ${SECT_RANKS[after][1]} (+${after * 2}% công / thủ / sinh lực)`, 'reward'); this.w.features.announce(`🎖️ ${p.c.name} được thăng làm ${SECT_RANKS[after][1]} của ${CLASSES[p.c.cls].name}!`); }
     } else if (a.op === 'abandon') {
@@ -134,7 +134,7 @@ class Sect {
     if (sectRank(p.c) < it.rank) return this.toast(p, `Cần cấp bậc ${SECT_RANKS[it.rank][1]}`, 'error');
     if (d.pts < it.cost * qty) return this.toast(p, 'Không đủ điểm cống hiến', 'error');
     d.pts -= it.cost * qty;
-    this.w.giveItem(p, id, qty);
+    this.w.giveItem(p, id, qty, 0, true);   // đổi ở NPC môn phái: đồ khoá
     this.toast(p, `Đổi ${ITEMS[id].name} x${qty} (−${it.cost * qty} cống hiến)`, 'reward');
     this.w.db.markDirty();
     p.socket.emit('sectShop', this.shopView(p));

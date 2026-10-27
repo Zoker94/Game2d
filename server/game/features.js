@@ -356,12 +356,12 @@ class Features {
     if (id === 'bonus') {
       if (d.bonusClaimed || !d.list.every(q => q.claimed)) return this.w.toast(p, 'Hãy hoàn thành tất cả nhiệm vụ', 'error');
       d.bonusClaimed = true;
-      this.w.giveReward(p, DAILY_ALL_BONUS, 'Hoàn thành tất cả NV ngày');
+      this.w.giveReward(p, DAILY_ALL_BONUS, 'Hoàn thành tất cả NV ngày', { bind: true });
     } else {
       const q = d.list.find(x => x.id === id);
       if (!q || !q.done || q.claimed) return;
       q.claimed = true;
-      this.w.giveReward(p, q.reward, 'Nhiệm vụ ngày');
+      this.w.giveReward(p, q.reward, 'Nhiệm vụ ngày', { bind: true });
       this.w.progressTutorial(p, 'daily');
       this.w.story.on(p, 'daily');
     }

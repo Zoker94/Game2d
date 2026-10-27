@@ -101,21 +101,22 @@ function migrateItems(c) {
   }
 }
 
-function addItem(c, id, qty = 1, plus = 0, extra = null) {
+// bind: đồ khoá (mua ở NPC / thưởng nhiệm vụ) – cờ bd: 1, không giao dịch / bán chợ được; không gộp chồng với đồ thường
+function addItem(c, id, qty = 1, plus = 0, extra = null, bind = false) {
   if ((c.fxv | 0) < 2) migrateItems(c);   // quà gửi lúc nhân vật offline: quy đổi đồ cũ trước, đồ mới đã theo thang mới
   id = resolveItem(c, id);
   const it = ITEMS[id];
   if (!it || qty <= 0) return false;
   if (isStack(id)) {
-    const s = c.inv.find(x => x.id === id);
+    const s = c.inv.find(x => x.id === id && !x.bd === !bind);
     if (s) { s.qty += qty; return true; }
     if (c.inv.length >= invSize(c)) return false;
-    c.inv.push({ uid: newUid(), id, qty });
+    c.inv.push(bind ? { uid: newUid(), id, qty, bd: 1 } : { uid: newUid(), id, qty });
     return true;
   }
   if (c.inv.length + qty > invSize(c)) return false;
   for (let i = 0; i < qty; i++) {
-    const s = Object.assign({ uid: newUid(), id, qty: 1, plus }, extra || rollAffixes(it));
+    const s = Object.assign({ uid: newUid(), id, qty: 1, plus }, extra || rollAffixes(it), bind ? { bd: 1 } : null);
     if (it.type === 'equip' && !BR_ATTR[s.br]) s.br = rollBranch(c);
     c.inv.push(s);
   }
@@ -123,16 +124,21 @@ function addItem(c, id, qty = 1, plus = 0, extra = null) {
 }
 function freeSlots(c) { return invSize(c) - c.inv.length; }
 function countItem(c, id) { return c.inv.filter(x => x.id === id).reduce((s, x) => s + x.qty, 0); }
+// trừ đồ thường trước, đồ khoá sau; trả về { bound } (true nếu có dùng tới đồ khoá) hoặc false nếu không đủ
 function removeItemById(c, id, qty) {
   if (countItem(c, id) < qty) return false;
-  for (let i = c.inv.length - 1; i >= 0 && qty > 0; i--) {
-    const s = c.inv[i];
-    if (s.id !== id) continue;
-    const take = Math.min(qty, s.qty);
-    s.qty -= take; qty -= take;
-    if (s.qty <= 0) c.inv.splice(i, 1);
+  let bound = false;
+  for (const pass of [0, 1]) {
+    for (let i = c.inv.length - 1; i >= 0 && qty > 0; i--) {
+      const s = c.inv[i];
+      if (s.id !== id || !s.bd !== !pass) continue;
+      const take = Math.min(qty, s.qty);
+      s.qty -= take; qty -= take;
+      if (pass) bound = true;
+      if (s.qty <= 0) c.inv.splice(i, 1);
+    }
   }
-  return true;
+  return { bound };
 }
 function removeByUid(c, uid, qty = 1) {
   const i = c.inv.findIndex(x => x.uid === uid);

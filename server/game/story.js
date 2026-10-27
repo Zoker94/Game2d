@@ -126,7 +126,7 @@ class Story {
     if (r.gold) out.gold = r.gold;
     if (r.knb) out.knb = r.knb;
     if (r.items) out.items = r.items.filter(([id]) => id === '@book1' || ITEMS[id]);   // @book1: sách kỹ năng 2 của môn phái
-    this.w.giveReward(p, out, src);
+    this.w.giveReward(p, out, src, { bind: true });
   }
 
   // ---------- boss cốt truyện (riêng từng người, chỉ xuất hiện khi tới đúng bước) ----------

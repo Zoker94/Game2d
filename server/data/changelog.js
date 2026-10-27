@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '27/10/2026',
     items: [
+      '🔒 ĐỒ KHOÁ: đồ mua ở NPC (kể cả Kỳ Trân Các, cửa hàng môn phái) và phần thưởng nhiệm vụ (hướng dẫn, nhiệm vụ ngày, cốt truyện, môn phái) là đồ khoá – không thể giao dịch hay bày bán ở Chợ Phiên. Có biểu tượng 🔒 trên ô đồ và trong mô tả. Đồ khoá không gộp chồng với đồ thường; khảm / luyện đá, chế áo choàng, mở rương từ đồ khoá thì đồ nhận được cũng là đồ khoá. Đồ có sẵn từ trước vẫn giao dịch bình thường.',
       '📖 MÔ TẢ CHIÊU THỨC: bảng Võ Công có lời mô tả cho từng chiêu kèm thông số chi tiết – loại đòn (đơn mục tiêu / diện rộng / đường thẳng / lướt), tầm đánh, phạm vi, % tấn công, hiệu ứng khống chế và tỉ lệ (choáng, làm chậm, đóng băng, độc...), tuyệt kỹ.',
       '🔤 CHỮ NHỎ GỌN HƠN: phông chữ toàn bộ giao diện và tên trên bản đồ nhỏ lại cho cân đối (bong bóng chat trên đầu giữ nguyên).',
       '🎨 TOÀN BỘ GIAO DIỆN SANG KIỂU MỚI: mọi bảng (túi đồ, nhân vật, võ công, thú cưỡi, cửa hàng, sự kiện, bang hội...), khung chat, khung nhiệm vụ, nút menu, hộp hồi sinh, bản đồ lớn... đều theo tông xám đá – nhấn xanh ngọc mới. Bỏ ngoại hình Chibi.',

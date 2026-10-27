@@ -40,7 +40,8 @@
   }
   function iconUrl(itemId) { const id = resolveId(itemId); return iconUrlCache[id] || (iconUrlCache[id] = iconCanvas(id).toDataURL()); }
   UI.iconUrl = id => iconUrl(id); UI.esc = esc; UI.itemName = (id, plus) => itemName(id, plus);
-  UI.itemTip = (e, id, plus, inst) => tip(e, `<b>${itemName(id, plus)}</b>${statsHtml(G.data.items[resolveId(id)], plus, inst && inst.br)}${elemFxHtml(G.data.items[resolveId(id)], inst)}`);
+  const bdLine = inst => inst && inst.bd ? '<div class="small" style="color:#ffb454">🔒 Đồ khoá – không thể giao dịch / bán ở chợ</div>' : '';
+  UI.itemTip = (e, id, plus, inst) => tip(e, `<b>${itemName(id, plus)}</b>${bdLine(inst)}${statsHtml(G.data.items[resolveId(id)], plus, inst && inst.br)}${elemFxHtml(G.data.items[resolveId(id)], inst)}`);
   UI.hideTip = () => hideTip();
   function itemName(id, plus) { const it = G.data.items[resolveId(id)]; return `<span class="r-${it.rarity}-t">${esc(it.name)}${plus ? ' +' + plus : ''}</span>`; }
   // chỉ số gốc theo hệ Nội / Ngoại của món (trùng server/data/items.js brStats)
@@ -243,7 +244,7 @@
     const rar = G.data.rarity[it.rarity];
     const clsLine = it.cls ? `<div class="small" style="color:${it.cls === G.me.cls ? '#4ade80' : '#ff6a6a'}">${it.wtype} · Chỉ dành cho ${G.data.classes[it.cls].name}</div>` : it.generic ? '<div class="small muted">Nhặt / mua sẽ thành vũ khí môn phái của bạn</div>' : '';
     return `<h4>${itemName(id, plus)}</h4>
-      <div class="muted small">${it.type === 'equip' ? G.data.slots[it.slot] + ' · ' : ''}<span style="color:${rar.color}">${rar.name}</span> · Yêu cầu cấp ${it.lv || 1}</div>${clsLine}
+      <div class="muted small">${it.type === 'equip' ? G.data.slots[it.slot] + ' · ' : ''}<span style="color:${rar.color}">${rar.name}</span> · Yêu cầu cấp ${it.lv || 1}</div>${clsLine}${bdLine(inst)}
       ${statsHtml(it, plus, inst && inst.br)}${brLine(it, inst, plus)}${elemFxHtml(it, inst)}${it.effect && it.effect.vmStudy ? `<div class="small ${(G.me.vmb | 0) >= 5 ? 'warn' : 'ok-t'}">📜 Đã lĩnh hội ${G.me.vmb | 0}/5 lần${(G.me.vmb | 0) >= 5 ? ' – đã đạt tối đa, không thể học thêm (có thể bán / giao dịch cho người khác)' : ''}</div>${(G.me.vmb | 0) < 5 ? (() => { const n = G.me.inv.filter(x => x.id === 'vm_tamphap').reduce((a, x) => a + x.qty, 0); return `<div class="small ${n ? 'ok-t' : 'warn'}">Cần 1 Võ Mục Tâm Pháp mỗi lần học (đang có ${n})</div>`; })() : ''}` : ''}${it.desc ? `<div class="small">${esc(it.desc)}</div>` : ''}
       <div class="small muted">Giá bán: ${fmt(Math.floor(it.price * 0.3 * (1 + (plus || 0) * 0.2)))} lượng</div>`;
   }
@@ -828,7 +829,7 @@
         const it = e && G.data.items[e.id];
         const ph = !it && placeholderIcon(s === 'ring2' ? 'ring' : s);
         const lbl = s === 'ring' ? 'Nhẫn trái' : s === 'ring2' ? 'Nhẫn phải' : G.data.slots[s];
-        html += `<div class="slot ${it ? 'r-' + it.rarity : 'empty-eq'} ${panelState.sel === 'eq:' + s ? 'sel' : ''}" data-eq="${s}">${it ? `${plusRing(e.plus | 0)}<img src="${iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}${brBadge(e)}${gemDots(it, e)}` : `${ph ? `<img src="${ph}" class="ic ph" alt="">` : ''}<span class="lbl">${lbl}</span>`}</div>`;
+        html += `<div class="slot ${it ? 'r-' + it.rarity : 'empty-eq'} ${panelState.sel === 'eq:' + s ? 'sel' : ''}" data-eq="${s}">${it ? `${plusRing(e.plus | 0)}<img src="${iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}${brBadge(e)}${e.bd ? '<span class="bdk" title="Đồ khoá">🔒</span>' : ''}${gemDots(it, e)}` : `${ph ? `<img src="${ph}" class="ic ph" alt="">` : ''}<span class="lbl">${lbl}</span>`}</div>`;
       }
       html += '</div>';
     }
@@ -837,7 +838,7 @@
     for (const s of inv) {
       const it = G.data.items[s.id];
       const cant = it.lv > me.level;
-      html += `<div class="slot r-${it.rarity} ${cant ? 'cant' : ''} ${panelState.sel === s.uid ? 'sel' : ''} ${opts.mark && opts.mark.has(s.uid) ? 'marked' : ''}" data-uid="${s.uid}">${plusRing(s.plus | 0)}<img src="${iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}${it.type === 'equip' ? brBadge(s) + gemDots(it, s) : ''}</div>`;
+      html += `<div class="slot r-${it.rarity} ${cant ? 'cant' : ''} ${panelState.sel === s.uid ? 'sel' : ''} ${opts.mark && opts.mark.has(s.uid) ? 'marked' : ''}" data-uid="${s.uid}">${plusRing(s.plus | 0)}<img src="${iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}${s.bd ? '<span class="bdk" title="Đồ khoá">🔒</span>' : ''}${it.type === 'equip' ? brBadge(s) + gemDots(it, s) : ''}</div>`;
     }
     for (let i = me.inv.length; i < (me.invMax || 48) && !opts.filter; i++) html += '<div class="slot" style="opacity:.35"></div>';
     html += '</div></div>';

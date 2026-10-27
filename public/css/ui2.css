@@ -165,3 +165,4 @@ body #trk-min { background: var(--u-bg); border: 1px solid var(--u-line); color:
 .sk-lore { font-size: 10.5px; color: #c9d3e2; font-style: italic; line-height: 1.45; margin: 3px 0 4px; }
 .sk-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 3px; }
 .sk-tags span { font-size: 9.5px; background: rgba(255,255,255,.06); border: 1px solid var(--u-line); border-radius: 999px; padding: 1px 8px; color: #dfe8f0; }
+.slot .bdk { position: absolute; right: 1px; top: 12px; z-index: 3; font-size: 9px; line-height: 11px; filter: drop-shadow(0 1px 1px #000); pointer-events: none; }
