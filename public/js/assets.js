@@ -1,6 +1,9 @@
 // Ảnh asset vẽ tay (public/assets). Có ảnh thì dùng ảnh, chưa có thì dùng sprite vẽ thủ tục cũ.
 (function () {
   const BASE = '/assets/';
+  // lưu hình ảnh trên máy người chơi bằng Service Worker (cần https hoặc localhost; không có thì vẫn dùng bộ nhớ đệm thường của trình duyệt)
+  if ('serviceWorker' in navigator && window.AV && window.isSecureContext) navigator.serviceWorker.register('/sw.js?b=' + (window.BUILD || '') + '&a=' + window.AV).catch(() => { });
+  const VQ = window.AV ? '?v=' + window.AV : '';   // phiên bản hình ảnh: trình duyệt lưu lâu, không hỏi lại máy chủ mỗi lần vào game
   // Nhân vật (vẽ bởi tools/rig2.py): ô gốc 144x144, chân ở (72, 128). Khung trả về là canvas 144 nhưng mọi chỗ vẽ
   // thu về 96x96 (x2/3, chân (48, 86)) để giữ chi tiết trên màn hình mật độ cao. Mỗi môn phái có các lớp ghép:
   //   chars/<cls>.json          hàng của từng động tác (đứng, đi, chạy, đánh, ra chiêu, trúng đòn, ngã, cưỡi...)
@@ -26,7 +29,7 @@
       // giải mã ảnh ngoài luồng chính trước khi dùng: lần vẽ đầu không bị khựng vì giải mã sheet lớn
       im.onload = () => (im.decode ? im.decode().catch(() => { }) : Promise.resolve()).then(() => res(im));
       im.onerror = () => res(null);
-      im.src = BASE + path;
+      im.src = BASE + path + VQ;
     });
   }
   // tải theo nhu cầu: kiểu đồ nào xuất hiện mới tải ảnh đó
@@ -38,10 +41,10 @@
   }
   const jobs = [];
   // màn chờ chỉ đợi dữ liệu khung hình (nhẹ); ảnh nhân vật các phái (~4MB) tải ngầm sau khi vào, vẽ tạm hình cũ tới khi xong
-  for (const c of CLASSES) jobs.push(fetch(BASE + 'chars/' + c + '.json').then(r => r.ok ? r.json() : null).then(j => { if (j) META[c] = j; }).catch(() => { }));
+  for (const c of CLASSES) jobs.push(fetch(BASE + 'chars/' + c + '.json' + VQ).then(r => r.ok ? r.json() : null).then(j => { if (j) META[c] = j; }).catch(() => { }));
   // biểu tượng vật phẩm vẽ mới (tools/icons.py)
   let ICONS = null;
-  jobs.push(Promise.all([load('icons.png'), fetch(BASE + 'icons.json').then(r => r.ok ? r.json() : null).catch(() => null)]).then(([im, j]) => { if (im && j) ICONS = { im, j }; }));
+  jobs.push(Promise.all([load('icons.png'), fetch(BASE + 'icons.json' + VQ).then(r => r.ok ? r.json() : null).catch(() => null)]).then(([im, j]) => { if (im && j) ICONS = { im, j }; }));
   for (const n of MONSTERS) jobs.push(load('monsters/' + n + '.png').then(im => { if (im) imgs['m:' + n] = im; }));
   const ready = Promise.all(jobs);
   // chỉ tải trước phái của tài khoản đang đăng nhập (nếu nhớ); phái khác tải khi thật sự cần vẽ (gặp người chơi phái đó,
@@ -248,7 +251,7 @@
   }
   // ----- thú cưỡi (ảnh tools/mounts2.py): ô 192 vẽ ra x2/3, nhìn ngang quay phải, kèm điểm yên (hông người cưỡi) từng khung -----
   let MOUNT_META = null;
-  fetch(BASE + 'mounts.json').then(r => r.ok ? r.json() : null).then(j => { MOUNT_META = j; }).catch(() => { });
+  fetch(BASE + 'mounts.json' + VQ).then(r => r.ok ? r.json() : null).then(j => { MOUNT_META = j; }).catch(() => { });
   const mountImgs = {}, mountLoading = {};
   // view: 'side' | 'down' | 'up'. Nhìn trước/sau có 2 lớp: back vẽ trước người cưỡi, front vẽ đè lên.
   function mountFrame(id, moving, t, view) {
@@ -276,7 +279,7 @@
   }
   // ----- cây cối / bụi / đá / nấm cho map cỏ (ảnh tools/nature.py): [x, y, w, h, gốc x, gốc y] -----
   let NATURE = null;
-  Promise.all([load('nature.png'), fetch(BASE + 'nature.json').then(r => r.ok ? r.json() : null).catch(() => null)])
+  Promise.all([load('nature.png'), fetch(BASE + 'nature.json' + VQ).then(r => r.ok ? r.json() : null).catch(() => null)])
     .then(([im, j]) => { if (im && j) NATURE = { im, j }; });
   function nature(name) {
     const r = NATURE && NATURE.j[name];
@@ -286,7 +289,7 @@
   // 'side': nhìn ngang quay phải (game tự lật), cột đứng4 đi6 đánh4 trúng1 chết1
   // 'rig' : quái hình người 4 hướng như nhân vật (hàng xuống / lên / phải, hàng 3 cột 0 là ngã)
   let MON_META = null;
-  fetch(BASE + 'monsters.json').then(r => r.ok ? r.json() : null).then(j => { MON_META = j; }).catch(() => { });
+  fetch(BASE + 'monsters.json' + VQ).then(r => r.ok ? r.json() : null).then(j => { MON_META = j; }).catch(() => { });
   const monImgs = {}, monLoading = {};
   const MON_N = { idle: 4, walk: 6, atk: 4, cast: 4, hurt: 1, dead: 1 };
   // quái sự kiện mượn hình vẽ có sẵn (G.data.monsters[id].art)
@@ -319,7 +322,7 @@
   }
   // ----- NPC vẽ mới (tools/npcs2.py): hàng 0 nhìn xuống, hàng 1 nhìn nghiêng; 4 khung đứng thở -----
   let NPC_META = null; const npcImgs = {}, npcLoading = {};
-  fetch(BASE + 'npcs.json').then(r => r.ok ? r.json() : null).then(j => { NPC_META = j; }).catch(() => { });
+  fetch(BASE + 'npcs.json' + VQ).then(r => r.ok ? r.json() : null).then(j => { NPC_META = j; }).catch(() => { });
   function npcFrame(id, i, side) {
     if (!NPC_META || NPC_META.ids.indexOf(id) < 0) return null;
     const img = npcImgs[id];
@@ -384,7 +387,7 @@
   // HTML biểu tượng kỹ năng cho nút bấm / bảng võ công
   // ảnh vẽ bằng tools/skillicons.py: public/assets/skills/<mã chiêu>.png (Long Ấn: dr_fire / dr_water / dr_ice)
   function skillIconUrl(cls, s) {
-    return s && s.id ? BASE + 'skills/' + s.id + '.png' : null;
+    return s && s.id ? BASE + 'skills/' + s.id + '.png' + VQ : null;
   }
   function skillIconHTML(cls, s) {
     const url = skillIconUrl(cls, s);

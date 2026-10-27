@@ -549,8 +549,8 @@
   // ===== Hình chiêu thức (assets/fx.png, vẽ bởi tools/fxsheet.py), tô màu theo chiêu =====
   const SHEET = { img: null, meta: null, tint: {} };
   (function loadSheet() {
-    const im = new Image(); im.onload = () => { SHEET.img = im; }; im.src = '/assets/fx.png';
-    fetch('/assets/fx.json').then(r => r.json()).then(m => { SHEET.meta = m; }).catch(() => {});
+    const im = new Image(); im.onload = () => { SHEET.img = im; }; im.src = '/assets/fx.png' + (window.AV ? '?v=' + window.AV : '');
+    fetch('/assets/fx.json' + (window.AV ? '?v=' + window.AV : '')).then(r => r.json()).then(m => { SHEET.meta = m; }).catch(() => {});
   })();
   function tinted(name, i, color) {
     const key = name + i + color;

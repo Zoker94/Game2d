@@ -36,7 +36,7 @@
   let spr = null, sprBuf = null, sprLoading = false;
   function loadSprite() {
     if (sprLoading) return; sprLoading = true;
-    Promise.all([fetch('/assets/sfx.json').then(r => r.json()), fetch('/assets/sfx.mp3').then(r => r.arrayBuffer())])
+    Promise.all([fetch('/assets/sfx.json' + (window.AV ? '?v=' + window.AV : '')).then(r => r.json()), fetch('/assets/sfx.mp3' + (window.AV ? '?v=' + window.AV : '')).then(r => r.arrayBuffer())])
       .then(([j, ab]) => new Promise((ok, bad) => ctx.decodeAudioData(ab, ok, bad)).then(buf => { spr = j; sprBuf = buf; }))
       .catch(() => { sprLoading = false; });
   }

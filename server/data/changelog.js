@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '27/10/2026',
     items: [
+      '⚡ LƯU HÌNH ẢNH TRÊN MÁY: hình nhân vật, quái, NPC, thú cưỡi, hiệu ứng, âm thanh giờ được lưu hẳn trên máy người chơi – lần sau vào game không phải tải hay hỏi lại máy chủ, vào nhanh hơn và đỡ tốn mạng. Khi cập nhật chỉ tải lại đúng file thay đổi. (Nền đất, nhà cửa, cây cối vốn đã được vẽ ngay trên máy.)',
       '🚫 BỎ PK TỰ ĐỘNG: chế độ Tự động giờ chỉ đánh quái – không còn tự đánh trả, tự tấn công người chơi hay tự đánh đối thủ tỷ võ. Muốn PK phải tự điều khiển.',
       '📌 THÔNG BÁO GHIM CỦA ADMIN: dải chữ nhỏ màu vàng rực chạy trên cùng màn hình, lặp lại mỗi 5 phút cho tới khi quản trị viên tắt. Người vào game sau cũng thấy ngay.',
       '💨 KHINH CÔNG 3 LẦN: tích tối đa 3 lượt khinh công, nhảy liên tiếp được 3 lần; mỗi lượt hồi lại sau 5 giây (hồi lần lượt). Góc nút khinh công hiện số lượt còn lại (xanh lá = đầy).',

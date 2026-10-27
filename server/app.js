@@ -208,7 +208,9 @@ app.get('/api/gamedata', (req, res) => {
   }
   // nén gzip một lần rồi giữ lại (dữ liệu ~260KB -> ~40KB)
   if (!gamedataGz) gamedataGz = require('zlib').gzipSync(JSON.stringify(gamedataCache), { level: 9 });
-  res.set('Cache-Control', 'no-cache');
+  const tag = '"gd-' + BUILD + '"';   // dữ liệu game (bản đồ, vật phẩm…) chỉ đổi khi cập nhật: không đổi thì trả 304, khỏi tải lại
+  res.set({ 'Cache-Control': 'no-cache', ETag: tag });
+  if (req.headers['if-none-match'] === tag) return res.status(304).end();
   if (/\bgzip\b/.test(req.headers['accept-encoding'] || '')) res.set({ 'Content-Encoding': 'gzip', Vary: 'Accept-Encoding' }).type('json').send(gamedataGz);
   else res.json(gamedataCache);
 });
@@ -234,6 +236,17 @@ const BUILD = (() => {
   try { walk(PUBLIC_DIR); walk(__dirname); } catch (e) { h.update(String(Date.now())); }
   return h.digest('hex').slice(0, 10);
 })();
+// Hình ảnh / âm thanh trong public/assets lưu hẳn trên máy người chơi:
+//  - mỗi file có mã băm nội dung (ASSET_MAN); URL gắn ?v=ASSET_VER nên trình duyệt giữ lâu (immutable), không hỏi lại máy chủ
+//  - Service Worker (public/sw.js) cất vào bộ nhớ đệm của trình duyệt, chỉ tải lại đúng file nào có mã băm đổi
+const ASSET_MAN = (() => {
+  const m = {}, root = path.join(PUBLIC_DIR, 'assets'), crypto = require('crypto');
+  const walk = d => { for (const f of fs.readdirSync(d).sort()) { const fp = path.join(d, f); if (fs.statSync(fp).isDirectory()) walk(fp); else m['/assets/' + path.relative(root, fp).split(path.sep).join('/')] = crypto.createHash('sha1').update(fs.readFileSync(fp)).digest('hex').slice(0, 10); } };
+  try { walk(root); } catch (e) { }
+  return m;
+})();
+const ASSET_VER = require('crypto').createHash('sha1').update(JSON.stringify(ASSET_MAN)).digest('hex').slice(0, 10);
+app.get('/asset-manifest.json', (req, res) => { res.set('Cache-Control', 'no-cache'); res.json({ v: ASSET_VER, files: ASSET_MAN }); });
 // lịch sử cập nhật cho mục Cài đặt (người mới xem lại các bản cập nhật trước)
 app.get('/api/changelog', (req, res) => { res.set('Cache-Control', 'no-cache'); res.json({ build: BUILD, list: CHANGELOG }); });
 const htmlCache = {};
@@ -242,7 +255,7 @@ function sendHtml(res, file) {
   if (!html) {
     html = fs.readFileSync(path.join(PUBLIC_DIR, file), 'utf8')
       .replace(/(src|href)="(\/[^"?#]+\.(?:js|css))"/g, `$1="$2?v=${BUILD}"`)
-      .replace('<head>', `<head><script>window.BUILD=${JSON.stringify(BUILD)}</script>`);
+      .replace('<head>', `<head><script>window.BUILD=${JSON.stringify(BUILD)};window.AV=${JSON.stringify(ASSET_VER)}</script>`);
     htmlCache[file] = html;
   }
   res.set('Cache-Control', 'no-cache').type('html').send(html);

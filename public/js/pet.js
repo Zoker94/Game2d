@@ -1,7 +1,7 @@
 // Thú cưng (bản thử nghiệm: Hồng Long Ấu Thú). Rồng bay theo sau chủ, chủ đứng yên một lúc thì đáp xuống đất
 // nằm nghỉ; khi máy chủ báo "petfire" thì lao tới phía trên mục tiêu và phun lửa xuống (khớp hoạt ảnh SPECIAL).
 (function () {
-  const PETS = { hong_long: { src: '/assets/pets/hong_long.png', meta: '/assets/pets/hong_long.json', fireX: 0.83, glow: '#ff8a30' } };
+  const PETS = { hong_long: { src: '/assets/pets/hong_long.png' + (window.AV ? '?v=' + window.AV : ''), meta: '/assets/pets/hong_long.json' + (window.AV ? '?v=' + window.AV : ''), fireX: 0.83, glow: '#ff8a30' } };
   const res = {};
   for (const id in PETS) {
     const r = res[id] = { img: new Image(), meta: null };
