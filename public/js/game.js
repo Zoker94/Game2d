@@ -292,6 +292,9 @@
     s.on('duelReq', d => Duel.onReq(d));
     s.on('daihoi', d => DaiHoi.onState(d));
     s.on('gmList', d => GM.onList(d));
+    s.on('pin', d => UI.pin(d));
+    s.on('pinOff', id => UI.pinOff(id));
+    s.on('pinList', d => GM.onPins(d));
     s.on('mapFlags', d => DaiHoi.onFlags(d));
     s.on('daihoiPts', d => DaiHoi.onPts(d));
     s.on('duel', d => Duel.onDuel(d));

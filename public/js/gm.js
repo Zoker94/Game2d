@@ -7,7 +7,7 @@
   const esc = s => UI.esc(String(s == null ? '' : s));
   const cmd = t => G.socket && G.socket.emit('chat', { ch: 'world', text: t });
   const click = () => G.sfx && G.sfx('click');
-  let tab = 'gm', list = null, listAt = 0, q = '', ptsN = 100;
+  let tab = 'gm', pins = [], pinDraft = '', list = null, listAt = 0, q = '', ptsN = 100;
 
   const box = () => $('tp-box');
   function refresh() { listAt = Date.now(); cmd('/gmlist'); }
@@ -15,11 +15,11 @@
     if (box()) { box().remove(); return; }
     const b = document.createElement('div'); b.id = 'tp-box';
     b.innerHTML = `<div class="tp-h">👁️ Công cụ GM <span class="tp-x">✕</span></div>
-      <div class="tp-tabs"><button data-tab="gm">⚙️ GM</button><button data-tab="map">🗺️ Bản đồ</button><button data-tab="pl">👥 Người chơi</button></div>
+      <div class="tp-tabs"><button data-tab="gm">⚙️ GM</button><button data-tab="map">🗺️ Bản đồ</button><button data-tab="pl">👥 Người chơi</button><button data-tab="pin">📌 Thông báo</button></div>
       <input class="tp-q" placeholder="Tìm tên..." maxlength="20"><div class="tp-list"></div>`;
     $('screen-game').appendChild(b);
     b.querySelector('.tp-x').onclick = () => b.remove();
-    b.querySelectorAll('[data-tab]').forEach(t => t.onclick = () => { tab = t.dataset.tab; if (tab === 'pl') refresh(); render(); });
+    b.querySelectorAll('[data-tab]').forEach(t => t.onclick = () => { tab = t.dataset.tab; if (tab === 'pl') refresh(); if (tab === 'pin') cmd('/dsghim q'); render(); });
     const inp = b.querySelector('.tp-q'); inp.value = q;
     inp.oninput = () => { q = inp.value; render(); };
     inp.onkeydown = e => e.stopPropagation();
@@ -34,7 +34,7 @@
   function render() {
     const b = box(); if (!b) return;
     b.querySelectorAll('[data-tab]').forEach(t => t.classList.toggle('on', t.dataset.tab === tab));
-    b.querySelector('.tp-q').style.display = tab === 'gm' ? 'none' : '';
+    b.querySelector('.tp-q').style.display = tab === 'gm' || tab === 'pin' ? 'none' : '';
     const el = b.querySelector('.tp-list'), f = q.trim().toLowerCase();
     if (tab === 'gm') {
       const g = (G.me && G.me.gm) || {};
@@ -44,6 +44,18 @@
           <button class="btn" data-gm="/heal">❤️ Hồi đầy</button></div>
         <div class="gm-note">Tàng hình: người chơi không thấy bạn trên bản đồ / danh sách online, quái không đánh bạn (ra chiêu thì hiệu ứng vẫn hiện). Miễn PK: người chơi, kể cả đồ sát, không đánh được bạn. Tài khoản quản trị không lên bảng xếp hạng. Phím <b>\`</b> mở / đóng hộp này.</div>`;
       el.querySelectorAll('[data-gm]').forEach(x => x.onclick = () => { cmd(x.dataset.gm); click(); });
+    } else if (tab === 'pin') {
+      el.innerHTML = `<div class="gm-pin"><textarea class="gm-pin-in" maxlength="200" rows="2" placeholder="Nội dung thông báo..."></textarea>
+          <button class="btn primary" data-pin>📌 Ghim</button></div>
+        <div class="gm-note">Chữ nhỏ chạy trên cùng màn hình của mọi người chơi, lặp lại <b>mỗi 5 phút</b> cho tới khi bạn bấm Tắt (vẫn giữ khi máy chủ khởi động lại). Tối đa 5 thông báo. Lệnh chat: /ghim · /boghim · /dsghim</div>` +
+        (pins.length ? pins.map(x => `<div class="tp-pl"><div><b style="color:#ffef3a">📌 ${esc(x.text)}</b><small>${esc(x.by)} · ${new Date(x.at).toLocaleString('vi-VN')}</small></div><button class="btn small red" data-unpin="${esc(x.id)}">Tắt</button></div>`).join('') +
+          (pins.length > 1 ? '<button class="btn small red" data-unpin="all" style="margin-top:4px">Tắt tất cả</button>' : '') : '<p class="muted small">Chưa có thông báo ghim nào</p>');
+      const ta = el.querySelector('.gm-pin-in'); ta.value = pinDraft;
+      ta.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
+      ta.oninput = () => { pinDraft = ta.value; };
+      const send = () => { const t = ta.value.replace(/\s+/g, ' ').trim(); if (!t) return; cmd('/ghim ' + t); pinDraft = ''; ta.value = ''; click(); };
+      el.querySelector('[data-pin]').onclick = send;
+      el.querySelectorAll('[data-unpin]').forEach(x => x.onclick = () => { cmd('/boghim ' + x.dataset.unpin); click(); });
     } else if (tab === 'map') {
       const maps = Object.entries(G.data.maps).filter(([id, m]) => !m.duel && (!f || m.name.toLowerCase().includes(f) || id.includes(f)))
         .sort((a, c) => (!!a[1].sect - !!c[1].sect) || (!!c[1].town - !!a[1].town) || lvNum(a[1].lv) - lvNum(c[1].lv));
@@ -98,6 +110,7 @@
       const btn = $('btn-gm'); if (btn) btn.classList.toggle('on', !!(me.gm && (me.gm.hide || me.gm.safe)));
       if (box() && tab === 'gm') render();
     },
+    onPins(d) { pins = Array.isArray(d) ? d : []; if (box() && tab === 'pin') render(); },
     onList(d) { list = Array.isArray(d) ? d : []; if (box() && tab === 'pl') render(); }
   };
 })();

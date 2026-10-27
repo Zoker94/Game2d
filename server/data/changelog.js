@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '27/10/2026',
     items: [
+      '📌 THÔNG BÁO GHIM CỦA ADMIN: dải chữ nhỏ màu vàng rực chạy trên cùng màn hình, lặp lại mỗi 5 phút cho tới khi quản trị viên tắt. Người vào game sau cũng thấy ngay.',
       '💨 KHINH CÔNG 3 LẦN: tích tối đa 3 lượt khinh công, nhảy liên tiếp được 3 lần; mỗi lượt hồi lại sau 5 giây (hồi lần lượt). Góc nút khinh công hiện số lượt còn lại (xanh lá = đầy).',
       '🗺️ NỀN BẢN ĐỒ NHẠT HƠN: mặt đất các bản đồ dịu màu và sáng hơn một chút để nhân vật, quái, đồ rơi nổi rõ hơn.',
       '🖼️ Biểu tượng mới cho game (logo Võ Lâm 2D) trên tab trình duyệt, màn hình chính điện thoại khi thêm game; nền các màn đăng nhập / tạo nhân vật / vào game sáng hơn để nhìn nhân vật rõ hơn.',

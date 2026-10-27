@@ -72,7 +72,8 @@ const LANTERN_EXCHANGE = [
 const GUILD_LEVELS = [0, 50000, 200000, 600000, 1500000, 4000000];
 const GUILD_CREATE_COST = 10000;
 
-const GM_CMDS = new Set(['help', 'lenh', 'an', 'hide', 'tanghinh', 'mienpk', 'safe', 'gmlist', 'tp', 'goto', 'keo', 'heal', 'kick', 'online']);
+const GM_CMDS = new Set(['help', 'lenh', 'an', 'hide', 'tanghinh', 'mienpk', 'safe', 'gmlist', 'tp', 'goto', 'keo', 'heal', 'kick', 'online', 'ghim', 'boghim', 'dsghim']);
+const PIN_EVERY = 5 * 60000, PIN_MAX = 5;   // thông báo ghim của admin: chạy lại mỗi 5 phút tới khi admin tắt
 
 class Features {
   constructor(world, db) {
@@ -101,6 +102,18 @@ class Features {
     (room ? this.io.to(room) : this.io).emit('chat', msg);
     this.pushChatLog(msg);
   }
+  // thông báo ghim: lưu trong config (không mất khi khởi động lại), chạy chữ trên cùng màn hình mỗi 5 phút
+  get pins() { return this.cfg.pins || (this.cfg.pins = []); }
+  pinView() { return this.pins.map(x => ({ id: x.id, text: x.text, by: x.by, at: x.at })); }
+  sendPins(p) { p.socket.emit('pinList', this.pinView()); }
+  showPin(x, to) { (to || this.io).emit('pin', { id: x.id, text: x.text }); }
+  tickPins(now) {
+    if (!this._pinNext) this._pinNext = {};
+    for (const x of this.pins) {
+      if (!this._pinNext[x.id]) this._pinNext[x.id] = now + PIN_EVERY;   // sau khởi động lại: chạy lần đầu sau 5 phút
+      else if (now >= this._pinNext[x.id]) { this._pinNext[x.id] = now + PIN_EVERY; this.showPin(x); }
+    }
+  }
   pushChatLog(msg) {
     const logs = this.db.data.chatLogs;
     logs.push(msg);
@@ -128,6 +141,7 @@ class Features {
         this.broadcastEvents();
       }
     }
+    this.tickPins(now);
     if (this.w.daihoi) this.w.daihoi.tick(now);
     if (now - this.lastLb > 30000) { this.lastLb = now; this.computeLeaderboard(); }
   }
@@ -441,7 +455,7 @@ class Features {
     const findPlayer = name => [...w.players.values()].find(o => o.c.name.toLowerCase() === String(name || '').toLowerCase());
     switch (c) {
       case 'help': case 'lenh':
-        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: 'Lệnh admin: /an (tàng hình) · /mienpk (miễn PK) · /admin (mở trang quản trị) · /tb <nội dung> · /tp <bản đồ> · /level <cấp> · /gold <số> · /knb <số> · /give <mã vật phẩm> [số lượng] [+cường hóa] · /heal · /boss <mã boss> · /event <mã sự kiện> [phút] · /kick <tên> · /goto <tên> · /keo <tên> · /tiemnang <tên> <số> · /kynang <tên> <số> · /conghien <số> · /online · /thoitiet <clear|rain|storm|wind|snow|blizzard|sun> [phút] · /cottruyen <chương> [bước] | reset · /tusat' });
+        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: 'Lệnh admin: /an (tàng hình) · /mienpk (miễn PK) · /admin (mở trang quản trị) · /tb <nội dung> · /ghim <nội dung> (chạy mỗi 5 phút) · /boghim <mã>|all · /dsghim · /tp <bản đồ> · /level <cấp> · /gold <số> · /knb <số> · /give <mã vật phẩm> [số lượng] [+cường hóa] · /heal · /boss <mã boss> · /event <mã sự kiện> [phút] · /kick <tên> · /goto <tên> · /keo <tên> · /tiemnang <tên> <số> · /kynang <tên> <số> · /conghien <số> · /online · /thoitiet <clear|rain|storm|wind|snow|blizzard|sun> [phút] · /cottruyen <chương> [bước] | reset · /tusat' });
         break;
       case 'an': case 'hide': case 'tanghinh': case 'mienpk': case 'safe': {   // bật / tắt tàng hình, miễn PK
         const k = c === 'mienpk' || c === 'safe' ? 'safe' : 'hide';
@@ -461,6 +475,36 @@ class Features {
         if (!msg) return err('Cú pháp: /tb <nội dung>');
         this.announce('📢 [Quản Trị] ' + msg); this.io.emit('notice', { text: msg, type: 'admin' });
         break;
+      }
+      case 'ghim': {   // /ghim <nội dung>: thông báo chạy trên cùng mỗi 5 phút cho tới khi tắt
+        const msg = args.join(' ').trim().slice(0, 200);
+        if (!msg) return err('Cú pháp: /ghim <nội dung>');
+        if (this.pins.length >= PIN_MAX) return err(`Tối đa ${PIN_MAX} thông báo ghim, hãy tắt bớt`);
+        const x = { id: Date.now().toString(36), text: msg, by: p.c.name, at: Date.now() };
+        this.pins.push(x); this.db.markDirty();
+        (this._pinNext || (this._pinNext = {}))[x.id] = Date.now() + PIN_EVERY;
+        this.showPin(x);
+        this.db.log('admin', `${p.c.name} ghim thông báo: ${msg}`);
+        ok('📌 Đã ghim thông báo, chạy lại mỗi 5 phút');
+        for (const o of w.players.values()) if (w.isGm(o)) this.sendPins(o);
+        return;
+      }
+      case 'boghim': {   // /boghim <id> | all
+        const n = this.pins.length;
+        if (args[0] === 'all') this.pins.length = 0;
+        else { const i = this.pins.findIndex(x => x.id === args[0]); if (i < 0) return err('Cú pháp: /boghim <mã> | all (xem mã: /dsghim)'); this.pins.splice(i, 1); }
+        this.db.markDirty();
+        this.io.emit('pinOff', args[0]);
+        ok(`Đã tắt ${n - this.pins.length} thông báo ghim`);
+        for (const o of w.players.values()) if (w.isGm(o)) this.sendPins(o);
+        return;
+      }
+      case 'dsghim': {
+        this.sendPins(p);
+        if (args[0] === 'q') return;
+        if (!this.pins.length) ok('Chưa có thông báo ghim nào');
+        else p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: '📌 Thông báo ghim: ' + this.pins.map(x => `[${x.id}] ${x.text}`).join(' · ') });
+        return;
       }
       case 'tp': {
         const { MAPS: M } = require('../data/maps');

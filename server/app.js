@@ -328,6 +328,8 @@ io.on('connection', socket => {
     socket.emit('events', features.eventsView());
     socket.emit('daily', features.dailyView(player));
     socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', text: db.data.config.motd, t: Date.now() });
+    (db.data.config.pins || []).forEach((x, i) => setTimeout(() => socket.connected && features.showPin(x, socket), 4000 + i * 20000));   // vào game thấy ngay thông báo ghim
+    if (world.isGm(player)) features.sendPins(player);
     if (isOwner(user)) {
       socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', text: '🛡️ Bạn là chủ server. Gõ /admin để mở trang quản trị, /help để xem lệnh.', t: Date.now() });
       if (!db.usingDatabase) socket.emit('notice', { text: '⚠ CẢNH BÁO: Máy chủ chưa cấu hình DATABASE_URL. Dữ liệu đang lưu vào file tạm và SẼ MẤT mỗi lần cập nhật / khởi động lại trên Render. Hãy thêm DATABASE_URL (Neon) trong Render → Environment.', type: 'admin' });

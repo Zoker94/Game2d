@@ -623,6 +623,26 @@
     box.innerHTML = ''; box.appendChild(d);
     setTimeout(() => d.remove(), 14000);
   };
+  // thông báo ghim (admin): xếp hàng, chạy từng cái một trên dải chữ trên cùng
+  const pinQ = [];
+  let pinBusy = false;
+  UI.pin = function (d) {
+    if (!d || !d.text || pinQ.some(x => x.id === d.id)) return;
+    pinQ.push(d); if (!pinBusy) nextPin();
+  };
+  UI.pinOff = function (id) { for (let i = pinQ.length - 1; i >= 0; i--) if (id === 'all' || pinQ[i].id === id) pinQ.splice(i, 1); };
+  function nextPin() {
+    const box = $('pin-ticker'), d = pinQ.shift();
+    if (!box || !d) { pinBusy = false; if (box) box.classList.remove('on'); return; }
+    pinBusy = true;
+    const el = document.createElement('div');
+    el.className = 'p'; el.textContent = '📌 ' + d.text;
+    box.innerHTML = ''; box.appendChild(el); box.classList.add('on');
+    const W = box.clientWidth, w = el.offsetWidth, dur = (W + w) / 85 * 1000;   // ~85 px/giây
+    const a = el.animate([{ transform: 'translateX(0)' }, { transform: `translateX(${-(W + w)}px)` }], { duration: dur, easing: 'linear', fill: 'forwards' });
+    let n = 2;   // mỗi lượt chạy 2 vòng cho dễ đọc
+    a.onfinish = () => { if (--n > 0 && box.contains(el)) a.play(); else { el.remove(); setTimeout(nextPin, 600); } };
+  }
   const chatLog = [];
   let chatFilter = 'all';
   const CH_NAME = { world: 'Thế giới', map: 'Bản đồ', guild: 'Bang', pm: 'Mật', sys: 'Hệ thống' };

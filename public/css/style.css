@@ -182,6 +182,10 @@ body:not(.touch) #auto-wrap { right: auto; left: 50%; transform: translateX(-50%
 @keyframes toastOut { to { opacity: 0; transform: translateY(-10px); } }
 #announce { position: absolute; top: 46px; left: 0; right: 0; height: 24px; overflow: hidden; pointer-events: none; z-index: 15; }
 #announce .a { position: absolute; white-space: nowrap; color: #ffe48a; font-weight: 700; font-size: 14px; text-shadow: 1px 1px 2px #000, 0 0 6px #a04000; animation: marquee 14s linear forwards; }
+/* thông báo ghim của admin: dải chữ nhỏ trên cùng màn hình */
+#pin-ticker { position: absolute; top: 0; left: 0; right: 0; height: 17px; overflow: hidden; pointer-events: none; z-index: 40; opacity: 0; transition: opacity .4s; background: linear-gradient(90deg, transparent, rgba(40,0,0,.72) 12%, rgba(40,0,0,.72) 88%, transparent); }
+#pin-ticker.on { opacity: 1; }
+#pin-ticker .p { position: absolute; top: 1px; left: 100%; white-space: nowrap; font-size: 12px; font-weight: 800; color: #ffef3a; letter-spacing: .3px; text-shadow: 1px 1px 0 #000, 0 0 5px #ff3000, 0 0 9px #ff6a00; will-change: transform; }
 @keyframes marquee { from { left: 100%; } to { left: -150%; } }
 
 /* ---------- Bảng (panel) ---------- */
@@ -1785,3 +1789,5 @@ body.short #bagwin .bw-bag { max-height: 150px; }
 .dch { position: absolute; right: 2px; top: 1px; z-index: 4; min-width: 14px; height: 14px; padding: 0 3px; border-radius: 7px; font-size: 10px; line-height: 14px; font-weight: 900; text-align: center; color: #fff; background: rgba(20, 60, 120, .9); box-shadow: 0 0 0 1px #8fd0ff; pointer-events: none; }
 .dch:empty { display: none; }
 .dch.full { background: rgba(30, 110, 60, .92); box-shadow: 0 0 0 1px #8fffb0; }
+#tp-box .gm-pin { grid-column: 1 / -1; display: flex; gap: 6px; align-items: stretch; }
+#tp-box .gm-pin textarea { flex: 1; min-width: 0; resize: none; background: rgba(0,0,0,.4); color: #f0e6d0; border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; font: inherit; font-size: 12.5px; }
