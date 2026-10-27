@@ -158,9 +158,15 @@ class Features {
     if (!this.cfg.autoEvents) return;
     const h = Math.floor(mod / 60), mi = mod % 60;
     const dow = U.vnDate().getUTCDay();
-    if ((h === 12 || h === 20) && mi === 0) this.startEvent('doubleExp', 60);
-    if ((h === 19 && mi === 0) || (h === 21 && mi === 30)) this.startEvent('huntRace', 30);
-    if (h % 2 === 0 && mi === 40) this.startEvent('treasure', 15);
+    // sự kiện theo khung giờ: kiểm tra cả khung chứ không chỉ phút bắt đầu, để máy chủ khởi động lại (cập nhật)
+    // giữa khung giờ vẫn bật lại phần thời gian còn lại; đã chạy trong khung này rồi (hết giờ / GM tắt) thì thôi
+    const wins = [['doubleExp', 12 * 60, 60], ['doubleExp', 20 * 60, 60], ['huntRace', 19 * 60, 30], ['huntRace', 21 * 60 + 30, 30]];
+    if (h % 2 === 0) wins.push(['treasure', h * 60 + 40, 15]);
+    for (const [k, st, len] of wins) {
+      if (mod < st || mod >= st + len) continue;
+      const e = this.events[k], winStart = Date.now() - (mod - st + 1) * 60000;
+      if (!(e && e.start >= winStart)) this.startEvent(k, st + len - mod);
+    }
     if (mi % 15 === 5) this.startEvent('quiz', 1);
     if (dow === 0 || dow === 3 || dow === 6) {   // Đại Hội Võ Lâm 20:30
       if (h === 20 && (mi === 20 || mi === 25)) this.announce(`⚔️ Đại Hội Võ Lâm sẽ khai mạc sau ${30 - mi} phút! Gặp Sứ Giả Đại Hội ở Tương Dương để vào lôi đài (cấp 20+).`);
