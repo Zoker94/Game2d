@@ -43,9 +43,16 @@
     $('sd-skip').onclick = e => { e.stopPropagation(); finish(true); };
     return box;
   }
+  let introOn = false;
+  // màn mở đầu: chiếu đoạn phim (intro.js); các cảnh khác đến trong lúc chiếu thì xếp hàng chờ
+  function playIntro(first) {
+    introOn = true;
+    Intro.play(() => { introOn = false; if (first) emit('story', { op: 'seen' }); if (!cur) nextScene(); });
+  }
   function show(sc) {
+    if (sc.kind === 'prologue' && window.Intro) return playIntro(true);
     queue.push(sc);
-    if (!cur) nextScene();
+    if (!cur && !introOn) nextScene();
   }
   function nextScene() {
     cur = queue.shift() || null;
@@ -175,7 +182,7 @@
     body.querySelectorAll('[data-replay]').forEach(b => b.onclick = () => {
       const S = G.data.story, k = b.dataset.replay;
       UI.closePanel();
-      if (k === 'prologue') { show({ title: S.PROLOGUE.title, lines: S.PROLOGUE.lines.map(t => ['n', t]), kind: 'chapter' }); return; }
+      if (k === 'prologue') { if (window.Intro) return playIntro(false); show({ title: S.PROLOGUE.title, lines: S.PROLOGUE.lines.map(t => ['n', t]), kind: 'chapter' }); return; }
       const ch = S.CHAPTERS[+k], st = G.me.story;
       const upto = st.done || +k < st.ch ? ch.steps.length : st.st;
       show({ title: `Chương ${+k + 1}: ${ch.name}`, lines: [['n', ch.desc]], kind: 'chapter' });
@@ -186,5 +193,5 @@
   setInterval(() => { if (G.inGame && G.me) tracker(); }, 400);
   // NPC đang cần gặp theo bước cốt truyện (vẽ dấu ❗)
   function wantsNpc(id) { const st = G.me && G.me.story; return !!(st && !st.done && st.npc === id); }
-  window.Story = { show, drawArrow, renderTab, bindTab, wantsNpc, get open() { return !!cur; } };
+  window.Story = { show, drawArrow, renderTab, bindTab, wantsNpc, get open() { return !!cur || introOn; } };
 })();

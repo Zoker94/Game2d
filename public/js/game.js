@@ -704,7 +704,7 @@
   }
   // Nhạc nền theo khu vực: thành (êm), bãi luyện công (sôi động), có Boss gần (căng thẳng)
   function updateMusic() {
-    if (!G.map) return;
+    if (!G.map || (window.Intro && Intro.open)) return;
     let m = G.map.safe ? 'town' : 'field';
     for (const e of G.monsters.values()) if (e.boss && Math.hypot(e.x - G.self.x, e.y - G.self.y) < 900) { m = 'boss'; break; }
     GameAudio.music(m);

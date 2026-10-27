@@ -166,3 +166,17 @@ body #trk-min { background: var(--u-bg); border: 1px solid var(--u-line); color:
 .sk-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 3px; }
 .sk-tags span { font-size: 9.5px; background: rgba(255,255,255,.06); border: 1px solid var(--u-line); border-radius: 999px; padding: 1px 8px; color: #dfe8f0; }
 .slot .bdk { position: absolute; right: 1px; top: 12px; z-index: 3; font-size: 9px; line-height: 11px; filter: drop-shadow(0 1px 1px #000); pointer-events: none; }
+/* đoạn phim mở đầu */
+#intro { position: fixed; inset: 0; z-index: 99990; background: #000; display: none; touch-action: none; user-select: none; -webkit-user-select: none; }
+#intro.on { display: block; }
+#intro-cv { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+#intro .in-bars::before, #intro .in-bars::after { content: ''; position: absolute; left: 0; right: 0; height: 7vh; background: #000; z-index: 1; }
+#intro .in-bars::before { top: 0; } #intro .in-bars::after { bottom: 0; }
+#intro .in-top { position: absolute; top: max(10px, env(safe-area-inset-top)); right: 12px; z-index: 3; display: flex; gap: 8px; }
+#intro .in-btn { background: rgba(10,8,14,.6); color: #f3e6c4; border: 1px solid rgba(255,215,120,.35); border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; backdrop-filter: blur(4px); }
+#intro .in-btn:hover { border-color: #ffd778; color: #fff; }
+#intro .in-sub { position: absolute; left: 50%; bottom: calc(7vh + 18px); transform: translateX(-50%); width: min(880px, calc(100% - 32px)); z-index: 2; text-align: center;
+  color: #fff6dc; font-size: clamp(12px, min(2.2vw, 3.6vh), 20px); line-height: 1.45; font-weight: 600; text-shadow: 0 2px 4px #000, 0 0 12px rgba(0,0,0,.8); min-height: 3em; pointer-events: none; }
+#intro .in-dots { position: absolute; left: 50%; bottom: calc(7vh - 14px); transform: translateX(-50%); z-index: 2; display: flex; gap: 6px; pointer-events: none; }
+#intro .in-dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.25); }
+#intro .in-dots i.d { background: rgba(255,215,120,.55); } #intro .in-dots i.on { background: #ffd778; box-shadow: 0 0 6px #ffd778; }
