@@ -88,7 +88,9 @@
   // kind: hit | crit | hurt | heal | mana | poison | burn | bleed | dot | status | miss
   function add(x, y, text, kind, color) {
     floats.push({ x: x + (Math.random() * 24 - 12), y, text: String(text), kind, color, t0: performance.now(), vx: (Math.random() - 0.5) * 30 });
-    if (floats.length > 90) floats.shift();
+    // đánh diện rộng sát thương lớn: số nổi dày đặc rất tốn trên điện thoại -> giữ tối đa 28 (máy tính 50), bỏ số cũ nhất
+    const cap = window.Input && Input.isTouch ? 28 : 50;
+    while (floats.length > cap) floats.shift();
   }
   // Chữ có viền vẽ lại mỗi khung (strokeText) rất tốn trên điện thoại: chữ cố định (tên, danh hiệu, nhãn quái)
   // được vẽ sẵn thành ảnh nhỏ theo độ phóng hiện tại rồi chỉ drawImage. Chữ đổi cỡ liên tục (số sát thương nảy) vẽ trực tiếp.
@@ -129,7 +131,63 @@
     ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(3, size / 5); ctx.strokeStyle = stroke; ctx.strokeText(text, x, y);
     ctx.fillStyle = fill; ctx.fillText(text, x, y);
   }
+  // Số nổi: vẽ chữ có viền MỘT lần thành ảnh nhỏ (gắn vào chính con số), các khung sau chỉ drawImage có phóng / thu.
+  // Trước đây cỡ chữ đổi liên tục khi nảy nên mỗi khung strokeText lại từ đầu -> rất nặng khi đánh trúng nhiều quái.
+  function floatSprite(ctx, f, size, fill, stroke, weight) {
+    const sc = Math.max(1, Math.round(ctx.getTransform().a * 4) / 4);
+    if (f.spr && f.sprSc === sc) return f.spr;
+    const font = `${weight} ${size}px Be Vietnam Pro, system-ui, sans-serif`, lw = Math.max(3, size / 5);
+    mcv.font = font;
+    const w = mcv.measureText(f._txt).width, pad = lw + 2, cw = w + pad * 2, ch = size * 1.5 + pad * 2;
+    const c = document.createElement('canvas'); c.width = Math.max(1, Math.ceil(cw * sc)); c.height = Math.max(1, Math.ceil(ch * sc));
+    const x = c.getContext('2d');
+    x.scale(sc, sc); x.font = font; x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineJoin = 'round';
+    x.lineWidth = lw; x.strokeStyle = stroke; x.strokeText(f._txt, cw / 2, ch / 2);
+    if (fill === 'crit') { const g = x.createLinearGradient(0, ch / 2 - size * 0.6, 0, ch / 2 + size * 0.6); g.addColorStop(0, '#fff6a0'); g.addColorStop(0.5, '#ffb020'); g.addColorStop(1, '#ff3a1a'); x.fillStyle = g; }
+    else x.fillStyle = fill;
+    x.fillText(f._txt, cw / 2, ch / 2);
+    c._w = cw; c._h = ch; f.spr = c; f.sprSc = sc;
+    return c;
+  }
+  // Bộ chữ số vẽ sẵn theo kiểu (cỡ, màu, viền): số sát thương ghép từ các ảnh chữ số, không phải tạo canvas cho từng con số.
+  // Mỗi ký tự 2 ảnh: viền và ruột – vẽ hết viền trước rồi mới tới ruột để viền ký tự sau không đè lên ký tự trước.
+  const GLYPHS = '0123456789+-KM.', gsets = new Map();
+  function glyphSet(size, fill, stroke, weight, sc) {
+    const key = size + '|' + fill + '|' + stroke + '|' + weight + '|' + sc;
+    let s = gsets.get(key);
+    if (s) return s;
+    const font = `${weight} ${size}px Be Vietnam Pro, system-ui, sans-serif`, lw = Math.max(3, size / 5), pad = lw + 1, ch = size * 1.4 + pad * 2;
+    s = { ch, g: {} };
+    mcv.font = font;
+    for (const k of GLYPHS) {
+      const adv = mcv.measureText(k).width, cw = adv + pad * 2, mk2 = () => { const c = document.createElement('canvas'); c.width = Math.ceil(cw * sc); c.height = Math.ceil(ch * sc); const x = c.getContext('2d'); x.scale(sc, sc); x.font = font; x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineJoin = 'round'; return [c, x]; };
+      const [o, ox] = mk2(); ox.lineWidth = lw; ox.strokeStyle = stroke; ox.strokeText(k, cw / 2, ch / 2);
+      const [f, fx] = mk2();
+      if (fill === 'crit') { const g = fx.createLinearGradient(0, ch / 2 - size * 0.6, 0, ch / 2 + size * 0.6); g.addColorStop(0, '#fff6a0'); g.addColorStop(0.5, '#ffb020'); g.addColorStop(1, '#ff3a1a'); fx.fillStyle = g; }
+      else fx.fillStyle = fill;
+      fx.fillText(k, cw / 2, ch / 2);
+      s.g[k] = { o, f, adv, cw };
+    }
+    if (gsets.size > 40) gsets.clear();
+    gsets.set(key, s);
+    return s;
+  }
+  const numOk = t => { for (const c of t) if (GLYPHS.indexOf(c) < 0) return false; return true; };
+  function drawNum(ctx, txt, x, y, scale, size, fill, stroke, weight) {
+    const sc = Math.max(1, Math.round(ctx.getTransform().a * 4) / 4), s = glyphSet(size, fill, stroke, weight, sc), k = scale;
+    let w = 0; for (const c of txt) w += s.g[c].adv;
+    let cx = x - w * k / 2;
+    const top = y - s.ch * k / 2, h = s.ch * k;
+    for (let pass = 0; pass < 2; pass++) {
+      let px = cx;
+      for (const c of txt) { const g = s.g[c], pad = (g.cw - g.adv) / 2; ctx.drawImage(pass ? g.f : g.o, px - pad * k, top, g.cw * k, h); px += g.adv * k; }
+    }
+  }
+  // số lớn rút gọn cho dễ đọc khi số nổi dày đặc: 207192 -> 207K, 1500000 -> 1.5M
+  const shortNum = t => { const n = +t; if (!Number.isFinite(n) || String(n) !== String(t).trim()) return String(t); return n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace(/\.0$/, '') + 'M' : n >= 1e5 ? Math.round(n / 1e3) + 'K' : String(n); };
+  function blitFloat(ctx, c, x, y, s) { const w = c._w * s, h = c._h * s; ctx.drawImage(c, x - w / 2, y - h / 2, w, h); }
   function drawFloats(ctx, now) {
+    let bursts = 0;
     for (let i = floats.length - 1; i >= 0; i--) {
       const f = floats[i];
       const life = f.kind === 'crit' ? 1300 : f.kind === 'status' ? 1200 : 1000;
@@ -141,7 +199,7 @@
         // bạo kích: số to, nảy lên rồi thu lại, viền đỏ, tia sáng phía sau
         const pop = p < 0.12 ? 0.6 + p / 0.12 * 1.2 : p < 0.25 ? 1.8 - (p - 0.12) / 0.13 * 0.5 : 1.3;
         const y = f.y - 10 - p * 36, x = f.x + f.vx * p;
-        if (p < 0.35) {
+        if (p < 0.35 && bursts++ < 3) {   // tia sáng bạo kích: tối đa 3 cái cùng lúc
           ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(x, y);
           const q = p / 0.35;
           for (let k = 0; k < 10; k++) {
@@ -152,20 +210,25 @@
           ctx.fillStyle = `rgba(255,220,120,${(1 - q) * 0.55})`; ctx.beginPath(); ctx.arc(0, 0, 14 + q * 26, 0, TAU); ctx.fill();
           ctx.restore();
         }
-        outlined(ctx, 'BẠO KÍCH', x, y - 22 * pop, 11 * Math.min(1.2, pop), '#fff3b0', '#7a1a00');
-        const g = ctx.createLinearGradient(0, y - 14 * pop, 0, y + 14 * pop);
-        g.addColorStop(0, '#fff6a0'); g.addColorStop(0.5, '#ffb020'); g.addColorStop(1, '#ff3a1a');
-        outlined(ctx, f.text, x, y, 24 * pop, g, '#3a0a00');
+        const lab = textSprite('BẠO KÍCH', 13, '#fff3b0', '#7a1a00', 900, 3, Math.max(1, Math.round(ctx.getTransform().a * 4) / 4));
+        blitFloat(ctx, lab, x, y - 22 * pop, 11 * Math.min(1.2, pop) / 13);
+        f._txt = shortNum(f.text);
+        if (numOk(f._txt)) drawNum(ctx, f._txt, x, y, 24 * pop / 32, 32, 'crit', '#3a0a00', 900);
+        else blitFloat(ctx, floatSprite(ctx, f, 32, 'crit', '#3a0a00', 900), x, y, 24 * pop / 32);
       } else if (f.kind === 'status') {
         const y = f.y - 26 - p * 22;
-        outlined(ctx, f.text, f.x, y, 13, f.color, '#1a1020', 800);
+        f._txt = f.text;
+        blitFloat(ctx, floatSprite(ctx, f, 13, f.color, '#1a1020', 800), f.x, y, 1);
       } else {
         const big = f.kind === 'hurt' ? 17 : f.kind === 'hit' ? 16 : 14;
         const pop = p < 0.1 ? 0.7 + p / 0.1 * 0.5 : p < 0.2 ? 1.2 - (p - 0.1) / 0.1 * 0.2 : 1;
         const y = f.y - p * 42, x = f.x + f.vx * p * 0.6;
         const col = f.color || (f.kind === 'hurt' ? '#ff4a4a' : f.kind === 'heal' ? '#4ade80' : f.kind === 'mana' ? '#6bb0ff' : DOT_COLOR[f.kind] || '#ffffff');
         const pre = f.kind === 'heal' || f.kind === 'mana' ? '+' : f.kind === 'hurt' ? '-' : '';
-        outlined(ctx, pre + f.text, x, y, big * pop, col, '#140c18');
+        f._txt = pre + shortNum(f.text);
+        const base = Math.round(big * 1.2);   // vẽ sẵn to hơn chút để lúc nảy phóng to vẫn nét
+        if (numOk(f._txt)) drawNum(ctx, f._txt, x, y, big * pop / base, base, col, '#140c18', 900);
+        else blitFloat(ctx, floatSprite(ctx, f, base, col, '#140c18', 900), x, y, big * pop / base);
       }
     }
     ctx.globalAlpha = 1;
@@ -409,5 +472,5 @@
       FX.emit(1, x + (Math.random() - 0.5) * 30, y - 4, { speed: 6, vy: -45, life: 700, size: 2, color: cols[Math.floor(Math.random() * cols.length)] });
   }
 
-  window.Overhead = { clearText: () => tcache.clear(), cachedText, ST, mask, drawUnder, drawOver, add, drawFloats, drawBubble, TITLES, title, relColor, pkLevel, drawBadge, drawNameplate, drawPkAura, drawEnhance };
+  window.Overhead = { clearText: () => { tcache.clear(); gsets.clear(); }, cachedText, ST, mask, drawUnder, drawOver, add, drawFloats, drawBubble, TITLES, title, relColor, pkLevel, drawBadge, drawNameplate, drawPkAura, drawEnhance };
 })();

@@ -561,10 +561,11 @@
     const x0 = Math.max(0, Math.floor(cam.x / TILE)), y0 = Math.max(0, Math.floor(cam.y / TILE));
     const x1 = Math.min(map.w - 1, Math.ceil((cam.x + vw) / TILE)), y1 = Math.min(map.h - 1, Math.ceil((cam.y + vh) / TILE));
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const rip = window.Input && Input.isTouch ? 1 : 3;   // điện thoại: 1 vệt gợn mỗi ô nước (hồ rộng là hàng trăm lệnh vẽ mỗi khung)
     for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
       const t = map.tiles[y * map.w + x];
       if (t === T.WATER) {
-        for (let k = 0; k < 3; k++) {
+        for (let k = 0; k < rip; k++) {
           const h = hash(x, y, 500 + k), ph = (now / 2600 + h) % 1;
           ctx.globalAlpha = Math.sin(ph * Math.PI) * 0.35;
           ctx.fillStyle = '#9fd4ff';

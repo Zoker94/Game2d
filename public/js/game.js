@@ -630,7 +630,7 @@
     if (d.k === 'heal' || d.k === 'mana') Overhead.add(x, y, d.v, d.k);
     else if (d.k === 'crit') {
       Overhead.add(x, y, d.v, 'crit');
-      FX.emit(14, e.x, e.y - 30, { speed: 170, life: 420, size: 4, color: '#ffb020', drag: 3 });
+      if (d.id === G.you || near < 300 || G.fx.length < 20) FX.emit(Input.isTouch ? 6 : 14, e.x, e.y - 30, { speed: 170, life: 420, size: 4, color: '#ffb020', drag: 3 });   // điện thoại: ít hạt hơn
       if (near < 600) GameAudio.sfx('crit', 80, d.id === G.you ? null : spatial(x, y));
       if (G.settings.shake && (d.id === G.you || near < 260)) shake = Math.max(shake, d.id === G.you ? 6 : 3);
     }
