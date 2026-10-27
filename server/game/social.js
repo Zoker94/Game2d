@@ -20,8 +20,16 @@ class Social {
   toast(p, t, k) { this.w.toast(p, t, k); }
 
   // ---------- xem thông tin ----------
-  inspect(p, id) {
-    const o = this.byEntity(id);
+  // id: thực thể đang ở gần; name: theo tên (bảng xếp hạng) – người không online thì tính chỉ số từ dữ liệu lưu
+  inspect(p, id, name) {
+    let o = id != null ? this.byEntity(id) : this.byName(name);
+    if (o && this.w.gmOn(o, 'hide') && !this.w.isGm(p)) o = null;
+    if (!o && name != null) {
+      const n = String(name).toLowerCase(), u = Object.values(this.db.data.users).find(x => x.character && x.character.name.toLowerCase() === n);
+      if (!u) return this.toast(p, 'Không tìm thấy nhân vật', 'error');
+      const g0 = u.character.guildId && this.db.data.guilds[u.character.guildId];
+      o = { id: null, userId: u.id, c: u.character, stats: U.calcStats(u.character, [], g0 ? g0.level : 0, false), mapId: null, offline: true };
+    }
     if (!o) return this.toast(p, 'Người chơi không còn ở gần', 'error');
     const c = o.c, s = o.stats, g = c.guildId && this.db.data.guilds[c.guildId];
     const equip = {};
@@ -30,7 +38,7 @@ class Social {
     p.socket.emit('inspect', {
       id: o.id, name: c.name, cls: c.cls, level: c.level, guild: g ? g.name : '', role: g ? g.members[o.userId] : '',
       power, stats: { maxHp: s.maxHp, maxMp: s.maxMp, atk: s.atk, def: s.def, crit: s.crit, spd: s.spd },
-      equip, mount: c.mount || null, kills: c.kills || 0, pvpKills: c.pvpKills || 0, duelWin: c.duelWin || 0, duelLose: c.duelLose || 0, map: MAPS[o.mapId].name,
+      equip, mount: c.mount || null, kills: c.kills || 0, pvpKills: c.pvpKills || 0, duelWin: c.duelWin || 0, duelLose: c.duelLose || 0, map: o.mapId && MAPS[o.mapId] ? MAPS[o.mapId].name : 'Ngoại tuyến', online: !o.offline, branch: c.branch || null,
       friend: !!(p.c.friends && p.c.friends[o.userId]), pk: c.pk || 0, rank: (this.f.powerRank && this.f.powerRank.get(o.userId)) || 0
     });
   }

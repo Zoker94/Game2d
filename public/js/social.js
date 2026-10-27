@@ -58,12 +58,12 @@
     if (!d) { body.innerHTML = '<p class="muted">Đang tải...</p>'; return; }
     const cls = G.data.classes[d.cls], s = d.stats;
     let html = `<div class="insp"><div class="insp-left"><canvas id="insp-cv" width="128" height="128"></canvas>
-      <h3>${esc(d.name)}</h3><div class="muted small">${cls ? cls.name : ''} · Cấp ${d.level}</div>
+      <h3>${esc(d.name)}</h3><div class="muted small">${cls ? cls.name : ''}${cls && d.branch && cls.branches && cls.branches[d.branch] ? ' · ' + cls.branches[d.branch].kind : ''} · Cấp ${d.level}</div>
       ${d.guild ? `<div class="small" style="color:#7fb8ff">«${esc(d.guild)}» ${d.role === 'leader' ? '· Bang chủ' : d.role === 'elder' ? '· Trưởng lão' : ''}</div>` : ''}
       <div class="small" style="color:${Overhead.title(d.power).color};font-weight:700">【${Overhead.title(d.power).name}】${d.rank ? ` · <span style="color:#ffd84a">#${d.rank} lực chiến</span>` : ''}</div>
       <div class="insp-power">⚡ Lực chiến <b>${d.power.toLocaleString('vi-VN')}</b> <span class="small" style="color:${Overhead.relColor(d.power, G.me.stats.power).color}">(${Overhead.relColor(d.power, G.me.stats.power).tip})</span></div>
       ${d.pk >= 3 ? `<div class="small" style="color:#ff4a4a">☠ Sát khí ${d.pk}</div>` : ''}
-      <div class="small muted">📍 ${esc(d.map)} · 💀 Quái ${d.kills} · ⚔️ PK ${d.pvpKills} · 🥋 Tỷ võ ${d.duelWin || 0} thắng / ${d.duelLose || 0} thua</div></div>
+      <div class="small muted">${d.online === false ? '<span style="color:#a8998a">⚫ Ngoại tuyến</span>' : '📍 ' + esc(d.map)} · 💀 Quái ${d.kills} · ⚔️ PK ${d.pvpKills} · 🥋 Tỷ võ ${d.duelWin || 0} thắng / ${d.duelLose || 0} thua</div></div>
       <div class="insp-right"><div class="insp-stats">
         <div>❤️ Sinh lực <b>${s.maxHp}</b></div><div>💧 Nội lực <b>${s.maxMp}</b></div>
         <div>⚔️ Tấn công <b>${s.atk}</b></div><div>🛡️ Phòng thủ <b>${s.def}</b></div>
@@ -75,15 +75,18 @@
     }
     html += `</div>${UI.gemSummary(d.equip)}${d.mount && G.data.mounts[d.mount] ? `<div class="small">🐎 Thú cưỡi: <b class="r-${G.data.mounts[d.mount].rarity}-t">${esc(G.data.mounts[d.mount].name)}</b></div>` : ''}
       <div class="row insp-btns">
-        ${d.friend ? '<span class="small" style="color:#4ade80">🤝 Bằng hữu</span>' : '<button class="btn small" data-act="friend">🤝 Kết bạn</button>'}
-        <button class="btn small" data-act="pm">💌 Nhắn riêng</button><button class="btn small green" data-act="trade">🔄 Giao dịch</button></div></div></div>`;
+        ${UI.lbBack ? '<button class="btn small" data-act="back">◀ Bảng xếp hạng</button>' : ''}
+        ${d.id == null ? '' : d.friend ? '<span class="small" style="color:#4ade80">🤝 Bằng hữu</span>' : '<button class="btn small" data-act="friend">🤝 Kết bạn</button>'}
+        <button class="btn small" data-act="pm">💌 Nhắn riêng</button>${d.id == null ? '' : '<button class="btn small green" data-act="trade">🔄 Giao dịch</button>'}</div></div></div>`;
     body.innerHTML = html;
     const cv = $('insp-cv');
     if (cv && Assets.has(d.cls)) { const c = cv.getContext('2d'); c.imageSmoothingEnabled = true; c.drawImage(Assets.charFrame(d.cls, 0, 'idle', 0, (G.players.get(d.id) || {}).ap), -8, -12, 144, 144); }
+    else if (cv && Assets.loadClass && !d._ld && (d._ld = 1)) Assets.loadClass(d.cls).then(() => { if (inspectData === d && UI.panelName() === 'inspect') UI.refreshPanel(); }).catch(() => {});   // người ngoại tuyến / ở xa: tải hình phái rồi vẽ lại
     body.querySelectorAll('[data-eqid]').forEach(el => { const inst = d.equip[el.dataset.slot]; el.onmouseenter = ev => UI.itemTip(ev, el.dataset.eqid, +el.dataset.plus, inst); el.onmouseleave = () => UI.hideTip(); el.onclick = ev => UI.itemTip(ev, el.dataset.eqid, +el.dataset.plus, inst); });
     body.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
       if (b.dataset.act === 'friend') emit('friend', { op: 'add', id: d.id });
       if (b.dataset.act === 'pm') UI.pmTo(d.name);
+      if (b.dataset.act === 'back') { UI.lbBack = false; UI.openPanel('leaderboard', { tab: UI.lbTab }); }
       if (b.dataset.act === 'trade') { emit('trade', { op: 'request', id: d.id }); UI.closePanel(); }
     });
   });
@@ -147,7 +150,7 @@
 
   // ---------- sự kiện từ máy chủ ----------
   function bind(s) {
-    s.on('inspect', d => { inspectData = d; UI.openPanel('inspect'); });
+    s.on('inspect', d => { inspectData = d; UI.lbBack = UI.panelName() === 'leaderboard' || (UI.lbBack && UI.panelName() === 'inspect'); UI.openPanel('inspect'); });
     s.on('friends', d => { friendsData = d; if (UI.panelName() === 'friends') UI.refreshPanel(); });
     s.on('friendReq', d => {
       if (blocked(d.name)) return;

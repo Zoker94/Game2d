@@ -1749,3 +1749,35 @@ body.blackout > *:not(#blackout) { visibility: hidden !important; }
 .gs-g { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px 2px 3px; border-radius: 999px; font-size: 11.5px; font-weight: 700; color: var(--gc); background: color-mix(in srgb, var(--gc) 14%, rgba(0,0,0,.4)); border: 1px solid color-mix(in srgb, var(--gc) 45%, transparent); }
 .gs-g small { font-weight: 500; color: #e8dcc0; margin-left: 2px; }
 .gs-g.e { color: #8a7a68; background: rgba(0,0,0,.3); border-color: rgba(255,255,255,.12); padding: 2px 8px; }
+.tbl tr.lb-row { cursor: pointer; transition: background .1s; }
+.tbl tr.lb-row:hover td { background: rgba(255,215,106,.08); }
+/* ===== Bảng không che kín màn hình, kéo di chuyển được (dnd.js) ===== */
+#panel { pointer-events: none; background: transparent !important; }
+#panel .panel-box { pointer-events: auto; }
+#panel .panel-box.moved { position: absolute; margin: 0; }
+.drag-handle { cursor: move; touch-action: none; user-select: none; }
+.dragging-win { opacity: .92; box-shadow: 0 14px 50px rgba(0,0,0,.8) !important; }
+#panel-pin { margin-right: 6px; padding: 3px 9px; border-radius: 7px; border: 1px solid rgba(255,215,106,.45); background: rgba(0,0,0,.35); color: #ffe39a; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+#panel-pin:hover { border-color: #ffd76a; }
+/* cửa sổ túi đồ nổi */
+#bagwin { position: absolute; right: 12px; top: 120px; z-index: 31; width: 404px; max-width: 96%; display: flex; flex-direction: column; background: var(--panel); border: 2px solid var(--gold2); border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,.7); }
+#bagwin.moved { right: auto; }
+#bagwin .bw-head { display: flex; align-items: center; padding: 5px 8px; background: linear-gradient(#3a2a1a, #2a1d12); border-bottom: 1px solid var(--line); border-radius: 8px 8px 0 0; }
+#bagwin .bw-title { flex: 1; font-weight: 800; color: #ffe39a; font-size: 13px; }
+#bagwin .bw-x { border: 0; background: none; color: #e8d8b0; font-size: 15px; cursor: pointer; }
+#bagwin .bw-body { display: flex; gap: 8px; padding: 7px; }
+#bagwin .bw-eq { display: grid; grid-template-columns: repeat(3, 40px); grid-auto-rows: 40px; gap: 3px; align-content: start; }
+#bagwin .bw-bag { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, 40px); grid-auto-rows: 40px; gap: 3px; max-height: 218px; overflow-y: auto; align-content: start; touch-action: pan-y; border-radius: 6px; padding: 2px; }
+#bagwin .slot { width: 40px; height: 40px; }
+#bagwin .slot .lbl { font-size: 8px; }
+#bagwin .bw-hint { padding: 0 8px 6px; font-size: 10.5px; color: #9a8a70; }
+body.short #bagwin { width: 360px; top: 56px; }
+body.short #bagwin .bw-bag { max-height: 150px; }
+/* kéo thả đồ */
+#dnd-ghost { position: fixed; z-index: 100001; pointer-events: none; transform: translate(-50%, -60%) scale(1.15); width: 46px; height: 46px; display: grid; place-items: center; border-radius: 8px; background: rgba(20,12,24,.9); border: 2px solid #ffd76a; box-shadow: 0 6px 18px rgba(0,0,0,.6), 0 0 14px rgba(255,200,80,.5); }
+.dnd-on, .dnd-on * { cursor: grabbing !important; }
+.slot.dnd-src { opacity: .35; }
+.slot.dnd-armed { transform: scale(1.08); box-shadow: 0 0 0 2px #ffd76a; }
+.slot.dnd-ok, .inv-grid.dnd-ok, .bw-bag.dnd-ok { outline: 2px dashed #4ade80; outline-offset: 1px; }
+.slot.dnd-hover, .inv-grid.dnd-hover, .bw-bag.dnd-hover, [data-uid].dnd-hover { outline: 2px solid #ffd76a !important; box-shadow: 0 0 12px rgba(255,215,106,.7); }
+.slot img, #bagwin img { -webkit-user-drag: none; user-drag: none; }

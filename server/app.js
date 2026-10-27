@@ -415,7 +415,7 @@ io.on('connection', socket => {
   on('online', inGame(() => socket.emit('online', [...world.players.values()].filter(p => user.isAdmin || isOwner(user) || !world.gmOn(p, 'hide')).map(p => ({ name: p.c.name, cls: p.c.cls, level: p.c.level, map: MAPS[p.mapId].name })))));
   on('setQuick', inGame(d => { if (d && ITEMS[d.id]) { if (d.kind === 'mp') player.c.quickMp = d.id; else player.c.quickHp = d.id; player.dirtyMe = true; } }));
 
-  on('inspect', inGame(d => d && social.inspect(player, d.id)));
+  on('inspect', inGame(d => d && social.inspect(player, d.name != null ? null : d.id, d.name != null ? String(d.name).slice(0, 20) : null)));
   on('friend', inGame(d => d && social.friend(player, d)));
   on('trade', inGame(d => d && social.trade(player, d)));
   on('duel', inGame(d => world.duel.action(player, d)));

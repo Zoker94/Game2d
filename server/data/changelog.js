@@ -4,6 +4,9 @@ const CHANGELOG = [
   {
     date: '27/10/2026',
     items: [
+      '🏆 BẢNG XẾP HẠNG: bấm vào bất kỳ ai để xem lực chiến, chỉ số, trang bị, ngọc đã khảm – kể cả người đang ngoại tuyến; có nút ◀ quay lại bảng xếp hạng.',
+      '🖱️ KÉO THẢ (chuột trên PC, ngón tay trên điện thoại): kéo đồ trong túi thả vào ô trang bị để mặc, kéo đồ đang mặc thả vào túi để tháo (ô thả được sáng viền xanh). Điện thoại: chạm giữ ô đồ một chút rồi kéo – vuốt nhanh vẫn là cuộn danh sách.',
+      '🪟 BẢNG KÉO ĐI ĐƯỢC: kéo thanh tiêu đề để dời bảng (Túi đồ, Nhân vật, Cửa hàng…) sang chỗ khác, nhấp đúp để về giữa; bảng không còn che tối màn hình nên vẫn thấy và chơi phía sau. Nút 🧷 Tách trên Túi đồ tách túi thành cửa sổ nhỏ riêng – vừa xem / kéo thả đồ vừa mở Nhân vật, Cửa hàng, Thợ Rèn… cùng lúc.',
       '💎 XEM NGỌC ĐÃ KHẢM: ô trang bị (đang mặc, trong túi, khi xem thông tin người khác) có chấm màu cho từng lỗ khảm – màu theo loại ngọc, số là cấp ngọc, chấm xám là lỗ trống. Bảng Nhân vật và bảng Thông tin Đại Hiệp có mục "Ngọc đã khảm": ngọc trên từng món cùng chỉ số, hiệu ứng, và tổng chỉ số nhận được từ ngọc.',
       '🎨 GIAO DIỆN MỚI HOÀN TOÀN trước khi vào game: nền động núi non lớp lớp, trăng, chùa tháp, rặng thông, hạc bay, hoa đào rơi; màn tải với thanh kiếm sáng dần và cuộn giấy mẹo; màn đăng nhập / đăng ký mới; màn vào game mới.',
       '🧭 TẠO NHÂN VẬT CHI TIẾT HƠN: biểu đồ NGŨ GIÁC (Tấn công · Phòng thủ · Sinh lực · Thân pháp · Tầm đánh) cho biết phái thiên công hay thiên thủ, so với hệ còn lại; CHỌN HỆ NỘI CÔNG / NGOẠI CÔNG ngay khi tạo nhân vật; thẻ Tiểu sử (lời môn phái, tổng đà, lịch sử, lối chơi từng hệ) và thẻ Võ công (chiêu thức, tuyệt kỹ, nội công bị động của hệ đã chọn); nút 🎲 tên ngẫu nhiên.',

@@ -131,7 +131,7 @@
     return `<div class="card gs-box"><h4>💎 Ngọc đã khảm <span class="gs-cnt">${cnt}/${holes} lỗ</span></h4>
       ${sum ? `<div class="gs-sum">Tổng từ ngọc: ${sum}</div>` : '<div class="gs-sum muted">Chưa khảm viên ngọc nào – khảm ở Thợ Rèn (thẻ 💎 Khảm đá).</div>'}${rows}</div>`;
   }
-  UI.gemDots = gemDots; UI.gemSummary = gemSummary;
+  UI.gemDots = gemDots; UI.gemSummary = gemSummary; UI.brBadge = s => brBadge(s);
   // tổng chỉ số của 1 món (gồm cường hóa + ngũ hành) để so sánh
   function itemTotals(it, inst) {
     const o = {};
@@ -225,6 +225,7 @@
     if (!el || keyOf(el) !== cmpKey) { cmpKey = null; hideCmp(); }
   }, true);
   function restoreCmp() { if (cmpKey) showKey(cmpKey); else hideCmp(); }
+  UI.cancelLp = () => { clearTimeout(lpTimer); lpFired = 0; cmpKey = null; hideCmp(); };   // kéo thả bắt đầu: tắt khung so sánh / bấm giữ
 
   // hệ trang bị: Ngoại công (+Sức Mạnh) / Nội công (+Nội Công) – công thức trùng server/data/items.js brPoints
   const BR_INFO = { ngoai: { name: 'Ngoại công', attr: 'str', an: 'Sức Mạnh', ch: 'Ngoại' }, noi: { name: 'Nội công', attr: 'ene', an: 'Nội Công', ch: 'Nội' } };
@@ -1233,11 +1234,13 @@
       html += `<table class="tbl"><tr><th>#</th><th>Bang hội</th><th>Cấp</th><th>Bang chủ</th><th>Thành viên</th><th>Quỹ</th></tr>${lbData.guild.map((g, i) => `<tr><td class="rank-${i + 1}">${i + 1}</td><td>${esc(g.name)}</td><td>${g.level}</td><td>${esc(g.leader)}</td><td>${g.count}</td><td>${fmt(g.fund)}</td></tr>`).join('')}</table>`;
     } else {
       const col = { level: 'Cấp', power: 'Lực chiến', gold: 'Ngân lượng', kills: 'Quái', pvp: 'Hạ gục', boss: 'Boss' }[tab];
-      html += `<table class="tbl"><tr><th>#</th><th>Nhân vật</th><th>Môn phái</th><th>Bang</th><th>${col}</th></tr>${(lbData[tab] || []).map((r, i) => `<tr class="${G.me && r.name === G.me.name ? 'me' : ''}"><td class="rank-${i + 1}">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</td><td>${esc(r.name)} <span class="muted small">Lv${r.level}</span></td><td>${G.data.classes[r.cls].name}</td><td>${esc(r.guild)}</td><td>${fmt(r.v)}</td></tr>`).join('')}</table>`;
+      html += `<table class="tbl"><tr><th>#</th><th>Nhân vật</th><th>Môn phái</th><th>Bang</th><th>${col}</th></tr>${(lbData[tab] || []).map((r, i) => `<tr class="lb-row ${G.me && r.name === G.me.name ? 'me' : ''}" data-lbname="${esc(r.name)}" title="Bấm để xem lực chiến, trang bị"><td class="rank-${i + 1}">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</td><td>${esc(r.name)} <span class="muted small">Lv${r.level}</span></td><td>${G.data.classes[r.cls].name}</td><td>${esc(r.guild)}</td><td>${fmt(r.v)}</td></tr>`).join('')}</table>`;
     }
-    html += '<p class="small muted">Cập nhật mỗi 30 giây.</p>';
+    html += '<p class="small muted">Cập nhật mỗi 30 giây. Bấm vào một người để xem lực chiến, chỉ số và trang bị.</p>';
     body.innerHTML = html;
     bindTabs(body);
+    UI.lbTab = tab;
+    body.querySelectorAll('[data-lbname]').forEach(tr => tr.onclick = () => { emit('inspect', { name: tr.dataset.lbname }); G.sfx('click'); });
   }
 
   // ---------- Cài đặt ----------
