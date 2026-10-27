@@ -623,7 +623,6 @@
   }
 
   function onDmg(d) {
-    if (d.s && d.id === G.you) G.lastAttacker = { id: d.s, t: performance.now() };   // người chơi vừa đánh mình
     const e = entityById(d.id);
     if (!e) return;
     const x = e.x, y = e.y - 70, near = Math.hypot(e.x - G.self.x, e.y - G.self.y);
@@ -1121,7 +1120,7 @@
   }
 
   // ===== Cài đặt tự động =====
-  const AUTO_DEF = { pvpBack: true, pvpAuto: false, pickPots: true, pickMats: true, pickup: true, pickGold: true, pickMin: 'common', pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, potAlways: true, townLow: false, townPct: 15, skills: true, range: 700 };
+  const AUTO_DEF = { pickPots: true, pickMats: true, pickup: true, pickGold: true, pickMin: 'common', pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, potAlways: true, townLow: false, townPct: 15, skills: true, range: 700 };
   function autoCfg() { return Object.assign({}, AUTO_DEF, G.autoCfg); }
   G.autoCfgGet = autoCfg;
   G.autoCfgSet = (k, v) => { G.autoCfg[k] = v; try { localStorage.setItem('vl_auto', JSON.stringify(G.autoCfg)); } catch (e) {} sendAutoSrv(); };
@@ -1167,20 +1166,6 @@
   }
 
   // Tự động đánh quái (auto)
-  // PK tự động: đối thủ tỷ võ > người chơi đang chọn làm mục tiêu > kẻ vừa đánh mình > (tuỳ chọn) người chơi thù địch gần nhất
-  function pvpTarget(now, cfg) {
-    const s = G.self, ok = p => p && !p.dead && Escort.canHarm(p) && Math.hypot(p.x - s.x, p.y - s.y) < 1300;
-    if (G._duelWith) { const p = G.players.get(G._duelWith); if (ok(p)) return p; }
-    const cur = G.target && G.players.get(G.target);
-    if (ok(cur)) return cur;
-    if (cfg.pvpBack && G.lastAttacker && now - G.lastAttacker.t < 8000) { const p = G.players.get(G.lastAttacker.id); if (ok(p)) return p; }
-    if (cfg.pvpAuto) {
-      let best = null, bd = cfg.range;
-      for (const p of G.players.values()) { if (!ok(p)) continue; const d = Math.hypot(p.x - s.x, p.y - s.y); if (d < bd) { bd = d; best = p; } }
-      return best;
-    }
-    return null;
-  }
   // ra chiêu vào mục tiêu: buff -> kỹ năng mạnh -> đánh thường; ngoài tầm thì đuổi theo
   function autoAttack(t, cfg) {
     const me = G.me, s = G.self, st = me.stats, skills = mySkills();
@@ -1202,11 +1187,6 @@
   function autoPlay(now) {
     const me = G.me, s = G.self;
     const cfg = autoCfg();
-    const foe = pvpTarget(now, cfg);
-    if (foe) {   // đang PK: bám theo đối thủ, không nhặt đồ, chỗ đứng mới thành tâm tự động
-      G.target = foe.id; G.autoDrop = null; G.autoHome = { x: s.x, y: s.y };
-      return autoAttack(foe, cfg);
-    }
     if (G.map.safe) return;
     const st = me.stats;
     const home = G.autoHome || s;
@@ -1222,7 +1202,7 @@
     }
     G.autoDrop = null;
     let t = validTarget();
-    if (t && Math.hypot(t.x - home.x, t.y - home.y) > 900) t = null;
+    if (t && (!G.monsters.has(t.id) || Math.hypot(t.x - home.x, t.y - home.y) > 900)) t = null;   // Tự động chỉ đánh quái, không bao giờ PK người chơi
     if (!t) {
       let best = null, bd = 700;
       for (const e of G.monsters.values()) {
