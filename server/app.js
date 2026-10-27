@@ -363,6 +363,7 @@ io.on('connection', socket => {
   on('meditate', inGame(() => world.toggleMeditate(player)));
   on('autoSrv', inGame(d => world.autoSrv.setState(player, d)));   // trạng thái tự động để máy chủ treo hộ khi rời trang
   on('away', inGame(d => world.autoSrv.setAway(player, d && d.v)));
+  on('hb', inGame(() => world.autoSrv.heartbeat(player)));   // nhịp tim: mất nhịp lâu thì máy chủ treo hộ
   on('channels', inGame(() => socket.emit('channels', world.channelsView(player))));   // danh sách khu của bản đồ đang đứng
   on('channel', inGame(d => world.switchChannel(player, d && d.ch)));
   on('craftCloak', inGame(d => world.craftCloak(player, d)));   // áo choàng ở bản đồ môn phái

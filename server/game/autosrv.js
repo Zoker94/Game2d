@@ -11,6 +11,7 @@ const U = require('./util');
 
 const OFFLINE_MAX = 8 * 3600e3;   // mất kết nối: treo tối đa 8 giờ rồi tự thoát
 const IDLE_GRACE = 3000;          // máy khách im lặng 3 giây (không gửi di chuyển) thì máy chủ mới cầm lái
+const HB_LOST = 8000;             // mất nhịp tim 8 giây (điện thoại tắt màn / khoá máy, trang bị đóng băng): máy chủ cầm lái luôn
 const RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
 const DEF = { pickup: true, pickGold: true, pickMin: 'common', pickPots: true, pickMats: true, pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, skills: true, range: 700 };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, Number.isFinite(+v) ? +v : a));
@@ -33,6 +34,8 @@ class AutoSrv {
     }
   }
   setAway(p, v) { p.away = !!v; if (!v) this.handBack(p); }
+  // nhịp tim từ máy khách (mỗi 3 giây khi trang đang hiện): trang sống lại sau khi bị đóng băng thì trả lái
+  heartbeat(p) { const was = p.lastHb; p.lastHb = Date.now(); if (was && p.lastHb - was > HB_LOST && !p.away && !p.offline) this.handBack(p); }
   // máy khách quay lại: trả quyền điều khiển, báo vị trí hiện tại và kết quả
   handBack(p) {
     const a = p.autoSrv;
@@ -70,7 +73,7 @@ class AutoSrv {
       const a = p.autoSrv;
       if (!a) continue;
       if (p.offline && now - p.offline > OFFLINE_MAX) { this.endOffline(p, 'time'); continue; }
-      const on = a.on && (p.offline || (p.away && now - (p.lastClientMove || 0) > IDLE_GRACE));
+      const on = a.on && (p.offline || (p.away && now - (p.lastClientMove || 0) > IDLE_GRACE) || (p.lastHb && now - p.lastHb > HB_LOST));
       if (!on) { if (a.active) { a.active = false; p.moving = false; } continue; }
       if (!a.active) {
         a.active = true; a.since = now; a.goal = null; a.target = null; a.drop = null; a.chase = null;

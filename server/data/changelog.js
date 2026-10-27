@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '27/10/2026',
     items: [
+      '📱 TREO MÁY ĐIỆN THOẠI ỔN ĐỊNH HƠN: (1) Khi bật Tự động, game giữ sáng màn hình – điện thoại không tự tắt màn nữa (tắt ở Cài đặt → ☀️ Giữ sáng màn hình; kết hợp nút 🌙 Tắt màn để màn đen đỡ tốn pin). (2) Nếu màn vẫn tắt / khoá máy / thoát ra ngoài, máy chủ nhận ra sau khoảng 8 giây và tự treo hộ ngay (trước đây có máy phải chờ mất kết nối mới treo, hoặc không treo), mở lại là nhận lại nhân vật kèm báo cáo.',
       '🏆 BẢNG XẾP HẠNG: bấm vào bất kỳ ai để xem lực chiến, chỉ số, trang bị, ngọc đã khảm – kể cả người đang ngoại tuyến; có nút ◀ quay lại bảng xếp hạng.',
       '🖱️ KÉO THẢ (chuột trên PC, ngón tay trên điện thoại): kéo đồ trong túi thả vào ô trang bị để mặc, kéo đồ đang mặc thả vào túi để tháo (ô thả được sáng viền xanh). Điện thoại: chạm giữ ô đồ một chút rồi kéo – vuốt nhanh vẫn là cuộn danh sách.',
       '🪟 BẢNG KÉO ĐI ĐƯỢC: kéo thanh tiêu đề để dời bảng (Túi đồ, Nhân vật, Cửa hàng…) sang chỗ khác, nhấp đúp để về giữa; bảng không còn che tối màn hình nên vẫn thấy và chơi phía sau. Nút 🧷 Tách trên Túi đồ tách túi thành cửa sổ nhỏ riêng – vừa xem / kéo thả đồ vừa mở Nhân vật, Cửa hàng, Thợ Rèn… cùng lúc.',

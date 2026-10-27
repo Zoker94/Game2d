@@ -1261,6 +1261,7 @@
           ${[['auto', 'Tự động'], ['high', 'Cao'], ['medium', 'Vừa'], ['low', 'Thấp (mượt nhất)']].map(([k, n]) => `<button class="btn small ${(s.gfx || 'auto') === k ? 'primary' : ''}" data-gfx="${k}">${n}</button>`).join('')}
           <span class="small muted">Độ nét hiện tại: ${Math.round(G.gfx.scale * 100)}%${G.gfx.lowFx ? ' · tiết kiệm hiệu ứng' : ''}</span></div>
         <label><input type="checkbox" id="set-battery" ${G.battery() ? 'checked' : ''}> 🔋 Tiết kiệm pin: 30 FPS, độ nét tối đa 150%, để yên lâu thì vẽ thưa hơn, hiệu ứng trang trí trên giao diện đứng yên (tắt để chạy 60 FPS)</label><br>
+        <label><input type="checkbox" id="set-awake" ${s.keepAwake !== false ? 'checked' : ''}> ☀️ Giữ sáng màn hình khi bật Tự động (điện thoại không tự tắt màn, treo liên tục)${'wakeLock' in navigator ? '' : ' <span class="muted">– trình duyệt này không hỗ trợ</span>'}</label><br>
         <button class="btn small" id="set-black" style="margin:4px 0">🌙 Tắt màn hình (màn đen, máy chủ treo hộ khi bật Tự động)</button><br>
         <label><input type="checkbox" id="set-qauto" ${s.questAuto !== false ? 'checked' : ''}> 🧭 Tự đi làm nhiệm vụ khi nhận nhiệm vụ mới (cốt truyện, môn phái)</label><br>
         <label><input type="checkbox" id="set-lowfx" ${s.lowfx ? 'checked' : ''}> ✨ Giảm hiệu ứng nặng (hạt, thời tiết, hoạt ảnh lặp trên giao diện)</label>
@@ -1278,6 +1279,7 @@
     body.querySelectorAll('[data-set]').forEach(c => c.onchange = () => { G.settings[c.dataset.set] = c.checked; G.saveSettings(); });
     body.querySelectorAll('[data-gfx]').forEach(b => b.onclick = () => { G.setGfx(b.dataset.gfx); UI.refreshPanel(); });
     $('set-battery').onchange = e => { G.setBattery(e.target.checked); UI.refreshPanel(); };
+    $('set-awake').onchange = e => { s.keepAwake = e.target.checked; G.saveSettings(); if (window.Awake) Awake.sync(); };
     $('set-qauto').onchange = e => { G.settings.questAuto = e.target.checked; G.saveSettings(); };
     $('set-black').onclick = () => { UI.closePanel(); G.setBlackout(true); };
     $('set-lowfx').onchange = e => { G.setLowFx(e.target.checked); UI.refreshPanel(); };
