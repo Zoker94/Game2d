@@ -1577,7 +1577,6 @@ body.touch.pvp-on #toasts { top: auto; bottom: 44px; flex-direction: column-reve
 .qb.sq { width: 35px; padding: 0; }
 .qb.sq i { font-size: 17px; }
 body.touch .qb.sq { width: 30px; }
-#btn-tp { border-color: #6ad0ff; }
 #tp-box { position: absolute; top: 60px; right: 230px; width: min(340px, 92vw); max-height: min(440px, 80vh); display: flex; flex-direction: column; z-index: 45; background: rgba(18,12,20,.96); border: 1px solid var(--gold, #c99a3a); border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,.6); padding: 8px; font-size: 13px; }
 body.touch #tp-box { top: 8px; right: auto; left: 50%; transform: translateX(-50%); max-height: calc(100vh - 16px); }
 #tp-box .tp-h { font-weight: 800; color: #ffd76a; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
@@ -1726,6 +1725,9 @@ body.blackout > *:not(#blackout) { visibility: hidden !important; }
 .gm-row { display: flex; gap: 6px; margin: 8px 0 4px; }
 .gm-row select, .gm-row input { flex: 1; min-width: 0; }
 .gm-list .li .btn.small { padding: 3px 7px; }
-#menu-buttons #btn-gm.on { box-shadow: 0 0 0 2px #7af0ff, 0 0 10px #4ad8ff; }
+#btn-gm { border-color: #6ad0ff; }
+#btn-gm.on { box-shadow: 0 0 0 2px #7af0ff, 0 0 10px #4ad8ff; }
+#tp-box .gm-tg { grid-column: 1 / -1; margin: 2px 0 6px; }
+#tp-box .gm-note { grid-column: 1 / -1; color: #a89a80; font-size: 11.5px; line-height: 1.4; }
 /* cảnh báo đồ sát ở NPC */
 .outlaw-warn { margin: 4px 0 8px; padding: 6px 8px; border-radius: 6px; background: rgba(120,10,10,.45); border: 1px solid #ff5050; color: #ffd0d0; font-size: 12px; }
