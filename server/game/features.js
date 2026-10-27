@@ -142,6 +142,7 @@ class Features {
       }
     }
     this.tickPins(now);
+    if (now - (this._wbAt || 0) > 1500) { this._wbAt = now; this.worldBossTop(); }
     if (this.w.daihoi) this.w.daihoi.tick(now);
     if (now - this.lastLb > 30000) { this.lastLb = now; this.computeLeaderboard(); }
   }
@@ -183,6 +184,24 @@ class Features {
     this.db.log('boss', `Boss ${tpl.name} xuất hiện`);
     this.broadcastEvents();
     return true;
+  }
+  // bảng top sát thương boss thế giới: gửi cho người đang ở bản đồ boss mỗi 1,5 giây (top 10 + hạng của chính mình)
+  worldBossTop() {
+    for (const id in this.bosses) {
+      const mon = this.bosses[id].mon;
+      if (!mon || mon.dead || !mon.tpl.world) continue;
+      const map = this.w.maps[mon.mapId];
+      if (!map || !map.players.size) continue;
+      const users = this.db.data.users, ranking = [...mon.dmgBy.entries()].sort((a, b) => b[1] - a[1]);
+      const total = ranking.reduce((a, [, d]) => a + d, 0) || 1;
+      const nameOf = uid => { const p = this.w.players.get(uid); return p ? p.c.name : users[uid] && users[uid].character ? users[uid].character.name : '?'; };
+      const top = ranking.slice(0, 10).map(([uid, d]) => [nameOf(uid), Math.round(d), Math.round(d / total * 1000) / 10]);
+      const base = { id: mon.id, name: mon.tpl.name, hp: Math.max(0, Math.round(mon.hp)), maxHp: mon.maxHp, n: ranking.length, top };
+      for (const p of map.players) {
+        const i = ranking.findIndex(([uid]) => uid === p.userId);
+        p.socket.emit('wbTop', i < 0 ? base : Object.assign({ me: [i + 1, Math.round(ranking[i][1]), Math.round(ranking[i][1] / total * 1000) / 10] }, base));
+      }
+    }
   }
   onBossKilled(mon) {
     delete this.bosses[mon.tpl.id];

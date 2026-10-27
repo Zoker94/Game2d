@@ -470,16 +470,23 @@
     if (t && t.type && !t.boss && !t.elite && !G.settings.tframe) t = null;
     if (!t) { f.classList.add('hidden'); return; }
     f.classList.remove('hidden');
-    let name;
-    if (t.type) { const info = G.data.monsters[t.type] || {}; const E = info.el && G.data.elements[info.el]; name = info.name ? `${t.boss ? '👑 ' : ''}${info.name} (Cấp ${info.lv})${E ? ' · Hệ ' + E.name : ''}` : '...'; }
-    else name = `${t.name} (Cấp ${t.level})`;
-    f.classList.toggle('boss', !!t.boss);
+    let name;   // tiêu đề: thẻ BOSS / TINH ANH, tên, cấp, hệ
+    if (t.type) {
+      const info = G.data.monsters[t.type] || {}, E = info.el && G.data.elements[info.el];
+      name = info.name ? `${t.boss || t.elite === 2 ? '<span class="tf-tag">BOSS</span>' : t.elite ? '<span class="tf-tag el">TINH ANH</span>' : ''}<b class="tf-nm">${esc(info.name)}</b><span class="tf-lv">Cấp ${info.lv}</span>${E ? `<span class="tf-el" style="color:${E.color}">Hệ ${esc(E.name)}</span>` : ''}` : '...';
+    } else name = `<b class="tf-nm">${esc(t.name || '')}</b><span class="tf-lv">Cấp ${t.level}</span>`;
+    f.classList.toggle('boss', !!(t.boss || t.elite === 2));
     const n = f.querySelector('.t-name');
-    if (n.textContent !== name) n.textContent = name;
+    if (n._h !== name) { n._h = name; n.innerHTML = name; }
     // người chơi: hiện lực chiến, danh hiệu và mức nguy hiểm ngay trong khung mục tiêu
     let pw = f.querySelector('.t-pw');
     if (!pw) { pw = document.createElement('div'); pw.className = 't-pw'; n.after(pw); }
-    if (t.type || t.pw == null) { pw.style.display = 'none'; }
+    const winfo = t.type && G.data.monsters[t.type];
+    if (winfo && winfo.world) {   // ghi chú boss thế giới
+      const html = '<span class="tf-world">🌍 BOSS THẾ GIỚI</span> <span style="color:#ff9ce4">cả máy chủ cùng đánh · thưởng theo hạng sát thương</span>';
+      if (pw.innerHTML !== html) pw.innerHTML = html;
+      pw.style.display = '';
+    } else if (t.type || t.pw == null) { pw.style.display = 'none'; }
     else {
       const ti = Overhead.title(t.pw), rc = Overhead.relColor(t.pw, G.me.stats.power), pk = Overhead.pkLevel(t.k);
       const E = t.el && G.data.elements[t.el];
@@ -487,7 +494,9 @@
       if (pw.innerHTML !== html) pw.innerHTML = html;
       pw.style.display = '';
     }
-    setBar(f.querySelector('.bar'), t.hp, t.maxHp);
+    const bar = f.querySelector('.bar');
+    setW(bar.querySelector('i'), Math.max(0, Math.min(100, t.hp / t.maxHp * 100)) + '%');
+    setTxt(bar.querySelector('span'), `${Math.max(0, Math.round(t.hp)).toLocaleString('vi-VN')} / ${(t.maxHp || 0).toLocaleString('vi-VN')} · ${Math.max(0, Math.round(t.hp / t.maxHp * 100))}%`);
   };
 
   // khung nhiệm vụ / tổ đội luôn nằm ngay dưới khung nhân vật (khung nhân vật cao thấp tùy màn hình)
@@ -659,7 +668,7 @@
     const atBottom = log.scrollTop + log.clientHeight >= log.scrollHeight - 20;
     const d = document.createElement('div');
     d.className = 'm ' + m.ch;
-    const who = m.ch === 'sys' ? '' : `<span class="from ${m.admin ? 'gm' : ''}" data-name="${esc(m.from)}">${m.admin ? '[GM] ' : ''}${esc(m.from)}${m.ch === 'pm' && m.to ? ' → ' + esc(m.to) : ''}:</span> `;
+    const who = m.ch === 'sys' ? '' : m.boss ? `<span class="from" style="color:#ff7a5a">${esc(m.from)}:</span> ` : `<span class="from ${m.admin ? 'gm' : ''}" data-name="${esc(m.from)}">${m.admin ? '[GM] ' : ''}${esc(m.from)}${m.ch === 'pm' && m.to ? ' → ' + esc(m.to) : ''}:</span> `;
     d.innerHTML = `<span class="ch">[${CH_NAME[m.ch] || m.ch}]</span>${who}${esc(m.text)}`;
     log.appendChild(d);
     while (log.children.length > 150) log.firstChild.remove();
@@ -1276,6 +1285,14 @@
     body.innerHTML = `
       <div class="card"><h4>💬 Cộng đồng</h4><p class="small">Tham gia nhóm Zalo để nhận gift code, tin sự kiện và giao lưu với các đại hiệp khác.</p><a class="zalo-btn" href="https://zalo.me/g/fkxw5crl6ksc0jotbzgp" target="_blank" rel="noopener">💬 Tham gia nhóm Zalo</a></div>
       <div class="card"><h4>🤖 Tự động</h4><button class="btn small primary" id="set-auto">⚙️ Cài đặt tự động (nhặt đồ, bơm máu...)</button></div>
+      <div class="card"><h4>Ngoại hình Chibi</h4>
+        <label><input type="checkbox" id="set-chibi" ${s.chibi ? 'checked' : ''}> Đổi nhân vật thành dạng chibi (đầu to, thân ngắn)</label>
+        <div class="chibi-pv"><div><canvas id="chibi-a" width="96" height="96"></canvas><small>Gốc</small></div><div><canvas id="chibi-b" width="96" height="96"></canvas><small>Chibi</small></div></div>
+        <div class="small">Độ chibi</div>
+        <div class="seg">${[[1, 'Nhẹ'], [2, 'Vừa'], [3, 'Siêu chibi']].map(([k, n]) => `<button class="btn ${(s.chibiLv || 2) === k ? 'primary' : ''}" data-chibilv="${k}">${n}</button>`).join('')}</div>
+        <div class="small">Áp dụng cho</div>
+        <div class="seg"><button class="btn ${s.chibiAll !== false ? 'primary' : ''}" data-chibiall="1">Tất cả nhân vật</button><button class="btn ${s.chibiAll === false ? 'primary' : ''}" data-chibiall="0">Chỉ nhân vật của tôi</button></div>
+        <div class="small muted">Chỉ thay đổi hình ảnh trên máy của bạn, người chơi khác vẫn thấy ngoại hình gốc.</div></div>
       <div class="card"><h4>Hiển thị & âm thanh</h4>
         <label><input type="checkbox" data-set="names" ${s.names ? 'checked' : ''}> Hiện tên nhân vật/quái</label><br>
         <label><input type="checkbox" id="au-music" ${GameAudio.state.music ? 'checked' : ''}> 🎵 Nhạc nền võ lâm</label> <input type="range" id="au-mvol" min="0" max="1" step="0.05" value="${GameAudio.state.musicVol}" style="width:110px;vertical-align:middle"><br>
@@ -1303,6 +1320,14 @@
         ${G.user && G.user.username ? `<div class="row" style="justify-content:flex-start;margin-top:6px"><input id="pw-old" type="password" placeholder="Mật khẩu cũ" style="width:130px"><input id="pw-new" type="password" placeholder="Mật khẩu mới" style="width:130px"><button class="btn small" id="pw-change">Đổi mật khẩu</button></div>` : ''}
         <button class="btn small primary" id="set-logout" style="margin-top:6px">Đăng xuất</button></div>`;
     body.querySelectorAll('[data-set]').forEach(c => c.onchange = () => { G.settings[c.dataset.set] = c.checked; G.saveSettings(); });
+    $('set-chibi').onchange = e => { G.settings.chibi = e.target.checked; G.saveSettings(); };
+    body.querySelectorAll('[data-chibilv]').forEach(b => b.onclick = () => { G.settings.chibiLv = +b.dataset.chibilv; G.saveSettings(); UI.refreshPanel(); });
+    body.querySelectorAll('[data-chibiall]').forEach(b => b.onclick = () => { G.settings.chibiAll = b.dataset.chibiall === '1'; G.saveSettings(); UI.refreshPanel(); });
+    { // xem trước: tư thế đứng của nhân vật mình, gốc và chibi
+      const me = G.me, pv = (id, fn) => { const c = $(id); if (!c || !me || !Assets.has(me.cls, true)) return; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.clearRect(0, 0, 96, 96); x.drawImage(fn(), 0, 0, 96, 96); };
+      const paint = () => { pv('chibi-a', () => Assets.charFrame(me.cls, 0, 'idle', 0, me.ap)); pv('chibi-b', () => Assets.chibiFrame(me.cls, 0, 'idle', 0, me.ap, G.settings.chibiLv || 2)); };
+      paint(); setTimeout(paint, 300);
+    }
     body.querySelectorAll('[data-gfx]').forEach(b => b.onclick = () => { G.setGfx(b.dataset.gfx); UI.refreshPanel(); });
     $('set-battery').onchange = e => { G.setBattery(e.target.checked); UI.refreshPanel(); };
     $('set-awake').onchange = e => { s.keepAwake = e.target.checked; G.saveSettings(); if (window.Awake) Awake.sync(); };
@@ -1493,6 +1518,7 @@
     if (d.action === 'escort') { Escort.open(d); return; }
     if (d.action === 'daihoi') { DaiHoi.open(d); return; }
     if (d.action === 'dungeon') { Dungeon.open(d); return; }
+    if (d.action === 'market') { Market.openNpc(d); return; }
     if (d.action === 'sect') { SectUI.open(d); return; }
     if (d.action === 'sectshop') { SectUI.openShop(d); return; }
     if (d.action === 'escortDest') { UI.toast(G.me.escort && G.me.escort.id ? 'Đưa xe tiêu tới sát bên Phân Đà để giao tiêu!' : d.talk); return; }

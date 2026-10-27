@@ -1791,3 +1791,43 @@ body.short #bagwin .bw-bag { max-height: 150px; }
 .dch.full { background: rgba(30, 110, 60, .92); box-shadow: 0 0 0 1px #8fffb0; }
 #tp-box .gm-pin { grid-column: 1 / -1; display: flex; gap: 6px; align-items: stretch; }
 #tp-box .gm-pin textarea { flex: 1; min-width: 0; resize: none; background: rgba(0,0,0,.4); color: #f0e6d0; border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; font: inherit; font-size: 12.5px; }
+/* bảng Top sát thương boss thế giới */
+#wb-top { position: absolute; right: 8px; top: 232px; width: 228px; z-index: 12; background: rgba(12,16,24,.82); border: 1px solid rgba(255,106,213,.35); border-radius: 12px; padding: 6px 8px; font-size: 11.5px; color: #e8ecf4; backdrop-filter: blur(6px); }
+#wb-top.hidden { display: none; }
+#wb-top .wb-h { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+#wb-top .wb-h b { color: #ff9ce4; white-space: nowrap; }
+#wb-top .wb-n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #a9b3c7; font-size: 10.5px; }
+#wb-top .wb-t { font-style: normal; color: #a9b3c7; }
+#wb-top.mini .wb-t { transform: rotate(-90deg); }
+#wb-top.mini .wb-l, #wb-top.mini .wb-hp { display: none; }
+#wb-top .wb-hp { position: relative; height: 12px; margin: 5px 0; border-radius: 6px; background: rgba(255,255,255,.1); overflow: hidden; }
+#wb-top .wb-hp i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, #ff3a6a, #ff7a3a); }
+#wb-top .wb-hp span { position: relative; display: block; text-align: center; font-size: 9.5px; line-height: 12px; font-weight: 700; text-shadow: 0 1px 1px #000; }
+#wb-top .wb-l { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+#wb-top .wb-l li { display: flex; gap: 5px; align-items: center; padding: 1px 3px; border-radius: 5px; }
+#wb-top .wb-l li.me { background: rgba(62,230,176,.16); }
+#wb-top .wb-r { width: 16px; text-align: center; font-weight: 800; color: #a9b3c7; }
+#wb-top .r1 .wb-r { color: #ffd84a; } #wb-top .r2 .wb-r { color: #d8e0ec; } #wb-top .r3 .wb-r { color: #e8a060; }
+#wb-top .wb-nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#wb-top .wb-d { font-weight: 700; color: #ffcf6a; }
+#wb-top .wb-p { width: 38px; text-align: right; color: #a9b3c7; }
+#wb-top .wb-me { margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,.1); color: #3ee6b0; }
+body.touch #wb-top { top: 108px; right: auto; left: 50%; transform: translateX(-50%); width: 230px; font-size: 10.5px; z-index: 14; }
+/* Chợ Phiên: bảng gian hàng */
+#mk-box { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, 94vw); max-height: 86vh; display: flex; flex-direction: column; z-index: 32; background: #141a26; border: 1px solid #2c3650; border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,.55); color: #e9edf5; }
+#mk-box .mk-h { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #253048; }
+#mk-box .mk-t { font-size: 15px; color: #ffd76a; }
+#mk-box .mk-x { cursor: pointer; padding: 4px 8px; border-radius: 8px; background: #1d2536; }
+#mk-box .mk-body { padding: 10px 14px 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+#mk-box .mk-it { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; background: #1a2131; }
+#mk-box .mk-nm { flex: 1; min-width: 0; } #mk-box .mk-nm b { display: block; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#mk-box .mk-nm small { color: #a3adc2; } #mk-box .mk-pr { color: #ffd76a; font-weight: 700; }
+#mk-box .mk-act { display: flex; gap: 4px; align-items: center; }
+#mk-box input { background: #0f1420; border: 1px solid #2c3650; color: #e9edf5; border-radius: 8px; padding: 6px 8px; font: inherit; min-width: 0; }
+#mk-box .mk-q, #mk-box .mk-aq { width: 64px; } #mk-box .mk-ap { width: 130px; } #mk-box .mk-name { flex: 1; }
+#mk-box .mk-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+#mk-box .mk-sub { margin-top: 6px; font-size: 12px; color: #a3adc2; font-weight: 700; }
+#mk-box .mk-bag { display: flex; flex-wrap: wrap; gap: 4px; max-height: 120px; overflow-y: auto; padding: 4px; background: #0f1420; border-radius: 10px; }
+#mk-box .mk-bag .ic { cursor: pointer; border-radius: 6px; border: 2px solid transparent; }
+#mk-box .mk-bag .ic.sel { border-color: #3ee6b0; }
+#mk-box .warn { color: #ff8a6a; }

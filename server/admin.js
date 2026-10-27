@@ -245,6 +245,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
       if (c.maintenance) for (const p of [...world.players.values()]) if (!p.user.isAdmin) { p.socket.emit('kicked', { reason: 'Máy chủ đang bảo trì' }); world.removePlayer(p); p.socket.disconnect(true); }
     }
     if (b.autoEvents != null) c.autoEvents = !!b.autoEvents;
+    if (b.serverMode === 'test' || b.serverMode === 'open') c.serverMode = b.serverMode;   // Open Test: NPC bán thêm rương mở đồ; Open chính thức: không bán
     if (b.disablePasswordAdmin != null) {
       if (!req.isOwner) return res.status(403).json({ error: 'Chỉ chủ server (tài khoản Google) mới được thay đổi mục này' });
       c.disablePasswordAdmin = !!b.disablePasswordAdmin;

@@ -3,6 +3,7 @@ const { CLASSES, classSkill, classRange, branchOf, PASSIVE_SLOT, ACTIVE_BUFF_SLO
 const { BRANCH_BONUS, BRANCH_FREE_LV } = require('../data/branches');
 const { ITEMS, RARITY, TIERS, equipId, tierOfLv, DROP_SLOTS } = require('../data/items');
 const { MONSTERS, BOSSES } = require('../data/monsters');
+const BOSS_LINES = require('../data/bosslines');
 const VM_IDS = ['vm_tq1', 'vm_tq2', 'vm_tq3', 'vm_tq4', 'vm_tq5', 'vm_tq6', 'vm_tq7'];
 const { MAPS, TILE, isSolidAt, SOLID, CHANNELS, CH_CAP, baseOf, chOf, chId } = require('../data/maps');
 const { NPCS, TELEPORTS } = require('../data/npcs');
@@ -93,6 +94,7 @@ class World {
     this.duel = new Duel(this);
     this.autoSrv = new (require('./autosrv').AutoSrv)(this);
     this.bossAI = new (require('./bossai').BossAI)(this);
+    this.market = new (require('./market').Market)(this);
     for (const id in MAPS) {
       this.maps[id] = { def: MAPS[id], players: new Set(), monsters: new Map(), drops: new Map() };
       this.spawnMap(id);
@@ -135,7 +137,25 @@ class World {
       event: opts.event || null, base
     };
     m.monsters.set(mon.id, mon);
+    if (tpl.boss || tpl.pbBoss) setTimeout(() => { if (!mon.dead) this.bossSay(mon, 'spawn'); }, 1500);   // đợi người chơi thấy boss rồi mới nói
     return mon;
+  }
+
+  // ---------- Lời thoại boss (server/data/bosslines.js): bong bóng trên đầu boss + kênh bản đồ ----------
+  bossSay(mon, kind, vars) {
+    const now = Date.now();
+    if (kind !== 'death' && kind !== 'spawn' && now - (mon.sayAt || 0) < 4000) return;   // không nói dồn dập
+    let text = BOSS_LINES.pick(mon.tpl.id, kind);
+    if (!text) return;
+    if (vars) for (const k in vars) text = text.split('{' + k + '}').join(vars[k]);
+    mon.sayAt = now;
+    this.io.to('map:' + mon.mapId).emit('chat', { ch: 'map', from: '👹 ' + mon.tpl.name, text, t: now, pid: mon.id, boss: 1 });
+  }
+  bossHurt(mon) {
+    const r = mon.hp / mon.maxHp, said = mon.hpSaid || (mon.hpSaid = {}), now = Date.now();
+    for (const [k, v] of [['hp10', 0.1], ['hp25', 0.25], ['hp50', 0.5], ['hp75', 0.75]]) if (r <= v && !said[k]) { said[k] = 1; mon.sayAt = 0; return this.bossSay(mon, k); }
+    if (!mon.nextTaunt) mon.nextTaunt = now + 8000 + Math.random() * 8000;
+    if (now >= mon.nextTaunt) { mon.nextTaunt = now + 15000 + Math.random() * 15000; this.bossSay(mon, 'fight'); }   // đang giao chiến: thỉnh thoảng nói
   }
 
   // ---------- Người chơi vào / rời ----------
@@ -219,6 +239,7 @@ class World {
     p.dirtyMe = true;
     this.escort.onEnterMap(p, prev, viaPortal);
     for (const r of this.duel.ringsOn(mapId)) p.socket.emit('duelRing', r);
+    this.market.onEnterMap(p);
     this.progressTutorial(p, 'map', { map: baseOf(mapId) });
     this.story.on(p, 'map', { map: baseOf(mapId) });
   }
@@ -619,7 +640,7 @@ class World {
   isOutlaw(p) { return ((p.c.pk | 0) >= PK_OUTLAW); }
   outlawBlock(p, what) {
     if (!this.isOutlaw(p)) return false;
-    this.toast(p, `☠️ Bạn đang mang tội đồ sát (sát khí ${p.c.pk}): không thể ${what}. Dùng Lệnh Bài Xoá Tội (Tạp Hóa / Thương Nhân Lưu Động / Kỳ Trân Các) hoặc chờ sát khí giảm (1 điểm / 15 phút).`, 'error');
+    this.toast(p, `☠️ Bạn đang mang tội đồ sát (sát khí ${p.c.pk}): không thể ${what}. Dùng Lệnh Bài Xoá Tội (mua bằng Nguyên Bảo ở Kỳ Trân Các) hoặc chờ sát khí giảm (1 điểm / 15 phút).`, 'error');
     return true;
   }
   // quản trị viên: tàng hình (người chơi không thấy, quái không đánh) / miễn PK (người chơi không đánh được)
@@ -953,11 +974,13 @@ class World {
         if (!t.target || Math.random() < 0.15) t.target = src.userId;
       }
       if (t.hp <= 0) this.killMonster(t, src);
+      else if (t.boss || t.tpl.pbBoss) this.bossHurt(t);
     }
     return dmg;
   }
 
   killPlayer(t, src) {
+    if (src && !src.c && (src.boss || (src.tpl && src.tpl.pbBoss))) this.bossSay(src, 'kill', { name: t.c.name });
     if (this.daihoi) this.daihoi.onPlayerKilled(t, src && src.c ? src : null);
     if (t.duel) this.duel.onLost(t, `${t.c.name} bị kẻ khác hạ gục`);
     t.dead = true; t.c.hp = 0; t.c.deaths = (t.c.deaths || 0) + 1; t.st = {}; t.dots = [];
@@ -1021,6 +1044,7 @@ class World {
   }
 
   killMonster(mon, killer) {
+    if (mon.boss || mon.tpl.pbBoss) this.bossSay(mon, 'death');
     mon.dead = true; mon.hp = 0;
     mon.respawnAt = Date.now() + (mon.tpl.respawn || 8000);
     const map = this.maps[mon.mapId];
@@ -1071,8 +1095,7 @@ class World {
     const drops = [];
     const rslot = () => DROP_SLOTS[U.randInt(0, DROP_SLOTS.length - 1)];
     if (mon.boss) {
-      // Boss ngoài bản đồ chỉ rơi trang bị Truyền Kỳ ngẫu nhiên, tỉ lệ thấp (tàn quyển Võ Mục nay rơi từ Boss phó bản).
-      // Boss dã ngoại: 8% (cấp 10) → 17% (cấp 90+) rơi 1 món, thuộc về người gây sát thương cao nhất.
+      // Tàn quyển Võ Mục chỉ rơi từ Boss phó bản.
       // Boss thế giới (500 triệu máu, 4 giờ / lần): hạng 1 chắc chắn, hạng 2-3 35%, hạng 4-10 10%, ai góp ≥0,5% sát thương 2%.
       const ranking = [...mon.dmgBy.entries()].sort((a, b) => b[1] - a[1]);
       const total = ranking.reduce((a, [, d]) => a + d, 0) || 1;
@@ -1092,14 +1115,22 @@ class World {
           this.giveReward(p, { items, knb: i < 3 ? [200, 120, 80][i] : i < 10 ? 40 : 15 }, `Hạng ${i + 1} đánh ${tpl.name}`);
         });
       } else {
-        ranking.slice(0, 3).forEach(([uid], i) => {
-          const p = this.players.get(uid);
-          if (p) this.giveReward(p, { knb: [20, 10, 5][i] }, `Top ${i + 1} sát thương Boss`);
-        });
+        // Boss dã ngoại (theo giờ) chỉ rơi: trang bị, đá cường hóa và 10 rương văng khắp nơi (ai nhanh tay thì được).
+        // Trang bị: 2 món cho người sát thương cao nhất (Hiếm 60% / Sử Thi 35% / Truyền Kỳ thấp 3–8% theo cấp boss)
         const topP = ranking[0] && this.players.get(ranking[0][0]);
-        if (Math.random() < Math.min(0.17, 0.07 + tier * 0.011) * dr) {
-          if (topP && topP.mapId === mon.mapId) legend(topP);
-          else drops.push(equipId(rslot(), tier, 'legendary'));
+        for (let k = 0; k < 2; k++) {
+          const x = Math.random(), rar = x < Math.min(0.08, 0.03 + tier * 0.006) * dr ? 'legendary' : x < 0.4 ? 'epic' : 'rare';
+          if (rar === 'legendary' && topP && topP.mapId === mon.mapId) legend(topP);
+          else drops.push(equipId(rslot(), tier, rar));
+        }
+        // đá cường hóa: 4-8 Huyền Tinh Thạch, boss cấp cao thêm Thiên Tinh Thạch
+        for (let k = 0, n = U.randInt(4, 8); k < n; k++) drops.push('stone');
+        if (tpl.lv >= 40 && Math.random() < 0.5 * dr) drops.push('stone2');
+        if (tpl.lv >= 80 && Math.random() < 0.5 * dr) drops.push('stone2');
+        // 10 rương rải quanh boss, không thuộc về ai
+        for (let k = 0; k < 10; k++) {
+          const a = Math.random() * Math.PI * 2, rr = 60 + Math.random() * 140;
+          this.createDrop(mon.mapId, mon.x + Math.cos(a) * rr, mon.y + Math.sin(a) * rr * 0.7, k < 2 ? 'boss_chest' : 'lucky_chest', 1, null, 0, 0);
         }
       }
       const top = ranking[0] && this.players.get(ranking[0][0]);
@@ -1296,6 +1327,7 @@ class World {
       this.features.questProgress(p, 'potion', 1);
     }
     if (e.town) { this.startRecall(p); return; }   // niệm phép, xong mới trừ phù
+    if (e.stall) return this.toast(p, '🏪 Đến Chợ Phiên (đi Xa Phu, miễn phí), gặp Quản Lý Chợ để mở gian hàng bằng lệnh bài này.', 'info');
     if (e.pardon) {
       if (!(c.pk > 0)) return this.toast(p, 'Bạn không mang sát khí, không cần xoá tội', 'error');
       U.removeByUid(c, uid, 1);
@@ -1507,11 +1539,13 @@ class World {
         .filter(id => !npc.bookShop || !ITEMS[id].cls || (ITEMS[id].cls === p.c.cls && (!BOOKS[id] || !BOOKS[id].branch || BOOKS[id].branch === branchOf(p.c))))   // sách: đúng phái, đúng hệ đang tu
         .map(id => ({ id, price: ITEMS[id].price }));
     }
-    if (npc.knbShop) out.knbShop = npc.knbShop;
+    if (npc.knbShop) out.knbShop = npc.knbShop.filter(x => this.shopAllowed(x.id));
+    if (out.shop) out.shop = out.shop.filter(x => this.shopAllowed(x.id));
     out.freeRename = !p.c.renameFree;
     if (npc.action === 'escort' || npc.action === 'escortDest') { out.routes = this.escort.routeView(); out.escort = this.escort.meView(p); }
     if (npc.action === 'daihoi') Object.assign(out, this.daihoi.npcView(p));
     if (npc.action === 'cloak') out.cloak = this.cloakView(p);
+    if (npc.action === 'market') out.market = this.market.view(p.userId, p.userId) || { mine: true, none: true, tokens: U.countItem(p.c, 'stall_token') };
     if (npc.action === 'channel') out.channels = this.channelsView(p);
     if (npc.action === 'teleport') {
       out.teleports = TELEPORTS.map(t => ({ ...t, name: MAPS[t.map].name, lv: MAPS[t.map].lv, minLv: MAPS[t.map].minLv }));
@@ -1614,8 +1648,14 @@ class World {
     if (it.type === 'equip') c._brPick = br === 'noi' || br === 'ngoai' ? br : branchOf(c);
     try { this.buyPay(p, npc, it, id, qty, knb); } finally { delete c._brPick; }
   }
+  // Open chính thức (mặc định): NPC không bán rương mở đồ; admin chuyển sang Open Test (config.serverMode = 'test') thì bán
+  shopAllowed(id) {
+    const it = ITEMS[id];
+    return !(this.db.data.config.serverMode !== 'test' && it && it.effect && it.effect.chest);
+  }
   buyPay(p, npc, it, id, qty, knb) {
     const c = p.c;
+    if (!this.shopAllowed(id)) return this.toast(p, 'Vật phẩm này không còn bán ở NPC', 'error');
     if (knb) {
       const entry = (npc.knbShop || []).find(x => x.id === id);
       if (!entry) return;
@@ -2010,6 +2050,7 @@ class World {
     if (sec) { this.rollWeather(now); this.story.tick(); }
     this.escort.tick(now, TICK);
     this.autoSrv.tick(now);
+    this.market.tick(now);
     if (this.tickN % 5 === 0) this.duel.tick(now);
     for (const id in this.maps) {
       const m = this.maps[id];

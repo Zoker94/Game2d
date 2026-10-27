@@ -284,7 +284,7 @@
       requestAnimationFrame(animPreview);
     });
     s.on('kicked', d => { G.inGame = false; s.close(); G.modal(d.reason || 'Bạn đã bị ngắt kết nối', [{ t: 'Tải lại', fn: () => location.reload() }]); });
-    s.on('init', onInit);
+    s.on('init', d => { Market.onStalls([]); onInit(d); });   // đổi bản đồ: xoá gian hàng (máy chủ gửi lại nếu là Chợ Phiên)
     s.on('snap', onSnap);
     s.on('leave', id => G.players.delete(id));
     s.on('storyScene', d => Story.show(d));
@@ -295,6 +295,9 @@
     s.on('pin', d => UI.pin(d));
     s.on('pinOff', id => UI.pinOff(id));
     s.on('pinList', d => GM.onPins(d));
+    s.on('wbTop', d => WBTop.onTop(d));
+    s.on('stalls', d => Market.onStalls(d));
+    s.on('stall', d => Market.onStall(d));
     s.on('mapFlags', d => DaiHoi.onFlags(d));
     s.on('daihoiPts', d => DaiHoi.onPts(d));
     s.on('duel', d => Duel.onDuel(d));
@@ -961,6 +964,7 @@
   canvas.addEventListener('pointerdown', e => {
     if (!G.map) return;
     const w = screenToWorld(e.clientX, e.clientY);
+    { const st = Market.hit(w.x, w.y); if (st) { Market.openStall(st); return; } }   // gian hàng ở Chợ Phiên
     // NPC
     for (const n of G.map.npcs) {
       const nx = (n.x + 0.5) * TILE, ny = (n.y + 0.5) * TILE;
@@ -1327,6 +1331,7 @@
     list.push({ y: s.y, k: 'self' });
     const bubbles = [];
     WorldArt.visibleDecos(cam, vw, vh, list);
+    Market.collect(list);
     Pet.collect(list, now);
     const nearPl = [s, ...G.players.values()];
     list.sort((a, b) => a.y - b.y);
@@ -1379,6 +1384,9 @@
         if (mm) Overhead.drawUnder(ctx, it.e, it.e.x, it.e.y, mm, now);
         drawMonster(it.e, now);
         if (mm) Overhead.drawOver(ctx, it.e, it.e.x, it.e.y, it.e.y - (Assets.monsterTop(it.e.type) || (it.e.boss ? 120 : 56)), mm, now);
+        if (it.e.bubble) bubbles.push([it.e, it.e.y - (Assets.monsterTop(it.e.type) || (it.e.boss ? 120 : 56)) - 30]);   // lời thoại boss
+      } else if (it.k === 'stall') {
+        Market.draw(ctx, it.s, label);
       } else if (it.k === 'corpse') {
         drawCorpse(it.c, now);
       } else if (it.k === 'cart') {
@@ -1603,6 +1611,7 @@
     const lvDiff = G.me ? info.lv - G.me.level : 0;
     const col = e.boss ? '#ff4040' : lvDiff > 5 ? '#ff7070' : lvDiff < -8 ? '#9a9a9a' : '#ffe9a8';
     if (G.settings.names || e.boss || G.target === e.id) label(e.x, e.y + top - 6, `${e.boss ? '👑 ' : ''}${info.name}${info.lv ? ' Lv' + info.lv : ''}`, col, e.boss ? 14 : 11, true);
+    if (info.world) label(e.x, e.y + top - 24, '🌍 BOSS THẾ GIỚI', '#ff6ad5', 12, true);   // nhắc người chơi đây là boss thế giới
     hpBar(e.x, e.y + top, e.boss ? (info.world ? 160 : 90) : 40, e.hp / e.maxHp, e.boss ? '#ff3030' : '#e5484d');
   }
 
@@ -1774,7 +1783,8 @@
           }
         }
         if (!dead && ent && ent.k) Overhead.drawPkAura(ctx, x, y, ent.k, now);
-        ctx.drawImage(Assets.charFrame(cls, dir, state, fi, ap), x - 48, y - 86, 96, 96);
+        const chibi = G.settings.chibi && (G.settings.chibiAll !== false || ent === G.self);   // Ngoại hình Chibi (chỉ trên máy mình)
+        ctx.drawImage(chibi ? Assets.chibiFrame(cls, dir, state, fi, ap, G.settings.chibiLv || 2) : Assets.charFrame(cls, dir, state, fi, ap), x - 48, y - 86, 96, 96);
         top = state === 'med' ? y - 50 : y - 72;   // ngồi thiền: tên hạ xuống theo dáng ngồi
       } else {
         ctx.drawImage(Sprites.playerSprite(cls, colors, dir, fr, atk, ap), x - 32, y - 58 + breathe);

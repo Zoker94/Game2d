@@ -388,6 +388,8 @@ io.on('connection', socket => {
   on('recall', inGame(() => world.startRecall(player)));
   on('rename', inGame(d => world.renameChar(player, d)));
   on('dungeon', inGame(d => world.dungeon.action(player, d)));
+  on('market', inGame(d => world.market.action(player, d)));
+  on('pg', cb => { if (typeof cb === 'function') cb(); });   // đo độ trễ mạng (ô FPS | ms trên HUD)
   on('sect', inGame(d => world.sect.action(player, d)));
   on('daihoi', inGame(d => {
     if (!d) return;

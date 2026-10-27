@@ -169,9 +169,10 @@
         <label>Tỉ lệ rơi đồ VIP cơ bản (0-1)<input id="c-vip" type="number" step="0.001" value="${c.vipDropBase}"></label></div></div>
         <div class="card"><h3>Server</h3><label>Thông điệp chào mừng (MOTD)<textarea id="c-motd" rows="2">${esc(c.motd)}</textarea></label>
         <label style="flex-direction:row;align-items:center;gap:6px;margin-top:8px"><input type="checkbox" id="c-auto" ${c.autoEvents ? 'checked' : ''}> Tự động chạy sự kiện theo lịch</label>
-        <label style="flex-direction:row;align-items:center;gap:6px;margin-top:8px"><input type="checkbox" id="c-maint" ${c.maintenance ? 'checked' : ''}> <b style="color:#ff8a8a">Chế độ bảo trì</b> (đá tất cả người chơi không phải GM ra)</label></div>
+        <label style="flex-direction:row;align-items:center;gap:6px;margin-top:8px"><input type="checkbox" id="c-maint" ${c.maintenance ? 'checked' : ''}> <b style="color:#ff8a8a">Chế độ bảo trì</b> (đá tất cả người chơi không phải GM ra)</label>
+        <label style="margin-top:8px">Chế độ máy chủ<select id="c-mode"><option value="test" ${c.serverMode === 'test' ? 'selected' : ''}>🧪 Open Test – NPC bán thêm rương mở đồ (Rương Bí Ẩn, Rương Thủ Lĩnh)</option><option value="open" ${c.serverMode !== 'test' ? 'selected' : ''}>🚀 Open chính thức – NPC KHÔNG bán rương mở đồ</option></select></label></div>
         <button class="btn primary" id="c-save">💾 Lưu cấu hình</button>`;
-      $('c-save').onclick = () => run(() => api('/config', { expRate: +$('c-exp').value, dropRate: +$('c-drop').value, goldRate: +$('c-gold').value, vipDropBase: +$('c-vip').value, motd: $('c-motd').value, autoEvents: $('c-auto').checked, maintenance: $('c-maint').checked }), 'Đã lưu cấu hình');
+      $('c-save').onclick = () => run(() => api('/config', { expRate: +$('c-exp').value, dropRate: +$('c-drop').value, goldRate: +$('c-gold').value, vipDropBase: +$('c-vip').value, motd: $('c-motd').value, autoEvents: $('c-auto').checked, maintenance: $('c-maint').checked, serverMode: $('c-mode').value }), 'Đã lưu cấu hình');
     },
 
     async chat(el) {

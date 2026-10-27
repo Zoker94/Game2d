@@ -39,3 +39,23 @@
   });
   window.HudTools = { toggleFs };
 })();
+
+// ô FPS | độ trễ (ms) cạnh khung nhân vật: FPS đếm khung vẽ thật mỗi giây, độ trễ đo bằng gói 'pg' có hồi âm mỗi 3 giây
+(function () {
+  let frames = 0, last = performance.now(), ms = 0;
+  const tick = () => { frames++; requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+  setInterval(() => {
+    const el = document.getElementById('net-pill');
+    const now = performance.now(), fps = Math.round(frames * 1000 / (now - last)); frames = 0; last = now;
+    if (!el || document.hidden) return;
+    const f = el.querySelector('.np-fps'), m = el.querySelector('.np-ms');
+    f.textContent = fps + ' FPS'; f.className = 'np-fps ' + (fps >= 45 ? 'ok' : fps >= 25 ? 'mid' : 'bad');
+    m.textContent = (ms ? ms : '--') + ' ms'; m.className = 'np-ms ' + (!ms ? '' : ms < 120 ? 'ok' : ms < 300 ? 'mid' : 'bad');
+  }, 1000);
+  setInterval(() => {
+    if (!window.G || !G.socket || !G.socket.connected || document.hidden) return;
+    const t0 = performance.now();
+    G.socket.timeout(5000).emit('pg', err => { if (!err) ms = Math.round(performance.now() - t0); });
+  }, 3000);
+})();

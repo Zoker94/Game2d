@@ -174,6 +174,17 @@ const MAP_DEFS = {
     spawns: [['u_minh_quy', 8], ['xich_lang', 8], ['diem_la', 6], ['diem_la', 5]]
   },
   // ---- Thành mới: mỗi vùng một thành để tiếp tế, xe ngựa, phó bản ----
+  // Chợ Phiên: người chơi mở gian hàng treo bán đồ (server/game/market.js). Không có cổng, đi bằng Xa Phu
+  cho_phien: {
+    name: 'Chợ Phiên Tương Dương', theme: 'town', w: 34, h: 24, seed: 131, safe: true, lv: '1+', town: true, music: 'town', market: true,
+    portals: [],
+    npcs: [
+      { id: 'quan_cho', x: 16, y: 6 },
+      { id: 'xa_phu',   x: 20, y: 6 },
+      { id: 'duoc_diem', x: 12, y: 6 }
+    ],
+    spawns: []
+  },
   thanh_do: {
     name: 'Thành Đô Phủ', theme: 'town', w: 36, h: 28, seed: 111, safe: true, lv: '20+', town: true, music: 'town',
     portals: [{ side: 'N', to: 'hoa_son' }],

@@ -83,7 +83,7 @@ class BossAI {
     return wind;
   }
   summon(mon, m, sk) {
-    const pool = { pb2_boss: 'pb2_thi_binh', pb3_boss: 'pb3_ma_lang' }[mon.tpl.id] || (m.def.spawns[0] && m.def.spawns[0].mon);
+    const pool = { pb2_boss: 'pb2_thi_binh', pb3_boss: 'pb3_ma_lang', pb4_boss: 'pb4_than_binh', pb5_boss: 'pb5_ma_lang' }[mon.tpl.id] || (m.def.spawns[0] && m.def.spawns[0].mon);
     const tpl = pool && MONSTERS[pool];
     if (!tpl) return;
     for (let i = 0; i < sk.summon; i++) {

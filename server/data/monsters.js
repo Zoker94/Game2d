@@ -129,6 +129,15 @@ const MONSTERS = {
   pb1_boss:      { name: 'Hắc Phong Trại Chủ', lv: 26, sprite: 'bandit',   color: '#101820', aggro: true,  speed: 110, range: 80, pb: 1, pbBoss: 1 },
   pb2_boss:      { name: 'Huyền Cung Thi Vương', lv: 46, sprite: 'ghost',  color: '#4a5a30', aggro: true,  speed: 95,  range: 85, pb: 1, pbBoss: 1 },
   pb3_boss:      { name: 'Huyết Ma Cung Chủ',  lv: 72, sprite: 'demon',    color: '#600010', aggro: true,  speed: 110, range: 95, pb: 1, pbBoss: 1 },
+  // phó bản cấp cao 85-104 / 105-120 (art: dùng hình quái có sẵn)
+  pb4_than_binh: { name: 'Thiên Cung Thần Binh', lv: 92, sprite: 'bandit',  color: '#e8eef8', aggro: true,  speed: 118, range: 72, art: 'con_lon_kiem', pb: 1 },
+  pb4_tien_nu:   { name: 'Thiên Cung Tiên Nữ',   lv: 95, sprite: 'bandit',  color: '#e0f4ff', aggro: true,  speed: 115, range: 200, ranged: true, art: 'tuyet_nu', pb: 1 },
+  pb4_than_thu:  { name: 'Thiên Cung Thần Thú',  lv: 98, sprite: 'tiger',   color: '#f0f8ff', aggro: true,  speed: 128, range: 62, art: 'tuyet_ho', pb: 1, hpK: 3 },
+  pb4_boss:      { name: 'Thiên Cung Kiếm Đế',   lv: 102, sprite: 'bandit', color: '#f0f4ff', aggro: true,  speed: 120, range: 110, art: 'boss_conlon', pb: 1, pbBoss: 1, size: 1.5 },
+  pb5_ma_lang:   { name: 'Luyện Ngục Ma Lang',   lv: 110, sprite: 'wolf',   color: '#7a0010', aggro: true,  speed: 140, range: 56, art: 'huyet_lang', pb: 1 },
+  pb5_quy_tuong: { name: 'Luyện Ngục Quỷ Tướng', lv: 113, sprite: 'demon',  color: '#4a0010', aggro: true,  speed: 112, range: 82, art: 'diem_la', pb: 1 },
+  pb5_ma_hon:    { name: 'Luyện Ngục Ma Hồn',    lv: 116, sprite: 'ghost',  color: '#2a0a4a', aggro: true,  speed: 125, range: 200, ranged: true, art: 'u_minh_quy', pb: 1, hpK: 3 },
+  pb5_boss:      { name: 'Cửu U Luyện Ngục Vương', lv: 120, sprite: 'demon', color: '#1a0010', aggro: true, speed: 115, range: 120, art: 'boss_ma', pb: 1, pbBoss: 1, size: 1.6 },
   // Cốt truyện Võ Mục Di Thư: quân Mông Cổ hội quân ở Hắc Phong Cốc, anh hồn Nhạc Gia Quân canh Nhạc Vương Miếu
   mong_co_ky:   { name: 'Mông Cổ Thiết Kỵ',   lv: 52, sprite: 'bandit',   color: '#5a4a2a', aggro: true,  speed: 120, range: 70 },
   nhac_gia_quan:{ name: 'Nhạc Gia Quân Hồn',  lv: 74, sprite: 'bandit',   color: '#c8a040', aggro: true,  speed: 115, range: 75 },
@@ -146,7 +155,7 @@ for (const id in MONSTERS) {
   Object.assign(m, stats(m.lv));
   m.respawn = 8000;
   if (m.hpK) m.hp = Math.round(m.hp * m.hpK);   // quái đầu lĩnh trong phó bản
-  if (m.pbBoss) { m.hp *= 18; m.atk = Math.round(m.atk * 1.5); m.def = Math.round(m.def * 1.25); m.exp *= 25; m.gold *= 30; }
+  if (m.pbBoss) { m.hp *= 40; m.atk = Math.round(m.atk * 2); m.def = Math.round(m.def * 1.4); m.exp *= 25; m.gold *= 30; }   // boss phó bản: rất trâu, đánh đau
 }
 
 // Boss săn theo giờ. schedule: danh sách phút trong ngày (giờ VN) xuất hiện
@@ -175,9 +184,9 @@ for (const id in BOSSES) {
   b.boss = true;
   b.aggro = true;
   const s = stats(b.lv, 1);
-  b.hp = b.hpFix || Math.round(s.hp * 45 * (1.4 + b.lv / 120));   // boss trâu hơn hẳn ở cấp cao
-  b.atk = b.atkFix || Math.round(s.atk * 1.5);
-  b.def = b.defFix || Math.round(s.def * 1.3);
+  b.hp = b.hpFix || Math.round(s.hp * 80 * (1.4 + b.lv / 120));   // boss trâu hơn hẳn ở cấp cao
+  b.atk = b.atkFix || Math.round(s.atk * 1.9);
+  b.def = b.defFix || Math.round(s.def * 1.4);
   b.exp = s.exp * (b.expK || 60);
   b.gold = s.gold * (b.goldK || 80);
 }

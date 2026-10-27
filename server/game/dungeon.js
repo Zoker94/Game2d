@@ -8,19 +8,29 @@ const U = require('./util');
 
 const DUNGEONS = {
   hac_phong: {
-    name: 'Hắc Phong Sơn Trại', minLv: 15, lv: '15-30', rLv: 22, theme: 'ruins', w: 46, h: 24, seed: 501, time: 15 * 60000, daily: 3, party: '1-3 người',
+    name: 'Hắc Phong Sơn Trại', minLv: 15, maxLv: 34, lv: '15-34', rLv: 22, theme: 'ruins', w: 46, h: 24, seed: 501, time: 15 * 60000, daily: 3, party: '1-3 người',
     desc: 'Sơn trại thổ phỉ hoành hành quanh Tương Dương. Quét sạch lâu la, hạ Trại Chủ để đoạt kho báu.',
     waves: [[['pb1_lau_la', 8]], [['pb1_lau_la', 6], ['pb1_dao_thu', 5]], [['pb1_dao_thu', 6], ['pb1_ho_phap', 2]]], boss: 'pb1_boss', knb: 5
   },
   co_mo: {
-    name: 'Cổ Mộ Huyền Cung', minLv: 35, lv: '35-50', rLv: 42, theme: 'tomb', w: 46, h: 24, seed: 503, time: 18 * 60000, daily: 3, party: '2-4 người',
+    name: 'Cổ Mộ Huyền Cung', minLv: 35, maxLv: 59, lv: '35-59', rLv: 42, theme: 'tomb', w: 46, h: 24, seed: 503, time: 18 * 60000, daily: 3, party: '2-4 người',
     desc: 'Huyền Cung dưới lòng đất đầy thi binh và oán hồn canh giữ. Kẻ phá được Thi Vương sẽ nhận bảo vật mộ thất.',
     waves: [[['pb2_thi_binh', 9]], [['pb2_thi_binh', 6], ['pb2_oan_hon', 6]], [['pb2_oan_hon', 6], ['pb2_mo_tuong', 3]]], boss: 'pb2_boss', knb: 10
   },
   ma_cung: {
-    name: 'Huyết Ma Cung', minLv: 60, lv: '60-80', rLv: 68, theme: 'demon', w: 46, h: 24, seed: 507, time: 20 * 60000, daily: 2, party: '3-6 người',
+    name: 'Huyết Ma Cung', minLv: 60, maxLv: 84, lv: '60-84', rLv: 68, theme: 'demon', w: 46, h: 24, seed: 507, time: 20 * 60000, daily: 2, party: '3-6 người',
     desc: 'Sào huyệt của Huyết Ma Giáo. Thần lang, hộ pháp và Huyết Ma Cung Chủ – chỉ tổ đội mạnh mới mong toàn mạng trở ra.',
     waves: [[['pb3_ma_ve', 9]], [['pb3_ma_ve', 6], ['pb3_ma_lang', 7]], [['pb3_ma_lang', 6], ['pb3_ho_phap', 3]]], boss: 'pb3_boss', knb: 20
+  },
+  thien_cung: {
+    name: 'Thiên Cung Bí Cảnh', minLv: 85, maxLv: 104, lv: '85-104', rLv: 95, theme: 'snow', w: 48, h: 24, seed: 509, time: 22 * 60000, daily: 2, party: '3-6 người',
+    desc: 'Cõi tiên trên mây, thần binh và thần thú canh giữ Kiếm Đế. Chỉ những cao thủ đã vượt Huyết Ma Cung mới được bước vào.',
+    waves: [[['pb4_than_binh', 9]], [['pb4_than_binh', 6], ['pb4_tien_nu', 6]], [['pb4_tien_nu', 6], ['pb4_than_thu', 3]]], boss: 'pb4_boss', knb: 30
+  },
+  luyen_nguc: {
+    name: 'Cửu U Luyện Ngục', minLv: 105, maxLv: 120, lv: '105-120', rLv: 113, theme: 'demon', w: 48, h: 24, seed: 511, time: 25 * 60000, daily: 2, party: '4-6 người',
+    desc: 'Tầng sâu nhất của Cửu U. Ma lang, quỷ tướng, ma hồn và Luyện Ngục Vương – thử thách tối thượng của võ lâm.',
+    waves: [[['pb5_ma_lang', 10]], [['pb5_ma_lang', 6], ['pb5_quy_tuong', 6]], [['pb5_quy_tuong', 6], ['pb5_ma_hon', 3]]], boss: 'pb5_boss', knb: 45
   }
 };
 for (const id in DUNGEONS) {
@@ -32,6 +42,7 @@ for (const id in DUNGEONS) {
   d.gold = d.rLv * d.rLv * 8;
 }
 const BUFF_ID = 'pb_dongtam';
+const VM_RATE = { hac_phong: 0.12, co_mo: 0.16, ma_cung: 0.2, thien_cung: 0.24, luyen_nguc: 0.28 };
 const CLOSE_MS = 60000;   // vượt ải xong: 60 giây để nhặt đồ rồi tự đưa ra
 
 let seq = 1;
@@ -53,7 +64,7 @@ class Dungeon {
   view(p) {
     const pt = this.w.party && this.w.party.of(p);
     return {
-      list: Object.values(DUNGEONS).map(d => ({ id: d.id, name: d.name, minLv: d.minLv, lv: d.lv, party: d.party, desc: d.desc, left: this.entries(p, d.id), daily: d.daily,
+      list: Object.values(DUNGEONS).map(d => ({ id: d.id, name: d.name, minLv: d.minLv, maxLv: d.maxLv, lv: d.lv, party: d.party, desc: d.desc, left: this.entries(p, d.id), daily: d.daily,
         min: Math.round(d.time / 60000), exp: d.exp, gold: d.gold, knb: d.knb })),
       party: pt ? { n: pt.members.length, leader: pt.leader === p.userId } : null
     };
@@ -72,6 +83,7 @@ class Dungeon {
     if (!this.w.nearNpc(p, 'pho_ban')) return this.toast(p, 'Hãy đến gặp Phó Bản Sứ Giả', 'error');
     if (this.of(p)) return;
     if (p.c.level < def.minLv) return this.toast(p, `Cần đạt cấp ${def.minLv}`, 'error');
+    if (p.c.level > def.maxLv) return this.toast(p, `Cấp ${p.c.level} đã quá cao cho ${def.name} (cấp ${def.lv}) – hãy vào phó bản cấp cao hơn`, 'error');
     if (this.entries(p, did) <= 0) return this.toast(p, `Hôm nay bạn đã hết lượt ${def.name}`, 'error');
     const pt = this.w.party && this.w.party.of(p);
     if (pt && pt.leader !== p.userId) return this.toast(p, 'Chỉ đội trưởng mới mở được phó bản cho cả đội', 'error');
@@ -82,6 +94,7 @@ class Dungeon {
       if (!q || q === p) continue;
       if (q.mapId !== p.mapId || q.dead) { this.toast(p, `${q.c.name} không ở cùng bản đồ nên không vào cùng`, 'error'); continue; }
       if (q.c.level < def.minLv) { this.toast(p, `${q.c.name} chưa đủ cấp ${def.minLv}`, 'error'); continue; }
+      if (q.c.level > def.maxLv) { this.toast(p, `${q.c.name} cấp quá cao cho phó bản này (tối đa ${def.maxLv})`, 'error'); continue; }
       if (this.entries(q, did) <= 0) { this.toast(p, `${q.c.name} đã hết lượt hôm nay`, 'error'); continue; }
       members.push(q);
     }
@@ -163,8 +176,9 @@ class Dungeon {
       if (Math.random() < 0.35) items.push(['stone2', 1]);
       if (Math.random() < 0.2) items.push(['mount_stone', 1]);
       if (fast) items.push(['lucky_chest', 1]);
-      // Boss phó bản: 25% (vượt thần tốc 30%) rơi 1 Võ Mục Tàn Quyển ngẫu nhiên 1-7; quyển Thất (Truyền Kỳ) hiếm gấp 3 lần quyển khác
-      if (Math.random() < (fast ? 0.3 : 0.25)) {
+      // Boss phó bản: có tỉ lệ rơi 1 Võ Mục Tàn Quyển ngẫu nhiên 1-7 (phó bản càng cao tỉ lệ càng cao: 12% → 28%, thần tốc +5%);
+      // quyển Thất (Truyền Kỳ) hiếm gấp 3 lần quyển khác
+      if (Math.random() < VM_RATE[def.id] + (fast ? 0.05 : 0)) {
         let k = Math.random() * 19, i = 0;
         while (i < 6 && (k -= 3) >= 0) i++;
         items.push(['vm_tq' + (i + 1), 1]);

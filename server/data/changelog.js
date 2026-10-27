@@ -4,6 +4,13 @@ const CHANGELOG = [
   {
     date: '27/10/2026',
     items: [
+      '🏪 CHỢ PHIÊN: bản đồ chợ mới (đi Xa Phu miễn phí). Có Lệnh Bài Bán Hàng (Quản Lý Chợ 20.000 lượng / Kỳ Trân Các 10 Nguyên Bảo) là mở được gian hàng 24 giờ, bày bán đồ cho người chơi khác – thoát game hàng vẫn bán, tiền tự cộng vào nhân vật (thuế chợ 5%).',
+      '👹 BOSS CÓ LỜI THOẠI: mọi boss đều nói khi xuất hiện, khi đang giao chiến, khi còn 75/50/25/10% máu, khi hạ người chơi và khi bị đánh bại (bong bóng trên đầu + kênh bản đồ).',
+      '🌍 BOSS THẾ GIỚI: có nhãn BOSS THẾ GIỚI trên đầu và trong khung mục tiêu; vào bản đồ boss thế giới có bảng Top sát thương trực tiếp (top 10 + hạng của bạn).',
+      '⚔️ BOSS DÃ NGOẠI: chỉ rơi trang bị, đá cường hoá và 10 rương văng quanh boss (ai nhanh tay thì được). Boss dã ngoại và boss phó bản trâu và đánh đau hơn nhiều.',
+      '📜 PHÓ BẢN: 7 Võ Mục Tàn Quyển rơi ngẫu nhiên từ boss phó bản theo tỉ lệ (phó bản càng cao tỉ lệ càng cao). Mỗi phó bản có giới hạn cấp – cấp cao chỉ vào được phó bản cấp cao. Thêm 2 phó bản mới: Thiên Cung Bí Cảnh (85-104), Cửu U Luyện Ngục (105-120).',
+      '🛒 CỬA HÀNG: NPC không còn bán rương mở đồ (quản trị viên bật lại được ở chế độ Open Test). Lệnh Bài Xoá Tội chỉ bán bằng Nguyên Bảo ở Kỳ Trân Các.',
+      '🎨 GIAO DIỆN MỚI: khung nhân vật, khung boss (thẻ BOSS, cấp, hệ, % máu), nút nhanh, cần điều khiển, bảng Cài đặt kiểu mới; ô FPS | độ trễ (ms) cạnh khung nhân vật. Thêm Ngoại hình Chibi (Cài đặt): nhân vật đầu to thân ngắn, 3 mức, áp dụng cho tất cả hoặc chỉ mình – chỉ đổi hình trên máy bạn.',
       '🚀 MƯỢT HƠN CHO ĐIỆN THOẠI YẾU: máy chủ chỉ gửi quái / người chơi ở gần và chỉ gửi phần thay đổi (dữ liệu mạng giảm 60–85%, nén thêm gói lớn); thêm mức đồ họa Siêu thấp; chỗ đông người chỉ vẽ chi tiết những người gần nhất; tuỳ chọn Ẩn hiệu ứng chiêu của người khác (Cài đặt); điện thoại cấu hình thấp tự vào mức đồ họa nhẹ ngay từ đầu.',
       '⚡ LƯU HÌNH ẢNH TRÊN MÁY: hình nhân vật, quái, NPC, thú cưỡi, hiệu ứng, âm thanh giờ được lưu hẳn trên máy người chơi – lần sau vào game không phải tải hay hỏi lại máy chủ, vào nhanh hơn và đỡ tốn mạng. Khi cập nhật chỉ tải lại đúng file thay đổi. (Nền đất, nhà cửa, cây cối vốn đã được vẽ ngay trên máy.)',
       '🚫 BỎ PK TỰ ĐỘNG: chế độ Tự động giờ chỉ đánh quái – không còn tự đánh trả, tự tấn công người chơi hay tự đánh đối thủ tỷ võ. Muốn PK phải tự điều khiển.',
