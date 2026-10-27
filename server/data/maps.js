@@ -658,6 +658,7 @@ function generate(id, def = MAP_DEFS[id]) {
       if (!reach[j] && !SOLID.has(g[j])) { reach[j] = 1; stack.push(j); }
     }
   }
+  if (def.market) for (let i = 0; i < g.length; i++) if (g[i] === T.WATER) g[i] = T.FLOOR;   // Chợ Phiên: bỏ hồ nước giữa quảng trường để bày gian hàng
   const walkable = [];
   for (let i = 0; i < w * h; i++) {
     if (!SOLID.has(g[i]) && !reach[i]) g[i] = th.obstacles[0][0];
