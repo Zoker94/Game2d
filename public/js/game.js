@@ -6,7 +6,7 @@
   const G = window.G = {
     data: null, config: null, socket: null, token: localStorage.getItem('vl_token'), user: null,
     me: null, you: null, map: null, solid: new Set(),
-    players: new Map(), monsters: new Map(), drops: new Map(), carts: new Map(), corpses: [], ghosts: [], dash: null, dodgeCd: null,
+    players: new Map(), monsters: new Map(), drops: new Map(), carts: new Map(), corpses: [], ghosts: [], dash: null, dodge: { ch: 3, mx: 3, until: 0, total: 5000, at: 0 },
     self: { x: 0, y: 0, dir: 0, moving: false, atkUntil: 0 },
     fx: [], floats: [], target: null, moveTo: null, npcGoal: null,
     cds: {}, pending: {}, auto: false, events: null, daily: null, inGame: false,
@@ -584,7 +584,8 @@
     if (self) {
       G.dash = { x0: d.x, y0: d.y, x1: d.tx, y1: d.ty, t0: now, dur: JUMP_DUR };
       G.self.dir = dir; G.moveTo = null; G.chase = null;
-      G.dodgeCd = { until: now + d.cd, total: d.cd };
+      if (d.ch != null) Object.assign(G.dodge, { ch: d.ch, mx: d.mx || 3, until: d.re ? now + d.re : 0, total: d.cd, pending: false });   // máy chủ xác nhận số lượt còn lại
+      else Object.assign(G.dodge, { ch: 0, mx: 1, until: now + d.cd, total: d.cd, pending: false });
     } else if (e) { e.x = d.tx; e.y = d.ty; e.tx = d.tx; e.ty = d.ty; e.dir = dir; }
     const near = Math.hypot(d.x - G.self.x, d.y - G.self.y);
     if (near < 700) GameAudio.sfx('whoosh', 60, self ? null : spatial(d.x, d.y));
@@ -835,15 +836,17 @@
   Input.on('mount', () => G.socket && G.socket.emit('mount', { op: 'ride' }));
   Input.on('meditate', () => G.socket && G.me && !G.me.dead && G.socket.emit('meditate'));
   // Khinh công (nhảy vọt): theo hướng đang đi, không đi thì theo hướng đang nhìn
+  // số lượt khinh công hiện có (tích tối đa 3, hồi lần lượt từng lượt)
+  G.dodgeCh = now => { const s = G.dodge; while (s.until && now >= s.until) { s.ch++; s.until = s.ch < s.mx ? s.until + s.total : 0; } return s.ch; };
   Input.on('dodge', () => {
     const now = performance.now();
-    if (!G.socket || !G.me || G.me.dead || G.dash || (G.dodgeCd && G.dodgeCd.until > now)) return;
+    if (!G.socket || !G.me || G.me.dead || G.dash || G.dodgeCh(now) <= 0 || now - G.dodge.at < 380) return;
     if (Overhead.mask(G.self, now) & 3) return;
     let v = Input.vector();
     if (Math.hypot(v.x, v.y) < 0.1 && G.moveTo) { const dx = G.moveTo.x - G.self.x, dy = G.moveTo.y - G.self.y, d = Math.hypot(dx, dy) || 1; v = { x: dx / d, y: dy / d }; }
     if (Math.hypot(v.x, v.y) < 0.1) v = [{ x: 0, y: 1 }, { x: -1, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }][G.self.dir || 0];
     G.socket.emit('dodge', { x: v.x, y: v.y });
-    G.dodgeCd = { until: now + 600, total: 5000, pending: true };   // chờ máy chủ xác nhận
+    const s = G.dodge; s.ch--; s.at = now; if (!s.until) s.until = now + s.total;   // trừ trước, máy chủ xác nhận sau
   });
   Input.on('panel', n => UI.togglePanel(n));
   Input.on('tlist', () => Targets.toggle());

@@ -552,8 +552,11 @@
     { const on = UI.pvpOn(); if (on !== UI._pvpCls) { UI._pvpCls = on; document.body.classList.toggle('pvp-on', on); } }
     { const md = !!(G.me && G.me.med); if (md !== UI._medCls) { UI._medCls = md; document.body.classList.toggle('meditating', md); } }
     // hồi khinh công
-    const dc = G.dodgeCd, dr = dc && dc.until > now ? (dc.until - now) / dc.total : 0;
-    const dtx = dc && dc.until > now && !dc.pending ? Math.ceil((dc.until - now) / 1000) : '';
+    // khinh công tích 3 lượt: hết lượt thì phủ vòng hồi + giây; còn lượt thì nút sáng, góc nút hiện số lượt
+    const dch = G.dodgeCh ? G.dodgeCh(now) : 1, dc = G.dodge;
+    const dr = dch <= 0 && dc && dc.until > now ? (dc.until - now) / dc.total : 0;
+    const dtx = dr ? Math.ceil((dc.until - now) / 1000) : '';
+    const dlab = dc && dc.mx > 1 ? String(Math.max(0, dch)) : '';
     // phần tử nút được nhớ lại, chỉ tìm lại khi thanh kỹ năng dựng lại (tránh querySelectorAll mỗi khung)
     const bar = $('skillbar');
     if (!UI._fc || UI._fc.bar !== bar.firstChild || now - UI._fc.t > 1000) {
@@ -561,7 +564,9 @@
       document.querySelectorAll('#skillbar .skill[data-idx], .act.sk[data-idx]').forEach(el => (UI._fc.sk[el.dataset.idx] = UI._fc.sk[el.dataset.idx] || []).push([el, el.querySelector('.cdo'), el.querySelector('.cdt')]));
     }
     for (const [el, o, t] of UI._fc.dodge) {
-      if (o) cdSet(o, dc && dc.pending ? 0 : Math.round(dr * 100));
+      let b = el._ch; if (!b) { b = el._ch = document.createElement('span'); b.className = 'dch'; el.appendChild(b); }
+      if (b._t !== dlab) { b.textContent = dlab; b._t = dlab; b.classList.toggle('full', dc && dch >= dc.mx); }
+      if (o) cdSet(o, Math.round(dr * 100));
       if (t && t._t !== dtx) { t.textContent = dtx; t._t = dtx; }
       if (el._r !== !dr) { el.classList.toggle('ready', !dr); el._r = !dr; }
     }

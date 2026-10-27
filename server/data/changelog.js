@@ -4,6 +4,8 @@ const CHANGELOG = [
   {
     date: '27/10/2026',
     items: [
+      '💨 KHINH CÔNG 3 LẦN: tích tối đa 3 lượt khinh công, nhảy liên tiếp được 3 lần; mỗi lượt hồi lại sau 5 giây (hồi lần lượt). Góc nút khinh công hiện số lượt còn lại (xanh lá = đầy).',
+      '🗺️ NỀN BẢN ĐỒ NHẠT HƠN: mặt đất các bản đồ dịu màu và sáng hơn một chút để nhân vật, quái, đồ rơi nổi rõ hơn.',
       '🖼️ Biểu tượng mới cho game (logo Võ Lâm 2D) trên tab trình duyệt, màn hình chính điện thoại khi thêm game; nền các màn đăng nhập / tạo nhân vật / vào game sáng hơn để nhìn nhân vật rõ hơn.',
       '⚡ GIẢM GIẬT TRÊN ĐIỆN THOẠI KHI ĐÁNH NHIỀU QUÁI: số sát thương nổi lên trước đây được vẽ lại chữ có viền mỗi khung hình – đánh diện rộng trúng hàng chục quái là hàng trăm lần vẽ chữ mỗi giây, gây khựng 0,1-0,3 giây liên tục. Nay số được ghép từ bộ chữ số vẽ sẵn, tối đa 28 số cùng lúc trên điện thoại, số lớn rút gọn (207K, 1.5M), bớt tia sáng / hạt lửa bạo kích khi quá đông, bớt gợn nước trên hồ rộng. Đo trên máy giả lập chậm: từ 15 FPS và 132 lần khựng xuống còn 27-30 FPS và vài lần khựng.',
       '🧥 PHI PHONG HIỆN TRÊN NHÂN VẬT: mặc áo choàng là nhân vật khoác phi phong – nhìn trước thấy vạt áo hai bên và khuy cài vai, quay lưng thấy cả tấm phi phong, chạy / ra đòn thì vạt áo tung bay phía sau, cưỡi thú vẫn khoác. Mỗi bậc một màu vải (Bố, Bì, Ngân Văn, Kim Tuyến, Huyền Vũ, Long Văn, Thiên Tàm, Tử Hà, Cửu Long, Hỗn Nguyên); viền theo độ hiếm (Hiếm xanh, VIP tím, Truyền Kỳ vàng có ánh sáng); từ Long Văn trở lên có hoa văn sau lưng. Người khác cũng nhìn thấy.',

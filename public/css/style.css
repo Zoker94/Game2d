@@ -1781,3 +1781,7 @@ body.short #bagwin .bw-bag { max-height: 150px; }
 .slot.dnd-ok, .inv-grid.dnd-ok, .bw-bag.dnd-ok { outline: 2px dashed #4ade80; outline-offset: 1px; }
 .slot.dnd-hover, .inv-grid.dnd-hover, .bw-bag.dnd-hover, [data-uid].dnd-hover { outline: 2px solid #ffd76a !important; box-shadow: 0 0 12px rgba(255,215,106,.7); }
 .slot img, #bagwin img { -webkit-user-drag: none; user-drag: none; }
+/* số lượt khinh công (tối đa 3) */
+.dch { position: absolute; right: 2px; top: 1px; z-index: 4; min-width: 14px; height: 14px; padding: 0 3px; border-radius: 7px; font-size: 10px; line-height: 14px; font-weight: 900; text-align: center; color: #fff; background: rgba(20, 60, 120, .9); box-shadow: 0 0 0 1px #8fd0ff; pointer-events: none; }
+.dch:empty { display: none; }
+.dch.full { background: rgba(30, 110, 60, .92); box-shadow: 0 0 0 1px #8fffb0; }

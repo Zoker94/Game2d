@@ -32,7 +32,8 @@ const { ATTRS, attrTotal, attrUsed, attrResetCost } = require('../data/attrs');
 const { SECT_MAP } = require('../data/sect');
 
 const HOTBAR_N = 8;          // số ô gán phím (phím 2..9)
-const DODGE_DIST = 190, DODGE_CD = 5000, DODGE_AIR = 460;   // khinh công: quãng nhảy, thời gian hồi, thời gian trên không (bất tử)
+const DODGE_DIST = 190, DODGE_CD = 5000, DODGE_AIR = 460;   // khinh công: quãng nhảy, thời gian hồi 1 lượt, thời gian trên không (bất tử)
+const DODGE_MAX = 3, DODGE_GAP = 380;   // tích tối đa 3 lượt (dùng liên tiếp 3 lần), mỗi lượt hồi lại sau DODGE_CD; hai lần nhảy cách nhau ít nhất 0,38 giây
 const TICK = 50;            // 20 tick/giây
 const SNAP_EVERY = 2;       // gửi trạng thái 10 lần/giây
 const PICKUP_R = 56;
@@ -569,7 +570,10 @@ class World {
     const now = Date.now();
     if (!d || p.dead) return;
     if (isCC(p, now)) return this.toast(p, 'Đang bị khống chế, không thể dùng khinh công!', 'error');
-    if (p.dodgeCd && p.dodgeCd > now) return;
+    // lượt khinh công: hồi lần lượt từng lượt, mỗi lượt DODGE_CD
+    if (p.dodgeCh == null) { p.dodgeCh = DODGE_MAX; p.dodgeRe = 0; }
+    while (p.dodgeRe && now >= p.dodgeRe) { p.dodgeCh++; p.dodgeRe = p.dodgeCh < DODGE_MAX ? p.dodgeRe + DODGE_CD : 0; }
+    if (p.dodgeCh <= 0 || (p.dodgeAt && now - p.dodgeAt < DODGE_GAP)) return;
     let vx = +d.x, vy = +d.y;
     const n = Math.hypot(vx, vy);
     if (!Number.isFinite(n) || n < 0.1) return;
@@ -583,9 +587,11 @@ class World {
     }
     const x0 = p.x, y0 = p.y;
     p.x = x; p.y = y; p.lastMove = now;
-    p.dodgeCd = now + DODGE_CD; p.dodgeUntil = now + DODGE_AIR;
+    p.dodgeCh--; p.dodgeAt = now; if (!p.dodgeRe) p.dodgeRe = now + DODGE_CD;
+    p.dodgeUntil = now + DODGE_AIR;
     p.dir = Math.abs(vx) > Math.abs(vy) ? (vx > 0 ? 2 : 1) : (vy > 0 ? 0 : 3);
-    this.fx(p.mapId, { t: 'dodge', from: p.id, x: x0, y: y0, tx: x, ty: y, cd: DODGE_CD });
+    // ch: số lượt còn lại, re: còn bao lâu hồi thêm 1 lượt (máy khách hiện số lượt + vòng hồi)
+    this.fx(p.mapId, { t: 'dodge', from: p.id, x: x0, y: y0, tx: x, ty: y, cd: DODGE_CD, ch: p.dodgeCh, mx: DODGE_MAX, re: p.dodgeRe ? p.dodgeRe - now : 0 });
   }
 
   // ---------- Chiến đấu ----------

@@ -100,12 +100,17 @@
     j.img = j.d = j.u = j.types = null;
     return true;
   }
+  // nền bản đồ nhạt bớt cho nhân vật / quái nổi rõ: giảm độ đậm màu 30%, giảm tương phản, sáng lên một chút.
+  // Làm một lần khi dựng mảng nền (không tốn gì mỗi khung hình).
+  const PALE_SAT = 0.3, PALE_CON = 0.9, PALE_LIFT = 0.1;
+  const pale = v => { v = 128 + (v - 128) * PALE_CON; return v + (255 - v) * PALE_LIFT; };
   function chunkRow(j, y) {
     const { cx, cy, u, types, W2 } = j;
     const tAt = (x, y) => types[(y + 3) * W2 + (x + 3)];
     // ghi cả điểm ảnh 2x2 bằng số 32 bit (nhanh hơn ghi từng kênh); làm tròn màu qua Uint8ClampedArray như trước
     const put = (x, y, col) => {
-      clampTmp[0] = col[0]; clampTmp[1] = col[1]; clampTmp[2] = col[2];
+      const L = col[0] * 0.299 + col[1] * 0.587 + col[2] * 0.114;   // nhạt màu (xem PALE_*)
+      clampTmp[0] = pale(col[0] + (L - col[0]) * PALE_SAT); clampTmp[1] = pale(col[1] + (L - col[1]) * PALE_SAT); clampTmp[2] = pale(col[2] + (L - col[2]) * PALE_SAT);
       const v = LE ? (0xff000000 | (clampTmp[2] << 16) | (clampTmp[1] << 8) | clampTmp[0]) >>> 0 : ((clampTmp[0] << 24) | (clampTmp[1] << 16) | (clampTmp[2] << 8) | 0xff) >>> 0;
       for (let yy = 0; yy < BS; yy++) { const i = (y * BS + yy) * CPX + x * BS; for (let xx = 0; xx < BS; xx++) u[i + xx] = v; }
     };
