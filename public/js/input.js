@@ -54,48 +54,54 @@
   };
 
   // ---------- Gán phím (bàn phím + tay cầm) – người chơi tự đổi trong Cài đặt → Cài đặt phím ----------
-  // [mã, tên, sự kiện, tham số, phím mặc định (tối đa 2), nút tay cầm mặc định]
+  // [mã, tên, sự kiện, tham số, phím mặc định (tối đa 2), nút tay cầm mặc định (số nút, hoặc tổ hợp "giữ+bấm" như '4+0' = LB+A)]
   const ACTIONS = [
     ['up', 'Đi lên', null, null, ['KeyW', 'ArrowUp']], ['down', 'Đi xuống', null, null, ['KeyS', 'ArrowDown']],
     ['left', 'Đi sang trái', null, null, ['KeyA', 'ArrowLeft']], ['right', 'Đi sang phải', null, null, ['KeyD', 'ArrowRight']],
     ['attack', 'Đánh thường', 'skill', 0, ['Digit1', 'Space'], 0],
     ['slot1', 'Ô kỹ năng 1', 'slot', 1, ['Digit2'], 2], ['slot2', 'Ô kỹ năng 2', 'slot', 2, ['Digit3'], 3], ['slot3', 'Ô kỹ năng 3', 'slot', 3, ['Digit4'], 1],
-    ['slot4', 'Ô kỹ năng 4', 'slot', 4, ['Digit5'], 6], ['slot5', 'Ô kỹ năng 5', 'slot', 5, ['Digit6'], 7], ['slot6', 'Ô kỹ năng 6', 'slot', 6, ['Digit7']],
-    ['slot7', 'Ô kỹ năng 7', 'slot', 7, ['Digit8']], ['slot8', 'Ô kỹ năng 8', 'slot', 8, ['Digit9']],
-    ['dodge', 'Khinh công', 'dodge', null, ['ShiftLeft', 'KeyQ']],
+    ['slot4', 'Ô kỹ năng 4', 'slot', 4, ['Digit5'], 6], ['slot5', 'Ô kỹ năng 5', 'slot', 5, ['Digit6'], 7], ['slot6', 'Ô kỹ năng 6', 'slot', 6, ['Digit7'], '4+1'],
+    ['slot7', 'Ô kỹ năng 7', 'slot', 7, ['Digit8'], '4+3'], ['slot8', 'Ô kỹ năng 8', 'slot', 8, ['Digit9'], '5+2'],
+    ['dodge', 'Khinh công', 'dodge', null, ['ShiftLeft', 'KeyQ'], '4+0'],
     ['hp', 'Bình máu', 'potion', 'hp', ['KeyZ'], 4], ['mp', 'Bình nội lực', 'potion', 'mp', ['KeyX'], 5],
-    ['target', 'Đổi mục tiêu', 'target', null, ['Tab'], 11], ['interact', 'Nói chuyện / nhặt đồ', 'interact', null, ['KeyF']],
+    ['target', 'Đổi mục tiêu', 'target', null, ['Tab'], 11], ['interact', 'Nói chuyện / nhặt đồ', 'interact', null, ['KeyF'], '4+2'],
     ['auto', 'Bật / tắt tự động', 'auto', null, ['KeyR'], 9], ['mount', 'Cưỡi thú', 'mount', null, ['KeyT'], 10],
-    ['meditate', 'Ngồi thiền', 'meditate', null, ['KeyY']], ['recall', 'Về thành', 'recall', null, ['KeyH']],
+    ['meditate', 'Ngồi thiền', 'meditate', null, ['KeyY'], '5+0'], ['recall', 'Về thành', 'recall', null, ['KeyH'], '5+1'],
     ['inventory', 'Túi đồ', 'panel', 'inventory', ['KeyI'], 8], ['character', 'Nhân vật', 'panel', 'character', ['KeyC']],
     ['skills', 'Võ công', 'panel', 'skills', ['KeyK']], ['quests', 'Nhiệm vụ', 'panel', 'quests', ['KeyJ']],
     ['mountp', 'Thú cưỡi', 'panel', 'mount', ['KeyM']], ['guild', 'Bang hội', 'panel', 'guild', ['KeyG']],
     ['friends', 'Bạn bè', 'panel', 'friends', ['KeyB']], ['events', 'Sự kiện', 'panel', 'events', ['KeyO']],
     ['leaderboard', 'Xếp hạng', 'panel', 'leaderboard', ['KeyL']], ['giftcode', 'Gift code', 'panel', 'giftcode', ['KeyU']],
-    ['tlist', 'Danh sách mục tiêu', 'tlist', null, ['KeyV']], ['bigmap', 'Bản đồ', 'bigmap', null, ['KeyN']],
-    ['chat', 'Mở khung chat', 'chat', null, ['Enter']]
+    ['tlist', 'Danh sách mục tiêu', 'tlist', null, ['KeyV'], '5+3'], ['bigmap', 'Bản đồ', 'bigmap', null, ['KeyN']],
+    ['chat', 'Mở khung chat', 'chat', null, ['Enter']],
+    ['keyspanel', 'Mở Cài đặt phím', 'panel', 'keys', [], '8+9']
   ];
   const ACT = Object.fromEntries(ACTIONS.map(a => [a[0], a]));
-  const defaults = () => ({ keys: Object.fromEntries(ACTIONS.map(a => [a[0], a[4].slice()])), pad: Object.fromEntries(ACTIONS.map(a => [a[0], a[5] == null ? null : a[5]])) });
-  let binds = defaults(), KEYMAP = {}, PADMAP = {};
-  try {   // cấu hình đã lưu (thiếu hành động mới thì lấy mặc định)
+  // nút tay cầm: số (nút đơn) hoặc chuỗi "giữ+bấm" (tổ hợp); mỗi hành động tối đa 2 nút
+  const padList = v => (Array.isArray(v) ? v : v == null ? [] : [v]).filter(x => x != null && x !== '').slice(0, 2);
+  const defaults = () => ({ keys: Object.fromEntries(ACTIONS.map(a => [a[0], a[4].slice()])), pad: Object.fromEntries(ACTIONS.map(a => [a[0], padList(a[5])])) });
+  let binds = defaults(), KEYMAP = {}, PADMAP = {}, PCOMBO = {}, MODS = new Set(), PADUSED = new Set();
+  try {   // cấu hình đã lưu (thiếu hành động mới thì lấy mặc định; bản cũ lưu 1 nút dạng số)
     const sv = JSON.parse(localStorage.getItem('vl_keybind') || 'null');
-    if (sv) for (const id in ACT) { if (Array.isArray(sv.keys && sv.keys[id])) binds.keys[id] = sv.keys[id].slice(0, 2); if (sv.pad && id in sv.pad) binds.pad[id] = sv.pad[id]; }
+    if (sv) for (const id in ACT) { if (Array.isArray(sv.keys && sv.keys[id])) binds.keys[id] = sv.keys[id].slice(0, 2); if (sv.pad && id in sv.pad && (sv.pv || sv.pad[id] != null)) binds.pad[id] = padList(sv.pad[id]); }
   } catch (e) { }
   function rebuild() {
     KEYMAP = { Escape: ['escape'] };   // Esc luôn để đóng bảng, không cho gán
-    PADMAP = {};
+    PADMAP = {}; PCOMBO = {}; MODS = new Set(); PADUSED = new Set();
     for (const [id, , ev, arg] of ACTIONS) {
       if (!ev) continue;
       for (const c of binds.keys[id] || []) KEYMAP[c] = [ev, arg, id];
-      if (binds.pad[id] != null) PADMAP[binds.pad[id]] = [ev, arg, id];
+      for (const v of binds.pad[id] || []) {
+        if (typeof v === 'string' && v.includes('+')) { const [m, k] = v.split('+').map(Number); PCOMBO[v] = [ev, arg, id]; MODS.add(m); PADUSED.add(m); PADUSED.add(k); }
+        else { PADMAP[+v] = [ev, arg, id]; PADUSED.add(+v); }
+      }
     }
     Input.bindVer = (Input.bindVer || 0) + 1;
   }
   const KEY_NAME = { Space: 'Space', ShiftLeft: 'Shift', ShiftRight: 'Shift phải', ControlLeft: 'Ctrl', ControlRight: 'Ctrl phải', AltLeft: 'Alt', AltRight: 'Alt phải', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Enter: 'Enter', Tab: 'Tab', Backquote: '`', Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/', Backslash: '\\', CapsLock: 'Caps' };
   const keyName = c => !c ? '' : KEY_NAME[c] || (c.startsWith('Key') ? c.slice(3) : c.startsWith('Digit') ? c.slice(5) : c.startsWith('Numpad') ? 'Num ' + c.slice(6) : c);
   const PAD_NAME = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 'Back', 'Start', 'L3', 'R3', 'D↑', 'D↓', 'D←', 'D→', 'Home'];
-  const padName = i => i == null ? '' : PAD_NAME[i] || 'Nút ' + i;
+  const padName = v => v == null || v === '' ? '' : typeof v === 'string' && v.includes('+') ? v.split('+').map(i => PAD_NAME[+i] || 'Nút ' + i).join('+') : PAD_NAME[+v] || 'Nút ' + v;
   Input.binds = {
     ACTIONS, keyName, padName,
     get: () => binds,
@@ -107,17 +113,19 @@
         const arr = binds.keys[id] = (binds.keys[id] || []).slice(); if (v) arr[i] = v; else arr.splice(i, 1);
         binds.keys[id] = arr.filter(Boolean).slice(0, 2);
       } else {
-        if (v != null) for (const o in binds.pad) if (o !== id && binds.pad[o] === v) { binds.pad[o] = null; moved = ACT[o][1]; }
-        binds.pad[id] = v;
+        if (v != null) for (const o in binds.pad) { const k = binds.pad[o].indexOf(v); if (k >= 0 && !(o === id && k === i)) { binds.pad[o].splice(k, 1); if (o !== id) moved = ACT[o][1]; } }
+        const arr = (binds.pad[id] || []).slice(); if (v != null) arr[i] = v; else arr.splice(i, 1);
+        binds.pad[id] = arr.filter(x => x != null).slice(0, 2);
       }
-      try { localStorage.setItem('vl_keybind', JSON.stringify(binds)); } catch (e) { }
+      try { localStorage.setItem('vl_keybind', JSON.stringify(Object.assign({ pv: 2 }, binds))); } catch (e) { }
       rebuild(); emit('bindsChanged');
       return moved;
     },
     reset() { binds = defaults(); try { localStorage.removeItem('vl_keybind'); } catch (e) { } rebuild(); emit('bindsChanged'); },
-    label(id) { const k = (binds.keys[id] || []).map(keyName).join('/'); return k || padName(binds.pad[id]); },
+    label(id) { const k = (binds.keys[id] || []).map(keyName).join('/'); return k || padName((binds.pad[id] || [])[0]); },
     capture: null,       // hàm nhận mã phím kế tiếp (bảng cài đặt phím đang chờ)
-    padCapture: null     // hàm nhận nút tay cầm kế tiếp
+    padCapture: null,    // hàm nhận nút / tổ hợp tay cầm kế tiếp
+    padNav: null         // bảng cài đặt phím đang mở: điều khiển bảng bằng tay cầm (lên / xuống / A / B / X)
   };
   rebuild();
 
@@ -208,28 +216,61 @@
   hold(document.getElementById('btn-pick'), () => emit('pickup'));
 
   // ---------- Tay cầm (Gamepad) ----------
-  const prevBtn = {};
+  // Nút đơn bấm là ra. Tổ hợp "giữ+bấm" (vd LB+A): nút giữ nếu cũng có việc riêng thì việc đó chạy khi THẢ ra mà chưa
+  // bấm tổ hợp nào. Nút D-pad chưa gán việc gì thì dùng để di chuyển (như cần gạt trái).
+  const prevBtn = {}, modDown = {}, comboUsed = {};
+  let cap = null, navRep = 0, navDir = 0;
   Input.pollGamepad = function () {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     let gp = null;
     for (const p of pads) if (p && p.connected) { gp = p; break; }
     if (!gp) { this.pad.x = 0; this.pad.y = 0; this.pad.connected = false; return; }
     this.pad.connected = true;
+    const n = gp.buttons.length, b = i => gp.buttons[i] && gp.buttons[i].pressed;
     let x = gp.axes[0] || 0, y = gp.axes[1] || 0;
     if (Math.hypot(x, y) < 0.2) { x = 0; y = 0; }
-    const b = i => gp.buttons[i] && gp.buttons[i].pressed;
-    if (b(14)) x = -1; if (b(15)) x = 1; if (b(12)) y = -1; if (b(13)) y = 1;
+    const dp = i => b(i) && !PADUSED.has(i);
+    if (dp(14)) x = -1; if (dp(15)) x = 1; if (dp(12)) y = -1; if (dp(13)) y = 1;
     this.pad.x = x; this.pad.y = y;
-    if (Input.binds.padCapture) {   // bảng cài đặt phím đang chờ một nút tay cầm
-      for (let i = 0; i < gp.buttons.length; i++) { const pr = b(i); if (pr && !prevBtn[i]) { const f = Input.binds.padCapture; Input.binds.padCapture = null; prevBtn[i] = pr; f(i); return; } prevBtn[i] = pr; }
-      this.pad.x = 0; this.pad.y = 0; return;
+    const edges = [], ups = [];
+    for (let i = 0; i < n; i++) { const pr = b(i); if (pr && !prevBtn[i]) edges.push(i); else if (!pr && prevBtn[i]) ups.push(i); prevBtn[i] = pr; }
+    // bảng cài đặt phím chờ nút: đợi thả hết nút, rồi bấm 1 nút (thả ra = nút đơn) hoặc giữ nút đó bấm thêm nút khác (= tổ hợp)
+    if (Input.binds.padCapture) {
+      this.pad.x = 0; this.pad.y = 0; this.padAttack = false;
+      if (!cap) cap = { armed: false, first: null };
+      if (!cap.armed) { let any = false; for (let i = 0; i < n; i++) if (b(i)) any = true; if (!any) cap.armed = true; return; }
+      let res = null;
+      if (cap.first == null) { if (edges.length) cap.first = edges[0]; }
+      else if (edges.length) res = cap.first + '+' + edges[0];
+      else if (ups.includes(cap.first)) res = cap.first;
+      if (res != null) { const f = Input.binds.padCapture; Input.binds.padCapture = null; cap = null; f(res); }
+      return;
     }
-    this.padAttack = binds.pad.attack != null && b(binds.pad.attack);
-    for (let i = 0; i < gp.buttons.length; i++) {
-      const pressed = b(i);
-      if (pressed && !prevBtn[i] && PADMAP[i]) emit(PADMAP[i][0], PADMAP[i][1]);
-      prevBtn[i] = pressed;
+    cap = null;
+    // bảng cài đặt phím đang mở: tay cầm điều khiển bảng, không ra chiêu
+    if (Input.binds.padNav) {
+      this.pad.x = 0; this.pad.y = 0; this.padAttack = false;
+      const dy = b(12) || y < -0.5 ? -1 : b(13) || y > 0.5 ? 1 : 0, dx = b(14) || x < -0.5 ? -1 : b(15) || x > 0.5 ? 1 : 0, d = dy * 10 + dx, now = performance.now();
+      if (d && (d !== navDir || now > navRep)) { navRep = now + (d !== navDir ? 380 : 140); Input.binds.padNav(dy ? (dy < 0 ? 'up' : 'down') : (dx < 0 ? 'left' : 'right')); }
+      navDir = d;
+      for (const i of edges) if (i === 0 || i === 1 || i === 2) Input.binds.padNav(i === 0 ? 'ok' : i === 1 ? 'back' : 'clear');
+      return;
     }
+    let modHeld = false;
+    for (const m of MODS) if (b(m)) { modHeld = true; break; }
+    for (const i of edges) {
+      let combo = null;
+      for (const m of MODS) if (m !== i && b(m) && PCOMBO[m + '+' + i]) { combo = PCOMBO[m + '+' + i]; comboUsed[m] = true; break; }
+      if (combo) { emit(combo[0], combo[1]); continue; }
+      if (MODS.has(i)) { modDown[i] = true; comboUsed[i] = false; continue; }   // nút giữ: chờ thả mới chạy việc riêng
+      if (PADMAP[i]) emit(PADMAP[i][0], PADMAP[i][1]);
+    }
+    for (const i of ups) {
+      if (MODS.has(i) && modDown[i] && !comboUsed[i] && PADMAP[i]) emit(PADMAP[i][0], PADMAP[i][1]);
+      modDown[i] = false;
+    }
+    // giữ nút đánh thường: đánh liên tục (không tính khi đang giữ nút tổ hợp)
+    this.padAttack = !modHeld && (binds.pad.attack || []).some(v => typeof v === 'number' && b(v));
   };
   window.addEventListener('gamepadconnected', e => emit('toast', `🎮 Đã kết nối tay cầm: ${e.gamepad.id.slice(0, 30)}`));
 

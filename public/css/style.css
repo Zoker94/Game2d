@@ -1720,6 +1720,7 @@ body.blackout > *:not(#blackout) { visibility: hidden !important; }
 .kb-cell { min-width: 74px; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(201,154,58,.5); background: rgba(0,0,0,.35); color: #ffe9b0; font: inherit; font-weight: 700; cursor: pointer; }
 .kb-cell.empty { color: #776; font-weight: 400; }
 .kb-cell.wait { border-color: #4affa0; color: #4affa0; animation: blink 1s infinite; }
+.kb-cell.focus { outline: 2px solid #6ad0ff; outline-offset: 1px; box-shadow: 0 0 8px #4ad8ff; }
 /* bảng GM */
 .gm-tg { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
 .gm-row { display: flex; gap: 6px; margin: 8px 0 4px; }
