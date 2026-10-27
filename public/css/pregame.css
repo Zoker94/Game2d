@@ -93,7 +93,7 @@
 .pg-sect.on::after { content: ''; position: absolute; inset: -1px; border-radius: 12px; box-shadow: inset 0 0 12px color-mix(in srgb, var(--sc) 40%, transparent); pointer-events: none; }
 /* sân khấu nhân vật */
 .pg-stage { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; }
-.pg-aura { position: absolute; top: 4%; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--sc) 55%, transparent) 0%, transparent 65%); filter: blur(6px); animation: pgAura 3s ease-in-out infinite; }
+.pg-aura { position: absolute; top: 4%; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(255,244,220,.42) 0%, color-mix(in srgb, var(--sc) 55%, transparent) 38%, transparent 68%); filter: blur(6px); animation: pgAura 3s ease-in-out infinite; }
 @keyframes pgAura { 50% { transform: scale(1.12); opacity: .75; } }
 .pg-stage canvas { position: relative; width: 240px; height: 240px; z-index: 1; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .55)); }
 .pg-plinth { width: 190px; height: 26px; margin-top: -24px; border-radius: 50%; background: radial-gradient(ellipse, rgba(0, 0, 0, .65), transparent 70%); box-shadow: 0 0 0 2px color-mix(in srgb, var(--sc) 40%, transparent); }
@@ -151,7 +151,7 @@
 
 /* ===================== VÀO GAME ===================== */
 .pg-enter { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 14px; }
-.pg-hero-card { display: flex; align-items: center; gap: 22px; padding: 18px 26px; border-radius: 20px; background: linear-gradient(180deg, rgba(30, 18, 34, .78), rgba(14, 9, 20, .86)); border: 1px solid var(--edge); box-shadow: 0 20px 60px rgba(0, 0, 0, .6); animation: pgRise .8s ease-out both; }
+.pg-hero-card { display: flex; align-items: center; gap: 22px; padding: 18px 26px; border-radius: 20px; background: linear-gradient(180deg, rgba(40, 26, 48, .62), rgba(18, 12, 26, .74)); border: 1px solid var(--edge); box-shadow: 0 20px 60px rgba(0, 0, 0, .6); animation: pgRise .8s ease-out both; }
 .pg-stage.sm canvas { width: 170px; height: 170px; } .pg-stage.sm .pg-aura { width: 190px; height: 190px; top: 0; } .pg-stage.sm .pg-plinth { width: 140px; }
 .pg-hc-info { display: flex; flex-direction: column; gap: 8px; min-width: 220px; }
 .pg-hc-info h3 { margin: 0; font-family: 'Playfair Display', serif; font-size: 30px; color: #ffe39a; text-shadow: 0 2px 0 #4a1408; }

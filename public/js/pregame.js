@@ -45,7 +45,7 @@
       W = app.clientWidth; H = app.clientHeight; dpr = Math.min(1.5, window.devicePixelRatio || 1);
       cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + 'px'; cv.style.height = H + 'px';
       seed = 7; layers = [];
-      const cols = ['#3a2a5a', '#2c1f48', '#211638', '#160f28', '#0b0814'];
+      const cols = ['#5e4c86', '#4c3c70', '#3c2e5c', '#2e2248', '#211833'];   // nhạt hơn để nhân vật nổi rõ
       for (let i = 0; i < 5; i++) {
         const c = document.createElement('canvas'); c.width = Math.round(W * 1.15); c.height = Math.round(H);
         ridge(c, H * (0.48 + i * 0.09), H * (0.16 - i * 0.015), 9 - i, cols[i], i === 2, i >= 3 ? (i === 4 ? 1.3 : 0.8) * H / 700 : 0);
@@ -66,7 +66,7 @@
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       // bầu trời hoàng hôn tím – đỏ
       const sky = ctx.createLinearGradient(0, 0, 0, H);
-      sky.addColorStop(0, '#07040f'); sky.addColorStop(0.38, '#241038'); sky.addColorStop(0.62, '#6a2238'); sky.addColorStop(0.78, '#c8603e'); sky.addColorStop(1, '#2a0f18');
+      sky.addColorStop(0, '#1c1234'); sky.addColorStop(0.38, '#46265e'); sky.addColorStop(0.62, '#94405a'); sky.addColorStop(0.78, '#e48c56'); sky.addColorStop(1, '#4e2634');
       ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
       // sao
       ctx.fillStyle = '#fff';
@@ -116,7 +116,7 @@
       ctx.globalAlpha = 1;
       // viền tối quanh màn
       const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.75);
-      vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.55)');
+      vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.32)');
       ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
     }
     let running = false;
