@@ -2,6 +2,12 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '27/10/2026',
+    items: [
+      '🔨 SỬA LỖI: trang bị bậc cấp 70 / 80 / 90 (Tiên Phẩm, Thánh Phẩm, Chí Tôn) nay cường hoá và kế thừa ở Thợ Rèn bình thường như các bậc khác (trước đây chọn đồ bậc này thì khung cường hoá / kế thừa bị lỗi, không bấm được).'
+    ]
+  },
+  {
     date: '26/10/2026',
     items: [
       '🔮⚔️ ĐỒ NỘI / ĐỒ NGOẠI KHÁC NHAU: trước đây cùng một món thì đồ Nội và đồ Ngoại có chỉ số y hệt (chỉ khác +Nội Công / +Sức Mạnh). Nay đồ Ngoại công: tấn công +6%, phòng thủ +10%, chí mạng +20%, nội lực ít đi một nửa. Đồ Nội công: mọi món đều có thêm Nội lực (nội lực nhiều gấp ~2-3 lần), sinh lực +8%, phòng thủ −5%, chí mạng −20%. Áp dụng luôn cho đồ đang có. Sát thương PK chỉnh nhẹ để thời gian trận giữ như cũ. ĐỒ NỘI CHO NỘI CÔNG, ĐỒ NGOẠI CHO NGOẠI CÔNG: mặc đồ khác hệ đang tu thì chỉ số gốc chỉ còn 70% và không tăng sát thương võ công (ô đồ có dấu ✗ đỏ, khung đồ ghi KHÁC HỆ). Đồ đang mặc đã được đổi miễn phí sang hệ của bạn; đồ rơi nay 80% đúng hệ (trước 65%); đổi hệ võ công thì đồ đang mặc đổi theo; đồ khác hệ trong túi đổi hệ ở Thợ Rèn.',

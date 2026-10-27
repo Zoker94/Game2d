@@ -201,7 +201,7 @@ app.get('/api/gamedata', (req, res) => {
     const M = require('./data/mounts');
     const mountExp = {};
     for (let l = 1; l <= M.MOUNT_MAX; l++) mountExp[l] = M.mountExpNext(l);
-    gamedataCache = { enhance: { max: E.ENHANCE_MAX, safe: E.ENHANCE_SAFE, rate: E.ENHANCE_RATE, cost: Array.from({ length: 15 }, (_, p) => [0, 1, 2, 3, 4, 5, 6].map(t => E.enhanceCost(p, t))) },
+    gamedataCache = { enhance: { max: E.ENHANCE_MAX, safe: E.ENHANCE_SAFE, rate: E.ENHANCE_RATE, cost: Array.from({ length: 15 }, (_, p) => Array.from({ length: require('./data/items').TIERS.length }, (_, t) => E.enhanceCost(p, t))) },
       skillMax: require('./data/skillbooks').SKILL_MAX,
       branchFreeLv: require('./data/branches').BRANCH_FREE_LV, dragons: require('./data/dragons').DRAGONS, mounts: M.MOUNTS, mountMax: M.MOUNT_MAX, mountExp, classes: CLASSES, story: require('./data/story'), gems: require('./data/gems').clientConfig(), attrs: require('./data/attrs').ATTRS, attrSuggest: require('./data/attrs').ATTR_SUGGEST, attrPerLv: require('./data/attrs').ATTR_PER_LEVEL, items: ITEMS, rarity: RARITY, brStat: require('./data/items').BR_STAT, brOffK: require('./data/items').BR_OFF_K, critMax: 5, slots: Object.assign(Object.fromEntries(Object.entries(SLOTS).map(([k, v]) => [k, v.name])), { ring2: 'Nhẫn' }), monsters: mons, maps, npcs,
       elements: require('./data/affixes').ELEMENTS, affixes: Object.fromEntries(Object.entries(require('./data/affixes').AFFIX).map(([k, a]) => [k, { name: a.name, text: a.text }])), khac: require('./data/affixes').KHAC };
