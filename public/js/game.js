@@ -1265,6 +1265,7 @@
     ctx.fillStyle = '#0b0810';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     if (!G.map || !G.me) return;
+    Assets.frameBudget(Input.isTouch || gfx.weak ? 3 : 8);   // mỗi khung chỉ ghép mới vài hình nhân vật (chỗ đông khỏi khựng)
     const m = G.map, s = G.self;
     const vw = W / zoom, vh = H / zoom;
     const fdt = Math.min(0.05, (now - (G._lastDraw || now)) / 1000); G._lastDraw = now;
@@ -1763,7 +1764,7 @@
       if (moving && fr % 4 === 1 && !dead && Math.random() < 0.5) WorldArt.dust(x, y);
       if (art) {
         const wr = ap[1] || 0;   // phẩm chất vũ khí: 1 Hiếm (xanh), 2 VIP (tím), 3 Truyền Kỳ (cam)
-        if (!dead && wr >= 1 && ap[0] >= 0) {
+        if (!dead && wr >= 1 && ap[0] >= 0 && !(ent && ent.lod)) {   // người ở xa chỗ đông: bỏ quầng sáng vũ khí
           const g = Assets.weaponGlow(cls, dir, state, fi, ['', '#4fa3ff', '#c060ff', '#ff9b2f'][wr], ap);
           if (g) {
             ctx.save(); ctx.globalCompositeOperation = 'lighter';
