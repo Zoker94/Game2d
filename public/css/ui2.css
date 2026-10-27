@@ -3,6 +3,17 @@
 :root {
   --u-bg: rgba(20, 26, 38, .86); --u-bg2: #1b2232; --u-bg3: #232c40; --u-line: rgba(140, 160, 190, .22);
   --u-text: #e8edf5; --u-muted: #9aa6ba; --u-teal: #3ee6b0; --u-teal2: #1fa3c8; --u-gold: #f0c45a; --u-red: #ff4d6d;
+  /* biến của giao diện cũ (style.css) đổi sang bảng màu mới: mọi chỗ còn dùng biến cũ tự đổi theo */
+  --bg: #0f141e; --panel: linear-gradient(180deg, rgba(24,30,44,.96), rgba(18,23,34,.96)); --panel2: #1b2232; --line: rgba(140,160,190,.24);
+  --gold: #f0c45a; --gold2: #3a4a66; --text: #e8edf5; --muted: #9aa6ba;
+  --lac1: #1b2232; --lac2: #141a26; --lacR1: #1f6b5c; --lacR2: #123d36;
+  --g1: #e8f6ff; --g2: #3ee6b0; --g3: #1f7a66; --gline: rgba(140,160,190,.3); --gdim: #2a3346;
+  --ink: #0a0e16; --ink2: #0a0e16; --cream: #e8edf5;
+  --frame: 0 0 0 1px rgba(0,0,0,.45), 0 4px 12px rgba(0,0,0,.35);
+  --pframe: 0 0 0 1px rgba(140,160,190,.25);
+  --tile: linear-gradient(180deg, #2a3346 0%, #232b3c 100%);
+  --sl0: #141a26; --sl1: #1b2232; --sl2: #232c40; --sl3: #2c3650; --sl4: #3a4660;
+  --or0: #161c28; --or1: #2a3448; --or2: #3a4a66; --or3: #f0c45a; --or4: #fff0c0;
 }
 
 /* ---------- khung nhân vật ---------- */
@@ -93,12 +104,9 @@ body input, body select, body textarea { background: #0f1420; border: 1px solid 
 body input:focus, body select:focus { border-color: var(--u-teal); }
 body input[type=checkbox] { accent-color: #2ed3a3; width: 18px; height: 18px; vertical-align: -4px; }
 
-/* nút chia đoạn (Độ chibi, Áp dụng cho...) */
+/* nút chia đoạn */
 .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; margin: 4px 0 10px; }
 .seg .btn { padding: 8px 6px; }
-.chibi-pv { display: flex; justify-content: center; gap: 60px; margin: 8px 0; }
-.chibi-pv > div { display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--u-muted); }
-.chibi-pv canvas { width: 96px; height: 96px; image-rendering: pixelated; }
 
 /* hộp thông báo */
 body .modal-box { background: #161c28; border: 1px solid var(--u-line); border-radius: 16px; }
@@ -130,3 +138,26 @@ body .card h4 { border-bottom: 1px solid var(--u-line); }
 body #panel { background: rgba(6,10,16,.55); }
 body .panel-head h3 { font-family: "Be Vietnam Pro", system-ui, sans-serif; font-weight: 800; }
 #net-pill, body.touch #net-pill { top: auto; bottom: -8px; }
+body #panel-title, body .panel-title, body .npc-head h3 { font-family: "Be Vietnam Pro", system-ui, sans-serif; font-weight: 800; letter-spacing: .3px; }
+
+/* ---------- các hộp còn lại của giao diện cũ ---------- */
+body #chat { background: rgba(14,19,28,.78); border: 1px solid var(--u-line); border-radius: 14px; }
+body #chat-tabs button { border-radius: 8px; }
+body #chat-tabs button.on { background: linear-gradient(90deg, #4ae8bc, #22b8c8); color: #062a20; }
+body .dead-opt, body .qs-box { background: var(--u-bg2); border: 1px solid var(--u-line); box-shadow: none; }
+body .dead-box { background: #161c28; border: 1px solid var(--u-line); border-radius: 18px; }
+body .bm-panel, body .wm-panel, body .login-box, body #cls-box .cls-in { background: #161c28; border: 1px solid var(--u-line); box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+body #tp-box { background: #161c28; border: 1px solid var(--u-line); border-radius: 16px; }
+body #tp-box .tp-h { color: #fff; }
+body #tp-box .tp-tabs button.on, body .buy-br button.on { background: linear-gradient(90deg, #4ae8bc, #22b8c8); color: #062a20; border-color: transparent; box-shadow: none; }
+body #tp-box .tp-it:hover, body .inh-it:hover, body .gem-btn:hover:not([disabled]), body #panel-pin:hover { border-color: var(--u-teal); background: rgba(62,230,176,.1); }
+body .qs-chip.on { border-color: var(--u-teal); background: rgba(62,230,176,.14); box-shadow: none; }
+body #exp-bar i { background: linear-gradient(90deg, #4ae8bc, #22b8c8); box-shadow: 0 0 6px rgba(62,230,176,.5); }
+body .sk-lv { background: rgba(62,230,176,.14); color: var(--u-teal); }
+body .sk-bar i { background: #2a3346; } body .sk-bar i.on { background: linear-gradient(90deg, #4ae8bc, #22b8c8); box-shadow: none; }
+body .kb-tbl th { color: var(--u-gold); border-bottom-color: var(--u-line); }
+body input[type=range] { accent-color: #2ed3a3; }
+body #panel-body { scrollbar-color: #3a4660 transparent; }
+body .slot { background: #121826; border-color: #2c3650; border-radius: 10px; }
+body #menu-buttons button.admin-btn { border-color: rgba(255,207,74,.45); }
+body #trk-min { background: var(--u-bg); border: 1px solid var(--u-line); color: #cfd8e6; box-shadow: 0 2px 6px rgba(0,0,0,.3); }

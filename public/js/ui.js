@@ -1285,14 +1285,6 @@
     body.innerHTML = `
       <div class="card"><h4>💬 Cộng đồng</h4><p class="small">Tham gia nhóm Zalo để nhận gift code, tin sự kiện và giao lưu với các đại hiệp khác.</p><a class="zalo-btn" href="https://zalo.me/g/fkxw5crl6ksc0jotbzgp" target="_blank" rel="noopener">💬 Tham gia nhóm Zalo</a></div>
       <div class="card"><h4>🤖 Tự động</h4><button class="btn small primary" id="set-auto">⚙️ Cài đặt tự động (nhặt đồ, bơm máu...)</button></div>
-      <div class="card"><h4>Ngoại hình Chibi</h4>
-        <label><input type="checkbox" id="set-chibi" ${s.chibi ? 'checked' : ''}> Đổi nhân vật thành dạng chibi (đầu to, thân ngắn)</label>
-        <div class="chibi-pv"><div><canvas id="chibi-a" width="96" height="96"></canvas><small>Gốc</small></div><div><canvas id="chibi-b" width="96" height="96"></canvas><small>Chibi</small></div></div>
-        <div class="small">Độ chibi</div>
-        <div class="seg">${[[1, 'Nhẹ'], [2, 'Vừa'], [3, 'Siêu chibi']].map(([k, n]) => `<button class="btn ${(s.chibiLv || 2) === k ? 'primary' : ''}" data-chibilv="${k}">${n}</button>`).join('')}</div>
-        <div class="small">Áp dụng cho</div>
-        <div class="seg"><button class="btn ${s.chibiAll !== false ? 'primary' : ''}" data-chibiall="1">Tất cả nhân vật</button><button class="btn ${s.chibiAll === false ? 'primary' : ''}" data-chibiall="0">Chỉ nhân vật của tôi</button></div>
-        <div class="small muted">Chỉ thay đổi hình ảnh trên máy của bạn, người chơi khác vẫn thấy ngoại hình gốc.</div></div>
       <div class="card"><h4>Hiển thị & âm thanh</h4>
         <label><input type="checkbox" data-set="names" ${s.names ? 'checked' : ''}> Hiện tên nhân vật/quái</label><br>
         <label><input type="checkbox" id="au-music" ${GameAudio.state.music ? 'checked' : ''}> 🎵 Nhạc nền võ lâm</label> <input type="range" id="au-mvol" min="0" max="1" step="0.05" value="${GameAudio.state.musicVol}" style="width:110px;vertical-align:middle"><br>
@@ -1320,14 +1312,6 @@
         ${G.user && G.user.username ? `<div class="row" style="justify-content:flex-start;margin-top:6px"><input id="pw-old" type="password" placeholder="Mật khẩu cũ" style="width:130px"><input id="pw-new" type="password" placeholder="Mật khẩu mới" style="width:130px"><button class="btn small" id="pw-change">Đổi mật khẩu</button></div>` : ''}
         <button class="btn small primary" id="set-logout" style="margin-top:6px">Đăng xuất</button></div>`;
     body.querySelectorAll('[data-set]').forEach(c => c.onchange = () => { G.settings[c.dataset.set] = c.checked; G.saveSettings(); });
-    $('set-chibi').onchange = e => { G.settings.chibi = e.target.checked; G.saveSettings(); };
-    body.querySelectorAll('[data-chibilv]').forEach(b => b.onclick = () => { G.settings.chibiLv = +b.dataset.chibilv; G.saveSettings(); UI.refreshPanel(); });
-    body.querySelectorAll('[data-chibiall]').forEach(b => b.onclick = () => { G.settings.chibiAll = b.dataset.chibiall === '1'; G.saveSettings(); UI.refreshPanel(); });
-    { // xem trước: tư thế đứng của nhân vật mình, gốc và chibi
-      const me = G.me, pv = (id, fn) => { const c = $(id); if (!c || !me || !Assets.has(me.cls, true)) return; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.clearRect(0, 0, 96, 96); x.drawImage(fn(), 0, 0, 96, 96); };
-      const paint = () => { pv('chibi-a', () => Assets.charFrame(me.cls, 0, 'idle', 0, me.ap)); pv('chibi-b', () => Assets.chibiFrame(me.cls, 0, 'idle', 0, me.ap, G.settings.chibiLv || 2)); };
-      paint(); setTimeout(paint, 300);
-    }
     body.querySelectorAll('[data-gfx]').forEach(b => b.onclick = () => { G.setGfx(b.dataset.gfx); UI.refreshPanel(); });
     $('set-battery').onchange = e => { G.setBattery(e.target.checked); UI.refreshPanel(); };
     $('set-awake').onchange = e => { s.keepAwake = e.target.checked; G.saveSettings(); if (window.Awake) Awake.sync(); };

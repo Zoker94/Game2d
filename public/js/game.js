@@ -1783,8 +1783,7 @@
           }
         }
         if (!dead && ent && ent.k) Overhead.drawPkAura(ctx, x, y, ent.k, now);
-        const chibi = G.settings.chibi && (G.settings.chibiAll !== false || ent === G.self);   // Ngoại hình Chibi (chỉ trên máy mình)
-        ctx.drawImage(chibi ? Assets.chibiFrame(cls, dir, state, fi, ap, G.settings.chibiLv || 2) : Assets.charFrame(cls, dir, state, fi, ap), x - 48, y - 86, 96, 96);
+        ctx.drawImage(Assets.charFrame(cls, dir, state, fi, ap), x - 48, y - 86, 96, 96);
         top = state === 'med' ? y - 50 : y - 72;   // ngồi thiền: tên hạ xuống theo dáng ngồi
       } else {
         ctx.drawImage(Sprites.playerSprite(cls, colors, dir, fr, atk, ap), x - 32, y - 58 + breathe);

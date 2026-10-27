@@ -289,26 +289,6 @@
     if (!body || (L.w && miss('w' + L.w)) || (!L.w && miss('w0')) || (L.h && miss('h' + L.h)) || (L.a && L.ar && miss('am' + L.a)) || (L.h && L.hr && miss('hm' + L.h)) || miss('fxo') || miss('fxu')) return c;
     return put(key, c);
   }
-  // ----- Ngoại hình Chibi (Cài đặt): đầu to, thân ngắn – chỉ đổi hình trên máy người chơi -----
-  // cắt khung ở cổ (theo khung thân đo từ sheet), thân thu ngắn giữ chân tại chỗ, đầu phóng to đặt lên trên
-  const CHIBI = { 1: [1.2, 0.88], 2: [1.35, 0.78], 3: [1.55, 0.66] };   // [phóng đầu, thu thân]
-  function chibiFrame(cls, dir, state, i, ap, lv) {
-    const f = charFrame(cls, dir, state, i, ap);
-    if (f === qcv || !META[cls]) return f;   // bản vẽ tạm: để nguyên
-    const key = 'cb' + lv + ':' + cls + ':' + dir + ':' + state + ':' + i + ':' + (ap ? ap.join(',') : '');
-    { const hit = hitOf(key); if (hit) return hit; }
-    const [row, col] = cellOf(cls, dir, state, i), [part, r0] = partOf(cls, row), base = imgs[cls + '_a0-' + part];
-    const b = base && bodyBox(cls, base, row, col, (row - r0) * SRC);
-    if (!b || overBudget()) return f;
-    budget--;
-    const [kh, kb] = CHIBI[lv] || CHIBI[2];
-    const neck = Math.round(b.top + b.h * 0.22), cx = isFlip(dir) ? SRC - b.cx : b.cx;
-    const dTop = b.bot - (b.bot - neck) * kb;
-    const [c, x] = mk(SRC, SRC);
-    x.drawImage(f, 0, neck, SRC, SRC - neck, 0, dTop, SRC, (SRC - neck) * kb);               // thân thu ngắn, chân giữ nguyên
-    x.drawImage(f, 0, 0, SRC, neck, cx * (1 - kh), dTop + 3 - neck * kh, SRC * kh, neck * kh); // đầu phóng to đặt lên cổ
-    return put(key, c);
-  }
   // ----- người cưỡi: sheet có sẵn động tác ngồi yên (cưỡi, đánh, ra chiêu, trúng đòn khi cưỡi); hông ở y = 66 (ô 96) -----
   function riderFrame(cls, dir, state, i, ap) {
     const st = state === 'atk' ? 'ride_atk' : state === 'cast' ? 'ride_cast' : state === 'hurt' ? 'ride_hurt' : 'ride';
@@ -460,5 +440,5 @@
     return `<i class="sk-img" style="background-image:url('${url}');--skc:${s.color || '#ffd76a'}"></i>`;
   }
 
-  window.Assets = { ready, loadClass, loadMonster, retainMonsters, imgs, has, nature, charFrame, chibiFrame, frameBudget, frameCount, frameMs, SRC, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, MONSTERS, skillIconUrl, skillIconHTML };
+  window.Assets = { ready, loadClass, loadMonster, retainMonsters, imgs, has, nature, charFrame, frameBudget, frameCount, frameMs, SRC, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, MONSTERS, skillIconUrl, skillIconHTML };
 })();
