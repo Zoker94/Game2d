@@ -4,6 +4,8 @@ const CHANGELOG = [
   {
     date: '27/10/2026',
     items: [
+      '🎨 GIAO DIỆN MỚI HOÀN TOÀN trước khi vào game: nền động núi non lớp lớp, trăng, chùa tháp, rặng thông, hạc bay, hoa đào rơi; màn tải với thanh kiếm sáng dần và cuộn giấy mẹo; màn đăng nhập / đăng ký mới; màn vào game mới.',
+      '🧭 TẠO NHÂN VẬT CHI TIẾT HƠN: biểu đồ NGŨ GIÁC (Tấn công · Phòng thủ · Sinh lực · Thân pháp · Tầm đánh) cho biết phái thiên công hay thiên thủ, so với hệ còn lại; CHỌN HỆ NỘI CÔNG / NGOẠI CÔNG ngay khi tạo nhân vật; thẻ Tiểu sử (lời môn phái, tổng đà, lịch sử, lối chơi từng hệ) và thẻ Võ công (chiêu thức, tuyệt kỹ, nội công bị động của hệ đã chọn); nút 🎲 tên ngẫu nhiên.',
       '🎮 TAY CẦM TỰ GÁN NÚT ĐẦY ĐỦ (Cài đặt → ⌨️ Cài đặt phím): mỗi việc gán được 2 nút tay cầm; gán được TỔ HỢP – giữ 1 nút rồi bấm thêm nút khác (vd LB+A) – nên đủ nút cho mọi việc. Mặc định: LB+A khinh công, LB+X nói chuyện / nhặt đồ, LB+B / LB+Y ô kỹ năng 6 / 7, RB+A thiền, RB+B về thành, RB+X ô 8, RB+Y danh sách mục tiêu (LB / RB bấm riêng vẫn là bình máu / nội lực, chạy khi thả nút). Nút D-pad gán việc khác thì thôi dùng để đi. Chỉ cần tay cầm: Back+Start mở bảng cài đặt, D-pad chọn ô, A gán, X xoá, B đóng.',
       '☠️ ÁN PHẠT ĐỒ SÁT: người mang sát khí từ 3 trở lên (tên đỏ) không đi được xe Xa Phu, không dùng được Hồi Thành Phù – phải tự chạy bộ qua các bản đồ – và không mua bán được với NPC. Sát khí vẫn tự giảm 1 điểm mỗi 15 phút.',
       '📜 LỆNH BÀI XOÁ TỘI: sử dụng để xoá sạch sát khí. Bán ở Tạp Hóa, Thương Nhân Lưu Động (30.000 lượng) và Kỳ Trân Các (30 💎) – kẻ đồ sát vẫn mua được.',

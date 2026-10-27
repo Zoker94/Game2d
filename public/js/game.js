@@ -182,47 +182,25 @@
   }
   G.logout = logout;
 
-  // ================== Tạo nhân vật ==================
-  let selCls = 'thieulam', previewT = 0;
-  let createLoad = null;
+  // ================== Tạo nhân vật (giao diện ở pregame.js) ==================
+  let previewT = 0, createLoad = null;
   function showCreate() {
     show('screen-create');
-    // màn tạo nhân vật cần hình cả 9 phái: tải lúc này rồi vẽ lại lưới một lần
-    if (!createLoad) createLoad = Promise.all(Assets.CLASSES.map(c => Assets.loadClass(c))).then(() => { if ($('screen-create').classList.contains('active')) showCreate(); });
-    const grid = $('class-grid');
-    grid.innerHTML = '';
-    for (const [id, cl] of Object.entries(G.data.classes)) {
-      const card = document.createElement('div');
-      card.className = 'class-card' + (id === selCls ? ' sel' : '');
-      const cv = document.createElement('canvas'); cv.width = 72; cv.height = 72;
-      const cx2 = cv.getContext('2d'); cx2.imageSmoothingEnabled = false;
-      if (Assets.has(id)) { cx2.imageSmoothingEnabled = true; cx2.drawImage(Assets.charFrame(id, 0, 'idle', 0), 18, 27, 108, 108, 0, 0, 72, 72); }
-      else cx2.drawImage(Sprites.playerSprite(id, cl.colors, 0, 0), 4, 4);
-      card.appendChild(cv);
-      card.insertAdjacentHTML('beforeend', `<b>${cl.name}</b><small>${cl.role}</small>`);
-      card.onclick = () => { selCls = id; showCreate(); };
-      grid.appendChild(card);
-    }
-    const cl = G.data.classes[selCls];
-    $('class-name').textContent = cl.name;
-    $('class-role').textContent = `${cl.role} · Vũ khí: ${cl.weapon} · Tầm đánh: ${cl.range >= 200 ? 'Xa' : 'Gần'}`;
-    $('class-desc').textContent = cl.desc;
-    const b = cl.base;
-    $('class-stats').innerHTML = `<div>❤️ ${b.hp}</div><div>💧 ${b.mp}</div><div>⚔️ ${b.atk}</div><div>🛡️ ${b.def}</div><div>💥 ${b.crit}%</div><div>👟 ${b.spd}</div>`;
-    // hai hệ võ công: hệ mặc định khi tạo nhân vật, đổi trong bảng Võ Công (miễn phí dưới cấp 20)
-    const brs = cl.branches ? [cl.branches[cl.defBranch], ...Object.values(cl.branches).filter(b => b.key !== cl.defBranch)] : [{ name: '', skills: cl.skills }];
-    $('class-skills').innerHTML = brs.map((b, k) => `<div class="cs-br"><span class="br-tag br-${b.key || 'noi'}">${b.kind || ''}</span> <b>${b.name}</b>${k === 0 ? ' <span class="muted small">(mặc định)</span>' : ' <span class="muted small">(đổi trong bảng Võ Công)</span>'}</div>`
-      + b.skills.filter((s, i) => i !== 3).map(s => `<div>⭐ <b>${s.name}</b>${s.ult ? ' <span class="br-ult">Tuyệt kỹ</span>' : ''} <span class="muted">(Cấp ${s.lv}${s.mp ? ', ' + s.mp + ' MP' : ''})</span></div>`).join('')).join('');
+    try { const last = localStorage.getItem('vl_cls'); if (last && G.data.classes[last] && !showCreate.done) Pregame.sel.cls = last; } catch (e) { }
+    showCreate.done = true;
+    // màn tạo nhân vật cần hình cả 9 phái: tải lúc này rồi vẽ lại một lần
+    if (!createLoad) createLoad = Promise.all(Assets.CLASSES.map(c => Assets.loadClass(c))).then(() => { if ($('screen-create').classList.contains('active')) Pregame.renderCreate(); });
+    Pregame.renderCreate();
   }
   function animPreview() {
     previewT++;
     const f = Math.floor(previewT / 10) % 4;
     const dir = Math.floor(previewT / 80) % 4;
-    for (const [cvId, cls] of [['class-preview', selCls], ['enter-preview', G.user && G.user.character && G.user.character.cls]]) {
+    for (const [cvId, cls] of [['class-preview', Pregame.sel.cls], ['enter-preview', G.user && G.user.character && G.user.character.cls]]) {
       const cv = $(cvId);
       if (!cls || !cv.offsetParent) continue;
       const ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false;
-      ctx.clearRect(0, 0, 128, 128);
+      ctx.clearRect(0, 0, 160, 160);
       if (Assets.has(cls)) {
         // xem trước: đứng – chạy xuống – chạy chéo – chạy ngang – đi ngang – đánh – ra chiêu
         const ph = Math.floor(previewT / 90) % 7, k = previewT % 90;
@@ -233,24 +211,26 @@
           : ph === 4 ? Assets.charFrame(cls, 2, 'walk', Math.floor(previewT / 4))
           : Assets.charFrame(cls, 2, ph === 5 ? 'atk' : 'cast', Math.min(Assets.frameCount(cls, ph === 5 ? 'atk' : 'cast') - 1, Math.floor(k / 90 * 1.4 * Assets.frameCount(cls, ph === 5 ? 'atk' : 'cast'))));
         ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(img, -8, -12, 144, 144);
-      } else ctx.drawImage(Sprites.playerSprite(cls, G.data.classes[cls].colors, [0, 1, 3, 2][dir], f), 0, 0, 128, 128);
+        ctx.drawImage(img, -10, -15, 180, 180);
+      } else ctx.drawImage(Sprites.playerSprite(cls, G.data.classes[cls].colors, [0, 1, 3, 2][dir], f), 0, 0, 160, 160);
     }
     if (!G.inGame) requestAnimationFrame(animPreview);
   }
-  $('create-btn').onclick = () => G.socket.emit('createChar', { name: $('char-name').value.trim(), cls: selCls });
 
   function showEnter() {
     show('screen-enter');
     const c = G.user.character;
     $('enter-name').textContent = c.name;
-    $('enter-info').textContent = `${G.data.classes[c.cls].name} · Cấp ${c.level}`;
+    const cl = G.data.classes[c.cls], b = cl.branches && cl.branches[c.branch || cl.defBranch], col = (window.LORE && LORE[c.cls] && LORE[c.cls].color) || '#ffd76a';
+    $('enter-info').innerHTML = `<b style="color:${col}">${UI.esc(cl.name)}</b>${b ? ' · ' + UI.esc(b.kind) + ' – ' + UI.esc(b.name) : ''} · Cấp ${c.level}`;
+    $('screen-enter').style.setProperty('--sc', col); Pregame.Scene.tint(col);
   }
   $('enter-btn').onclick = async () => {
     await Input.goLandscape();
     enterGame();
   };
   function enterGame() {
+    Pregame.Scene.stop();   // tắt nền cảnh động của các màn trước khi vào game
     G.inGame = true;
     Input.inGame = true;
     show('screen-game');

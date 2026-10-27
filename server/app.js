@@ -77,7 +77,7 @@ function rateLimited(ip, max = 20) {
   return rec.n > max;
 }
 function publicUser(u) {
-  return { id: u.id, name: u.name, username: u.username || null, owner: isOwner(u), email: u.email, avatar: u.avatar, hasChar: !!u.character, character: u.character ? { name: u.character.name, cls: u.character.cls, level: u.character.level } : null };
+  return { id: u.id, name: u.name, username: u.username || null, owner: isOwner(u), email: u.email, avatar: u.avatar, hasChar: !!u.character, character: u.character ? { name: u.character.name, cls: u.character.cls, level: u.character.level, branch: u.character.branch || null } : null };
 }
 
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
@@ -305,7 +305,7 @@ io.on('connection', socket => {
   });
   const inGame = fn => (...args) => { if (player && world.players.get(user.id) === player) fn(...args); };
 
-  on('createChar', ({ name, cls } = {}) => {
+  on('createChar', ({ name, cls, branch } = {}) => {
     if (user.character) return socket.emit('toast', { text: 'Tài khoản đã có nhân vật', type: 'error' });
     name = String(name || '').trim();
     if (!NAME_RE.test(name)) return socket.emit('toast', { text: 'Tên 3-14 ký tự, chỉ gồm chữ, số, dấu _', type: 'error' });
@@ -313,6 +313,7 @@ io.on('connection', socket => {
     const lower = name.toLowerCase();
     if (Object.values(db.data.users).some(u => u.character && u.character.name.toLowerCase() === lower)) return socket.emit('toast', { text: 'Tên nhân vật đã tồn tại', type: 'error' });
     user.character = U.newCharacter(name, cls);
+    if (branch === 'noi' || branch === 'ngoai') user.character.branch = branch;   // hệ võ công chọn ngay khi tạo nhân vật
     db.log('user', `Tạo nhân vật ${name} (${CLASSES[cls].name})`, { user: user.id });
     db.markDirty();
     hello();
