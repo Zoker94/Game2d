@@ -53,6 +53,8 @@
     if (!G.me) return;
     const ids = [G.you, ...G.players.keys()];
     for (const id of ids) {
+      const pe = id !== G.you && G.players.get(id);
+      if (pe && pe.lod) continue;   // chỗ đông: người ở xa không vẽ thú cưng
       const e = ownerOf(id);
       if (!e) continue;
       const s = step(id, e, now);

@@ -261,7 +261,7 @@
       document.addEventListener('keydown', e => { e.stopImmediatePropagation(); e.preventDefault(); if (e.code === 'Enter' || e.code === 'Space') location.reload(); }, true);
       document.body.appendChild(g);
     }
-    s.on('connect', () => loading(false));
+    s.on('connect', () => { loading(false); if (G.pStatic) G.pStatic.clear(); });   // kết nối mới: máy chủ gửi lại phần tĩnh của người chơi
     s.on('connect_error', err => {
       loading(false);
       const m = err.message;
@@ -452,31 +452,47 @@
     setTimeout(() => { if (seq === mapLoadSeq) el.classList.add('hidden'); }, 300);
   }
 
+  // trạng thái bản đồ (server/game/world.js snapshot): người chơi = phần động mỗi lần + phần tĩnh khi đổi (giữ trong G.pStatic),
+  // quái dạng mảng; chỉ có những gì trong vùng nhìn thấy
+  G.pStatic = new Map();
   function onSnap(d) {
     const now = performance.now();
+    if (d.ps) for (const id in d.ps) G.pStatic.set(id, d.ps[id]);
     const seenP = new Set();
     for (const p of d.p) {
-      seenP.add(p.i);
-      if (p.i === G.you) {
-        G.selfSnap = p; G.self.st = p.s || 0;
-        if (G.me) { G.me.hp = p.h; }
+      const id = p[0];
+      seenP.add(id);
+      if (id === G.you) {
+        G.self.st = p[7] || 0;
+        if (G.me) { G.me.hp = p[5]; }
         continue;
       }
-      let e = G.players.get(p.i);
-      if (!e) { e = { x: p.x, y: p.y }; G.players.set(p.i, e); }
-      Object.assign(e, { id: p.i, name: p.n, cls: p.c, tx: p.x, ty: p.y, dir: p.d, moving: p.m, hp: p.h, maxHp: p.H, level: p.l, guild: p.g, dead: p.a, gm: p.v, ap: p.q, st: p.s || 0, el: p.el || '', pw: p.pw || 0, rk: p.rk || 0, k: p.k || 0, pm: p.pm || 0, rb: p.rb || 0, mc: p.mc || 0, bf: p.bf || null, md: p.md || 0, iv: p.iv || 0, seen: now });
-      if (p.d === 1 || p.d === 2) e.lastH = p.d;
+      let e = G.players.get(id);
+      if (!e) { e = { x: p[1], y: p[2] }; G.players.set(id, e); }
+      e.id = id; e.tx = p[1]; e.ty = p[2]; e.dir = p[3]; e.moving = p[4]; e.hp = p[5]; e.dead = p[6]; e.st = p[7] || 0; e.seen = now;
+      const q = G.pStatic.get(id);
+      if (q && e.sv !== p[8]) {
+        e.sv = p[8];
+        e.name = q[0]; e.cls = q[1]; e.level = q[2]; e.guild = q[3]; e.gm = q[4]; e.ap = q[5]; e.maxHp = q[6]; e.pw = q[7] || 0; e.el = q[8] || '';
+        e.rk = q[9] || 0; e.k = q[10] || 0; e.pm = q[11] || 0; e.rb = q[12] || 0; e.mc = q[13] || 0; e.bf = q[14] || null; e.md = q[15] || 0; e.iv = q[16] || 0;
+        e.apLite = null;
+        if (e.cls) Assets.loadClass(e.cls);
+      }
+      if (p[3] === 1 || p[3] === 2) e.lastH = p[3];
     }
     for (const id of G.players.keys()) if (!seenP.has(id)) G.players.delete(id);
     const seenM = new Set();
-    if (d.m && d.m.some(m => !G.data.monsters[m.t])) G.refreshData();   // gặp loại quái lạ: dữ liệu cũ
+    let odd = false;
     for (const m of d.m) {
-      seenM.add(m.i);
-      let e = G.monsters.get(m.i);
-      if (!e) { e = { x: m.x, y: m.y, born: now }; G.monsters.set(m.i, e); }
-      Object.assign(e, { id: m.i, type: m.t, tx: m.x, ty: m.y, dir: m.d, moving: m.m, hp: m.h, maxHp: m.H, boss: m.b, elite: m.el || 0, event: m.e, frozen: m.f, st: m.s || 0 });
-      if (m.d === 1 || m.d === 2) e.face = m.d;
+      const id = m[0];
+      seenM.add(id);
+      if (!G.data.monsters[m[1]]) odd = true;
+      let e = G.monsters.get(id);
+      if (!e) { e = { x: m[2], y: m[3], born: now }; G.monsters.set(id, e); }
+      e.id = id; e.type = m[1]; e.tx = m[2]; e.ty = m[3]; e.dir = m[4]; e.moving = m[5]; e.hp = m[6]; e.maxHp = m[7]; e.boss = m[8]; e.elite = m[9] || 0; e.event = m[10]; e.frozen = m[11]; e.st = m[12] || 0;
+      if (m[4] === 1 || m[4] === 2) e.face = m[4];
     }
+    if (odd) G.refreshData();   // gặp loại quái lạ: dữ liệu cũ
     for (const id of G.monsters.keys()) if (!seenM.has(id)) { G.monsters.delete(id); if (G.target === id) G.target = null; }
     // xe tiêu
     const seenC = new Set();
@@ -489,6 +505,16 @@
     for (const id of G.carts.keys()) if (!seenC.has(id)) { G.carts.delete(id); if (G.target === id) G.target = null; }
   }
 
+  // chỗ đông người (thành, Đại Hội, boss thế giới): chỉ N người gần nhất vẽ đầy đủ, còn lại e.lod = 1 (vẽ gọn, bỏ hiệu ứng chiêu)
+  const lodTmp = [];
+  function markLod(s) {
+    const n = G.settings.gfx === 'ultra' ? 6 : Input.isTouch || gfx.weak ? 10 : 18;
+    if (G.players.size <= n) { for (const e of G.players.values()) e.lod = 0; return; }
+    lodTmp.length = 0;
+    for (const e of G.players.values()) { e._d = (e.x - s.x) * (e.x - s.x) + (e.y - s.y) * (e.y - s.y); lodTmp.push(e); }
+    lodTmp.sort((a, b) => a._d - b._d);
+    for (let i = 0; i < lodTmp.length; i++) lodTmp[i].lod = i < n ? 0 : 1;
+  }
   function entityById(id) {
     if (id === G.you) return G.self;
     return G.players.get(id) || G.monsters.get(id) || G.carts.get(id);
@@ -504,6 +530,9 @@
     if (d.t === 'dodge') { onDodge(d, now); return; }
     const src = d.from && entityById(d.from);
     if (src && d.from !== G.you) { src.atkKind = BASIC_FX.has(d.t) ? 'atk' : 'skill'; src.atkStart = now; src.atkDur = src.atkKind === 'atk' ? 300 : 440; src.atkUntil = now + src.atkDur; }
+    // chiêu của người chơi khác: bỏ hiệu ứng khi người đó ở xa, đang vẽ gọn (chỗ đông) hoặc bật "Ẩn hiệu ứng chiêu của người khác"
+    if (src && d.from !== G.you && G.players.has(d.from) && !ULTI[d.t] && d.t !== 'levelup' &&
+      (src.lod || G.settings.hideOtherFx || Math.abs(src.x - G.self.x) > 1000 || Math.abs(src.y - G.self.y) > 700)) return;
     if (d.t === 'death' && G.monsters.has(d.id)) {   // giữ xác quái để chạy khung ngã
       const m = G.monsters.get(d.id);
       if (Assets.monsterTop(m.type)) G.corpses.push({ type: m.type, x: m.x, y: m.y, dir: m.dir, face: m.face || 2, t0: now });
@@ -866,9 +895,14 @@
   // ---------- chất lượng đồ họa ----------
   // Số điểm ảnh phải vẽ là chi phí lớn nhất trên điện thoại. 'auto': bắt đầu ở mức vừa (điện thoại) / cao (PC),
   // đo thời gian khung hình rồi tự hạ độ phân giải khi giật, nâng lại khi mượt ổn định.
-  const GFX_STEPS = [2, 1.75, 1.5, 1.25, 1];
-  const GFX_FIXED = { high: 2, medium: 1.5, low: 1 };
-  const gfx = { scale: 1.5, lowFx: false, win: [], since: 0, fail: {} };
+  // dưới 1: vẽ ít điểm ảnh hơn màn hình rồi phóng lên (hình pixel nhìn gần như không khác) – cứu điện thoại rất yếu
+  const GFX_STEPS = [2, 1.75, 1.5, 1.25, 1, 0.85, 0.75];
+  const GFX_FIXED = { high: 2, medium: 1.5, low: 1, ultra: 0.6 };
+  const GFX_MIN = 0.6;
+  // máy yếu (ít RAM / ít nhân CPU): vào thẳng mức thấp thay vì bắt đầu ở mức vừa rồi giật vài giây mới tự hạ
+  const weak = (() => { if (!Input.isTouch) return 0; const mem = navigator.deviceMemory || 8, cores = navigator.hardwareConcurrency || 8; return mem <= 2 && cores <= 4 ? 2 : mem <= 3 || cores <= 4 ? 1 : 0; })();   // chỉ điện thoại / máy tính bảng
+  const GFX_START = () => GFX_FIXED[G.settings.gfx] || (weak === 2 ? 0.85 : weak ? 1 : Input.isTouch ? 1.5 : 2);
+  const gfx = { scale: 1.5, lowFx: false, win: [], since: 0, fail: {}, weak };
   G.gfx = gfx;
   // Tiết kiệm pin (mặc định bật trên thiết bị cảm ứng): khóa 30 FPS, độ nét tối đa 1,5x, 20 FPS khi để yên lâu.
   // Không đổi cách chơi: di chuyển / hồi chiêu tính theo thời gian thật, chỉ vẽ ít khung hơn.
@@ -876,11 +910,11 @@
   G.battery = battery;
   function gfxCap() { return Math.min(window.devicePixelRatio || 1, battery() ? 1.5 : 2); }
   function gfxApply(scale) {
-    gfx.scale = Math.max(1, Math.min(gfxCap(), scale));
+    gfx.scale = Math.max(GFX_MIN, Math.min(gfxCap(), scale));
     // hiệu ứng tiết kiệm: ít hạt thời tiết / hiệu ứng, bỏ lớp ám màu kiểu 'overlay'
     const mode = G.settings.gfx || 'auto';
-    gfx.lowFx = mode === 'low' || (mode === 'auto' && gfx.scale <= 1.25) || !!G.settings.lowfx;
-    gfx.fx = mode === 'low' || G.settings.lowfx ? 0.4 : gfx.lowFx ? 0.55 : mode === 'high' ? 1 : (Input.isTouch ? 0.8 : 1);
+    gfx.lowFx = mode === 'low' || mode === 'ultra' || (mode === 'auto' && (gfx.scale <= 1.25 || weak === 2)) || !!G.settings.lowfx;
+    gfx.fx = mode === 'ultra' ? 0.25 : mode === 'low' || G.settings.lowfx ? 0.4 : gfx.lowFx ? 0.55 : mode === 'high' ? 1 : (Input.isTouch ? 0.8 : 1);
     document.body.classList.toggle('lowfx', !!G.settings.lowfx);
     document.body.classList.toggle('calm', !!G.settings.lowfx || battery());   // dừng hoạt ảnh CSS lặp trang trí (cuối style.css)
     resize();
@@ -888,9 +922,9 @@
   G.setGfx = mode => {
     G.settings.gfx = mode; G.saveSettings();
     gfx.fail = {}; gfx.win = []; gfx.since = performance.now();
-    gfxApply(GFX_FIXED[mode] || (Input.isTouch ? 1.5 : 2));
+    gfxApply(GFX_START());
   };
-  G.setBattery = on => { G.settings.battery = !!on; G.saveSettings(); gfx.fail = {}; gfx.win = []; gfx.since = performance.now(); gfxApply(GFX_FIXED[G.settings.gfx] || (Input.isTouch ? 1.5 : 2)); };
+  G.setBattery = on => { G.settings.battery = !!on; G.saveSettings(); gfx.fail = {}; gfx.win = []; gfx.since = performance.now(); gfxApply(GFX_START()); };
   G.setLowFx = on => { G.settings.lowfx = !!on; G.saveSettings(); gfxApply(gfx.scale); };
   // gọi mỗi khung hình với thời gian khung (ms)
   function gfxTick(ms, now) {
@@ -900,7 +934,7 @@
     const w = gfx.win.slice().sort((a, b) => a - b), med = w[w.length >> 1], p90 = w[Math.floor(w.length * 0.9)];
     gfx.win = [];
     const i = GFX_STEPS.findIndex(v => v <= gfx.scale + 1e-6), k = gfx.k || 1;   // k: khóa 30 FPS thì ngưỡng x2
-    if ((med > 22 * k || p90 > 40 * k) && gfx.scale > 1) {            // dưới ~45 FPS: hạ một bậc
+    if ((med > 22 * k || p90 > 40 * k) && gfx.scale > GFX_STEPS[GFX_STEPS.length - 1] + 1e-6) {            // dưới ~45 FPS: hạ một bậc
       gfx.fail[gfx.scale] = (gfx.fail[gfx.scale] || 0) + 1;
       gfx.since = now; gfxApply(GFX_STEPS[Math.min(GFX_STEPS.length - 1, i + 1)]);
     } else if (med < 17.5 * k && p90 < 22 * k && i > 0 && now - gfx.since > 12000) {   // mượt liên tục 12 giây: thử nâng
@@ -918,7 +952,7 @@
   }
   window.addEventListener('load', resize);
   gfx.since = performance.now();
-  gfxApply(GFX_FIXED[G.settings.gfx] || (Input.isTouch ? 1.5 : 2));
+  gfxApply(GFX_START());
 
   function screenToWorld(cx, cy) {
     const p = Input.toLocal(cx, cy);
@@ -1286,6 +1320,7 @@
     if (G.corpses.length) G.corpses = G.corpses.filter(c => now - c.t0 < 1500);
     for (const c of G.corpses) list.push({ y: c.y - 1, k: 'corpse', c });
     for (const e of G.monsters.values()) if (inView(e)) list.push({ y: e.y, k: 'mon', e });
+    markLod(s);
     for (const e of G.players.values()) if (inView(e)) list.push({ y: e.y, k: 'pl', e });
     for (const e of G.carts.values()) if (inView(e)) list.push({ y: e.y, k: 'cart', e });
     list.push({ y: s.y, k: 'self' });
@@ -1349,6 +1384,14 @@
         Escort.drawCart(ctx, it.e, now, label, hpBar);
       } else if (it.k === 'pl') {
         const e = it.e;
+        if (e.lod && G.target !== e.id && !Party.has(e.id)) {   // chỗ đông, ở xa: vẽ gọn (không thú cưỡi / thú cưng / phi phong / hào quang / tên)
+          if (!e.apLite && e.ap) { e.apLite = e.ap.slice(); e.apLite[7] = ''; e.apLite[9] = 0; e.apLite[10] = ''; e.apLite[11] = -1; }
+          if (e.iv) ctx.globalAlpha = 0.4;
+          const top = drawHero(e.x, e.y, e.cls, e.dir, e.lastH, e.moving, e.atkUntil > now, e.apLite, e.dead, e.x / 50, now, e);
+          ctx.globalAlpha = 1;
+          if (e.bubble) bubbles.push([e, top - 2]);
+          continue;
+        }
         const pm = e.dead ? 0 : Overhead.mask(e, now);
         if (pm) Overhead.drawUnder(ctx, e, e.x, e.y, pm, now);
         const elift = e.ap && e.ap[7] ? 24 : 0;

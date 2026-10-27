@@ -37,7 +37,8 @@ app.disable('x-powered-by');
 app.set('trust proxy', 1); // chạy sau proxy (Render, Nginx...) để lấy đúng IP người chơi
 app.use(express.json({ limit: '200kb' }));
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: false }, pingInterval: 10000, pingTimeout: 20000 });
+// nén gói tin lớn (trạng thái bản đồ đông người, dữ liệu túi đồ...): gói nhỏ hơn 1KB gửi thẳng để đỡ tốn CPU máy chủ
+const io = new Server(server, { cors: { origin: false }, pingInterval: 10000, pingTimeout: 20000, perMessageDeflate: { threshold: 1024 } });
 
 const world = new World(io, db);
 const features = new Features(world, db);

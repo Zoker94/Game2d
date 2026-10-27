@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '27/10/2026',
     items: [
+      '🚀 MƯỢT HƠN CHO ĐIỆN THOẠI YẾU: máy chủ chỉ gửi quái / người chơi ở gần và chỉ gửi phần thay đổi (dữ liệu mạng giảm 60–85%, nén thêm gói lớn); thêm mức đồ họa Siêu thấp; chỗ đông người chỉ vẽ chi tiết những người gần nhất; tuỳ chọn Ẩn hiệu ứng chiêu của người khác (Cài đặt); điện thoại cấu hình thấp tự vào mức đồ họa nhẹ ngay từ đầu.',
       '⚡ LƯU HÌNH ẢNH TRÊN MÁY: hình nhân vật, quái, NPC, thú cưỡi, hiệu ứng, âm thanh giờ được lưu hẳn trên máy người chơi – lần sau vào game không phải tải hay hỏi lại máy chủ, vào nhanh hơn và đỡ tốn mạng. Khi cập nhật chỉ tải lại đúng file thay đổi. (Nền đất, nhà cửa, cây cối vốn đã được vẽ ngay trên máy.)',
       '🚫 BỎ PK TỰ ĐỘNG: chế độ Tự động giờ chỉ đánh quái – không còn tự đánh trả, tự tấn công người chơi hay tự đánh đối thủ tỷ võ. Muốn PK phải tự điều khiển.',
       '📌 THÔNG BÁO GHIM CỦA ADMIN: dải chữ nhỏ màu vàng rực chạy trên cùng màn hình, lặp lại mỗi 5 phút cho tới khi quản trị viên tắt. Người vào game sau cũng thấy ngay.',

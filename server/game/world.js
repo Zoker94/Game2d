@@ -36,6 +36,7 @@ const DODGE_DIST = 190, DODGE_CD = 5000, DODGE_AIR = 460;   // khinh công: quã
 const DODGE_MAX = 3, DODGE_GAP = 380;   // tích tối đa 3 lượt (dùng liên tiếp 3 lần), mỗi lượt hồi lại sau DODGE_CD; hai lần nhảy cách nhau ít nhất 0,38 giây
 const TICK = 50;            // 20 tick/giây
 const SNAP_EVERY = 2;       // gửi trạng thái 10 lần/giây
+const AOI_X = 1150, AOI_Y = 800;   // vùng gửi trạng thái quanh mỗi người chơi (màn hình rộng nhất ~1920x1080 ở mức thu phóng 0,8 + lề)
 const PICKUP_R = 56;
 const GOLD_DROP_CHANCE = 0.35;   // quái thường rơi ngân lượng 35% số lần (gấp đôi lượng mỗi lần)
 const CLOAK_ODDS = { legendary: 0.005, epic: 0.06, rare: 0.3 };   // chế tạo áo choàng: còn lại là Thường
@@ -2270,29 +2271,51 @@ class World {
     return false;
   }
 
+  // Gửi trạng thái bản đồ 10 lần/giây, gọn cho điện thoại yếu / mạng chập chờn:
+  //  - chỉ gửi quái / người chơi trong vùng nhìn thấy của từng người (AOI); boss, quái tinh anh, đồng đội, đối thủ tỷ võ luôn gửi
+  //  - mỗi người chơi tách 2 phần: động (vị trí, máu, trạng thái) gửi mỗi lần; tĩnh (tên, bang, trang bị, lực chiến...)
+  //    chỉ gửi khi đổi hoặc người nhận chưa có (p._known: id -> phiên bản phần tĩnh mà máy người nhận đang giữ)
+  //  - quái và người chơi gửi dạng mảng (không lặp tên trường)
+  // Định dạng: { p: [[id,x,y,dir,moving,hp,dead,st,sv]...], ps: { id: [phần tĩnh] }, m: [[id,tpl,x,y,dir,moving,hp,maxHp,boss,elite,event,frozen,st]...], c }
   snapshot(m) {
-    const guilds = this.db.data.guilds, now = Date.now();
-    const ps = [], hid = new Set();
+    const guilds = this.db.data.guilds, now = Date.now(), rank = this.features && this.features.powerRank;
+    const pl = [];
     for (const p of m.players) {
-      if (this.gmOn(p, 'hide')) hid.add(p.id);
       const g = p.c.guildId && guilds[p.c.guildId];
-      ps.push({ i: p.id, n: p.c.name, c: p.c.cls, x: Math.round(p.x), y: Math.round(p.y), d: p.dir, m: p.moving ? 1 : 0,
-        h: Math.max(0, Math.round(p.c.hp)), H: p.stats.maxHp, l: p.c.level, g: g ? g.name : '', a: p.dead ? 1 : 0,
-        q: this.appearance(p.c), v: p.user.isAdmin ? 1 : 0, s: stMask(p, now),
-        md: p.med ? 1 : 0, pw: p.stats.power || 0, el: p.stats.el || '', rk: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0, k: p.c.pk || 0, pm: p.c.pkMode | 0, rb: p.c.robUntil > now ? 1 : 0, mc: this.daihoi && this.daihoi.isMinhChu(p.userId) ? 1 : 0, bf: p.buffs.length ? p.buffs.filter(b => b.until > now && b.aura).map(b => [b.aura, b.color]) : 0 });
+      const st = [p.c.name, p.c.cls, p.c.level, g ? g.name : '', p.user.isAdmin ? 1 : 0, this.appearance(p.c), p.stats.maxHp,
+        p.stats.power || 0, p.stats.el || '', (rank && rank.get(p.userId)) || 0, p.c.pk || 0, p.c.pkMode | 0, p.c.robUntil > now ? 1 : 0,
+        this.daihoi && this.daihoi.isMinhChu(p.userId) ? 1 : 0, p.buffs.length ? p.buffs.filter(b => b.until > now && b.aura).map(b => [b.aura, b.color]) : 0,
+        p.med ? 1 : 0, 0];
+      const key = JSON.stringify(st);
+      if (key !== p._sk) { p._sk = key; p._sv = ((p._sv || 0) + 1) % 1e6; }
+      const hide = this.gmOn(p, 'hide');
+      if (hide) st[16] = 1;   // cờ tàng hình: chỉ quản trị viên nhận được bản này
+      pl.push({ p, hide, st, dyn: [p.id, Math.round(p.x), Math.round(p.y), p.dir, p.moving ? 1 : 0, Math.max(0, Math.round(p.c.hp)), p.dead ? 1 : 0, stMask(p, now), p._sv] });
     }
     const ms = [];
     for (const mon of m.monsters.values()) {
       if (mon.dead) continue;
-      ms.push({ i: mon.id, t: mon.tpl.id, x: Math.round(mon.x), y: Math.round(mon.y), d: mon.dir, m: mon.moving ? 1 : 0, h: Math.max(0, Math.round(mon.hp)), H: mon.maxHp, b: mon.boss ? 1 : 0, el: mon.tpl.elite ? 1 : mon.tpl.pbBoss ? 2 : 0, e: mon.event ? 1 : 0, f: mon.frozenUntil > now ? 1 : 0, s: stMask(mon, now) });
+      ms.push([mon.id, mon.tpl.id, Math.round(mon.x), Math.round(mon.y), mon.dir, mon.moving ? 1 : 0, Math.max(0, Math.round(mon.hp)), mon.maxHp, mon.boss ? 1 : 0, mon.tpl.elite ? 1 : mon.tpl.pbBoss ? 2 : 0, mon.event ? 1 : 0, mon.frozenUntil > now ? 1 : 0, stMask(mon, now)]);
     }
     const cs = m.carts && m.carts.size ? this.escort.snapshot(m.def.id) : null;
-    const pack = list => cs ? { p: list, m: ms, c: cs } : { p: list, m: ms };
-    if (!hid.size) return this.io.to('map:' + m.def.id).emit('snap', pack(ps));
-    // có quản trị viên tàng hình: quản trị viên thấy đủ (đánh dấu iv), người chơi khác không thấy
-    for (const o of ps) if (hid.has(o.i)) o.iv = 1;
-    const vis = ps.filter(o => !hid.has(o.i)), all = pack(ps), pub = pack(vis);
-    for (const p of m.players) p.socket.emit('snap', this.isGm(p) ? all : pub);
+    for (const r of m.players) {
+      const gm = this.isGm(r), known = r._known || (r._known = new Map());
+      const rx = r.x, ry = r.y, party = r.partyId, opp = r.duel ? (r.duel.a === r ? r.duel.b : r.duel.a) : null;
+      const p = [], ps = {}, mm = [];
+      for (const o of pl) {
+        const q = o.p;
+        if (o.hide && !gm && q !== r) continue;
+        if (q !== r && !(Math.abs(q.x - rx) < AOI_X && Math.abs(q.y - ry) < AOI_Y) && !(party && q.partyId === party) && q !== opp) continue;
+        p.push(o.dyn);
+        const v = o.hide && gm ? -o.p._sv : o.p._sv;   // bản có cờ tàng hình cho quản trị viên tính là phiên bản khác
+        if (known.get(q.id) !== v) { known.set(q.id, v); ps[q.id] = o.st; }
+      }
+      for (const a of ms) if (a[8] || a[9] || (Math.abs(a[2] - rx) < AOI_X && Math.abs(a[3] - ry) < AOI_Y)) mm.push(a);
+      const pack = { p, m: mm };
+      for (const k in ps) { pack.ps = ps; break; }
+      if (cs) pack.c = cs;
+      r.socket.emit('snap', pack);
+    }
   }
 
   // Ngoại hình: [bậc vũ khí, độ hiếm vũ khí, +vũ khí, bậc áo, độ hiếm áo, +áo, bậc nón, thú cưỡi đang cưỡi, độ hiếm nón, cấp thú, thú cưng, bậc áo choàng, độ hiếm áo choàng]
