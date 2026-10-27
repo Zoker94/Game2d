@@ -2438,4 +2438,4 @@ function segDist(px, py, ax, ay, bx, by) {
 }
 
 World.WEATHER_NAME = WEATHER_NAME;
-module.exports = { World, MONSTERS, BOSSES };
+module.exports = { World, MONSTERS, BOSSES, SKILL_STATUS };

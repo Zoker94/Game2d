@@ -1617,7 +1617,7 @@
 
   function label(x, y, text, color, size = 12, outline) {
     if (outline !== false && Number.isInteger(size)) return Overhead.cachedText(ctx, text, x, y, size, color, 'rgba(0,0,0,0.85)', 'bold', 3);
-    ctx.font = `bold ${size}px Be Vietnam Pro, system-ui, sans-serif`;
+    ctx.font = `bold ${size * 0.88}px Be Vietnam Pro, system-ui, sans-serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     if (outline !== false) { ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.strokeText(text, x, y); }
     ctx.fillStyle = color; ctx.fillText(text, x, y);

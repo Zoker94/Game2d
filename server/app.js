@@ -208,6 +208,11 @@ app.get('/api/gamedata', (req, res) => {
       elements: require('./data/affixes').ELEMENTS, affixes: Object.fromEntries(Object.entries(require('./data/affixes').AFFIX).map(([k, a]) => [k, { name: a.name, text: a.text }])), khac: require('./data/affixes').KHAC };
   }
   // nén gzip một lần rồi giữ lại (dữ liệu ~260KB -> ~40KB)
+  if (!gamedataCache.skillStatus) {   // mô tả chiêu thức + hiệu ứng khống chế cho bảng Võ Công
+    const { LORE } = require('./data/skilllore');
+    for (const cl of Object.values(CLASSES)) for (const b of Object.values(cl.branches || {})) for (const sk of b.skills) if (LORE[sk.id]) sk.lore = LORE[sk.id];
+    gamedataCache.skillStatus = require('./game/world').SKILL_STATUS;
+  }
   if (!gamedataGz) gamedataGz = require('zlib').gzipSync(JSON.stringify(gamedataCache), { level: 9 });
   const tag = '"gd-' + BUILD + '"';   // dữ liệu game (bản đồ, vật phẩm…) chỉ đổi khi cập nhật: không đổi thì trả 304, khỏi tải lại
   res.set({ 'Cache-Control': 'no-cache', ETag: tag });

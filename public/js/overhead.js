@@ -1,5 +1,6 @@
 // Vẽ trên đầu nhân vật: số sát thương bay lên, hiệu ứng trạng thái (choáng, băng, độc...), bong bóng chat
 (function () {
+  const TEXT_K = 0.88;   // cỡ chữ vẽ trên bản đồ (tên, danh hiệu, nhãn) nhỏ lại cho cân đối; bong bóng chat giữ nguyên
   const TAU = Math.PI * 2;
   const ST = {
     stun:   { bit: 1,  name: 'Choáng!',     color: '#ffe04a' },
@@ -120,13 +121,14 @@
     return w;
   }
   function cachedText(ctx, text, x, y, size, fill, stroke, weight, lw) {
+    size = Math.round(size * TEXT_K); if (lw) lw = Math.max(2.5, lw * TEXT_K);
     const sc = Math.max(1, Math.round(ctx.getTransform().a * 4) / 4);
     const c = textSprite(text, size, fill, stroke, weight, lw, sc);
     ctx.drawImage(c, x - c._w / 2, y - c._h / 2, c._w, c._h);
   }
   function outlined(ctx, text, x, y, size, fill, stroke, weight) {
     if (typeof fill === 'string' && Number.isInteger(size)) return cachedText(ctx, text, x, y, size, fill, stroke, weight || 900, Math.max(3, size / 5));
-    ctx.font = `${weight || 900} ${size}px Be Vietnam Pro, system-ui, sans-serif`;
+    ctx.font = `${weight || 900} ${size * TEXT_K}px Be Vietnam Pro, system-ui, sans-serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(3, size / 5); ctx.strokeStyle = stroke; ctx.strokeText(text, x, y);
     ctx.fillStyle = fill; ctx.fillText(text, x, y);
@@ -387,14 +389,14 @@
     if (pk) nameCol = pk === 2 ? '#c00010' : '#ff5a5a';
     else if (o.party) nameCol = '#5dff8a';
     const name = (pk ? '☠ ' : '') + (o.party ? '👥 ' : '') + (o.gm ? '[GM] ' : '') + o.name + (o.level ? ' Lv' + o.level : '');
-    const w = textW('bold 12px Be Vietnam Pro, system-ui, sans-serif', name);
+    const w = textW('bold 10.5px Be Vietnam Pro, system-ui, sans-serif', name);
     if (o.gm) rainbowName(ctx, name, x, top - 10, w);   // quản trị viên: tên 7 sắc cầu vồng lấp lánh
     else outlined(ctx, name, x, top - 10, 12, nameCol, '#000', 700);
     if (o.rank) drawBadge(ctx, x - w / 2 - 10, top - 11, o.rank);
     // Võ Lâm Minh Chủ: danh hiệu riêng vàng rực thay cho danh hiệu lực chiến
     if (o.mc) {
       const now = performance.now(), mt = '👑【Võ Lâm Minh Chủ】';
-      const mw = textW('900 11px Be Vietnam Pro, system-ui, sans-serif', mt);
+      const mw = textW('900 9.5px Be Vietnam Pro, system-ui, sans-serif', mt);
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
       const g = ctx.createLinearGradient(x - mw / 2, 0, x + mw / 2, 0);
       const sh = (now / 1500) % 1;
@@ -407,7 +409,7 @@
     }
     // danh hiệu: chữ nhỏ có khung, bậc cao có viền sáng
     const tt = '【' + t.name + '】';
-    const tw = textW('700 10px Be Vietnam Pro, system-ui, sans-serif', tt);
+    const tw = textW('700 9px Be Vietnam Pro, system-ui, sans-serif', tt);
     if (t.tier >= 3) {
       ctx.save(); ctx.globalAlpha = 0.35 + Math.sin(performance.now() / 300) * 0.1; ctx.fillStyle = t.color;
       ctx.fillRect(Math.round(x - tw / 2 - 2), top - 29, Math.round(tw + 4), 12); ctx.restore();

@@ -4,6 +4,8 @@ const CHANGELOG = [
   {
     date: '27/10/2026',
     items: [
+      '📖 MÔ TẢ CHIÊU THỨC: bảng Võ Công có lời mô tả cho từng chiêu kèm thông số chi tiết – loại đòn (đơn mục tiêu / diện rộng / đường thẳng / lướt), tầm đánh, phạm vi, % tấn công, hiệu ứng khống chế và tỉ lệ (choáng, làm chậm, đóng băng, độc...), tuyệt kỹ.',
+      '🔤 CHỮ NHỎ GỌN HƠN: phông chữ toàn bộ giao diện và tên trên bản đồ nhỏ lại cho cân đối (bong bóng chat trên đầu giữ nguyên).',
       '🎨 TOÀN BỘ GIAO DIỆN SANG KIỂU MỚI: mọi bảng (túi đồ, nhân vật, võ công, thú cưỡi, cửa hàng, sự kiện, bang hội...), khung chat, khung nhiệm vụ, nút menu, hộp hồi sinh, bản đồ lớn... đều theo tông xám đá – nhấn xanh ngọc mới. Bỏ ngoại hình Chibi.',
       '🏪 CHỢ PHIÊN: bản đồ chợ mới (đi Xa Phu miễn phí). Có Lệnh Bài Bán Hàng (Quản Lý Chợ 20.000 lượng / Kỳ Trân Các 10 Nguyên Bảo) là mở được gian hàng 24 giờ, bày bán đồ cho người chơi khác – thoát game hàng vẫn bán, tiền tự cộng vào nhân vật (thuế chợ 5%).',
       '👹 BOSS CÓ LỜI THOẠI: mọi boss đều nói khi xuất hiện, khi đang giao chiến, khi còn 75/50/25/10% máu, khi hạ người chơi và khi bị đánh bại (bong bóng trên đầu + kênh bản đồ).',

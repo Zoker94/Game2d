@@ -376,6 +376,31 @@
     const t = { single: 'Tấn công đơn mục tiêu', aoe: `Sát thương diện rộng (bán kính ${s.radius})`, line: 'Tấn công theo đường thẳng', buff: 'Tăng cường bản thân', heal: 'Hồi máu bản thân và đồng đội xung quanh', dot: 'Gây độc theo thời gian', dash: 'Lướt tới mục tiêu, sát thương lan quanh điểm đáp' }[s.type] || '';
     return `${t}${s.mult ? ' · x' + s.mult + ' sát thương' : ''}`;
   }
+  // mô tả chi tiết chiêu thức: lời văn (server/data/skilllore.js) + thông số tự sinh (tầm, phạm vi, khống chế, tuyệt kỹ)
+  let loreMap = null;
+  function loreOf(id) {
+    if (!loreMap) { loreMap = {}; for (const cl of Object.values(G.data.classes || {})) for (const b of Object.values(cl.branches || {})) for (const k of b.skills || []) if (k.lore) loreMap[k.id] = k.lore; }
+    return loreMap[id] || '';
+  }
+  const ST_NAME = { stun: 'Choáng', slow: 'Làm chậm', bleed: 'Chảy máu', burn: 'Thiêu đốt', poison: 'Trúng độc', freeze: 'Đóng băng' };
+  const zoneOf = r => r <= 110 ? 'cận chiến' : r <= 230 ? 'tầm trung' : 'tầm xa';
+  function skillDetail(s) {
+    const tags = [];
+    if (s.type === 'single') tags.push(`🎯 Đơn mục tiêu · tầm ${s.range} (${zoneOf(s.range)})`);
+    else if (s.type === 'aoe') tags.push(`💥 Diện rộng bán kính ${s.radius} ${s.range ? `· thi triển xa tối đa ${s.range}` : '· quanh bản thân'}`);
+    else if (s.type === 'line') tags.push(`➖ Đường thẳng dài ${s.range}, rộng ${s.width || 60} · xuyên mọi kẻ địch`);
+    else if (s.type === 'dash') tags.push(`💨 Lướt tới mục tiêu tối đa ${s.range} · sát thương lan quanh điểm đáp`);
+    else if (s.type === 'dot') tags.push(`☠️ Gây độc liên tục · tầm ${s.range || 200}`);
+    else if (s.type === 'heal') tags.push(`💚 Hồi máu bản thân và đồng đội xung quanh`);
+    else if (s.type === 'buff') tags.push('✨ Tăng cường bản thân, có hào quang quanh người');
+    else if (s.type === 'passive') tags.push('🧘 Bị động: luôn có hiệu lực sau khi học');
+    if (s.mult) tags.push(`⚔️ ${Math.round(s.mult * 100)}% tấn công`);
+    const st = G.data.skillStatus && G.data.skillStatus[s.id];
+    if (st) tags.push(`🌀 ${Math.round(st[2] * 100)}% ${ST_NAME[st[0]] || st[0]} ${st[1] / 1000}s`);
+    if (s.ult) tags.push('🔥 Tuyệt kỹ: rung màn, nứt màn, người trúng cũng thấy');
+    const lore = loreOf(s.id);
+    return `${lore ? `<div class="sk-lore">${esc(lore)}</div>` : ''}<div class="sk-tags">${tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>`;
+  }
 
   // ghi DOM chỉ khi giá trị đổi: gán lại cùng giá trị vẫn làm trình duyệt tính lại bố cục / vẽ lại
   const setTxt = (el, v) => { if (el && el._t !== v) { el.textContent = v; el._t = v; } };
@@ -1187,7 +1212,7 @@
     let html = tabs([['events', '🎉 Sự kiện'], ['boss', '👑 Boss'], ['wheel', '🎡 Vòng quay'], ['checkin', '📆 Điểm danh'], ['lantern', '🏮 Đổi Hoa Đăng'], ['code', '🎁 Gift code']], tab);
     const ev = G.events;
     if (tab === 'events') {
-      html += '<div class="list">' + (ev ? ev.list.map(e => `<div class="li ${e.active ? 'done' : ''}"><div style="font-size:24px">${e.icon}</div><div class="grow"><b>${esc(e.name)}</b> ${e.active ? `<span style="color:#4ade80">● Đang diễn ra · còn <span data-until="${e.until}"></span></span>` : '<span class="muted">Chưa diễn ra</span>'}
+      html += '<div class="list">' + (ev ? ev.list.map(e => `<div class="li ${e.active ? 'done' : ''}"><div style="font-size:21px">${e.icon}</div><div class="grow"><b>${esc(e.name)}</b> ${e.active ? `<span style="color:#4ade80">● Đang diễn ra · còn <span data-until="${e.until}"></span></span>` : '<span class="muted">Chưa diễn ra</span>'}
         <div class="sub">${esc(e.desc)}</div>
         ${e.q ? `<div style="color:#ffd76a">❓ ${esc(e.q)}</div>` : ''}${e.chests != null ? `<div class="small">Còn ${e.chests} Bảo Rương</div>` : ''}
         ${e.top ? `<div class="small">${e.top.slice(0, 5).map((t, i) => `${i + 1}. ${esc(t.name)} (${t.n})`).join(' · ') || 'Chưa có ai'}</div>` : ''}</div></div>`).join('') : '') + '</div>';
@@ -1414,7 +1439,7 @@
         const at = hb.indexOf(i);
         const keyTag = s.type === 'passive' ? '<span class="kb-cat kb-passive">Bị động</span>' : i === 0 ? '<span class="sk-key">Phím 1</span>' : at >= 0 ? `<span class="sk-key">${Input.isTouch && at < 6 ? 'Nút ' + (at + 1) : 'Phím ' + SLOT_KEYS[at]}</span>` : (s.learned ? '<span class="small muted">Chưa gán phím</span>' : '');
         html += `<div class="li sk-row ${s.learned || i === 0 ? 'done' : ''}"><div class="sk-ico ${i === 6 ? 'dragon' : ''}">${ico(s, i)}</div><div class="grow"><b>${esc(s.name)}</b> ${s.learned || i === 0 ? `<span class="sk-lv">Tầng ${s.slv}/${max}</span>` : ''} ${keyTag} ${lvOk ? '' : `<span class="warn small">(cấp ${s.lv})</span>`}
-          <div class="sub">${s.desc ? esc(s.desc) : skillDesc(s)}${s.type === 'passive' ? '' : ` · ${s.mp || 0} MP · Hồi ${(s.cd || 0) / 1000}s`}</div><div class="sub">${effect}</div>
+          ${s.desc ? `<div class="sk-lore">${esc(s.desc)}</div>` : ''}${skillDetail(s)}<div class="sub">${effect}${s.type === 'passive' ? '' : ` · ${s.mp || 0} nội lực · hồi chiêu ${(s.cd || 0) / 1000}s`}</div>
           ${s.learned ? `<div class="sk-bar">${Array.from({ length: max }, (_, k) => `<i class="${k < s.slv ? 'on' : ''}"></i>`).join('')}</div>` : ''}</div>${right}</div>`;
       }
       if (!list.length) html += `<p class="small muted">${tab === 'dragon' ? '🐉 Long Ấn (rồng lửa / nước / băng) học bằng Bí Kíp từ Boss, Kỳ Trân Các hoặc đổi Hoa Đăng.' : 'Chưa có võ công.'}</p>`;
