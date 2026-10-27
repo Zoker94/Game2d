@@ -4,6 +4,9 @@ const CHANGELOG = [
   {
     date: '27/10/2026',
     items: [
+      '☠️ ÁN PHẠT ĐỒ SÁT: người mang sát khí từ 3 trở lên (tên đỏ) không đi được xe Xa Phu, không dùng được Hồi Thành Phù – phải tự chạy bộ qua các bản đồ – và không mua bán được với NPC. Sát khí vẫn tự giảm 1 điểm mỗi 15 phút.',
+      '📜 LỆNH BÀI XOÁ TỘI: sử dụng để xoá sạch sát khí. Bán ở Tạp Hóa, Thương Nhân Lưu Động (30.000 lượng) và Kỳ Trân Các (30 💎) – kẻ đồ sát vẫn mua được.',
+      '👁️ CÔNG CỤ GM cho quản trị viên (nút GM trên menu): bật / tắt Tàng hình (người chơi không thấy, quái không đánh), Miễn PK (không ai đánh được), hồi đầy, tới nhanh bản đồ bất kỳ, danh sách người chơi online (tới chỗ / kéo về / kick) để tiện theo dõi. Tài khoản quản trị không còn lên bảng xếp hạng.',
       '🔨 SỬA LỖI: trang bị bậc cấp 70 / 80 / 90 (Tiên Phẩm, Thánh Phẩm, Chí Tôn) nay cường hoá và kế thừa ở Thợ Rèn bình thường như các bậc khác (trước đây chọn đồ bậc này thì khung cường hoá / kế thừa bị lỗi, không bấm được).'
     ]
   },

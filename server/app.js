@@ -389,6 +389,7 @@ io.on('connection', socket => {
   on('adminPanel', () => features.openAdminPanel(user, socket));
   on('teleport', inGame(d => {
     if (!world.nearNpc(player, 'xa_phu')) return world.toast(player, 'Hãy gặp Xa Phu để đi xe', 'error');
+    if (world.outlawBlock(player, 'đi xe Xa Phu – phải tự chạy bộ qua các bản đồ')) return;
     let t = require('./data/npcs').TELEPORTS.find(x => x.map === (d && d.map));
     const sm = require('./data/sect').SECT_MAP;
     if (!t && d && Object.values(sm).includes(d.map)) t = { map: d.map, price: sm[player.c.cls] === d.map ? 0 : 300 };   // bản đồ môn phái
@@ -410,7 +411,7 @@ io.on('connection', socket => {
   on('chat', inGame(d => features.chat(player, d || {})));
   on('guild', inGame(d => d && d.op ? features.guildAction(player, d) : features.guildPanel(player)));
   on('lb', inGame(() => { if (!features.lb.level) features.computeLeaderboard(); socket.emit('lb', features.lb); }));
-  on('online', inGame(() => socket.emit('online', [...world.players.values()].map(p => ({ name: p.c.name, cls: p.c.cls, level: p.c.level, map: MAPS[p.mapId].name })))));
+  on('online', inGame(() => socket.emit('online', [...world.players.values()].filter(p => user.isAdmin || isOwner(user) || !world.gmOn(p, 'hide')).map(p => ({ name: p.c.name, cls: p.c.cls, level: p.c.level, map: MAPS[p.mapId].name })))));
   on('setQuick', inGame(d => { if (d && ITEMS[d.id]) { if (d.kind === 'mp') player.c.quickMp = d.id; else player.c.quickHp = d.id; player.dirtyMe = true; } }));
 
   on('inspect', inGame(d => d && social.inspect(player, d.id)));

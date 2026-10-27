@@ -24,7 +24,7 @@ const NPCS = {
     shop: ['hp1', 'hp2', 'hp3', 'hp4', 'hp5', 'hp6', 'mp1', 'mp2', 'mp3', 'mp4', 'mp5', 'mp6'] },
   tap_hoa: { name: 'Tạp Hóa Tiểu Nhị', sprite: 'merchant', color: '#8b4513', action: 'shop',
     talk: 'Đủ thứ trên đời, cứ chọn thoải mái.',
-    shop: ['scroll_town', 'stone', 'mount_food', 'exp_x2', 'wheel_ticket', 'rename_card', 'hp1', 'mp1'] },
+    shop: ['scroll_town', 'stone', 'mount_food', 'exp_x2', 'wheel_ticket', 'rename_card', 'pk_pardon', 'hp1', 'mp1'] },
   ma_phu: { name: 'Mã Phu Lão Trương', sprite: 'driver', color: '#6b4423', action: 'shop', mountNpc: true,
     talk: 'Ngựa tốt ngàn dặm! Thú cưỡi giúp đại hiệp đi nhanh hơn và mạnh hơn. Nhớ cho chúng ăn Mã Linh Đan để lên cấp.',
     shop: ['mount_ngua_nau', 'mount_bach_ma', 'mount_hac_ma', 'mount_food', 'mount_stone'] },
@@ -32,7 +32,7 @@ const NPCS = {
     talk: 'Bảo vật hiếm có, chỉ nhận Nguyên Bảo.',
     knbShop: [
       ...['weapon', 'armor', 'helmet', 'boots', 'ring', 'amulet'].flatMap(s => [1, 2, 3, 4].map(t => ({ id: `${s}_${t}_rare`, knb: 20 + t * 25 }))),
-      { id: 'doi_phai', knb: 300 }, { id: 'inv_card', knb: 50 }, { id: 'rename_card', knb: 20 }, { id: 'tay_tuy_kinh', knb: 30 }, { id: 'tay_tiem_nang', knb: 20 }, { id: 'lucky_chest', knb: 30 }, { id: 'exp_x2', knb: 10 }, { id: 'wheel_ticket', knb: 15 }, { id: 'stone', knb: 3 },
+      { id: 'doi_phai', knb: 300 }, { id: 'inv_card', knb: 50 }, { id: 'rename_card', knb: 20 }, { id: 'tay_tuy_kinh', knb: 30 }, { id: 'pk_pardon', knb: 30 }, { id: 'tay_tiem_nang', knb: 20 }, { id: 'lucky_chest', knb: 30 }, { id: 'exp_x2', knb: 10 }, { id: 'wheel_ticket', knb: 15 }, { id: 'stone', knb: 3 },
       { id: 'stone2', knb: 40 }, { id: 'insure', knb: 60 }, { id: 'mount_food', knb: 2 }, { id: 'mount_stone', knb: 30 },
       { id: 'book_fire', knb: 800 }, { id: 'book_water', knb: 800 }, { id: 'book_ice', knb: 800 },
       { id: 'mount_kim_nguu', knb: 1200 }, { id: 'mount_bach_ho', knb: 1500 }, { id: 'mount_kim_quy', knb: 2000 }, { id: 'mount_hoa_ky_lan', knb: 5000 }, { id: 'mount_phuong_hoang', knb: 6500 }, { id: 'mount_thanh_long', knb: 8000 }, { id: 'mount_hac_long', knb: 8000 }
@@ -96,7 +96,7 @@ const NPCS = {
     talk: 'Điểm cống hiến môn phái có thể đổi lấy bảo vật nơi ta. Cấp bậc càng cao, sức mạnh càng tăng.' },
   thuong_nhan: { name: 'Thương Nhân Lưu Động', sprite: 'merchant', color: '#cd853f', action: 'shop', field: true,
     talk: 'Đường xa vất vả, mua chút thuốc đi đường nào!',
-    shop: ['hp1', 'hp2', 'hp3', 'hp4', 'hp6', 'mp1', 'mp2', 'mp3', 'mp4', 'mp6', 'scroll_town', 'stone', 'mount_food'] }
+    shop: ['hp1', 'hp2', 'hp3', 'hp4', 'hp6', 'mp1', 'mp2', 'mp3', 'mp4', 'mp6', 'scroll_town', 'stone', 'mount_food', 'pk_pardon'] }
 };
 
 for (const id in NPCS) {

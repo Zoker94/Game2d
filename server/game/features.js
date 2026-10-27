@@ -72,6 +72,8 @@ const LANTERN_EXCHANGE = [
 const GUILD_LEVELS = [0, 50000, 200000, 600000, 1500000, 4000000];
 const GUILD_CREATE_COST = 10000;
 
+const GM_CMDS = new Set(['help', 'lenh', 'an', 'hide', 'tanghinh', 'mienpk', 'safe', 'gmlist', 'tp', 'goto', 'keo', 'heal', 'kick', 'online']);
+
 class Features {
   constructor(world, db) {
     this.w = world; this.db = db; this.io = world.io;
@@ -434,12 +436,26 @@ class Features {
     const [cmd, ...args] = text.slice(1).split(' ');
     const c = cmd.toLowerCase(), w = this.w, ok = t => w.toast(p, t, 'reward'), err = t => w.toast(p, t, 'error');
     if (c === 'admin' || c === 'cpanel' || c === 'quantri') return this.openAdminPanel(p.user, p.socket);
-    if (!isOwner(p.user)) return err('Lệnh không tồn tại hoặc bạn không có quyền');
+    // quản trị viên (không phải chủ server) dùng được nhóm lệnh theo dõi người chơi; lệnh tạo vật phẩm / sửa chỉ số chỉ chủ server
+    if (!isOwner(p.user) && !(p.user.isAdmin && GM_CMDS.has(c))) return err('Lệnh không tồn tại hoặc bạn không có quyền');
     const findPlayer = name => [...w.players.values()].find(o => o.c.name.toLowerCase() === String(name || '').toLowerCase());
     switch (c) {
       case 'help': case 'lenh':
-        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: 'Lệnh admin: /admin (mở trang quản trị) · /tb <nội dung> · /tp <bản đồ> · /level <cấp> · /gold <số> · /knb <số> · /give <mã vật phẩm> [số lượng] [+cường hóa] · /heal · /boss <mã boss> · /event <mã sự kiện> [phút] · /kick <tên> · /goto <tên> · /keo <tên> · /tiemnang <tên> <số> · /kynang <tên> <số> · /conghien <số> · /online · /thoitiet <clear|rain|storm|wind|snow|blizzard|sun> [phút] · /cottruyen <chương> [bước] | reset · /tusat' });
+        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: 'Lệnh admin: /an (tàng hình) · /mienpk (miễn PK) · /admin (mở trang quản trị) · /tb <nội dung> · /tp <bản đồ> · /level <cấp> · /gold <số> · /knb <số> · /give <mã vật phẩm> [số lượng] [+cường hóa] · /heal · /boss <mã boss> · /event <mã sự kiện> [phút] · /kick <tên> · /goto <tên> · /keo <tên> · /tiemnang <tên> <số> · /kynang <tên> <số> · /conghien <số> · /online · /thoitiet <clear|rain|storm|wind|snow|blizzard|sun> [phút] · /cottruyen <chương> [bước] | reset · /tusat' });
         break;
+      case 'an': case 'hide': case 'tanghinh': case 'mienpk': case 'safe': {   // bật / tắt tàng hình, miễn PK
+        const k = c === 'mienpk' || c === 'safe' ? 'safe' : 'hide';
+        const g = p.c.gm || (p.c.gm = {});
+        g[k] = args[0] === 'on' ? true : args[0] === 'off' ? false : !g[k];
+        if (k === 'hide' && g.hide) for (const mon of w.maps[p.mapId].monsters.values()) if (mon.target === p.userId) mon.target = null;
+        ok(k === 'hide' ? (g.hide ? '👻 Đã TÀNG HÌNH: người chơi không thấy bạn, quái không đánh bạn' : 'Đã tắt tàng hình') : (g.safe ? '🛡️ Đã bật MIỄN PK: người chơi không đánh được bạn' : 'Đã tắt miễn PK'));
+        break;
+      }
+      case 'gmlist': {   // danh sách người chơi cho bảng GM
+        const { MAPS: M } = require('../data/maps');
+        p.socket.emit('gmList', [...w.players.values()].map(o => ({ name: o.c.name, lv: o.c.level, cls: o.c.cls, map: M[o.mapId] ? M[o.mapId].name : o.mapId, pk: o.c.pk | 0, me: o === p, off: !!o.offline, hide: w.gmOn(o, 'hide') })).sort((a, b) => b.lv - a.lv));
+        return;
+      }
       case 'tb': case 'thongbao': {
         const msg = args.join(' ');
         if (!msg) return err('Cú pháp: /tb <nội dung>');
@@ -468,6 +484,7 @@ class Features {
       case 'kick': {
         const o = findPlayer(args.join(' '));
         if (!o) return err('Người chơi không online');
+        if (isOwner(o.user) && !isOwner(p.user)) return err('Không thể kick chủ server');
         o.socket.emit('kicked', { reason: 'Bị quản trị viên mời ra khỏi game' }); w.removePlayer(o); o.socket.disconnect(true); ok('Đã kick ' + o.c.name); break;
       }
       case 'tiemnang': case 'kynang': {   // /tiemnang <tên> <số> · /kynang <tên> <số> (số âm để thu lại)
@@ -482,7 +499,7 @@ class Features {
         break;
       }
       case 'goto': { const o = findPlayer(args.join(' ')); if (!o) return err('Người chơi không online'); w.enterMap(p, o.mapId, o.x + 40, o.y); break; }
-      case 'keo': { const o = findPlayer(args.join(' ')); if (!o) return err('Người chơi không online'); w.enterMap(o, p.mapId, p.x + 40, p.y); ok('Đã kéo ' + o.c.name + ' tới chỗ bạn'); break; }
+      case 'keo': { const o = findPlayer(args.join(' ')); if (!o) return err('Người chơi không online'); if (isOwner(o.user) && !isOwner(p.user)) return err('Không thể kéo chủ server'); w.enterMap(o, p.mapId, p.x + 40, p.y); ok('Đã kéo ' + o.c.name + ' tới chỗ bạn'); break; }
       case 'tusat': { if (!p.dead) { p.c.hp = 0; w.killPlayer(p, null); } break; }   // tự hạ gục (thử màn hình hồi sinh)
       case 'cottruyen': case 'story': {   // /cottruyen <chương 1-7> [bước 1-n] · /cottruyen reset
         const st = w.story.state(p.c);
@@ -686,7 +703,7 @@ class Features {
 
   // ---------------- Bảng xếp hạng ----------------
   computeLeaderboard() {
-    const users = Object.values(this.db.data.users).filter(u => u.character && !u.banned);
+    const users = Object.values(this.db.data.users).filter(u => u.character && !u.banned && !u.isAdmin && !isOwner(u));   // tài khoản quản trị không lên bảng xếp hạng
     // hạng lực chiến top 10 -> huy hiệu cạnh tên
     this.powerRank = new Map(users.filter(u => u.character.power > 0).sort((a, b) => b.character.power - a.character.power).slice(0, 10).map((u, i) => [u.id, i + 1]));
     for (const p of this.w.players.values()) { p.c.x = p.x; p.c.y = p.y; }

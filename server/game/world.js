@@ -278,7 +278,7 @@ class World {
       inv: c.inv, invMax: U.invSize(c), vmb: Math.min(5, c.vmb | 0), equip: c.equip, kills: c.kills, pvpKills: c.pvpKills, bossKills: c.bossKills,
       tutorial: this.tutorialView(c), gemTut: c.gemTut | 0, guild: g ? { id: g.id, name: g.name, role: g.members[p.userId] } : null,
       expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
-      quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, owner: isOwner(p.user) ? 1 : 0, dead: p.dead,
+      quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, gm: this.isGm(p) ? { hide: !!(c.gm && c.gm.hide), safe: !!(c.gm && c.gm.safe) } : null, owner: isOwner(p.user) ? 1 : 0, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null,
       minhChu: this.daihoi && this.daihoi.isMinhChu(p.userId) ? 1 : 0,
       attr: c.attr || {}, attrFree: attrTotalOf(c) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
@@ -522,6 +522,7 @@ class World {
   // Hồi Thành Phù: niệm 3 giây (bị đánh / di chuyển là hủy) rồi về thành gần nhất
   startRecall(p) {
     if (p.dead || p.recall) return;
+    if (this.outlawBlock(p, 'dùng Hồi Thành Phù – phải tự chạy bộ')) return;
     const s = p.c.inv.find(x => x.id === 'scroll_town');
     if (!s) return this.toast(p, 'Bạn không có Hồi Thành Phù (mua ở Tạp Hóa hoặc Thương Nhân Lưu Động)', 'error');
     const home = this.homeOf(p), ms = MAPS[p.mapId].safe ? 1000 : 3000;
@@ -607,8 +608,19 @@ class World {
 
   // Luyện công: không đánh ai. Cờ PK: đánh được người cũng đeo cờ và cướp tiêu.
   // Đồ sát: đánh được tất cả, và ai cũng đánh được kẻ đồ sát. Người dưới cấp 10 được bảo hộ.
+  // Kẻ đồ sát (sát khí từ PK_OUTLAW): không đi Xa Phu, không dùng Hồi Thành Phù, không mua bán với NPC (trừ Lệnh Bài Xoá Tội)
+  isOutlaw(p) { return ((p.c.pk | 0) >= PK_OUTLAW); }
+  outlawBlock(p, what) {
+    if (!this.isOutlaw(p)) return false;
+    this.toast(p, `☠️ Bạn đang mang tội đồ sát (sát khí ${p.c.pk}): không thể ${what}. Dùng Lệnh Bài Xoá Tội (Tạp Hóa / Thương Nhân Lưu Động / Kỳ Trân Các) hoặc chờ sát khí giảm (1 điểm / 15 phút).`, 'error');
+    return true;
+  }
+  // quản trị viên: tàng hình (người chơi không thấy, quái không đánh) / miễn PK (người chơi không đánh được)
+  isGm(p) { return !!(p && p.user && (p.user.isAdmin || isOwner(p.user))); }   // quản trị viên hoặc chủ server
+  gmOn(p, k) { return !!(this.isGm(p) && p.c.gm && p.c.gm[k]); }
   canHarm(a, b) {
     if (!b || a === b || !b.c || b.dead || a.dead || a.mapId !== b.mapId) return false;
+    if (this.gmOn(b, 'hide') || this.gmOn(b, 'safe')) return false;
     if (this.duel.fighting(a, b)) return true;         // đang thách đấu với nhau: đánh được ở mọi nơi
     const def = this.maps[a.mapId].def;
     if (def.safe) return false;
@@ -1251,7 +1263,7 @@ class World {
   }
   batchable(it) {
     const e = it.effect || {};
-    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.rename || e.pet || e.learn || e.dragon || e.resetSkill || e.resetAttr);
+    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.pardon || e.rename || e.pet || e.learn || e.dragon || e.resetSkill || e.resetAttr);
   }
   useOne(p, uid) {
     const c = p.c;
@@ -1277,6 +1289,13 @@ class World {
       this.features.questProgress(p, 'potion', 1);
     }
     if (e.town) { this.startRecall(p); return; }   // niệm phép, xong mới trừ phù
+    if (e.pardon) {
+      if (!(c.pk > 0)) return this.toast(p, 'Bạn không mang sát khí, không cần xoá tội', 'error');
+      U.removeByUid(c, uid, 1);
+      const was = c.pk; c.pk = 0; p.pkDecayAt = 0;
+      this.toast(p, `📜 Lệnh Bài Xoá Tội: đã xoá ${was} điểm sát khí. Bạn lại là người lương thiện.`, 'reward');
+      p.dirtyMe = true; this.db.markDirty(); return;
+    }
     if (e.rename) { p.socket.emit('renamePrompt', { uid }); return; }   // nhập tên mới ở máy khách
     if (e.pet) {   // thú cưng: triệu hồi / thu hồi, không mất vật phẩm
       c.pet = c.pet === e.pet ? null : e.pet;
@@ -1576,6 +1595,7 @@ class World {
     if (!it) return;
     if (it.type === 'equip') qty = Math.min(qty, 10);
     const c = p.c;
+    if (id !== 'pk_pardon' && this.outlawBlock(p, 'mua bán với NPC')) return;
     if (id === 'rename_card' && !c.renameFree && ((npc.shop || []).includes(id) || (npc.knbShop || []).some(x => x.id === id))) {   // thẻ đổi tên: lần mua đầu miễn phí
       if (!U.addItem(c, id, 1)) return this.toast(p, 'Túi đồ đầy', 'error');
       c.renameFree = 1;
@@ -1614,6 +1634,7 @@ class World {
     const c = p.c;
     const s = c.inv.find(x => x.uid === uid);
     if (!s) return;
+    if (this.outlawBlock(p, 'mua bán với NPC')) return;
     if (!MAPS[p.mapId].npcs.some(n => NPCS[n.id].shop && this.nearNpc(p, n.id))) return this.toast(p, 'Hãy đứng gần một NPC cửa hàng để bán', 'error');
     qty = U.clamp(qty | 0 || s.qty, 1, s.qty);
     const it = ITEMS[s.id];
@@ -1651,6 +1672,7 @@ class World {
   // bán nhiều món một lần (bán nhanh)
   sellMany(p, uids) {
     if (!Array.isArray(uids) || !uids.length) return;
+    if (this.outlawBlock(p, 'mua bán với NPC')) return;
     if (!MAPS[p.mapId].npcs.some(n => NPCS[n.id].shop && this.nearNpc(p, n.id))) return this.toast(p, 'Hãy đứng gần một NPC cửa hàng để bán', 'error');
     const c = p.c; let gold = 0, n = 0;
     for (const uid of new Set(uids.slice(0, 200))) {
@@ -2089,7 +2111,7 @@ class World {
     const slowed = mon.st && (mon.st.slow || 0) > now;
     const tpl = mon.tpl;
     let target = mon.target ? this.players.get(mon.target) : null;
-    if (target && (target.dead || target.mapId !== mon.mapId || Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > LEASH_R)) {
+    if (target && (target.dead || target.mapId !== mon.mapId || this.gmOn(target, 'hide') || Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > LEASH_R)) {
       target = null; mon.target = null;
       if (Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > LEASH_R) {
         mon.wander = { x: mon.hx, y: mon.hy };
@@ -2099,7 +2121,7 @@ class World {
     if (!target && tpl.aggro && !m.def.safe && this.tickN % 5 === 0) {
       let best = null, bd = AGGRO_R;
       for (const p of m.players) {
-        if (p.dead) continue;
+        if (p.dead || this.gmOn(p, 'hide')) continue;   // quản trị viên tàng hình: quái không thấy
         const d = U.dist(p, mon);
         if (d < bd) { bd = d; best = p; }
       }
@@ -2130,7 +2152,7 @@ class World {
       if (tpl.elite && !mon.boss && now >= mon.nextAoe) {   // tinh anh: chấn địa nhỏ mỗi 7 giây
         mon.nextAoe = now + 7000;
         this.fx(mon.mapId, { t: 'ring', x: mon.x, y: mon.y, tx: mon.x, ty: mon.y, r: 120, color: '#ffb020' });
-        for (const p of m.players) if (!p.dead && U.dist(p, mon) < 120) {
+        for (const p of m.players) if (!p.dead && !this.gmOn(p, 'hide') && U.dist(p, mon) < 120) {
           const { dmg } = this.calcDamage(tpl.atk, 0, p.stats.def, 1.1, 0.4);
           this.applyDamage(p, dmg, mon, 'hurt');
         }
@@ -2244,8 +2266,9 @@ class World {
 
   snapshot(m) {
     const guilds = this.db.data.guilds, now = Date.now();
-    const ps = [];
+    const ps = [], hid = new Set();
     for (const p of m.players) {
+      if (this.gmOn(p, 'hide')) hid.add(p.id);
       const g = p.c.guildId && guilds[p.c.guildId];
       ps.push({ i: p.id, n: p.c.name, c: p.c.cls, x: Math.round(p.x), y: Math.round(p.y), d: p.dir, m: p.moving ? 1 : 0,
         h: Math.max(0, Math.round(p.c.hp)), H: p.stats.maxHp, l: p.c.level, g: g ? g.name : '', a: p.dead ? 1 : 0,
@@ -2258,7 +2281,12 @@ class World {
       ms.push({ i: mon.id, t: mon.tpl.id, x: Math.round(mon.x), y: Math.round(mon.y), d: mon.dir, m: mon.moving ? 1 : 0, h: Math.max(0, Math.round(mon.hp)), H: mon.maxHp, b: mon.boss ? 1 : 0, el: mon.tpl.elite ? 1 : mon.tpl.pbBoss ? 2 : 0, e: mon.event ? 1 : 0, f: mon.frozenUntil > now ? 1 : 0, s: stMask(mon, now) });
     }
     const cs = m.carts && m.carts.size ? this.escort.snapshot(m.def.id) : null;
-    this.io.to('map:' + m.def.id).emit('snap', cs ? { p: ps, m: ms, c: cs } : { p: ps, m: ms });
+    const pack = list => cs ? { p: list, m: ms, c: cs } : { p: list, m: ms };
+    if (!hid.size) return this.io.to('map:' + m.def.id).emit('snap', pack(ps));
+    // có quản trị viên tàng hình: quản trị viên thấy đủ (đánh dấu iv), người chơi khác không thấy
+    for (const o of ps) if (hid.has(o.i)) o.iv = 1;
+    const vis = ps.filter(o => !hid.has(o.i)), all = pack(ps), pub = pack(vis);
+    for (const p of m.players) p.socket.emit('snap', this.isGm(p) ? all : pub);
   }
 
   // Ngoại hình: [bậc vũ khí, độ hiếm vũ khí, +vũ khí, bậc áo, độ hiếm áo, +áo, bậc nón, thú cưỡi đang cưỡi, độ hiếm nón]
@@ -2313,6 +2341,7 @@ const POISON_PVP = 0.007;                        // PK: mỗi nhịp độc tr�
 const MELEE_PVP_ATK = 1.15, MELEE_PVP_DEF = 0.85, MELEE_PVP_CC = 0.7;   // PK: cận chiến gây +15% sát thương, nhận 85% sát thương, bị khống chế 70% thời gian
 const STUN_IMMUNE = 3000;
 // PvP: sát thương người chơi lên người chơi, hồi máu khi đang giao tranh, bình máu (hồi chiêu, tối đa % máu mỗi bình)
+const PK_OUTLAW = 3;   // sát khí từ 3 (tên đỏ) là kẻ đồ sát
 const PVP_DMG = 0.0285, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;
 const MED_AFTER = 30000;                        // đứng yên trong thành bao lâu thì ngồi thiền (ms)
 const MED_EXP = 0.00001;                        // mỗi 5 giây ngồi thiền: 0,001% kinh nghiệm cấp hiện tại (≈0,7%/giờ)                       // kháng choáng sau khi hết choáng (ms)

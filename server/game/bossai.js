@@ -127,7 +127,7 @@ class BossAI {
       let drained = 0;
       for (const p of m.players) {
         const key = id + ':' + p.userId + ':' + s.at;
-        if (p.dead || hitSet.has(key) || !this.hit(s, p)) continue;
+        if (p.dead || hitSet.has(key) || this.w.gmOn(p, 'hide') || !this.hit(s, p)) continue;
         hitSet.add(key);
         if (p.dodgeUntil > now) continue;   // đang lướt: né được
         const dmg = this.w.bossPctDmg(mon, p, mult * (mon.enraged ? 1.15 : 1), true);   // theo % máu người trúng

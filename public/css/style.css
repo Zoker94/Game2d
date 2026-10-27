@@ -1721,3 +1721,11 @@ body.blackout > *:not(#blackout) { visibility: hidden !important; }
 .kb-cell { min-width: 74px; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(201,154,58,.5); background: rgba(0,0,0,.35); color: #ffe9b0; font: inherit; font-weight: 700; cursor: pointer; }
 .kb-cell.empty { color: #776; font-weight: 400; }
 .kb-cell.wait { border-color: #4affa0; color: #4affa0; animation: blink 1s infinite; }
+/* bảng GM */
+.gm-tg { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.gm-row { display: flex; gap: 6px; margin: 8px 0 4px; }
+.gm-row select, .gm-row input { flex: 1; min-width: 0; }
+.gm-list .li .btn.small { padding: 3px 7px; }
+#menu-buttons #btn-gm.on { box-shadow: 0 0 0 2px #7af0ff, 0 0 10px #4ad8ff; }
+/* cảnh báo đồ sát ở NPC */
+.outlaw-warn { margin: 4px 0 8px; padding: 6px 8px; border-radius: 6px; background: rgba(120,10,10,.45); border: 1px solid #ff5050; color: #ffd0d0; font-size: 12px; }

@@ -1496,6 +1496,8 @@
     if (d.knbShop) tl.push(['knb', '💎 Kỳ Trân'], ['sell', '💰 Bán']);
     if (d.enhance) tl.push(['enhance', '🔨 Cường hóa'], ['inherit', '♻️ Kế thừa'], ['gem', '💎 Khảm đá'], ['gemup', '🔥 Luyện đá']);
     if (tl.length) html += tabs(tl, tab);
+    if ((G.me.pk | 0) >= 3 && (d.shop || d.knbShop || d.teleports))   // đồ sát: không đi xe, không mua bán (trừ Lệnh Bài Xoá Tội)
+      html += `<div class="outlaw-warn">☠️ Bạn đang mang tội đồ sát (sát khí ${G.me.pk}): không thể ${d.teleports ? 'đi xe Xa Phu – phải tự chạy bộ' : 'mua bán với NPC'}. ${d.teleports ? '' : 'Vẫn mua được <b>Lệnh Bài Xoá Tội</b>. '}Sát khí giảm 1 điểm mỗi 15 phút.</div>`;
     if (tab === 'buy' || tab === 'knb') {
       const list = tab === 'buy' ? d.shop.map(x => ({ id: x.id, price: x.price })) : d.knbShop.map(x => ({ id: x.id, knb: x.knb }));
       const hasEq = list.some(x => G.data.items[x.id] && G.data.items[x.id].type === 'equip'), bbr = panelState.buyBr || G.me.branch;

@@ -311,13 +311,14 @@
     s.on('giftcodes', d => Gift.onView(d));
     s.on('duelReq', d => Duel.onReq(d));
     s.on('daihoi', d => DaiHoi.onState(d));
+    s.on('gmList', d => GM.onList(d));
     s.on('mapFlags', d => DaiHoi.onFlags(d));
     s.on('daihoiPts', d => DaiHoi.onPts(d));
     s.on('duel', d => Duel.onDuel(d));
     s.on('duelRing', d => Duel.onRing(d));
     s.on('giftResult', d => Gift.onResult(d));
     s.on('me', d => { if (d._k) { if (!G.me) return s.emit('meFull'); for (const k of d._k) d[k] = G.me[k]; delete d._k; }   // phần không đổi: giữ bản cũ
-      if (G.me && d.riding !== G.me.riding) GameAudio.sfx('mount'); G.me = d; if (d.pvp) G.pvpUntil = performance.now() + 8000; UI.updateHud(); $('dead-overlay').classList.toggle('hidden', !d.dead); });
+      if (G.me && d.riding !== G.me.riding) GameAudio.sfx('mount'); G.me = d; if (d.pvp) G.pvpUntil = performance.now() + 8000; UI.updateHud(); if (window.GM) GM.sync(); $('dead-overlay').classList.toggle('hidden', !d.dead); });
     s.on('pos', d => { const far = Math.hypot(d.x - G.self.x, d.y - G.self.y) > 64; G.self.x = d.x; G.self.y = d.y; if (far || d.dash) G.moveTo = null; });   // lệch ít: giữ đích đang đi tới
     s.on('weather', w => Weather.set(w));
     s.on('pickClass', d => UI.pickClass(d));
@@ -480,7 +481,7 @@
       }
       let e = G.players.get(p.i);
       if (!e) { e = { x: p.x, y: p.y }; G.players.set(p.i, e); }
-      Object.assign(e, { id: p.i, name: p.n, cls: p.c, tx: p.x, ty: p.y, dir: p.d, moving: p.m, hp: p.h, maxHp: p.H, level: p.l, guild: p.g, dead: p.a, gm: p.v, ap: p.q, st: p.s || 0, el: p.el || '', pw: p.pw || 0, rk: p.rk || 0, k: p.k || 0, pm: p.pm || 0, rb: p.rb || 0, mc: p.mc || 0, bf: p.bf || null, md: p.md || 0, seen: now });
+      Object.assign(e, { id: p.i, name: p.n, cls: p.c, tx: p.x, ty: p.y, dir: p.d, moving: p.m, hp: p.h, maxHp: p.H, level: p.l, guild: p.g, dead: p.a, gm: p.v, ap: p.q, st: p.s || 0, el: p.el || '', pw: p.pw || 0, rk: p.rk || 0, k: p.k || 0, pm: p.pm || 0, rb: p.rb || 0, mc: p.mc || 0, bf: p.bf || null, md: p.md || 0, iv: p.iv || 0, seen: now });
       if (p.d === 1 || p.d === 2) e.lastH = p.d;
     }
     for (const id of G.players.keys()) if (!seenP.has(id)) G.players.delete(id);
@@ -1386,7 +1387,9 @@
         if (pm) Overhead.drawUnder(ctx, e, e.x, e.y, pm, now);
         const elift = e.ap && e.ap[7] ? 24 : 0;
         if (e.bf && !e.dead) Auras.draw(ctx, e.x, e.y, e.bf, now, 'under', elift);
+        if (e.iv) ctx.globalAlpha = 0.4;   // quản trị viên đang tàng hình (chỉ quản trị viên khác thấy)
         const top = drawHero(e.x, e.y, e.cls, e.dir, e.lastH, e.moving, e.atkUntil > now, e.ap, e.dead, e.x / 50, now, e);
+        ctx.globalAlpha = 1;
         if (e.bf && !e.dead) Auras.draw(ctx, e.x, e.y, e.bf, now, 'over', elift);
         if (e.pm && !e.dead && !G.map.pvp) Escort.drawFlag(ctx, e.x, e.y, top, e.dir === 1 || e.dir === 2 ? e.dir : (e.lastH || 2), e.pm, now);
         if (pm) Overhead.drawOver(ctx, e, e.x, e.y, top, pm, now);
@@ -1404,7 +1407,9 @@
         const tnow = Date.now(), mbf = me.dead ? null : me.buffs.filter(b => b.until > tnow && b.aura).map(b => [b.aura, b.color]);
         const slift = me.ap && me.ap[7] ? 24 : 0;
         if (mbf && mbf.length) Auras.draw(ctx, s.x, s.y, mbf, now, 'under', slift);
+        if (me.gm && me.gm.hide) ctx.globalAlpha = 0.4;   // đang tàng hình: tự thấy mình mờ
         const top = drawHero(s.x, s.y, me.cls, s.dir, s.lastH, s.moving, s.atkUntil > now, me.ap, me.dead, 0, now, s);
+        ctx.globalAlpha = 1;
         if (mbf && mbf.length) Auras.draw(ctx, s.x, s.y, mbf, now, 'over', slift);
         if (me.pkMode && !me.dead && !G.map.pvp) Escort.drawFlag(ctx, s.x, s.y, top, s.dir === 1 || s.dir === 2 ? s.dir : (s.lastH || 2), me.pkMode, now);
         if (sm) Overhead.drawOver(ctx, s, s.x, s.y, top, sm, now);
