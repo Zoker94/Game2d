@@ -2,7 +2,7 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
-    date: '27/10/2026',
+    date: '28/10/2026',
     items: [
       '🎨 Vẽ lại Sứ Giả Hoa Sơn (Tương Dương) và Chủ Trì Luận Kiếm (đỉnh Hoa Sơn) cùng phong cách các NPC khác: kiếm khách phái Hoa Sơn áo tím trắng thêu hoa mai, kiếm đeo tua.',
       '🐉 2 LONG ẤN MỚI (nay đủ 5): ⚡ Lôi Long Chấn Thiên – rồng sấm giáng 7 tia sét xuống diện rộng, làm choáng kẻ địch 1,5 giây; 🌑 Ám Long Phệ Hồn – rồng bóng tối mở xoáy nuốt hồn, làm chậm 3 giây và hút 25% sát thương gây ra thành sinh lực. Bí kíp rơi từ Boss / đổi Hoa Đăng như 3 Long Ấn cũ, hoặc mua 800 Nguyên Bảo ở Kỳ Trân Các.',
@@ -13,6 +13,11 @@ const CHANGELOG = [
       '⚔️ Đại Hội Võ Lâm nay 1 tuần 1 lần (20:30 Chủ Nhật), Võ Lâm Minh Chủ giữ danh hiệu trọn 7 ngày.',
       '🔔 Thông báo nhặt / mua / mở đồ nhỏ gọn hơn và nổi lên trên túi đồ – dùng đồ trong túi thấy thông báo ngay.',
       '🛠️ Sửa lỗi kẹt cốt truyện ở bước Sứ Giả Nhiệm Vụ: nếu hôm nay đã nhận thưởng nhiệm vụ hàng ngày (kể cả đã nhận hết) thì bước này tự hoàn thành, không phải chờ sang ngày. Ai đang kẹt chỉ cần mở bảng Nhiệm vụ hoặc vào lại game.',
+    ]
+  },
+  {
+    date: '27/10/2026',
+    items: [
       '🛠️ Sửa lỗi: máy chủ cập nhật / khởi động lại giữa khung giờ sự kiện (Nhân Đôi Kinh Nghiệm, Săn Quái, Tầm Bảo) thì sự kiện bị mất – nay tự bật lại cho hết phần thời gian còn lại.',
       '🎬 PHIM MỞ ĐẦU: lần đầu vào game sẽ xem đoạn phim mở đầu 9 cảnh theo cốt truyện Võ Mục Di Thư – thiết kỵ Mông Cổ, Tương Dương bị vây, bảy tàn quyển thất lạc, Thiên Ma Giáo tái xuất, chín đại môn phái và chính bạn đặt chân tới cổng thành. Có giọng đọc tiếng Việt (bật / tắt ở góc trên) và phụ đề; chạm để tua, có nút Bỏ qua. Xem lại ở Nhiệm vụ → Cốt truyện → "Xem lại phần mở đầu".',
       '🔒 ĐỒ KHOÁ: đồ mua ở NPC (kể cả Kỳ Trân Các, cửa hàng môn phái) và phần thưởng nhiệm vụ (hướng dẫn, nhiệm vụ ngày, cốt truyện, môn phái) là đồ khoá – không thể giao dịch hay bày bán ở Chợ Phiên. Có biểu tượng 🔒 trên ô đồ và trong mô tả. Đồ khoá không gộp chồng với đồ thường; khảm / luyện đá, chế áo choàng, mở rương từ đồ khoá thì đồ nhận được cũng là đồ khoá. Đồ có sẵn từ trước vẫn giao dịch bình thường.',
