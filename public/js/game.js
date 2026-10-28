@@ -727,10 +727,11 @@
     if (Array.isArray(snd)) { GameAudio.sfx(snd[0], 300, o); setTimeout(() => GameAudio.sfx(snd[1], 300, o), 750); }
     else GameAudio.sfx(snd, mine ? 40 : 120, o);
   }
-  // Nhạc nền theo khu vực: thành (êm), bãi luyện công (sôi động), có Boss gần (căng thẳng)
+  // Nhạc nền theo khu vực: thành (êm), bãi luyện công (sôi động), có Boss gần / sự kiện PK đang diễn ra (hào hùng)
+  const BATTLE_MAPS = new Set(['tong_kim', 'hoa_son_ld', 'dai_hoi']);
   function updateMusic() {
     if (!G.map || (window.Intro && Intro.open)) return;
-    let m = G.map.safe ? 'town' : 'field';
+    let m = G.map.safe ? 'town' : BATTLE_MAPS.has(G.map.id) ? 'battle' : 'field';
     for (const e of G.monsters.values()) if (e.boss && Math.hypot(e.x - G.self.x, e.y - G.self.y) < 900) { m = 'boss'; break; }
     GameAudio.music(m);
   }

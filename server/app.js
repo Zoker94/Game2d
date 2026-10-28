@@ -255,6 +255,13 @@ const ASSET_MAN = (() => {
   try { walk(root); } catch (e) { }
   return m;
 })();
+// nhạc nền (public/music): phát dần bằng thẻ <audio>, KHÔNG qua Service Worker (để trình duyệt tự xin từng đoạn – Range);
+// URL gắn ?v=MUSIC_VER (mã băm nội dung) nên trình duyệt giữ lâu, đổi file nhạc thì tự tải lại
+const MUSIC_VER = (() => {
+  const h = require('crypto').createHash('sha1'), dir = path.join(PUBLIC_DIR, 'music');
+  try { for (const f of fs.readdirSync(dir).sort()) h.update(f).update(fs.readFileSync(path.join(dir, f))); } catch (e) { }
+  return h.digest('hex').slice(0, 10);
+})();
 const ASSET_VER = require('crypto').createHash('sha1').update(JSON.stringify(ASSET_MAN)).digest('hex').slice(0, 10);
 app.get('/asset-manifest.json', (req, res) => { res.set('Cache-Control', 'no-cache'); res.json({ v: ASSET_VER, files: ASSET_MAN }); });
 // lịch sử cập nhật cho mục Cài đặt (người mới xem lại các bản cập nhật trước)
@@ -265,7 +272,7 @@ function sendHtml(res, file) {
   if (!html) {
     html = fs.readFileSync(path.join(PUBLIC_DIR, file), 'utf8')
       .replace(/(src|href)="(\/[^"?#]+\.(?:js|css))"/g, `$1="$2?v=${BUILD}"`)
-      .replace('<head>', `<head><script>window.BUILD=${JSON.stringify(BUILD)};window.AV=${JSON.stringify(ASSET_VER)}</script>`);
+      .replace('<head>', `<head><script>window.BUILD=${JSON.stringify(BUILD)};window.AV=${JSON.stringify(ASSET_VER)};window.MV=${JSON.stringify(MUSIC_VER)}</script>`);
     htmlCache[file] = html;
   }
   res.set('Cache-Control', 'no-cache').type('html').send(html);

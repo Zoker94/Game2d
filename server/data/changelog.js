@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '28/10/2026',
     items: [
+      '🎶 NHẠC NỀN MỚI: 3 bản nhạc cổ phong thu sẵn thay nhạc tổng hợp – thành / chợ êm ả, dã ngoại sôi động, gặp Boss hoặc Tống Kim · Hoa Sơn · Đại Hội hào hùng; đổi nơi thì nhạc chuyển êm 2 giây, quay lại phát tiếp đúng đoạn cũ. Nhạc phát dần (không tải hết một lần), điện thoại tự dùng bản nhẹ, ẩn game thì tạm dừng cho đỡ pin. Tắt / chỉnh âm lượng ở Cài đặt → Âm thanh.',
       '🏷️ Ô trang bị hiện cấp đồ (Lv, đỏ nếu chưa đủ cấp mặc) ở túi đồ, trang bị đang mặc, khi xem thông tin người khác và trong gian hàng Chợ Phiên. Xem đồ người khác giờ có cả vòng cường hoá và hệ Nội/Ngoại; gian hàng ghi rõ "Cấp …" từng món và chạm vào ô đồ (điện thoại) để xem chi tiết.',
       '📖 Nâng tầng võ công giờ cần thêm 1 cuốn chính võ công đó (ngoài điểm võ học và ngân lượng): chiêu môn phái cần 1 Sách cùng tên (mua ở Tàng Kinh Các), Long Ấn cần 1 Bí Kíp rồng cùng hệ, Tuyệt Kỹ Giang Hồ cần 1 Bí Kíp tuyệt kỹ đó. Ví dụ nâng Kháng Long Hữu Hối cần 1 cuốn Kháng Long Hữu Hối. Học rồi đừng vứt sách thừa – giữ lại để nâng tầng.',
       '✨ Danh hiệu có hiệu ứng riêng trên đầu: Hộ Quốc Anh Hùng (khung vàng cánh rồng, hào quang xoay, kim tinh), Diệt Ma Chí Tôn (lửa cháy + tàn lửa), Vạn Trận Bất Bại (trận đồ bát quái + sét), Hoa Sơn Danh Kiếm (song kiếm + tuyết), Vạn Nhân Địch (chiến kỳ tung bay + khói), Võ Lâm Hào Kiệt (khung ngọc + cánh sen), Thần Tốc Hiệp Khách (vệt gió), danh hiệu hiếm có khung sáng. Ở chỗ đông người hiệu ứng tự giản lược cho đỡ giật.',

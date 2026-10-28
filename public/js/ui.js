@@ -1395,6 +1395,7 @@
       html += `<div class="card"><h4>🔊 Âm thanh</h4>
           <div class="set-row"><label><input type="checkbox" id="au-music" ${st.music ? 'checked' : ''}> 🎵 Nhạc nền võ lâm</label><input type="range" id="au-mvol" min="0" max="1" step="0.05" value="${st.musicVol}"><b>${Math.round(st.musicVol * 100)}%</b></div>
           <div class="set-row"><label><input type="checkbox" id="au-sfx" ${st.sfx ? 'checked' : ''}> 💥 Âm thanh hiệu ứng</label><input type="range" id="au-svol" min="0" max="1" step="0.05" value="${st.sfxVol}"><b>${Math.round(st.sfxVol * 100)}%</b></div>
+          <p class="small muted">🎶 Nhạc nền đổi theo nơi đứng: thành / chợ êm ả, dã ngoại sôi động, gặp Boss hoặc Tống Kim · Hoa Sơn · Đại Hội hào hùng. Điện thoại tự dùng bản nhẹ để đỡ tốn mạng.<br>Nhạc: D.O channel · Youtube Library – NO COPYRIGHT SOUNDS · playmymusic (Free Music for Creators).</p>
           <label class="set-row"><input type="checkbox" id="set-voice" ${(() => { try { return localStorage.getItem('vl_introVoice') !== '0'; } catch (e) { return true; } })() ? 'checked' : ''}> 🗣️ Giọng đọc phim mở đầu</label></div>`;
     } else if (tab === 'keys') {
       html += `<div class="card"><h4>⌨️ Phím bấm</h4>

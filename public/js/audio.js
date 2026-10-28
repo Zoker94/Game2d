@@ -68,6 +68,7 @@
     sfxBus.gain.value = st.sfx ? st.sfxVol * 0.6 : 0;
     const mv = st.music ? st.musicVol * 0.35 : 0;
     musicBus.gain.setTargetAtTime(mv, ctx.currentTime, 0.15);
+    if (fileBus) fileBus.gain.setTargetAtTime(st.music ? st.musicVol * 0.9 : 0, ctx.currentTime, 0.15);   // nhạc thu sẵn (đã cân -18 LUFS)
     musicWet.gain.setTargetAtTime(st.music ? 1 : 0, ctx.currentTime, 0.15);
     sfxWet.gain.setTargetAtTime(st.sfx ? st.sfxVol : 0, ctx.currentTime, 0.05);
   }
@@ -219,15 +220,88 @@
       nextT += beat; step++;
     }
   }
+  // nhạc tổng hợp (dự phòng khi file nhạc chưa phát được): synthMood = điệu đang chơi, null = im
+  let synthMood = null;
+  function synthMusic(m) {
+    m = m && (MOODS[m] ? m : 'boss');   // 'battle' (sự kiện PK) dùng điệu boss
+    if (m === synthMood && (timer || !m)) return;
+    synthMood = m;
+    if (!ctx) return;
+    if (timer) { clearInterval(timer); timer = null; }
+    if (!m) { stopDrone(); return; }
+    nextT = ctx.currentTime + 0.2; step = 0;
+    stopDrone(); startDrone(MOODS[m]);
+    timer = setInterval(schedule, 100);
+  }
+
+  // ---------- nhạc nền thu sẵn (public/music) ----------
+  // Mỗi khung cảnh một bài, phát dần bằng thẻ <audio> (trình duyệt tự giải mã ngoài luồng vẽ game, không tải hết một lần).
+  // Âm lượng đi qua WebAudio (iOS bỏ qua audio.volume) – mỗi bài một nút gain để chuyển bài êm 2 giây.
+  // Bài chưa sẵn sàng / lỗi mạng: chơi nhạc tổng hợp, bài tải xong thì chuyển sang. Đổi qua lại khung cảnh: bài cũ tạm dừng,
+  // quay lại phát tiếp đúng chỗ. Điện thoại / mạng yếu dùng bản 48 kbps mono.
+  const TRACK = { town: 'tinh_lang', field: 'doi_thuong', boss: 'hao_hung', battle: 'hao_hung' };
+  const FADE = 2;
+  const lite = (() => {
+    const cn = navigator.connection || {};
+    return !!(cn.saveData || /(^|-)2g$/.test(cn.effectiveType || '') || matchMedia('(pointer: coarse)').matches);
+  })();
+  const tracks = {};   // tên bài -> { el, g, src, ok, bad }
+  let fileBus = null, curTrack = null, failT = 0;
+  function trackOf(name) {
+    let t = tracks[name];
+    if (t) return t;
+    const el = new Audio();
+    el.preload = 'none'; el.loop = true; el.crossOrigin = 'anonymous';
+    el.src = '/music/' + name + (lite ? '.m' : '') + '.mp3' + (window.MV ? '?v=' + window.MV : '');
+    t = tracks[name] = { name, el, g: null, src: null, ok: false, bad: false };
+    el.addEventListener('playing', () => { t.ok = true; if (curTrack === t) synthMusic(null); });   // bài đã chạy: tắt nhạc tổng hợp
+    el.addEventListener('error', () => { t.bad = true; failT = Date.now(); if (curTrack === t) synthMusic(mood); });
+    el.addEventListener('waiting', () => { if (curTrack === t && !t.ok) synthMusic(mood); });
+    return t;
+  }
+  function wire(t) {   // nối vào WebAudio lần đầu phát (cần AudioContext đã mở)
+    if (t.g || !ctx) return;
+    if (!fileBus) { fileBus = ctx.createGain(); fileBus.connect(master); applyVol(); }
+    try { t.src = ctx.createMediaElementSource(t.el); t.g = ctx.createGain(); t.g.gain.value = 0; t.src.connect(t.g); t.g.connect(fileBus); }
+    catch (e) { t.g = null; }
+  }
+  function fadeTo(t, v) {
+    if (t.g) { const n = ctx.currentTime; t.g.gain.cancelScheduledValues(n); t.g.gain.setValueAtTime(t.g.gain.value, n); t.g.gain.linearRampToValueAtTime(v, n + FADE); }
+    else t.el.volume = v ? Math.min(1, st.musicVol) : 0;
+  }
+  function stopTrack(t) {
+    if (!t) return;
+    fadeTo(t, 0);
+    clearTimeout(t.stopT); t.stopT = setTimeout(() => { if (curTrack !== t) t.el.pause(); }, FADE * 1000 + 100);
+  }
+  function fileMusic(m) {
+    const name = m && st.music && !hiddenNow ? TRACK[m] : null;
+    const next = name ? trackOf(name) : null;
+    if (next && next.bad && Date.now() - failT > 60000) { next.bad = false; next.el.load(); }   // lỗi mạng: thử lại sau 1 phút
+    if (next === curTrack && (!next || !next.el.paused)) return;
+    const prev = curTrack; curTrack = next;
+    if (prev && prev !== next) stopTrack(prev);
+    if (!next) return;
+    if (next.bad) { synthMusic(m); return; }
+    wire(next); clearTimeout(next.stopT);
+    if (!next.ok) synthMusic(m);   // chờ tải: chơi tạm nhạc tổng hợp
+    const p = next.el.play();
+    if (p && p.catch) p.catch(() => { if (curTrack === next) synthMusic(m); });   // trình duyệt chưa cho phát (chưa chạm màn hình)
+    fadeTo(next, 1);
+  }
+  // ẩn tab / chuyển ứng dụng: tạm dừng nhạc cho đỡ pin, quay lại phát tiếp
+  let hiddenNow = document.hidden;
+  document.addEventListener('visibilitychange', () => {
+    hiddenNow = document.hidden;
+    if (hiddenNow) { for (const t of Object.values(tracks)) { clearTimeout(t.stopT); t.el.pause(); } curTrack = null; synthMusic(null); }
+    else if (mood) { const m = mood; mood = null; music(m); }
+  });
+  // gọi mỗi giây từ game.js: cùng khung cảnh và bài đang chạy thì fileMusic / synthMusic tự bỏ qua, rất nhẹ
   function music(newMood) {
-    if (newMood === mood && (timer || !st.music)) return;
     mood = newMood;
     if (!init()) return;
-    if (timer) { clearInterval(timer); timer = null; }
-    if (!mood || !st.music) { stopDrone(); return; }   // tắt nhạc: dừng hẳn bộ phát nhạc
-    nextT = ctx.currentTime + 0.2; step = 0;
-    startDrone(MOODS[mood]);
-    timer = setInterval(schedule, 100);
+    if (!mood || !st.music) { fileMusic(null); synthMusic(null); return; }   // tắt nhạc: dừng hẳn, không tải thêm
+    fileMusic(mood);
   }
 
   // âm nền thời tiết: tiếng mưa / gió liên tục
@@ -253,7 +327,8 @@
 
   window.GameAudio = {
     init, sfx, music, ambience, get state() { return st; }, get sprite() { return !!sprBuf; },
-    set(k, v) { st[k] = v; save(); applyVol(); if (k === 'music') { if (v && mood) { const m = mood; mood = null; music(m); } else if (!v) { if (timer) { clearInterval(timer); timer = null; } if (ctx) stopDrone(); } } },
-    get mood() { return mood; }
+    set(k, v) { st[k] = v; save(); applyVol(); if (k === 'music') { const m = mood; mood = null; if (v && m) music(m); else { fileMusic(null); synthMusic(null); mood = m; } } },
+    get mood() { return mood; },
+    get musicInfo() { return { track: curTrack && curTrack.name, playing: !!(curTrack && !curTrack.el.paused && curTrack.ok), synth: synthMood, file: curTrack && curTrack.el.currentSrc, t: curTrack && +curTrack.el.currentTime.toFixed(1) }; }   // để kiểm tra / gỡ lỗi
   };
 })();
