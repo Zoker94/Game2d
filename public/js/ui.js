@@ -554,9 +554,9 @@
       pw.style.display = '';
     } else if (t.type || t.pw == null) { pw.style.display = 'none'; }
     else {
-      const ti = Overhead.title(t.pw), rc = Overhead.relColor(t.pw, G.me.stats.power), pk = Overhead.pkLevel(t.k);
+      const ti = Overhead.earned(t.ttl), rc = Overhead.relColor(t.pw, G.me.stats.power), pk = Overhead.pkLevel(t.k);
       const E = t.el && G.data.elements[t.el];
-      const html = `⚡ <b>${(t.pw || 0).toLocaleString('vi-VN')}</b> <span style="color:${ti.color}">${ti.name}</span>${E ? ` <span style="color:${E.color}">◆${E.name}</span>` : ''} <span class="t-rel" style="color:${pk ? '#ff4a4a' : rc.color}">${pk ? '☠ Sát khí ' + t.k : rc.tip}</span>${t.rk ? ` <span style="color:#ffd84a">#${t.rk} lực chiến</span>` : ''}`;
+      const html = `⚡ <b>${(t.pw || 0).toLocaleString('vi-VN')}</b>${ti ? ` <span style="color:${ti.color}">【${ti.name}】</span>` : ''}${E ? ` <span style="color:${E.color}">◆${E.name}</span>` : ''} <span class="t-rel" style="color:${pk ? '#ff4a4a' : rc.color}">${pk ? '☠ Sát khí ' + t.k : rc.tip}</span>${t.rk ? ` <span style="color:#ffd84a">#${t.rk} lực chiến</span>` : ''}`;
       if (pw.innerHTML !== html) pw.innerHTML = html;
       pw.style.display = '';
     }
@@ -1075,6 +1075,7 @@
         <div>Tốc độ <b>${Math.round(st.spd)}</b></div><div>Kinh nghiệm <b>${fmt(me.exp)}/${fmt(me.expNext)}</b></div><div>Tầm đánh <b>${cl.range}</b></div>
         <div>Võ Mục Di Thư <b>${me.vmb | 0}/5</b>${me.vmb ? ` <span class="small muted">(+${(me.vmb | 0) * 3}% công/thủ/máu)</span>` : ''}</div><div>Quái đã diệt <b>${fmt(me.kills)}</b></div><div>Hạ người chơi <b>${fmt(me.pvpKills)}</b></div><div>Boss đã đánh <b>${fmt(me.bossKills)}</b></div>
       </div>
+      ${titlePanel(me)}
       ${gemSummary(me.equip)}
       ${attrPanel(me)}
       ${elemPanel(st)}
@@ -1087,10 +1088,27 @@
           ${has ? (on ? '' : `<button class="btn small green" data-dragon="${el}">Dùng</button>`) : '<span class="small muted">Chưa học<br>(Bí kíp: Boss, Kỳ Trân Các, Hoa Đăng)</span>'}</div>`;
       }).join('')}</div>`;
     body.querySelectorAll('[data-dragon]').forEach(b => b.onclick = () => emit('dragon', { el: b.dataset.dragon }));
+    body.querySelectorAll('[data-title]').forEach(b => b.onclick = () => emit('title', { id: b.dataset.title }));
     bindAttr(body);
     const c = $('char-cv').getContext('2d'); c.imageSmoothingEnabled = false;
     if (Assets.has(me.cls)) { c.imageSmoothingEnabled = true; c.drawImage(Assets.charFrame(me.cls, 0, 'idle', 0, me.ap), 0, 0, 96, 96); setTimeout(() => { if ($('char-cv')) { c.clearRect(0, 0, 96, 96); c.drawImage(Assets.charFrame(me.cls, 0, 'idle', 0, me.ap), 0, 0, 96, 96); } }, 600); }
     else c.drawImage(Sprites.playerSprite(me.cls, cl.colors, 0, 0), 0, 0);
+  }
+
+  // ---------- Danh hiệu giang hồ: giành từ phó bản / Boss / sự kiện, chọn 1 để đeo ----------
+  function titlePanel(me) {
+    const T = G.data.titles; if (!T) return '';
+    const ach = me.ach || {}, list = Object.entries(T);
+    const got = list.filter(([, t]) => (ach[t.stat] | 0) >= t.need).length;
+    const cur = me.title && T[me.title];
+    const rows = list.map(([id, t]) => {
+      const v = ach[t.stat] | 0, ok = v >= t.need, on = me.title === id;
+      return `<div class="ttl-row ${ok ? 'ok' : ''} ${on ? 'on' : ''}"><div class="grow"><b style="color:${ok ? t.color : '#8a8072'}">【${esc(t.name)}】</b> <span class="ttl-src">${esc(t.src)}</span>
+        <div class="sub">${esc(t.desc)}${ok ? '' : ` · <b>${Math.min(v, t.need)}/${t.need}</b>`}</div>${ok ? '' : `<div class="ttl-bar"><i style="width:${Math.round(Math.min(1, v / t.need) * 100)}%;background:${t.color}"></i></div>`}</div>
+        ${ok ? (on ? '<button class="btn small" data-title="">Tháo</button>' : '<button class="btn small green" data-title="' + id + '">Đeo</button>') : '<span class="small muted">🔒</span>'}</div>`;
+    }).join('');
+    return `<details class="card ttl-box"${me.title ? '' : ' open'}><summary><b>🏅 Danh hiệu</b> <span class="small muted">${got}/${list.length} đã mở</span> · Đang đeo: ${cur ? `<b style="color:${cur.color}">【${esc(cur.name)}】</b>` : '<span class="muted">không</span>'}</summary>
+      <p class="small muted">Danh hiệu không còn tính theo lực chiến – phải tự giành qua phó bản, Boss và sự kiện. Mở khoá là giữ mãi.</p>${rows}</details>`;
   }
 
   // ---------- Điểm tiềm năng: phân điểm tạm rồi bấm Xác nhận ----------

@@ -91,7 +91,7 @@ class DaiHoi {
       const p = this.w.players.get(uid);
       if (p) this.w.giveReward(p, r, `Đại Hội Võ Lâm – hạng ${i + 1}`);
       else { const u = this.db.data.users[uid]; if (u && u.character) this.f.giveOffline(u.character, r); }
-      if (i < 3) lines.push(`Hạng ${i + 1}: ${s.name} (${s.pts} điểm)`);
+      if (i < 3) { lines.push(`Hạng ${i + 1}: ${s.name} (${s.pts} điểm)`); this.w.achieve(uid, 'dhTop3'); }
     });
     if (rank.length) {
       const [uid, s] = rank[0];

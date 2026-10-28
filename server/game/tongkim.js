@@ -354,6 +354,8 @@ class TongKim {
         const mul = side === win ? 1.5 : win ? 1 : 1.2;
         const ct = Math.round(s.pts * mul) + (i === 0 ? 100 : i === 1 ? 60 : i === 2 ? 30 : 0);
         this.addCt(uid, ct);
+        if (side === win) this.w.achieve(uid, 'tkWin');
+        if (i === 0) this.w.achieve(uid, 'tkMvp');
         this.give(uid, { expPct: Math.min(0.6, 0.05 + s.pts / 1500) * mul, gold: Math.round(s.pts * 50 * mul) }, `Chiến Trường Tống Kim (+${ct} Công Trạng)`);
       });
       if (rank[0]) lines.push(`${SIDES[side].name}: ${rank[0][1].name} (${rank[0][1].pts} điểm)`);

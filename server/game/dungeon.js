@@ -185,6 +185,7 @@ class Dungeon {
         if (i === 6) this.w.features.brag(`📜 ${q.c.name} nhận được Võ Mục Tàn Quyển · Thất từ ${MONSTERS[def.boss].name}!`);
       }
       if (this.w.sect) this.w.sect.onDungeon(q);
+      this.w.achieve(q, 'pbClears'); if (fast) this.w.achieve(q, 'pbFast');
       this.w.giveReward(q, { exp: Math.round(def.exp * mult), gold: Math.round(def.gold * mult), knb: def.knb, items }, `🏆 Vượt ${def.name}${fast ? ' (thần tốc)' : ''}`);
     }
     this.w.features.announce(`🏆 ${players.map(q => q.c.name).join(', ')} đã vượt phó bản ${def.name}!`);

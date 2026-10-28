@@ -321,15 +321,8 @@
 
   // ---------- nhận biết mạnh / yếu ----------
   // danh hiệu theo lực chiến
-  const TITLES = [
-    { min: 0,     name: 'Sơ Nhập Giang Hồ',   color: '#a8a8a8' },
-    { min: 500,   name: 'Tam Lưu Võ Giả',     color: '#e8f0e0' },
-    { min: 1500,  name: 'Nhị Lưu Hảo Thủ',    color: '#6ec8ff' },
-    { min: 3000,  name: 'Nhất Lưu Cao Thủ',   color: '#c58aff' },
-    { min: 6000,  name: 'Tuyệt Đỉnh Cao Thủ', color: '#ffae3a' },
-    { min: 10000, name: 'Võ Lâm Chí Tôn',     color: '#ff4a3a' }
-  ];
-  function title(power) { let t = 0; for (let i = 0; i < TITLES.length; i++) if ((power || 0) >= TITLES[i].min) t = i; return Object.assign({ tier: t }, TITLES[t]); }
+  // danh hiệu đã giành (id trong G.data.titles) – không còn suy từ lực chiến
+  function earned(id) { const t = id && G.data && G.data.titles && G.data.titles[id]; return t ? Object.assign({ id }, t) : null; }
   // màu tên theo sức mạnh so với mình
   function relColor(theirs, mine) {
     const r = (theirs || 1) / Math.max(1, mine || 1);
@@ -384,7 +377,7 @@
   }
   // tên + danh hiệu + bang + huy hiệu, trả về y trên cùng (để đặt bong bóng chat)
   function drawNameplate(ctx, x, top, o) {
-    const t = title(o.power), pk = pkLevel(o.pk);
+    const t = earned(o.title), pk = pkLevel(o.pk);
     let nameCol = o.self ? '#ffd76a' : relColor(o.power, o.myPower).color;
     if (pk) nameCol = pk === 2 ? '#c00010' : '#ff5a5a';
     else if (o.party) nameCol = '#5dff8a';
@@ -420,11 +413,15 @@
       if (o.guild) { outlined(ctx, '«' + o.guild + '»', x, top - 37, 10, '#7fb8ff', '#000', 600); yTop = top - 44; }
       return yTop;
     }
-    // danh hiệu: chữ nhỏ có khung, bậc cao có viền sáng
+    // danh hiệu giang hồ (giành từ phó bản / Boss / sự kiện): chữ nhỏ có khung, bậc cao có viền sáng; chưa đeo thì chỉ hiện bang
+    if (!t) {
+      if (o.guild) { outlined(ctx, '«' + o.guild + '»', x, top - 23, 10, '#7fb8ff', '#000', 600); return top - 30; }
+      return top - 17;
+    }
     const tt = '【' + t.name + '】';
     const tw = textW('700 9px Be Vietnam Pro, system-ui, sans-serif', tt);
-    if (t.tier >= 3) {
-      ctx.save(); ctx.globalAlpha = 0.35 + Math.sin(performance.now() / 300) * 0.1; ctx.fillStyle = t.color;
+    if (t.tier >= 2) {
+      ctx.save(); ctx.globalAlpha = t.tier >= 3 ? 0.35 + Math.sin(performance.now() / 300) * 0.1 : 0.22; ctx.fillStyle = t.color;
       ctx.fillRect(Math.round(x - tw / 2 - 2), top - 29, Math.round(tw + 4), 12); ctx.restore();
     }
     outlined(ctx, tt, x, top - 23, 10, t.color, '#000', 700);
@@ -487,5 +484,5 @@
       FX.emit(1, x + (Math.random() - 0.5) * 30, y - 4, { speed: 6, vy: -45, life: 700, size: 2, color: cols[Math.floor(Math.random() * cols.length)] });
   }
 
-  window.Overhead = { clearText: () => { tcache.clear(); gsets.clear(); }, cachedText, ST, mask, drawUnder, drawOver, add, drawFloats, drawBubble, TITLES, title, relColor, pkLevel, drawBadge, drawNameplate, drawPkAura, drawEnhance };
+  window.Overhead = { clearText: () => { tcache.clear(); gsets.clear(); }, cachedText, ST, mask, drawUnder, drawOver, add, drawFloats, drawBubble, earned, relColor, pkLevel, drawBadge, drawNameplate, drawPkAura, drawEnhance };
 })();

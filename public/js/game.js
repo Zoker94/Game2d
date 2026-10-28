@@ -482,7 +482,7 @@
       if (q && e.sv !== p[8]) {
         e.sv = p[8];
         e.name = q[0]; e.cls = q[1]; e.level = q[2]; e.guild = q[3]; e.gm = q[4]; e.ap = q[5]; e.maxHp = q[6]; e.pw = q[7] || 0; e.el = q[8] || '';
-        e.rk = q[9] || 0; e.k = q[10] || 0; e.pm = q[11] || 0; e.rb = q[12] || 0; e.mc = q[13] || 0; e.bf = q[14] || null; e.md = q[15] || 0; e.iv = q[16] || 0; e.tk = q[17] || 0;
+        e.rk = q[9] || 0; e.k = q[10] || 0; e.pm = q[11] || 0; e.rb = q[12] || 0; e.mc = q[13] || 0; e.bf = q[14] || null; e.md = q[15] || 0; e.iv = q[16] || 0; e.tk = q[17] || 0; e.ttl = q[18] || '';
         e.apLite = null;
         if (e.cls) Assets.loadClass(e.cls);
       }
@@ -1443,7 +1443,7 @@
         if (e.pm && !e.dead && !G.map.pvp) Escort.drawFlag(ctx, e.x, e.y, top, e.dir === 1 || e.dir === 2 ? e.dir : (e.lastH || 2), e.pm, now);
         if (pm) Overhead.drawOver(ctx, e, e.x, e.y, top, pm, now);
         let ptop = top - 6;
-        if (G.settings.names) ptop = Overhead.drawNameplate(ctx, e.x, top, { name: e.name, level: e.level, gm: e.gm, guild: e.guild, power: e.pw, myPower: G.me.stats.power, rank: e.rk, pk: e.k, mc: e.mc, tk: e.tk, party: Party.has(e.id) });
+        if (G.settings.names) ptop = Overhead.drawNameplate(ctx, e.x, top, { name: e.name, level: e.level, gm: e.gm, guild: e.guild, power: e.pw, myPower: G.me.stats.power, title: e.ttl, rank: e.rk, pk: e.k, mc: e.mc, tk: e.tk, party: Party.has(e.id) });
         hpBar(e.x, top - 4, 40, e.hp / e.maxHp, '#4ade80');
         if (e.rb && !e.dead) { ptop -= 14; label(e.x, ptop, '💰 Truy nã · Cướp Tiêu', '#ff5050', 11, true); }
         if (e.bubble) bubbles.push([e, ptop + 4]);
@@ -1463,7 +1463,7 @@
         if (me.pkMode && !me.dead && !G.map.pvp) Escort.drawFlag(ctx, s.x, s.y, top, s.dir === 1 || s.dir === 2 ? s.dir : (s.lastH || 2), me.pkMode, now);
         if (sm) Overhead.drawOver(ctx, s, s.x, s.y, top, sm, now);
         let stop = top - 6;
-        if (G.settings.names) stop = Overhead.drawNameplate(ctx, s.x, top, { self: true, name: me.name, gm: me.admin, guild: me.guild && me.guild.name, power: me.stats.power, rank: me.rank, pk: me.pk, mc: me.minhChu, tk: me.tk });
+        if (G.settings.names) stop = Overhead.drawNameplate(ctx, s.x, top, { self: true, name: me.name, gm: me.admin, guild: me.guild && me.guild.name, power: me.stats.power, title: me.title, rank: me.rank, pk: me.pk, mc: me.minhChu, tk: me.tk });
         hpBar(s.x, top - 4, 40, me.hp / me.stats.maxHp, '#ff5050');
         if (me.robUntil > Date.now() && !me.dead) { stop -= 14; label(s.x, stop, '💰 Truy nã · Cướp Tiêu', '#ff5050', 11, true); }
         if (s.bubble) bubbles.push([s, stop + 4]);

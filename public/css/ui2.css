@@ -258,3 +258,12 @@ body.touch #tk-hud { width: 250px; top: 44px; font-size: 9.5px; }
 .act.jhb.hidden { display: none; }
 .act.jhb .sk-img { position: absolute; inset: 0; border-radius: 50%; background-size: 126%; }
 .act.jhb::after { content: 'TUYỆT'; position: absolute; top: 1px; left: 50%; transform: translateX(-50%); font-size: 7px; font-weight: 900; letter-spacing: .5px; color: #fff4c8; text-shadow: 0 0 3px #000, 0 0 2px #000; z-index: 3; }
+/* bảng danh hiệu */
+.ttl-box summary { cursor: pointer; padding: 2px 0; }
+.ttl-row { display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-bottom: 1px solid rgba(255,255,255,.06); }
+.ttl-row:not(.ok) { opacity: .75; }
+.ttl-row.on { background: rgba(255,215,106,.08); border-radius: 6px; }
+.ttl-src { font-size: 9px; padding: 1px 5px; border-radius: 6px; background: rgba(255,255,255,.07); color: #c8b898; }
+.ttl-bar { height: 4px; border-radius: 3px; background: rgba(255,255,255,.08); margin-top: 3px; overflow: hidden; }
+.ttl-bar i { display: block; height: 100%; opacity: .8; }
+.ttl-row .grow { flex: 1; min-width: 0; }

@@ -208,7 +208,7 @@ app.get('/api/gamedata', (req, res) => {
     for (let l = 1; l <= M.MOUNT_MAX; l++) mountExp[l] = M.mountExpNext(l);
     gamedataCache = { enhance: { max: E.ENHANCE_MAX, safe: E.ENHANCE_SAFE, rate: E.ENHANCE_RATE, cost: Array.from({ length: 15 }, (_, p) => Array.from({ length: require('./data/items').TIERS.length }, (_, t) => E.enhanceCost(p, t))) },
       skillMax: require('./data/skillbooks').SKILL_MAX,
-      branchFreeLv: require('./data/branches').BRANCH_FREE_LV, dragons: require('./data/dragons').DRAGONS, jianghu: require('./data/jianghu').JIANGHU, mounts: M.MOUNTS, mountMax: M.MOUNT_MAX, mountExp, classes: CLASSES, story: require('./data/story'), gems: require('./data/gems').clientConfig(), attrs: require('./data/attrs').ATTRS, attrSuggest: require('./data/attrs').ATTR_SUGGEST, attrPerLv: require('./data/attrs').ATTR_PER_LEVEL, items: ITEMS, rarity: RARITY, brStat: require('./data/items').BR_STAT, brOffK: require('./data/items').BR_OFF_K, brAttr: require('./data/items').BR_ATTR, gearCap: require('./data/affixes').GEAR_CAP, critMax: 5, slots: Object.assign(Object.fromEntries(Object.entries(SLOTS).map(([k, v]) => [k, v.name])), { ring2: 'Nhẫn' }), monsters: mons, maps, npcs,
+      branchFreeLv: require('./data/branches').BRANCH_FREE_LV, dragons: require('./data/dragons').DRAGONS, jianghu: require('./data/jianghu').JIANGHU, titles: require('./data/titles').TITLES, mounts: M.MOUNTS, mountMax: M.MOUNT_MAX, mountExp, classes: CLASSES, story: require('./data/story'), gems: require('./data/gems').clientConfig(), attrs: require('./data/attrs').ATTRS, attrSuggest: require('./data/attrs').ATTR_SUGGEST, attrPerLv: require('./data/attrs').ATTR_PER_LEVEL, items: ITEMS, rarity: RARITY, brStat: require('./data/items').BR_STAT, brOffK: require('./data/items').BR_OFF_K, brAttr: require('./data/items').BR_ATTR, gearCap: require('./data/affixes').GEAR_CAP, critMax: 5, slots: Object.assign(Object.fromEntries(Object.entries(SLOTS).map(([k, v]) => [k, v.name])), { ring2: 'Nhẫn' }), monsters: mons, maps, npcs,
       elements: require('./data/affixes').ELEMENTS, affixes: Object.fromEntries(Object.entries(require('./data/affixes').AFFIX).map(([k, a]) => [k, { name: a.name, text: a.text }])), khac: require('./data/affixes').KHAC };
   }
   // nén gzip một lần rồi giữ lại (dữ liệu ~260KB -> ~40KB)
@@ -374,6 +374,7 @@ io.on('connection', socket => {
     if (!world.quickUse(player, kind, d && d.auto)) { if (d && d.auto) socket.emit('noPot', { kind }); else world.toast(player, 'Không còn thuốc!', 'error'); }
   }));
   on('equip', inGame(d => world.equip(player, d && d.uid, d && d.side)));
+  on('title', inGame(d => world.selectTitle(player, d && typeof d.id === 'string' ? d.id : null)));
   on('unequip', inGame(d => world.unequip(player, d && d.slot)));
   on('discard', inGame(d => world.discard(player, d && d.uid)));
   on('discardMany', inGame(d => world.discardMany(player, d && d.uids)));

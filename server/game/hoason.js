@@ -306,7 +306,7 @@ class HoaSon {
     this.t = null; this._names = t.names;   // tên vẫn tra được sau khi giải đã đóng
     const third = t.third;
     const top = [champ, runner, third];
-    top.forEach((uid, i) => { if (uid) this.give(uid, REWARDS[i], `Hoa Sơn Luận Kiếm – ${['Vô Địch', 'Á Quân', 'Hạng Ba'][i]}`); });
+    top.forEach((uid, i) => { if (uid) { this.give(uid, REWARDS[i], `Hoa Sơn Luận Kiếm – ${['Vô Địch', 'Á Quân', 'Hạng Ba'][i]}`); this.w.achieve(uid, 'hsTop3'); } });
     for (const uid of Object.keys(t.names)) if (!top.includes(uid)) this.give(uid, REWARD_JOIN, 'Hoa Sơn Luận Kiếm – tham gia');
     if (champ) {
       this.data.champ = { uid: champ, name: this.name(champ), until: Date.now() + TITLE_DAYS * 86400000, at: Date.now() };

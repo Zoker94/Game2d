@@ -11,6 +11,7 @@ const { TUTORIAL } = require('../data/quests');
 const { MOUNTS, MOUNT_MAX, mountExpNext, isBreakLevel } = require('../data/mounts');
 const { DRAGONS, DRAGON_SLOT } = require('../data/dragons');
 const { JIANGHU, JH_SLOT, JH_DROP, JH_PVP } = require('../data/jianghu');
+const { TITLES, statOf, unlocked: titleUnlocked } = require('../data/titles');
 const jhOf = c => (c.jh && c.jhs && c.jhs[c.jh] ? JIANGHU[c.jh] : null);   // tuyệt kỹ giang hồ đang chọn
 const { SKILL_MAX, scaleSkill, upgradeCost, skillPointsTotal, BOOKS } = require('../data/skillbooks');
 const RARITY_IDX = { common: 0, rare: 1, epic: 2, legendary: 3 };
@@ -251,6 +252,28 @@ class World {
     this.story.on(p, 'map', { map: baseOf(mapId) });
   }
 
+  // ---------- Danh hiệu giang hồ (server/data/titles.js) ----------
+  // cộng thành tích cho người chơi (online hoặc offline); đạt mốc thì mở khoá danh hiệu, chưa đeo gì thì tự đeo
+  achieve(who, stat, n = 1) {
+    const p = typeof who === 'string' ? this.players.get(who) : who;
+    const c = p ? p.c : (this.db.data.users[who] || {}).character;
+    if (!c) return;
+    if (stat !== 'bossKills') { c.ach = c.ach || {}; c.ach[stat] = (c.ach[stat] | 0) + n; }
+    for (const [id, t] of Object.entries(TITLES)) {
+      if (t.stat !== stat || statOf(c, stat) < t.need || statOf(c, stat) - n >= t.need) continue;   // chỉ báo đúng lúc vừa chạm mốc
+      if (!c.title) c.title = id;
+      if (p) { this.toast(p, `🏅 Mở khoá danh hiệu 【${t.name}】! Đổi danh hiệu ở bảng Nhân Vật.`, 'reward'); p.dirtyMe = true; }
+      if (t.tier >= 3) this.features.brag(`🏅 ${c.name} đạt danh hiệu 【${t.name}】 – ${t.desc}!`);
+    }
+    this.db.markDirty();
+  }
+  selectTitle(p, id) {
+    if (id && !titleUnlocked(p.c, id)) return this.toast(p, 'Chưa mở khoá danh hiệu này', 'error');
+    p.c.title = id || null; p.dirtyMe = true;
+    this.toast(p, id ? `Đã đeo danh hiệu 【${TITLES[id].name}】` : 'Đã tháo danh hiệu', 'info');
+  }
+  titleOf(c) { return c.title && titleUnlocked(c, c.title) ? c.title : ''; }
+
   // danh hiệu trên đầu: 1 = Võ Lâm Minh Chủ (Đại Hội), 2 = Hoa Sơn Kiếm Thánh (Hoa Sơn Luận Kiếm)
   titleFlags(p) {
     return (this.daihoi && this.daihoi.isMinhChu(p.userId) ? 1 : 0) | (this.hoason && this.hoason.isChamp(p.userId) ? 2 : 0);
@@ -315,7 +338,7 @@ class World {
       expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, gm: this.isGm(p) ? { hide: !!(c.gm && c.gm.hide), safe: !!(c.gm && c.gm.safe) } : null, owner: isOwner(p.user) ? 1 : 0, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null, jhs: c.jhs || {}, jh: c.jh || null,
-      minhChu: this.titleFlags(p), tk: this.tongkim ? this.tongkim.tag(p) : 0, congTrang: c.congTrang || 0,
+      minhChu: this.titleFlags(p), title: this.titleOf(c), ach: Object.assign({ bossKills: c.bossKills | 0 }, c.ach || {}), tk: this.tongkim ? this.tongkim.tag(p) : 0, congTrang: c.congTrang || 0,
       attr: c.attr || {}, attrFree: attrTotalOf(c) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
       branch: branchOf(c), skills: c.skills || {}, hotbar: c.hotbar, sp: spTotalOf(c) - (c.spSpent || 0),
       mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
@@ -1129,6 +1152,7 @@ class World {
       p.socket.emit('gain', { exp: gained, gold: mon.boss ? gold : 0, x: mon.x, y: mon.y });
       if (mon.boss) {
         p.c.bossKills = (p.c.bossKills || 0) + 1;
+        this.achieve(p, 'bossKills', 1);
         this.features.questProgress(p, 'boss', 1);
       } else {
         this.features.questProgress(p, 'kill', 1, tpl.id);
@@ -1165,6 +1189,7 @@ class World {
         ranking.forEach(([uid, d], i) => {
           const p = this.players.get(uid);
           if (!p || d / total < 0.005) return;
+          this.achieve(p, 'wbJoin'); if (i === 0) this.achieve(p, 'wbTop1');
           const chance = i === 0 ? 1 : i < 3 ? 0.35 : i < 10 ? 0.1 : 0.02;
           if (Math.random() < chance * dr) legend(p);
           const items = i === 0 && tpl.id === 'boss_vumuc' ? [['vm_tamphap', 1]] : [];   // chỉ top 1 sát thương: anh linh Nhạc Vũ Mục truyền Tâm Pháp (cách học Di Thư)
@@ -2416,7 +2441,7 @@ class World {
       const st = [p.c.name, p.c.cls, p.c.level, g ? g.name : '', p.user.isAdmin ? 1 : 0, this.appearance(p.c), p.stats.maxHp,
         p.stats.power || 0, p.stats.el || '', (rank && rank.get(p.userId)) || 0, p.c.pk || 0, p.c.pkMode | 0, p.c.robUntil > now ? 1 : 0,
         this.titleFlags(p), p.buffs.length ? p.buffs.filter(b => b.until > now && b.aura).map(b => [b.aura, b.color]) : 0,
-        p.med ? 1 : 0, 0, this.tongkim ? this.tongkim.tag(p) : 0];
+        p.med ? 1 : 0, 0, this.tongkim ? this.tongkim.tag(p) : 0, this.titleOf(p.c)];
       const key = JSON.stringify(st);
       if (key !== p._sk) { p._sk = key; p._sv = ((p._sv || 0) + 1) % 1e6; }
       const hide = this.gmOn(p, 'hide');
