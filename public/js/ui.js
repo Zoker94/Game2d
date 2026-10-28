@@ -1303,65 +1303,87 @@
     body.querySelectorAll('[data-lbname]').forEach(tr => tr.onclick = () => { emit('inspect', { name: tr.dataset.lbname }); G.sfx('click'); });
   }
 
-  // ---------- Cài đặt ----------
+  // ---------- Cài đặt: 4 tab Đồ họa / Âm thanh / Phím bấm / Chung ----------
   function renderSettings(body) {
-    const s = G.settings;
-    setTimeout(() => { const b = $('set-auto'); if (b) b.onclick = () => UI.openPanel('auto'); }, 0);
+    const s = G.settings, tab = panelState.stab || 'gfx';
     const pad = navigator.getGamepads && [...navigator.getGamepads()].find(p => p && p.connected);
-    body.innerHTML = `
-      <div class="card"><h4>💬 Cộng đồng</h4><p class="small">Tham gia nhóm Zalo để nhận gift code, tin sự kiện và giao lưu với các đại hiệp khác.</p><a class="zalo-btn" href="https://zalo.me/g/fkxw5crl6ksc0jotbzgp" target="_blank" rel="noopener">💬 Tham gia nhóm Zalo</a></div>
-      <div class="card"><h4>🤖 Tự động</h4><button class="btn small primary" id="set-auto">⚙️ Cài đặt tự động (nhặt đồ, bơm máu...)</button></div>
-      <div class="card"><h4>Hiển thị & âm thanh</h4>
-        <label><input type="checkbox" data-set="names" ${s.names ? 'checked' : ''}> Hiện tên nhân vật/quái</label><br>
-        <label><input type="checkbox" id="au-music" ${GameAudio.state.music ? 'checked' : ''}> 🎵 Nhạc nền võ lâm</label> <input type="range" id="au-mvol" min="0" max="1" step="0.05" value="${GameAudio.state.musicVol}" style="width:110px;vertical-align:middle"><br>
-        <label><input type="checkbox" id="au-sfx" ${GameAudio.state.sfx ? 'checked' : ''}> 🔊 Âm thanh hiệu ứng</label> <input type="range" id="au-svol" min="0" max="1" step="0.05" value="${GameAudio.state.sfxVol}" style="width:110px;vertical-align:middle"><br>
-        <label><input type="checkbox" data-set="shake" ${s.shake ? 'checked' : ''}> Rung màn hình khi bị đánh</label><br>
-        <label><input type="checkbox" data-set="tframe" ${s.tframe ? 'checked' : ''}> Hiện khung máu cả quái thường (mặc định chỉ boss, tinh anh, người chơi)</label>
-        <div class="row gfx-row" style="justify-content:flex-start;margin-top:6px;align-items:center">🖥️ Đồ họa
-          ${[['auto', 'Tự động'], ['high', 'Cao'], ['medium', 'Vừa'], ['low', 'Thấp'], ['ultra', 'Siêu thấp (máy yếu)']].map(([k, n]) => `<button class="btn small ${(s.gfx || 'auto') === k ? 'primary' : ''}" data-gfx="${k}">${n}</button>`).join('')}
-          <span class="small muted">Độ nét hiện tại: ${Math.round(G.gfx.scale * 100)}%${G.gfx.lowFx ? ' · tiết kiệm hiệu ứng' : ''}${G.gfx.weak ? ' · máy cấu hình thấp' : ''}</span></div>
-        <label><input type="checkbox" id="set-battery" ${G.battery() ? 'checked' : ''}> 🔋 Tiết kiệm pin: 30 FPS, độ nét tối đa 150%, để yên lâu thì vẽ thưa hơn, hiệu ứng trang trí trên giao diện đứng yên (tắt để chạy 60 FPS)</label><br>
-        <label><input type="checkbox" id="set-awake" ${s.keepAwake !== false ? 'checked' : ''}> ☀️ Giữ sáng màn hình khi bật Tự động (điện thoại không tự tắt màn, treo liên tục)${'wakeLock' in navigator ? '' : ' <span class="muted">– trình duyệt này không hỗ trợ</span>'}</label><br>
-        <button class="btn small" id="set-black" style="margin:4px 0">🌙 Tắt màn hình (màn đen, máy chủ treo hộ khi bật Tự động)</button><br>
-        <label><input type="checkbox" id="set-qauto" ${s.questAuto !== false ? 'checked' : ''}> 🧭 Tự đi làm nhiệm vụ khi nhận nhiệm vụ mới (cốt truyện, môn phái)</label><br>
-        <label><input type="checkbox" id="set-lowfx" ${s.lowfx ? 'checked' : ''}> ✨ Giảm hiệu ứng nặng (hạt, thời tiết, hoạt ảnh lặp trên giao diện)</label><br>
-        <label><input type="checkbox" data-set="hideOtherFx" ${s.hideOtherFx ? 'checked' : ''}> 🙈 Ẩn hiệu ứng chiêu của người chơi khác (vẫn thấy sát thương lên mình) – mượt hơn nhiều ở chỗ đông</label>
-        <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn small primary" id="set-keys">⌨️ Cài đặt phím (bàn phím / tay cầm)</button><button class="btn small" id="set-fs">⛶ Toàn màn hình</button><button class="btn small" id="set-online">👥 Người chơi online</button><button class="btn small" id="set-news">📜 Lịch sử cập nhật</button></div>
-        <div class="row" style="justify-content:flex-start;margin-top:6px;align-items:center;gap:6px"><span class="small">Giao diện:</span>${[['auto', 'Tự động'], ['pc', '🖥️ Máy tính'], ['mobile', '📱 Điện thoại']].map(([k, n]) => `<button class="btn small ${Input.uiPref === k ? 'primary' : ''}" data-uipref="${k}">${n}</button>`).join('')}${G.user && G.user.owner ? '<button class="btn small primary" id="set-admin">🛡️ Trang quản trị</button>' : ''}</div></div>
-      <div class="card small"><h4>Điều khiển</h4>
-        <div class="small" style="color:#9fe3ff">Phím dưới đây là mặc định – đổi tùy ý ở nút ⌨️ Cài đặt phím phía trên (cả tay cầm).</div>
-        <div><b>PC:</b> WASD/mũi tên di chuyển · Nhấp chuột để đi/chọn mục tiêu · 1/Space đánh · 2–7 các ô kỹ năng (tự gán trong bảng Võ Công, phím K) · Z/X thuốc · T cưỡi thú · Tab đổi mục tiêu · F nói chuyện NPC · R tự động · Enter chat · I/C/M/J/G/O/L mở bảng · Esc đóng</div>
-        <div><b>Mobile:</b> Joystick trái để di chuyển · Nút ⚔️ (giữ để đánh liên tục) · 3 nút kỹ năng · ❤️💧 thuốc · 🎯 đổi mục tiêu · Chạm NPC/quái để tương tác</div>
-        <div><b>Tay cầm:</b> Cần trái/D-pad di chuyển · A đánh · X/Y/B kỹ năng · LB/RB thuốc · LT đổi mục tiêu · RT nói chuyện NPC · Back mở túi · Start tự động ${pad ? `<br><span style="color:#4ade80">🎮 Đã kết nối: ${esc(pad.id.slice(0, 40))}</span>` : '<br><span class="muted">Chưa phát hiện tay cầm (nhấn một nút bất kỳ để kết nối)</span>'}</div></div>
-      <div class="card"><h4>Tài khoản</h4>
-        <div class="small muted">${G.user && G.user.username ? 'Tài khoản: <b>' + esc(G.user.username) + '</b>' : 'Đăng nhập bằng Google: ' + esc(G.user && G.user.email)}</div>
-        ${G.user && G.user.username ? `<div class="row" style="justify-content:flex-start;margin-top:6px"><input id="pw-old" type="password" placeholder="Mật khẩu cũ" style="width:130px"><input id="pw-new" type="password" placeholder="Mật khẩu mới" style="width:130px"><button class="btn small" id="pw-change">Đổi mật khẩu</button></div>` : ''}
-        <button class="btn small primary" id="set-logout" style="margin-top:6px">Đăng xuất</button></div>`;
+    const ck = (k, label, on) => `<label class="set-row"><input type="checkbox" data-set="${k}" ${on ?? s[k] ? 'checked' : ''}> ${label}</label>`;
+    const view = Math.round((s.view || 1) * 100);
+    let html = tabs([['gfx', '🖥️ Đồ họa'], ['sound', '🔊 Âm thanh'], ['keys', '⌨️ Phím bấm'], ['other', '⚙️ Chung']], tab, 'stab');
+    if (tab === 'gfx') {
+      html += `<div class="card"><h4>🔭 Góc nhìn</h4>
+          <div class="set-row"><span>Độ rộng góc nhìn</span><input type="range" id="set-view" min="80" max="150" step="5" value="${view}"><b id="set-view-v">${view}%</b><button class="btn small" id="set-view-reset">Mặc định</button></div>
+          <div class="small muted">Kéo sang phải để nhìn được rộng hơn (thấy xa hơn, nhân vật nhỏ lại), sang trái để nhìn gần. Góc nhìn càng rộng máy càng phải vẽ nhiều – máy yếu nên để 100% trở xuống.</div></div>
+        <div class="card"><h4>🎨 Chất lượng đồ họa</h4>
+          <div class="row gfx-row" style="justify-content:flex-start;align-items:center;gap:4px">${[['auto', 'Tự động'], ['high', 'Cao'], ['medium', 'Vừa'], ['low', 'Thấp'], ['ultra', 'Siêu thấp (máy yếu)']].map(([k, n]) => `<button class="btn small ${(s.gfx || 'auto') === k ? 'primary' : ''}" data-gfx="${k}">${n}</button>`).join('')}</div>
+          <div class="small muted" style="margin-top:4px">Độ nét hiện tại: ${Math.round(G.gfx.scale * 100)}%${G.gfx.lowFx ? ' · tiết kiệm hiệu ứng' : ''}${G.gfx.weak ? ' · máy cấu hình thấp' : ''}</div>
+          <label class="set-row"><input type="checkbox" id="set-lowfx" ${s.lowfx ? 'checked' : ''}> ✨ Giảm hiệu ứng nặng (hạt, thời tiết, hoạt ảnh lặp trên giao diện)</label>
+          ${ck('hideOtherFx', '🙈 Ẩn hiệu ứng chiêu của người chơi khác – mượt hơn nhiều ở chỗ đông')}
+          <label class="set-row"><input type="checkbox" id="set-battery" ${G.battery() ? 'checked' : ''}> 🔋 Tiết kiệm pin: 30 FPS, độ nét tối đa 150%, để yên lâu thì vẽ thưa hơn</label></div>
+        <div class="card"><h4>👁 Hiển thị</h4>
+          ${ck('names', 'Hiện tên nhân vật / quái')}
+          ${ck('tframe', 'Hiện khung máu cả quái thường (mặc định chỉ boss, tinh anh, người chơi)')}
+          ${ck('shake', 'Rung màn hình khi bị đánh')}
+          <div class="row" style="justify-content:flex-start;align-items:center;gap:6px;margin-top:4px"><span class="small">Giao diện:</span>${[['auto', 'Tự động'], ['pc', '🖥️ Máy tính'], ['mobile', '📱 Điện thoại']].map(([k, n]) => `<button class="btn small ${Input.uiPref === k ? 'primary' : ''}" data-uipref="${k}">${n}</button>`).join('')}<button class="btn small" id="set-fs">⛶ Toàn màn hình</button></div></div>
+        <div class="card"><h4>📱 Màn hình khi treo máy</h4>
+          <label class="set-row"><input type="checkbox" id="set-awake" ${s.keepAwake !== false ? 'checked' : ''}> ☀️ Giữ sáng màn hình khi bật Tự động${'wakeLock' in navigator ? '' : ' <span class="muted">– trình duyệt này không hỗ trợ</span>'}</label>
+          <button class="btn small" id="set-black">🌙 Tắt màn hình (màn đen, máy chủ treo hộ khi bật Tự động)</button></div>`;
+    } else if (tab === 'sound') {
+      const st = GameAudio.state;
+      html += `<div class="card"><h4>🔊 Âm thanh</h4>
+          <div class="set-row"><label><input type="checkbox" id="au-music" ${st.music ? 'checked' : ''}> 🎵 Nhạc nền võ lâm</label><input type="range" id="au-mvol" min="0" max="1" step="0.05" value="${st.musicVol}"><b>${Math.round(st.musicVol * 100)}%</b></div>
+          <div class="set-row"><label><input type="checkbox" id="au-sfx" ${st.sfx ? 'checked' : ''}> 💥 Âm thanh hiệu ứng</label><input type="range" id="au-svol" min="0" max="1" step="0.05" value="${st.sfxVol}"><b>${Math.round(st.sfxVol * 100)}%</b></div>
+          <label class="set-row"><input type="checkbox" id="set-voice" ${(() => { try { return localStorage.getItem('vl_introVoice') !== '0'; } catch (e) { return true; } })() ? 'checked' : ''}> 🗣️ Giọng đọc phim mở đầu</label></div>`;
+    } else if (tab === 'keys') {
+      html += `<div class="card"><h4>⌨️ Phím bấm</h4>
+          <button class="btn primary" id="set-keys">⌨️ Đổi phím (bàn phím / tay cầm)</button>
+          <div class="small muted" style="margin-top:4px">Dưới đây là phím mặc định – đổi tùy ý bằng nút trên.</div></div>
+        <div class="card small"><h4>🖥️ Máy tính</h4><div>WASD / mũi tên di chuyển · Nhấp chuột để đi / chọn mục tiêu · 1 / Space đánh · 2–7 các ô kỹ năng (gán trong bảng Võ Công, phím K) · Z / X thuốc · T cưỡi thú · Tab đổi mục tiêu · F nói chuyện NPC · R tự động · Enter chat · I / C / M / J / G / O / L mở bảng · Esc đóng</div></div>
+        <div class="card small"><h4>📱 Điện thoại</h4><div>Cần gạt trái để di chuyển · Nút ⚔️ (giữ để đánh liên tục) · các nút kỹ năng · ❤️💧 thuốc · 🎯 đổi mục tiêu · Chạm NPC / quái để tương tác</div></div>
+        <div class="card small"><h4>🎮 Tay cầm</h4><div>Cần trái / D-pad di chuyển · A đánh · X / Y / B kỹ năng · LB / RB thuốc · LT đổi mục tiêu · RT nói chuyện NPC · Back mở túi · Start tự động</div>
+          ${pad ? `<div style="color:#4ade80">🎮 Đã kết nối: ${esc(pad.id.slice(0, 40))}</div>` : '<div class="muted">Chưa phát hiện tay cầm (nhấn một nút bất kỳ để kết nối)</div>'}</div>`;
+    } else {
+      html += `<div class="card"><h4>🎮 Lối chơi</h4>
+          <button class="btn small primary" id="set-auto">🤖 Cài đặt tự động (nhặt đồ, bơm máu...)</button>
+          <label class="set-row"><input type="checkbox" id="set-qauto" ${s.questAuto !== false ? 'checked' : ''}> 🧭 Tự đi làm nhiệm vụ khi nhận nhiệm vụ mới (cốt truyện, môn phái)</label></div>
+        <div class="card"><h4>💬 Cộng đồng</h4><p class="small">Tham gia nhóm Zalo để nhận gift code, tin sự kiện và giao lưu với các đại hiệp khác.</p>
+          <div class="row" style="justify-content:flex-start;gap:6px"><a class="zalo-btn" href="https://zalo.me/g/fkxw5crl6ksc0jotbzgp" target="_blank" rel="noopener">💬 Nhóm Zalo</a><button class="btn small" id="set-online">👥 Người chơi online</button><button class="btn small" id="set-news">📜 Lịch sử cập nhật</button>${G.user && G.user.owner ? '<button class="btn small primary" id="set-admin">🛡️ Trang quản trị</button>' : ''}</div></div>
+        <div class="card"><h4>👤 Tài khoản</h4>
+          <div class="small muted">${G.user && G.user.username ? 'Tài khoản: <b>' + esc(G.user.username) + '</b>' : 'Đăng nhập bằng Google: ' + esc(G.user && G.user.email)}</div>
+          ${G.user && G.user.username ? `<div class="row" style="justify-content:flex-start;margin-top:6px"><input id="pw-old" type="password" placeholder="Mật khẩu cũ" style="width:130px"><input id="pw-new" type="password" placeholder="Mật khẩu mới" style="width:130px"><button class="btn small" id="pw-change">Đổi mật khẩu</button></div>` : ''}
+          <button class="btn small red" id="set-logout" style="margin-top:6px">Đăng xuất</button></div>`;
+    }
+    body.innerHTML = html;
+    bindTabs(body, 'stab');
+    const on = (id, ev, fn) => { const e = $(id); if (e) e[ev] = fn; };
     body.querySelectorAll('[data-set]').forEach(c => c.onchange = () => { G.settings[c.dataset.set] = c.checked; G.saveSettings(); });
     body.querySelectorAll('[data-gfx]').forEach(b => b.onclick = () => { G.setGfx(b.dataset.gfx); UI.refreshPanel(); });
-    $('set-battery').onchange = e => { G.setBattery(e.target.checked); UI.refreshPanel(); };
-    $('set-awake').onchange = e => { s.keepAwake = e.target.checked; G.saveSettings(); if (window.Awake) Awake.sync(); };
-    $('set-qauto').onchange = e => { G.settings.questAuto = e.target.checked; G.saveSettings(); };
-    $('set-black').onclick = () => { UI.closePanel(); G.setBlackout(true); };
-    $('set-lowfx').onchange = e => { G.setLowFx(e.target.checked); UI.refreshPanel(); };
-    $('set-fs').onclick = () => Input.toggleFullscreen();
-    $('set-keys').onclick = () => UI.openPanel('keys');
-    $('au-music').onchange = e => { GameAudio.set('music', e.target.checked); UI.updateMusicBtn(); };
-    $('au-sfx').onchange = e => GameAudio.set('sfx', e.target.checked);
-    $('au-mvol').oninput = e => GameAudio.set('musicVol', +e.target.value);
-    $('au-svol').oninput = e => { GameAudio.set('sfxVol', +e.target.value); GameAudio.sfx('coin', 150); };
-    $('set-online').onclick = () => UI.openPanel('online');
-    $('set-news').onclick = () => UI.openPanel('changelog');
     body.querySelectorAll('[data-uipref]').forEach(b => b.onclick = () => { if (b.dataset.uipref === Input.uiPref) return; try { localStorage.setItem('vl_ui', b.dataset.uipref); } catch (e) {} location.reload(); });
-    const sa = $('set-admin'); if (sa) sa.onclick = () => emit('adminPanel');
-    $('set-logout').onclick = () => G.logout();
-    const pc = $('pw-change');
-    if (pc) pc.onclick = async () => {
+    on('set-view', 'oninput', e => { const v = +e.target.value; $('set-view-v').textContent = v + '%'; G.setView(v / 100); });
+    on('set-view-reset', 'onclick', () => { G.setView(1); UI.refreshPanel(); });
+    on('set-battery', 'onchange', e => { G.setBattery(e.target.checked); UI.refreshPanel(); });
+    on('set-awake', 'onchange', e => { s.keepAwake = e.target.checked; G.saveSettings(); if (window.Awake) Awake.sync(); });
+    on('set-qauto', 'onchange', e => { G.settings.questAuto = e.target.checked; G.saveSettings(); });
+    on('set-black', 'onclick', () => { UI.closePanel(); G.setBlackout(true); });
+    on('set-lowfx', 'onchange', e => { G.setLowFx(e.target.checked); UI.refreshPanel(); });
+    on('set-fs', 'onclick', () => Input.toggleFullscreen());
+    on('set-keys', 'onclick', () => UI.openPanel('keys'));
+    on('set-auto', 'onclick', () => UI.openPanel('auto'));
+    on('au-music', 'onchange', e => { GameAudio.set('music', e.target.checked); UI.updateMusicBtn(); });
+    on('au-sfx', 'onchange', e => GameAudio.set('sfx', e.target.checked));
+    on('au-mvol', 'oninput', e => { GameAudio.set('musicVol', +e.target.value); e.target.nextElementSibling.textContent = Math.round(e.target.value * 100) + '%'; });
+    on('au-svol', 'oninput', e => { GameAudio.set('sfxVol', +e.target.value); e.target.nextElementSibling.textContent = Math.round(e.target.value * 100) + '%'; GameAudio.sfx('coin', 150); });
+    on('set-voice', 'onchange', e => { try { localStorage.setItem('vl_introVoice', e.target.checked ? '1' : '0'); } catch (er) { } });
+    on('set-online', 'onclick', () => UI.openPanel('online'));
+    on('set-news', 'onclick', () => UI.openPanel('changelog'));
+    on('set-admin', 'onclick', () => emit('adminPanel'));
+    on('set-logout', 'onclick', () => G.logout());
+    on('pw-change', 'onclick', async () => {
       const r = await fetch('/api/auth/password', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + G.token }, body: JSON.stringify({ oldPassword: $('pw-old').value, newPassword: $('pw-new').value }) });
       const j = await r.json().catch(() => ({}));
       UI.toast(r.ok ? 'Đã đổi mật khẩu' : (j.error || 'Lỗi'), r.ok ? 'reward' : 'error');
       if (r.ok) { $('pw-old').value = ''; $('pw-new').value = ''; }
-    };
+    });
   }
 
   let onlineData = null;

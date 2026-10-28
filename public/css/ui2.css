@@ -213,3 +213,7 @@ body.hs-map #duel-banner { top: 24%; font-size: 34px; letter-spacing: 2px; }
 body.hs-map #duel-banner.go { font-size: 30px; }
 body.hs-map #duel-banner small { font-size: 11px; margin-top: 3px; }
 body.hs-map #hs-hud.min { width: auto; min-width: 150px; }
+/* bảng Cài đặt */
+.set-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; flex-wrap: wrap; }
+.set-row input[type=range] { flex: 1; min-width: 110px; max-width: 260px; }
+.set-row b { min-width: 38px; color: var(--u-gold, #ffd778); }

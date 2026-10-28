@@ -953,9 +953,11 @@
     DPR = Math.min(gfxCap(), gfx.scale);
     canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-    zoom = Math.max(0.8, Math.min(1.6, Math.min(W / (TILE * 12), H / (TILE * 6.6)))); // gần hơn để thấy rõ nhân vật
+    // gần hơn để thấy rõ nhân vật; Cài đặt → Đồ họa → Độ rộng góc nhìn (G.settings.view: 0.8–1.5, lớn = nhìn rộng hơn)
+    zoom = Math.max(0.8, Math.min(1.6, Math.min(W / (TILE * 12), H / (TILE * 6.6)))) / Math.max(0.8, Math.min(1.5, G.settings.view || 1));
   }
   window.addEventListener('load', resize);
+  G.setView = v => { G.settings.view = Math.max(0.8, Math.min(1.5, +v || 1)); G.saveSettings(); resize(); G._camSnap = true; };
   gfx.since = performance.now();
   gfxApply(GFX_START());
 

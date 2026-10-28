@@ -445,6 +445,7 @@
   }
   function play(done) {
     if (open) return;
+    voiceOn = store('vl_introVoice') !== '0';   // có thể đã đổi ở Cài đặt → Âm thanh
     build(); warmVoices(); resize(); voiceBtn();
     onDone = done || null; open = true;
     prevMood = window.GameAudio ? GameAudio.mood : null;
