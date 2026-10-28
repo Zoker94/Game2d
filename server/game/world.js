@@ -761,7 +761,9 @@ class World {
       let hits = [];
       let fxd = { t: sk.fx, from: p.id, x: p.x, y: p.y, color: sk.color, dir: p.dir };
       if (sk.ult) fxd.ult = 1;
-      if (sk.jh) { fxd.jh = 1; fxd.name = sk.name; fxd.r = sk.radius; }   // Tuyệt Kỹ Giang Hồ: máy khách vẽ vỡ màn 4 góc + đọc tên chiêu
+      if (sk.jh) { fxd.jh = 1; fxd.name = sk.name; fxd.r = sk.radius; }
+      // vùng chữ nhật (tuyệt kỹ giang hồ phủ cả màn hình) hoặc vòng tròn bán kính sk.radius
+      const inArea = (e, x, y) => sk.area ? Math.abs(e.x - x) <= sk.area.hw && Math.abs(e.y - y) <= sk.area.hh : Math.hypot(e.x - x, e.y - y) <= sk.radius;   // Tuyệt Kỹ Giang Hồ: máy khách vẽ vỡ màn 4 góc + đọc tên chiêu
       if (sk.type === 'dash') {
         const ang = Math.atan2(t.y - p.y, t.x - p.x);
         const nx = t.x - Math.cos(ang) * 40, ny = t.y - Math.sin(ang) * 40;
@@ -779,12 +781,13 @@ class World {
         fxd.tx = ex; fxd.ty = ey;
       } else if (sk.type === 'aoe') {
         const c = (sk.range && t) ? t : p;
-        hits = enemies.filter(e => U.dist(e, c) <= sk.radius);
+        hits = enemies.filter(e => inArea(e, c.x, c.y));
         fxd.tx = c.x; fxd.ty = c.y; fxd.r = sk.radius;
+        if (sk.area) fxd.area = [sk.area.hw, sk.area.hh];
       }
       if (sk.healAllies) {
         for (const o of map.players) {
-          if (o.dead || U.dist(o, p) > sk.radius) continue;
+          if (o.dead || !inArea(o, p.x, p.y)) continue;
           if (o !== p && this.canHarm(p, o)) continue;
           const amt = Math.round(o.stats.maxHp * sk.healAllies * this.healMul(o));
           o.c.hp = Math.min(o.stats.maxHp, o.c.hp + amt);
@@ -830,7 +833,7 @@ class World {
         const mapId = p.mapId;
         setTimeout(() => {
           if (!this.players.has(p.userId) || p.mapId !== mapId || p.dead) return;
-          strike(this.enemiesOf(p).filter(e => Math.hypot(e.x - cx, e.y - cy) <= sk.radius));
+          strike(this.enemiesOf(p).filter(e => inArea(e, cx, cy)));
         }, sk.hitDelay);
       } else strike(hits);
       this.fx(p.mapId, fxd);

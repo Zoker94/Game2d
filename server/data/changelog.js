@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '28/10/2026',
     items: [
+      '🌐 9 Tuyệt Kỹ Giang Hồ giờ PHỦ TOÀN MÀN HÌNH: đánh mọi kẻ địch trong vùng 1360×840 quanh người ra chiêu (trước đây chỉ bán kính 230). Hiệu ứng nổ rải khắp màn hình. Nga My hồi máu, Võ Đang hồi sinh lực cũng áp dụng cho đồng đội trong cả vùng.',
       '📱 Điện thoại: thêm nút ⚡ TUYỆT riêng (viền vàng, góc trên cụm nút) để thi triển Tuyệt Kỹ Giang Hồ – trước đây tuyệt kỹ nằm ở phím 8/9 nên không có nút bấm trên điện thoại. Nút tự ẩn nếu đã gán tuyệt kỹ vào 1 trong 6 nút chiêu.',
       '⚡ TUYỆT KỸ GIANG HỒ (mới): 9 bộ võ công thất truyền của 9 đại môn phái – môn phái nào cũng học được (cấp 40+, ô kỹ năng riêng như Long Ấn, đổi tuỳ ý ở Võ Công → tab ⚡ Tuyệt Kỹ): Đạt Ma Độ Giang, Phá Thiên Trảm, Bạo Vũ Lê Hoa, Vạn Cổ Thực Hồn, Phật Quang Phổ Chiếu, Tuyết Ảnh Băng Tâm, Kháng Long Hữu Hối, Thái Cực Vô Cực, Thiên Lôi Vạn Kiếm.',
       '💥 Thi triển Tuyệt Kỹ Giang Hồ: màn hình vỡ ở 4 góc, mảnh kính pixel rơi, tên tuyệt kỹ chữ pixel đập giữa màn hình, giọng đọc tiếng Việt tên chiêu. Bí kíp chỉ rơi từ Boss (tỉ lệ thấp: boss thế giới 8%, boss dã ngoại 2,5%, boss phó bản 1,5%) cho người gây sát thương cao nhất.',

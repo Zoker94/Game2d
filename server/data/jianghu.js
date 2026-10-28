@@ -22,8 +22,10 @@ const JIANGHU = {
   cl: { name: 'Thiên Lôi Vạn Kiếm', sect: 'conlon', fx: 'thunder', color: '#d8a4ff', mult: 4.1, radius: 230, stun: 1000,
         desc: 'Vạn kiếm dẫn thiên lôi giáng xuống, sấm sét làm choáng kẻ địch 1 giây.' }
 };
-for (const [k, j] of Object.entries(JIANGHU)) Object.assign(j, { id: 'jh_' + k, key: k, lv: 40, mp: 90, cd: 60000, type: 'aoe', range: 320, hitDelay: 650, book: 'jh_book_' + k, jh: 1 });
+// vùng đánh: hình chữ nhật quanh người ra chiêu, phủ trọn màn hình (kể cả khi kéo tầm nhìn 150%)
+const JH_AREA = { hw: 680, hh: 420 };
+for (const [k, j] of Object.entries(JIANGHU)) Object.assign(j, { id: 'jh_' + k, key: k, lv: 40, mp: 90, cd: 60000, type: 'aoe', range: 0, area: JH_AREA, hitDelay: 650, book: 'jh_book_' + k, jh: 1 });
 const JH_SLOT = 9;   // chỉ số kỹ năng (sau Long Ấn 6, hỗ trợ 7, nội công 8)
 // tỉ lệ rơi bí kíp (cho người gây sát thương cao nhất): boss thế giới / boss dã ngoại / boss phó bản
 const JH_DROP = { world: 0.08, field: 0.025, dungeon: 0.015 };
-module.exports = { JIANGHU, JH_SLOT, JH_DROP };
+module.exports = { JIANGHU, JH_SLOT, JH_DROP, JH_AREA };

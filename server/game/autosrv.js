@@ -160,7 +160,7 @@ class AutoSrv {
       if (!sk || sk.type === 'passive' || c.level < sk.lv || (p.cds[sk.id] || 0) > now || c.mp < (sk.mp || 0)) continue;
       if (sk.type === 'buff') { if (!p.buffs.some(b => b.id === sk.id)) { w.useSkill(p, idx, t.id); return; } continue; }
       if (sk.type === 'heal') { if (c.hp < p.stats.maxHp * 0.6) { w.useSkill(p, idx, t.id); return; } continue; }
-      const range = (sk.type === 'aoe' && !sk.range ? sk.radius : (sk.range || classRange(c.cls, branchOf(c)))) * 0.85;
+      const range = (sk.area ? sk.area.hh : sk.type === 'aoe' && !sk.range ? sk.radius : (sk.range || classRange(c.cls, branchOf(c)))) * 0.85;
       if (d > range) { if (idx === 0) a.goal = { x: t.x, y: t.y }; continue; }
       a.goal = null;
       w.useSkill(p, idx, t.id);

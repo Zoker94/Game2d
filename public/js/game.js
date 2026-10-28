@@ -548,11 +548,26 @@
     const f = Object.assign({ t0: now, dur: FX_DUR[d.t] || 300 }, d);
     G.fx.push(f);
     FxSpawn(f);
+    if (d.area) jhSpread(d, now);
     if (d.jh) JhFX.play(d);   // Tuyệt Kỹ Giang Hồ: vỡ màn 4 góc + tên chiêu pixel + giọng đọc
     else if (ULTI[d.t]) ulti(d);
     else if (d.ult) ultSkill(d);
     if (d.t === 'levelup' && !d.small) sfx('level');
     else fxSound(d);
+  }
+  // tuyệt kỹ phủ cả màn hình: rải thêm các đợt hiệu ứng khắp vùng chữ nhật quanh người ra chiêu (trễ lệch nhau)
+  function jhSpread(d, now) {
+    const [hw, hh] = d.area, cx = d.tx != null ? d.tx : d.x, cy = d.ty != null ? d.ty : d.y;
+    const pts = [[-0.62, -0.5], [0.62, -0.5], [-0.62, 0.5], [0.62, 0.5], [0, -0.72], [0, 0.72], [-0.92, 0], [0.92, 0]];
+    const n = Input.isTouch || gfx.weak ? 5 : pts.length;   // điện thoại / máy yếu: bớt đợt cho đỡ giật
+    pts.slice(0, n).forEach(([ax, ay], i) => {
+      const dl = 90 + i * 70 + Math.random() * 60;
+      setTimeout(() => {
+        const x = cx + ax * hw + (Math.random() - 0.5) * 80, y = cy + ay * hh + (Math.random() - 0.5) * 60;
+        const g = Object.assign({}, d, { t0: performance.now(), dur: FX_DUR[d.t] || 300, x, y, tx: x, ty: y, to: null, area: null, jh: 0, r: (d.r || 200) * 0.85 });
+        G.fx.push(g); FxSpawn(g);
+      }, dl);
+    });
   }
   // tuyệt kỹ Long Ấn: rung màn 2 nhịp (gồng chiêu rồi nổ), lớp sáng theo hệ, tên chiêu chạy ngang màn hình
   const ULTI = { firedragon: 'fire', waterdragon: 'water', icedragon: 'ice', thunderdragon: 'thunder', shadowdragon: 'shadow' };
