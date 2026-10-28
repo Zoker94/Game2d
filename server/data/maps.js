@@ -669,7 +669,6 @@ function generate(id, def = MAP_DEFS[id]) {
       if (!reach[j] && !SOLID.has(g[j])) { reach[j] = 1; stack.push(j); }
     }
   }
-  if (def.market) for (let i = 0; i < g.length; i++) if (g[i] === T.WATER) g[i] = T.FLOOR;   // Chợ Phiên: bỏ hồ nước giữa quảng trường để bày gian hàng
   const walkable = [];
   for (let i = 0; i < w * h; i++) {
     if (!SOLID.has(g[i]) && !reach[i]) g[i] = th.obstacles[0][0];
@@ -691,6 +690,10 @@ function generate(id, def = MAP_DEFS[id]) {
     const c = slice[Math.floor(r() * slice.length)] ?? pool[0];
     return { mon, count, x: c % w, y: (c / w) | 0, r: 5 };
   });
+  if (def.market) {   // Chợ Phiên: quảng trường giữa lát gạch trơn (bỏ hồ nước, cây, bồn hoa) để bày gian hàng
+    for (let i = 0; i < g.length; i++) if (g[i] === T.WATER) g[i] = T.FLOOR;
+    for (let y = 5; y <= 18; y++) for (let x = 6; x <= 27; x++) if (!SOLID.has(g[y * w + x]) || [T.TREE, T.PINE, T.ROCK, T.FLOWER, T.BAMBOO, T.DEADTREE].includes(g[y * w + x])) g[y * w + x] = T.FLOOR;
+  }
   // Ô có thể dùng làm điểm hồi sinh/bãi boss
   const bossSpot = farFromPortals.length ? farFromPortals[Math.floor(r() * farFromPortals.length)] : start;
 

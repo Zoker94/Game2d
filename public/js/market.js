@@ -67,9 +67,9 @@
     const tokens = G.me ? G.me.inv.filter(x => x.id === 'stall_token').reduce((a, x) => a + x.qty, 0) : 0;
     if (d.none) {   // chưa có gian hàng
       b.querySelector('.mk-t').textContent = '🏪 Gian hàng của tôi';
-      body.innerHTML = `<p class="small">Mở gian hàng ở chỗ bạn đang đứng trong Chợ Phiên, bày bán đồ cho người chơi khác trong <b>24 giờ</b> – thoát game hàng vẫn bán, tiền bán tự cộng vào nhân vật (thuế chợ 5%).</p>
+      body.innerHTML = `<p class="small">Mở gian hàng ngay chỗ bạn đang đứng (bất kỳ chỗ trống nào trong Chợ Phiên), bày bán đồ cho người chơi khác trong <b>6 giờ</b> – thoát game hàng vẫn bán, tiền bán tự cộng vào nhân vật (thuế chợ 5%).</p>
         <div class="mk-row"><input class="mk-name" maxlength="24" placeholder="Tên gian hàng (tuỳ chọn)"><button class="btn primary" data-open ${tokens && G.map.id === 'cho_phien' ? '' : 'disabled'}>🏪 Mở gian hàng</button></div>
-        <p class="small ${tokens ? 'muted' : 'warn'}">Lệnh Bài Bán Hàng trong túi: <b>${tokens}</b>${tokens ? '' : ' – mua ở Quản Lý Chợ (20.000 lượng) hoặc Kỳ Trân Các (10 Nguyên Bảo)'}${G.map.id !== 'cho_phien' ? ' · Hãy đến Chợ Phiên (Xa Phu) để mở' : ''}</p>
+        <p class="small ${tokens ? 'muted' : 'warn'}">Lệnh Bài Bán Hàng trong túi: <b>${tokens}</b>${tokens ? '' : ' – mua ở Quản Lý Chợ (20.000 lượng) hoặc Kỳ Trân Các (10 Nguyên Bảo)'}${G.map.id !== 'cho_phien' ? ' · Hãy đến Chợ Phiên (Xa Phu) để mở' : ''}</p><p class="small muted">Gian hàng phải cách gian hàng khác một chút. Hết 6 giờ gian hàng tự dẹp, đồ chưa bán giữ lại – mở "Sạp hàng của tôi" để thu về.</p>
         <button class="btn" data-buytoken>Mua Lệnh Bài Bán Hàng (20.000 lượng)</button>`;
       const nm = body.querySelector('.mk-name'); nm.onkeydown = e => e.stopPropagation();
       body.querySelector('[data-open]').onclick = () => emit({ op: 'open', name: nm.value });
@@ -110,6 +110,19 @@
     if (cl) cl.onclick = () => G.modal('Dẹp gian hàng? Đồ chưa bán sẽ về túi.', [{ t: 'Dẹp', cls: 'red', fn: () => emit({ op: 'close' }) }, { t: 'Huỷ' }]);
     bindTips(body, d.items);
   }
+
+  // nút "Sạp hàng của tôi" khi ở Chợ Phiên: mở / quản lý gian hàng ở bất kỳ đâu, không cần tìm NPC
+  setInterval(() => {
+    const on = !!(G.inGame && G.map && G.map.id === 'cho_phien');
+    let h = $('mk-hud');
+    if (!on) { if (h) h.remove(); return; }
+    if (!h) {
+      h = document.createElement('button'); h.id = 'mk-hud'; h.className = 'btn primary'; h.textContent = '🏪 Sạp hàng của tôi';
+      h.onpointerdown = e => e.stopPropagation();
+      h.onclick = e => { e.stopPropagation(); emit({ op: 'mine' }); };
+      $('screen-game').appendChild(h);
+    }
+  }, 600);
 
   window.Market = {
     collect, draw, hit,

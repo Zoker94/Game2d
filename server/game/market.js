@@ -1,12 +1,13 @@
 // Chợ Phiên: người chơi có Lệnh Bài Bán Hàng mở gian hàng tại bản đồ chợ (cho_phien), treo bán đồ bằng ngân lượng.
 // Gian hàng lưu trong db.data.stalls (userId -> gian hàng) nên vẫn bán khi chủ thoát game; tiền bán được cộng thẳng vào nhân vật
-// (thuế chợ 5%). Mỗi Lệnh Bài mở gian hàng 24 giờ; hết hạn thì gian hàng ẩn, chủ gặp Quản Lý Chợ để thu đồ còn lại về túi.
+// (thuế chợ 5%). Mở ở bất kỳ chỗ trống nào trong chợ (không cần gặp NPC). Mỗi Lệnh Bài mở gian hàng 6 giờ (nhiều người mở
+// không chiếm đất lâu); hết hạn thì gian hàng ẩn, chủ mở "Sạp hàng của tôi" để thu đồ còn lại về túi.
 const { ITEMS } = require('../data/items');
 const U = require('./util');
 
 const MAP = 'cho_phien';
 const TOKEN = 'stall_token';
-const DUR = 24 * 3600 * 1000;
+const DUR = 6 * 3600 * 1000;
 const MAX_ITEMS = 12, TAX = 0.05, GAP = 72;   // tối đa 12 món; gian hàng cách nhau ít nhất 72px
 
 class Market {
@@ -55,12 +56,11 @@ class Market {
     if (!U.countItem(p.c, TOKEN)) return this.toast(p, 'Cần Lệnh Bài Bán Hàng (mua ở Quản Lý Chợ hoặc Kỳ Trân Các)', 'error');
     const map = this.w.maps[MAP];
     for (const [uid, s] of Object.entries(this.stalls)) if (uid !== p.userId && this.live(s) && Math.hypot(s.x - p.x, s.y - p.y) < GAP) return this.toast(p, 'Quá gần gian hàng khác, hãy đứng chỗ trống hơn', 'error');
-    for (const n of map.def.npcs) if (Math.hypot((n.x + 0.5) * 64 - p.x, (n.y + 0.5) * 64 - p.y) < GAP) return this.toast(p, 'Không được bày hàng sát NPC', 'error');
     U.removeItemById(p.c, TOKEN, 1);
     const nm = String(name || '').replace(/[<>]/g, '').trim().slice(0, 24) || `Gian hàng của ${p.c.name}`;
     this.stalls[p.userId] = { name: nm, seller: p.c.name, x: Math.round(p.x), y: Math.round(p.y), until: Date.now() + DUR, items: [], earned: 0, sold: 0, seq: 1 };
     this.db.markDirty(); p.dirtyMe = true;
-    this.toast(p, `🏪 Đã mở "${nm}" trong 24 giờ. Thoát game gian hàng vẫn bán.`, 'reward');
+    this.toast(p, `🏪 Đã mở "${nm}" trong 6 giờ. Thoát game gian hàng vẫn bán.`, 'reward');
     this.broadcast();
     p.socket.emit('stall', this.view(p.userId, p.userId));
   }

@@ -1355,7 +1355,7 @@ class World {
       this.features.questProgress(p, 'potion', 1);
     }
     if (e.town) { this.startRecall(p); return; }   // niệm phép, xong mới trừ phù
-    if (e.stall) return this.toast(p, '🏪 Đến Chợ Phiên (đi Xa Phu, miễn phí), gặp Quản Lý Chợ để mở gian hàng bằng lệnh bài này.', 'info');
+    if (e.stall) return p.mapId === 'cho_phien' ? this.market.action(p, { op: 'mine' }) : this.toast(p, '🏪 Đến Chợ Phiên (đi Xa Phu, miễn phí) rồi dùng lệnh bài này hoặc bấm "🏪 Sạp hàng của tôi" để mở gian hàng ở bất kỳ chỗ trống nào.', 'info');
     if (e.pardon) {
       if (!(c.pk > 0)) return this.toast(p, 'Bạn không mang sát khí, không cần xoá tội', 'error');
       U.removeByUid(c, uid, 1);
