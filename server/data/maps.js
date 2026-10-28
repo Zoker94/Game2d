@@ -367,9 +367,9 @@ const MAP_DEFS = {
   },
   // Hoa Sơn Luận Kiếm: đỉnh núi phủ tuyết, sân đá có 5 vòng đài (giữa + 4 góc); ai cũng lên xem được, chỉ đấu thủ được giao chiến
   hoa_son_ld: {
-    name: 'Hoa Sơn Luận Kiếm', theme: 'snow', w: 44, h: 34, seed: 97, lv: '30+', safe: true, hoason: true, minLv: 1,
+    name: 'Hoa Sơn Luận Kiếm', theme: 'snow', w: 60, h: 46, seed: 97, lv: '30+', safe: true, hoason: true, minLv: 1,
     portals: [],
-    npcs: [{ id: 'hs_chu_tri', x: 22, y: 3 }],
+    npcs: [{ id: 'hs_chu_tri', x: 30, y: 3 }],
     spawns: []
   },
   // lôi đài riêng cho thách đấu 1-1: không cổng, không quái; chỉ vào được khi thách đấu, đấu xong tự đưa về chỗ cũ

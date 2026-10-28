@@ -10,7 +10,7 @@ const { MAPS, TILE } = require('../data/maps');
 const { CLASSES } = require('../data/classes');
 
 const MAP = 'hoa_son_ld';
-const MIN_LV = 30, MAX_REG = 64, TITLE_DAYS = 7;
+const MIN_LV = 30, MAX_REG = 64, TITLE_DAYS = 7, RY = 0.62;   // RY: tỉ lệ dọc của đài bầu dục
 const DOW = 6, HOUR = 20;                 // Thứ 7, 20:00 (giờ Việt Nam)
 const PREP = 45000, BREAK = 12000;        // chờ người chơi vào sân trước trận đầu; nghỉ giữa các vòng
 const REWARDS = [
@@ -33,10 +33,33 @@ class HoaSon {
   isChamp(uid) { const c = this.champ(); return !!(c && c.uid === uid); }
   toast(p, t, k) { this.w.toast(p, t, k || 'info'); }
   announce(t, room) { this.f.announce(t, room); }
-  // các vòng đài: 0 = đài chính giữa, 1-4 = đài phụ bốn góc (toạ độ điểm ảnh)
+  // các vòng đài (hình bầu dục như vẽ trên sân: bán kính dọc = r * RY): 0 = đài chính giữa, 1-4 = đài phụ bốn góc
   rings() {
     const d = this.def(), W = d.w * TILE, H = d.h * TILE;
-    return [{ cx: W / 2, cy: H * 0.52, r: 300 }, { cx: W * 0.24, cy: H * 0.3, r: 230 }, { cx: W * 0.76, cy: H * 0.3, r: 230 }, { cx: W * 0.24, cy: H * 0.76, r: 230 }, { cx: W * 0.76, cy: H * 0.76, r: 230 }];
+    return [{ cx: W / 2, cy: H * 0.53, r: 560 }, { cx: W * 0.2, cy: H * 0.26, r: 400 }, { cx: W * 0.8, cy: H * 0.26, r: 400 }, { cx: W * 0.2, cy: H * 0.8, r: 400 }, { cx: W * 0.8, cy: H * 0.8, r: 400 }];
+  }
+  // ô (x, y) nằm trên bục đài nào (tính cả mép bục), -1 nếu không
+  ringAt(x, y, pad) {
+    const R = this.rings();
+    for (let i = 0; i < R.length; i++) if (Math.hypot(x - R[i].cx, (y - R[i].cy) / RY) < R[i].r + (pad == null ? 24 : pad)) return i;
+    return -1;
+  }
+  // người xem không được bước lên bục đài; đấu thủ chỉ đứng được trên đài của trận mình.
+  // Đang đứng sẵn trên bục (vd. vừa đấu xong) thì cho đi để còn bước xuống.
+  blocked(p, x, y) {
+    if (p.mapId !== MAP) return false;
+    const i = this.ringAt(x, y);
+    if (i < 0) return false;
+    const R = this.rings()[i], d = p.duel;
+    if (d && d.cx === R.cx && d.cy === R.cy) return false;
+    return this.ringAt(p.x, p.y) !== i;
+  }
+  // đẩy người không thi đấu ra khỏi bục
+  clearRing(slot, keep) {
+    for (const p of this.w.maps[MAP].players) {
+      if (keep.includes(p) || this.ringAt(p.x, p.y) !== slot) continue;
+      const s = this.spectatorPos(); p.x = s.x; p.y = s.y; p.moving = false; p.socket.emit('pos', { x: s.x, y: s.y, dash: 1 });
+    }
   }
   // giờ khai mạc tuần này (mốc thời gian thật)
   nextStart() {
@@ -97,10 +120,14 @@ class HoaSon {
   // khán đài: dải trên cùng và hai bên mép bản đồ, tránh các vòng đài
   spectatorPos() {
     const d = this.def();
-    const side = Math.random();
-    const tx = side < 0.5 ? 4 + Math.random() * (d.w - 8) : (side < 0.75 ? 3 : d.w - 4);
-    const ty = side < 0.5 ? 3 + Math.random() * 1.5 : 6 + Math.random() * (d.h - 12);
-    return this.w.randomSpotNear(d, tx + 0.5, ty + 0.5, 1);
+    for (let k = 0; k < 40; k++) {
+      const side = Math.random();
+      const tx = side < 0.45 ? 4 + Math.random() * (d.w - 8) : side < 0.7 ? 3 + Math.random() * 2 : side < 0.95 ? d.w - 5 + Math.random() * 2 : 8 + Math.random() * (d.w - 16);
+      const ty = side < 0.45 ? 2.5 + Math.random() * 2.5 : side < 0.95 ? 6 + Math.random() * (d.h - 12) : d.h * 0.53 + (Math.random() < 0.5 ? -1 : 1) * (8 + Math.random() * 3);
+      const s = this.w.randomSpotNear(d, tx + 0.5, ty + 0.5, 1);
+      if (this.ringAt(s.x, s.y, 60) < 0) return s;
+    }
+    return this.w.randomSpotNear(d, d.w / 2 + 0.5, 3.5, 1);
   }
 
   // ---------------- lịch ----------------
@@ -211,7 +238,8 @@ class HoaSon {
     const R = this.rings()[slot];
     const m = { a, b, slot, ai: pa.id, bi: pb.id, start: Date.now() };
     t.live.set(a + '|' + b, m);
-    this.w.duel.start(pa, pb, { map: MAP, cx: R.cx, cy: R.cy, r: R.r, stay: true, quiet: true,
+    this.clearRing(slot, [pa, pb]);
+    this.w.duel.start(pa, pb, { map: MAP, cx: R.cx, cy: R.cy, r: R.r, ry: RY, stay: true, quiet: true,
       onEnd: (winner, loser, reason) => this.onMatchEnd(m, winner, reason) });
     this.announce(`⚔️ [${this.roundLabel()}] ${pa.c.name} ⚔ ${pb.c.name} lên ${slot ? 'đài ' + slot : 'ĐÀI CHÍNH'}!`, 'map:' + MAP);
   }
@@ -227,6 +255,8 @@ class HoaSon {
       reason = 'bất phân thắng bại, xét máu còn lại';
     }
     const l = w === m.a ? m.b : m.a;
+    // đấu xong: hai người bước xuống khán đài sau vài giây cho trận sau dùng đài
+    setTimeout(() => { for (const uid of [m.a, m.b]) { const p = this.w.players.get(uid); if (p && p.mapId === MAP && !p.duel && this.ringAt(p.x, p.y) >= 0) { const s = this.spectatorPos(); p.x = s.x; p.y = s.y; p.socket.emit('pos', { x: s.x, y: s.y, dash: 1 }); } } }, 3500);
     t.log.unshift(`${this.name(w)} thắng ${this.name(l)}${reason ? ` (${reason})` : ''}`);
     this.result(w, l, reason);
   }
@@ -311,6 +341,7 @@ class HoaSon {
     out.phase = t.phase; out.label = this.roundLabel(); out.at = t.at; out.total = t.total;
     out.left = t.cur.length && t.phase !== 'round' ? t.cur.length : t.next.length + t.queue.length * 2 + t.live.size * 2;
     out.live = [...t.live.values()].map(m => ({ a: this.name(m.a), b: this.name(m.b), ai: m.ai, bi: m.bi, slot: m.slot, cx: R[m.slot].cx, cy: R[m.slot].cy, r: R[m.slot].r }));
+    out.ry = RY;
     out.queue = t.queue.slice(0, 6).map(([a, b]) => [this.name(a), this.name(b)]);
     out.log = t.log.slice(0, 6);
     if (p && t.names[p.userId]) {

@@ -76,10 +76,13 @@
 
   // ---------- bảng theo dõi trên núi ----------
   function hud(force) {
+    const on = !!inMap();
+    if (on !== document.body.classList.contains('hs-map')) document.body.classList.toggle('hs-map', on);   // thu gọn thông báo / bảng phụ khi ở Hoa Sơn
     let h = $('hs-hud');
     if (!inMap() || !st) { if (h) h.remove(); if (!inMap()) { watch = false; lastSelf = null; } return; }
     if (!h) {
       h = document.createElement('div'); h.id = 'hs-hud'; $('screen-game').appendChild(h);
+      if (Input.isTouch) h.classList.add('min');   // điện thoại: mặc định thu gọn, chạm ▾ để mở
       h.addEventListener('pointerdown', e => e.stopPropagation());
       h.addEventListener('click', e => {
         const t = e.target.closest('[data-hs]'); if (!t) return;
@@ -115,16 +118,27 @@
   setInterval(() => hud(), 500);
 
   // ---------- 5 vòng đài trên sân ----------
+  const RY = 0.62;   // đài bầu dục: bán kính dọc = r * RY (giống máy chủ – hoason.js)
   function rings() {
     const W = G.map.w * 64, H = G.map.h * 64;
-    return [{ cx: W / 2, cy: H * 0.52, r: 300 }, { cx: W * 0.24, cy: H * 0.3, r: 230 }, { cx: W * 0.76, cy: H * 0.3, r: 230 }, { cx: W * 0.24, cy: H * 0.76, r: 230 }, { cx: W * 0.76, cy: H * 0.76, r: 230 }];
+    return [{ cx: W / 2, cy: H * 0.53, r: 560 }, { cx: W * 0.2, cy: H * 0.26, r: 400 }, { cx: W * 0.8, cy: H * 0.26, r: 400 }, { cx: W * 0.2, cy: H * 0.8, r: 400 }, { cx: W * 0.8, cy: H * 0.8, r: 400 }];
+  }
+  function ringAt(x, y) { const R = rings(); for (let i = 0; i < R.length; i++) if (Math.hypot(x - R[i].cx, (y - R[i].cy) / RY) < R[i].r + 24) return i; return -1; }
+  // người xem không bước lên bục đài được (máy chủ cũng chặn); đấu thủ chỉ đứng trên đài của trận mình
+  function blocked(x, y) {
+    if (!inMap()) return false;
+    const i = ringAt(x, y);
+    if (i < 0) return false;
+    const R = rings()[i], d = window.Duel && Duel.state;
+    if (d && Math.abs(d.cx - R.cx) < 2 && Math.abs(d.cy - R.cy) < 2) return false;
+    return ringAt(G.self.x, G.self.y) !== i;   // đang đứng sẵn trên bục thì cho bước xuống
   }
   function drawGround(ctx, now) {
     if (!inMap()) return;
     const live = new Set(((st && st.live) || []).map(m => m.slot));
     rings().forEach((R, i) => {
       ctx.save();
-      ctx.translate(R.cx, R.cy); ctx.scale(1, 0.62);
+      ctx.translate(R.cx, R.cy); ctx.scale(1, RY);
       // bục đá tròn hai tầng
       ctx.fillStyle = 'rgba(40,46,60,.55)'; ctx.beginPath(); ctx.arc(0, 10, R.r + 26, 0, Math.PI * 2); ctx.fill();
       const g = ctx.createRadialGradient(0, 0, R.r * 0.2, 0, 0, R.r + 14);
@@ -134,13 +148,13 @@
       ctx.beginPath(); ctx.arc(0, 0, R.r + 14, 0, Math.PI * 2); ctx.stroke();
       ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.beginPath(); ctx.arc(0, 0, R.r * 0.55, 0, Math.PI * 2); ctx.stroke();
       // chữ 劍 giữa đài
-      ctx.font = `bold ${i ? 90 : 130}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = `bold ${i ? 150 : 210}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillStyle = live.has(i) ? 'rgba(255,220,140,.32)' : 'rgba(255,255,255,.16)'; ctx.fillText('劍', 0, 0);
       ctx.restore();
       // biển tên đài
       const lbl = i ? 'ĐÀI ' + i : 'ĐÀI CHÍNH';
       ctx.font = 'bold 13px "Be Vietnam Pro", sans-serif'; ctx.textAlign = 'center';
-      const ty = R.cy - (R.r + 14) * 0.62 - 10, w = ctx.measureText(lbl).width + 16;
+      const ty = R.cy - (R.r + 14) * RY - 10, w = ctx.measureText(lbl).width + 16;
       ctx.fillStyle = 'rgba(20,24,34,.8)'; ctx.fillRect(R.cx - w / 2, ty - 11, w, 18);
       ctx.fillStyle = live.has(i) ? '#ffd778' : '#dfe8f5'; ctx.fillText(lbl, R.cx, ty + 3);
     });
@@ -152,5 +166,5 @@
     if (d.running && !wasRunning && inMap() && !(window.Duel && Duel.active)) setWatch(true, true);   // giải bắt đầu: tự bật xem
     hud();
   }
-  window.HoaSon = { open, onNpc, onState, drawGround, camFocus, get watching() { return watch; } };
+  window.HoaSon = { open, onNpc, onState, drawGround, camFocus, blocked, get watching() { return watch; } };
 })();

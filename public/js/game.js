@@ -1008,7 +1008,7 @@
     if (tx < 0 || ty < 0 || tx >= m.w || ty >= m.h) return true;
     return G.solid.has(m.tiles[ty * m.w + tx]);
   }
-  function blocked(x, y) { return solidAt(x - 12, y - 6) || solidAt(x + 12, y - 6) || solidAt(x - 12, y + 6) || solidAt(x + 12, y + 6) || solidAt(x, y); }
+  function blocked(x, y) { return solidAt(x - 12, y - 6) || solidAt(x + 12, y - 6) || solidAt(x - 12, y + 6) || solidAt(x + 12, y + 6) || solidAt(x, y) || HoaSon.blocked(x, y); }
 
   // ---------- Tìm đường cho nhân vật (bấm đi tới, tự động đánh, tự nhặt đồ): vướng vật cản thì đi vòng ----------
   function clearPath(x0, y0, x1, y1) {

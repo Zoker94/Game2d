@@ -207,3 +207,9 @@ body.touch #hs-hud { top: 130px; width: 210px; font-size: 9.5px; padding: 5px 7p
 .hs-reglist { display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .hs-reglist i { font-style: normal; color: var(--u-dim, #9aa); font-size: 9.5px; }
 .hs-hero .dh-emb { background: radial-gradient(circle, #3a6a9a, #10243a); }
+/* Hoa Sơn: gọn màn hình cho người thi đấu và người xem */
+body.hs-map #story-box, body.hs-map #daily-box { display: none !important; }
+body.hs-map #duel-banner { top: 24%; font-size: 34px; letter-spacing: 2px; }
+body.hs-map #duel-banner.go { font-size: 30px; }
+body.hs-map #duel-banner small { font-size: 11px; margin-top: 3px; }
+body.hs-map #hs-hud.min { width: auto; min-width: 150px; }

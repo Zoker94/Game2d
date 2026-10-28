@@ -35,7 +35,7 @@
     const w = h.querySelector('.dh-time'); if (w.textContent !== tm) w.textContent = tm;
     h.classList.toggle('warn', st.st === 'fight' && left <= 15);
     // cảnh báo sắp ra khỏi vòng
-    const s = G.self, d = Math.hypot(s.x - st.cx, s.y - st.cy);
+    const s = G.self, d = Math.hypot(s.x - st.cx, (s.y - st.cy) / (st.ry || 1));
     h.classList.toggle('edge', d > st.r * 0.82);
   }
   // chữ lớn giữa màn hình: 3, 2, 1, Giao đấu! / Thắng / Thua
@@ -109,5 +109,5 @@
   function fighting() { return !!(st && st.st === 'fight'); }
   function clearRings() { rings.clear(); }
 
-  window.Duel = { request, onReq, onDuel, onRing, draw, isFoe, fighting, clearRings, get active() { return !!st; } };
+  window.Duel = { request, onReq, onDuel, onRing, draw, isFoe, fighting, clearRings, get active() { return !!st; }, get state() { return st; } };
 })();

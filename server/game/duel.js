@@ -73,12 +73,12 @@ class Duel {
       else this.w.enterMap(p, arena, s.x, s.y);
     };
     place(a, spot(-off)); place(b, spot(off));
-    const d = { a, b, mapId: arena, cx, cy, r, state: 'count', at: now + COUNT, until: now + COUNT + FIGHT, stay: !!opts.stay, onEnd: opts.onEnd || null };
+    const d = { a, b, mapId: arena, cx, cy, r, ry: opts.ry || 1, state: 'count', at: now + COUNT, until: now + COUNT + FIGHT, stay: !!opts.stay, onEnd: opts.onEnd || null };
     a.duel = b.duel = d;
     this.list.add(d);
     for (const p of [a, b]) { p.st = {}; p.dots = []; p.c.hp = p.stats.maxHp; p.c.mp = p.stats.maxMp; p.dirtyMe = true; this.sync(p); }
     if (!opts.quiet) this.w.features.announce(`⚔️ ${a.c.name} và ${b.c.name} lên Lôi Đài Tỷ Võ (từ ${from})!`);
-    this.w.io.to('map:' + arena).emit('duelRing', { a: a.id, b: b.id, cx: d.cx, cy: d.cy, r: d.r, on: 1 });
+    this.w.io.to('map:' + arena).emit('duelRing', { a: a.id, b: b.id, cx: d.cx, cy: d.cy, r: d.r, ry: d.ry, on: 1 });
   }
   // đấu xong: đưa về chỗ cũ (đang ở lôi đài thì mới đưa)
   sendHome(p) {
@@ -90,7 +90,7 @@ class Duel {
     const d = p.duel;
     if (!d) return;
     const o = this.other(d, p);
-    p.socket.emit('duel', { st: d.state, with: o.id, name: o.c.name, cx: d.cx, cy: d.cy, r: d.r, at: d.at, until: d.until, now: Date.now() });
+    p.socket.emit('duel', { st: d.state, with: o.id, name: o.c.name, cx: d.cx, cy: d.cy, r: d.r, ry: d.ry, at: d.at, until: d.until, now: Date.now() });
   }
   end(d, winner, reason) {
     if (!this.list.has(d)) return;
@@ -131,7 +131,8 @@ class Duel {
       if (!this.w.players.has(b.userId) || b.mapId !== d.mapId) { this.end(d, a, `${b.c.name} đã rời đi`); continue; }
       if (d.state === 'count' && now >= d.at) { d.state = 'fight'; this.sync(a); this.sync(b); continue; }
       if (d.state !== 'fight') continue;
-      const outA = Math.hypot(a.x - d.cx, a.y - d.cy) > d.r, outB = Math.hypot(b.x - d.cx, b.y - d.cy) > d.r;
+      const out = p => Math.hypot(p.x - d.cx, (p.y - d.cy) / d.ry) > d.r;   // ry < 1: vòng bầu dục đúng như vẽ trên sân
+      const outA = out(a), outB = out(b);
       if (outA && !outB) { this.end(d, b, `${a.c.name} bước ra khỏi vòng đấu`); continue; }
       if (outB && !outA) { this.end(d, a, `${b.c.name} bước ra khỏi vòng đấu`); continue; }
       if (now >= d.until) {
@@ -146,7 +147,7 @@ class Duel {
   // thông tin vòng đấu đang diễn ra trên bản đồ (cho người mới vào)
   ringsOn(mapId) {
     const out = [];
-    for (const d of this.list) if (d.mapId === mapId) out.push({ a: d.a.id, b: d.b.id, cx: d.cx, cy: d.cy, r: d.r, on: 1 });
+    for (const d of this.list) if (d.mapId === mapId) out.push({ a: d.a.id, b: d.b.id, cx: d.cx, cy: d.cy, r: d.r, ry: d.ry, on: 1 });
     return out;
   }
 }

@@ -582,7 +582,7 @@
     o.style.transform = 'translateY(' + (100 - pct) + '%)';
     o.style.visibility = pct ? '' : 'hidden';
   }
-  UI.pvpOn = () => !!G._duelWith || (G.pvpUntil || 0) > performance.now();
+  UI.pvpOn = () => !!G._duelWith || (G.pvpUntil || 0) > performance.now() || !!(G.map && G.map.id === 'hoa_son_ld');   // Hoa Sơn: thông báo gọn cho người đấu và người xem
   UI.frame = function (now) {
     { const on = UI.pvpOn(); if (on !== UI._pvpCls) { UI._pvpCls = on; document.body.classList.toggle('pvp-on', on); } }
     { const md = !!(G.me && G.me.med); if (md !== UI._medCls) { UI._medCls = md; document.body.classList.toggle('meditating', md); } }
@@ -646,7 +646,7 @@
     d.textContent = text;
     box.appendChild(d);
     while (box.children.length > (pvp ? 2 : 5)) box.firstChild.remove();
-    setTimeout(() => d.remove(), pvp ? 1800 : 3100);
+    setTimeout(() => d.remove(), pvp && type !== 'reward' ? 1800 : 3100);   // phần thưởng vẫn hiện đủ lâu để đọc
     if (type === 'item:epic' || type === 'item:legendary') GameAudio.sfx('rare');
     else if (type.startsWith('item')) G.sfx('pick');
     else if (type === 'level') GameAudio.sfx('level');

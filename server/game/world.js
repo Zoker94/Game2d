@@ -466,7 +466,7 @@ class World {
     const allow = Math.min(cap, (p.mvAllow ?? cap) + p.stats.spd * 1.5 * dt / 1000);
     const d = Math.hypot(x - p.x, y - p.y);
     p.mvAllow = allow;
-    if (d > allow || isSolidAt(map, x, y)) {
+    if (d > allow || isSolidAt(map, x, y) || (this.hoason && this.hoason.blocked(p, x, y))) {
       p.socket.emit('pos', { x: p.x, y: p.y });
       return;
     }
@@ -615,7 +615,7 @@ class World {
     let x = p.x, y = p.y;
     for (let k = 0; k < DODGE_DIST; k += 8) {
       const nx = x + vx * 8, ny = y + vy * 8;
-      if (isSolidAt(map, nx, ny)) break;
+      if (isSolidAt(map, nx, ny) || (this.hoason && this.hoason.blocked(p, nx, ny))) break;
       x = nx; y = ny;
     }
     const x0 = p.x, y0 = p.y;
@@ -757,7 +757,7 @@ class World {
       if (sk.type === 'dash') {
         const ang = Math.atan2(t.y - p.y, t.x - p.x);
         const nx = t.x - Math.cos(ang) * 40, ny = t.y - Math.sin(ang) * 40;
-        if (!isSolidAt(MAPS[p.mapId], nx, ny)) { p.x = nx; p.y = ny; p.lastMove = now; p.socket.emit('pos', { x: nx, y: ny, dash: 1 }); }
+        if (!isSolidAt(MAPS[p.mapId], nx, ny) && !(this.hoason && this.hoason.blocked(p, nx, ny))) { p.x = nx; p.y = ny; p.lastMove = now; p.socket.emit('pos', { x: nx, y: ny, dash: 1 }); }
         hits = enemies.filter(e => U.dist(e, t) <= 110); // sát thương lan quanh điểm đáp
         fxd.r = 110;
         fxd.tx = t.x; fxd.ty = t.y; fxd.to = t.id;
