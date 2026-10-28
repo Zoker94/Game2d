@@ -317,7 +317,7 @@
     if (!G.me) return;
     const skills = G.mySkills();
     const hb = G.me.hotbar || [1, 2, 3, 4, 5, 6];
-    const bkey = G.me.cls + ':' + (G.me.branch || '') + ':' + (G.me.dragon || '') + ':' + hb.join(',') + ':' + skills.map(s => s && s.learned ? s.slv : 0).join(',') + ':' + Input.bindVer;   // đổi phím: dựng lại nhãn phím
+    const bkey = G.me.cls + ':' + (G.me.branch || '') + ':' + (G.me.dragon || '') + ':' + (G.me.jh || '') + ':' + hb.join(',') + ':' + skills.map(s => s && s.learned ? s.slv : 0).join(',') + ':' + Input.bindVer;   // đổi phím: dựng lại nhãn phím
     if (builtFor === bkey) return;
     builtFor = bkey;
     const bar = $('skillbar');
@@ -325,7 +325,7 @@
     const mk = (s, key, onclick, slot) => {
       const d = document.createElement('div');
       if (!s) { d.className = 'skill empty'; d.innerHTML = `<span class="key">${key}</span><span class="small muted">Trống</span>`; d.onclick = () => UI.openPanel('skills'); bar.appendChild(d); return; }
-      d.className = 'skill' + (s.idx === 6 ? ' dragon el-' + s.el : '') + (s.learned ? '' : ' unlearned'); d.dataset.idx = s.idx;
+      d.className = 'skill' + (s.idx === 6 ? ' dragon el-' + s.el : '') + (s.idx === 9 ? ' jianghu' : '') + (s.learned ? '' : ' unlearned'); d.dataset.idx = s.idx;
       const ico = Assets.skillIconHTML(G.me.cls, s);
       if (ico) d.classList.add('has-img');
       d.innerHTML = `${ico}<span class="key">${key}</span>${ico ? '' : esc(s.name)}<span class="mpc">${s.mp || ''}</span>${s.slv > 1 ? `<span class="slv">${s.slv}</span>` : ''}<div class="cdo"></div><div class="cdt"></div>`;
@@ -887,7 +887,7 @@
     else if (it.type === 'equip') btns += `<button class="btn small green" data-act="equip">Trang bị</button>`;
     else if (it.type === 'use') {
       btns += `<button class="btn small green" data-act="use">Sử dụng</button>`;
-      const e = it.effect || {}, multi = !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.rename || e.pet || e.learn || e.dragon || e.resetSkill || e.resetAttr || e.changeClass || e.invExpand);
+      const e = it.effect || {}, multi = !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr || e.changeClass || e.invExpand);
       if (multi && s.qty > 1) {   // dùng nhiều cái một lần (rương, bùa, vé quay...)
         const def = Math.min(s.qty, panelState.useN || 10);
         btns += `<span class="use-multi"><input type="number" id="use-n" min="1" max="${Math.min(200, s.qty)}" value="${def}"><button class="btn small green" data-act="usen">Dùng</button></span>`;
@@ -1398,18 +1398,18 @@
       return `${BUFF_LABEL[k] || k} <b>+${f(obj[k])}</b>${next && next[k] != null ? ` → <b style="color:#4ade80">+${f(next[k])}</b>` : ''}`;
     }).join(' · ');
   }
-  const SK_CAT = s => s.idx === 6 ? 'dragon' : s.type === 'passive' ? 'passive' : (s.type === 'buff' || s.type === 'heal') ? 'support' : 'attack';
+  const SK_CAT = s => s.idx === 6 ? 'dragon' : s.idx === 9 ? 'jianghu' : s.type === 'passive' ? 'passive' : (s.type === 'buff' || s.type === 'heal') ? 'support' : 'attack';
   function renderSkills(body) {
     const me = G.me, skills = G.mySkills(), max = G.data.skillMax || 10;
     const hb = (me.hotbar || [1, 2, 3, 4, 5, 6, 7, 0]).slice(); while (hb.length < 8) hb.push(0);
     const BOOK_PRICE = [0, 300, 2500, 12000, 50000, 180000, 0, 30000, 90000];
-    const upCost = (idx, lv) => ({ sp: lv, gold: Math.round(400 * lv * lv * ((idx === 6 ? 5 : idx === 7 ? 4 : idx === 8 ? 5 : idx) + 1)) });
+    const upCost = (idx, lv) => ({ sp: lv, gold: Math.round(400 * lv * lv * ((idx === 6 || idx === 9 ? 5 : idx === 7 ? 4 : idx === 8 ? 5 : idx) + 1)) });
     const tab = panelState.tab || 'keys';
     const br = G.myBranch(), cl = G.data.classes[me.cls];
-    const baseOf = i => i === 6 ? G.data.dragons[me.dragon] : i === 7 ? cl.extra[0] : i === 8 ? br.passive : br.skills[i];
+    const baseOf = i => i === 6 ? G.data.dragons[me.dragon] : i === 9 ? G.data.jianghu[me.jh] : i === 7 ? cl.extra[0] : i === 8 ? br.passive : br.skills[i];
     const ico = (s, i) => Assets.skillIconHTML(me.cls, s) || (i === 0 ? '⚔️' : i === 6 ? '🐉' : '✦');
     let html = `<div class="sk-head"><div>📜 Điểm võ học: <b style="color:#ffd76a">${me.sp}</b> <span class="small muted">(mỗi cấp nhân vật +3,4 điểm · cấp 120 đủ tối đa)</span></div><div class="small">Hệ: <b class="br-tag br-${br.key}">${br.kind || ''} · ${esc(br.name || '')}</b></div><div class="small muted">Sách võ công bán tại <b>Tàng Kinh Các</b> – Tương Dương</div></div>`;
-    html += tabs([['branch', '🔀 Hệ phái'], ['keys', '⌨️ Gán phím'], ['attack', '⚔️ Chiêu thức'], ['support', '✨ Hỗ trợ'], ['passive', '☯ Nội công'], ['dragon', '🐉 Long Ấn']], tab);
+    html += tabs([['branch', '🔀 Hệ phái'], ['keys', '⌨️ Gán phím'], ['attack', '⚔️ Chiêu thức'], ['support', '✨ Hỗ trợ'], ['passive', '☯ Nội công'], ['dragon', '🐉 Long Ấn'], ['jianghu', '⚡ Tuyệt Kỹ']], tab);
     if (tab === 'branch' && cl.branches) {
       const freeLv = G.data.branchFreeLv || 20, wash = (me.inv || []).filter(x => x.id === 'tay_tuy_kinh').reduce((a, x) => a + x.qty, 0);
       html += `<p class="small muted">Mỗi môn phái có hai hệ. <b>Nội công</b>: vận khí, sát thương võ công tăng theo điểm <b>Nội Công</b> và xuyên 20% phòng thủ. <b>Ngoại công</b>: binh khí, sát thương võ công tăng theo điểm <b>Sức Mạnh</b>. Đổi hệ sẽ hoàn lại toàn bộ điểm võ học; ${me.level < freeLv ? `<b style="color:#4ade80">miễn phí dưới cấp ${freeLv}</b>` : `cần <b>1 Tẩy Tủy Kinh</b> (đang có ${wash})`}. Nên tẩy tiềm năng (Tẩy Tiềm Năng Đan) để cộng lại theo hệ mới.</p><div class="br-grid">`;
@@ -1438,14 +1438,14 @@
       if (!pool.length) html += '<p class="small muted">Chưa học võ công nào. Mua sách tại Tàng Kinh Các.</p>';
       for (const s of pool) {
         const at = hb.indexOf(s.idx);
-        html += `<div class="kb-sk ${at >= 0 ? 'on' : ''}" data-kassign="${s.idx}" title="${esc(s.name)}"><div class="kb-ico">${ico(s, s.idx)}</div><div class="kb-name">${esc(s.name)}</div><span class="kb-at">${at >= 0 ? (Input.isTouch && at < 6 ? 'Nút ' + (at + 1) : 'Phím ' + SLOT_KEYS[at]) : ''}</span><span class="kb-cat kb-${SK_CAT(s)}">${{ attack: 'Chiêu thức', support: 'Hỗ trợ', dragon: 'Long Ấn' }[SK_CAT(s)]}</span></div>`;
+        html += `<div class="kb-sk ${at >= 0 ? 'on' : ''}" data-kassign="${s.idx}" title="${esc(s.name)}"><div class="kb-ico">${ico(s, s.idx)}</div><div class="kb-name">${esc(s.name)}</div><span class="kb-at">${at >= 0 ? (Input.isTouch && at < 6 ? 'Nút ' + (at + 1) : 'Phím ' + SLOT_KEYS[at]) : ''}</span><span class="kb-cat kb-${SK_CAT(s)}">${{ attack: 'Chiêu thức', support: 'Hỗ trợ', dragon: 'Long Ấn', jianghu: 'Tuyệt kỹ' }[SK_CAT(s)]}</span></div>`;
       }
       html += '</div>';
       html += `<div class="row" style="justify-content:flex-start;margin-top:8px"><button class="btn small" id="kb-reset">↺ Gán mặc định</button></div>`;
     } else {
       const list = skills.map((s, i) => s && SK_CAT(s) === tab ? [s, i] : null).filter(Boolean);
       if (tab === 'attack' && skills[0]) list.sort((a, b) => a[1] - b[1]);
-      html += `<p class="small muted">${{ attack: 'Chiêu thức tấn công của môn phái. Nâng tầng để tăng sát thương.', support: 'Võ công hỗ trợ chủ động: khi kích hoạt sẽ có hào quang quanh người trong thời gian hiệu lực.', passive: 'Nội công bị động: học xong là luôn có hiệu lực, không cần gán phím. Nâng tầng để tăng chỉ số.', dragon: 'Long Ấn: chiêu rồng diện rộng, môn phái nào cũng học được bằng Bí Kíp.' }[tab]}</p><div class="list">`;
+      html += `<p class="small muted">${{ attack: 'Chiêu thức tấn công của môn phái. Nâng tầng để tăng sát thương.', support: 'Võ công hỗ trợ chủ động: khi kích hoạt sẽ có hào quang quanh người trong thời gian hiệu lực.', passive: 'Nội công bị động: học xong là luôn có hiệu lực, không cần gán phím. Nâng tầng để tăng chỉ số.', dragon: 'Long Ấn: chiêu rồng diện rộng, môn phái nào cũng học được bằng Bí Kíp.', jianghu: 'Tuyệt Kỹ Giang Hồ: 9 bộ võ công thất truyền của 9 đại môn phái – phái nào cũng học được. Bí kíp chỉ rơi từ Boss (tỉ lệ thấp, Boss thế giới cao hơn). Mỗi lúc chỉ dùng một tuyệt kỹ, đổi tuỳ ý trong danh sách dưới.' }[tab]}</p><div class="list">`;
       for (const [s, i] of list) {
         const lvOk = me.level >= s.lv;
         const nextS = s.learned && s.slv < max ? G.scaleSkill(baseOf(i), s.slv + 1) : null;
@@ -1456,16 +1456,24 @@
         else if (s.buff) effect = `${statLine(s.buff, nextS && nextS.buff)} · Hiệu lực ${Math.round(s.buff.dur / 1000)}s${nextS ? ` → <b style="color:#4ade80">${Math.round(nextS.buff.dur / 1000)}s</b>` : ''}`;
         else if (s.passive) effect = statLine(s.passive, nextS && nextS.passive);
         let right;
-        if (!s.learned && i !== 0) right = `<div class="sk-need"><span class="warn small">Chưa học</span><br><span class="small muted">${i === 6 ? 'Bí Kíp rồng' : 'Sách ' + fmt(BOOK_PRICE[i]) + ' lượng'}${lvOk ? '' : ' · cần cấp ' + s.lv}</span></div>`;
+        if (!s.learned && i !== 0) right = `<div class="sk-need"><span class="warn small">Chưa học</span><br><span class="small muted">${i === 6 ? 'Bí Kíp rồng' : i === 9 ? 'Bí kíp từ Boss' : 'Sách ' + fmt(BOOK_PRICE[i]) + ' lượng'}${lvOk ? '' : ' · cần cấp ' + s.lv}</span></div>`;
         else if (s.slv >= max) right = '<span class="small" style="color:#ff9b2f">✦ Đại thành ✦</span>';
         else right = `<button class="btn small green" data-up="${i}" ${me.sp >= cost.sp && me.gold >= cost.gold ? '' : 'disabled'}>Nâng tầng ${s.slv + 1}<br><span class="small">${cost.sp} điểm · ${fmt(cost.gold)} lượng</span></button>`;
         const at = hb.indexOf(i);
         const keyTag = s.type === 'passive' ? '<span class="kb-cat kb-passive">Bị động</span>' : i === 0 ? '<span class="sk-key">Phím 1</span>' : at >= 0 ? `<span class="sk-key">${Input.isTouch && at < 6 ? 'Nút ' + (at + 1) : 'Phím ' + SLOT_KEYS[at]}</span>` : (s.learned ? '<span class="small muted">Chưa gán phím</span>' : '');
-        html += `<div class="li sk-row ${s.learned || i === 0 ? 'done' : ''}"><div class="sk-ico ${i === 6 ? 'dragon' : ''}">${ico(s, i)}</div><div class="grow"><b>${esc(s.name)}</b> ${s.learned || i === 0 ? `<span class="sk-lv">Tầng ${s.slv}/${max}</span>` : ''} ${keyTag} ${lvOk ? '' : `<span class="warn small">(cấp ${s.lv})</span>`}
+        html += `<div class="li sk-row ${s.learned || i === 0 ? 'done' : ''}"><div class="sk-ico ${i === 6 ? 'dragon' : i === 9 ? 'jianghu' : ''}">${ico(s, i)}</div><div class="grow"><b>${esc(s.name)}</b> ${s.learned || i === 0 ? `<span class="sk-lv">Tầng ${s.slv}/${max}</span>` : ''} ${keyTag} ${lvOk ? '' : `<span class="warn small">(cấp ${s.lv})</span>`}
           ${s.desc ? `<div class="sk-lore">${esc(s.desc)}</div>` : ''}${skillDetail(s)}<div class="sub">${effect}${s.type === 'passive' ? '' : ` · ${s.mp || 0} nội lực · hồi chiêu ${(s.cd || 0) / 1000}s`}</div>
           ${s.learned ? `<div class="sk-bar">${Array.from({ length: max }, (_, k) => `<i class="${k < s.slv ? 'on' : ''}"></i>`).join('')}</div>` : ''}</div>${right}</div>`;
       }
-      if (!list.length) html += `<p class="small muted">${tab === 'dragon' ? '🐉 Long Ấn (rồng lửa / nước / băng / sấm / bóng tối) học bằng Bí Kíp từ Boss, Kỳ Trân Các hoặc đổi Hoa Đăng.' : 'Chưa có võ công.'}</p>`;
+      if (tab === 'jianghu' && G.data.jianghu) {   // cả 9 tuyệt kỹ: đã học thì chọn dùng, chưa học thì ghi nguồn
+        html += '<h4 class="sk-title">⚡ 9 Tuyệt Kỹ Giang Hồ</h4>';
+        for (const [k, j] of Object.entries(G.data.jianghu)) {
+          const has = me.jhs && me.jhs[k], on = me.jh === k, sect = G.data.classes[j.sect];
+          html += `<div class="li jh-row ${has ? 'done' : ''}"><div class="sk-ico jianghu">${Assets.skillIconHTML(me.cls, j) || '⚡'}</div><div class="grow"><b style="color:${j.color}">${esc(j.name)}</b> <span class="small muted">· tuyệt học ${sect ? esc(sect.name) : ''}</span>${on ? ' <span style="color:#4ade80">● Đang dùng</span>' : ''}<div class="sk-lore">${esc(j.desc)}</div><div class="sub">Sát thương x${j.mult} · bán kính ${j.radius} · ${j.mp} nội lực · hồi chiêu ${j.cd / 1000}s · cần cấp ${j.lv}</div></div>
+            ${has ? (on ? '' : `<button class="btn small green" data-jh="${k}">Dùng</button>`) : '<span class="small muted">Chưa học<br>(rơi từ Boss)</span>'}</div>`;
+        }
+      }
+      if (!list.length && tab !== 'jianghu') html += `<p class="small muted">${tab === 'dragon' ? '🐉 Long Ấn (rồng lửa / nước / băng / sấm / bóng tối) học bằng Bí Kíp từ Boss, Kỳ Trân Các hoặc đổi Hoa Đăng.' : 'Chưa có võ công.'}</p>`;
       html += '</div>';
     }
     body.innerHTML = html;
@@ -1488,6 +1496,7 @@
     });
     if ($('kb-reset')) $('kb-reset').onclick = () => save([1, 2, 3, 4, 5, 6, 7, 0]);
     body.querySelectorAll('[data-up]').forEach(b => b.onclick = () => emit('skillOp', { op: 'upgrade', idx: +b.dataset.up }));
+    body.querySelectorAll('[data-jh]').forEach(b => b.onclick = () => emit('jianghu', { k: b.dataset.jh }));
     body.querySelectorAll('[data-branch]').forEach(b => b.onclick = () => {
       const nb = cl.branches[b.dataset.branch];
       if (confirm(`Chuyển sang ${nb.kind} – ${nb.name}?\nMọi võ công trở về tầng 1 và hoàn lại điểm võ học.${me.level >= (G.data.branchFreeLv || 20) ? '\nTốn 1 Tẩy Tủy Kinh.' : ''}`)) emit('skillOp', { op: 'branch', to: nb.key });

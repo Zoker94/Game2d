@@ -7,6 +7,7 @@ const { ITEMS } = require('../data/items');
 const { classSkill, classRange, branchOf } = require('../data/classes');
 const { scaleSkill } = require('../data/skillbooks');
 const { DRAGONS, DRAGON_SLOT } = require('../data/dragons');
+const { JIANGHU, JH_SLOT } = require('../data/jianghu');
 const U = require('./util');
 
 const OFFLINE_MAX = 8 * 3600e3;   // mất kết nối: treo tối đa 8 giờ rồi tự thoát
@@ -147,8 +148,8 @@ class AutoSrv {
 
   skillAt(p, idx) {
     const c = p.c, learned = c.skills || {};
-    const base = idx === DRAGON_SLOT ? (c.dragon && c.dragons && c.dragons[c.dragon] ? DRAGONS[c.dragon] : null) : classSkill(c.cls, idx, branchOf(c));
-    if (!base || (idx > 0 && idx !== DRAGON_SLOT && !learned[base.id])) return null;
+    const base = idx === DRAGON_SLOT ? (c.dragon && c.dragons && c.dragons[c.dragon] ? DRAGONS[c.dragon] : null) : idx === JH_SLOT ? (c.jh && c.jhs && c.jhs[c.jh] ? JIANGHU[c.jh] : null) : classSkill(c.cls, idx, branchOf(c));
+    if (!base || (idx > 0 && idx !== DRAGON_SLOT && idx !== JH_SLOT && !learned[base.id])) return null;
     return scaleSkill(base, learned[base.id] || 1);
   }
   // giống tự động trên máy khách: buff → chiêu mạnh → đánh thường; ngoài tầm thì đi tới

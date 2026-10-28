@@ -548,7 +548,8 @@
     const f = Object.assign({ t0: now, dur: FX_DUR[d.t] || 300 }, d);
     G.fx.push(f);
     FxSpawn(f);
-    if (ULTI[d.t]) ulti(d);
+    if (d.jh) JhFX.play(d);   // Tuyệt Kỹ Giang Hồ: vỡ màn 4 góc + tên chiêu pixel + giọng đọc
+    else if (ULTI[d.t]) ulti(d);
     else if (d.ult) ultSkill(d);
     if (d.t === 'levelup' && !d.small) sfx('level');
     else fxSound(d);
@@ -749,6 +750,7 @@
     const br = G.myBranch();
     const list = br.skills.map((s, i) => Object.assign(scaleSkill(s, learnedMap[s.id] || 1), { idx: i, slv: learnedMap[s.id] || 1, learned: i === 0 || !!learnedMap[s.id] }));
     if (G.me.dragon && G.me.dragons && G.me.dragons[G.me.dragon]) { const d = G.data.dragons[G.me.dragon]; list[6] = Object.assign(scaleSkill(d, learnedMap[d.id] || 1), { idx: 6, slv: learnedMap[d.id] || 1, learned: true }); }
+    if (G.me.jh && G.me.jhs && G.me.jhs[G.me.jh] && G.data.jianghu) { const j = G.data.jianghu[G.me.jh]; list[9] = Object.assign(scaleSkill(j, learnedMap[j.id] || 1), { idx: 9, slv: learnedMap[j.id] || 1, learned: true }); }   // Tuyệt Kỹ Giang Hồ
     [G.data.classes[G.me.cls].extra[0], br.passive].forEach((s, k) => { if (s) list[7 + k] = Object.assign(scaleSkill(s, learnedMap[s.id] || 1), { idx: 7 + k, slv: learnedMap[s.id] || 1, learned: !!learnedMap[s.id] }); });
     return list;
   }

@@ -187,6 +187,13 @@ for (const [el, d] of Object.entries(DRAGONS)) {
     price: 120000, lv: d.lv, rarity: 'epic', icon: 'book_' + el, stack: true };
 }
 
+// Bí kíp Tuyệt Kỹ Giang Hồ (chỉ rơi từ Boss)
+const { JIANGHU } = require('./jianghu');
+for (const [k, j] of Object.entries(JIANGHU)) {
+  ITEMS[j.book] = { id: j.book, type: 'use', name: `Bí Kíp ${j.name}`, desc: `Tuyệt Kỹ Giang Hồ (môn phái nào cũng học được, cần cấp ${j.lv}): ${j.desc}`, effect: { jianghu: k },
+    price: 300000, lv: j.lv, rarity: 'legendary', icon: j.book, stack: true };
+}
+
 // Thú cưỡi (vật phẩm dùng để thuần phục)
 const { MOUNTS } = require('./mounts');
 for (const m of Object.values(MOUNTS)) {

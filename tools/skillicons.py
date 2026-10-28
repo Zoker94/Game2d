@@ -528,6 +528,7 @@ CLS = {
     'dragon_ice':   ('#1a5a6a', '#03101a', '#d8f8ff'),
     'dragon_thunder': ('#2a1460', '#06030f', '#e0c8ff'),
     'dragon_shadow':  ('#3a0a22', '#060104', '#ff8ab0'),
+    'jianghu':        ('#5a3a08', '#100802', '#ffe27a'),   # Tuyệt Kỹ Giang Hồ: khung vàng kim
 }
 
 # =====================================================================
@@ -1684,6 +1685,11 @@ def register():
     SKILLS['dr_ice'] = ('dragon_ice', '#9ee8ff', dr_ice)
     SKILLS['dr_thunder'] = ('dragon_thunder', '#c89aff', dr_thunder)
     SKILLS['dr_shadow'] = ('dragon_shadow', '#e0306a', dr_shadow)
+    # Tuyệt Kỹ Giang Hồ: vẽ lại bằng hình tuyệt kỹ của phái tương ứng, khung vàng kim
+    for k, src, col in (('tl', 'tl5', '#ffd040'), ('tv', 'tv5', '#ff7a2a'), ('dm', 'dm5', '#7affd0'), ('nd', 'nd5', '#8fff4a'), ('nm', 'nm5', '#ffb0e0'),
+                        ('ty', 'ty5', '#a8ecff'), ('cb', 'cb5', '#ffc040'), ('vd', 'vd5', '#b8d8ff'), ('cl', 'cl5', '#d8a4ff')):
+        fn = g.get(src)
+        if fn: SKILLS['jh_' + k] = ('jianghu', col, fn)
 
 if __name__ == '__main__':
     root = sys.argv[1] if len(sys.argv) > 1 else 'public/assets'

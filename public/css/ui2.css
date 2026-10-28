@@ -246,3 +246,8 @@ body.touch #tk-hud { width: 250px; top: 44px; font-size: 9.5px; }
 .tk-hero .dh-emb { background: radial-gradient(circle, #8a2a1a, #2a0a06); }
 .tk-shop .li { display: flex; align-items: center; gap: 8px; }
 .tk-shop .tk-ico { width: 34px; text-align: center; } .tk-shop .tk-gold { font-size: 24px; }
+/* Tuyệt Kỹ Giang Hồ */
+#jh-ov { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 29; }
+.skill.jianghu { border-color: #ffd040 !important; box-shadow: 0 0 0 1px #000, 0 0 14px rgba(255,208,64,.75), 0 3px 6px rgba(0,0,0,.6) !important; }
+.sk-ico.jianghu { box-shadow: 0 0 10px rgba(255,208,64,.6); border-radius: 8px; }
+.jh-row .sk-lore { font-size: 10px; }

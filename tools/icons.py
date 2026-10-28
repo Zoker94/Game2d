@@ -628,11 +628,17 @@ SIMPLE = {
     'book_ice': lambda ic: book(ic, ('#7ac8e8', '#1a4a6a'), '冰', emblem=elem_emblem('#9ae0ff', 'ice')),
     'book_thunder': lambda ic: book(ic, ('#6a4ad0', '#1a0a4a'), '雷', emblem=elem_emblem('#b090ff', 'thunder')),
     'book_shadow': lambda ic: book(ic, ('#5a1032', '#12020a'), '冥', emblem=elem_emblem('#e0306a', 'shadow')),
+    # bí kíp Tuyệt Kỹ Giang Hồ: bìa theo màu tuyệt kỹ, chữ Hán đại diện
+    'jh_book_tl': lambda ic: book(ic, ('#d8a020', '#4a2a04'), '達'), 'jh_book_tv': lambda ic: book(ic, ('#d8501a', '#4a1004'), '破'),
+    'jh_book_dm': lambda ic: book(ic, ('#2aa080', '#06302a'), '梨'), 'jh_book_nd': lambda ic: book(ic, ('#5aa020', '#123004'), '蠱'),
+    'jh_book_nm': lambda ic: book(ic, ('#d870b0', '#4a1036'), '佛'), 'jh_book_ty': lambda ic: book(ic, ('#5ab0d8', '#0a2a4a'), '雪'),
+    'jh_book_cb': lambda ic: book(ic, ('#c88a1a', '#3a2004'), '龍'), 'jh_book_vd': lambda ic: book(ic, ('#6a8ad0', '#101e4a'), '極'),
+    'jh_book_cl': lambda ic: book(ic, ('#9a5ad8', '#24104a'), '雷'),
     'stone': stone, 'stone2': lambda ic: stone(ic, True), 'insure': insure, 'food': food, 'blood': blood,
     'chest': chest, 'chest_gold': lambda ic: chest(ic, True), 'ticket': ticket, 'lantern': lantern, 'saddle': saddle, 'gold': gold_icon,
     'bag': bag,
 }
-SIMPLE_GLOW = {'silk': '#e0c8ff', 'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'book_thunder': '#c090ff', 'book_shadow': '#ff3a6a', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'bag': '#ffd040'}
+SIMPLE_GLOW = {'silk': '#e0c8ff', 'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'book_thunder': '#c090ff', 'book_shadow': '#ff3a6a', 'jh_book_tl': '#ffd040', 'jh_book_tv': '#ff7a2a', 'jh_book_dm': '#7affd0', 'jh_book_nd': '#8fff4a', 'jh_book_nm': '#ffb0e0', 'jh_book_ty': '#a8ecff', 'jh_book_cb': '#ffc040', 'jh_book_vd': '#b8d8ff', 'jh_book_cl': '#d8a4ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'bag': '#ffd040'}
 
 def build():
     tiles, index = [], {}

@@ -4,6 +4,8 @@ const CHANGELOG = [
   {
     date: '28/10/2026',
     items: [
+      '⚡ TUYỆT KỸ GIANG HỒ (mới): 9 bộ võ công thất truyền của 9 đại môn phái – môn phái nào cũng học được (cấp 40+, ô kỹ năng riêng như Long Ấn, đổi tuỳ ý ở Võ Công → tab ⚡ Tuyệt Kỹ): Đạt Ma Độ Giang, Phá Thiên Trảm, Bạo Vũ Lê Hoa, Vạn Cổ Thực Hồn, Phật Quang Phổ Chiếu, Tuyết Ảnh Băng Tâm, Kháng Long Hữu Hối, Thái Cực Vô Cực, Thiên Lôi Vạn Kiếm.',
+      '💥 Thi triển Tuyệt Kỹ Giang Hồ: màn hình vỡ ở 4 góc, mảnh kính pixel rơi, tên tuyệt kỹ chữ pixel đập giữa màn hình, giọng đọc tiếng Việt tên chiêu. Bí kíp chỉ rơi từ Boss (tỉ lệ thấp: boss thế giới 8%, boss dã ngoại 2,5%, boss phó bản 1,5%) cho người gây sát thương cao nhất.',
       '🕹️ Sửa lỗi cần điều khiển trên điện thoại: vòng joystick hiện lệch xuống dưới chỗ ngón tay chạm – nay hiện đúng tâm ngón tay (cả khi chơi màn hình dọc tự xoay).',
       '🏯 CHIẾN TRƯỜNG TỐNG KIM (mới): 22:00 – 22:35 mỗi tối, cấp 30+. Báo danh với Mộ Binh Quan ở Tương Dương từ 21:30 (đang đánh vẫn vào được). Máy tự chia hai phe Tống – Kim cân bằng theo lực chiến, tổ đội đi chung một phe. Hậu doanh hai đầu an toàn, có tháp canh bắn kẻ địch xông vào.',
       '⚔️ Luật Tống Kim: hạ người phe địch ~10 điểm (đối thủ mạnh hơn được nhiều hơn) + thưởng chặn liên trảm, hạ lính +1 / Hiệu Úy +5; 10 phút cuối có Đại Tướng hai phe (hạ được: phe mình +100). Tử trận không mất gì, 6 giây sau hồi sinh ở hậu doanh. Quân hàm Binh Sĩ → Nguyên Soái hiện trên đầu theo màu phe.',
