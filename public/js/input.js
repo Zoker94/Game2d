@@ -156,15 +156,22 @@
   const knob = document.getElementById('joy-knob');
   let joyId = null, cx = 0, cy = 0, R = 52;
   const baseDefault = () => { base.style.left = ''; base.style.top = ''; base.style.bottom = ''; };
+  // gốc toạ độ của vùng joystick (toạ độ bố cục, không bị ảnh hưởng khi xoay ngang): vòng joystick nằm trong vùng này,
+  // nên phải trừ đi gốc vùng thì tâm vòng mới trùng đúng chỗ ngón tay chạm
+  function zoneOrigin() {
+    let x = 0, y = 0, el = zone;
+    while (el && el !== document.body) { x += el.offsetLeft; y += el.offsetTop; el = el.offsetParent; }
+    return { x, y };
+  }
   function joyStart(e) {
     for (const t of e.changedTouches) {
       if (joyId !== null) break;
       joyId = t.identifier;
-      const p = Input.toLocal(t.clientX, t.clientY);
+      const p = Input.toLocal(t.clientX, t.clientY), o = zoneOrigin();
       const bw = base.offsetWidth;
       R = bw * 0.4;
-      base.style.left = (p.x - bw / 2) + 'px';
-      base.style.top = (p.y - bw / 2) + 'px';
+      base.style.left = (p.x - o.x - bw / 2) + 'px';
+      base.style.top = (p.y - o.y - bw / 2) + 'px';
       base.style.bottom = 'auto';
       cx = p.x; cy = p.y;
       Input.joy.active = true;
