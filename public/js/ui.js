@@ -372,6 +372,16 @@
       b.classList.toggle('has-img', !!ico);
       b.innerHTML = s ? `${ico || esc(s.name)}<div class="cdo"></div><div class="cdt"></div>` : '<span class="muted">+</span>';
     });
+    // nút Tuyệt Kỹ Giang Hồ riêng trên điện thoại (ô kỹ năng 9) – ẩn nếu đã gán vào 1 trong 6 nút cảm ứng
+    const jb = document.getElementById('btn-jh'), js = G.me.jh && skills[9];
+    if (jb) {
+      jb.classList.toggle('hidden', !js || hb.slice(0, 6).includes(9));
+      jb.dataset.idx = js ? 9 : '';
+      jb.classList.toggle('unlearned', !!js && !js.learned);
+      const ico = js ? Assets.skillIconHTML(G.me.cls, js) : '';
+      jb.classList.toggle('has-img', !!ico);
+      jb.innerHTML = js ? `${ico || esc(js.name)}<div class="cdo"></div><div class="cdt"></div>` : '';
+    }
   }
   function skillDesc(s) {
     const t = { single: 'Tấn công đơn mục tiêu', aoe: `Sát thương diện rộng (bán kính ${s.radius})`, line: 'Tấn công theo đường thẳng', buff: 'Tăng cường bản thân', heal: 'Hồi máu bản thân và đồng đội xung quanh', dot: 'Gây độc theo thời gian', dash: 'Lướt tới mục tiêu, sát thương lan quanh điểm đáp' }[s.type] || '';
@@ -434,7 +444,7 @@
     // khóa kỹ năng
     G.mySkills().forEach((s, i) => {
       const locked = !s.learned || me.level < s.lv;
-      document.querySelectorAll(`#skillbar .skill[data-idx="${i}"], .act.sk[data-idx="${i}"]`).forEach(el => el.classList.toggle('locked', locked));
+      document.querySelectorAll(`#skillbar .skill[data-idx="${i}"], .act.sk[data-idx="${i}"], #btn-jh[data-idx="${i}"]`).forEach(el => el.classList.toggle('locked', locked));
     });
     const cnt = k => me.inv.filter(x => x.id.startsWith(k)).reduce((s, x) => s + x.qty, 0);
     const hpc = cnt('hp'), mpc = cnt('mp');
@@ -596,7 +606,7 @@
     const bar = $('skillbar');
     if (!UI._fc || UI._fc.bar !== bar.firstChild || now - UI._fc.t > 1000) {
       UI._fc = { bar: bar.firstChild, t: now, dodge: [...document.querySelectorAll('#dodge-sk, #btn-dodge')].map(el => [el, el.querySelector('.cdo'), el.querySelector('.cdt')]), sk: {} };
-      document.querySelectorAll('#skillbar .skill[data-idx], .act.sk[data-idx]').forEach(el => (UI._fc.sk[el.dataset.idx] = UI._fc.sk[el.dataset.idx] || []).push([el, el.querySelector('.cdo'), el.querySelector('.cdt')]));
+      document.querySelectorAll('#skillbar .skill[data-idx], .act.sk[data-idx], #btn-jh[data-idx]').forEach(el => (UI._fc.sk[el.dataset.idx] = UI._fc.sk[el.dataset.idx] || []).push([el, el.querySelector('.cdo'), el.querySelector('.cdt')]));
     }
     for (const [el, o, t] of UI._fc.dodge) {
       let b = el._ch; if (!b) { b = el._ch = document.createElement('span'); b.className = 'dch'; el.appendChild(b); }

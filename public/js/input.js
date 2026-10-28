@@ -214,6 +214,7 @@
   };
   hold(document.getElementById('btn-attack'), () => { Input.attackHeld = true; emit('skill', 0); }, () => { Input.attackHeld = false; });
   document.querySelectorAll('.act.sk').forEach(b => hold(b, () => emit('slot', +b.dataset.sk)));
+  hold(document.getElementById('btn-jh'), () => emit('skill', 9));
   hold(document.getElementById('btn-hp'), () => emit('potion', 'hp'));
   hold(document.getElementById('btn-mp'), () => emit('potion', 'mp'));
   hold(document.getElementById('btn-target'), () => emit('target'));

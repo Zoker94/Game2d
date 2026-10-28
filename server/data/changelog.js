@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '28/10/2026',
     items: [
+      '📱 Điện thoại: thêm nút ⚡ TUYỆT riêng (viền vàng, góc trên cụm nút) để thi triển Tuyệt Kỹ Giang Hồ – trước đây tuyệt kỹ nằm ở phím 8/9 nên không có nút bấm trên điện thoại. Nút tự ẩn nếu đã gán tuyệt kỹ vào 1 trong 6 nút chiêu.',
       '⚡ TUYỆT KỸ GIANG HỒ (mới): 9 bộ võ công thất truyền của 9 đại môn phái – môn phái nào cũng học được (cấp 40+, ô kỹ năng riêng như Long Ấn, đổi tuỳ ý ở Võ Công → tab ⚡ Tuyệt Kỹ): Đạt Ma Độ Giang, Phá Thiên Trảm, Bạo Vũ Lê Hoa, Vạn Cổ Thực Hồn, Phật Quang Phổ Chiếu, Tuyết Ảnh Băng Tâm, Kháng Long Hữu Hối, Thái Cực Vô Cực, Thiên Lôi Vạn Kiếm.',
       '💥 Thi triển Tuyệt Kỹ Giang Hồ: màn hình vỡ ở 4 góc, mảnh kính pixel rơi, tên tuyệt kỹ chữ pixel đập giữa màn hình, giọng đọc tiếng Việt tên chiêu. Bí kíp chỉ rơi từ Boss (tỉ lệ thấp: boss thế giới 8%, boss dã ngoại 2,5%, boss phó bản 1,5%) cho người gây sát thương cao nhất.',
       '🕹️ Sửa lỗi cần điều khiển trên điện thoại: vòng joystick hiện lệch xuống dưới chỗ ngón tay chạm – nay hiện đúng tâm ngón tay (cả khi chơi màn hình dọc tự xoay).',

@@ -251,3 +251,10 @@ body.touch #tk-hud { width: 250px; top: 44px; font-size: 9.5px; }
 .skill.jianghu { border-color: #ffd040 !important; box-shadow: 0 0 0 1px #000, 0 0 14px rgba(255,208,64,.75), 0 3px 6px rgba(0,0,0,.6) !important; }
 .sk-ico.jianghu { box-shadow: 0 0 10px rgba(255,208,64,.6); border-radius: 8px; }
 .jh-row .sk-lore { font-size: 10px; }
+/* nút Tuyệt Kỹ Giang Hồ trên điện thoại */
+.act.jhb { width: 48px; height: 48px; right: -4px; bottom: 156px; border-color: transparent; padding: 0;
+  background: radial-gradient(#3a2c08, #120c02) padding-box, conic-gradient(from 210deg, #fffbe0, #ffd040, #7a3a08, #ffe890, #fffbe0) border-box;
+  box-shadow: 0 0 0 1px #000, 0 0 14px rgba(255,208,64,.75), 0 4px 10px rgba(0,0,0,.6); }
+.act.jhb.hidden { display: none; }
+.act.jhb .sk-img { position: absolute; inset: 0; border-radius: 50%; background-size: 126%; }
+.act.jhb::after { content: 'TUYỆT'; position: absolute; top: 1px; left: 50%; transform: translateX(-50%); font-size: 7px; font-weight: 900; letter-spacing: .5px; color: #fff4c8; text-shadow: 0 0 3px #000, 0 0 2px #000; z-index: 3; }
