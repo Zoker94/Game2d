@@ -26,6 +26,7 @@ const JIANGHU = {
 const JH_AREA = { hw: 680, hh: 420 };
 for (const [k, j] of Object.entries(JIANGHU)) Object.assign(j, { id: 'jh_' + k, key: k, lv: 40, mp: 90, cd: 60000, type: 'aoe', range: 0, area: JH_AREA, hitDelay: 650, book: 'jh_book_' + k, jh: 1 });
 const JH_SLOT = 9;   // chỉ số kỹ năng (sau Long Ấn 6, hỗ trợ 7, nội công 8)
-// tỉ lệ rơi bí kíp (cho người gây sát thương cao nhất): boss thế giới / boss dã ngoại / boss phó bản
-const JH_DROP = { world: 0.08, field: 0.025, dungeon: 0.015 };
+// tỉ lệ rơi bí kíp (cho người gây sát thương cao nhất): boss thế giới / boss dã ngoại / boss phó bản – cố ý rất hiếm,
+// không nhân theo hệ số rơi đồ của máy chủ
+const JH_DROP = { world: 0.02, field: 0.005, dungeon: 0.003 };
 module.exports = { JIANGHU, JH_SLOT, JH_DROP, JH_AREA };

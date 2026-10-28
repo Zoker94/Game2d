@@ -1456,7 +1456,7 @@
     } else {
       const list = skills.map((s, i) => s && SK_CAT(s) === tab ? [s, i] : null).filter(Boolean);
       if (tab === 'attack' && skills[0]) list.sort((a, b) => a[1] - b[1]);
-      html += `<p class="small muted">${{ attack: 'Chiêu thức tấn công của môn phái. Nâng tầng để tăng sát thương.', support: 'Võ công hỗ trợ chủ động: khi kích hoạt sẽ có hào quang quanh người trong thời gian hiệu lực.', passive: 'Nội công bị động: học xong là luôn có hiệu lực, không cần gán phím. Nâng tầng để tăng chỉ số.', dragon: 'Long Ấn: chiêu rồng diện rộng, môn phái nào cũng học được bằng Bí Kíp.', jianghu: 'Tuyệt Kỹ Giang Hồ: 9 bộ võ công thất truyền của 9 đại môn phái – phái nào cũng học được. Bí kíp chỉ rơi từ Boss (tỉ lệ thấp, Boss thế giới cao hơn). Mỗi lúc chỉ dùng một tuyệt kỹ, đổi tuỳ ý trong danh sách dưới.' }[tab]}</p><div class="list">`;
+      html += `<p class="small muted">${{ attack: 'Chiêu thức tấn công của môn phái. Nâng tầng để tăng sát thương.', support: 'Võ công hỗ trợ chủ động: khi kích hoạt sẽ có hào quang quanh người trong thời gian hiệu lực.', passive: 'Nội công bị động: học xong là luôn có hiệu lực, không cần gán phím. Nâng tầng để tăng chỉ số.', dragon: 'Long Ấn: chiêu rồng diện rộng, môn phái nào cũng học được bằng Bí Kíp.', jianghu: 'Tuyệt Kỹ Giang Hồ: 9 bộ võ công thất truyền của 9 đại môn phái – phái nào cũng học được. Bí kíp cực hiếm, chỉ rơi từ Boss (Boss thế giới cao hơn chút). Mỗi lúc chỉ dùng một tuyệt kỹ, đổi tuỳ ý trong danh sách dưới.' }[tab]}</p><div class="list">`;
       for (const [s, i] of list) {
         const lvOk = me.level >= s.lv;
         const nextS = s.learned && s.slv < max ? G.scaleSkill(baseOf(i), s.slv + 1) : null;

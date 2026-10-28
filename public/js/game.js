@@ -555,13 +555,17 @@
     if (d.t === 'levelup' && !d.small) sfx('level');
     else fxSound(d);
   }
-  // tuyệt kỹ phủ cả màn hình: rải thêm các đợt hiệu ứng khắp vùng chữ nhật quanh người ra chiêu (trễ lệch nhau)
+  // tuyệt kỹ phủ cả màn hình: rải thêm các đợt hiệu ứng khắp vùng chữ nhật quanh người ra chiêu (trễ lệch nhau),
+  // lặp 3 lượt trong ~2,6 giây cho chiêu kéo dài; lượt sau rải lệch vị trí so với lượt trước
   function jhSpread(d, now) {
     const [hw, hh] = d.area, cx = d.tx != null ? d.tx : d.x, cy = d.ty != null ? d.ty : d.y;
-    const pts = [[-0.62, -0.5], [0.62, -0.5], [-0.62, 0.5], [0.62, 0.5], [0, -0.72], [0, 0.72], [-0.92, 0], [0.92, 0]];
-    const n = Input.isTouch || gfx.weak ? 5 : pts.length;   // điện thoại / máy yếu: bớt đợt cho đỡ giật
-    pts.slice(0, n).forEach(([ax, ay], i) => {
-      const dl = 90 + i * 70 + Math.random() * 60;
+    const base = [[-0.62, -0.5], [0.62, -0.5], [-0.62, 0.5], [0.62, 0.5], [0, -0.72], [0, 0.72], [-0.92, 0], [0.92, 0]];
+    const n = Input.isTouch || gfx.weak ? 5 : base.length;   // điện thoại / máy yếu: bớt đợt cho đỡ giật
+    const pts = [];
+    for (let w = 0; w < 3; w++) base.slice(0, n).forEach(([ax, ay], i) => pts.push([w % 2 ? ax * 0.55 : ax, w % 2 ? ay * 0.6 : ay, w * 1000 + i * (520 / n)]));
+    pts.push([0, 0, 1000], [0, 0, 2000]);   // giữa màn cũng nổ lại
+    pts.forEach(([ax, ay, t0]) => {
+      const dl = 90 + t0 + Math.random() * 60;
       setTimeout(() => {
         const x = cx + ax * hw + (Math.random() - 0.5) * 80, y = cy + ay * hh + (Math.random() - 0.5) * 60;
         const g = Object.assign({}, d, { t0: performance.now(), dur: FX_DUR[d.t] || 300, x, y, tx: x, ty: y, to: null, area: null, jh: 0, r: (d.r || 200) * 0.85 });

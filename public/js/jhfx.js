@@ -78,19 +78,19 @@
       cur.shards.push({ x: x0 + Math.cos(an) * r, y: y0 + Math.sin(an) * r, s: 4 + Math.floor(R(seed + i * 11) * 9), vx: (R(seed + i * 4) - 0.5) * 120, vy: -40 - R(seed + i * 6) * 80, rot: R(seed + i) * 6, delay: 550 + R(seed + i * 2) * 400 });
     }
     // rung màn, âm thanh, giọng đọc
-    if (G.rumble) G.rumble(self ? 24 : Math.max(4, 14 * (1 - near / 900)), self ? 1000 : 600);
-    GameAudio.sfx('thunder', 0); setTimeout(() => GameAudio.sfx('boom', 0), 180);
+    if (G.rumble) G.rumble(self ? 24 : Math.max(4, 14 * (1 - near / 900)), self ? 3000 : 2400);
+    GameAudio.sfx('thunder', 0); for (const ms of [180, 1150, 2150]) setTimeout(() => GameAudio.sfx('boom', 0), ms);   // nổ theo từng lượt hiệu ứng
     if (self) { say(d.name || ''); if (navigator.vibrate && G.settings.shake) try { navigator.vibrate([80, 40, 160]); } catch (e) { } }
     cancelAnimationFrame(raf); raf = requestAnimationFrame(frame);
   }
   function frame(now) {
     const c = cur;
     if (!c) return;
-    const t = now - c.t0, DUR = 2400;
+    const t = now - c.t0, DUR = 4400;
     cx.clearRect(0, 0, c.W, c.H);
     if (t > DUR) { cur = null; return; }
     raf = requestAnimationFrame(frame);
-    const fade = t < 1700 ? 1 : 1 - (t - 1700) / (DUR - 1700);
+    const fade = t < 3700 ? 1 : 1 - (t - 3700) / (DUR - 3700);
     // chớp sáng
     if (t < 260) { cx.fillStyle = `rgba(255,250,230,${(1 - t / 260) * (c.self ? 0.75 : 0.35)})`; cx.fillRect(0, 0, c.W, c.H); }
     // viền tối + màu tuyệt kỹ

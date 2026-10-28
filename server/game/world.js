@@ -1050,7 +1050,7 @@ class World {
   }
   // bí kíp Tuyệt Kỹ Giang Hồ: tỉ lệ thấp, trao cho người gây sát thương cao nhất còn ở bản đồ
   rollJhBook(mon, tpl) {
-    const rate = (tpl.world ? JH_DROP.world : mon.boss ? JH_DROP.field : JH_DROP.dungeon) * (this.db.data.config.dropRate || 1);
+    const rate = (tpl.world ? JH_DROP.world : mon.boss ? JH_DROP.field : JH_DROP.dungeon);
     if (Math.random() >= rate) return;
     const top = [...mon.dmgBy.entries()].sort((a, b) => b[1] - a[1]).map(([uid]) => this.players.get(uid)).find(p => p && p.mapId === mon.mapId);
     if (!top) return;
