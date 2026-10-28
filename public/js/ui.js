@@ -1517,7 +1517,13 @@
         let right;
         if (!s.learned && i !== 0) right = `<div class="sk-need"><span class="warn small">Chưa học</span><br><span class="small muted">${i === 6 ? 'Bí Kíp rồng' : i === 9 ? 'Bí kíp từ Boss' : 'Sách ' + fmt(BOOK_PRICE[i]) + ' lượng'}${lvOk ? '' : ' · cần cấp ' + s.lv}</span></div>`;
         else if (s.slv >= max) right = '<span class="small" style="color:#ff9b2f">✦ Đại thành ✦</span>';
-        else right = `<button class="btn small green" data-up="${i}" ${me.sp >= cost.sp && me.gold >= cost.gold ? '' : 'disabled'}>Nâng tầng ${s.slv + 1}<br><span class="small">${cost.sp} điểm · ${fmt(cost.gold)} lượng</span></button>`;
+        else {
+          // nâng tầng cần thêm 1 cuốn chính võ công đó (máy chủ kiểm tra lại)
+          const bk = i === 0 ? null : i === 6 ? (G.data.dragons[me.dragon] || {}).book : i === 9 ? (G.data.jianghu[me.jh] || {}).book : baseOf(i) && 'sk_' + baseOf(i).id;
+          const bit = bk && G.data.items[bk], have = bit ? me.inv.filter(x => x.id === bk).reduce((a, x) => a + x.qty, 0) : 1;
+          const bname = bit ? bit.name.replace(/^Sách: /, '') : '';
+          right = `<button class="btn small green" data-up="${i}" ${me.sp >= cost.sp && me.gold >= cost.gold && have >= 1 ? '' : 'disabled'}>Nâng tầng ${s.slv + 1}<br><span class="small">${cost.sp} điểm · ${fmt(cost.gold)} lượng</span>${bit ? `<br><span class="small" style="color:${have ? '#9fe0a8' : '#ff8a7a'}">📖 1 ${esc(bname)} (có ${have})</span>` : ''}</button>`;
+        }
         const at = hb.indexOf(i);
         const keyTag = s.type === 'passive' ? '<span class="kb-cat kb-passive">Bị động</span>' : i === 0 ? '<span class="sk-key">Phím 1</span>' : at >= 0 ? `<span class="sk-key">${Input.isTouch && at < 6 ? 'Nút ' + (at + 1) : 'Phím ' + SLOT_KEYS[at]}</span>` : (s.learned ? '<span class="small muted">Chưa gán phím</span>' : '');
         html += `<div class="li sk-row ${s.learned || i === 0 ? 'done' : ''}"><div class="sk-ico ${i === 6 ? 'dragon' : i === 9 ? 'jianghu' : ''}">${ico(s, i)}</div><div class="grow"><b>${esc(s.name)}</b> ${s.learned || i === 0 ? `<span class="sk-lv">Tầng ${s.slv}/${max}</span>` : ''} ${keyTag} ${lvOk ? '' : `<span class="warn small">(cấp ${s.lv})</span>`}

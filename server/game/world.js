@@ -1461,7 +1461,7 @@ class World {
     if (e.learn) {
       const b = BOOKS[s.id];
       if (b.cls !== c.cls) return this.toast(p, `Sách này của môn phái ${CLASSES[b.cls].name}, bạn không thể học`, 'error');
-      if (c.skills[e.learn]) return this.toast(p, 'Bạn đã học võ công này rồi. Nâng cấp trong bảng Võ Công (phím K).', 'error');
+      if (c.skills[e.learn]) return this.toast(p, 'Bạn đã học võ công này rồi. Giữ sách lại: mỗi lần nâng tầng võ công cần 1 cuốn (bảng Võ Công, phím K).', 'error');
       if (b.branch && b.branch !== branchOf(c)) return this.toast(p, `Sách thuộc hệ ${CLASSES[c.cls].branches[b.branch].kind} (${CLASSES[c.cls].branches[b.branch].name}). Bạn đang tu ${CLASSES[c.cls].branches[branchOf(c)].kind} – đổi hệ trong bảng Võ Công.`, 'error');
       U.removeByUid(c, uid, 1);
       c.skills[e.learn] = 1;
@@ -1476,7 +1476,7 @@ class World {
       if (!j) return;
       if (c.level < j.lv) return this.toast(p, `Cần cấp ${j.lv} để lĩnh ngộ ${j.name}`, 'error');
       c.jhs = c.jhs || {};
-      if (c.jhs[e.jianghu]) return this.toast(p, 'Bạn đã lĩnh ngộ tuyệt kỹ này rồi', 'error');
+      if (c.jhs[e.jianghu]) return this.toast(p, 'Bạn đã lĩnh ngộ tuyệt kỹ này rồi. Giữ bí kíp lại: mỗi lần nâng tầng cần 1 cuốn.', 'error');
       U.removeByUid(c, uid, 1);
       c.jhs[e.jianghu] = true; c.jh = e.jianghu;
       c.skills[j.id] = c.skills[j.id] || 1;
@@ -1489,7 +1489,7 @@ class World {
     }
     if (e.dragon) {
       c.dragons = c.dragons || {};
-      if (c.dragons[e.dragon]) return this.toast(p, 'Bạn đã lĩnh ngộ Long Ấn này rồi', 'error');
+      if (c.dragons[e.dragon]) return this.toast(p, 'Bạn đã lĩnh ngộ Long Ấn này rồi. Giữ bí kíp lại: mỗi lần nâng tầng Long Ấn cần 1 cuốn.', 'error');
       U.removeByUid(c, uid, 1);
       c.dragons[e.dragon] = true;
       c.skills[DRAGONS[e.dragon].id] = c.skills[DRAGONS[e.dragon].id] || 1;
@@ -1997,6 +1997,10 @@ class World {
       const sp = spTotalOf(c) - (c.spSpent || 0);
       if (sp < cost.sp) return this.toast(p, `Cần ${cost.sp} điểm võ học (mỗi cấp nhân vật nhận ~3,4 điểm)`, 'error');
       if (c.gold < cost.gold) return this.toast(p, `Cần ${cost.gold.toLocaleString('vi-VN')} lượng`, 'error');
+      // nâng tầng phải có thêm 1 cuốn chính võ công đó (sách môn phái / bí kíp Long Ấn / bí kíp Tuyệt Kỹ); đánh thường không cần
+      const book = idx === 0 ? null : idx === DRAGON_SLOT ? base.book : idx === JH_SLOT ? base.book : 'sk_' + base.id;
+      if (book && ITEMS[book] && U.countItem(c, book) < 1) return this.toast(p, `Cần 1 cuốn ${ITEMS[book].name.replace(/^Sách: /, 'Sách ')} để nâng ${base.name} lên tầng ${lv + 1}`, 'error');
+      if (book && ITEMS[book]) U.removeItemById(c, book, 1);
       c.gold -= cost.gold; c.spSpent = (c.spSpent || 0) + cost.sp;
       c.skills[base.id] = lv + 1;
       if (base.type === 'passive') this.recalc(p);
