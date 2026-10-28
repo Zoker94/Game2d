@@ -49,6 +49,7 @@ const MAP_DEFS = {
       { id: 'tang_kinh',  x: 26, y: 18 },
       { id: 'dh_su_gia',  x: 17, y: 20 },
       { id: 'hs_su_gia',  x: 21, y: 20 },
+      { id: 'tk_mo_binh', x: 13, y: 20 },
       { id: 'pho_ban',    x: 26, y: 15 }
     ],
     spawns: []
@@ -370,6 +371,13 @@ const MAP_DEFS = {
     name: 'Hoa Sơn Luận Kiếm', theme: 'snow', w: 60, h: 46, seed: 97, lv: '30+', safe: true, hoason: true, minLv: 1,
     portals: [],
     npcs: [{ id: 'hs_chu_tri', x: 30, y: 3 }],
+    spawns: []
+  },
+  // Chiến Trường Tống Kim: đồng cỏ rộng, hậu doanh Tống (Tây) và Kim (Đông) lát đá, giữa có vài lùm cây / tảng đá làm chỗ nấp
+  tong_kim: {
+    name: 'Chiến Trường Tống Kim', theme: 'plains', w: 72, h: 34, seed: 141, lv: '30+', safe: true, tongkim: true, minLv: 1,
+    portals: [],
+    npcs: [{ id: 'tk_quan_nhu', x: 3, y: 17 }, { id: 'tk_quan_nhu', x: 68, y: 17 }],
     spawns: []
   },
   // lôi đài riêng cho thách đấu 1-1: không cổng, không quái; chỉ vào được khi thách đấu, đấu xong tự đưa về chỗ cũ
@@ -694,11 +702,23 @@ function generate(id, def = MAP_DEFS[id]) {
     for (let i = 0; i < g.length; i++) if (g[i] === T.WATER) g[i] = T.FLOOR;
     for (let y = 5; y <= 18; y++) for (let x = 6; x <= 27; x++) if (!SOLID.has(g[y * w + x]) || [T.TREE, T.PINE, T.ROCK, T.FLOWER, T.BAMBOO, T.DEADTREE].includes(g[y * w + x])) g[y * w + x] = T.FLOOR;
   }
+  if (def.tongkim) {   // Tống Kim: xoá địa hình ngẫu nhiên, dựng lại chiến trường đối xứng
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const base = x < 9 || x > w - 10;
+      g[y * w + x] = base ? T.FLOOR : (Math.abs(y - (h >> 1)) <= 1 ? T.PATH : T.GRASS);
+    }
+    for (let y = 1; y < h - 1; y++) { g[y * w + 9] = (Math.abs(y - (h >> 1)) <= 3) ? T.PATH : T.WALL; g[y * w + (w - 10)] = (Math.abs(y - (h >> 1)) <= 3) ? T.PATH : T.WALL; }   // tường hậu doanh, cổng giữa
+    for (let k = 0; k < 14; k++) {   // lùm cây / tảng đá đối xứng hai bên
+      const cx2 = 14 + Math.floor(r() * (w / 2 - 17)), cy2 = 3 + Math.floor(r() * (h - 6)), t = r() < 0.6 ? T.TREE : T.ROCK;
+      if (Math.abs(cy2 - (h >> 1)) <= 2) continue;
+      for (const [ox, oy] of [[0, 0], [1, 0], [0, 1]]) { g[(cy2 + oy) * w + cx2 + ox] = t; g[(cy2 + oy) * w + (w - 1 - cx2 - ox)] = t; }
+    }
+  }
   // Ô có thể dùng làm điểm hồi sinh/bãi boss
   const bossSpot = farFromPortals.length ? farFromPortals[Math.floor(r() * farFromPortals.length)] : start;
 
   return {
-    id, name: def.name, theme: def.theme, w, h, tiles: g, safe: !!def.safe, pvp: !!def.pvp, tourney: !!def.tourney, duelArena: !!def.duelArena, hoason: !!def.hoason, minLv: def.minLv || 1, lv: def.lv, tier: def.tier ?? 0, town: !!def.town,
+    id, name: def.name, theme: def.theme, w, h, tiles: g, safe: !!def.safe, pvp: !!def.pvp, tourney: !!def.tourney, duelArena: !!def.duelArena, hoason: !!def.hoason, tongkim: !!def.tongkim, minLv: def.minLv || 1, lv: def.lv, tier: def.tier ?? 0, town: !!def.town,
     portals, npcs: def.npcs, spawns, walkable, buildings, props, sect: def.sect || null, noPk: !!def.noPk,
     boss: def.temple ? { x: cx, y: cy - 4 } : { x: bossSpot % w, y: (bossSpot / w) | 0 },   // miếu: Boss đứng giữa sân
     center: { x: cx, y: cy }

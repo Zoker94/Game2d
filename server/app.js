@@ -47,6 +47,7 @@ world.dungeon = new (require('./game/dungeon').Dungeon)(world);
 world.sect = new (require('./game/sect').Sect)(world);
 world.daihoi = new (require('./game/daihoi').DaiHoi)(world, features, db);
 world.hoason = new (require('./game/hoason').HoaSon)(world, features, db);
+world.tongkim = new (require('./game/tongkim').TongKim)(world, features, db);
 const { Social } = require('./game/social');
 const social = new Social(world, features, db);
 world.start();
@@ -190,6 +191,7 @@ app.get('/api/gamedata', (req, res) => {
     for (const m of [...Object.values(MONSTERS), ...Object.values(BOSSES)]) mons[m.id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: m.el, art: m.art, size: m.size, world: m.world };
     mons.chest = { name: 'Bảo Rương', lv: 1, sprite: 'chest', color: '#ffd700' };
     for (const [id, m] of Object.entries(require('./game/daihoi').DH_MONS)) mons[id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: 'kim', art: m.art };
+    for (const [id, m] of Object.entries(require('./game/tongkim').TK_MONS)) mons[id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: 'kim', art: m.art, tk: m.side };
     const maps = {};
     for (const id in MAPS) {
       if (MAPS[id].instance || MAPS[id].base) continue;   // bản đồ phó bản tạm thời, bản sao của khu
@@ -404,6 +406,7 @@ io.on('connection', socket => {
     else if (d.op === 'view') world.daihoi.sync(player);
   }));
   on('hoason', inGame(d => world.hoason.action(player, d)));
+  on('tongkim', inGame(d => world.tongkim.action(player, d)));
   on('sellMany', inGame(d => world.sellMany(player, d && d.uids)));
   on('enhance', inGame(d => world.enhance(player, d || {})));
   on('gem', inGame(d => world.gems.action(player, d)));

@@ -219,6 +219,7 @@ class World {
   enterMap(p, mapId, x, y, viaPortal = false) {
     const prev = p.mapId ? { mapId: p.mapId, x: p.x, y: p.y } : null;
     if (p.duel && p.duel.mapId !== mapId) this.duel.onLost(p, `${p.c.name} đã rời bản đồ`);
+    if (this.tongkim && p.mapId === 'tong_kim' && mapId !== 'tong_kim') this.tongkim.onLeaveMap(p);
     const old = this.maps[p.mapId];
     if (old) { old.players.delete(p); p.socket.leave('map:' + p.mapId); this.io.to('map:' + p.mapId).emit('leave', p.id); }
     if (old && old.def.instance && p.mapId !== mapId && this.dungeon) this.dungeon.onExit(p, p.mapId);
@@ -241,6 +242,7 @@ class World {
     for (const r of this.duel.ringsOn(mapId)) p.socket.emit('duelRing', r);
     this.market.onEnterMap(p);
     if (this.hoason && mapId === 'hoa_son_ld') this.hoason.sync(p);
+    if (this.tongkim && mapId === 'tong_kim') this.tongkim.onEnter(p);
     this.progressTutorial(p, 'map', { map: baseOf(mapId) });
     this.story.on(p, 'map', { map: baseOf(mapId) });
   }
@@ -309,7 +311,7 @@ class World {
       expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, gm: this.isGm(p) ? { hide: !!(c.gm && c.gm.hide), safe: !!(c.gm && c.gm.safe) } : null, owner: isOwner(p.user) ? 1 : 0, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null,
-      minhChu: this.titleFlags(p),
+      minhChu: this.titleFlags(p), tk: this.tongkim ? this.tongkim.tag(p) : 0, congTrang: c.congTrang || 0,
       attr: c.attr || {}, attrFree: attrTotalOf(c) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
       branch: branchOf(c), skills: c.skills || {}, hotbar: c.hotbar, sp: spTotalOf(c) - (c.spSpent || 0),
       mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
@@ -631,7 +633,7 @@ class World {
   enemiesOf(p) {
     const m = this.maps[p.mapId];
     const list = [];
-    for (const mon of m.monsters.values()) if (!mon.dead) list.push(mon);
+    for (const mon of m.monsters.values()) if (!mon.dead && !(mon.tkSide && p.tk === mon.tkSide)) list.push(mon);   // lính cùng phe Tống Kim
     for (const o of m.players) if (this.canHarm(p, o)) list.push(o);
     for (const c of this.escort.targetsFor(p)) list.push(c);
     return list;
@@ -662,6 +664,7 @@ class World {
     if (this.gmOn(b, 'hide') || this.gmOn(b, 'safe')) return false;
     if (this.duel.fighting(a, b)) return true;         // đang thách đấu với nhau: đánh được ở mọi nơi
     const def = this.maps[a.mapId].def;
+    if (def.tongkim) return !!(this.tongkim && this.tongkim.canHarm(a, b));   // Tống Kim: chỉ đánh phe địch, ngoài hậu doanh
     if (def.safe) return false;
     if (def.noPk) return false;   // bản đồ môn phái: cấm tranh đấu (chỉ thách đấu)
     if (a.c.guildId && a.c.guildId === b.c.guildId) return false;
@@ -1003,6 +1006,7 @@ class World {
   killPlayer(t, src) {
     if (src && !src.c && (src.boss || (src.tpl && src.tpl.pbBoss))) this.bossSay(src, 'kill', { name: t.c.name });
     if (this.daihoi) this.daihoi.onPlayerKilled(t, src && src.c ? src : null);
+    if (this.tongkim) this.tongkim.onPlayerKilled(t, src && src.c ? src : null);
     if (t.duel) this.duel.onLost(t, `${t.c.name} bị kẻ khác hạ gục`);
     t.dead = true; t.c.hp = 0; t.c.deaths = (t.c.deaths || 0) + 1; t.st = {}; t.dots = [];
     if (t.c.riding) { t.c.riding = false; this.recalc(t); }
@@ -1021,7 +1025,7 @@ class World {
       src.pkDecayAt = Date.now() + 15 * 60000;
       this.features.questProgress(src, 'pvp', 1);
       this.escort.onKill(t, src);
-      this.features.announce(`🗡️ ${src.c.name} đã hạ gục ${t.c.name} tại ${map.def.name}!`, 'map:' + t.mapId);
+      if (!map.def.tongkim) this.features.announce(`🗡️ ${src.c.name} đã hạ gục ${t.c.name} tại ${map.def.name}!`, 'map:' + t.mapId);
       src.dirtyMe = true;
     }
     t.dirtyMe = true;
@@ -1074,6 +1078,7 @@ class World {
     const cfg = this.db.data.config;
 
     if (mon.event === 'daihoi') { this.daihoi.onMonsterKilled(mon, killer); map.monsters.delete(mon.id); return; }
+    if (mon.event === 'tongkim') { this.tongkim.onMonsterKilled(mon, killer); map.monsters.delete(mon.id); return; }
     if (mon.event) { this.features.onEventMonsterKilled(mon, killer); map.monsters.delete(mon.id); return; }
     if (mon.story) { this.rewardStoryElite(mon, killer); this.story.onEliteKilled(mon, killer); map.monsters.delete(mon.id); return; }
 
@@ -1573,6 +1578,7 @@ class World {
     if (npc.action === 'escort' || npc.action === 'escortDest') { out.routes = this.escort.routeView(); out.escort = this.escort.meView(p); }
     if (npc.action === 'daihoi') Object.assign(out, this.daihoi.npcView(p));
     if (npc.action === 'hoason' && this.hoason) Object.assign(out, this.hoason.npcView(p));
+    if (npc.action === 'tongkim' && this.tongkim) Object.assign(out, this.tongkim.npcView(p));
     if (npc.action === 'cloak') out.cloak = this.cloakView(p);
     if (npc.action === 'market') out.market = this.market.view(p.userId, p.userId) || { mine: true, none: true, tokens: U.countItem(p.c, 'stall_token') };
     if (npc.action === 'channel') out.channels = this.channelsView(p);
@@ -2190,7 +2196,7 @@ class World {
     const slowed = mon.st && (mon.st.slow || 0) > now;
     const tpl = mon.tpl;
     let target = mon.target ? this.players.get(mon.target) : null;
-    if (target && (target.dead || target.mapId !== mon.mapId || this.gmOn(target, 'hide') || Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > LEASH_R)) {
+    if (target && (target.dead || target.mapId !== mon.mapId || this.gmOn(target, 'hide') || Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > LEASH_R || (mon.tkSide && !this.tongkim.monCanTarget(mon, target)))) {
       target = null; mon.target = null;
       if (Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > LEASH_R) {
         mon.wander = { x: mon.hx, y: mon.hy };
@@ -2201,6 +2207,7 @@ class World {
       let best = null, bd = AGGRO_R;
       for (const p of m.players) {
         if (p.dead || this.gmOn(p, 'hide')) continue;   // quản trị viên tàng hình: quái không thấy
+        if (mon.tkSide && !this.tongkim.monCanTarget(mon, p)) continue;   // lính Tống Kim: chỉ đánh phe địch ngoài hậu doanh
         const d = U.dist(p, mon);
         if (d < bd) { bd = d; best = p; }
       }
@@ -2357,7 +2364,7 @@ class World {
       const st = [p.c.name, p.c.cls, p.c.level, g ? g.name : '', p.user.isAdmin ? 1 : 0, this.appearance(p.c), p.stats.maxHp,
         p.stats.power || 0, p.stats.el || '', (rank && rank.get(p.userId)) || 0, p.c.pk || 0, p.c.pkMode | 0, p.c.robUntil > now ? 1 : 0,
         this.titleFlags(p), p.buffs.length ? p.buffs.filter(b => b.until > now && b.aura).map(b => [b.aura, b.color]) : 0,
-        p.med ? 1 : 0, 0];
+        p.med ? 1 : 0, 0, this.tongkim ? this.tongkim.tag(p) : 0];
       const key = JSON.stringify(st);
       if (key !== p._sk) { p._sk = key; p._sv = ((p._sv || 0) + 1) % 1e6; }
       const hide = this.gmOn(p, 'hide');

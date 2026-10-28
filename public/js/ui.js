@@ -582,7 +582,7 @@
     o.style.transform = 'translateY(' + (100 - pct) + '%)';
     o.style.visibility = pct ? '' : 'hidden';
   }
-  UI.pvpOn = () => !!G._duelWith || (G.pvpUntil || 0) > performance.now() || !!(G.map && G.map.id === 'hoa_son_ld');   // Hoa Sơn: thông báo gọn cho người đấu và người xem
+  UI.pvpOn = () => !!G._duelWith || (G.pvpUntil || 0) > performance.now() || !!(G.map && (G.map.id === 'hoa_son_ld' || G.map.id === 'tong_kim'));   // Hoa Sơn: thông báo gọn cho người đấu và người xem
   UI.frame = function (now) {
     { const on = UI.pvpOn(); if (on !== UI._pvpCls) { UI._pvpCls = on; document.body.classList.toggle('pvp-on', on); } }
     { const md = !!(G.me && G.me.med); if (md !== UI._medCls) { UI._medCls = md; document.body.classList.toggle('meditating', md); } }
@@ -1550,6 +1550,7 @@
     if (d.action === 'escort') { Escort.open(d); return; }
     if (d.action === 'daihoi') { DaiHoi.open(d); return; }
     if (d.action === 'hoason') { HoaSon.open(d); return; }
+    if (d.action === 'tongkim') { TongKim.open(d); return; }
     if (d.action === 'dungeon') { Dungeon.open(d); return; }
     if (d.action === 'market') { Market.openNpc(d); return; }
     if (d.action === 'sect') { SectUI.open(d); return; }

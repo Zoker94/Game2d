@@ -133,7 +133,7 @@ class AutoSrv {
     if (!t) {
       let bd = 700;
       for (const e of m.monsters.values()) {
-        if (e.dead || a.skip.has(e.id) || Math.hypot(e.x - home.x, e.y - home.y) > cfg.range) continue;
+        if (e.dead || a.skip.has(e.id) || (e.tkSide && e.tkSide === p.tk) || Math.hypot(e.x - home.x, e.y - home.y) > cfg.range) continue;
         const d = Math.hypot(e.x - p.x, e.y - p.y);
         if (d < bd) { bd = d; t = e; }
       }

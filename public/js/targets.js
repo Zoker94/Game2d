@@ -46,7 +46,7 @@
       if (e.dead) continue;
       const d = dist(e); if (d > RANGE) continue;
       const info = G.data.monsters[e.type] || {}, E = info.el && G.data.elements[info.el];
-      out.push({ k: 'mon', id: e.id, e, d, name: info.name || e.type, lv: info.lv, sub: (e.boss ? 'Boss' : 'Quái vật') + (E ? ' · Hệ ' + E.name : ''), boss: e.boss, hostile: true, hp: e.hp, maxHp: e.maxHp });
+      out.push({ k: 'mon', id: e.id, e, d, name: info.name || e.type, lv: info.lv, sub: (e.boss ? 'Boss' : 'Quái vật') + (E ? ' · Hệ ' + E.name : ''), boss: e.boss, hostile: !TongKim.friendly(e), hp: e.hp, maxHp: e.maxHp });
     }
     if (G.map) for (const n of G.map.npcs) {
       const x = (n.x + 0.5) * 64, y = (n.y + 0.5) * 64, d = Math.hypot(x - s.x, y - s.y);

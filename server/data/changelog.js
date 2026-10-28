@@ -4,6 +4,9 @@ const CHANGELOG = [
   {
     date: '28/10/2026',
     items: [
+      '🏯 CHIẾN TRƯỜNG TỐNG KIM (mới): 22:00 – 22:35 mỗi tối, cấp 30+. Báo danh với Mộ Binh Quan ở Tương Dương từ 21:30 (đang đánh vẫn vào được). Máy tự chia hai phe Tống – Kim cân bằng theo lực chiến, tổ đội đi chung một phe. Hậu doanh hai đầu an toàn, có tháp canh bắn kẻ địch xông vào.',
+      '⚔️ Luật Tống Kim: hạ người phe địch ~10 điểm (đối thủ mạnh hơn được nhiều hơn) + thưởng chặn liên trảm, hạ lính +1 / Hiệu Úy +5; 10 phút cuối có Đại Tướng hai phe (hạ được: phe mình +100). Tử trận không mất gì, 6 giây sau hồi sinh ở hậu doanh. Quân hàm Binh Sĩ → Nguyên Soái hiện trên đầu theo màu phe.',
+      '🎖️ CÔNG TRẠNG: hết trận nhận kinh nghiệm, ngân lượng và Công Trạng theo điểm (phe thắng +50%, top 3 mỗi phe thêm). Đổi ở Mộ Binh Quan: Rương Bí Ẩn, ngân lượng, Huyền Tinh Thạch, Thiên Tinh Thạch, đá khảm cấp 4 – 5 (5 loại).',
       '💎 CHỢ PHIÊN: bày bán được bằng Nguyên Bảo – khi bày đồ chọn 💰 Lượng hoặc 💎 Nguyên Bảo (thuế chợ 5% như cũ). Bán hết hàng thì sạp tự động dẹp, nhường chỗ cho người khác.',
       '🏪 CHỢ PHIÊN: mở gian hàng ở bất kỳ chỗ trống nào trong chợ bằng nút "🏪 Sạp hàng của tôi" (hoặc dùng Lệnh Bài Bán Hàng) – không cần tìm Quản Lý Chợ. Gian hàng mở 6 giờ rồi tự dẹp để nhường chỗ (đồ chưa bán vẫn giữ, mở lại nút để thu về). Quảng trường giữa chợ bỏ cây, lát gạch trơn cho rộng chỗ bày hàng.',
       '🎨 Vẽ lại Sứ Giả Hoa Sơn (Tương Dương) và Chủ Trì Luận Kiếm (đỉnh Hoa Sơn) cùng phong cách các NPC khác: kiếm khách phái Hoa Sơn áo tím trắng thêu hoa mai, kiếm đeo tua.',

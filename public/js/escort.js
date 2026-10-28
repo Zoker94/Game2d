@@ -16,6 +16,7 @@
     if (!me || !e || e.dead || !G.map) return false;
     if (window.Duel && Duel.isFoe(e)) return true;   // đang tỷ võ với nhau
     if (G.map.safe) return false;
+    if (G.map.id === 'tong_kim') return !!(me.tk && e.tk && ((me.tk / 10) | 0) !== ((e.tk / 10) | 0));   // Tống Kim: chỉ phe địch
     if (me.guild && e.guild && e.guild === me.guild.name) return false;
     if (G.map.pvp) return true;
     if (me.level < 10 || e.level < 10) return false;

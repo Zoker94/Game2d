@@ -392,7 +392,18 @@
     const w = textW('bold 10.5px Be Vietnam Pro, system-ui, sans-serif', name);
     if (o.gm) rainbowName(ctx, name, x, top - 10, w);   // quản trị viên: tên 7 sắc cầu vồng lấp lánh
     else outlined(ctx, name, x, top - 10, 12, nameCol, '#000', 700);
-    if (o.rank) drawBadge(ctx, x - w / 2 - 10, top - 11, o.rank);
+    if (o.rank && !o.tk) drawBadge(ctx, x - w / 2 - 10, top - 11, o.rank);
+    // Chiến Trường Tống Kim: tên theo màu phe + quân hàm phía trên (thay danh hiệu khác cho dễ phân địch ta)
+    if (o.tk) {
+      const side = (o.tk / 10) | 0, rk = o.tk % 10, col = side === 1 ? '#ff6a5a' : '#6ab0ff';
+      const RK = ['Binh Sĩ', 'Hiệu Úy', 'Thống Lĩnh', 'Phó Tướng', 'Đại Tướng', 'Nguyên Soái'];
+      const lbl = (side === 1 ? '【Tống】' : '【Kim】') + (RK[rk] || '');
+      ctx.save(); ctx.globalAlpha = 0.85; ctx.fillStyle = side === 1 ? 'rgba(120,20,16,.75)' : 'rgba(16,40,110,.75)';
+      const lw = textW('800 9.5px Be Vietnam Pro, system-ui, sans-serif', lbl);
+      ctx.fillRect(Math.round(x - lw / 2 - 4), top - 30, Math.round(lw + 8), 14); ctx.restore();
+      outlined(ctx, lbl, x, top - 23, 10, rk >= 4 ? '#ffe060' : col, '#000', 800);
+      return top - 31;
+    }
     // Võ Lâm Minh Chủ: danh hiệu riêng vàng rực thay cho danh hiệu lực chiến
     if (o.mc) {
       // 1 = Võ Lâm Minh Chủ (vàng), 2 = Hoa Sơn Kiếm Thánh (bạc xanh), 3 = cả hai

@@ -94,7 +94,8 @@
     G.map.safe = d.safe; G.map.pvp = d.pvp;
     const sp = document.querySelector('#map-name span');
     if (sp) { sp.className = d.pvp ? 'pvp' : d.safe ? 'safe' : 'muted'; sp.textContent = d.pvp ? '[PK]' : d.safe ? '[An toàn]' : ''; }
-    UI.toast(d.pvp ? '⚔️ Lôi đài mở – hỗn chiến bắt đầu!' : '🏯 Lôi đài đã đóng, trở lại an toàn', d.pvp ? 'error' : 'info');
+    if (d.id === 'tong_kim') UI.toast(d.pvp ? '⚔️ Chiến Trường Tống Kim khai chiến!' : '🏯 Chiến trường đã ngừng giao tranh', d.pvp ? 'error' : 'info');
+    else UI.toast(d.pvp ? '⚔️ Lôi đài mở – hỗn chiến bắt đầu!' : '🏯 Lôi đài đã đóng, trở lại an toàn', d.pvp ? 'error' : 'info');
   }
   function onPts(d) {
     Overhead.add(G.self.x, G.self.y - 92, `+${d.n} điểm`, 'status', '#ffd84a');
