@@ -1052,11 +1052,11 @@ class World {
   rollJhBook(mon, tpl) {
     const rate = (tpl.world ? JH_DROP.world : mon.boss ? JH_DROP.field : JH_DROP.dungeon);
     if (Math.random() >= rate) return;
-    const top = [...mon.dmgBy.entries()].sort((a, b) => b[1] - a[1]).map(([uid]) => this.players.get(uid)).find(p => p && p.mapId === mon.mapId);
-    if (!top) return;
+    // rơi xuống đất, không thuộc về ai (kể cả người gây sát thương cao nhất): ai nhanh tay thì nhặt, để 3 phút
     const keys = Object.keys(JIANGHU), j = JIANGHU[keys[U.randInt(0, keys.length - 1)]];
-    this.giveReward(top, { items: [[j.book, 1]] }, `Boss ${tpl.name}`);
-    this.features.brag(`⚡ ${top.c.name} đánh bại ${tpl.name}, nhặt được bí kíp Tuyệt Kỹ Giang Hồ [${j.name}]!`);
+    const a = Math.random() * Math.PI * 2, dr = this.createDrop(mon.mapId, mon.x + Math.cos(a) * 50, mon.y + Math.sin(a) * 50, j.book, 1, null, 0, 0);
+    dr.expire = Date.now() + 180000; dr.jh = 1;
+    this.features.brag(`⚡ Bí kíp Tuyệt Kỹ Giang Hồ [${j.name}] rơi ra từ ${tpl.name} tại ${(MAPS[baseOf(mon.mapId)] || MAPS[mon.mapId] || { name: 'bản đồ boss' }).name}! Ai nhanh tay sẽ nhặt được!`);
   }
 
   // giá hồi sinh tại chỗ: theo cấp (lượng), không đủ lượng thì dùng Nguyên Bảo
@@ -1301,6 +1301,7 @@ class World {
     this.io.to('map:' + p.mapId).emit('dropDel', dr.id);
     const it = ITEMS[U.resolveItem(p.c, dr.itemId)];
     this.toast(p, `Nhặt được ${it.name}${dr.qty > 1 ? ' x' + dr.qty : ''}`, 'item:' + it.rarity);
+    if (dr.jh) this.features.brag(`⚡ ${p.c.name} đã nhặt được ${it.name}!`);
     if (it.rarity === 'epic' || it.rarity === 'legendary') {
       // chỉ khoe trang bị Truyền Kỳ (đá, nguyên liệu VIP rơi nhiều làm trôi kênh Thế Giới)
       if (it.type === 'equip' && it.rarity === 'legendary') this.features.brag(`✨ ${p.c.name} nhặt được [${it.name}] (${RARITY[it.rarity].name}) tại ${m.def.name}!`);
