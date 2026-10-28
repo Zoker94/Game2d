@@ -1009,8 +1009,8 @@
     for (const p of G.players.values()) { const d = Math.hypot(w.x - p.x, w.y - (p.y - 26)); if (d < bd) { bd = d; best = p; } }
     return best;
   }
-  // điện thoại: bấm giữ 3 giây vào người chơi mới mở bảng Xem thông tin / Kết bạn / Thách đấu (chạm 1 lần chỉ chọn mục tiêu)
-  const HOLD_MS = 3000;
+  // điện thoại: bấm giữ 1,5 giây vào người chơi mới mở bảng Xem thông tin / Kết bạn / Thách đấu (chạm 1 lần chỉ chọn mục tiêu)
+  const HOLD_MS = 1500;
   let holdT = 0, holdAt = null;
   function cancelHold() { clearTimeout(holdT); holdT = 0; holdAt = null; G.holdRing = null; }
   canvas.addEventListener('pointermove', e => { if (holdAt && Math.hypot(e.clientX - holdAt.x, e.clientY - holdAt.y) > 14) cancelHold(); });
@@ -1043,7 +1043,7 @@
     }
     if (best) {
       const isPl = G.players.has(best.id);
-      // bấm trái / chạm 1 lần = chọn mục tiêu (kẻ địch thì đuổi theo đánh); bảng tương tác: chuột phải hoặc bấm giữ 3 giây
+      // bấm trái / chạm 1 lần = chọn mục tiêu (kẻ địch thì đuổi theo đánh); bảng tương tác: chuột phải hoặc bấm giữ 1,5 giây
       const hostile = isPl ? Escort.canHarm(best) : best.cart ? Escort.canHitCart(best) : true;
       if (isPl && e.pointerType !== 'mouse') {
         cancelHold(); holdAt = { x: e.clientX, y: e.clientY };
@@ -1405,7 +1405,7 @@
       const rr = tgt.boss ? 44 : tgt.cart ? 40 : 22;
       ctx.beginPath(); ctx.ellipse(tgt.x, tgt.y + 2, rr, rr * 0.4, 0, 0, Math.PI * 2); ctx.stroke();
     }
-    if (G.holdRing) {   // bấm giữ vào người chơi: vòng chạy đủ 3 giây thì mở bảng tương tác
+    if (G.holdRing) {   // bấm giữ vào người chơi: vòng chạy đủ 1,5 giây thì mở bảng tương tác
       const hp = G.players.get(G.holdRing.id), k = Math.min(1, (now - G.holdRing.t0) / G.holdRing.dur);
       if (hp) {
         ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.beginPath(); ctx.arc(hp.x, hp.y - 30, 26, 0, Math.PI * 2); ctx.stroke();

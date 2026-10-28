@@ -276,3 +276,5 @@ body.touch #tk-hud { width: 250px; top: 44px; font-size: 9.5px; }
 #target-frame.npc .bar { display: none; }
 #target-frame.npc { cursor: pointer; }
 .tf-tag.npc { background: #6a5420; color: #ffe9a0; }
+/* vùng chạm joystick nhỏ lại (trước gần nửa màn hình): đủ chỗ cho vòng joystick, phần còn lại chạm được nhân vật / quái */
+#joy-zone { width: clamp(210px, 30%, 300px); height: clamp(190px, 46%, 260px); }
