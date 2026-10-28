@@ -1098,11 +1098,12 @@
   // ---------- Danh hiệu giang hồ: giành từ phó bản / Boss / sự kiện, chọn 1 để đeo ----------
   function titlePanel(me) {
     const T = G.data.titles; if (!T) return '';
-    const ach = me.ach || {}, list = Object.entries(T);
-    const got = list.filter(([, t]) => (ach[t.stat] | 0) >= t.need).length;
+    const ach = me.ach || {}, list = Object.entries(T).filter(([, t]) => !t.admin || me.admin);   // danh hiệu Quản trị viên: chỉ Admin thấy
+    const isOk = t => t.admin ? !!me.admin : (ach[t.stat] | 0) >= t.need;
+    const got = list.filter(([, t]) => isOk(t)).length;
     const cur = me.title && T[me.title];
     const rows = list.map(([id, t]) => {
-      const v = ach[t.stat] | 0, ok = v >= t.need, on = me.title === id;
+      const v = ach[t.stat] | 0, ok = isOk(t), on = me.title === id;
       return `<div class="ttl-row ${ok ? 'ok' : ''} ${on ? 'on' : ''}"><div class="grow"><b style="color:${ok ? t.color : '#8a8072'}">【${esc(t.name)}】</b> <span class="ttl-src">${esc(t.src)}</span>
         <div class="sub">${esc(t.desc)}${ok ? '' : ` · <b>${Math.min(v, t.need)}/${t.need}</b>`}</div>${ok ? '' : `<div class="ttl-bar"><i style="width:${Math.round(Math.min(1, v / t.need) * 100)}%;background:${t.color}"></i></div>`}</div>
         ${ok ? (on ? '<button class="btn small" data-title="">Tháo</button>' : '<button class="btn small green" data-title="' + id + '">Đeo</button>') : '<span class="small muted">🔒</span>'}</div>`;

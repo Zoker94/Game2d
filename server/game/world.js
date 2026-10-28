@@ -260,7 +260,7 @@ class World {
     if (!c) return;
     if (stat !== 'bossKills') { c.ach = c.ach || {}; c.ach[stat] = (c.ach[stat] | 0) + n; }
     for (const [id, t] of Object.entries(TITLES)) {
-      if (t.stat !== stat || statOf(c, stat) < t.need || statOf(c, stat) - n >= t.need) continue;   // chỉ báo đúng lúc vừa chạm mốc
+      if (t.admin || t.stat !== stat || statOf(c, stat) < t.need || statOf(c, stat) - n >= t.need) continue;   // chỉ báo đúng lúc vừa chạm mốc
       if (!c.title) c.title = id;
       if (p) { this.toast(p, `🏅 Mở khoá danh hiệu 【${t.name}】! Đổi danh hiệu ở bảng Nhân Vật.`, 'reward'); p.dirtyMe = true; }
       if (t.tier >= 3) this.features.brag(`🏅 ${c.name} đạt danh hiệu 【${t.name}】 – ${t.desc}!`);
@@ -268,11 +268,15 @@ class World {
     this.db.markDirty();
   }
   selectTitle(p, id) {
-    if (id && !titleUnlocked(p.c, id)) return this.toast(p, 'Chưa mở khoá danh hiệu này', 'error');
+    if (id && !titleUnlocked(p.c, id, p.user && p.user.isAdmin)) return this.toast(p, 'Chưa mở khoá danh hiệu này', 'error');
     p.c.title = id || null; p.dirtyMe = true;
     this.toast(p, id ? `Đã đeo danh hiệu 【${TITLES[id].name}】` : 'Đã tháo danh hiệu', 'info');
   }
-  titleOf(c) { return c.title && titleUnlocked(c, c.title) ? c.title : ''; }
+  // danh hiệu đang đeo; Admin chưa từng chọn thì mặc định đeo danh hiệu Quản trị viên (tháo ra = null thì thôi)
+  titleOf(c, admin) {
+    if (c.title === undefined && admin) return 'admin';
+    return c.title && titleUnlocked(c, c.title, admin) ? c.title : '';
+  }
 
   // danh hiệu trên đầu: 1 = Võ Lâm Minh Chủ (Đại Hội), 2 = Hoa Sơn Kiếm Thánh (Hoa Sơn Luận Kiếm)
   titleFlags(p) {
@@ -338,7 +342,7 @@ class World {
       expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, gm: this.isGm(p) ? { hide: !!(c.gm && c.gm.hide), safe: !!(c.gm && c.gm.safe) } : null, owner: isOwner(p.user) ? 1 : 0, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null, jhs: c.jhs || {}, jh: c.jh || null,
-      minhChu: this.titleFlags(p), title: this.titleOf(c), ach: Object.assign({ bossKills: c.bossKills | 0 }, c.ach || {}), tk: this.tongkim ? this.tongkim.tag(p) : 0, congTrang: c.congTrang || 0,
+      minhChu: this.titleFlags(p), title: this.titleOf(c, p.user.isAdmin), ach: Object.assign({ bossKills: c.bossKills | 0 }, c.ach || {}), tk: this.tongkim ? this.tongkim.tag(p) : 0, congTrang: c.congTrang || 0,
       attr: c.attr || {}, attrFree: attrTotalOf(c) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
       branch: branchOf(c), skills: c.skills || {}, hotbar: c.hotbar, sp: spTotalOf(c) - (c.spSpent || 0),
       mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
@@ -2441,7 +2445,7 @@ class World {
       const st = [p.c.name, p.c.cls, p.c.level, g ? g.name : '', p.user.isAdmin ? 1 : 0, this.appearance(p.c), p.stats.maxHp,
         p.stats.power || 0, p.stats.el || '', (rank && rank.get(p.userId)) || 0, p.c.pk || 0, p.c.pkMode | 0, p.c.robUntil > now ? 1 : 0,
         this.titleFlags(p), p.buffs.length ? p.buffs.filter(b => b.until > now && b.aura).map(b => [b.aura, b.color]) : 0,
-        p.med ? 1 : 0, 0, this.tongkim ? this.tongkim.tag(p) : 0, this.titleOf(p.c)];
+        p.med ? 1 : 0, 0, this.tongkim ? this.tongkim.tag(p) : 0, this.titleOf(p.c, p.user.isAdmin)];
       const key = JSON.stringify(st);
       if (key !== p._sk) { p._sk = key; p._sv = ((p._sv || 0) + 1) % 1e6; }
       const hide = this.gmOn(p, 'hide');

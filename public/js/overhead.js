@@ -418,15 +418,10 @@
       if (o.guild) { outlined(ctx, '«' + o.guild + '»', x, top - 23, 10, '#7fb8ff', '#000', 600); return top - 30; }
       return top - 17;
     }
-    const tt = '【' + t.name + '】';
-    const tw = textW('700 9px Be Vietnam Pro, system-ui, sans-serif', tt);
-    if (t.tier >= 2) {
-      ctx.save(); ctx.globalAlpha = t.tier >= 3 ? 0.35 + Math.sin(performance.now() / 300) * 0.1 : 0.22; ctx.fillStyle = t.color;
-      ctx.fillRect(Math.round(x - tw / 2 - 2), top - 29, Math.round(tw + 4), 12); ctx.restore();
-    }
-    outlined(ctx, tt, x, top - 23, 10, t.color, '#000', 700);
+    // khung + hiệu ứng theo từng danh hiệu (public/js/titlefx.js); bậc cao có hiệu ứng nhô lên trên nên đẩy tên bang cao hơn
+    TitleFX.draw(ctx, t, x, top - 23, performance.now(), !!o.lite);
     let yTop = top - 30;
-    if (o.guild) { outlined(ctx, '«' + o.guild + '»', x, top - 36, 10, '#7fb8ff', '#000', 600); yTop = top - 43; }
+    if (o.guild) { const gy = t.tier >= 3 ? top - 42 : top - 37; outlined(ctx, '«' + o.guild + '»', x, gy, 10, '#7fb8ff', '#000', 600); yTop = gy - 7; }
     return yTop;
   }
   // sát khí: khói đen quanh người
