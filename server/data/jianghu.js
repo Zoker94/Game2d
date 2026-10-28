@@ -28,5 +28,5 @@ for (const [k, j] of Object.entries(JIANGHU)) Object.assign(j, { id: 'jh_' + k, 
 const JH_SLOT = 9;   // chỉ số kỹ năng (sau Long Ấn 6, hỗ trợ 7, nội công 8)
 // tỉ lệ rơi bí kíp (cho người gây sát thương cao nhất): boss thế giới / boss dã ngoại / boss phó bản – cố ý rất hiếm,
 // không nhân theo hệ số rơi đồ của máy chủ
-const JH_DROP = { world: 0.02, field: 0.005, dungeon: 0.003 };
+const JH_DROP = { world: 0.02, field: 0.002, dungeon: 0.003 };   // dã ngoại hiếm nhất: ~1/500
 module.exports = { JIANGHU, JH_SLOT, JH_DROP, JH_AREA };
