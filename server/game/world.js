@@ -787,19 +787,28 @@ class World {
       const cx = fxd.tx != null ? fxd.tx : p.x, cy = fxd.ty != null ? fxd.ty : p.y;
       const strike = list => {
         const t = Date.now();
+        let drained = 0;
         for (const h of list) {
           if (h.dead) continue;
+          p._lastDealt = 0;
           this.damage(p, h, sk.mult);
+          if (sk.drain) drained += p._lastDealt || 0;
           if (sk.ult && h.c && h.socket) h.socket.emit('ultHit', { from: p.id, name: sk.name, color: sk.color, fx: sk.fx });
           if (sk.type === 'dot' || sk.dotTicks) this.addDot(p, h, sk, 'poison');
           if (h.dead) continue;
           if (sk.freeze) this.applyStatus(h, 'freeze', sk.freeze, p);
+          if (sk.stun) this.applyStatus(h, 'stun', sk.stun, p);
+          if (sk.slow) this.applyStatus(h, 'slow', sk.slow, p);
           const stDef = SKILL_STATUS[base.id] || FX_STATUS[sk.fx];
           if (stDef && Math.random() < stDef[2]) this.applyStatus(h, stDef[0], stDef[1], p);
           if (sk.knock && !h.c && !h.boss) {
             const a = Math.atan2(h.y - cy, h.x - cx), nx = h.x + Math.cos(a) * sk.knock, ny = h.y + Math.sin(a) * sk.knock;
             if (!isSolidAt(MAPS[p.mapId], nx, ny)) { h.x = nx; h.y = ny; }
           }
+        }
+        if (sk.drain && drained > 0 && !p.dead) {   // Ám Long: hút một phần sát thương gây ra
+          const amt = Math.round(drained * sk.drain * this.healMul(p));
+          if (amt > 0) { p.c.hp = Math.min(p.stats.maxHp, p.c.hp + amt); this.io.to('map:' + p.mapId).emit('dmg', { id: p.id, v: amt, k: 'heal' }); p.dirtyMe = true; }
         }
         if (sk.healSelf && !p.dead) {
           const amt = Math.round(p.stats.maxHp * sk.healSelf * this.healMul(p));
@@ -913,6 +922,7 @@ class World {
     dmg *= em;
     dmg = Math.max(1, Math.round(dmg));
     const dealt = this.applyDamage(t, dmg, p, crit ? 'crit' : 'hit', ek) || 0;   // sát thương thật (sau giảm PK, né, giảm sát thương)
+    p._lastDealt = dealt;   // Long Ấn hút máu (drain) đọc lại
     if (t.dead || p.dead) return;
     // hiệu ứng trang bị khi đánh trúng
     for (const k of PROC_KEYS) if (fx[k] && Math.random() * 100 < fx[k]) this.applyStatus(t, AFFIX[k].st[0], AFFIX[k].st[1], p);

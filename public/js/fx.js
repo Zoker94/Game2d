@@ -414,8 +414,20 @@
   const DRAGON_PAL = {
     fire:  { body: '#ff5a1a', light: '#ffd040', dark: '#a01808', glow: '#ff6a20', eye: '#fff36a', spike: '#ffb030' },
     water: { body: '#2fa8ff', light: '#c0f0ff', dark: '#0a3a90', glow: '#3ab8ff', eye: '#ffffff', spike: '#8ad8ff' },
-    ice:   { body: '#9ee8ff', light: '#ffffff', dark: '#3a7ab0', glow: '#bff0ff', eye: '#5af0ff', spike: '#e8fbff' }
+    ice:   { body: '#9ee8ff', light: '#ffffff', dark: '#3a7ab0', glow: '#bff0ff', eye: '#5af0ff', spike: '#e8fbff' },
+    thunder: { body: '#a070ff', light: '#fff4a0', dark: '#3a1a8a', glow: '#c89aff', eye: '#fffbe0', spike: '#ffe060' },
+    shadow:  { body: '#3a0a2a', light: '#ff5a8a', dark: '#0a0208', glow: '#e0306a', eye: '#ff2040', spike: '#8a1a4a' }
   };
+  // tia sét gấp khúc từ trời xuống (x, y): dùng cho Lôi Long
+  function boltPts(x, y, h, seed) {
+    const pts = []; let px = x + Math.sin(seed * 7.3) * 30;
+    for (let i = 0; i <= 8; i++) { const t = i / 8; px += (Math.sin(seed * 13.1 + i * 2.7) * 18) * (1 - t * 0.6); pts.push([i === 8 ? x : px, y - h * (1 - t)]); }
+    return pts;
+  }
+  function drawBolt(ctx, pts, col, a, w) {
+    glowPath(ctx, () => { ctx.moveTo(pts[0][0], pts[0][1]); for (const q of pts) ctx.lineTo(q[0], q[1]); }, col, w * 3, a * 0.6);
+    glowPath(ctx, () => { ctx.moveTo(pts[0][0], pts[0][1]); for (const q of pts) ctx.lineTo(q[0], q[1]); }, '#ffffff', w, a);
+  }
   function bez(p0, p1, p2, t) { const u = 1 - t; return [u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0], u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1]]; }
   function drawDragon(ctx, o, q, pal, fade, now) {
     const side = o.tx >= o.sx ? 1 : -1;
@@ -480,6 +492,17 @@
           for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; emit(8, o.tx + Math.cos(a) * r * 0.5, o.ty + Math.sin(a) * r * 0.22, { angle: -Math.PI / 2, spread: 0.9, speed: 260, grav: 600, life: 900, size: 5, color: R() < 0.4 ? '#ffffff' : pal.body, delay: d + i * 15 }); }
           emit(60, o.tx, o.ty - 8, { speed: r * 1.8, life: 700, size: 5, color: pal.light, flat: 0.45, drag: 2, delay: d });
           setFlash(f, '#40b0ff', d, 450);
+        } else if (el === 'thunder') {
+          // 7 tia sét giáng xuống rải trong vùng, lần lượt từng tia
+          f.bolts = Array.from({ length: 7 }, (_, i) => { const a = R() * TAU, dd = i ? r * (0.25 + R() * 0.7) : 0; return { x: Math.cos(a) * dd, y: Math.sin(a) * dd * 0.45, t: i * 0.06 + R() * 0.03, seed: R() * 100 }; });
+          emit(70, o.tx, o.ty - 10, { speed: r * 1.8, life: 600, size: 4, color: R() < 0.5 ? pal.light : pal.glow, flat: 0.45, drag: 2.2, delay: d });
+          emit(40, o.tx, o.ty - 20, { speed: 60, vy: -120, life: 900, size: 3, color: '#ffffff', jitter: r * 0.8, jitterY: r * 0.35, delay: d, delayRand: 400 });
+          setFlash(f, '#e8d8ff', d, 380);
+        } else if (el === 'shadow') {
+          // linh hồn bị hút từ rìa vùng về người ra chiêu
+          f.souls = Array.from({ length: 12 }, (_, i) => { const a = i / 12 * TAU + R() * 0.3, dd = r * (0.5 + R() * 0.5); return { x: Math.cos(a) * dd, y: Math.sin(a) * dd * 0.45, t: R() * 0.25, w: 0.8 + R() * 0.6 }; });
+          emit(60, o.tx, o.ty - 10, { speed: r * 1.4, life: 900, size: 6, color: R() < 0.6 ? '#1a0412' : pal.light, flat: 0.45, drag: 1.6, delay: d });
+          setFlash(f, '#5a0a2a', d, 520);
         } else {
           f.spikes = Array.from({ length: 26 }, (_, i) => { const a = i / 26 * TAU + R() * 0.2, dd = r * (0.25 + R() * 0.75); return { x: Math.cos(a) * dd, y: Math.sin(a) * dd * 0.45, h: 40 + R() * 60, t: (dd / r) * 0.12 }; });
           emit(80, o.tx, o.ty - 20, { speed: r * 1.6, life: 1000, size: 4, color: '#ffffff', flat: 0.5, drag: 1.6, delay: d });
@@ -495,7 +518,11 @@
         if (p < impact + 0.12) {
           const fade = p < impact ? 1 : 1 - (p - impact) / 0.12;
           const [hx, hy, a] = drawDragon(ctx, o, q, pal, fade, now);
-          if (Math.random() < 0.9) emit(2, hx, hy, { angle: a + Math.PI, spread: 0.8, speed: 80, life: 500, size: 5, color: el === 'water' ? '#ffffff' : pal.light });
+          if (Math.random() < 0.9) emit(2, hx, hy, { angle: a + Math.PI, spread: 0.8, speed: 80, life: 500, size: 5, color: el === 'water' ? '#ffffff' : el === 'shadow' ? (Math.random() < 0.5 ? '#12030c' : pal.light) : pal.light });
+          if (el === 'thunder' && Math.random() < 0.35) {   // tia điện nhỏ quanh thân rồng
+            const ex = hx + (Math.random() - 0.5) * 90, ey = hy + (Math.random() - 0.5) * 60;
+            drawBolt(ctx, [[hx, hy], [(hx + ex) / 2 + (Math.random() - 0.5) * 20, (hy + ey) / 2 + (Math.random() - 0.5) * 20], [ex, ey]], pal.glow, fade, 1.6);
+          }
         }
         if (p >= impact) {
           const e = (p - impact) / (1 - impact), fade = 1 - e;
@@ -524,6 +551,38 @@
             const g = ctx.createLinearGradient(0, o.ty - h, 0, o.ty);
             g.addColorStop(0, Sprites.hexA('#ffffff', 0)); g.addColorStop(1, Sprites.hexA(pal.body, 0.8));
             ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(o.tx - 30, o.ty - h, 60, h);
+          } else if (el === 'thunder') {
+            // vòng điện lan ra + các tia sét giáng xuống
+            glowPath(ctx, () => ctx.ellipse(o.tx, o.ty, r * ease(Math.min(1, e * 1.6)), r * ease(Math.min(1, e * 1.6)) * 0.45, 0, 0, TAU), pal.glow, 6, fade);
+            for (const b of f.bolts || []) {
+              const lp = (e - b.t) / 0.22;
+              if (lp < 0 || lp > 1) continue;
+              const x = o.tx + b.x, y = o.ty + b.y, fl = (1 - lp) * (0.7 + 0.3 * Math.sin(now / 25 + b.seed));
+              drawBolt(ctx, boltPts(x, y, 360, b.seed + Math.floor(now / 70)), pal.glow, fl, 3);
+              glowDot(ctx, x, y - 4, 40, pal.light, fl);
+              ground(ctx, x, y, 34, pal.glow, fl * 0.7);
+            }
+            for (let i = 0; i < 10; i++) {   // hồ quang chạy trên mặt đất
+              const an = i / 10 * TAU + now / 300, rr = r * (0.3 + 0.7 * ((i * 0.37 + e) % 1));
+              if (Math.random() < 0.5) glowDot(ctx, o.tx + Math.cos(an) * rr, o.ty + Math.sin(an) * rr * 0.45, 10, '#ffffff', fade * 0.8);
+            }
+          } else if (el === 'shadow') {
+            // xoáy đen nuốt hồn, linh hồn bay ngược về người ra chiêu
+            ctx.save(); ctx.globalAlpha = 0.75 * fade; ctx.fillStyle = '#080206';
+            ctx.beginPath(); ctx.ellipse(o.tx, o.ty, r * ease(Math.min(1, e * 2)) * 0.95, r * ease(Math.min(1, e * 2)) * 0.42, 0, 0, TAU); ctx.fill(); ctx.restore();
+            for (let k = 0; k < 3; k++) {
+              const rot = now / 260 * (k % 2 ? -1 : 1) + k;
+              glowPath(ctx, () => { for (let i = 0; i <= 40; i++) { const t = i / 40, an = rot + t * TAU * 1.5, rr = r * (0.15 + t * 0.8) * ease(Math.min(1, e * 2)); const x = o.tx + Math.cos(an) * rr, y = o.ty + Math.sin(an) * rr * 0.45; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } }, k ? pal.glow : pal.light, 4 - k, fade * 0.8);
+            }
+            for (const sp of f.souls || []) {
+              const lp = Math.max(0, Math.min(1, (e - sp.t) / 0.6));
+              if (lp <= 0 || lp >= 1) continue;
+              const x0 = o.tx + sp.x, y0 = o.ty + sp.y - 20, x1 = o.sx, y1 = o.sy - 40;
+              const q = ease(lp), x = x0 + (x1 - x0) * q + Math.sin(lp * 9 + sp.w * 5) * 14, y = y0 + (y1 - y0) * q - Math.sin(lp * Math.PI) * 80 * sp.w;
+              glowDot(ctx, x, y, 22, pal.glow, (1 - lp) * 0.9);
+              glowDot(ctx, x, y, 7, '#ffd0e0', 1 - lp);
+            }
+            glowDot(ctx, o.tx, o.ty - 20, 50 + e * 40, '#ff2050', fade * 0.5);
           } else {
             glowPath(ctx, () => ctx.ellipse(o.tx, o.ty, r * ease(Math.min(1, e * 2)), r * ease(Math.min(1, e * 2)) * 0.45, 0, 0, TAU), '#ffffff', 5, fade);
             for (const sp of f.spikes || []) {
@@ -544,6 +603,8 @@
   SIG.firedragon = dragonSkill('fire', 1700, 0.5);
   SIG.waterdragon = dragonSkill('water', 1700, 0.5);
   SIG.icedragon = dragonSkill('ice', 1800, 0.48);
+  SIG.thunderdragon = dragonSkill('thunder', 1700, 0.48);
+  SIG.shadowdragon = dragonSkill('shadow', 1900, 0.46);
 
 
   // ===== Hình chiêu thức (assets/fx.png, vẽ bởi tools/fxsheet.py), tô màu theo chiêu =====

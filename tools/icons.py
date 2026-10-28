@@ -566,6 +566,8 @@ def elem_emblem(col, kind):
         ic.paint(ic.m_ell(36, 42, 8, 8), light(col, 0.3), dark(col, 0.45), edge=0.4, shine=0.3)
         if kind == 'fire': ic.paint(ic.m_poly([(36, 34), (40, 42), (36, 48), (32, 42)]), '#fff0a0', '#ffa020', edge=0, shine=0)
         elif kind == 'water': ic.paint(ic.m_poly([(36, 35), (40, 44), (36, 48), (32, 44)]), '#e0f4ff', '#60b0ff', edge=0, shine=0)
+        elif kind == 'thunder': ic.paint(ic.m_poly([(38, 34), (32, 43), (36, 43), (33, 50), (40, 40), (36, 40)]), '#fff6a0', '#c0a0ff', edge=0, shine=0)
+        elif kind == 'shadow': ic.paint(ic.m_ell(36, 42, 4.2, 4.2), '#ff6a90', '#3a0414', edge=0, shine=0)
         else:
             for a in range(3): ic.paint(ic.m_line([(36 + math.cos(a * 1.047) * 6, 42 + math.sin(a * 1.047) * 6), (36 - math.cos(a * 1.047) * 6, 42 - math.sin(a * 1.047) * 6)], 1.4), '#ffffff', None, edge=0, shine=0)
     return f
@@ -624,11 +626,13 @@ SIMPLE = {
     'book_fire': lambda ic: book(ic, ('#e04020', '#5a0a08'), '炎', emblem=elem_emblem('#ff5020', 'fire')),
     'book_water': lambda ic: book(ic, ('#2a7ad0', '#0a2050'), '水', emblem=elem_emblem('#2a8aff', 'water')),
     'book_ice': lambda ic: book(ic, ('#7ac8e8', '#1a4a6a'), '冰', emblem=elem_emblem('#9ae0ff', 'ice')),
+    'book_thunder': lambda ic: book(ic, ('#6a4ad0', '#1a0a4a'), '雷', emblem=elem_emblem('#b090ff', 'thunder')),
+    'book_shadow': lambda ic: book(ic, ('#5a1032', '#12020a'), '冥', emblem=elem_emblem('#e0306a', 'shadow')),
     'stone': stone, 'stone2': lambda ic: stone(ic, True), 'insure': insure, 'food': food, 'blood': blood,
     'chest': chest, 'chest_gold': lambda ic: chest(ic, True), 'ticket': ticket, 'lantern': lantern, 'saddle': saddle, 'gold': gold_icon,
     'bag': bag,
 }
-SIMPLE_GLOW = {'silk': '#e0c8ff', 'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'bag': '#ffd040'}
+SIMPLE_GLOW = {'silk': '#e0c8ff', 'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'book_thunder': '#c090ff', 'book_shadow': '#ff3a6a', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'bag': '#ffd040'}
 
 def build():
     tiles, index = [], {}

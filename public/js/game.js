@@ -551,7 +551,7 @@
     else fxSound(d);
   }
   // tuyệt kỹ Long Ấn: rung màn 2 nhịp (gồng chiêu rồi nổ), lớp sáng theo hệ, tên chiêu chạy ngang màn hình
-  const ULTI = { firedragon: 'fire', waterdragon: 'water', icedragon: 'ice' };
+  const ULTI = { firedragon: 'fire', waterdragon: 'water', icedragon: 'ice', thunderdragon: 'thunder', shadowdragon: 'shadow' };
   const rumbles = [];
   G.rumble = (amp, ms) => { if (G.settings.shake) { const t = performance.now(); rumbles.push({ t0: t, t1: t + ms, amp }); } };   // rung màn (chiêu boss...)
   function ulti(d) {
@@ -687,7 +687,7 @@
     dragon: 'roar', hanglong: 'roar', lightning: 'lightning', storm: 'thunder', thunder: 'thunder', ring: 'boom', nova: 'boom', quake: 'quake', meteor: 'boom', pillar: 'boom',
     buddha: 'holy', lionroar: 'lion', whirl: 'slash', arrowrain: 'arrows', net: 'throw', swords: 'magic', taiji: 'magic', bagua: 'magic', lotus: 'heal', holylotus: 'holy',
     blades: 'slash', tornado: 'wind', poison: 'poison', toxic: 'poison', swarm: 'poison', frost: 'ice', dragonring: 'roar', aura: 'buff', heal: 'heal',
-    firedragon: ['roar', 'fire'], waterdragon: ['roar', 'water'], icedragon: ['roar', 'ice'] };
+    firedragon: ['roar', 'fire'], waterdragon: ['roar', 'water'], icedragon: ['roar', 'ice'], thunderdragon: ['roar', 'lightning'], shadowdragon: ['roar', 'magic'] };
   // âm theo vị trí: xa thì nhỏ, lệch trái/phải theo hướng
   function spatial(x, y) {
     const dx = x - G.self.x, d = Math.hypot(dx, y - G.self.y);

@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '27/10/2026',
     items: [
+      '🐉 2 LONG ẤN MỚI (nay đủ 5): ⚡ Lôi Long Chấn Thiên – rồng sấm giáng 7 tia sét xuống diện rộng, làm choáng kẻ địch 1,5 giây; 🌑 Ám Long Phệ Hồn – rồng bóng tối mở xoáy nuốt hồn, làm chậm 3 giây và hút 25% sát thương gây ra thành sinh lực. Bí kíp rơi từ Boss / đổi Hoa Đăng như 3 Long Ấn cũ, hoặc mua 800 Nguyên Bảo ở Kỳ Trân Các.',
       '⚙️ CÀI ĐẶT GỌN GÀNG: chia 4 mục Đồ họa / Âm thanh / Phím bấm / Chung. Mới: 🔭 Độ rộng góc nhìn (80% – 150%) trong mục Đồ họa – kéo sang phải để nhìn xa hơn; giọng đọc phim mở đầu bật / tắt ở mục Âm thanh.',
       '⛰️ Hoa Sơn Luận Kiếm: bản đồ và 5 lôi đài to gấp đôi, đủ chỗ dùng khinh công. Người xem không bước lên được bục đài (ai đứng sẵn sẽ được đưa xuống khi trận bắt đầu) – hai đấu thủ tập trung tỷ thí. Trên núi thông báo được thu gọn, ẩn bảng nhiệm vụ phụ, bảng theo dõi giải tự thu nhỏ khi đang đấu.',
       '⛰️ HOA SƠN LUẬN KIẾM (mới): giải đấu loại trực tiếp 1 chọi 1 lúc 20:00 Thứ 7 hằng tuần trên bản đồ mới Hoa Sơn Luận Kiếm. Ghi danh cả tuần với Sứ Giả Hoa Sơn ở Tương Dương (cấp 30+). Vòng đầu đấu song song ở 4 đài phụ, Tranh Hạng Ba và Chung Kết ở đài chính. Vô địch nhận danh hiệu HOA SƠN KIẾM THÁNH 7 ngày + 300 Nguyên Bảo, Á quân và Hạng Ba có thưởng, ai tham gia cũng có quà.',

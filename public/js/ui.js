@@ -1465,7 +1465,7 @@
           ${s.desc ? `<div class="sk-lore">${esc(s.desc)}</div>` : ''}${skillDetail(s)}<div class="sub">${effect}${s.type === 'passive' ? '' : ` · ${s.mp || 0} nội lực · hồi chiêu ${(s.cd || 0) / 1000}s`}</div>
           ${s.learned ? `<div class="sk-bar">${Array.from({ length: max }, (_, k) => `<i class="${k < s.slv ? 'on' : ''}"></i>`).join('')}</div>` : ''}</div>${right}</div>`;
       }
-      if (!list.length) html += `<p class="small muted">${tab === 'dragon' ? '🐉 Long Ấn (rồng lửa / nước / băng) học bằng Bí Kíp từ Boss, Kỳ Trân Các hoặc đổi Hoa Đăng.' : 'Chưa có võ công.'}</p>`;
+      if (!list.length) html += `<p class="small muted">${tab === 'dragon' ? '🐉 Long Ấn (rồng lửa / nước / băng / sấm / bóng tối) học bằng Bí Kíp từ Boss, Kỳ Trân Các hoặc đổi Hoa Đăng.' : 'Chưa có võ công.'}</p>`;
       html += '</div>';
     }
     body.innerHTML = html;

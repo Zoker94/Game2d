@@ -472,8 +472,8 @@
         p(5, 4, 6, 7, '#f3ead6'); p(6, 5, 4, 1, '#8b1a1a'); p(7, 6, 2, 4, '#8b1a1a'); p(6, 8, 4, 1, '#8b1a1a');
         break;
       }
-      case 'book_fire': case 'book_water': case 'book_ice': {
-        const col = { book_fire: ['#c0301a', '#ff7a2a', '#ffd040'], book_water: ['#1a4aa0', '#2fa8ff', '#c0f0ff'], book_ice: ['#3a8ab0', '#9ee8ff', '#ffffff'] }[icon];
+      case 'book_fire': case 'book_water': case 'book_ice': case 'book_thunder': case 'book_shadow': {
+        const col = { book_fire: ['#c0301a', '#ff7a2a', '#ffd040'], book_water: ['#1a4aa0', '#2fa8ff', '#c0f0ff'], book_ice: ['#3a8ab0', '#9ee8ff', '#ffffff'], book_thunder: ['#4a2a9a', '#a070ff', '#fff4a0'], book_shadow: ['#2a0618', '#8a1a4a', '#ff5a8a'] }[icon];
         p(3, 2, 10, 12, col[0]); p(4, 3, 8, 10, col[1]); p(12, 2, 1, 12, '#f5e6c0');
         p(6, 5, 4, 1, col[2]); p(5, 6, 2, 2, col[2]); p(9, 6, 2, 3, col[2]); p(6, 8, 3, 1, col[2]); p(7, 9, 2, 2, col[2]); p(8, 11, 1, 1, col[2]);
         break;

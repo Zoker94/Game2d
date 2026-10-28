@@ -6,6 +6,7 @@ const { MONSTERS, BOSSES } = require('../data/monsters');
 const { MAPS, TILE, isSolidAt, chId } = require('../data/maps');
 const { makeDaily, DAILY_ALL_BONUS } = require('../data/quests');
 const U = require('./util');
+const DRAGON_BOOKS = Object.values(require('../data/dragons').DRAGONS).map(d => d.book);
 const { isOwner } = require('../owner');
 
 const EVENT_INFO = {
@@ -458,7 +459,7 @@ class Features {
     const ex = LANTERN_EXCHANGE[idx | 0];
     if (!ex) return;
     if (!U.removeItemById(p.c, 'event_token', ex.cost)) return this.w.toast(p, `Cần ${ex.cost} Hoa Đăng`, 'error');
-    const r = ex.r.dragonBook ? { items: [[['book_fire', 'book_water', 'book_ice'][U.randInt(0, 2)], 1]] } : ex.r;
+    const r = ex.r.dragonBook ? { items: [[DRAGON_BOOKS[U.randInt(0, DRAGON_BOOKS.length - 1)], 1]] } : ex.r;
     this.w.giveReward(p, r, 'Đổi Hoa Đăng');
     p.socket.emit('eventPanel', this.eventPanel(p));
   }

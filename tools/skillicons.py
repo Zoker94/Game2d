@@ -1,7 +1,7 @@
 # Vẽ biểu tượng võ học: mỗi chiêu một hình riêng, cùng phong cách "ấn ký phát sáng".
 # Vẽ ở độ phân giải gấp 4 (384px) rồi thu nhỏ còn 96px: nền chuyển màu theo môn phái + mây cát tường mờ,
 # hình chiêu có quầng sáng, lõi trắng, viền tối; viền khung trong ảnh.
-# Xuất public/assets/skills/<mã chiêu>.png (+ dr_fire / dr_water / dr_ice cho Long Ấn).
+# Xuất public/assets/skills/<mã chiêu>.png (+ dr_fire / dr_water / dr_ice / dr_thunder / dr_shadow cho Long Ấn).
 # Dùng: python3 tools/skillicons.py [thư mục assets] [mã chiêu ...]
 import math, os, sys
 import numpy as np
@@ -526,6 +526,8 @@ CLS = {
     'dragon_fire':  ('#7a1a08', '#180402', '#ffa050'),
     'dragon_water': ('#0a3a7a', '#020814', '#80d0ff'),
     'dragon_ice':   ('#1a5a6a', '#03101a', '#d8f8ff'),
+    'dragon_thunder': ('#2a1460', '#06030f', '#e0c8ff'),
+    'dragon_shadow':  ('#3a0a22', '#060104', '#ff8ab0'),
 }
 
 # =====================================================================
@@ -1599,6 +1601,17 @@ def dr_ice(ic, col):
     dragon_head(ic, 26, 52, 0.8, -0.22, '#6ac0e0', glowc='#c0f4ff', mane='#ffffff', horn=('#ffffff', '#7ab0c8'))
     ic.sparkle(82, 26, 4.5, '#ffffff')
 
+def dr_thunder(ic, col):
+    lightning(ic, 80, 0, 66, 94, '#fff68f', w=3.6, n=6, amp=7, seed=61, branches=2)
+    lightning(ic, 94, 30, 78, 96, col, w=2.6, n=5, amp=5, seed=62, branches=1)
+    dragon_head(ic, 24, 54, 0.8, -0.22, '#7a4ae8', glowc='#b080ff', mane='#fff090', horn=('#fffbe0', '#8a70c0'))
+    ic.sparkle(86, 16, 4.5, '#fff8b0')
+def dr_shadow(ic, col):
+    for k in range(3):   # xoáy hồn đen đỏ
+        ic.energy(ic.stroke(arcpts(64, 70, 26 - k * 7, 11 - k * 3, 0, 5.6, 28, tilt=0.2), 0.5, 3.2 - k * 0.6, 3), '#ff3a6a' if k else '#ff9ab8', r=3, k=0.7, core=0.4, body=0.7)
+    dragon_head(ic, 24, 52, 0.8, -0.22, '#4a1030', glowc='#e0306a', mane='#ff4a7a', horn=('#e8c8d0', '#5a2030'))
+    for (x, y) in ((82, 22), (72, 86)): ic.sparkle(x, y, 3.6, '#ffb0c8')
+
 # ---------------- Nút chung ----------------
 def ui_attack(ic, col):   # đánh thường: song kiếm bắt chéo
     ic.energy(ic.ring(48, 48, 34, 2), '#ff6a3a', r=5, k=0.6, core=0.3, body=0.6)
@@ -1669,6 +1682,8 @@ def register():
     SKILLS['dr_fire'] = ('dragon_fire', '#ff5a1a', dr_fire)
     SKILLS['dr_water'] = ('dragon_water', '#2fa8ff', dr_water)
     SKILLS['dr_ice'] = ('dragon_ice', '#9ee8ff', dr_ice)
+    SKILLS['dr_thunder'] = ('dragon_thunder', '#c89aff', dr_thunder)
+    SKILLS['dr_shadow'] = ('dragon_shadow', '#e0306a', dr_shadow)
 
 if __name__ == '__main__':
     root = sys.argv[1] if len(sys.argv) > 1 else 'public/assets'
