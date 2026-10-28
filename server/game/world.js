@@ -196,6 +196,8 @@ class World {
       c.petGift = 1;
       setTimeout(() => { if (this.players.get(user.id) === p) { this.giveItem(p, 'pet_hong_long', 1); this.toast(p, '🐉 Đã gửi Hồng Long Ấu Thú (thú cưng thử nghiệm) vào túi đồ. Vào túi → Sử dụng để triệu hồi.', 'reward'); this.db.markDirty(); } }, 2500);
     }
+    // quản trị viên: tặng đủ 9 bí kíp Tuyệt Kỹ Giang Hồ một lần (túi đầy thì lần đăng nhập sau tặng tiếp; nhận thêm bằng /tuyetky)
+    if ((isOwner(user) || user.isAdmin) && !c.jhGift) setTimeout(() => { if (this.players.get(user.id) === p && !c.jhGift && this.giveJhBooks(p)) { c.jhGift = 1; this.toast(p, '⚡ Đã gửi 9 bí kíp Tuyệt Kỹ Giang Hồ vào túi đồ (quản trị viên). Nhận thêm: /tuyetky', 'reward'); } }, 3000);
     const st = this.db.data.stats;
     st.peakOnline = Math.max(st.peakOnline || 0, this.players.size);
     return p;
@@ -1035,6 +1037,14 @@ class World {
     for (const mon of map.monsters.values()) if (mon.target === t.userId) mon.target = null;
   }
 
+  // trao đủ 9 bí kíp Tuyệt Kỹ Giang Hồ vào túi (quản trị viên); trả về số cuốn đã nhận, 0 nếu túi không đủ chỗ
+  giveJhBooks(p) {
+    const books = Object.values(JIANGHU).map(j => j.book);
+    if (U.freeSlots(p.c) < books.filter(b => !U.countItem(p.c, b)).length) return 0;
+    for (const b of books) U.addItem(p.c, b, 1);
+    p.dirtyMe = true; this.db.markDirty();
+    return books.length;
+  }
   // bí kíp Tuyệt Kỹ Giang Hồ: tỉ lệ thấp, trao cho người gây sát thương cao nhất còn ở bản đồ
   rollJhBook(mon, tpl) {
     const rate = (tpl.world ? JH_DROP.world : mon.boss ? JH_DROP.field : JH_DROP.dungeon) * (this.db.data.config.dropRate || 1);

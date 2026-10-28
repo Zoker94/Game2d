@@ -48,6 +48,7 @@ world.sect = new (require('./game/sect').Sect)(world);
 world.daihoi = new (require('./game/daihoi').DaiHoi)(world, features, db);
 world.hoason = new (require('./game/hoason').HoaSon)(world, features, db);
 world.tongkim = new (require('./game/tongkim').TongKim)(world, features, db);
+world.cleanup = new (require('./game/cleanup').Cleanup)(world, features, db);
 const { Social } = require('./game/social');
 const social = new Social(world, features, db);
 world.start();

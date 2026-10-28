@@ -342,6 +342,22 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     res.json(l.slice(-300).reverse());
   });
 
+  // ----- Dọn dẹp dữ liệu -----
+  app.get('/api/admin/cleanup', auth, (req, res) => res.json(world.cleanup.preview(Math.max(1, +req.query.days || 180))));
+  app.post('/api/admin/cleanup', auth, (req, res) => {
+    const C = world.cleanup, b = req.body || {}, days = Math.max(0, +b.days || 0);
+    let n = 0, what = '';
+    if (b.what === 'logs') { n = C.clearLogs('logs', days); what = `nhật ký hệ thống${days ? ` cũ hơn ${days} ngày` : ''}`; }
+    else if (b.what === 'chat') { n = C.clearLogs('chatLogs', days); what = `nhật ký chat${days ? ` cũ hơn ${days} ngày` : ''}`; }
+    else if (b.what === 'nochar') { n = C.purgeList(C.find('nochar', 1)); what = 'tài khoản không có nhân vật (tạo hơn 1 ngày)'; }
+    else if (b.what === 'inactive') { if (days < 7) return res.json({ error: 'Số ngày không online tối thiểu là 7' }); n = C.purgeList(C.find('inactive', days)); what = `tài khoản không online ${days} ngày`; }
+    else if (b.what === 'auto') { db.data.config.autoCleanDays = Math.max(0, Math.min(3650, +b.days | 0)); db.markDirty(); act(req, `Đặt tự dọn tài khoản sau ${db.data.config.autoCleanDays || 'tắt'} ngày`); return res.json({ ok: true }); }
+    else return res.json({ error: 'Không rõ thao tác' });
+    act(req, `Dọn dẹp: xoá ${n} ${what}`);
+    db.log('admin', `[${req.admin}] Dọn dẹp: xoá ${n} ${what}`);
+    res.json({ ok: true, n });
+  });
+
   // ----- Dữ liệu tham chiếu -----
   app.get('/api/admin/items', auth, (req, res) => res.json(Object.values(ITEMS).map(i => ({ id: i.id, name: i.name, type: i.type, rarity: i.rarity, lv: i.lv, slot: i.slot, price: i.price }))));
   app.get('/api/admin/maps', auth, (req, res) => res.json(Object.values(MAPS).filter(m => world.maps[m.id]).map(m => ({ id: m.id, name: m.name + (m.base ? ' · Khu ' + m.ch : m.chs ? ' · Khu 1' : ''), lv: m.lv, online: world.maps[m.id].players.size, monsters: [...world.maps[m.id].monsters.values()].filter(x => !x.dead).length }))));

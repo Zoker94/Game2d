@@ -179,6 +179,7 @@ class Features {
     }
     if (this.w.hoason) this.w.hoason.onMinute(mod);   // Hoa Sơn Luận Kiếm 20:00 Thứ 7
     if (this.w.tongkim) this.w.tongkim.onMinute(mod);   // Chiến Trường Tống Kim 22:00 mỗi tối
+    if (mod === 4 * 60 + 7 && this.w.cleanup) this.w.cleanup.auto();   // 04:07 mỗi ngày: tự dọn tài khoản bỏ lâu, chat cũ
     if ((dow === 0 || dow === 6) && !this.isActive('lantern')) this.startEvent('lantern', (24 * 60 - mod));
     if (this.lastMinute % 5 === 0) this.broadcastEvents();
   }
@@ -493,7 +494,7 @@ class Features {
     const findPlayer = name => [...w.players.values()].find(o => o.c.name.toLowerCase() === String(name || '').toLowerCase());
     switch (c) {
       case 'help': case 'lenh':
-        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: 'Lệnh admin: /an (tàng hình) · /mienpk (miễn PK) · /admin (mở trang quản trị) · /tb <nội dung> · /ghim <nội dung> (chạy mỗi 5 phút) · /boghim <mã>|all · /dsghim · /tp <bản đồ> · /level <cấp> · /gold <số> · /knb <số> · /give <mã vật phẩm> [số lượng] [+cường hóa] · /heal · /boss <mã boss> · /event <mã sự kiện> [phút] · /kick <tên> · /goto <tên> · /keo <tên> · /tiemnang <tên> <số> · /kynang <tên> <số> · /conghien <số> · /online · /thoitiet <clear|rain|storm|wind|snow|blizzard|sun> [phút] · /cottruyen <chương> [bước] | reset · /tusat' });
+        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: 'Lệnh admin: /an (tàng hình) · /mienpk (miễn PK) · /admin (mở trang quản trị) · /tb <nội dung> · /ghim <nội dung> (chạy mỗi 5 phút) · /boghim <mã>|all · /dsghim · /tp <bản đồ> · /level <cấp> · /gold <số> · /knb <số> · /give <mã vật phẩm> [số lượng] [+cường hóa] · /tuyetky (9 bí kíp Tuyệt Kỹ Giang Hồ) · /heal · /boss <mã boss> · /event <mã sự kiện> [phút] · /kick <tên> · /goto <tên> · /keo <tên> · /tiemnang <tên> <số> · /kynang <tên> <số> · /conghien <số> · /online · /thoitiet <clear|rain|storm|wind|snow|blizzard|sun> [phút] · /cottruyen <chương> [bước] | reset · /tusat' });
         break;
       case 'an': case 'hide': case 'tanghinh': case 'mienpk': case 'safe': {   // bật / tắt tàng hình, miễn PK
         const k = c === 'mienpk' || c === 'safe' ? 'safe' : 'hide';
@@ -553,6 +554,10 @@ class Features {
       case 'level': { const n = U.clamp(+args[0] | 0, 1, U.MAX_LEVEL); p.c.level = n; p.c.exp = 0; w.recalc(p); p.c.hp = p.stats.maxHp; ok('Cấp ' + n); break; }
       case 'gold': p.c.gold = Math.max(0, +args[0] | 0); ok('Ngân lượng: ' + p.c.gold); break;
       case 'knb': p.c.knb = Math.max(0, +args[0] | 0); ok('Nguyên bảo: ' + p.c.knb); break;
+      case 'tuyetky': {   // nhận đủ 9 bí kíp Tuyệt Kỹ Giang Hồ
+        const n = w.giveJhBooks(p);
+        ok(n ? `Đã nhận ${n} bí kíp Tuyệt Kỹ Giang Hồ` : 'Túi đồ không đủ chỗ (cần 9 ô trống)'); break;
+      }
       case 'give': {
         const id = args[0];
         if (!ITEMS[id]) return err('Không có vật phẩm "' + id + '". Xem mã trong trang quản trị → Gift code');

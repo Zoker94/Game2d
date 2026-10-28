@@ -56,7 +56,7 @@
   function openModal(title, html) { $('m-title').textContent = title; $('m-body').innerHTML = html; $('modal').classList.remove('hidden'); }
   function closeModal() { $('modal').classList.add('hidden'); }
 
-  const TITLES = { dashboard: 'Tổng quan', users: 'Quản lý người chơi', events: 'Sự kiện & Boss', broadcast: 'Gửi thông báo', guilds: 'Bang hội', giftcodes: 'Gift code', config: 'Cấu hình server', chat: 'Nhật ký chat', logs: 'Nhật ký hệ thống', account: 'Tài khoản quản trị' };
+  const TITLES = { dashboard: 'Tổng quan', users: 'Quản lý người chơi', events: 'Sự kiện & Boss', broadcast: 'Gửi thông báo', guilds: 'Bang hội', giftcodes: 'Gift code', config: 'Cấu hình server', chat: 'Nhật ký chat', logs: 'Nhật ký hệ thống', cleanup: 'Dọn dẹp dữ liệu', account: 'Tài khoản quản trị' };
   async function show(v) {
     view = v;
     document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.dataset.v === v));
@@ -184,6 +184,29 @@
       };
       $('ch-go').onclick = load; $('ch-q').onkeydown = e => { if (e.key === 'Enter') load(); };
       await load();
+    },
+
+    async cleanup(el) {
+      const days = +($('cl-days') && $('cl-days').value) || 180;
+      const d = await api('/cleanup?days=' + days);
+      const la = d.lastAuto;
+      el.innerHTML = `<div class="card"><h3>Tổng quan</h3><p>${fmt(d.users)} tài khoản · ${fmt(d.logs)} dòng nhật ký hệ thống · ${fmt(d.chatLogs)} dòng chat.</p>
+          <p class="small muted">Tài khoản chủ server, quản trị viên và người đang online không bao giờ bị xoá. Xoá tài khoản là <b>không hoàn tác được</b> (mất cả nhân vật, đồ, gian hàng).</p></div>
+        <div class="card"><h3>📜 Dọn nhật ký</h3><div class="row"><label>Giữ lại<select id="cl-logdays"><option value="0">Xoá hết</option><option value="7">7 ngày gần nhất</option><option value="30" selected>30 ngày gần nhất</option><option value="90">90 ngày gần nhất</option></select></label>
+          <button class="btn danger" id="cl-logs">Dọn nhật ký hệ thống</button><button class="btn danger" id="cl-chat">Dọn nhật ký chat</button></div></div>
+        <div class="card"><h3>👤 Tài khoản không có nhân vật</h3><p><b>${fmt(d.nochar)}</b> tài khoản tạo hơn 7 ngày mà chưa từng tạo nhân vật.</p><button class="btn danger" id="cl-nochar">Xoá tài khoản không có nhân vật (tạo hơn 1 ngày)</button></div>
+        <div class="card"><h3>💤 Tài khoản lâu không online</h3><div class="row"><label>Không online từ<input id="cl-days" type="number" min="7" value="${d.days}" style="width:90px"> ngày</label><button class="btn" id="cl-count">Đếm lại</button></div>
+          <p><b>${fmt(d.inactive)}</b> tài khoản không online từ ${d.days} ngày trở lên.</p><button class="btn danger" id="cl-inactive">Xoá các tài khoản này</button></div>
+        <div class="card"><h3>⏰ Tự động dọn mỗi ngày (04:07)</h3><div class="row"><label>Tự xoá tài khoản không online quá<input id="cl-auto" type="number" min="0" value="${d.autoCleanDays}" style="width:90px"> ngày</label><button class="btn ok" id="cl-auto-save">Lưu</button></div>
+          <p class="small muted">0 = tắt. Mặc định 180 ngày (6 tháng). Cùng lúc đó tự xoá tài khoản tạo hơn 7 ngày chưa có nhân vật và chat cũ hơn 30 ngày.</p>
+          ${la ? `<p class="small">Lần tự dọn gần nhất: ${dt(la.at)} – xoá ${la.inactive} tài khoản không online, ${la.nochar} tài khoản không có nhân vật, ${la.chat} dòng chat.</p>` : '<p class="small muted">Chưa chạy lần nào.</p>'}</div>`;
+      const go = async (body, q) => { if (!confirm(q)) return; const r = await run(() => api('/cleanup', body)); if (r) { toast(`Đã xoá ${fmt(r.n || 0)} mục`); show('cleanup'); } };
+      $('cl-logs').onclick = () => go({ what: 'logs', days: +$('cl-logdays').value }, 'Dọn nhật ký hệ thống?');
+      $('cl-chat').onclick = () => go({ what: 'chat', days: +$('cl-logdays').value }, 'Dọn nhật ký chat?');
+      $('cl-nochar').onclick = () => go({ what: 'nochar' }, `Xoá ${d.nochar}+ tài khoản không có nhân vật? Không hoàn tác được.`);
+      $('cl-inactive').onclick = () => go({ what: 'inactive', days: +$('cl-days').value }, `Xoá ${d.inactive} tài khoản không online từ ${$('cl-days').value} ngày? Không hoàn tác được.`);
+      $('cl-count').onclick = () => show('cleanup');
+      $('cl-auto-save').onclick = async () => { const r = await run(() => api('/cleanup', { what: 'auto', days: +$('cl-auto').value })); if (r) { toast('Đã lưu'); show('cleanup'); } };
     },
 
     async logs(el) {
