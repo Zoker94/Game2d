@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '28/10/2026',
     items: [
+      '⚡ Sửa cách tính LỰC CHIẾN: (1) dòng hiệu ứng của đá khảm cấp 4-5 và dòng đặc biệt trang bị (xuyên giáp, giảm sát thương, phản đòn, chí mạng bạo kích, hút máu, né...) giờ được cộng vào lực chiến – trước đây bị bỏ qua; (2) buff tạm thời (chiêu hỗ trợ) không còn làm lực chiến nhảy lên xuống; (3) khung so sánh đồ trong túi tính đúng như máy chủ: có điểm hệ Nội/Ngoại của món, hệ số bang hội / nội công / môn phái và dòng hiệu ứng của ngọc.',
       '⚖️ Cân bằng PK Tuyệt Kỹ Giang Hồ: khi trúng người chơi chỉ còn 40% sát thương (ngang một chiêu thường của phái), thời gian choáng / đóng băng / làm chậm và số nhịp độc giảm một nửa – đánh quái và Boss vẫn giữ nguyên sức mạnh.',
       '🎲 Bí kíp Tuyệt Kỹ Giang Hồ không còn tự vào túi người gây sát thương cao nhất: bí kíp RƠI XUỐNG ĐẤT cạnh Boss, không thuộc về ai, ai nhanh tay thì nhặt (để 3 phút). Kênh Thế Giới báo khi bí kíp rơi và khi có người nhặt được.',
       '⏳ Tuyệt Kỹ Giang Hồ kéo dài thêm 2 giây: hiệu ứng nổ dội 3 lượt khắp màn hình, vết nứt và tên chiêu giữ lâu hơn, rung màn theo từng lượt. Bí kíp Tuyệt Kỹ giờ CỰC HIẾM: boss thế giới 2%, boss phó bản 0,3%, boss dã ngoại hiếm nhất 0,2% (~500 lần mới rơi 1 cuốn) (không tăng theo sự kiện nhân tỉ lệ rơi).',

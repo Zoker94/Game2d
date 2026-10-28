@@ -132,7 +132,7 @@
     return `<div class="card gs-box"><h4>💎 Ngọc đã khảm <span class="gs-cnt">${cnt}/${holes} lỗ</span></h4>
       ${sum ? `<div class="gs-sum">Tổng từ ngọc: ${sum}</div>` : '<div class="gs-sum muted">Chưa khảm viên ngọc nào – khảm ở Thợ Rèn (thẻ 💎 Khảm đá).</div>'}${rows}</div>`;
   }
-  UI.gemDots = gemDots; UI.gemSummary = gemSummary; UI.brBadge = s => brBadge(s);
+  UI.gemDots = gemDots; UI.gemSummary = gemSummary; UI._powerDiff = powerDiff; UI.brBadge = s => brBadge(s);
   // tổng chỉ số của 1 món (gồm cường hóa + ngũ hành) để so sánh
   function itemTotals(it, inst) {
     const o = {};
@@ -142,13 +142,37 @@
     for (const gid of (inst && inst.gems) || []) { const g = gid && G.data.items[gid]; if (g) for (const [k, v] of Object.entries(g.gemStats || {})) o[k] = (o[k] || 0) + v; }
     return o;
   }
+  // điểm hệ của món (Sức Mạnh / Nội Công như điểm tiềm năng) – máy chủ cộng vào chỉ số khi mặc
+  function itemAttrPts(it, inst) {
+    const o = {}, ba = inst && G.data.brAttr && G.data.brAttr[inst.br], A = ba && G.data.attrs[ba];
+    if (!A || !it || it.type !== 'equip') return o;
+    const n = Math.round((1 + it.tier * 1.2) * G.data.rarity[it.rarity].mult * (1 + (inst.plus || 0) * 0.04));
+    for (const [k, v] of Object.entries(A.per)) if (k !== 'dodge' && k !== 'regen') o[k] = v * n;
+    return o;
+  }
+  // dòng hiệu ứng của món: dòng đặc biệt + đá khảm cấp 4-5
+  function itemFx(inst) {
+    const o = {};
+    for (const [k, v] of (inst && inst.fx) || []) o[k] = (o[k] || 0) + v;
+    for (const gid of (inst && inst.gems) || []) { const g = gid && G.data.items[gid]; if (g && g.gemFx) o[g.gemFx[0]] = (o[g.gemFx[0]] || 0) + g.gemFx[1]; }
+    return o;
+  }
+  const fxScore = fx => Object.entries(fx).reduce((a, [k, v]) => a + ((G.data.powerFx || {})[k] || 0) * v, 0);
   const powerOf = o => (o.atk || 0) * 3 + (o.def || 0) * 2 + (o.hp || 0) / 4 + (o.mp || 0) / 8 + (o.crit || 0) * 12;
+  // chênh lệch lực chiến khi thay món a (đang mặc) bằng món b – cùng công thức máy chủ: chỉ số × (1 + điểm hiệu ứng)
+  function powerDiff(ia, a, ib, b) {
+    const sa = itemTotals(ia, a), sb = itemTotals(ib, b), pa = itemAttrPts(ia, a), pb = itemAttrPts(ib, b);
+    const st = G.me.stats || {}, m = st.mul || {};
+    const pw = o => (o.atk || 0) * 3 * (m.atk || 1) + (o.def || 0) * 2 * (m.def || 1) + (o.hp || 0) / 4 * (m.hp || 1) + (o.mp || 0) / 8 * (m.mp || 1) + (o.crit || 0) * 12;
+    const base = (pw(sb) + pw(pb)) - (pw(sa) + pw(pa));
+    return Math.round(base * (1 + (st.fxs || 0)) + (st.pw0 || 0) * (fxScore(itemFx(b)) - fxScore(itemFx(a))));
+  }
   // dòng tóm tắt trong khung chi tiết (bảng so sánh đầy đủ hiện ở khung nổi khi rê chuột / bấm giữ)
   function compareMini(s) {
     const it = G.data.items[s.id];
     if (!it || it.type !== 'equip' || s.equipped) return '';
     const cur = G.me.equip[eqSlotOf(it)], cit = cur && G.data.items[cur.id];
-    const dp = Math.round(powerOf(itemTotals(it, s)) - powerOf(itemTotals(cit, cur)));
+    const dp = powerDiff(cit, cur, it, s);
     return `<div class="cmp-mini">⚖️ ${cit ? 'So với đồ đang mặc' : 'Ô ' + G.data.slots[it.slot] + ' đang trống'}: Lực chiến <b class="${dp > 0 ? 'up' : dp < 0 ? 'down' : ''}">${dp > 0 ? '▲ +' : dp < 0 ? '▼ ' : ''}${dp || '='}</b>
       <span class="muted">· ${Input.isTouch ? 'bấm giữ' : 'rê chuột vào'} ô đồ để so sánh</span></div>`;
   }
@@ -174,7 +198,7 @@
       const d = (b[k] || 0) - (a[k] || 0), dd = k === 'crit' ? Math.round(d * 10) / 10 : Math.round(d);
       return dd ? `<span class="${dd > 0 ? 'up' : 'down'}">${STAT_NAME[k]} ${dd > 0 ? '▲+' : '▼'}${dd}${k === 'crit' ? '%' : ''}</span>` : '';
     }).filter(Boolean).join('');
-    const dp = Math.round(powerOf(b) - powerOf(a));
+    const dp = powerDiff(cit, cur, it, s);
     return `<div class="cp-cols">${col(cur, cit, 'Đang mặc')}<div class="cp-vs">VS</div>${col(s, it, 'Món này')}</div>
       <div class="cp-diff">${diffs || '<span class="muted">Chỉ số như nhau</span>'}</div>
       <div class="cp-pw ${dp > 0 ? 'up' : dp < 0 ? 'down' : ''}">Lực chiến ${dp > 0 ? '▲ +' : dp < 0 ? '▼ ' : ''}${dp || '= không đổi'}</div>`;

@@ -2,7 +2,7 @@ const { CLASSES, branchOf } = require('../data/classes');
 const { scaleSkill } = require('../data/skillbooks');
 const { ITEMS, BR_ATTR, brPoints, brStats } = require('../data/items');
 const { mountStats } = require('../data/mounts');
-const { rollAffixes, elementBonus, CAP, GEAR_CAP, rescaleFx } = require('../data/affixes');
+const { rollAffixes, elementBonus, CAP, GEAR_CAP, rescaleFx, fxPowerScore } = require('../data/affixes');
 const { ATTRS } = require('../data/attrs');
 const { gemBonus } = require('../data/gems');
 
@@ -215,17 +215,23 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
       else if (k === 'hp') s.maxHp += ms.hp; else if (k === 'mp') s.maxMp += ms.mp; else s[k] += ms[k];
     }
   }
-  if (guildLevel > 0) { s.atk *= 1 + guildLevel * 0.02; s.def *= 1 + guildLevel * 0.02; s.maxHp *= 1 + guildLevel * 0.02; }
+  // hệ số nhân sau trang bị (bang, nội công, môn phái, di thư) – gửi máy khách để so đồ ra đúng lực chiến
+  const mul = { atk: 1, def: 1, maxHp: 1, maxMp: 1 };
+  const mulAll = (k, f) => { s[k] *= f; mul[k] *= f; };
+  if (guildLevel > 0) { mulAll('atk', 1 + guildLevel * 0.02); mulAll('def', 1 + guildLevel * 0.02); mulAll('maxHp', 1 + guildLevel * 0.02); }
   // nội công bị động (đã học thì luôn có hiệu lực, mạnh dần theo tầng)
   const ps = cl.branches ? cl.branches[branchOf(c)].passive : cl.extra && cl.extra[1];   // nội công bị động của hệ đang tu
   const FXK = ['dodge', 'dmgred', 'lifesteal', 'reflect', 'critdmg', 'ccres'];
   if (ps && c.skills && c.skills[ps.id]) {
     const pv = scaleSkill(ps, c.skills[ps.id]).passive;
-    if (pv.hp) s.maxHp *= 1 + pv.hp; if (pv.mp) s.maxMp *= 1 + pv.mp; if (pv.atk) s.atk *= 1 + pv.atk; if (pv.def) s.def *= 1 + pv.def;
+    if (pv.hp) mulAll('maxHp', 1 + pv.hp); if (pv.mp) mulAll('maxMp', 1 + pv.mp); if (pv.atk) mulAll('atk', 1 + pv.atk); if (pv.def) mulAll('def', 1 + pv.def);
     if (pv.spd) s.spd *= 1 + pv.spd; if (pv.crit) s.crit += pv.crit; if (pv.regen) s.regen += pv.regen;
     for (const k of FXK) if (pv[k]) fx[k] = Math.min(CAP[k] || 100, (fx[k] || 0) + pv[k]);
   }
+  // lực chiến không tính buff tạm thời (chiêu hỗ trợ, thuốc...): ghi lại hệ số buff để chia ra khi tính
+  const fxScore = fxPowerScore(fx), bm = { maxHp: 1, atk: 1, def: 1, crit: 0 };
   for (const b of buffs) {
+    if (b.hp) bm.maxHp *= 1 + b.hp; if (b.atk) bm.atk *= 1 + b.atk; if (b.def) bm.def *= 1 + b.def; if (b.crit) bm.crit += b.crit;
     if (b.hp) s.maxHp *= 1 + b.hp;
     for (const k of FXK) if (b[k]) fx[k] = Math.min(CAP[k] || 100, (fx[k] || 0) + b[k]);
     if (b.atk) s.atk *= 1 + b.atk;
@@ -236,15 +242,19 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
   }
   // cấp bậc môn phái: +2% công / thủ / sinh lực mỗi bậc
   const sr = require('../data/sect').sectRank(c);
-  if (sr) { s.atk *= 1 + sr * 0.02; s.def *= 1 + sr * 0.02; s.maxHp *= 1 + sr * 0.02; }
+  if (sr) { mulAll('atk', 1 + sr * 0.02); mulAll('def', 1 + sr * 0.02); mulAll('maxHp', 1 + sr * 0.02); }
   // Võ Mục Di Thư: mỗi lần nghiền ngẫm +3% công / thủ / sinh lực (tối đa 5 lần)
   const vm = Math.min(5, c.vmb | 0);
-  if (vm) { s.atk *= 1 + vm * 0.03; s.def *= 1 + vm * 0.03; s.maxHp *= 1 + vm * 0.03; }
+  if (vm) { mulAll('atk', 1 + vm * 0.03); mulAll('def', 1 + vm * 0.03); mulAll('maxHp', 1 + vm * 0.03); }
   s.spd = Math.min(s.spd, 320);
   s.crit = Math.min(s.crit, 75);
   for (const k of ['maxHp', 'maxMp', 'atk', 'def']) s[k] = Math.round(s[k]);
   s.crit = Math.round(s.crit * 10) / 10;
-  s.power = Math.round(s.atk * 3 + s.def * 2 + s.maxHp / 4 + s.maxMp / 8 + s.crit * 12);
+  // lực chiến = chỉ số (bỏ buff tạm thời) × (1 + điểm hiệu ứng): đá khảm cấp 4-5 / dòng đặc biệt đều được tính
+  const pw0 = s.atk / bm.atk * 3 + s.def / bm.def * 2 + s.maxHp / bm.maxHp / 4 + s.maxMp / 8 + Math.max(0, s.crit - bm.crit) * 12;
+  s.pw0 = Math.round(pw0); s.fxs = Math.round(fxScore * 1000) / 1000;
+  s.mul = { atk: +mul.atk.toFixed(4), def: +mul.def.toFixed(4), hp: +mul.maxHp.toFixed(4), mp: +mul.maxMp.toFixed(4) };
+  s.power = Math.round(pw0 * (1 + fxScore));
   // điểm trang bị (không phụ thuộc phái): bậc, độ hiếm, cường hoá, đá khảm – dùng so chênh lệch đồ khi PK
   let gs = 0;
   for (const slot in c.equip) {
