@@ -173,6 +173,7 @@
   const f = $('target-frame'); if (f) f.addEventListener('click', e => {
     e.stopPropagation();
     if (e.target.closest('.t-x')) { G.target = null; G.chase = null; close(); return; }   // ✕: bỏ chọn, khung tắt ngay
+    if (G.npcEnt && G.npcEnt(G.target)) return;   // NPC: khung mục tiêu dùng để đi tới nói chuyện (ui.js)
     open();
   });
   window.Targets = { open, close, toggle, get open_() { return isOpen(); } };

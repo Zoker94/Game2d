@@ -272,3 +272,7 @@ body.touch #tk-hud { width: 250px; top: 44px; font-size: 9.5px; }
 .slot .ilv::before { content: 'Lv'; opacity: .65; margin-right: 1px; }
 .slot .ilv.no { color: #ff8a7a; border-color: rgba(255,90,70,.45); }
 #mk-box .mk-slot { position: relative; width: 42px; height: 42px; flex: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+/* khung mục tiêu khi chọn NPC: không có thanh máu */
+#target-frame.npc .bar { display: none; }
+#target-frame.npc { cursor: pointer; }
+.tf-tag.npc { background: #6a5420; color: #ffe9a0; }

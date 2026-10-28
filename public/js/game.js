@@ -523,6 +523,13 @@
     lodTmp.sort((a, b) => a._d - b._d);
     for (let i = 0; i < lodTmp.length; i++) lodTmp[i].lod = i < n ? 0 : 1;
   }
+  // NPC làm mục tiêu (nút đổi mục tiêu): G.target = 'npc:<id>'
+  function npcEnt(id) {
+    if (typeof id !== 'string' || !id.startsWith('npc:') || !G.map) return null;
+    const n = G.map.npcs.find(x => 'npc:' + x.id === id);
+    return n ? { id, npc: n, x: (n.x + 0.5) * TILE, y: (n.y + 0.5) * TILE + 20, name: n.name } : null;
+  }
+  G.npcEnt = npcEnt;
   function entityById(id) {
     if (id === G.you) return G.self;
     return G.players.get(id) || G.monsters.get(id) || G.carts.get(id);
@@ -838,8 +845,12 @@
     if (t) G.target = t.id;
     return t;
   }
+  // nút / phím đổi mục tiêu: lần lượt mọi thứ ở gần (kẻ địch, người chơi khác, xe tiêu, NPC), gần trước xa sau
   function cycleTarget() {
-    const list = enemies().map(e => ({ e, d: Math.hypot(e.x - G.self.x, e.y - G.self.y) })).filter(x => x.d < 600).sort((a, b) => a.d - b.d);
+    const all = [...enemies()];
+    for (const p of G.players.values()) if (!all.includes(p)) all.push(p);
+    if (G.map) for (const n of G.map.npcs) { const e = npcEnt('npc:' + n.id); if (e) all.push(e); }
+    const list = all.map(e => ({ e, d: Math.hypot(e.x - G.self.x, e.y - G.self.y) })).filter(x => x.d < 600).sort((a, b) => a.d - b.d);
     if (!list.length) { G.target = null; return; }
     const i = list.findIndex(x => x.e.id === G.target);
     G.target = list[(i + 1) % list.length].e.id;
@@ -986,13 +997,29 @@
   gfx.since = performance.now();
   gfxApply(GFX_START());
 
+  // toạ độ thế giới -> toạ độ màn hình (màn ngang, không xoay) – dùng cho kiểm thử / gợi ý
+  G.toScreen = (x, y) => { const r = canvas.getBoundingClientRect(); return { x: r.left + (x - cam.x) * zoom, y: r.top + (y - cam.y) * zoom }; };
   function screenToWorld(cx, cy) {
     const p = Input.toLocal(cx, cy);
     return { x: p.x / zoom + cam.x, y: p.y / zoom + cam.y };
   }
+  // người chơi dưới con trỏ / ngón tay
+  function playerAt(w) {
+    let best = null, bd = 40;
+    for (const p of G.players.values()) { const d = Math.hypot(w.x - p.x, w.y - (p.y - 26)); if (d < bd) { bd = d; best = p; } }
+    return best;
+  }
+  // điện thoại: bấm giữ 3 giây vào người chơi mới mở bảng Xem thông tin / Kết bạn / Thách đấu (chạm 1 lần chỉ chọn mục tiêu)
+  const HOLD_MS = 3000;
+  let holdT = 0, holdAt = null;
+  function cancelHold() { clearTimeout(holdT); holdT = 0; holdAt = null; G.holdRing = null; }
+  canvas.addEventListener('pointermove', e => { if (holdAt && Math.hypot(e.clientX - holdAt.x, e.clientY - holdAt.y) > 14) cancelHold(); });
+  for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) canvas.addEventListener(ev, cancelHold);
   canvas.addEventListener('pointerdown', e => {
     if (!G.map) return;
     const w = screenToWorld(e.clientX, e.clientY);
+    // máy tính: chuột phải vào người chơi = bảng tương tác; chuột phải chỗ khác không làm gì
+    if (e.button === 2) { const p = playerAt(w); if (p) Social.menu(p, e.clientX, e.clientY); return; }
     { const st = Market.hit(w.x, w.y); if (st) { Market.openStall(st); return; } }   // gian hàng ở Chợ Phiên
     // NPC
     for (const n of G.map.npcs) {
@@ -1016,9 +1043,14 @@
     }
     if (best) {
       const isPl = G.players.has(best.id);
-      // người chơi khác: mở menu tương tác (bản đồ PK: bấm lần 2 vào cùng người mới mở menu)
+      // bấm trái / chạm 1 lần = chọn mục tiêu (kẻ địch thì đuổi theo đánh); bảng tương tác: chuột phải hoặc bấm giữ 3 giây
       const hostile = isPl ? Escort.canHarm(best) : best.cart ? Escort.canHitCart(best) : true;
-      if (isPl && (!hostile || G.target === best.id)) { G.target = best.id; Social.menu(best, e.clientX, e.clientY); return; }
+      if (isPl && e.pointerType !== 'mouse') {
+        cancelHold(); holdAt = { x: e.clientX, y: e.clientY };
+        G.holdRing = { id: best.id, t0: performance.now(), dur: HOLD_MS };
+        const who = best, cx = e.clientX, cy = e.clientY;
+        holdT = setTimeout(() => { cancelHold(); G.chase = null; Social.menu(who, cx, cy); if (navigator.vibrate) try { navigator.vibrate(30); } catch (er) { } }, HOLD_MS);
+      }
       G.target = best.id;
       if (hostile) { if (!Input.isTouch || e.detail >= 1) G.chase = { id: best.id, skill: 0 }; }
       return;
@@ -1367,11 +1399,18 @@
     list.sort((a, b) => a.y - b.y);
 
     // vòng chọn mục tiêu
-    const tgt = G.target && (G.monsters.get(G.target) || G.players.get(G.target) || G.carts.get(G.target));
+    const tgt = G.target && (G.monsters.get(G.target) || G.players.get(G.target) || G.carts.get(G.target) || npcEnt(G.target));
     if (tgt) {
-      ctx.strokeStyle = '#ff4040'; ctx.lineWidth = 2;
+      ctx.strokeStyle = tgt.npc ? '#ffd76a' : G.players.has(tgt.id) && !Escort.canHarm(tgt) ? '#5dd0ff' : '#ff4040'; ctx.lineWidth = 2;   // vàng: NPC · xanh: người không đánh được · đỏ: kẻ địch
       const rr = tgt.boss ? 44 : tgt.cart ? 40 : 22;
       ctx.beginPath(); ctx.ellipse(tgt.x, tgt.y + 2, rr, rr * 0.4, 0, 0, Math.PI * 2); ctx.stroke();
+    }
+    if (G.holdRing) {   // bấm giữ vào người chơi: vòng chạy đủ 3 giây thì mở bảng tương tác
+      const hp = G.players.get(G.holdRing.id), k = Math.min(1, (now - G.holdRing.t0) / G.holdRing.dur);
+      if (hp) {
+        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.beginPath(); ctx.arc(hp.x, hp.y - 30, 26, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = '#ffd76a'; ctx.beginPath(); ctx.arc(hp.x, hp.y - 30, 26, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2); ctx.stroke();
+      }
     }
 
     DaiHoi.drawGround(ctx, now);

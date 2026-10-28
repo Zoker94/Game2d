@@ -427,7 +427,7 @@
   function skillDetail(s) {
     const tags = [];
     if (s.type === 'single') tags.push(`🎯 Đơn mục tiêu · tầm ${s.range} (${zoneOf(s.range)})`);
-    else if (s.area) tags.push(`🌐 Phủ toàn màn hình quanh bản thân (${s.area.hw * 2}×${s.area.hh * 2}) · đánh mọi kẻ địch trong vùng`, '⚖️ Trúng người chơi (PK): 40% sát thương, khống chế và độc giảm một nửa');
+    else if (s.area) tags.push(`🌐 Phủ toàn màn hình quanh bản thân (${s.area.hw * 2}×${s.area.hh * 2}) · đánh mọi kẻ địch trong vùng`);
     else if (s.type === 'aoe') tags.push(`💥 Diện rộng bán kính ${s.radius} ${s.range ? `· thi triển xa tối đa ${s.range}` : '· quanh bản thân'}`);
     else if (s.type === 'line') tags.push(`➖ Đường thẳng dài ${s.range}, rộng ${s.width || 60} · xuyên mọi kẻ địch`);
     else if (s.type === 'dash') tags.push(`💨 Lướt tới mục tiêu tối đa ${s.range} · sát thương lan quanh điểm đáp`);
@@ -536,6 +536,20 @@
     if (t && t.type && !t.boss && !t.elite && !G.settings.tframe) t = null;
     if (!t) { f.classList.add('hidden'); return; }
     f.classList.remove('hidden');
+    f.classList.toggle('npc', !!t.npc);
+    if (!f._npcBound) {   // NPC đang chọn: chạm khung mục tiêu để đi tới nói chuyện
+      f._npcBound = 1;
+      f.addEventListener('click', () => { const e = G.npcEnt && G.npcEnt(G.target); if (e) { G.npcGoal = e.npc; G.moveTo = { x: e.x, y: e.y + 20 }; G.chase = null; } });
+    }
+    if (t.npc) {
+      const html = `<span class="tf-tag npc">NPC</span><b class="tf-nm">${esc(t.name || '')}</b>`;
+      const n = f.querySelector('.t-name'); if (n._h !== html) { n._h = html; n.innerHTML = html; }
+      let pw = f.querySelector('.t-pw'); if (!pw) { pw = document.createElement('div'); pw.className = 't-pw'; n.after(pw); }
+      const hint = '<span class="small">💬 Chạm vào khung này để đi tới nói chuyện</span>';
+      if (pw) { if (pw.innerHTML !== hint) pw.innerHTML = hint; pw.style.display = ''; }
+      f.classList.remove('boss');
+      return;
+    }
     let name;   // tiêu đề: thẻ BOSS / TINH ANH, tên, cấp, hệ
     if (t.type) {
       const info = G.data.monsters[t.type] || {}, E = info.el && G.data.elements[info.el];

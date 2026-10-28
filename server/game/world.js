@@ -10,7 +10,7 @@ const { NPCS, TELEPORTS } = require('../data/npcs');
 const { TUTORIAL } = require('../data/quests');
 const { MOUNTS, MOUNT_MAX, mountExpNext, isBreakLevel } = require('../data/mounts');
 const { DRAGONS, DRAGON_SLOT } = require('../data/dragons');
-const { JIANGHU, JH_SLOT, JH_DROP, JH_PVP } = require('../data/jianghu');
+const { JIANGHU, JH_SLOT, JH_DROP } = require('../data/jianghu');
 const { TITLES, statOf, unlocked: titleUnlocked } = require('../data/titles');
 const jhOf = c => (c.jh && c.jhs && c.jhs[c.jh] ? JIANGHU[c.jh] : null);   // tuyệt kỹ giang hồ đang chọn
 const { SKILL_MAX, scaleSkill, upgradeCost, skillPointsTotal, BOOKS } = require('../data/skillbooks');
@@ -829,16 +829,14 @@ class World {
         for (const h of list) {
           if (h.dead) continue;
           p._lastDealt = 0;
-          const pk = sk.jh && h.c;   // Tuyệt Kỹ Giang Hồ trúng người chơi: chỉ 40% sát thương, khống chế / độc giảm một nửa
-          this.damage(p, h, pk ? sk.mult * JH_PVP : sk.mult);
+          this.damage(p, h, sk.mult);
           if (sk.drain) drained += p._lastDealt || 0;
           if (sk.ult && h.c && h.socket) h.socket.emit('ultHit', { from: p.id, name: sk.name, color: sk.color, fx: sk.fx });
-          if (sk.type === 'dot' || sk.dotTicks) this.addDot(p, h, pk ? Object.assign({}, sk, { dotTicks: Math.ceil(sk.dotTicks / 2) }) : sk, 'poison');
+          if (sk.type === 'dot' || sk.dotTicks) this.addDot(p, h, sk, 'poison');
           if (h.dead) continue;
-          const cc = pk ? 0.5 : 1;
-          if (sk.freeze) this.applyStatus(h, 'freeze', Math.round(sk.freeze * cc), p);
-          if (sk.stun) this.applyStatus(h, 'stun', Math.round(sk.stun * cc), p);
-          if (sk.slow) this.applyStatus(h, 'slow', Math.round(sk.slow * cc), p);
+          if (sk.freeze) this.applyStatus(h, 'freeze', sk.freeze, p);
+          if (sk.stun) this.applyStatus(h, 'stun', sk.stun, p);
+          if (sk.slow) this.applyStatus(h, 'slow', sk.slow, p);
           const stDef = SKILL_STATUS[base.id] || FX_STATUS[sk.fx];
           if (stDef && Math.random() < stDef[2]) this.applyStatus(h, stDef[0], stDef[1], p);
           if (sk.knock && !h.c && !h.boss) {

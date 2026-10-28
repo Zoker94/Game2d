@@ -29,7 +29,4 @@ const JH_SLOT = 9;   // chỉ số kỹ năng (sau Long Ấn 6, hỗ trợ 7, n�
 // tỉ lệ rơi bí kíp (rơi xuống đất, không thuộc về ai – ai nhanh tay thì nhặt): boss thế giới / boss dã ngoại / boss phó bản – cố ý rất hiếm,
 // không nhân theo hệ số rơi đồ của máy chủ
 const JH_DROP = { world: 0.02, field: 0.002, dungeon: 0.003 };   // dã ngoại hiếm nhất: ~1/500
-// trúng người chơi (PK): hệ số sát thương ×0,4 (≈ một chiêu thường của phái), khống chế và số nhịp độc giảm một nửa –
-// phủ cả màn hình nên không thể để một chiêu là thắng
-const JH_PVP = 0.4;
-module.exports = { JIANGHU, JH_SLOT, JH_DROP, JH_AREA, JH_PVP };
+module.exports = { JIANGHU, JH_SLOT, JH_DROP, JH_AREA };
