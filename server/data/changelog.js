@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '28/10/2026',
     items: [
+      '💎 CHỢ PHIÊN: bày bán được bằng Nguyên Bảo – khi bày đồ chọn 💰 Lượng hoặc 💎 Nguyên Bảo (thuế chợ 5% như cũ). Bán hết hàng thì sạp tự động dẹp, nhường chỗ cho người khác.',
       '🏪 CHỢ PHIÊN: mở gian hàng ở bất kỳ chỗ trống nào trong chợ bằng nút "🏪 Sạp hàng của tôi" (hoặc dùng Lệnh Bài Bán Hàng) – không cần tìm Quản Lý Chợ. Gian hàng mở 6 giờ rồi tự dẹp để nhường chỗ (đồ chưa bán vẫn giữ, mở lại nút để thu về). Quảng trường giữa chợ bỏ cây, lát gạch trơn cho rộng chỗ bày hàng.',
       '🎨 Vẽ lại Sứ Giả Hoa Sơn (Tương Dương) và Chủ Trì Luận Kiếm (đỉnh Hoa Sơn) cùng phong cách các NPC khác: kiếm khách phái Hoa Sơn áo tím trắng thêu hoa mai, kiếm đeo tua.',
       '🐉 2 LONG ẤN MỚI (nay đủ 5): ⚡ Lôi Long Chấn Thiên – rồng sấm giáng 7 tia sét xuống diện rộng, làm choáng kẻ địch 1,5 giây; 🌑 Ám Long Phệ Hồn – rồng bóng tối mở xoáy nuốt hồn, làm chậm 3 giây và hút 25% sát thương gây ra thành sinh lực. Bí kíp rơi từ Boss / đổi Hoa Đăng như 3 Long Ấn cũ, hoặc mua 800 Nguyên Bảo ở Kỳ Trân Các.',

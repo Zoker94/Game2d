@@ -53,7 +53,7 @@
   function close() { const b = $('mk-box'); if (b) b.remove(); cur = null; pick = null; }
   function row(it, act) {
     return `<div class="mk-it" data-k="${it.k}"><img src="${UI.iconUrl(it.id)}" class="ic" width="34" height="34" data-tip="${it.k}">
-      <div class="mk-nm"><b>${UI.itemName(it.id, it.plus)}</b><small>x${it.qty} · <span class="mk-pr">${money(it.price)}</span> lượng / cái</small></div>${act}</div>`;
+      <div class="mk-nm"><b>${UI.itemName(it.id, it.plus)}</b><small>x${it.qty} · <span class="mk-pr ${it.cur === 'knb' ? 'knb' : ''}">${money(it.price)}</span> ${it.cur === 'knb' ? '💎 Nguyên Bảo' : 'lượng'} / cái</small></div>${act}</div>`;
   }
   function bindTips(el, items) {
     el.querySelectorAll('[data-tip]').forEach(im => {
@@ -78,12 +78,12 @@
     }
     b.querySelector('.mk-t').textContent = (d.mine ? '🏪 ' : '🛒 ') + d.name;
     if (!d.mine) {   // gian hàng người khác: mua
-      body.innerHTML = `<p class="small muted">Chủ gian hàng: <b>${esc(d.seller)}</b> · Ngân lượng của bạn: <b style="color:#ffd76a">${money(G.me && G.me.gold)}</b></p>` +
+      body.innerHTML = `<p class="small muted">Chủ gian hàng: <b>${esc(d.seller)}</b> · Bạn có: <b style="color:#ffd76a">${money(G.me && G.me.gold)}</b> lượng · <b style="color:#7fe0ff">${money(G.me && G.me.knb)}</b> 💎</p>` +
         (d.items.map(it => row(it, `<div class="mk-act">${it.qty > 1 ? `<input type="number" class="mk-q" min="1" max="${it.qty}" value="1">` : ''}<button class="btn small primary" data-buy="${it.k}">Mua</button></div>`)).join('') || '<p class="muted small">Gian hàng đã bán hết.</p>');
       body.querySelectorAll('.mk-q').forEach(q => q.onkeydown = e => e.stopPropagation());
       body.querySelectorAll('[data-buy]').forEach(btn => btn.onclick = () => {
         const it = d.items.find(x => String(x.k) === btn.dataset.buy), q = btn.parentNode.querySelector('.mk-q'), n = q ? Math.max(1, Math.min(it.qty, q.value | 0)) : 1;
-        G.modal(`Mua ${plain(it.id, it.plus)} x${n} với giá ${money(it.price * n)} lượng?`, [{ t: 'Mua', cls: 'primary', fn: () => emit({ op: 'buy', uid: d.uid, k: it.k, qty: n }) }, { t: 'Huỷ' }]);
+        G.modal(`Mua ${plain(it.id, it.plus)} x${n} với giá ${money(it.price * n)} ${it.cur === 'knb' ? 'Nguyên Bảo' : 'lượng'}?`, [{ t: 'Mua', cls: 'primary', fn: () => emit({ op: 'buy', uid: d.uid, k: it.k, qty: n }) }, { t: 'Huỷ' }]);
       });
       bindTips(body, d.items);
       return;
@@ -91,11 +91,11 @@
     // gian hàng của mình
     const left = Math.max(0, d.until - Date.now()), h = Math.floor(left / 3600000), m = Math.floor(left / 60000) % 60;
     const bag = (G.me ? G.me.inv : []).filter(x => x.id !== 'stall_token');
-    body.innerHTML = `<p class="small">${d.live ? `Đang mở · còn <b>${h} giờ ${m} phút</b>` : '<span class="warn">Đã hết hạn – thu đồ về túi rồi dùng Lệnh Bài mới để mở lại</span>'} · Đã bán <b>${d.sold}</b> món, thu <b style="color:#ffd76a">${money(d.earned)}</b> lượng</p>` +
+    body.innerHTML = `<p class="small">${d.live ? `Đang mở · còn <b>${h} giờ ${m} phút</b>` : '<span class="warn">Đã hết hạn – thu đồ về túi rồi dùng Lệnh Bài mới để mở lại</span>'} · Đã bán <b>${d.sold}</b> món, thu <b style="color:#ffd76a">${money(d.earned)}</b> lượng${d.earnedKnb ? ` + <b style="color:#7fe0ff">${money(d.earnedKnb)}</b> 💎` : ''}<br><span class="muted">Bán hết hàng sạp sẽ tự dẹp.</span></p>` +
       (d.items.map(it => row(it, `<button class="btn small" data-rm="${it.k}">Thu về</button>`)).join('') || '<p class="muted small">Chưa bày món nào.</p>') +
       (d.live ? `<div class="mk-sub">Bày thêm đồ từ túi (${d.items.length}/12)</div>
         <div class="mk-bag">${bag.map(s => `<img src="${UI.iconUrl(s.id)}" class="ic ${pick === s.uid ? 'sel' : ''}" width="34" height="34" data-uid="${s.uid}" title="${esc(plain(s.id, s.plus))} x${s.qty}">`).join('') || '<span class="muted small">Túi trống</span>'}</div>
-        ${pick ? (() => { const s = bag.find(x => x.uid === pick); return s ? `<div class="mk-row"><b class="small">${UI.itemName(s.id, s.plus)}</b>${s.qty > 1 ? `<input type="number" class="mk-aq" min="1" max="${s.qty}" value="${s.qty}" title="Số lượng">` : ''}<input type="number" class="mk-ap" min="1" placeholder="Giá / cái (lượng)"><button class="btn small primary" data-add>Bày bán</button></div>` : ''; })() : ''}` : '') +
+        ${pick ? (() => { const s = bag.find(x => x.uid === pick); return s ? `<div class="mk-row"><b class="small">${UI.itemName(s.id, s.plus)}</b>${s.qty > 1 ? `<input type="number" class="mk-aq" min="1" max="${s.qty}" value="${s.qty}" title="Số lượng">` : ''}<input type="number" class="mk-ap" min="1" placeholder="Giá / cái"><select class="mk-cur" title="Bán bằng"><option value="gold">💰 Lượng</option><option value="knb">💎 Nguyên Bảo</option></select><button class="btn small primary" data-add>Bày bán</button></div>` : ''; })() : ''}` : '') +
       `<div class="mk-row" style="margin-top:8px"><button class="btn small red" data-close>${d.live ? 'Dẹp gian hàng (đồ về túi)' : 'Thu hết đồ về túi'}</button></div>`;
     body.querySelectorAll('[data-rm]').forEach(btn => btn.onclick = () => emit({ op: 'remove', k: +btn.dataset.rm }));
     body.querySelectorAll('[data-uid]').forEach(im => im.onclick = () => { pick = im.dataset.uid; render(); });
@@ -104,7 +104,8 @@
     if (add) add.onclick = () => {
       const q = body.querySelector('.mk-aq'), pr = +body.querySelector('.mk-ap').value;
       if (!(pr >= 1)) return UI.toast('Nhập giá bán', 'error');
-      emit({ op: 'add', uid: pick, qty: q ? +q.value : 1, price: pr }); pick = null;
+      const cu = body.querySelector('.mk-cur');
+      emit({ op: 'add', uid: pick, qty: q ? +q.value : 1, price: pr, cur: cu ? cu.value : 'gold' }); pick = null;
     };
     const cl = body.querySelector('[data-close]');
     if (cl) cl.onclick = () => G.modal('Dẹp gian hàng? Đồ chưa bán sẽ về túi.', [{ t: 'Dẹp', cls: 'red', fn: () => emit({ op: 'close' }) }, { t: 'Huỷ' }]);
@@ -127,7 +128,7 @@
   window.Market = {
     collect, draw, hit,
     onStalls(list) { stalls = Array.isArray(list) ? list : []; },
-    onStall(d) { cur = d; render(); },
+    onStall(d) { if (!d) return close(); if (d.closedSold && !$('mk-box')) return; cur = d; render(); },   // null: gian hàng vừa đóng; bán hết khi chủ không mở bảng: chỉ báo tin
     openStall(s) { emit({ op: s.uid === (G.user && G.user.id) ? 'mine' : 'view', uid: s.uid }); },
     openNpc(d) { cur = d.market || { mine: true, none: true }; render(); if (d.talk) UI.toast(d.talk, 'info'); },
     refresh() { if (cur && $('mk-box')) render(); }

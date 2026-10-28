@@ -28,12 +28,12 @@ class Market {
 
   itemView(it) {
     const s = it.s, d = ITEMS[s.id] || {};
-    return { k: it.k, id: s.id, qty: s.qty, plus: s.plus || 0, price: it.price, name: d.name, rarity: d.rarity, icon: d.icon, tier: d.tier, br: s.br, el: s.el, fx: s.fx, gems: s.gems };
+    return { k: it.k, id: s.id, qty: s.qty, plus: s.plus || 0, price: it.price, cur: it.cur || 'gold', name: d.name, rarity: d.rarity, icon: d.icon, tier: d.tier, br: s.br, el: s.el, fx: s.fx, gems: s.gems };
   }
   view(uid, me) {
     const s = this.stalls[uid];
     if (!s) return null;
-    return { uid, name: s.name, seller: s.seller, mine: uid === me, live: this.live(s), until: s.until, earned: s.earned || 0, sold: s.sold || 0, items: s.items.map(it => this.itemView(it)) };
+    return { uid, name: s.name, seller: s.seller, mine: uid === me, live: this.live(s), until: s.until, earned: s.earned || 0, earnedKnb: s.earnedKnb || 0, sold: s.sold || 0, items: s.items.map(it => this.itemView(it)) };
   }
 
   action(p, d) {
@@ -42,7 +42,7 @@ class Market {
     if (op === 'mine') return p.socket.emit('stall', this.view(p.userId, p.userId) || { mine: true, none: true, tokens: U.countItem(p.c, TOKEN) });
     if (op === 'view') { const v = this.view(String(d.uid || ''), p.userId); if (v && (v.live || v.mine)) p.socket.emit('stall', v); return; }
     if (op === 'open') return this.open(p, d.name);
-    if (op === 'add') return this.add(p, d.uid, d.qty, d.price);
+    if (op === 'add') return this.add(p, d.uid, d.qty, d.price, d.cur);
     if (op === 'remove') return this.remove(p, d.k);
     if (op === 'buy') return this.buy(p, String(d.uid || ''), d.k, d.qty);
     if (op === 'close') return this.close(p);
@@ -65,12 +65,14 @@ class Market {
     p.socket.emit('stall', this.view(p.userId, p.userId));
   }
 
-  add(p, uid, qty, price) {
+  // cur: 'gold' (ngân lượng) hoặc 'knb' (Nguyên Bảo)
+  add(p, uid, qty, price, cur) {
+    cur = cur === 'knb' ? 'knb' : 'gold';
     const st = this.stalls[p.userId];
     if (!this.live(st)) return this.toast(p, 'Bạn chưa mở gian hàng', 'error');
     if (st.items.length >= MAX_ITEMS) return this.toast(p, `Gian hàng tối đa ${MAX_ITEMS} món`, 'error');
     price = Math.floor(+price);
-    if (!(price >= 1 && price <= 2e9)) return this.toast(p, 'Giá không hợp lệ', 'error');
+    if (!(price >= 1 && price <= (cur === 'knb' ? 1e7 : 2e9))) return this.toast(p, 'Giá không hợp lệ', 'error');
     const s = p.c.inv.find(x => x.uid === uid);
     if (!s) return;
     const it = ITEMS[s.id];
@@ -79,9 +81,9 @@ class Market {
     qty = U.clamp(qty | 0 || 1, 1, s.qty);
     const snap = Object.assign({}, s, { qty });
     if (!U.removeByUid(p.c, uid, qty)) return;
-    st.items.push({ k: st.seq++, s: snap, price });
+    st.items.push({ k: st.seq++, s: snap, price, cur });
     this.db.markDirty(); p.dirtyMe = true;
-    this.toast(p, `Đã bày bán ${it.name} x${qty} – ${price.toLocaleString('vi-VN')} lượng / cái`, 'reward');
+    this.toast(p, `Đã bày bán ${it.name} x${qty} – ${price.toLocaleString('vi-VN')} ${cur === 'knb' ? 'Nguyên Bảo' : 'lượng'} / cái`, 'reward');
     this.broadcast();
     p.socket.emit('stall', this.view(p.userId, p.userId));
   }
@@ -128,21 +130,31 @@ class Market {
     if (i < 0) return this.toast(p, 'Món này vừa có người mua mất', 'error');
     const it = st.items[i];
     qty = U.clamp(qty | 0 || 1, 1, it.s.qty);
-    const cost = it.price * qty;
-    if (p.c.gold < cost) return this.toast(p, 'Không đủ ngân lượng', 'error');
+    const cost = it.price * qty, knb = it.cur === 'knb', unit = knb ? 'Nguyên Bảo' : 'lượng', key = knb ? 'knb' : 'gold';
+    if ((p.c[key] || 0) < cost) return this.toast(p, knb ? 'Không đủ Nguyên Bảo' : 'Không đủ ngân lượng', 'error');
     const part = Object.assign({}, it.s, { qty });
     if (!this.giveBack(p.c, part)) return this.toast(p, 'Túi đồ đầy', 'error');
-    p.c.gold -= cost;
+    p.c[key] -= cost;
     it.s.qty -= qty;
     if (it.s.qty <= 0) st.items.splice(i, 1);
     const get = Math.floor(cost * (1 - TAX)), name = (ITEMS[part.id] || {}).name || part.id;
-    st.earned = (st.earned || 0) + get; st.sold = (st.sold || 0) + qty;
+    if (knb) st.earnedKnb = (st.earnedKnb || 0) + get; else st.earned = (st.earned || 0) + get;
+    st.sold = (st.sold || 0) + qty;
     const seller = this.w.players.get(uid);
-    if (seller) { seller.c.gold += get; seller.dirtyMe = true; this.toast(seller, `💰 ${p.c.name} đã mua ${name} x${qty} ở gian hàng của bạn: +${get.toLocaleString('vi-VN')} lượng (thuế chợ 5%)`, 'reward'); }
-    else { const u = this.db.data.users[uid]; if (u && u.character) u.character.gold = (u.character.gold || 0) + get; }
-    this.db.log && this.db.log('market', `${p.c.name} mua ${name} x${qty} của ${st.seller} giá ${cost}`);
+    if (seller) { seller.c[key] = (seller.c[key] || 0) + get; seller.dirtyMe = true; this.toast(seller, `💰 ${p.c.name} đã mua ${name} x${qty} ở gian hàng của bạn: +${get.toLocaleString('vi-VN')} ${unit} (thuế chợ 5%)`, 'reward'); }
+    else { const u = this.db.data.users[uid]; if (u && u.character) u.character[key] = (u.character[key] || 0) + get; }
+    this.db.log && this.db.log('market', `${p.c.name} mua ${name} x${qty} của ${st.seller} giá ${cost} ${unit}`);
+    this.toast(p, `Đã mua ${name} x${qty} – ${cost.toLocaleString('vi-VN')} ${unit}`, 'reward');
+    // bán hết hàng: tự dẹp gian hàng, nhường chỗ cho người khác
+    if (!st.items.length) {
+      delete this.stalls[uid];
+      if (seller) { this.toast(seller, `🏪 Gian hàng đã bán hết (thu ${(st.earned || 0).toLocaleString('vi-VN')} lượng${st.earnedKnb ? ` + ${st.earnedKnb.toLocaleString('vi-VN')} Nguyên Bảo` : ''}) – tự động dẹp sạp.`, 'reward'); seller.socket.emit('stall', { mine: true, none: true, tokens: U.countItem(seller.c, TOKEN), closedSold: true }); }
+      this.db.markDirty(); p.dirtyMe = true;
+      this.broadcast();
+      p.socket.emit('stall', null);
+      return;
+    }
     this.db.markDirty(); p.dirtyMe = true;
-    this.toast(p, `Đã mua ${name} x${qty} – ${cost.toLocaleString('vi-VN')} lượng`, 'reward');
     this.broadcast();
     p.socket.emit('stall', this.view(uid, p.userId));
   }
