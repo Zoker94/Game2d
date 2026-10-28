@@ -46,6 +46,7 @@ world.party = new (require('./game/party').Party)(world);
 world.dungeon = new (require('./game/dungeon').Dungeon)(world);
 world.sect = new (require('./game/sect').Sect)(world);
 world.daihoi = new (require('./game/daihoi').DaiHoi)(world, features, db);
+world.hoason = new (require('./game/hoason').HoaSon)(world, features, db);
 const { Social } = require('./game/social');
 const social = new Social(world, features, db);
 world.start();
@@ -402,6 +403,7 @@ io.on('connection', socket => {
     else if (d.op === 'leave' && player.mapId === 'dai_hoi') world.daihoi.leave(player);
     else if (d.op === 'view') world.daihoi.sync(player);
   }));
+  on('hoason', inGame(d => world.hoason.action(player, d)));
   on('sellMany', inGame(d => world.sellMany(player, d && d.uids)));
   on('enhance', inGame(d => world.enhance(player, d || {})));
   on('gem', inGame(d => world.gems.action(player, d)));

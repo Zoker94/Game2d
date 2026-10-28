@@ -291,6 +291,8 @@
     s.on('giftcodes', d => Gift.onView(d));
     s.on('duelReq', d => Duel.onReq(d));
     s.on('daihoi', d => DaiHoi.onState(d));
+    s.on('hoason', d => HoaSon.onState(d));
+    s.on('hoasonNpc', d => HoaSon.onNpc(d));
     s.on('gmList', d => GM.onList(d));
     s.on('pin', d => UI.pin(d));
     s.on('pinOff', id => UI.pinOff(id));
@@ -1274,7 +1276,8 @@
     const vw = W / zoom, vh = H / zoom;
     const fdt = Math.min(0.05, (now - (G._lastDraw || now)) / 1000); G._lastDraw = now;
     // camera đi theo mượt
-    let tx = Math.max(0, Math.min(m.w * TILE - vw, s.x - vw / 2)), ty = Math.max(0, Math.min(m.h * TILE - vh, s.y - vh / 2 - 20));
+    const foc = HoaSon.camFocus() || s;   // Hoa Sơn Luận Kiếm, chế độ Xem thi đấu: camera theo trận đang đấu
+    let tx = Math.max(0, Math.min(m.w * TILE - vw, foc.x - vw / 2)), ty = Math.max(0, Math.min(m.h * TILE - vh, foc.y - vh / 2 - 20));
     if (m.w * TILE < vw) tx = (m.w * TILE - vw) / 2;
     if (m.h * TILE < vh) ty = (m.h * TILE - vh) / 2;
     if (G._camSnap) { cam.x = tx; cam.y = ty; G._camSnap = false; }
@@ -1345,6 +1348,7 @@
     }
 
     DaiHoi.drawGround(ctx, now);
+    HoaSon.drawGround(ctx, now);
     BossFX.drawGround(ctx, now);
     Duel.draw(ctx, now);
     drawGhosts(now);

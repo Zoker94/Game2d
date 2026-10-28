@@ -48,6 +48,7 @@ const MAP_DEFS = {
       { id: 'tieu_cuc',   x: 28, y: 13 },
       { id: 'tang_kinh',  x: 26, y: 18 },
       { id: 'dh_su_gia',  x: 17, y: 20 },
+      { id: 'hs_su_gia',  x: 21, y: 20 },
       { id: 'pho_ban',    x: 26, y: 15 }
     ],
     spawns: []
@@ -364,6 +365,13 @@ const MAP_DEFS = {
     npcs: [{ id: 'xa_phu', x: 36, y: 17 }],
     spawns: [['khoang_ma', 9], ['huyen_hat', 8], ['hong_mang', 8], ['khoang_ma', 6]]
   },
+  // Hoa Sơn Luận Kiếm: đỉnh núi phủ tuyết, sân đá có 5 vòng đài (giữa + 4 góc); ai cũng lên xem được, chỉ đấu thủ được giao chiến
+  hoa_son_ld: {
+    name: 'Hoa Sơn Luận Kiếm', theme: 'snow', w: 44, h: 34, seed: 97, lv: '30+', safe: true, hoason: true, minLv: 1,
+    portals: [],
+    npcs: [{ id: 'hs_chu_tri', x: 22, y: 3 }],
+    spawns: []
+  },
   // lôi đài riêng cho thách đấu 1-1: không cổng, không quái; chỉ vào được khi thách đấu, đấu xong tự đưa về chỗ cũ
   ty_vo_dai: {
     name: 'Lôi Đài Tỷ Võ', theme: 'arena', w: 30, h: 22, seed: 95, lv: '1+', safe: true, duelArena: true, minLv: 1,
@@ -598,6 +606,9 @@ function generate(id, def = MAP_DEFS[id]) {
     for (const dx of [-9, -5, 5, 9]) props.push({ x: cx + dx, y: 5, k: 'banner' });
     for (const [px, py] of [[8, 9], [w - 9, 9], [8, h - 10], [w - 9, h - 10], [cx - 12, cy], [cx + 12, cy]]) props.push({ x: px, y: py, k: 'stonelamp' });
   }
+  if (def.hoason) {   // đỉnh Hoa Sơn: sân đá phẳng, viền thông tuyết
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) set(x, y, (x < 2 || x > w - 3 || y < 2 || y > h - 3) ? T.PINE : (y < 5 ? T.SNOW : T.FLOOR));
+  }
   if (def.tourney) {   // Đại Hội: sân đá rộng, không chướng ngại, hồ nước bốn góc
     for (let y = 2; y < h - 2; y++) for (let x = 2; x < w - 2; x++) set(x, y, T.FLOOR);
     for (const [qx, qy] of [[4, 4], [w - 7, 4], [4, h - 7], [w - 7, h - 7]]) for (let y = 0; y < 3; y++) for (let x = 0; x < 3; x++) set(qx + x, qy + y, T.WATER);
@@ -684,7 +695,7 @@ function generate(id, def = MAP_DEFS[id]) {
   const bossSpot = farFromPortals.length ? farFromPortals[Math.floor(r() * farFromPortals.length)] : start;
 
   return {
-    id, name: def.name, theme: def.theme, w, h, tiles: g, safe: !!def.safe, pvp: !!def.pvp, tourney: !!def.tourney, duelArena: !!def.duelArena, minLv: def.minLv || 1, lv: def.lv, tier: def.tier ?? 0, town: !!def.town,
+    id, name: def.name, theme: def.theme, w, h, tiles: g, safe: !!def.safe, pvp: !!def.pvp, tourney: !!def.tourney, duelArena: !!def.duelArena, hoason: !!def.hoason, minLv: def.minLv || 1, lv: def.lv, tier: def.tier ?? 0, town: !!def.town,
     portals, npcs: def.npcs, spawns, walkable, buildings, props, sect: def.sect || null, noPk: !!def.noPk,
     boss: def.temple ? { x: cx, y: cy - 4 } : { x: bossSpot % w, y: (bossSpot / w) | 0 },   // miếu: Boss đứng giữa sân
     center: { x: cx, y: cy }

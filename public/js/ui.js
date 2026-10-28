@@ -1527,6 +1527,7 @@
     if (d.action === 'bank') { UI.openPanel('bank'); UI.toast(d.talk); return; }
     if (d.action === 'escort') { Escort.open(d); return; }
     if (d.action === 'daihoi') { DaiHoi.open(d); return; }
+    if (d.action === 'hoason') { HoaSon.open(d); return; }
     if (d.action === 'dungeon') { Dungeon.open(d); return; }
     if (d.action === 'market') { Market.openNpc(d); return; }
     if (d.action === 'sect') { SectUI.open(d); return; }

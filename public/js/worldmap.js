@@ -84,7 +84,7 @@
     }
     let info;
     if (!sel || sel === cur) info = `<div class="wm-info"><b>📍 ${UI.esc(maps[cur] ? maps[cur].name : '')}</b> <span class="muted">· Chạm vào một vùng đất để xem đường đi.</span>${nav.to ? ` <button class="btn small" id="wm-stop">✖ Tắt dẫn đường</button>` : ''}</div>`;
-    else if (!path) info = `<div class="wm-info"><b>${UI.esc(maps[sel].name)}</b>: không có cổng nối tới. ${sel === 'dai_hoi' ? 'Gặp <b>Sứ Giả Đại Hội</b> ở Tương Dương để vào.' : 'Thuê <b>Xa Phu</b> ở Tương Dương để đi nhanh.'}</div>`;
+    else if (!path) info = `<div class="wm-info"><b>${UI.esc(maps[sel].name)}</b>: không có cổng nối tới. ${sel === 'dai_hoi' ? 'Gặp <b>Sứ Giả Đại Hội</b> ở Tương Dương để vào.' : sel === 'hoa_son_ld' ? 'Gặp <b>Sứ Giả Hoa Sơn</b> ở Tương Dương để lên núi.' : 'Thuê <b>Xa Phu</b> ở Tương Dương để đi nhanh.'}</div>`;
     else {
       const first = path[0];
       info = `<div class="wm-info"><b>Tới ${UI.esc(maps[sel].name)}</b> · ${path.length} bản đồ · Ra cổng <b class="wm-dir">${SIDE_NAME[first.side]}</b>

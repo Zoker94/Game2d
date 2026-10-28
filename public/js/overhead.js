@@ -395,14 +395,16 @@
     if (o.rank) drawBadge(ctx, x - w / 2 - 10, top - 11, o.rank);
     // Võ Lâm Minh Chủ: danh hiệu riêng vàng rực thay cho danh hiệu lực chiến
     if (o.mc) {
-      const now = performance.now(), mt = '👑【Võ Lâm Minh Chủ】';
+      // 1 = Võ Lâm Minh Chủ (vàng), 2 = Hoa Sơn Kiếm Thánh (bạc xanh), 3 = cả hai
+      const now = performance.now(), ks = o.mc === 2, mt = o.mc === 3 ? '👑【Minh Chủ · Kiếm Thánh】' : ks ? '⚔️【Hoa Sơn Kiếm Thánh】' : '👑【Võ Lâm Minh Chủ】';
       const mw = textW('900 9.5px Be Vietnam Pro, system-ui, sans-serif', mt);
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
       const g = ctx.createLinearGradient(x - mw / 2, 0, x + mw / 2, 0);
       const sh = (now / 1500) % 1;
-      g.addColorStop(0, 'rgba(255,140,20,.15)'); g.addColorStop(Math.max(0, sh - 0.1), 'rgba(255,180,40,.35)'); g.addColorStop(sh, 'rgba(255,250,200,.85)'); g.addColorStop(Math.min(1, sh + 0.1), 'rgba(255,180,40,.35)'); g.addColorStop(1, 'rgba(255,140,20,.15)');
+      const c0 = ks ? '90,170,255' : '255,140,20', c1 = ks ? '140,210,255' : '255,180,40', c2 = ks ? '235,250,255' : '255,250,200';
+      g.addColorStop(0, `rgba(${c0},.15)`); g.addColorStop(Math.max(0, sh - 0.1), `rgba(${c1},.35)`); g.addColorStop(sh, `rgba(${c2},.85)`); g.addColorStop(Math.min(1, sh + 0.1), `rgba(${c1},.35)`); g.addColorStop(1, `rgba(${c0},.15)`);
       ctx.fillStyle = g; ctx.fillRect(Math.round(x - mw / 2 - 4), top - 30, Math.round(mw + 8), 14); ctx.restore();
-      outlined(ctx, mt, x, top - 23, 11, '#ffe060', '#5a1a00', 900);
+      outlined(ctx, mt, x, top - 23, 11, ks ? '#c8ecff' : '#ffe060', ks ? '#0a2a4a' : '#5a1a00', 900);
       let yTop = top - 31;
       if (o.guild) { outlined(ctx, '«' + o.guild + '»', x, top - 37, 10, '#7fb8ff', '#000', 600); yTop = top - 44; }
       return yTop;

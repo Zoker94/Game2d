@@ -13,7 +13,8 @@ const EVENT_INFO = {
   huntRace:  { name: 'Đua Top Săn Quái', desc: 'Ai tiêu diệt nhiều quái nhất trong 30 phút sẽ nhận thưởng lớn. Tự động 19:00 và 21:30.', icon: '🏆' },
   treasure:  { name: 'Truy Tìm Bảo Rương', desc: 'Bảo Rương xuất hiện rải rác khắp các bản đồ luyện công. Đánh vỡ rương để nhận quà! Mỗi 2 giờ (giờ chẵn, phút 40).', icon: '💰' },
   quiz:      { name: 'Đố Vui Võ Lâm', desc: 'Câu hỏi xuất hiện ở kênh Thế Giới, người trả lời đúng đầu tiên nhận Nguyên Bảo. Mỗi 15 phút.', icon: '❓' },
-  daiHoi:    { name: 'Đại Hội Võ Lâm', desc: 'Hỗn chiến tranh ngôi Võ Lâm Minh Chủ tại lôi đài Đại Hội (cấp 20+, gặp Sứ Giả Đại Hội ở Tương Dương). Hạ người chơi, Hộ Pháp và Thiên Hạ Đệ Nhất Cao Thủ để ghi điểm. 20:30 Thứ 4, Thứ 7, Chủ Nhật.', icon: '⚔️' },
+  daiHoi:    { name: 'Đại Hội Võ Lâm', desc: 'Hỗn chiến tranh ngôi Võ Lâm Minh Chủ tại lôi đài Đại Hội (cấp 20+, gặp Sứ Giả Đại Hội ở Tương Dương). Hạ người chơi, Hộ Pháp và Thiên Hạ Đệ Nhất Cao Thủ để ghi điểm. 20:30 Chủ Nhật hằng tuần (1 tuần 1 lần). Minh Chủ giữ danh hiệu 7 ngày.', icon: '⚔️' },
+  hoaSon:    { name: 'Hoa Sơn Luận Kiếm', desc: 'Giải đấu loại trực tiếp 1 chọi 1 trên đỉnh Hoa Sơn (cấp 30+, ghi danh với Sứ Giả Hoa Sơn ở Tương Dương). Vô địch nhận danh hiệu Hoa Sơn Kiếm Thánh 7 ngày, Á quân và hạng Ba có thưởng. Ai cũng lên núi xem được. 20:00 Thứ 7 hằng tuần.', icon: '⛰️' },
   lantern:   { name: 'Lễ Hội Hoa Đăng', desc: 'Quái rơi Hoa Đăng, đổi quà tại Lễ Quan. Tự động cả ngày Thứ 7 & Chủ Nhật.', icon: '🏮' }
 };
 
@@ -144,6 +145,7 @@ class Features {
     this.tickPins(now);
     if (now - (this._wbAt || 0) > 1500) { this._wbAt = now; this.worldBossTop(); }
     if (this.w.daihoi) this.w.daihoi.tick(now);
+    if (this.w.hoason) this.w.hoason.tick(now);
     if (now - this.lastLb > 30000) { this.lastLb = now; this.computeLeaderboard(); }
   }
 
@@ -168,10 +170,11 @@ class Features {
       if (!(e && e.start >= winStart)) this.startEvent(k, st + len - mod);
     }
     if (mi % 15 === 5) this.startEvent('quiz', 1);
-    if (dow === 0 || dow === 3 || dow === 6) {   // Đại Hội Võ Lâm 20:30
+    if (dow === 0) {   // Đại Hội Võ Lâm 20:30 Chủ Nhật, 1 tuần 1 lần (Minh Chủ giữ 7 ngày)
       if (h === 20 && (mi === 20 || mi === 25)) this.announce(`⚔️ Đại Hội Võ Lâm sẽ khai mạc sau ${30 - mi} phút! Gặp Sứ Giả Đại Hội ở Tương Dương để vào lôi đài (cấp 20+).`);
       if (h === 20 && mi === 30) this.startEvent('daiHoi', 30);
     }
+    if (this.w.hoason) this.w.hoason.onMinute(mod);   // Hoa Sơn Luận Kiếm 20:00 Thứ 7
     if ((dow === 0 || dow === 6) && !this.isActive('lantern')) this.startEvent('lantern', (24 * 60 - mod));
     if (this.lastMinute % 5 === 0) this.broadcastEvents();
   }
@@ -242,6 +245,8 @@ class Features {
       this.announce(`${info.icon} Sự kiện ${info.name} bắt đầu! ${minutes} phút, top 3 nhận thưởng lớn!`);
     } else if (k === 'daiHoi') {
       this.w.daihoi.start(minutes);
+    } else if (k === 'hoaSon') {   // giải tự báo tin; không đủ người thì tắt luôn
+      if (this.w.hoason && !this.w.hoason.running && !this.w.hoason.start(true)) e.active = false;
     } else if (k === 'treasure') {
       e.chests = 0;
       const tpl = { id: 'chest', name: 'Bảo Rương', sprite: 'chest', color: '#ffd700', lv: 1, hp: 1, atk: 0, def: 0, exp: 0, gold: 0, speed: 0, static: true };
@@ -267,6 +272,7 @@ class Features {
     const e = this.events[k];
     if (!e || !e.active) return false;
     e.active = false;
+    if (k === 'hoaSon' && this.w.hoason && this.w.hoason.running) this.w.hoason.abort();
     const info = EVENT_INFO[k];
     if (k === 'huntRace') {
       const top = Object.entries(e.scores || {}).sort((a, b) => b[1].n - a[1].n).slice(0, 10);

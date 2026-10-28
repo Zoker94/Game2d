@@ -1,6 +1,6 @@
 // Đại Hội Võ Lâm: lôi đài hỗn chiến tranh ngôi Võ Lâm Minh Chủ.
 // - Bản đồ 'dai_hoi' vào bằng NPC Sứ Giả Đại Hội (Tương Dương), cấp 20+. Ngoài giờ là nơi an toàn.
-// - Diễn ra Thứ 4, Thứ 7, Chủ Nhật 20:30-21:00 (admin: /event daiHoi [phút]). Trong giờ: hỗn chiến tự do (trừ người cùng bang).
+// - Diễn ra Chủ Nhật hằng tuần 20:30-21:00 (admin: /event daiHoi [phút]). Trong giờ: hỗn chiến tự do (trừ người cùng bang).
 // - Điểm: hạ người chơi +3 (+ thêm theo chuỗi liên trảm của nạn nhân), hạ Hộ Pháp +1, hạ Thiên Hạ Đệ Nhất Cao Thủ +20.
 // - Kết thúc: top 1 thành Võ Lâm Minh Chủ 7 ngày (danh hiệu trên đầu) + thưởng theo hạng.
 const U = require('./util');
@@ -52,7 +52,7 @@ class DaiHoi {
     const pos = this.spawnPos();
     this.w.enterMap(p, MAP, pos.x, pos.y);
     p.dodgeUntil = Date.now() + 3000;
-    this.w.toast(p, this.active ? '⚔️ Đại Hội đang diễn ra! Hạ đối thủ để giành điểm.' : '🏯 Đã đến Đại Hội Võ Lâm. Chờ giờ khai mạc (20:30 Thứ 4, 7, CN).', 'info');
+    this.w.toast(p, this.active ? '⚔️ Đại Hội đang diễn ra! Hạ đối thủ để giành điểm.' : '🏯 Đã đến Đại Hội Võ Lâm. Chờ giờ khai mạc (20:30 Chủ Nhật hằng tuần).', 'info');
     this.sync(p);
   }
   leave(p) {

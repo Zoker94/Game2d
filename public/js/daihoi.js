@@ -15,7 +15,7 @@
     const left = d.until ? Math.max(0, Math.round((d.until - Date.now()) / 60000)) : 0;
     let html = `<div class="dh-hero"><div class="dh-emb">⚔️</div><div class="grow"><h3>Đại Hội Võ Lâm</h3>
       <div class="small">"${UI.esc((npc && npc.talk) || '')}"</div>
-      <div class="dh-state ${d.active ? 'on' : ''}">${d.active ? `🔥 ĐANG DIỄN RA · còn ${left} phút` : '⏳ Khai mạc 20:30 Thứ 4, Thứ 7, Chủ Nhật (30 phút)'}</div></div></div>`;
+      <div class="dh-state ${d.active ? 'on' : ''}">${d.active ? `🔥 ĐANG DIỄN RA · còn ${left} phút` : '⏳ Khai mạc 20:30 Chủ Nhật hằng tuần (30 phút)'}</div></div></div>`;
     html += `<div class="dh-mc">👑 Võ Lâm Minh Chủ: ${mc ? `<b>${UI.esc(mc.name)}</b> <span class="small muted">(${fmt(mc.pts)} điểm · còn ${Math.max(1, Math.ceil((mc.until - Date.now()) / 86400000))} ngày)</span>` : '<span class="muted">Chưa có – hãy là người đầu tiên!</span>'}</div>`;
     html += d.inMap ? `<button class="btn" id="dh-leave">🏯 Rời Đại Hội về Tương Dương</button>`
       : `<button class="btn primary big" id="dh-enter" ${G.me.level < d.minLv ? 'disabled' : ''}>⚔️ Vào lôi đài Đại Hội</button>${G.me.level < d.minLv ? `<div class="warn small">Cần cấp ${d.minLv}</div>` : ''}`;
@@ -50,7 +50,7 @@
       html = `<div class="dh-h">🏆 Kết quả Đại Hội</div><div class="dh-top">${st.final.map(([n, p], i) => `<div><i>${i + 1}</i><b>${UI.esc(n)}</b><span>${p}</span></div>`).join('') || '<div class="muted">Không ai ghi điểm</div>'}</div>
         <div class="dh-me">👑 Minh Chủ: <b>${UI.esc(st.mc || '—')}</b></div>`;
     } else {
-      html = `<div class="dh-h">🏯 Đại Hội Võ Lâm</div><div class="dh-me">Khai mạc 20:30 Thứ 4, Thứ 7, CN.<br>👑 Minh Chủ: <b>${UI.esc(st.mc || 'chưa có')}</b></div>`;
+      html = `<div class="dh-h">🏯 Đại Hội Võ Lâm</div><div class="dh-me">Khai mạc 20:30 Chủ Nhật hằng tuần.<br>👑 Minh Chủ: <b>${UI.esc(st.mc || 'chưa có')}</b></div>`;
     }
     if (h._h !== html) { h.innerHTML = html; h._h = html; }
   }

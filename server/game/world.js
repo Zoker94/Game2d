@@ -240,8 +240,14 @@ class World {
     this.escort.onEnterMap(p, prev, viaPortal);
     for (const r of this.duel.ringsOn(mapId)) p.socket.emit('duelRing', r);
     this.market.onEnterMap(p);
+    if (this.hoason && mapId === 'hoa_son_ld') this.hoason.sync(p);
     this.progressTutorial(p, 'map', { map: baseOf(mapId) });
     this.story.on(p, 'map', { map: baseOf(mapId) });
+  }
+
+  // danh hiệu trên đầu: 1 = Võ Lâm Minh Chủ (Đại Hội), 2 = Hoa Sơn Kiếm Thánh (Hoa Sơn Luận Kiếm)
+  titleFlags(p) {
+    return (this.daihoi && this.daihoi.isMinhChu(p.userId) ? 1 : 0) | (this.hoason && this.hoason.isChamp(p.userId) ? 2 : 0);
   }
 
   // ---------- Khu ----------
@@ -303,7 +309,7 @@ class World {
       expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, gm: this.isGm(p) ? { hide: !!(c.gm && c.gm.hide), safe: !!(c.gm && c.gm.safe) } : null, owner: isOwner(p.user) ? 1 : 0, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null,
-      minhChu: this.daihoi && this.daihoi.isMinhChu(p.userId) ? 1 : 0,
+      minhChu: this.titleFlags(p),
       attr: c.attr || {}, attrFree: attrTotalOf(c) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
       branch: branchOf(c), skills: c.skills || {}, hotbar: c.hotbar, sp: spTotalOf(c) - (c.spSpent || 0),
       mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
@@ -501,6 +507,7 @@ class World {
     const old = c.name;
     c.name = name;
     const mc = this.db.data.minhChu; if (mc && mc.uid === p.userId) mc.name = name;
+    const hs = this.db.data.hoason && this.db.data.hoason.champ; if (hs && hs.uid === p.userId) hs.name = name;
     this.db.log('rename', `${old} → ${name} (${p.userId})`);
     this.db.markDirty();
     p.dirtyMe = true;
@@ -1555,6 +1562,7 @@ class World {
     out.freeRename = !p.c.renameFree;
     if (npc.action === 'escort' || npc.action === 'escortDest') { out.routes = this.escort.routeView(); out.escort = this.escort.meView(p); }
     if (npc.action === 'daihoi') Object.assign(out, this.daihoi.npcView(p));
+    if (npc.action === 'hoason' && this.hoason) Object.assign(out, this.hoason.npcView(p));
     if (npc.action === 'cloak') out.cloak = this.cloakView(p);
     if (npc.action === 'market') out.market = this.market.view(p.userId, p.userId) || { mine: true, none: true, tokens: U.countItem(p.c, 'stall_token') };
     if (npc.action === 'channel') out.channels = this.channelsView(p);
@@ -2338,7 +2346,7 @@ class World {
       const g = p.c.guildId && guilds[p.c.guildId];
       const st = [p.c.name, p.c.cls, p.c.level, g ? g.name : '', p.user.isAdmin ? 1 : 0, this.appearance(p.c), p.stats.maxHp,
         p.stats.power || 0, p.stats.el || '', (rank && rank.get(p.userId)) || 0, p.c.pk || 0, p.c.pkMode | 0, p.c.robUntil > now ? 1 : 0,
-        this.daihoi && this.daihoi.isMinhChu(p.userId) ? 1 : 0, p.buffs.length ? p.buffs.filter(b => b.until > now && b.aura).map(b => [b.aura, b.color]) : 0,
+        this.titleFlags(p), p.buffs.length ? p.buffs.filter(b => b.until > now && b.aura).map(b => [b.aura, b.color]) : 0,
         p.med ? 1 : 0, 0];
       const key = JSON.stringify(st);
       if (key !== p._sk) { p._sk = key; p._sv = ((p._sv || 0) + 1) % 1e6; }
@@ -2352,6 +2360,7 @@ class World {
       ms.push([mon.id, mon.tpl.id, Math.round(mon.x), Math.round(mon.y), mon.dir, mon.moving ? 1 : 0, Math.max(0, Math.round(mon.hp)), mon.maxHp, mon.boss ? 1 : 0, mon.tpl.elite ? 1 : mon.tpl.pbBoss ? 2 : 0, mon.event ? 1 : 0, mon.frozenUntil > now ? 1 : 0, stMask(mon, now)]);
     }
     const cs = m.carts && m.carts.size ? this.escort.snapshot(m.def.id) : null;
+    const hs = m.def.hoason;   // Hoa Sơn Luận Kiếm: đấu thủ đang đấu luôn gửi cho mọi người xem (camera xem thi đấu ở xa nhân vật)
     for (const r of m.players) {
       const gm = this.isGm(r), known = r._known || (r._known = new Map());
       const rx = r.x, ry = r.y, party = r.partyId, opp = r.duel ? (r.duel.a === r ? r.duel.b : r.duel.a) : null;
@@ -2359,7 +2368,7 @@ class World {
       for (const o of pl) {
         const q = o.p;
         if (o.hide && !gm && q !== r) continue;
-        if (q !== r && !(Math.abs(q.x - rx) < AOI_X && Math.abs(q.y - ry) < AOI_Y) && !(party && q.partyId === party) && q !== opp) continue;
+        if (q !== r && !(Math.abs(q.x - rx) < AOI_X && Math.abs(q.y - ry) < AOI_Y) && !(party && q.partyId === party) && q !== opp && !(hs && q.duel)) continue;
         p.push(o.dyn);
         const v = o.hide && gm ? -o.p._sv : o.p._sv;   // bản có cờ tàng hình cho quản trị viên tính là phiên bản khác
         if (known.get(q.id) !== v) { known.set(q.id, v); ps[q.id] = o.st; }

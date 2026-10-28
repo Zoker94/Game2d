@@ -4,6 +4,10 @@ const CHANGELOG = [
   {
     date: '27/10/2026',
     items: [
+      '⛰️ HOA SƠN LUẬN KIẾM (mới): giải đấu loại trực tiếp 1 chọi 1 lúc 20:00 Thứ 7 hằng tuần trên bản đồ mới Hoa Sơn Luận Kiếm. Ghi danh cả tuần với Sứ Giả Hoa Sơn ở Tương Dương (cấp 30+). Vòng đầu đấu song song ở 4 đài phụ, Tranh Hạng Ba và Chung Kết ở đài chính. Vô địch nhận danh hiệu HOA SƠN KIẾM THÁNH 7 ngày + 300 Nguyên Bảo, Á quân và Hạng Ba có thưởng, ai tham gia cũng có quà.',
+      '👁 Ai cũng lên núi xem được: chế độ Xem thi đấu (camera tự theo trận đang đấu, ◀ ▶ đổi trận) hoặc Tự do (tự đi lại quanh các đài).',
+      '⚔️ Đại Hội Võ Lâm nay 1 tuần 1 lần (20:30 Chủ Nhật), Võ Lâm Minh Chủ giữ danh hiệu trọn 7 ngày.',
+      '🔔 Thông báo nhặt / mua / mở đồ nhỏ gọn hơn và nổi lên trên túi đồ – dùng đồ trong túi thấy thông báo ngay.',
       '🛠️ Sửa lỗi kẹt cốt truyện ở bước Sứ Giả Nhiệm Vụ: nếu hôm nay đã nhận thưởng nhiệm vụ hàng ngày (kể cả đã nhận hết) thì bước này tự hoàn thành, không phải chờ sang ngày. Ai đang kẹt chỉ cần mở bảng Nhiệm vụ hoặc vào lại game.',
       '🛠️ Sửa lỗi: máy chủ cập nhật / khởi động lại giữa khung giờ sự kiện (Nhân Đôi Kinh Nghiệm, Săn Quái, Tầm Bảo) thì sự kiện bị mất – nay tự bật lại cho hết phần thời gian còn lại.',
       '🎬 PHIM MỞ ĐẦU: lần đầu vào game sẽ xem đoạn phim mở đầu 9 cảnh theo cốt truyện Võ Mục Di Thư – thiết kỵ Mông Cổ, Tương Dương bị vây, bảy tàn quyển thất lạc, Thiên Ma Giáo tái xuất, chín đại môn phái và chính bạn đặt chân tới cổng thành. Có giọng đọc tiếng Việt (bật / tắt ở góc trên) và phụ đề; chạm để tua, có nút Bỏ qua. Xem lại ở Nhiệm vụ → Cốt truyện → "Xem lại phần mở đầu".',
