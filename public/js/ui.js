@@ -398,7 +398,7 @@
   function skillDetail(s) {
     const tags = [];
     if (s.type === 'single') tags.push(`🎯 Đơn mục tiêu · tầm ${s.range} (${zoneOf(s.range)})`);
-    else if (s.area) tags.push(`🌐 Phủ toàn màn hình quanh bản thân (${s.area.hw * 2}×${s.area.hh * 2}) · đánh mọi kẻ địch trong vùng`);
+    else if (s.area) tags.push(`🌐 Phủ toàn màn hình quanh bản thân (${s.area.hw * 2}×${s.area.hh * 2}) · đánh mọi kẻ địch trong vùng`, '⚖️ Trúng người chơi (PK): 40% sát thương, khống chế và độc giảm một nửa');
     else if (s.type === 'aoe') tags.push(`💥 Diện rộng bán kính ${s.radius} ${s.range ? `· thi triển xa tối đa ${s.range}` : '· quanh bản thân'}`);
     else if (s.type === 'line') tags.push(`➖ Đường thẳng dài ${s.range}, rộng ${s.width || 60} · xuyên mọi kẻ địch`);
     else if (s.type === 'dash') tags.push(`💨 Lướt tới mục tiêu tối đa ${s.range} · sát thương lan quanh điểm đáp`);
