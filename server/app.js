@@ -425,7 +425,7 @@ io.on('connection', socket => {
     world.teleport(player, t.map);
   }));
   on('tutorialClaim', inGame(() => world.claimTutorial(player)));
-  on('daily', inGame(() => socket.emit('daily', features.dailyView(player))));
+  on('daily', inGame(() => { world.story.check(player); socket.emit('daily', features.dailyView(player)); }));
   on('dailyClaim', inGame(d => features.claimDaily(player, d && d.id)));
   on('eventPanel', inGame(() => socket.emit('eventPanel', features.eventPanel(player))));
   on('wheel', inGame(() => features.spinWheel(player)));

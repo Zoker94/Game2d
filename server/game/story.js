@@ -97,6 +97,7 @@ class Story {
     if (step.type === 'equip' && p.c.equip.weapon) this.advance(p);
     else if (step.type === 'level' && p.c.level >= step.n) this.advance(p);
     else if (step.type === 'map' && baseOf(p.mapId) === step.map) this.advance(p);
+    else if (step.type === 'daily' && this.w.features && this.w.features.ensureDaily(p).list.some(q => q.claimed)) this.advance(p);   // hôm nay đã nhận thưởng NV ngày (kể cả đã nhận hết) thì không phải chờ sang ngày
   }
   advance(p, skip) {
     const c = p.c, s = this.state(c), ch = CHAPTERS[s.ch], step = ch.steps[s.st];

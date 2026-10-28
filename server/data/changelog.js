@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '27/10/2026',
     items: [
+      '🛠️ Sửa lỗi kẹt cốt truyện ở bước Sứ Giả Nhiệm Vụ: nếu hôm nay đã nhận thưởng nhiệm vụ hàng ngày (kể cả đã nhận hết) thì bước này tự hoàn thành, không phải chờ sang ngày. Ai đang kẹt chỉ cần mở bảng Nhiệm vụ hoặc vào lại game.',
       '🛠️ Sửa lỗi: máy chủ cập nhật / khởi động lại giữa khung giờ sự kiện (Nhân Đôi Kinh Nghiệm, Săn Quái, Tầm Bảo) thì sự kiện bị mất – nay tự bật lại cho hết phần thời gian còn lại.',
       '🎬 PHIM MỞ ĐẦU: lần đầu vào game sẽ xem đoạn phim mở đầu 9 cảnh theo cốt truyện Võ Mục Di Thư – thiết kỵ Mông Cổ, Tương Dương bị vây, bảy tàn quyển thất lạc, Thiên Ma Giáo tái xuất, chín đại môn phái và chính bạn đặt chân tới cổng thành. Có giọng đọc tiếng Việt (bật / tắt ở góc trên) và phụ đề; chạm để tua, có nút Bỏ qua. Xem lại ở Nhiệm vụ → Cốt truyện → "Xem lại phần mở đầu".',
       '🔒 ĐỒ KHOÁ: đồ mua ở NPC (kể cả Kỳ Trân Các, cửa hàng môn phái) và phần thưởng nhiệm vụ (hướng dẫn, nhiệm vụ ngày, cốt truyện, môn phái) là đồ khoá – không thể giao dịch hay bày bán ở Chợ Phiên. Có biểu tượng 🔒 trên ô đồ và trong mô tả. Đồ khoá không gộp chồng với đồ thường; khảm / luyện đá, chế áo choàng, mở rương từ đồ khoá thì đồ nhận được cũng là đồ khoá. Đồ có sẵn từ trước vẫn giao dịch bình thường.',
