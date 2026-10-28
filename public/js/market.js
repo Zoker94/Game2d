@@ -52,13 +52,15 @@
   }
   function close() { const b = $('mk-box'); if (b) b.remove(); cur = null; pick = null; }
   function row(it, act) {
-    return `<div class="mk-it" data-k="${it.k}"><img src="${UI.iconUrl(it.id)}" class="ic" width="34" height="34" data-tip="${it.k}">
-      <div class="mk-nm"><b>${UI.itemName(it.id, it.plus)}</b><small>x${it.qty} · <span class="mk-pr ${it.cur === 'knb' ? 'knb' : ''}">${money(it.price)}</span> ${it.cur === 'knb' ? '💎 Nguyên Bảo' : 'lượng'} / cái</small></div>${act}</div>`;
+    // ô đồ như trong túi: vòng cường hoá, +N, hệ, ngọc khảm, cấp đồ; bấm / rê để xem chi tiết
+    const d = G.data.items[UI.resolveId(it.id)] || {}, eq = d.type === 'equip';
+    return `<div class="mk-it" data-k="${it.k}"><div class="slot mk-slot r-${d.rarity || 'common'}" data-tip="${it.k}">${eq ? UI.plusRing(it.plus | 0) : ''}<img src="${UI.iconUrl(it.id)}" class="ic" width="34" height="34">${it.plus ? `<span class="plus">+${it.plus}</span>` : ''}${eq ? UI.brBadge(it) + UI.gemDots(d, it) + UI.lvBadge(it.id) : ''}</div>
+      <div class="mk-nm"><b>${UI.itemName(it.id, it.plus)}</b><small>${eq ? `<span class="${G.me.level < (d.lv || 1) ? 'warn' : ''}">Cấp ${d.lv || 1}</span> · ` : ''}x${it.qty} · <span class="mk-pr ${it.cur === 'knb' ? 'knb' : ''}">${money(it.price)}</span> ${it.cur === 'knb' ? '💎 Nguyên Bảo' : 'lượng'} / cái</small></div>${act}</div>`;
   }
   function bindTips(el, items) {
     el.querySelectorAll('[data-tip]').forEach(im => {
       const it = items.find(x => String(x.k) === im.dataset.tip);
-      if (it) im.onmouseenter = e => UI.itemTip(e, it.id, it.plus, it);
+      if (it) { im.onmouseenter = e => UI.itemTip(e, it.id, it.plus, it); im.onmouseleave = () => UI.hideTip(); im.onclick = e => UI.itemTip(e, it.id, it.plus, it); }   // điện thoại: chạm để xem
     });
   }
   function render() {

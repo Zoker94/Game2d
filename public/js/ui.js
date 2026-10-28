@@ -856,6 +856,9 @@
     return t ? `<span class="pfx-aura pfx-aura-${t}"></span><span class="pfx pfx-${t}"></span>${t >= 3 ? `<span class="pfx-glow pfx-glow-${t}"></span>` : ''}${t >= 4 ? '<span class="pfx-spark">✦</span><span class="pfx-spark s2">✦</span>' : ''}` : '';
   }
   UI.plusRing = plusRing;
+  // nhãn cấp đồ (góc dưới phải ô trang bị): đỏ nếu chưa đủ cấp mặc
+  const lvBadge = id => { const it = G.data.items[resolveId(id)]; return it && it.type === 'equip' ? `<span class="ilv ${G.me && G.me.level < (it.lv || 1) ? 'no' : ''}" title="Yêu cầu cấp ${it.lv || 1}">${it.lv || 1}</span>` : ''; };
+  UI.lvBadge = lvBadge;
   function invGrid(body, opts = {}) {
     const me = G.me;
     // 10 ô, lưới 3 cột: nón · dây chuyền · áo choàng / vũ khí · áo · găng / nhẫn trái · quần · nhẫn phải / – giày –
@@ -869,7 +872,7 @@
         const it = e && G.data.items[e.id];
         const ph = !it && placeholderIcon(s === 'ring2' ? 'ring' : s);
         const lbl = s === 'ring' ? 'Nhẫn trái' : s === 'ring2' ? 'Nhẫn phải' : G.data.slots[s];
-        html += `<div class="slot ${it ? 'r-' + it.rarity : 'empty-eq'} ${panelState.sel === 'eq:' + s ? 'sel' : ''}" data-eq="${s}">${it ? `${plusRing(e.plus | 0)}<img src="${iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}${brBadge(e)}${e.bd ? '<span class="bdk" title="Đồ khoá">🔒</span>' : ''}${gemDots(it, e)}` : `${ph ? `<img src="${ph}" class="ic ph" alt="">` : ''}<span class="lbl">${lbl}</span>`}</div>`;
+        html += `<div class="slot ${it ? 'r-' + it.rarity : 'empty-eq'} ${panelState.sel === 'eq:' + s ? 'sel' : ''}" data-eq="${s}">${it ? `${plusRing(e.plus | 0)}<img src="${iconUrl(e.id)}" class="ic" width="36" height="36">${e.plus ? `<span class="plus">+${e.plus}</span>` : ''}${brBadge(e)}${e.bd ? '<span class="bdk" title="Đồ khoá">🔒</span>' : ''}${gemDots(it, e)}${lvBadge(e.id)}` : `${ph ? `<img src="${ph}" class="ic ph" alt="">` : ''}<span class="lbl">${lbl}</span>`}</div>`;
       }
       html += '</div>';
     }
@@ -878,7 +881,7 @@
     for (const s of inv) {
       const it = G.data.items[s.id];
       const cant = it.lv > me.level;
-      html += `<div class="slot r-${it.rarity} ${cant ? 'cant' : ''} ${panelState.sel === s.uid ? 'sel' : ''} ${opts.mark && opts.mark.has(s.uid) ? 'marked' : ''}" data-uid="${s.uid}">${plusRing(s.plus | 0)}<img src="${iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}${s.bd ? '<span class="bdk" title="Đồ khoá">🔒</span>' : ''}${it.type === 'equip' ? brBadge(s) + gemDots(it, s) : ''}</div>`;
+      html += `<div class="slot r-${it.rarity} ${cant ? 'cant' : ''} ${panelState.sel === s.uid ? 'sel' : ''} ${opts.mark && opts.mark.has(s.uid) ? 'marked' : ''}" data-uid="${s.uid}">${plusRing(s.plus | 0)}<img src="${iconUrl(s.id)}" class="ic" width="36" height="36">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}${s.bd ? '<span class="bdk" title="Đồ khoá">🔒</span>' : ''}${it.type === 'equip' ? brBadge(s) + gemDots(it, s) + lvBadge(s.id) : ''}</div>`;
     }
     for (let i = me.inv.length; i < (me.invMax || 48) && !opts.filter; i++) html += '<div class="slot" style="opacity:.35"></div>';
     html += '</div></div>';
