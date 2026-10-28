@@ -33,6 +33,15 @@ def look(nid, sprite, color):
                  'thuyyen': dict()}[sect]
         d.update(elder)
         return d
+    # Hoa Sơn Luận Kiếm: kiếm khách phái Hoa Sơn – áo trắng tím, kiếm đeo tua, thêu hoa mai (Mai Hoa Kiếm Pháp)
+    if nid == 'hs_su_gia':
+        return mk(nid, robe='#9a7ad0', robe2='#f3f0f8', trim='#4a2a7a', belt='#4a2a7a', pants='#3e3452', shoe='#1e1828', hair='#1a1420', hairstyle='topknot',
+                  longhair=True, sleeve='wide', weapon='sword', blade='#eef0fa', guard='#c9a24a', hilt='#3a2a4a', tassel='#9a6ad8', glow='#c8a8ff',
+                  motif='plum', sash=True, inner=True, pendant='#9a6ad8', bootcuff='#f3f0f8', skin='#f2c8a4')
+    if nid == 'hs_chu_tri':
+        return mk(nid, robe='#ece8f4', robe2='#5a3a8a', trim='#c8a040', belt='#5a3a8a', pants='#3a2e4a', shoe='#1e1828', hair='#ececf2', hairstyle='topknot',
+                  longhair=True, beard='long', beardcol='#ececf2', old=True, sleeve='wide', weapon='sword', blade='#f0f2fa', guard='#e0c060', hilt='#2a1e3a',
+                  tassel='#b080e8', glow='#d0b8ff', motif='plum', sash=True, inner=True, pendant='#c8a040', skin='#e8b890')
     if sprite == 'elder':
         return mk(nid, robe=c, robe2=light(c, 0.3) if nid == 'truong_lao' else dark(c, 0.3), trim='#c8a040', belt='#8a6a30', pants=dark(c, 0.35),
                   hair='#ececf2', hairstyle='topknot', longhair=True, beard='long', old=True, weapon='cane', wood='#8a5a2a', guard='#c8c8d0', pendant='#6ac8a0', motif='cloud')
