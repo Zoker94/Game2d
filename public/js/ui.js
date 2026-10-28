@@ -157,15 +157,20 @@
     for (const gid of (inst && inst.gems) || []) { const g = gid && G.data.items[gid]; if (g && g.gemFx) o[g.gemFx[0]] = (o[g.gemFx[0]] || 0) + g.gemFx[1]; }
     return o;
   }
-  const fxScore = fx => Object.entries(fx).reduce((a, [k, v]) => a + ((G.data.powerFx || {})[k] || 0) * v, 0);
-  const powerOf = o => (o.atk || 0) * 3 + (o.def || 0) * 2 + (o.hp || 0) / 4 + (o.mp || 0) / 8 + (o.crit || 0) * 12;
-  // chênh lệch lực chiến khi thay món a (đang mặc) bằng món b – cùng công thức máy chủ: chỉ số × (1 + điểm hiệu ứng)
+  // chênh lệch lực chiến khi thay món a (đang mặc) bằng món b – dựng lại chỉ số sau khi đổi rồi tính bằng đúng công thức máy chủ (power.js)
   function powerDiff(ia, a, ib, b) {
+    const st = G.me.stats || {}, q = st.pc, m = st.mul || {};
+    if (!q) return 0;
     const sa = itemTotals(ia, a), sb = itemTotals(ib, b), pa = itemAttrPts(ia, a), pb = itemAttrPts(ib, b);
-    const st = G.me.stats || {}, m = st.mul || {};
-    const pw = o => (o.atk || 0) * 3 * (m.atk || 1) + (o.def || 0) * 2 * (m.def || 1) + (o.hp || 0) / 4 * (m.hp || 1) + (o.mp || 0) / 8 * (m.mp || 1) + (o.crit || 0) * 12;
-    const base = (pw(sb) + pw(pb)) - (pw(sa) + pw(pa));
-    return Math.round(base * (1 + (st.fxs || 0)) + (st.pw0 || 0) * (fxScore(itemFx(b)) - fxScore(itemFx(a))));
+    const d = k => ((sb[k] || 0) + (pb[k] || 0)) - ((sa[k] || 0) + (pa[k] || 0));
+    const fa = itemFx(a), fb = itemFx(b), cap = G.data.gearCap || {}, fx = Object.assign({}, q.fx);
+    for (const k of new Set([...Object.keys(fa), ...Object.keys(fb)])) fx[k] = Math.max(0, Math.min(cap[k] || 100, (fx[k] || 0) + (fb[k] || 0) - (fa[k] || 0)));
+    // điểm hệ chính (Sức Mạnh / Nội Công) của món còn tăng % sát thương võ công
+    const ptsOf = (it, inst) => { const ba = inst && G.data.brAttr && G.data.brAttr[inst.br]; return ba && ba === q.attr ? Math.round((1 + it.tier * 1.2) * G.data.rarity[it.rarity].mult * (1 + (inst.plus || 0) * 0.04)) : 0; };
+    const dPts = (ib ? ptsOf(ib, b) : 0) - (ia ? ptsOf(ia, a) : 0);
+    const nq = Object.assign({}, q, { fx, atk: q.atk + d('atk') * (m.atk || 1), def: q.def + d('def') * (m.def || 1), hp: q.hp + d('hp') * (m.hp || 1), mp: q.mp + d('mp') * (m.mp || 1),
+      crit: q.crit + d('crit'), bonus: q.bonus + dPts * (q.per || 0) });
+    return Power.calc(nq) - Power.calc(q);
   }
   // dòng tóm tắt trong khung chi tiết (bảng so sánh đầy đủ hiện ở khung nổi khi rê chuột / bấm giữ)
   function compareMini(s) {

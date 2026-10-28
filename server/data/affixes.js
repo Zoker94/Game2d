@@ -81,9 +81,4 @@ function rollAffixes(it) {
   return fx.length ? { el, fx } : { el };
 }
 
-// lực chiến: mỗi 1 điểm hiệu ứng (dòng đặc biệt của trang bị, đá khảm cấp 4-5, nội công) cộng thêm bao nhiêu phần lực chiến gốc
-// (vd xuyên giáp 20 → +12%). Kinh nghiệm / ngân lượng không tính.
-const POWER_FX = { pierce: 0.006, dmgred: 0.01, reflect: 0.004, critdmg: 0.003, lifesteal: 0.008, dodge: 0.01, ccres: 0.003, regen: 0.03, double: 0.008,
-  stun: 0.006, freeze: 0.006, poison: 0.003, burn: 0.003, bleed: 0.003, slow: 0.002 };
-const fxPowerScore = fx => { let k = 0; for (const key in fx || {}) k += (POWER_FX[key] || 0) * fx[key]; return k; };
-module.exports = { POWER_FX, fxPowerScore, ELEMENTS, EL_KEYS, KHAC, elementBonus, AFFIX, PROC_KEYS, SLOT_POOL, CAP, GEAR_CAP, FX_MAX, rollAffixes, rescaleFx };
+module.exports = { ELEMENTS, EL_KEYS, KHAC, elementBonus, AFFIX, PROC_KEYS, SLOT_POOL, CAP, GEAR_CAP, FX_MAX, rollAffixes, rescaleFx };
