@@ -3,7 +3,7 @@ const { MONSTERS } = require('./monsters');
 // Hướng dẫn tân thủ: chuỗi bước tuần tự
 const TUTORIAL = [
   { type: 'talk', npc: 'truong_lao', text: 'Nói chuyện với Trưởng Lão Tân Thủ ở quảng trường Tương Dương', reward: { gold: 200 } },
-  { type: 'equip', text: 'Mở Túi đồ (phím I hoặc nút Túi) và mặc Mộc Kiếm', reward: { items: [['hp1', 10], ['mp1', 10]] } },
+  { type: 'equip', text: 'Mở Túi đồ (phím I hoặc nút 🎒 Nhân vật) và mặc Mộc Kiếm', reward: { items: [['hp1', 10], ['mp1', 10]] } },
   { type: 'map', map: 'ngoai_o', text: 'Đi qua cổng phía Đông để tới Ngoại Ô Tương Dương', reward: { exp: 60 } },
   { type: 'kill', mon: 'tho_rung', n: 5, text: 'Tiêu diệt 5 Thỏ Rừng', reward: { exp: 150, gold: 200 } },
   { type: 'level', n: 3, text: 'Đạt cấp 3', reward: { items: [['armor_0_common', 1], ['@book1', 1]] } },

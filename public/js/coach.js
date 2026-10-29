@@ -1,5 +1,5 @@
 // Chỉ dẫn tận tay cho người mới: ở bước cốt truyện "mặc Mộc Kiếm" và "học bí kíp rồi thi triển",
-// phủ tối màn hình, khoanh sáng đúng chỗ cần bấm và có bàn tay chỉ vào: nút Túi → món đồ → nút Trang bị / Sử dụng → nút kỹ năng.
+// phủ tối màn hình, khoanh sáng đúng chỗ cần bấm và có bàn tay chỉ vào: nút 🎒 Nhân vật (tab Túi đồ) → món đồ → nút Trang bị / Sử dụng → nút kỹ năng.
 // Lớp phủ không chặn chạm (pointer-events: none) nên người chơi bấm thẳng vào chỗ được khoanh.
 (function () {
   const $ = id => document.getElementById(id);
@@ -53,10 +53,14 @@
       return el ? { el, text: `Bấm vào đây để thi triển "${sk.name}"` } : null;
     }
     if (info.panel !== 'inventory') {
+      if (info.panel === 'character' || info.panel === 'skills') {   // cùng bảng Nhân vật nhưng đang ở tab khác: chỉ vào tab Túi đồ
+        const tb = document.querySelector('#panel-tabs [data-hero="inventory"]');
+        return visible(tb) ? { el: tb, text: 'Bấm vào tab Túi đồ' } : null;
+      }
       if (info.panel) return null;   // đang mở bảng khác: không chen vào
       if (document.body.classList.contains('menu-min')) { const b = $('btn-menu-min'); return visible(b) ? { el: b, text: 'Bấm vào đây để mở menu' } : null; }
       const b = document.querySelector('#menu-buttons [data-panel="inventory"]');
-      return visible(b) ? { el: b, text: 'Bấm vào đây để mở Túi đồ' } : null;
+      return visible(b) ? { el: b, text: 'Bấm nút 🎒 Nhân vật để mở Túi đồ' } : null;
     }
     const body = $('panel-body');
     if (info.sel !== item.uid) {
