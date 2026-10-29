@@ -2105,9 +2105,10 @@ def render_sect(key, outdir):
             Js = [solve(B, P) for P in Ps]
             CH = simulate(defs, Js, times, speed, loop, dur)
             frames = [render_layers(L, B, J, {nm: CH[nm][i] for nm in CH}, view, name, ts[i], f, Ps[i]) for i, J in enumerate(Js)]
-            for k in LAYERS:
-                fr = [x[k] for x in frames]
+            for k in LAYERS:   # giữ khung dạng uint8 (ô 288 dạng số thực tốn ~8GB mỗi phái -> bị hệ thống dừng)
+                fr = [None if x[k] is None else np.clip(x[k], 0, 255).astype(np.uint8) for x in frames]
                 for r in range(rpv): rows[k].append(fr[r * COLS:(r + 1) * COLS])
+            del frames
             nrow += rpv
     for k in LAYERS:
         if save_sheet(rows[k], os.path.join(outdir, '%s_%s.png' % (key, k))): meta['layers'].append(k)

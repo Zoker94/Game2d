@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '29/10/2026',
     items: [
+      '🎨 NÂNG CẤP ĐỒ HOẠ NHÂN VẬT: 9 môn phái vẽ lại nét gấp đôi – tô khối 7 cấp sáng tối có viền sáng, khuôn mặt chi tiết (mắt có tròng, đồng tử, ánh sáng, lông mày, mũi, môi), tóc có sợi, áo có nếp vải, giáp chế tác (tấm ngực, lá vai tách lớp có đinh tán, bao tay, ống chân, viền màu phái); màu phẩm chất giáp kiểu kim loại thay kiểu phủ đặc. Máy tính tự dùng bản nét cao; điện thoại dùng bản thường (vẫn là hình mới, nhẹ như cũ), điện thoại mạnh có thể bật nét cao (đổi ở Cài đặt → Đồ họa → Hình nhân vật).',
       '🎁 RƯƠNG THỦ LĨNH (chắc chắn ra đồ Hiếm trở lên) rơi rộng hơn: quái thường rất hiếm (~1/2.500 con), quái tinh anh 1,5%. Boss và sự kiện thay Rương Bí Ẩn bằng Rương Thủ Lĩnh: Boss dã ngoại rải 4 Rương Thủ Lĩnh; Boss Thế Giới hạng 1/2/3 nhận 3/2/1 rương; vượt phó bản thần tốc thêm 1 rương; Đại Hội Võ Lâm top 10 nhận 1 rương, người tham gia 30% nhận 1 rương; Hoa Sơn Luận Kiếm người tham gia 30% nhận 1 rương; Thiên Hạ Đệ Nhất Cao Thủ, Săn Quái top 3 và Bảo Rương (8%) đều ra Rương Thủ Lĩnh.'
     ]
   },

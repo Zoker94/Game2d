@@ -18,7 +18,7 @@
   function portrait(cv, sp) {
     const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; c.clearRect(0, 0, cv.width, cv.height);
     let img = null, sx = 0, sy = 0, sw = 96, sh = 96, ox = 0, oy = 0, sc = 2;
-    if (sp === 'me' && G.me && Assets.has(G.me.cls)) { img = Assets.charFrame(G.me.cls, 0, 'idle', 0, G.me.ap); sx = 27; sy = 12; sw = 90; sh = 90; sc = 4 / 3; }
+    if (sp === 'me' && G.me && Assets.has(G.me.cls)) { img = Assets.charFrame(G.me.cls, 0, 'idle', 0, G.me.ap); sx = 27 * Assets.K; sy = 12 * Assets.K; sw = 90 * Assets.K; sh = 90 * Assets.K; sc = 4 / 3 / Assets.K; }
     else if (sp.startsWith('npc:')) { const f = Assets.npcFrame(sp.slice(4), 0, false); if (f) { const k = f.w / 96; img = f.img; sx = f.sx + 18 * k; sy = f.sy + 8 * k; sw = 60 * k; sh = 60 * k; sc = 2 / k; } }
     else if (sp.startsWith('mon:')) {
       const f = Assets.monsterFrame(sp.slice(4), 'idle', 0, 0);

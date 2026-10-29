@@ -4,10 +4,10 @@
 # hết khựng khi gặp nhiều phái. Ghi thêm vào <cls>.json:
 #   "parts": { nhóm: [hàng đầu, số hàng] },  "empty": { lớp: [nhóm trống trơn – khỏi tải] }
 # Chạy: python3 tools/splitsheets.py   (xoá sheet gốc sau khi cắt; chạy lại khi vẽ lại nhân vật bằng tools/rig2.py)
-import json, os, glob
+import json, os, glob, sys
 from PIL import Image
 
-D = 'public/assets/chars'
+D = sys.argv[1] if len(sys.argv) > 1 else 'public/assets/chars'   # bộ nét cao: python3 tools/splitsheets.py public/assets/chars_hd
 PART_OF = {'idle': 'idle', 'walk': 'walk', 'run': 'run', 'attack': 'attack', 'ride': 'ride', 'ride_attack': 'ride',
            'ride_cast': 'ride', 'ride_hurt': 'ride', 'cast': 'cast', 'hurt': 'misc', 'death': 'misc', 'meditate': 'misc'}
 

@@ -796,7 +796,7 @@
     $('screen-game').appendChild(box);
     box.querySelector('.cls-x').onclick = () => box.remove();
     box.addEventListener('pointerdown', e => { if (e.target === box) box.remove(); });
-    box.querySelectorAll('[data-cv]').forEach(cv => { const k = cv.dataset.cv, x = cv.getContext('2d'); const draw = () => { if (Assets.has(k)) { x.imageSmoothingEnabled = true; x.drawImage(Assets.charFrame(k, 0, 'idle', 0), 12, 18, 120, 120, 0, 0, 72, 72); } }; if (Assets.has(k)) draw(); else if (Assets.loadClass) Assets.loadClass(k).then(draw).catch(() => {}); });
+    box.querySelectorAll('[data-cv]').forEach(cv => { const k = cv.dataset.cv, x = cv.getContext('2d'); const draw = () => { if (Assets.has(k)) { x.imageSmoothingEnabled = true; x.drawImage(Assets.charFrame(k, 0, 'idle', 0), 12 * Assets.K, 18 * Assets.K, 120 * Assets.K, 120 * Assets.K, 0, 0, 72, 72); } }; if (Assets.has(k)) draw(); else if (Assets.loadClass) Assets.loadClass(k).then(draw).catch(() => {}); });
     box.querySelectorAll('[data-cls]').forEach(b => b.onclick = () => {
       const k = b.dataset.cls;
       G.modal(`Chuyển từ ${C[me.cls].name} sang ${C[k].name}?\nTiêu hao 1 Chuyển Phái Lệnh. 3 ngày sau mới đổi lại được.`, [
@@ -1396,6 +1396,9 @@
           <label class="set-row"><input type="checkbox" id="set-lowfx" ${s.lowfx ? 'checked' : ''}> ✨ Giảm hiệu ứng nặng (hạt, thời tiết, hoạt ảnh lặp trên giao diện)</label>
           ${ck('hideOtherFx', '🙈 Ẩn hiệu ứng chiêu của người chơi khác – mượt hơn nhiều ở chỗ đông')}
           <label class="set-row"><input type="checkbox" id="set-battery" ${G.battery() ? 'checked' : ''}> 🔋 Tiết kiệm pin: 30 FPS, độ nét tối đa 150%, để yên lâu thì vẽ thưa hơn</label></div>
+        <div class="card"><h4>🧍 Hình nhân vật</h4>
+          <div class="row" style="justify-content:flex-start;align-items:center;gap:4px">${(() => { let o = 'auto'; try { o = localStorage.getItem('vl_hdchar') || 'auto'; } catch (e) { } return [['auto', 'Tự động'], ['on', 'Nét cao'], ['off', 'Thường (nhẹ)']].map(([k, n]) => `<button class="btn small ${o === k ? 'primary' : ''}" data-hdchar="${k}">${n}</button>`).join(''); })()}</div>
+          <div class="small muted" style="margin-top:4px">Đang dùng: <b>${Assets.HD ? 'nét cao' : 'thường'}</b>. Tự động: máy tính dùng nét cao, điện thoại dùng bản thường. Nét cao rõ từng chi tiết nhưng tốn gấp ~4 lần bộ nhớ ảnh – điện thoại mạnh mới nên bật. Đổi xong tải lại trang để áp dụng.</div></div>
         <div class="card"><h4>👁 Hiển thị</h4>
           ${ck('names', 'Hiện tên nhân vật / quái')}
           ${ck('tframe', 'Hiện khung máu cả quái thường (mặc định chỉ boss, tinh anh, người chơi)')}
@@ -1438,6 +1441,11 @@
     body.querySelectorAll('[data-uipref]').forEach(b => b.onclick = () => { if (b.dataset.uipref === Input.uiPref) return; try { localStorage.setItem('vl_ui', b.dataset.uipref); } catch (e) {} location.reload(); });
     on('set-view', 'oninput', e => { const v = +e.target.value; $('set-view-v').textContent = v + '%'; G.setView(v / 100); });
     on('set-view-reset', 'onclick', () => { G.setView(1); UI.refreshPanel(); });
+    body.querySelectorAll('[data-hdchar]').forEach(b => b.onclick = () => {
+      try { localStorage.setItem('vl_hdchar', b.dataset.hdchar); } catch (e) { }
+      UI.refreshPanel();
+      G.modal('Đã lưu. Tải lại trang để đổi hình nhân vật?', [{ t: 'Tải lại', cls: 'primary', fn: () => location.reload() }, { t: 'Để sau' }]);
+    });
     on('set-battery', 'onchange', e => { G.setBattery(e.target.checked); UI.refreshPanel(); });
     on('set-awake', 'onchange', e => { s.keepAwake = e.target.checked; G.saveSettings(); if (window.Awake) Awake.sync(); });
     on('set-qauto', 'onchange', e => { G.settings.questAuto = e.target.checked; G.saveSettings(); });

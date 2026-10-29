@@ -16,7 +16,18 @@
   // Mỗi lớp được cắt thành dải theo nhóm động tác (tools/splitsheets.py): <cls>_<lớp>-<nhóm>.png, meta.parts = { nhóm: [hàng đầu, số hàng] }.
   // Trình duyệt chỉ giải mã dải đang dùng (~3–7MB) thay vì cả sheet 38MB – chỗ đông nhiều phái không còn tràn bộ nhớ giải mã.
   const CLASSES = ['thieulam', 'ngudoc', 'thienvuong', 'caibang', 'vodang', 'ngamy', 'thuyyen', 'conlon', 'duongmon'];
-  const SRC = 144, CELL = 96, FOOT_X = 48, FOOT_Y = 86;
+  // Bộ hình nét cao (tools/rig3.py, ô 288 – gấp đôi): máy tính dùng chars_hd/; điện thoại, máy yếu, tiết kiệm dữ liệu dùng
+  // chars/ (cùng hình mới thu về ô 144). Chọn trong Cài đặt → Đồ họa (lưu vl_hdchar: auto | on | off, áp dụng khi tải lại trang).
+  const HD = (() => {
+    let o = 'auto'; try { o = localStorage.getItem('vl_hdchar') || 'auto'; } catch (e) { }
+    if (o === 'on') return true;
+    if (o === 'off') return false;
+    const cn = navigator.connection || {};
+    if (cn.saveData || /(^|-)2g$/.test(cn.effectiveType || '') || (navigator.deviceMemory || 8) < 4) return false;
+    return !matchMedia('(pointer: coarse)').matches;   // máy tính: nét cao; điện thoại mặc định bản thường (ảnh nét giải mã tốn gấp 4 bộ nhớ)
+  })();
+  const K = HD ? 2 : 1, CDIR = HD ? 'chars_hd/' : 'chars/';
+  const SRC = 144 * K, CELL = 96, FOOT_X = 48, FOOT_Y = 86;
   const STATE_ANIM = { idle: 'idle', walk: 'walk', run: 'run', atk: 'attack', cast: 'cast', hurt: 'hurt', dead: 'death',
                        ride: 'ride', ride_atk: 'ride_attack', ride_cast: 'ride_cast', ride_hurt: 'ride_hurt', med: 'meditate' };
   // Quái / boss: thêm tên quái (id trong server/data/monsters.js) vào đây khi có ảnh
@@ -38,12 +49,12 @@
   const loading = {};
   function need(key) {
     if (imgs[key] || loading[key]) return imgs[key] || null;
-    loading[key] = load('chars/' + key + '.png').then(im => { if (im) imgs[key] = im; });
+    loading[key] = load(CDIR + key + '.png').then(im => { if (im) imgs[key] = im; });
     return null;
   }
   const jobs = [];
   // màn chờ chỉ đợi dữ liệu khung hình (nhẹ); ảnh nhân vật các phái (~4MB) tải ngầm sau khi vào, vẽ tạm hình cũ tới khi xong
-  for (const c of CLASSES) jobs.push(fetch(BASE + 'chars/' + c + '.json' + VQ).then(r => r.ok ? r.json() : null).then(j => { if (j) META[c] = j; }).catch(() => { }));
+  for (const c of CLASSES) jobs.push(fetch(BASE + CDIR + c + '.json' + VQ).then(r => r.ok ? r.json() : null).then(j => { if (j) META[c] = j; }).catch(() => { }));
   // biểu tượng vật phẩm vẽ mới (tools/icons.py)
   let ICONS = null;
   jobs.push(Promise.all([load('icons.png'), fetch(BASE + 'icons.json' + VQ).then(r => r.ok ? r.json() : null).catch(() => null)]).then(([im, j]) => { if (im && j) ICONS = { im, j }; }));
@@ -75,7 +86,8 @@
   const overBudget = () => performance.now() - budgetAt < 200 && budget <= 0;
   // bộ nhớ đệm khung đã ghép: đầy thì bỏ dần khung cũ nhất (không xoá sạch một lần gây khựng hình)
   // điện thoại giữ ít hơn (400 khung ~ 33MB thay vì 900 ~ 75MB)
-  const cacheMap = new Map(), CACHE_MAX = matchMedia('(pointer: coarse)').matches ? 400 : 900;   // mỗi khung 144x144 ~ 83KB
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  const cacheMap = new Map(), CACHE_MAX = HD ? (coarse ? 300 : 900) : (coarse ? 400 : 900);   // mỗi khung 144x144 ~ 83KB, 288x288 ~ 330KB
   const put = (k, v) => {
     cacheMap.set(k, v);
     if (cacheMap.size > CACHE_MAX) { const it = cacheMap.keys(); for (let i = 0; i < 200; i++) { const k = it.next().value, old = cacheMap.get(k); cacheMap.delete(k); if (old && old.width === SRC && old.height === SRC && pool.length < 120) pool.push(old); } }
@@ -148,9 +160,10 @@
     const h = bot - top, sy = Math.round(top + h * 0.21);
     let l = SRC, r = 0;
     for (let y = sy; y < sy + Math.max(3, h * 0.06); y++) for (let x = 0; x < SRC; x++) if (A(x, y)) { if (x < l) l = x; if (x > r) r = x; }
-    if (r < l) { l = 66; r = 78; }
-    const sw = Math.max(10, Math.min(30, r - l));
-    return (boxCache[k] = { top, bot, h, sy, cx: (l + r) / 2, sw });
+    if (r < l) { l = 66 * K; r = 78 * K; }
+    const sw = Math.max(10, Math.min(30, (r - l) / K));
+    // trả về theo toạ độ ô 144 (áo choàng vẽ thủ tục dùng toạ độ này; bộ nét vẽ với x.scale(K))
+    return (boxCache[k] = { top: top / K, bot: bot / K, h: h / K, sy: sy / K, cx: (l + r) / 2 / K, sw });
   }
   // part: 'back' (vẽ dưới thân) | 'front' (vẽ đè lên thân: lưng khi quay đi, quai cài khi nhìn trước)
   function drawCape(x, view, b, state, i, L, part) {
@@ -219,7 +232,8 @@
   function tinted(im, sx, sy, color) {
     tcx.globalCompositeOperation = 'source-over'; tcx.clearRect(0, 0, SRC, SRC);
     tcx.drawImage(im, sx, sy, SRC, SRC, 0, 0, SRC, SRC);
-    tcx.globalCompositeOperation = 'color'; tcx.fillStyle = color; tcx.fillRect(0, 0, SRC, SRC);
+    // tô kiểu kim loại: phủ 62% màu phẩm chất, giữ lại ánh thép (trước phủ đặc 100% nên giáp trông như nhựa)
+    tcx.globalCompositeOperation = 'color'; tcx.fillStyle = color; tcx.globalAlpha = 0.62; tcx.fillRect(0, 0, SRC, SRC); tcx.globalAlpha = 1;
     tcx.globalCompositeOperation = 'destination-in'; tcx.drawImage(im, sx, sy, SRC, SRC, 0, 0, SRC, SRC);
     tcx.globalCompositeOperation = 'source-over';
     return tcv;
@@ -241,11 +255,11 @@
     mx.setTransform(1, 0, 0, 1, 0, 0);
     mx.globalCompositeOperation = 'source-in'; mx.fillStyle = color; mx.fillRect(0, 0, SRC, SRC);
     const [c, x] = mk(SRC, SRC);
-    for (const [dx, dy, a] of [[-3, 0, 0.3], [3, 0, 0.3], [0, -3, 0.3], [0, 3, 0.3], [-2, -2, 0.5], [2, 2, 0.5], [2, -2, 0.5], [-2, 2, 0.5], [0, 0, 0.5]]) { x.globalAlpha = a; x.drawImage(m, dx, dy); }
+    for (const [dx, dy, a] of [[-3, 0, 0.3], [3, 0, 0.3], [0, -3, 0.3], [0, 3, 0.3], [-2, -2, 0.5], [2, 2, 0.5], [2, -2, 0.5], [-2, 2, 0.5], [0, 0, 0.5]]) { x.globalAlpha = a; x.drawImage(m, dx * K, dy * K); }   // bộ nét: loang gấp đôi để cùng cỡ
     return put(key, c);
   }
   // dir: 0 xuống, 1 trái, 2 phải, 3 lên; state: idle | walk | run | atk | cast | hurt | dead | ride | ride_atk | ride_cast | ride_hurt
-  // Trả về canvas 144x144 (vẽ ra 96x96 tại x-48, y-86).
+  // Trả về canvas SRC x SRC (144, hoặc 288 với bộ nét) – mọi chỗ vẽ ra 96x96 tại x-48, y-86.
   const [qcv, qcx] = mk(SRC, SRC);
   function charFrame(cls, dir, state, i, ap) {
     const L = lookOf(ap);
@@ -264,7 +278,7 @@
     { const hit = hitOf(key); if (hit) return hit; }
     if (overBudget() && (body || base)) {   // bản nhanh, không lưu: thân + vũ khí
       qcx.setTransform(1, 0, 0, 1, 0, 0); qcx.clearRect(0, 0, SRC, SRC);
-      if (!state.startsWith('ride')) { qcx.fillStyle = 'rgba(0,0,0,0.3)'; qcx.beginPath(); qcx.ellipse(72, 128, state === 'dead' ? 33 : 19, 6, 0, 0, Math.PI * 2); qcx.fill(); }
+      if (!state.startsWith('ride')) { qcx.fillStyle = 'rgba(0,0,0,0.3)'; qcx.beginPath(); qcx.ellipse(72 * K, 128 * K, (state === 'dead' ? 33 : 19) * K, 6 * K, 0, 0, Math.PI * 2); qcx.fill(); }
       if (isFlip(dir)) { qcx.translate(SRC, 0); qcx.scale(-1, 1); }
       qcx.drawImage(body || base, sx, sy, SRC, SRC, 0, 0, SRC, SRC);
       if (wpn) qcx.drawImage(wpn, sx, sy, SRC, SRC, 0, 0, SRC, SRC);
@@ -272,15 +286,16 @@
     }
     budget--;
     const [c, x] = mk(SRC, SRC);
-    if (!state.startsWith('ride')) { x.fillStyle = 'rgba(0,0,0,0.3)'; x.beginPath(); x.ellipse(72, 128, state === 'dead' ? 33 : 19, 6, 0, 0, Math.PI * 2); x.fill(); }
+    if (!state.startsWith('ride')) { x.fillStyle = 'rgba(0,0,0,0.3)'; x.beginPath(); x.ellipse(72 * K, 128 * K, (state === 'dead' ? 33 : 19) * K, 6 * K, 0, 0, Math.PI * 2); x.fill(); }
     if (isFlip(dir)) { x.translate(SRC, 0); x.scale(-1, 1); }
     const put2 = im => { if (im) x.drawImage(im, sx, sy, SRC, SRC, 0, 0, SRC, SRC); };
     const cb = L.c >= 0 && base ? bodyBox(cls, base, row, col, sy) : null, cview = VIEW_OF[dir] || 'down';
     put2(fxu);
-    drawCape(x, cview, cb, state, i, L, 'back');   // phi phong sau lưng (nhìn trước / nghiêng)
+    const cape = part => { if (!cb) return; x.save(); x.scale(K, K); drawCape(x, cview, cb, state, i, L, part); x.restore(); };   // vẽ theo toạ độ ô 144
+    cape('back');   // phi phong sau lưng (nhìn trước / nghiêng)
     put2(body || base);
     if (metal) x.drawImage(tinted(metal, sx, sy, METAL[L.ar]), 0, 0);
-    drawCape(x, cview, cb, state, i, L, 'front');  // quay lưng: phi phong phủ lên thân; nhìn trước: quai cài vai
+    cape('front');  // quay lưng: phi phong phủ lên thân; nhìn trước: quai cài vai
     put2(wpn);
     if (helm) { put2(helm); if (hmetal) x.drawImage(tinted(hmetal, sx, sy, METAL[L.hr]), 0, 0); }
     put2(fxo);
@@ -388,7 +403,7 @@
     const f = charFrame(cls, 0, 'idle', 0, ap);
     const [c, x] = mk(size, size);
     x.imageSmoothingEnabled = true;
-    x.drawImage(f, 72 - 17, 17, 34, 34, 0, 0, size, size);
+    x.drawImage(f, (72 - 17) * K, 17 * K, 34 * K, 34 * K, 0, 0, size, size);
     return c;
   }
 
@@ -440,5 +455,5 @@
     return `<i class="sk-img" style="background-image:url('${url}');--skc:${s.color || '#ffd76a'}"></i>`;
   }
 
-  window.Assets = { ready, loadClass, loadMonster, retainMonsters, imgs, has, nature, charFrame, frameBudget, frameCount, frameMs, SRC, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, MONSTERS, skillIconUrl, skillIconHTML };
+  window.Assets = { HD, K, ready, loadClass, loadMonster, retainMonsters, imgs, has, nature, charFrame, frameBudget, frameCount, frameMs, SRC, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, MONSTERS, skillIconUrl, skillIconHTML };
 })();

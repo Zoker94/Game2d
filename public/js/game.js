@@ -1829,7 +1829,7 @@
       if (art) {
         const rider = Assets.charFrame(cls, face, state === 'walk' || state === 'dead' ? 'idle' : state, fi, ap);
         const ry = y - 86 - 26 + (moving && mf % 2 ? 1 : 0);
-        ctx.drawImage(rider, 0, 0, 144, 99, x - 48 + (face === 1 ? 2 : -2), ry, 96, 66);
+        ctx.drawImage(rider, 0, 0, 144 * Assets.K, 99 * Assets.K, x - 48 + (face === 1 ? 2 : -2), ry, 96, 66);
         top = y - 96;
       } else {
         const rider = Sprites.playerSprite(cls, colors, face, 0, atk, ap);

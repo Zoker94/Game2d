@@ -96,7 +96,7 @@
     const f = Assets.charFrame(cls, dir, state, frame, ap);
     if (!f) return false;
     const S = Assets.SRC;
-    c.drawImage(f, 0, 0, S, S, Math.round(x - 72 * sc), Math.round(y - 128 * sc), Math.round(S * sc), Math.round(S * sc));
+    c.drawImage(f, 0, 0, S, S, Math.round(x - 72 * sc), Math.round(y - 128 * sc), Math.round(144 * sc), Math.round(144 * sc));   // ô 144 hay 288 (bộ nét) đều vẽ cùng cỡ
     return true;
   }
 

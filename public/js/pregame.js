@@ -198,7 +198,7 @@
       const cv = b.querySelector('canvas'), x = cv.getContext('2d'), id = b.dataset.cls;
       if (cv.dataset.drawn === '2') return;
       x.clearRect(0, 0, 56, 56);
-      if (Assets.has(id)) { x.imageSmoothingEnabled = true; x.drawImage(Assets.charFrame(id, 0, 'idle', 0), 22, 26, 100, 100, 0, 0, 56, 56); cv.dataset.drawn = '2'; }
+      if (Assets.has(id)) { x.imageSmoothingEnabled = true; x.drawImage(Assets.charFrame(id, 0, 'idle', 0), 22 * Assets.K, 26 * Assets.K, 100 * Assets.K, 100 * Assets.K, 0, 0, 56, 56); cv.dataset.drawn = '2'; }
       else { x.imageSmoothingEnabled = false; x.drawImage(Sprites.playerSprite(id, C[id].colors, 0, 0), 0, 0, 64, 64, 0, 0, 56, 56); cv.dataset.drawn = '1'; }
     });
     // sân khấu
