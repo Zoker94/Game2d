@@ -75,7 +75,7 @@ const LANTERN_EXCHANGE = [
 const GUILD_LEVELS = [0, 50000, 200000, 600000, 1500000, 4000000];
 const GUILD_CREATE_COST = 10000;
 
-const GM_CMDS = new Set(['help', 'lenh', 'an', 'hide', 'tanghinh', 'mienpk', 'safe', 'gmlist', 'tp', 'goto', 'keo', 'heal', 'kick', 'online', 'ghim', 'boghim', 'dsghim']);
+const GM_CMDS = new Set(['help', 'lenh', 'an', 'hide', 'tanghinh', 'mienpk', 'safe', 'gmlist', 'tp', 'goto', 'keo', 'heal', 'kick', 'online', 'ghim', 'boghim', 'dsghim', 'refcheck', 'ipcheck']);
 const PIN_EVERY = 5 * 60000, PIN_MAX = 5;   // thông báo ghim của admin: chạy lại mỗi 5 phút tới khi admin tắt
 
 class Features {
@@ -494,7 +494,7 @@ class Features {
     const findPlayer = name => [...w.players.values()].find(o => o.c.name.toLowerCase() === String(name || '').toLowerCase());
     switch (c) {
       case 'help': case 'lenh':
-        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: 'Lệnh admin: /an (tàng hình) · /mienpk (miễn PK) · /admin (mở trang quản trị) · /tb <nội dung> · /ghim <nội dung> (chạy mỗi 5 phút) · /boghim <mã>|all · /dsghim · /tp <bản đồ> · /level <cấp> · /gold <số> · /knb <số> · /give <mã vật phẩm> [số lượng] [+cường hóa] · /tuyetky (9 bí kíp Tuyệt Kỹ Giang Hồ) · /heal · /boss <mã boss> · /event <mã sự kiện> [phút] · /kick <tên> · /goto <tên> · /keo <tên> · /tiemnang <tên> <số> · /kynang <tên> <số> · /conghien <số> · /online · /thoitiet <clear|rain|storm|wind|snow|blizzard|sun> [phút] · /cottruyen <chương> [bước] | reset · /tusat' });
+        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: 'Lệnh admin: /an (tàng hình) · /mienpk (miễn PK) · /admin (mở trang quản trị) · /tb <nội dung> · /ghim <nội dung> (chạy mỗi 5 phút) · /boghim <mã>|all · /dsghim · /tp <bản đồ> · /level <cấp> · /gold <số> · /knb <số> · /give <mã vật phẩm> [số lượng] [+cường hóa] · /tuyetky (9 bí kíp Tuyệt Kỹ Giang Hồ) · /heal · /boss <mã boss> · /event <mã sự kiện> [phút] · /kick <tên> · /goto <tên> · /keo <tên> · /tiemnang <tên> <số> · /kynang <tên> <số> · /conghien <số> · /online · /thoitiet <clear|rain|storm|wind|snow|blizzard|sun> [phút] · /cottruyen <chương> [bước] | reset · /tusat · Chống clone mời bạn: /refcheck <tên> · /ipcheck <tên> · /refblock <tên> · /refflag <tên>' });
         break;
       case 'an': case 'hide': case 'tanghinh': case 'mienpk': case 'safe': {   // bật / tắt tàng hình, miễn PK
         const k = c === 'mienpk' || c === 'safe' ? 'safe' : 'hide';
@@ -543,6 +543,14 @@ class Features {
         if (args[0] === 'q') return;
         if (!this.pins.length) ok('Chưa có thông báo ghim nào');
         else p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: '📌 Thông báo ghim: ' + this.pins.map(x => `[${x.id}] ${x.text}`).join(' · ') });
+        return;
+      }
+      case 'refcheck': case 'ipcheck': case 'refblock': case 'refflag': {   // chống clone link mời bạn (server/game/referral.js)
+        const R = w.referral, u = R && R.findUser(args.join(' '));
+        if (!u) return err(`Cú pháp: /${c} <tên nhân vật hoặc tài khoản>`);
+        if (c === 'refblock') { const r = R.ref(u); r.blocked = !r.blocked; this.db.markDirty(); this.db.log('admin', `${p.c.name} ${r.blocked ? 'khoá' : 'mở'} quà mời bạn của ${R.nameOf(u)}`); return ok(`${r.blocked ? '🔒 Đã khoá' : '🔓 Đã mở lại'} quà mời bạn của ${R.nameOf(u)}`); }
+        if (c === 'refflag') { if (!u.ref || !u.ref.by) return err('Tài khoản này không vào game qua link mời'); u.ref.flag = !u.ref.flag; this.db.markDirty(); return ok(`${u.ref.flag ? '⚠ Đã đánh dấu' : 'Đã bỏ đánh dấu'} ${R.nameOf(u)} là tài khoản mời không hợp lệ`); }
+        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: c === 'refcheck' ? R.check(u) : R.ipcheck(u) });
         return;
       }
       case 'tp': {

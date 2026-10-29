@@ -1864,3 +1864,4 @@ body.touch #wb-top { top: 108px; right: auto; left: 50%; transform: translateX(-
 .rf-tier.ok b { color: #ffd76a; }
 .rf-top { margin: 0; padding-left: 0; list-style: none; }
 .rf-top li { display: flex; justify-content: space-between; padding: 3px 0; border-top: 1px solid rgba(255,255,255,.05); font-size: 13px; }
+.rf-bad { color: #ff9a7a; }
