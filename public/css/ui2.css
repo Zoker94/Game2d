@@ -278,3 +278,20 @@ body.touch #tk-hud { width: 250px; top: 44px; font-size: 9.5px; }
 .tf-tag.npc { background: #6a5420; color: #ffe9a0; }
 /* vùng chạm joystick nhỏ lại (trước gần nửa màn hình): đủ chỗ cho vòng joystick, phần còn lại chạm được nhân vật / quái */
 #joy-zone { width: clamp(210px, 30%, 300px); height: clamp(190px, 46%, 260px); }
+/* Tống Kim: bảng điểm chiếm chỗ khung nhiệm vụ (bên trái, dưới khung nhân vật); ẩn nhiệm vụ; vẫn hiện ô chat dù đang ở bản đồ PK */
+body.tk-on #tracker { display: none !important; }
+body.tk-on #tk-hud { left: 8px; top: 80px; transform: none; width: 260px; }
+body.touch.tk-on #tk-hud { top: 80px; width: 236px; }
+body.short.touch.tk-on #tk-hud { top: 70px; }
+body.pvp-on.tk-on #chat.collapsed #chat-log { display: block; }
+body.touch.pvp-on.tk-on #chat.collapsed { display: flex; }
+/* bảng biểu cảm trong khung chat */
+#chat-emo { padding: 2px 6px; font-size: 13px; line-height: 1; }
+#emo-pop { position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 4px; display: grid; grid-template-columns: repeat(auto-fill, minmax(30px, 1fr)); gap: 2px; padding: 5px; max-height: 150px; overflow-y: auto;
+  background: rgba(14,19,28,.95); border: 1px solid var(--u-line, #3a4a60); border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,.5); z-index: 5; }
+#emo-pop.hidden, #chat.collapsed #emo-pop { display: none; }
+#emo-pop button { background: transparent; border: 0; font-size: 18px; line-height: 1; padding: 4px 0; border-radius: 8px; cursor: pointer; }
+#emo-pop button:hover, #emo-pop button:active { background: rgba(255,255,255,.12); }
+body.touch #emo-pop button { font-size: 21px; padding: 5px 0; }
+body.touch #chat-emo { min-width: 36px; font-size: 16px; }
+#mine-hud.auto { pointer-events: auto; cursor: pointer; }

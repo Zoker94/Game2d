@@ -63,6 +63,7 @@
   // ---------- bảng điểm trên chiến trường ----------
   function hud() {
     let h = $('tk-hud');
+    const on = !!inMap(); if (document.body.classList.contains('tk-on') !== on) document.body.classList.toggle('tk-on', on);
     if (!inMap() || !st) { if (h) h.remove(); return; }
     if (!h) {
       h = document.createElement('div'); h.id = 'tk-hud'; $('screen-game').appendChild(h);

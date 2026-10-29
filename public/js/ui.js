@@ -311,6 +311,24 @@
       $('chat-input').value = '';
       if (Input.isTouch) $('chat-input').blur();
     };
+    // bảng biểu cảm: chạm để chèn vào tin nhắn (điện thoại không bật bàn phím – gửi luôn bằng nút Gửi)
+    {
+      const EMO = '😀 😂 🤣 😊 😍 😘 😎 🤩 😏 😅 😭 😡 😱 🤔 🙄 😴 🤗 🥳 😤 🤬 👍 👎 👏 🙏 💪 🤝 ✌️ 👋 🔥 💯 ❤️ 💔 ⭐ 🎉 🎁 💰 💎 ⚔️ 🗡️ 🛡️ 🏹 🐉 👑 🏆 💀 ☠️ 🍵 🌸'.split(' ');
+      const pop = document.createElement('div'); pop.id = 'emo-pop'; pop.className = 'hidden';
+      pop.innerHTML = EMO.map(x => `<button type="button">${x}</button>`).join('');
+      $('chat').appendChild(pop);
+      $('chat-emo').onclick = e => { e.stopPropagation(); pop.classList.toggle('hidden'); };
+      pop.addEventListener('click', e => {
+        e.stopPropagation();
+        const b = e.target.closest('button'); if (!b) return;
+        const inp = $('chat-input');
+        if (inp.value.length + b.textContent.length > 140) return;
+        inp.value += b.textContent;
+        if (!Input.isTouch) inp.focus();
+      });
+      document.addEventListener('pointerdown', e => { if (!pop.classList.contains('hidden') && !pop.contains(e.target) && e.target.id !== 'chat-emo') pop.classList.add('hidden'); });
+      $('chat-form').addEventListener('submit', () => pop.classList.add('hidden'));
+    }
     $('chat-ch').onchange = () => $('chat-to').classList.toggle('hidden', $('chat-ch').value !== 'pm');
     document.querySelectorAll('#chat-tabs button[data-ch]').forEach(b => b.onclick = () => {
       document.querySelectorAll('#chat-tabs button[data-ch]').forEach(x => x.classList.toggle('on', x === b));

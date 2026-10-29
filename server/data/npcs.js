@@ -32,7 +32,7 @@ const NPCS = {
     talk: 'Bảo vật hiếm có, chỉ nhận Nguyên Bảo.',
     knbShop: [
       ...['weapon', 'armor', 'helmet', 'boots', 'ring', 'amulet'].flatMap(s => [1, 2, 3, 4].map(t => ({ id: `${s}_${t}_rare`, knb: 20 + t * 25 }))),
-      { id: 'doi_phai', knb: 300 }, { id: 'inv_card', knb: 50 }, { id: 'rename_card', knb: 20 }, { id: 'tay_tuy_kinh', knb: 30 }, { id: 'pk_pardon', knb: 30 }, { id: 'stall_token', knb: 10 }, { id: 'mine_ticket', knb: 15 }, { id: 'pickaxe', knb: 10 }, { id: 'tay_tiem_nang', knb: 20 }, { id: 'lucky_chest', knb: 30 }, { id: 'exp_x2', knb: 10 }, { id: 'wheel_ticket', knb: 15 }, { id: 'stone', knb: 3 },
+      { id: 'doi_phai', knb: 300 }, { id: 'inv_card', knb: 50 }, { id: 'rename_card', knb: 20 }, { id: 'tay_tuy_kinh', knb: 30 }, { id: 'pk_pardon', knb: 30 }, { id: 'stall_token', knb: 10 }, { id: 'mine_ticket', knb: 15 }, { id: 'pickaxe', knb: 10 }, { id: 'auto_dig', knb: 10 }, { id: 'tay_tiem_nang', knb: 20 }, { id: 'lucky_chest', knb: 30 }, { id: 'exp_x2', knb: 10 }, { id: 'wheel_ticket', knb: 15 }, { id: 'stone', knb: 3 },
       { id: 'stone2', knb: 40 }, { id: 'insure', knb: 60 }, { id: 'mount_food', knb: 2 }, { id: 'mount_stone', knb: 30 },
       { id: 'book_fire', knb: 800 }, { id: 'book_water', knb: 800 }, { id: 'book_ice', knb: 800 }, { id: 'book_thunder', knb: 800 }, { id: 'book_shadow', knb: 800 },
       { id: 'mount_kim_nguu', knb: 1200 }, { id: 'mount_bach_ho', knb: 1500 }, { id: 'mount_kim_quy', knb: 2000 }, { id: 'mount_hoa_ky_lan', knb: 5000 }, { id: 'mount_phuong_hoang', knb: 6500 }, { id: 'mount_thanh_long', knb: 8000 }, { id: 'mount_hac_long', knb: 8000 }

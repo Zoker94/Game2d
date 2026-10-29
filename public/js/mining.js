@@ -99,12 +99,44 @@
     G.moveTo = null; G.chase = null;
     return true;
   }
+  // Bùa Tự Đào: tự đi tới mỏ sẵn sàng gần nhất (tránh mỏ có người / vừa cạn), tới nơi thì bấm Đào; chạm khung đồng hồ để tạm dừng
+  let autoPause = false, goal = null, manualAt = 0;
+  const skip = new Map();   // id mỏ -> hết hạn bỏ qua (đi mãi không tới / gửi đào không được)
+  function autoDig() {
+    const m = G.me && G.me.mine;
+    if (!m || !m.auto || autoPause || !inCave() || G.me.dead) { goal = null; return; }
+    const t = performance.now();
+    if (Input.vector && Math.hypot(Input.vector().x, Input.vector().y) > 0.01) manualAt = t;   // đang tự điều khiển: nhường 3 giây
+    if (t - manualAt < 3000) { goal = null; return; }
+    if (digs.has(G.you)) { G.moveTo = null; return; }
+    if (!m.pick && !(G.me.inv || []).some(x => x.id === 'pickaxe')) return;   // hết cuốc
+    const ok = n => n.ready <= now() && !n.busy && !(skip.get(n.id) > t);
+    if (goal && (!ok(goal.n) || t - goal.t0 > 12000)) { if (t - goal.t0 > 12000) skip.set(goal.n.id, t + 30000); goal = null; }
+    if (!goal) {
+      let best = null, bd = 1e9;
+      for (const n of nodes) { if (!ok(n)) continue; const d = Math.hypot(n.x - G.self.x, n.y - G.self.y); if (d < bd) { bd = d; best = n; } }
+      if (!best) { G.moveTo = null; return; }   // mỏ nào cũng cạn: đứng chờ
+      goal = { n: best, t0: t, sent: 0 };
+    }
+    const n = goal.n, d = Math.hypot(n.x - G.self.x, n.y - G.self.y);
+    if (d > RANGE * 0.6) { G.moveTo = { x: n.x, y: n.y + 26 }; G.chase = null; return; }
+    G.moveTo = null;
+    if (t - goal.sent > 1500) {
+      if (goal.sent && ++goal.tries >= 3) { skip.set(n.id, t + 15000); goal = null; return; }
+      goal.sent = t; goal.tries = goal.tries || 0;
+      G.socket.emit('mine', { id: n.id });
+    }
+  }
+  setInterval(() => { try { autoDig(); } catch (e) { } }, 200);
+
   function ui() {
     if (!btn) {
       btn = document.createElement('button'); btn.id = 'btn-dig'; btn.className = 'hidden'; btn.innerHTML = '⛏<span>Đào</span>';
       btn.onclick = e => { e.stopPropagation(); tryDig(); };
       ($('screen-game') || document.body).appendChild(btn);
       hud = document.createElement('div'); hud.id = 'mine-hud'; hud.className = 'hidden';
+      hud.addEventListener('pointerdown', e => e.stopPropagation());
+      hud.onclick = e => { e.stopPropagation(); if (!(G.me && G.me.mine && G.me.mine.auto)) return; autoPause = !autoPause; if (autoPause) G.moveTo = null; UI.toast(autoPause ? '⏸ Tạm dừng tự đào' : '🤖 Tiếp tục tự đào'); };
       ($('screen-game') || document.body).appendChild(hud);
       window.addEventListener('keydown', e => { if (e.code === 'KeyF' && Input.inGame && !Input.typing() && nearest()) { e.preventDefault(); e.stopImmediatePropagation(); tryDig(); } }, true);
     }
@@ -112,9 +144,10 @@
     hud.classList.toggle('hidden', !on);
     if (on) {
       const left = Math.max(0, m.until - now()), mm = Math.floor(left / 60000), ss = Math.floor(left / 1000) % 60;
-      const txt = `⛏ ${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')} · Cuốc ${m.pick} lần`;
+      const txt = `⛏ ${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')} · Cuốc ${m.pick} lần${m.auto ? (autoPause ? ' · ⏸ Tự đào' : ' · 🤖 Tự đào') : ''}`;
       if (hud.textContent !== txt) hud.textContent = txt;
       hud.classList.toggle('warn', left < 5 * 60000);
+      hud.classList.toggle('auto', !!m.auto);
     }
     const n = nearest(), can = !!(n && n.ready <= now() && !n.busy && !digs.has(G.you));
     btn.classList.toggle('hidden', !n);

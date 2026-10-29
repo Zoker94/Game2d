@@ -23,7 +23,8 @@ class Mining {
   active(c, mapId) { return c.mineUntil > Date.now() && (!mapId || c.mineMap === baseOf(mapId)); }
   view(p) {
     const c = p.c;
-    return { left: Math.max(0, DAILY - this.usedToday(c)), daily: DAILY, until: this.active(c) ? c.mineUntil : 0, map: c.mineMap || null, pick: c.pickUses | 0 };
+    const on = this.active(c);
+    return { left: Math.max(0, DAILY - this.usedToday(c)), daily: DAILY, until: on ? c.mineUntil : 0, map: c.mineMap || null, pick: c.pickUses | 0, auto: on && c.mineAuto === c.mineUntil ? 1 : 0 };
   }
   // vào bản đồ khoáng động khi không có lượt (cổng, dịch chuyển, đăng nhập lại sau khi hết giờ): đưa về thành
   allowEnter(p, mapId) {
@@ -77,6 +78,16 @@ class Mining {
     p.c.pickUses = (p.c.pickUses | 0) + PICK_USES;
     this.w.toast(p, `⛏ Cuốc Chim: còn ${p.c.pickUses} lần đào`, 'reward');
     p.dirtyMe = true; this.w.db.markDirty();
+  }
+  // Bùa Tự Đào: bật tự đào cho lượt đang có (máy khách tự đi tới mỏ và bấm Đào)
+  useAuto(p, uid) {
+    const c = p.c, w = this.w;
+    if (!this.active(c, p.mapId)) return w.toast(p, 'Vào Khoáng Động (dùng Vé Vào Khoáng Động) rồi mới dùng Bùa Tự Đào', 'error');
+    if (c.mineAuto === c.mineUntil) return w.toast(p, 'Lượt này đang tự đào rồi', 'error');
+    U.removeByUid(c, uid, 1);
+    c.mineAuto = c.mineUntil;
+    w.toast(p, '🤖 Bật tự đào: nhân vật sẽ tự tìm mỏ và đào tới hết lượt. Chạm khung đồng hồ ⛏ để tạm dừng / chạy tiếp.', 'reward');
+    p.dirtyMe = true; w.db.markDirty();
   }
   end(p, why) {
     const c = p.c;

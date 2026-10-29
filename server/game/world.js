@@ -1467,6 +1467,7 @@ class World {
       p.dirtyMe = true; this.db.markDirty(); return;
     }
     if (e.pick) return this.mining.usePick(p, uid);     // Cuốc Chim
+    if (e.autoDig) return this.mining.useAuto(p, uid);   // Bùa Tự Đào
     if (e.dvFrag) return this.divine.useFrag(p, uid, e.dvFrag);       // ghép mảnh lệnh
     if (e.dvSummon) return this.divine.summon(p, uid, e.dvSummon);    // triệu hồi boss Thần Binh
     if (e.stall) return p.mapId === 'cho_phien' ? this.market.action(p, { op: 'mine' }) : this.toast(p, '🏪 Đến Chợ Phiên (đi Xa Phu, miễn phí) rồi dùng lệnh bài này hoặc bấm "🏪 Sạp hàng của tôi" để mở gian hàng ở bất kỳ chỗ trống nào.', 'info');

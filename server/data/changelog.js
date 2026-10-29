@@ -4,6 +4,10 @@ const CHANGELOG = [
   {
     date: '29/10/2026',
     items: [
+      '🤖 Bùa Tự Đào (10 Nguyên Bảo – Kỳ Trân Các): dùng trong Khoáng Động, nhân vật tự tìm mỏ đá gần nhất và đào liên tục tới hết lượt 60 phút (vẫn cần Cuốc Chim). Chạm khung đồng hồ ⛏ để tạm dừng / chạy tiếp; tự điều khiển thì tự đào nhường 3 giây.',
+      '💀 Quái bãi luyện từ cấp 90 trở lên đánh cực đau (lực đánh x3 ở cấp 90, tăng dần theo cấp). Chuẩn bị đồ và bình máu thật kỹ!',
+      '😊 Khung chat có nút biểu cảm: chạm 😊 chọn icon chèn vào tin nhắn – trên điện thoại gửi được ngay không cần bật bàn phím.',
+      '⚔️ Tống Kim: ô chat hiện lại trên điện thoại; bảng điểm chuyển sang bên trái (chỗ khung nhiệm vụ – khung nhiệm vụ tạm ẩn khi ở chiến trường) không che giữa màn hình nữa.',
       '⚙️ Thần Binh: tỉ lệ rơi từ Boss triệu hồi giảm còn 3–5%; cần 100 Mảnh Lệnh mới ghép được Triệu Hồi Lệnh; Boss triệu hồi đánh 10.000–20.000 mỗi đòn. Mặc đủ 5 món cùng bộ: thêm vụ nổ vàng dưới chân mỗi 5 giây – chớp sáng, sóng xung kích lan rộng, đất đá nứt toả ra, đá văng.',
       '⚔️ Chiến Trường Tống Kim: trọng thương không còn tự hồi sinh – chọn hồi sinh tại chỗ bằng 10 Nguyên Bảo hoặc về doanh trại phe mình (miễn phí).',
       '🧹 Menu gọn hơn: Túi đồ, Nhân vật, Võ công gộp chung một nút 🎒 Nhân vật (đổi qua lại bằng tab ở đầu bảng; phím I / C / K vẫn dùng được). Mời bạn, Gift code, Nhóm Zalo chuyển vào Cài đặt → Chung (chấm đỏ trên nút Cài đặt khi có quà chưa nhận).',

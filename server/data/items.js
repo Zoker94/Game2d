@@ -196,6 +196,7 @@ const CONSUMABLES = [
   { id: 'title_rainbow', name: 'Lệnh Bài: Thất Thải Lưu Ly', desc: 'Dùng để mở khoá vĩnh viễn danh hiệu quà tặng 【Thất Thải Lưu Ly】 có hiệu ứng riêng và đeo ngay. Chưa dùng thì tặng, giao dịch hay bán ở chợ được.', effect: { title: 'g_rainbow' }, price: 0, icon: 'title_rainbow', rarity: 'legendary' },
   { id: 'mine_ticket', name: 'Vé Vào Khoáng Động', desc: 'Dùng để vào Khoáng Động đào đá khảm trong 60 phút (cấp 25+; cấp 55+ vào Huyền Tinh Mật Cảnh, đá cấp cao hơn). Mỗi ngày tối đa 3 lượt. Cần Cuốc Chim để đào.', effect: { mine: 1 }, price: 0, icon: 'ticket' },
   { id: 'pickaxe', name: 'Cuốc Chim', desc: 'Dụng cụ đào đá trong Khoáng Động: mỗi cuốc dùng được 50 lần đào. Hết lượt sẽ tự lấy cuốc mới trong túi.', effect: { pick: 50 }, price: 0, icon: 'pickaxe' },
+  { id: 'auto_dig', name: 'Bùa Tự Đào', desc: 'Dùng trong Khoáng Động: nhân vật tự đi tới mỏ đá gần nhất và đào liên tục tới hết lượt 60 phút đang có (vẫn cần Cuốc Chim). Mỗi lá dùng cho 1 lượt vào hang.', effect: { autoDig: 1 }, price: 0, icon: 'auto_dig' },
   { id: 'lucky_chest', name: 'Rương Bí Ẩn', desc: 'Mở ra nhận vật phẩm ngẫu nhiên, có thể ra đồ VIP!', effect: { chest: 1 }, price: 5000, icon: 'chest' },
   { id: 'boss_chest', name: 'Rương Thủ Lĩnh', desc: 'Rương từ Boss, chắc chắn có đồ Hiếm trở lên', effect: { chest: 2 }, price: 20000, icon: 'chest_gold' },
   { id: 'tieu_chest_dong', name: 'Rương Tiêu Đồng', desc: 'Rương hàng văng ra khi xe Tiêu Đồng bị cướp. Mở nhận ngân lượng, Huyền Tinh.', effect: { tieuChest: 'dong' }, price: 600, icon: 'chest' },

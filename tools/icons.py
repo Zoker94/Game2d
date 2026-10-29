@@ -555,6 +555,16 @@ def pickaxe(ic):   # Cuốc Chim: cán gỗ chéo, lưỡi sắt cong hai đầu
     ic.spec([(22, 18), (34, 12)], 1.2, 0.8)
     ic.paint(ic.m_ell(48, 46, 6, 5), '#c070ff', '#4a1aa0', edge=0.4, shine=0); ic.dot(46, 44, 1.6, '#ffffff', 0.9)   # viên đá vừa đào
 
+def auto_dig(ic):   # Bùa Tự Đào: lá bùa vàng chữ đỏ 掘, cuốc chim nhỏ bắt chéo phía sau, viên đá tím
+    ic.paint(ic.m_line([(10, 54), (34, 22)], 3), *WOOD)
+    ic.paint(ic.m_poly([(16, 26), (26, 18), (38, 18), (44, 24), (36, 22), (26, 26), (18, 32)]), '#e8eef4', '#4a5464', ang=-60)
+    ic.paint(ic.m_poly([(26, 8), (50, 12), (46, 58), (22, 54)]), '#ffe27a', '#b07a10', ang=-70)
+    ic.paint(ic.m_poly([(28, 12), (47, 15), (44, 54), (25, 51)]), '#ffd04a', '#c08a18', edge=0.2, shine=0.1, alpha=0.6)
+    ic.text('掘', 36, 30, 15, '#c81a10')
+    for k in range(3): ic.paint(ic.m_line([(27 + k, 44 + k * 3), (44 + k * 0.3, 46 + k * 3)], 1), '#c81a10', None, edge=0, shine=0)
+    ic.paint(ic.m_ell(50, 50, 6, 5), '#c070ff', '#4a1aa0', edge=0.4, shine=0); ic.dot(48, 48, 1.6, '#ffffff', 0.9)
+    ic.spec([(28, 12), (26, 30)], 1, 0.5)
+
 # Mảnh lệnh / Triệu Hồi Lệnh boss Thần Binh
 DV_SETS = {'xv': ('#ff7a3a', '#7a1004', '炎'), 'hb': ('#8ae0ff', '#0a3a6a', '冰'), 'ld': ('#c8a8ff', '#2a1460', '雷')}
 def dv_token(ic, key):
@@ -678,12 +688,12 @@ SIMPLE = {
     'jh_book_cl': lambda ic: book(ic, ('#9a5ad8', '#24104a'), '雷'),
     'stone': stone, 'stone2': lambda ic: stone(ic, True), 'insure': insure, 'food': food, 'blood': blood,
     'chest': chest, 'chest_gold': lambda ic: chest(ic, True), 'ticket': ticket, 'lantern': lantern, 'saddle': saddle, 'gold': gold_icon,
-    'bag': bag, 'pickaxe': pickaxe,
+    'bag': bag, 'pickaxe': pickaxe, 'auto_dig': auto_dig,
     **{'dv_token_' + k: (lambda k: lambda ic: dv_token(ic, k))(k) for k in DV_SETS},
     **{'dv_frag_' + k: (lambda k: lambda ic: dv_frag(ic, k))(k) for k in DV_SETS},
     **{'title_' + k: (lambda k: lambda ic: title_token(ic, k))(k) for k in TITLE_TOKENS},
 }
-SIMPLE_GLOW = {**{'dv_token_' + k: '#ff3020' for k in DV_SETS}, **{'title_' + k: v[0] for k, v in TITLE_TOKENS.items()}, 'silk': '#e0c8ff', 'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'book_thunder': '#c090ff', 'book_shadow': '#ff3a6a', 'jh_book_tl': '#ffd040', 'jh_book_tv': '#ff7a2a', 'jh_book_dm': '#7affd0', 'jh_book_nd': '#8fff4a', 'jh_book_nm': '#ffb0e0', 'jh_book_ty': '#a8ecff', 'jh_book_cb': '#ffc040', 'jh_book_vd': '#b8d8ff', 'jh_book_cl': '#d8a4ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'bag': '#ffd040'}
+SIMPLE_GLOW = {**{'dv_token_' + k: '#ff3020' for k in DV_SETS}, **{'title_' + k: v[0] for k, v in TITLE_TOKENS.items()}, 'silk': '#e0c8ff', 'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'book_thunder': '#c090ff', 'book_shadow': '#ff3a6a', 'jh_book_tl': '#ffd040', 'jh_book_tv': '#ff7a2a', 'jh_book_dm': '#7affd0', 'jh_book_nd': '#8fff4a', 'jh_book_nm': '#ffb0e0', 'jh_book_ty': '#a8ecff', 'jh_book_cb': '#ffc040', 'jh_book_vd': '#b8d8ff', 'jh_book_cl': '#d8a4ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'bag': '#ffd040', 'auto_dig': '#ffd040'}
 
 def build():
     tiles, index = [], {}
