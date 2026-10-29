@@ -529,6 +529,23 @@ def bag(ic):   # Thẻ Mở Rộng Hành Trang: túi gấm buộc dây, thêu ch
     ic.paint(ic.m_ell(32, 44, 10, 10), '#fff2a8', '#c08a20'); ic.text('囊', 32, 44, 11, '#8a1010')
     ic.paint(ic.m_ell(50, 16, 8, 8), '#5ad06a', '#0a5a1a'); ic.text('+', 50, 15.5, 12, '#ffffff')
 
+# Lệnh Bài Danh Hiệu (quà tặng): thẻ bài đầu tròn viền vàng, lòng bài màu danh hiệu, chữ Hán, tua đỏ
+TITLE_TOKENS = {'snow': ('#bfeaff', '#1b4a6a', '冰'), 'sakura': ('#ffb7d5', '#7a1a44', '桃'), 'dragon': ('#ffd24a', '#6a3a04', '龍'),
+                'phoenix': ('#ffa040', '#7a1a04', '鳳'), 'thunder': ('#7ad8ff', '#0a2a5a', '雷'), 'shadow': ('#ff4a5a', '#2a0410', '影'),
+                'jade': ('#6fe0a0', '#0a4a2a', '玉'), 'galaxy': ('#b8a0ff', '#20104a', '星'), 'moon': ('#fff2c0', '#2a2850', '月'),
+                'love': ('#ff8aa8', '#6a0a24', '緣'), 'rich': ('#ffd040', '#6a4004', '富'), 'yinyang': ('#f0f0f0', '#202020', '道'), 'rainbow': ('#e0b0ff', '#3a1a5a', '彩')}
+def title_token(ic, key):
+    col, deep, glyph = TITLE_TOKENS[key]
+    outer = [(18, 14), (22, 8), (32, 5), (42, 8), (46, 14), (46, 48), (32, 54), (18, 48)]
+    ic.paint(ic.m_poly(outer), *GOLD, ang=-60)
+    inner = [(22, 16), (25, 11), (32, 9), (39, 11), (42, 16), (42, 46), (32, 50), (22, 46)]
+    ic.paint(ic.m_poly(inner), light(col, 0.15), deep, ang=-70, edge=0.3, shine=0.25)
+    ic.paint(ic.m_ell(32, 12, 3, 3), *GOLD, edge=0.3, shine=0)
+    ic.text(glyph, 32, 31, 15, '#ffffff' if key not in ('moon', 'yinyang', 'snow') else '#14102a')
+    ic.paint(ic.m_line([(32, 53), (32, 58)], 1.6), '#d02020', None, edge=0, shine=0)
+    ic.paint(ic.m_poly([(29, 57), (35, 57), (37, 63), (27, 63)]), '#ff4a3a', '#8a0a0a', edge=0.2, shine=0)
+    ic.spec([(24, 18), (26, 40)], 1, 0.35)
+
 def lantern(ic):
     ic.paint(ic.m_line([(32, 2), (32, 10)], 1.4), '#3a2010', None, edge=0, shine=0)
     ic.paint(ic.m_rect(26, 9, 38, 13), *GOLD)
@@ -637,8 +654,9 @@ SIMPLE = {
     'stone': stone, 'stone2': lambda ic: stone(ic, True), 'insure': insure, 'food': food, 'blood': blood,
     'chest': chest, 'chest_gold': lambda ic: chest(ic, True), 'ticket': ticket, 'lantern': lantern, 'saddle': saddle, 'gold': gold_icon,
     'bag': bag,
+    **{'title_' + k: (lambda k: lambda ic: title_token(ic, k))(k) for k in TITLE_TOKENS},
 }
-SIMPLE_GLOW = {'silk': '#e0c8ff', 'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'book_thunder': '#c090ff', 'book_shadow': '#ff3a6a', 'jh_book_tl': '#ffd040', 'jh_book_tv': '#ff7a2a', 'jh_book_dm': '#7affd0', 'jh_book_nd': '#8fff4a', 'jh_book_nm': '#ffb0e0', 'jh_book_ty': '#a8ecff', 'jh_book_cb': '#ffc040', 'jh_book_vd': '#b8d8ff', 'jh_book_cl': '#d8a4ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'bag': '#ffd040'}
+SIMPLE_GLOW = {**{'title_' + k: v[0] for k, v in TITLE_TOKENS.items()}, 'silk': '#e0c8ff', 'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'book_thunder': '#c090ff', 'book_shadow': '#ff3a6a', 'jh_book_tl': '#ffd040', 'jh_book_tv': '#ff7a2a', 'jh_book_dm': '#7affd0', 'jh_book_nd': '#8fff4a', 'jh_book_nm': '#ffb0e0', 'jh_book_ty': '#a8ecff', 'jh_book_cb': '#ffc040', 'jh_book_vd': '#b8d8ff', 'jh_book_cl': '#d8a4ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'bag': '#ffd040'}
 
 def build():
     tiles, index = [], {}

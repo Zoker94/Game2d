@@ -276,6 +276,304 @@
       }
     }
   };
+  // ---------- Danh hiệu quà tặng (chỉ nhận qua vật phẩm "Lệnh Bài Danh Hiệu"): hiệu ứng riêng từng cái ----------
+  // điểm chạy quanh viền khung (d: quãng đường đã chạy)
+  const edge = (p, d) => {
+    const per = 2 * (p.w + p.h); d = ((d % per) + per) % per;
+    if (d < p.w) return [p.l + d, p.top];
+    if (d < p.w + p.h) return [p.l + p.w, p.top + d - p.w];
+    if (d < 2 * p.w + p.h) return [p.l + p.w - (d - p.w - p.h), p.top + p.h];
+    return [p.l, p.top + p.h - (d - 2 * p.w - p.h)];
+  };
+  // chữ tô dải màu chạy ngang (viền tối)
+  function gtext(ctx, p, x, y, cols, shift, stroke) {
+    ctx.save();
+    ctx.font = FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+    ctx.lineWidth = 3; ctx.strokeStyle = stroke; ctx.strokeText(p.txt, x, y + 0.5);
+    const g = ctx.createLinearGradient(p.l, 0, p.l + p.w, 0), n = cols.length, s = Math.floor(shift * n);
+    for (let i = 0; i <= n * 2; i++) g.addColorStop(i / (n * 2), cols[(i + s) % n]);
+    ctx.fillStyle = g; ctx.fillText(p.txt, x, y + 0.5);
+    ctx.restore();
+  }
+  const px = (ctx, c, x, y, w = 1, h = 1) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); };
+  // vệt sáng quét qua khung
+  function sweep(ctx, p, t, per, col) {
+    const sx = p.l + (((t / per) % 1.6) - 0.3) * p.w;
+    ctx.save(); ctx.beginPath(); ctx.rect(p.l, p.top, p.w, p.h); ctx.clip(); ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createLinearGradient(sx - 10, 0, sx + 10, 0); g.addColorStop(0, rgba(col, 0)); g.addColorStop(0.5, rgba(col, 0.6)); g.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = g; ctx.fillRect(sx - 10, p.top, 20, p.h); ctx.restore();
+  }
+
+  Object.assign(FX, {
+    // Băng Tâm Tiên Tử: khung băng có tinh thể nhọn hai đầu, tuyết rơi lất phất
+    snow(ctx, T, x, y, t, lite) {
+      const p = box(T, x, y);
+      const g = ctx.createLinearGradient(0, p.top, 0, p.top + p.h); g.addColorStop(0, '#1b3a52'); g.addColorStop(1, '#0a1a2a');
+      frame(ctx, p, g, '#bfeaff');
+      for (const s of [-1, 1]) {   // tinh thể băng hai đầu
+        const bx = s < 0 ? p.l - 1 : p.l + p.w + 1;
+        ctx.fillStyle = '#dff6ff'; ctx.beginPath(); ctx.moveTo(bx, y - 5); ctx.lineTo(bx + s * 7, y); ctx.lineTo(bx, y + 5); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#7cc8ee'; ctx.beginPath(); ctx.moveTo(bx, y - 2); ctx.lineTo(bx + s * 4, y); ctx.lineTo(bx, y + 2); ctx.closePath(); ctx.fill();
+        px(ctx, '#ffffff', bx + s * 2, y - 1, 1, 1);
+      }
+      for (let i = 4; i < p.w - 4; i += 7) { const h = 2 + (i * 7 % 3); px(ctx, '#cfefff', p.l + i, p.top + p.h, 1, h); }   // nhũ băng rủ dưới khung
+      text(ctx, p.txt, x, y, '#e6f8ff', '#06223a');
+      sweep(ctx, p, t, 2200, '#ffffff');
+      if (!lite) for (let i = 0; i < 12; i++) {   // bông tuyết
+        const life = (t / 3200 + R(i)) % 1, xx = p.l - 12 + R(i + 3) * (p.w + 24) + Math.sin(t / 600 + i) * 4, yy = p.top - 16 + life * 40;
+        ctx.globalAlpha = Math.sin(life * Math.PI);
+        if (i % 4 === 0) { px(ctx, '#ffffff', xx - 1, yy, 3, 1); px(ctx, '#ffffff', xx, yy - 1, 1, 3); } else px(ctx, '#e8f8ff', xx, yy, i % 3 ? 1 : 2, i % 3 ? 1 : 2);
+      }
+      ctx.globalAlpha = 1;
+    },
+    // Hoa Đào Tiên Duyên: hoa đào nở hai góc, cánh hoa hồng bay theo gió
+    sakura(ctx, T, x, y, t, lite) {
+      const p = box(T, x, y);
+      frame(ctx, p, 'rgba(90,20,50,.55)', '#ffb7d5');
+      const flower = (cx, cy, r, rot) => {
+        for (let k = 0; k < 5; k++) { const a = rot + k * Math.PI * 2 / 5; px(ctx, k % 2 ? '#ffc8de' : '#ff9ec4', cx + Math.cos(a) * r - 1, cy + Math.sin(a) * r - 1, 2, 2); }
+        px(ctx, '#fff2a0', cx - 0.5, cy - 0.5, 1, 1);
+      };
+      flower(p.l, p.top, 3, t / 2000); flower(p.l + p.w, p.top + p.h, 3, -t / 2000);
+      flower(p.l + p.w - 1, p.top, 2, t / 1500); flower(p.l + 1, p.top + p.h, 2, -t / 1500);
+      text(ctx, p.txt, x, y, '#ffd0e4', '#3a0820');
+      if (!lite) for (let i = 0; i < 10; i++) {   // cánh hoa bay chéo
+        const life = (t / 4200 + R(i + 1)) % 1, xx = p.l - 24 + life * (p.w + 48) + Math.sin(t / 500 + i * 2) * 3, yy = p.top - 10 + R(i + 6) * (p.h + 20) + Math.sin(t / 400 + i) * 3;
+        ctx.globalAlpha = Math.sin(life * Math.PI) * 0.95;
+        const flip = Math.sin(t / 220 + i) > 0;
+        px(ctx, i % 3 ? '#ffb0d0' : '#ffe0ec', xx, yy, flip ? 2 : 1, flip ? 1 : 2);
+      }
+      ctx.globalAlpha = 1;
+    },
+    // Long Ngâm Cửu Thiên: rồng vàng uốn lượn bay vòng quanh khung (lúc sau lưng, lúc trườn ra trước chữ), vảy lấp lánh
+    dragon(ctx, T, x, y, t, lite) {
+      const p = box(T, x, y), A = t / 1100, rx = p.w / 2 + 11, ry = 12;
+      const pt = k => { const a = A - k * 0.075; return [x + Math.cos(a) * rx, y + Math.sin(a) * ry + Math.sin(k * 0.9 + t / 160) * 1.4, Math.sin(a) > 0]; };
+      const N = lite ? 0 : 26, P = []; for (let k = 0; k <= N; k++) P.push(pt(k));
+      // thân rồng: nét dày viền nâu, thân vàng, bụng nhạt; vẽ từng đoạn theo phía trước / sau khung
+      const body = front => {
+        for (let k = N; k > 0; k--) {
+          const a = P[k], b = P[k - 1]; if (a[2] !== front || b[2] !== front) continue;
+          const w = 1.6 + (1 - k / N) * 2.6;
+          ctx.lineCap = 'round';
+          ctx.strokeStyle = '#4a2c00'; ctx.lineWidth = w + 2; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+          ctx.strokeStyle = k % 2 ? '#f0b828' : '#ffd84a'; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+          if (k % 3 === 0) px(ctx, '#fff3b0', b[0] - 0.5, b[1] - w / 2, 1, 1);   // vảy sáng
+          if (k % 6 === 3) { ctx.fillStyle = '#ff7a20'; ctx.beginPath(); ctx.moveTo(b[0], b[1] - w / 2); ctx.lineTo(b[0] - 1.5, b[1] - w / 2 - 3); ctx.lineTo(b[0] + 1.5, b[1] - w / 2 - 1); ctx.fill(); }   // vây lưng
+        }
+      };
+      if (N) body(false);
+      const g = ctx.createLinearGradient(0, p.top, 0, p.top + p.h); g.addColorStop(0, '#4a2a04'); g.addColorStop(1, '#1e1002');
+      frame(ctx, p, g, '#ffd24a');
+      text(ctx, p.txt, x, y, '#ffe27a', '#2a1600');
+      sweep(ctx, p, t, 1800, '#fff0b0');
+      if (!N) return;
+      body(true);
+      // đuôi: chùm lửa nhỏ; đầu rồng: mõm, sừng, mắt đỏ, râu bay
+      const [tx, ty] = P[N]; px(ctx, '#ff9a30', tx - 1.5, ty - 1.5, 3, 3);
+      const [hx, hy] = P[0], [nx, ny] = P[2], dx = hx - nx, dy = hy - ny, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+      ctx.fillStyle = '#4a2c00'; ctx.beginPath(); ctx.ellipse(hx, hy, 4.6, 3.6, Math.atan2(uy, ux), 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffd84a'; ctx.beginPath(); ctx.ellipse(hx, hy, 3.6, 2.6, Math.atan2(uy, ux), 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffe9a0'; ctx.beginPath(); ctx.ellipse(hx + ux * 3, hy + uy * 3, 2, 1.5, Math.atan2(uy, ux), 0, Math.PI * 2); ctx.fill();   // mõm
+      px(ctx, '#ff2a10', hx + ux * 0.5 - uy * 1.2 - 0.5, hy + uy * 0.5 + ux * 1.2 - 1.5, 1, 1);   // mắt
+      ctx.strokeStyle = '#fff2c0'; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(hx - ux * 2, hy - 2); ctx.lineTo(hx - ux * 5, hy - 5); ctx.moveTo(hx, hy - 2.5); ctx.lineTo(hx - ux * 2, hy - 6); ctx.stroke();   // sừng
+      const wv = Math.sin(t / 130) * 2;
+      ctx.strokeStyle = '#ffe9a0'; ctx.beginPath(); ctx.moveTo(hx + ux * 4, hy + 1); ctx.quadraticCurveTo(hx + ux * 7, hy + 3 + wv, hx + ux * 9, hy + 1 - wv); ctx.stroke();   // râu
+      if (Math.sin(t / 700) > 0.6) for (let i = 0; i < 4; i++) px(ctx, i % 2 ? '#ffb040' : '#fff0a0', hx + ux * (6 + i * 2.5), hy + uy * (6 + i * 2.5) + (R(i + Math.floor(t / 90)) - 0.5) * 3, 2, 2);   // phun lửa nhỏ
+    },
+    // Phượng Hoàng Niết Bàn: đôi cánh lửa vỗ hai bên, tàn lửa bay lên
+    phoenix(ctx, T, x, y, t, lite) {
+      const p = box(T, x, y), flap = Math.sin(t / 260);
+      for (const s of [-1, 1]) {
+        const bx = s < 0 ? p.l - 1 : p.l + p.w + 1;
+        for (let i = 0; i < 6; i++) {   // lông vũ xoè ra theo nhịp vỗ
+          const a = (-0.9 + i * 0.32 + flap * 0.18) , len = 14 - Math.abs(i - 2) * 2;
+          const ex = bx + s * Math.cos(a) * len, ey = y - Math.sin(a) * len * 0.9;
+          ctx.strokeStyle = i < 2 ? '#ffe070' : i < 4 ? '#ff9a30' : '#e04018'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(bx, y); ctx.lineTo(ex, ey); ctx.stroke();
+          px(ctx, '#fff4c0', ex - 0.5, ey - 0.5, 1, 1);
+        }
+      }
+      const g = ctx.createLinearGradient(0, p.top, 0, p.top + p.h); g.addColorStop(0, '#6a1a04'); g.addColorStop(1, '#2a0602');
+      frame(ctx, p, g, '#ffb040');
+      gtext(ctx, p, x, y, ['#ffe070', '#ff9a30', '#ff5a20', '#ffb050'], (t / 1400) % 1, '#2a0400');
+      if (!lite) for (let i = 0; i < 12; i++) {
+        const life = (t / 1500 + R(i + 2)) % 1, xx = p.l + R(i + 4) * p.w + Math.sin(t / 300 + i) * 2, yy = p.top - life * 26;
+        ctx.globalAlpha = 1 - life; px(ctx, life < 0.4 ? '#ffe080' : '#ff6a20', xx, yy, 2, 2);
+      }
+      ctx.globalAlpha = 1;
+    },
+    // Lôi Thần Giáng Thế: sét xanh giáng từ trên xuống hai bên, khung chớp sáng theo nhịp sét
+    thunder(ctx, T, x, y, t, lite) {
+      const p = box(T, x, y), cyc = (t % 1700) / 1700, hit = cyc < 0.14;
+      const seed = Math.floor(t / 1700);
+      if (!lite && hit) {
+        for (const s of [-1, 1]) bolt(ctx, x + s * (p.w / 2 - 6) + (R(seed + s) - 0.5) * 10, p.top - 28, x + s * (p.w / 2 - 2), p.top, seed * 3 + s, 6, 'rgba(90,180,255,.55)', '#e8f6ff');
+        ctx.fillStyle = 'rgba(160,220,255,.18)'; ctx.fillRect(p.l - 6, p.top - 6, p.w + 12, p.h + 12);
+      }
+      const g = ctx.createLinearGradient(0, p.top, 0, p.top + p.h); g.addColorStop(0, '#0e2a4a'); g.addColorStop(1, '#040e1e');
+      frame(ctx, p, g, hit ? '#ffffff' : '#7ad8ff');
+      text(ctx, p.txt, x, y, hit ? '#ffffff' : '#bfe8ff', '#001226');
+      if (!lite) for (let i = 0; i < 4; i++) {   // tia điện nhỏ bò quanh viền
+        const [ex, ey] = edge(p, t / 4 + i * (p.w + p.h) / 2);
+        px(ctx, '#ffffff', ex - 1, ey - 1, 2, 2); px(ctx, 'rgba(122,216,255,.7)', ex - 3, ey, 6, 1); px(ctx, 'rgba(122,216,255,.7)', ex, ey - 3, 1, 6);
+      }
+    },
+    // Ám Dạ Sát Thần: khói đen cuộn quanh, đôi mắt đỏ chớp, chữ đỏ thẫm
+    shadow(ctx, T, x, y, t, lite) {
+      const p = box(T, x, y);
+      if (!lite) for (let i = 0; i < 14; i++) {   // khói tím đen
+        const life = (t / 2600 + R(i)) % 1, a = R(i + 8) * Math.PI * 2, rr = 6 + life * 16;
+        const xx = x + Math.cos(a) * (p.w / 2 + rr * 0.6), yy = y + Math.sin(a) * (6 + rr * 0.4) - life * 6;
+        ctx.globalAlpha = (1 - life) * 0.55; ctx.fillStyle = i % 2 ? '#2a0a2a' : '#140414';
+        ctx.beginPath(); ctx.arc(xx, yy, 2 + life * 4, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      frame(ctx, p, 'rgba(10,0,8,.85)', '#7a1030');
+      const blink = (t % 3200) > 3050;
+      for (const s of [-1, 1]) {   // mắt đỏ hai bên
+        const ex = s < 0 ? p.l - 6 : p.l + p.w + 3;
+        if (!blink) { px(ctx, '#ff2a40', ex, y - 1, 3, 1); px(ctx, 'rgba(255,40,60,.35)', ex - 1, y - 2, 5, 3); }
+      }
+      text(ctx, p.txt, x, y, R(Math.floor(t / 120)) > 0.15 ? '#ff4a5a' : '#c02040', '#000000');
+    },
+    // Ngọc Diện Công Tử: khung ngọc bích, chuỗi hạt ngọc xoay quanh, ánh ngọc quét
+    jade(ctx, T, x, y, t, lite) {
+      const p = box(T, x, y);
+      const g = ctx.createLinearGradient(0, p.top, 0, p.top + p.h); g.addColorStop(0, '#0e4a32'); g.addColorStop(0.5, '#126a44'); g.addColorStop(1, '#06281a');
+      frame(ctx, p, g, '#a8ffd0');
+      for (const [cx, cy] of [[p.l - 1, p.top - 1], [p.l + p.w - 2, p.top - 1], [p.l - 1, p.top + p.h - 2], [p.l + p.w - 2, p.top + p.h - 2]]) { px(ctx, '#f0d070', cx, cy, 3, 3); px(ctx, '#fff6c0', cx + 1, cy, 1, 1); }
+      text(ctx, p.txt, x, y, '#d8ffe8', '#022014');
+      sweep(ctx, p, t, 2000, '#e0fff0');
+      if (!lite) for (let i = 0; i < 8; i++) {   // hạt ngọc xoay quanh
+        const a = t / 1100 + i * Math.PI / 4, xx = x + Math.cos(a) * (p.w / 2 + 9), yy = y + Math.sin(a) * 11;
+        const front = Math.sin(a) > 0;
+        px(ctx, front ? '#6fe0a0' : 'rgba(111,224,160,.4)', xx - 1, yy - 1, 3, 3);
+        if (front) px(ctx, '#e8fff0', xx - 1, yy - 1, 1, 1);
+      }
+    },
+    // Tinh Hà Vạn Lý: lòng khung là bầu trời sao, sao băng vụt qua
+    galaxy(ctx, T, x, y, t, lite) {
+      const p = box(T, x, y);
+      const g = ctx.createLinearGradient(p.l, 0, p.l + p.w, 0); g.addColorStop(0, '#1a0a3a'); g.addColorStop(0.5, '#2a1260'); g.addColorStop(1, '#0a1a40');
+      frame(ctx, p, g, '#b8a0ff');
+      for (let i = 0; i < 14; i++) {   // sao lấp lánh trong khung
+        const tw = 0.5 + 0.5 * Math.sin(t / 300 + i * 1.9);
+        ctx.globalAlpha = tw; px(ctx, i % 4 ? '#ffffff' : '#ffe0a0', p.l + 2 + R(i + 1) * (p.w - 4), p.top + 2 + R(i + 11) * (p.h - 4), 1, 1);
+      }
+      ctx.globalAlpha = 1;
+      gtext(ctx, p, x, y, ['#d8c8ff', '#ffffff', '#a8d8ff', '#ffd8f0'], (t / 2000) % 1, '#0a0420');
+      if (!lite) {
+        const sc = (t % 2600) / 2600;   // sao băng
+        if (sc < 0.35) {
+          const f = sc / 0.35, sx = p.l - 20 + f * (p.w + 40), sy = p.top - 14 + f * 10;
+          const tg = ctx.createLinearGradient(sx - 16, sy - 5, sx, sy); tg.addColorStop(0, 'rgba(255,255,255,0)'); tg.addColorStop(1, 'rgba(255,255,255,.95)');
+          ctx.strokeStyle = tg; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(sx - 16, sy - 5); ctx.lineTo(sx, sy); ctx.stroke();
+          px(ctx, '#ffffff', sx - 1, sy - 1, 2, 2);
+        }
+        for (let i = 0; i < 6; i++) {   // sao bốn cánh quanh khung
+          const tw = Math.max(0, Math.sin(t / 500 + i * 2.3));
+          if (tw < 0.3) continue;
+          const xx = p.l - 8 + R(i + 21) * (p.w + 16), yy = R(i + 31) > 0.5 ? p.top - 6 - R(i) * 6 : p.top + p.h + 4 + R(i) * 6, L = Math.round(tw * 3);
+          px(ctx, '#ffffff', xx - L, yy, L * 2 + 1, 1); px(ctx, '#ffffff', xx, yy - L, 1, L * 2 + 1);
+        }
+      }
+    },
+    // Nguyệt Hạ Thi Nhân: vầng trăng khuyết bên trái, ánh trăng toả, đom đóm bay
+    moon(ctx, T, x, y, t, lite) {
+      const p = box(T, x, y), mx = p.l - 10, my = y - 2;
+      const halo = ctx.createRadialGradient(mx, my, 2, mx, my, 16); halo.addColorStop(0, 'rgba(255,242,192,.45)'); halo.addColorStop(1, 'rgba(255,242,192,0)');
+      ctx.fillStyle = halo; ctx.fillRect(mx - 16, my - 16, 32, 32);
+      ctx.fillStyle = '#fff2c0'; ctx.beginPath(); ctx.arc(mx, my, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#1a1830'; ctx.beginPath(); ctx.arc(mx + 3, my - 2, 5, 0, Math.PI * 2); ctx.fill();   // khoét thành trăng khuyết
+      frame(ctx, p, 'rgba(20,18,48,.8)', '#fff2c0');
+      text(ctx, p.txt, x, y, '#fff6d8', '#14102a');
+      if (!lite) for (let i = 0; i < 7; i++) {   // đom đóm
+        const a = t / (1400 + i * 120) + i * 2, xx = x + Math.cos(a) * (p.w / 2 + 4 + R(i) * 10), yy = y + Math.sin(a * 1.3) * (10 + R(i + 4) * 6);
+        const k = 0.5 + 0.5 * Math.sin(t / 250 + i * 3);
+        ctx.globalAlpha = k; px(ctx, '#e8ff9a', xx - 1, yy - 1, 2, 2); ctx.globalAlpha = k * 0.3; px(ctx, '#e8ff9a', xx - 2, yy - 2, 4, 4);
+      }
+      ctx.globalAlpha = 1;
+    },
+    // Thiên Trường Địa Cửu: tim hồng bay lên, tim lớn đập hai bên (danh hiệu đôi lứa)
+    love(ctx, T, x, y, t, lite) {
+      const p = box(T, x, y), beat = 1 + Math.max(0, Math.sin(t / 180)) * 0.25 * (Math.floor(t / 1130) % 2 ? 0 : 1);
+      const heart = (cx, cy, s, col) => {
+        ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(cx, cy + 3 * s);
+        ctx.bezierCurveTo(cx - 5 * s, cy - 1 * s, cx - 3 * s, cy - 5 * s, cx, cy - 2 * s);
+        ctx.bezierCurveTo(cx + 3 * s, cy - 5 * s, cx + 5 * s, cy - 1 * s, cx, cy + 3 * s); ctx.fill();
+      };
+      frame(ctx, p, 'rgba(80,10,30,.6)', '#ff8aa8');
+      heart(p.l - 7, y, 1.1 * beat, '#ff4a70'); heart(p.l + p.w + 7, y, 1.1 * beat, '#ff4a70');
+      px(ctx, '#ffd0dc', p.l - 9, y - 3, 1, 1); px(ctx, '#ffd0dc', p.l + p.w + 5, y - 3, 1, 1);
+      text(ctx, p.txt, x, y, '#ffd0dc', '#3a0414');
+      if (!lite) for (let i = 0; i < 8; i++) {
+        const life = (t / 2400 + R(i + 3)) % 1, xx = p.l + R(i + 7) * p.w + Math.sin(t / 350 + i) * 4, yy = p.top - life * 28;
+        ctx.globalAlpha = Math.sin(life * Math.PI); heart(xx, yy, 0.55, i % 2 ? '#ff7a98' : '#ffb0c4');
+      }
+      ctx.globalAlpha = 1;
+    },
+    // Phú Khả Địch Quốc: khung vàng ròng, nén bạc hai bên, đồng tiền vàng rơi lấp lánh
+    rich(ctx, T, x, y, t, lite) {
+      const p = box(T, x, y);
+      const g = ctx.createLinearGradient(0, p.top, 0, p.top + p.h); g.addColorStop(0, '#7a5208'); g.addColorStop(0.5, '#b07a10'); g.addColorStop(1, '#4a3004');
+      frame(ctx, p, g, '#fff0a0');
+      for (const s of [-1, 1]) {   // nén vàng (thỏi nguyên bảo)
+        const bx = s < 0 ? p.l - 11 : p.l + p.w + 2, by = y - 2 + Math.round(Math.sin(t / 400 + s) * 1);
+        px(ctx, '#7a4a00', bx, by + 1, 9, 3); px(ctx, '#ffd040', bx + 1, by, 7, 3); px(ctx, '#ffd040', bx - 1, by - 2, 3, 3); px(ctx, '#ffd040', bx + 7, by - 2, 3, 3);
+        px(ctx, '#fff6c0', bx + 2, by, 3, 1);
+      }
+      text(ctx, p.txt, x, y, '#fff2a0', '#2a1800');
+      sweep(ctx, p, t, 1500, '#fff8d0');
+      if (!lite) for (let i = 0; i < 10; i++) {   // tiền vàng rơi, xoay (dẹt lại rồi tròn ra)
+        const life = (t / 2000 + R(i + 9)) % 1, xx = p.l - 6 + R(i + 1) * (p.w + 12), yy = p.top - 18 + life * 40;
+        const w = Math.max(1, Math.round(Math.abs(Math.cos(t / 160 + i)) * 4));
+        ctx.globalAlpha = Math.sin(life * Math.PI);
+        px(ctx, '#c88a10', xx - w / 2, yy, w, 4); px(ctx, '#ffe060', xx - w / 2, yy, Math.max(1, w - 1), 3);
+      }
+      ctx.globalAlpha = 1;
+    },
+    // Thái Cực Chân Nhân: hai âm dương xoay hai bên, chữ trắng đen chạy, bát quái mờ phía sau
+    yinyang(ctx, T, x, y, t, lite) {
+      const p = box(T, x, y);
+      if (!lite) {   // bát quái mờ sau lưng
+        ctx.save(); ctx.translate(x, y); ctx.rotate(-t / 5000); ctx.strokeStyle = 'rgba(240,240,240,.22)'; ctx.lineWidth = 1;
+        for (let i = 0; i < 8; i++) { ctx.rotate(Math.PI / 4); for (let k = 0; k < 3; k++) { const yy = -18 - k * 3; if ((i >> k) & 1) { ctx.beginPath(); ctx.moveTo(-4, yy); ctx.lineTo(4, yy); ctx.stroke(); } else { ctx.beginPath(); ctx.moveTo(-4, yy); ctx.lineTo(-1, yy); ctx.moveTo(1, yy); ctx.lineTo(4, yy); ctx.stroke(); } } }
+        ctx.restore();
+      }
+      const yy = (cx, cy, r, a) => {
+        ctx.save(); ctx.translate(cx, cy); ctx.rotate(a);
+        ctx.fillStyle = '#f4f4f4'; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(0, 0, r, -Math.PI / 2, Math.PI / 2); ctx.arc(0, r / 2, r / 2, Math.PI / 2, -Math.PI / 2, true); ctx.arc(0, -r / 2, r / 2, Math.PI / 2, -Math.PI / 2); ctx.fill();
+        ctx.fillStyle = '#f4f4f4'; ctx.beginPath(); ctx.arc(0, r / 2, r / 6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(0, -r / 2, r / 6, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#888'; ctx.lineWidth = 0.6; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      };
+      frame(ctx, p, 'rgba(30,30,30,.82)', '#f0f0f0');
+      yy(p.l - 8, y, 6, t / 600); yy(p.l + p.w + 8, y, 6, -t / 600);
+      gtext(ctx, p, x, y, ['#ffffff', '#c8c8c8', '#ffffff', '#9a9a9a'], (t / 1800) % 1, '#000');
+    },
+    // Thất Thải Lưu Ly: chữ và viền đổi bảy sắc cầu vồng, hạt lưu ly lấp lánh
+    rainbow(ctx, T, x, y, t, lite) {
+      const p = box(T, x, y), hue = (t / 12) % 360;
+      const bg = ctx.createLinearGradient(p.l, 0, p.l + p.w, 0);
+      for (let i = 0; i <= 6; i++) bg.addColorStop(i / 6, `hsla(${(hue + i * 50) % 360},80%,25%,.75)`);
+      ctx.fillStyle = bg; ctx.fillRect(p.l, p.top, p.w, p.h);
+      const bd = ctx.createLinearGradient(p.l, 0, p.l + p.w, 0);
+      for (let i = 0; i <= 6; i++) bd.addColorStop(i / 6, `hsl(${(hue + 180 + i * 50) % 360},95%,70%)`);
+      ctx.strokeStyle = bd; ctx.lineWidth = 1; ctx.strokeRect(p.l + 0.5, p.top + 0.5, p.w - 1, p.h - 1);
+      const cols = []; for (let i = 0; i < 7; i++) cols.push(`hsl(${(hue + i * 51) % 360},100%,78%)`);
+      gtext(ctx, p, x, y, cols, 0, '#10061a');
+      if (!lite) for (let i = 0; i < 10; i++) {   // hạt lưu ly đổi màu
+        const life = (t / 2200 + R(i + 13)) % 1, a = R(i) * Math.PI * 2, d = 8 + life * 16;
+        ctx.globalAlpha = 1 - life;
+        px(ctx, `hsl(${(hue + i * 36) % 360},100%,75%)`, x + Math.cos(a) * (p.w / 2 + d * 0.5), y + Math.sin(a) * (6 + d * 0.5), 2, 2);
+      }
+      ctx.globalAlpha = 1;
+    }
+  });
   // vẽ danh hiệu; trả về toạ độ trên cùng của phần khung (để đặt tên bang phía trên)
   function draw(ctx, T, x, y, t, lite) { (FX[T.fx] || FX.plain)(ctx, T, x, y, t, lite); }
   window.TitleFX = { draw, FX };
