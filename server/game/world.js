@@ -225,6 +225,11 @@ class World {
   }
 
   enterMap(p, mapId, x, y, viaPortal = false) {
+    if (this.mining && !this.mining.allowEnter(p, mapId)) {   // khoáng động: chỉ vào bằng Vé Vào Khoáng Động (Kỳ Trân Các)
+      this.toast(p, '⛏ Khoáng Động chỉ vào được bằng Vé Vào Khoáng Động (mua ở Kỳ Trân Các)', 'error');
+      if (p.mapId) return;
+      const t = MAPS.tuong_duong; mapId = 'tuong_duong'; x = (t.center.x + 0.5) * TILE; y = (t.center.y + 2.5) * TILE;
+    }
     const prev = p.mapId ? { mapId: p.mapId, x: p.x, y: p.y } : null;
     if (p.duel && p.duel.mapId !== mapId) this.duel.onLost(p, `${p.c.name} đã rời bản đồ`);
     if (this.tongkim && p.mapId === 'tong_kim' && mapId !== 'tong_kim') this.tongkim.onLeaveMap(p);
@@ -249,6 +254,7 @@ class World {
     this.escort.onEnterMap(p, prev, viaPortal);
     for (const r of this.duel.ringsOn(mapId)) p.socket.emit('duelRing', r);
     this.market.onEnterMap(p);
+    if (this.mining) this.mining.onEnterMap(p);
     if (this.hoason && mapId === 'hoa_son_ld') this.hoason.sync(p);
     if (this.tongkim && mapId === 'tong_kim') this.tongkim.onEnter(p);
     this.progressTutorial(p, 'map', { map: baseOf(mapId) });
@@ -349,7 +355,7 @@ class World {
       attr: c.attr || {}, attrFree: attrTotalOf(c) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
       branch: branchOf(c), skills: c.skills || {}, hotbar: c.hotbar, sp: spTotalOf(c) - (c.spSpent || 0),
       mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
-      sect: this.sect ? this.sect.meView(p) : null,
+      sect: this.sect ? this.sect.meView(p) : null, mine: this.mining ? this.mining.view(p) : null,
       med: !!p.med, pvp: this.inPvp(p) ? 1 : 0, st: this.statusView(p), friends: Object.keys(c.friends || {}).length, friendIds: this.friendIds(c), pk: c.pk || 0,
       rank: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0
     };
@@ -1393,7 +1399,7 @@ class World {
   }
   batchable(it) {
     const e = it.effect || {};
-    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.pardon || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr);
+    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.mine || e.pardon || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr);
   }
   useOne(p, uid) {
     const s = p.c.inv.find(x => x.uid === uid);
@@ -1425,6 +1431,8 @@ class World {
       this.features.questProgress(p, 'potion', 1);
     }
     if (e.town) { this.startRecall(p); return; }   // niệm phép, xong mới trừ phù
+    if (e.mine) return this.mining.useTicket(p, uid);   // Vé Vào Khoáng Động
+    if (e.pick) return this.mining.usePick(p, uid);     // Cuốc Chim
     if (e.stall) return p.mapId === 'cho_phien' ? this.market.action(p, { op: 'mine' }) : this.toast(p, '🏪 Đến Chợ Phiên (đi Xa Phu, miễn phí) rồi dùng lệnh bài này hoặc bấm "🏪 Sạp hàng của tôi" để mở gian hàng ở bất kỳ chỗ trống nào.', 'info');
     if (e.pardon) {
       if (!(c.pk > 0)) return this.toast(p, 'Bạn không mang sát khí, không cần xoá tội', 'error');
@@ -2176,6 +2184,7 @@ class World {
     if (sec) { this.rollWeather(now); this.story.tick(); }
     this.escort.tick(now, TICK);
     this.autoSrv.tick(now);
+    if (this.mining) this.mining.tick(now);
     this.market.tick(now);
     if (this.tickN % 5 === 0) this.duel.tick(now);
     for (const id in this.maps) {

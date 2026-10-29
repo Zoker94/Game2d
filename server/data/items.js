@@ -146,6 +146,8 @@ const CONSUMABLES = [
   { id: 'insure', name: 'Bảo Hiểm Phù', desc: 'Khi cường hóa từ +10 trở lên mà thất bại, giữ nguyên cấp thay vì rớt về +1.', price: 15000, icon: 'insure', material: true },
   { id: 'mount_food', name: 'Mã Linh Đan', desc: 'Thức ăn cho thú cưỡi, +100 kinh nghiệm thú cưỡi.', price: 400, icon: 'food', material: true },
   { id: 'mount_stone', name: 'Long Huyết Thạch', desc: 'Dùng để đột phá thú cưỡi ở cấp 10, 20, 30, 40.', price: 6000, icon: 'blood', material: true },
+  { id: 'mine_ticket', name: 'Vé Vào Khoáng Động', desc: 'Dùng để vào Khoáng Động đào đá khảm trong 60 phút (cấp 25+; cấp 55+ vào Huyền Tinh Mật Cảnh, đá cấp cao hơn). Mỗi ngày tối đa 3 lượt. Cần Cuốc Chim để đào.', effect: { mine: 1 }, price: 0, icon: 'ticket' },
+  { id: 'pickaxe', name: 'Cuốc Chim', desc: 'Dụng cụ đào đá trong Khoáng Động: mỗi cuốc dùng được 50 lần đào. Hết lượt sẽ tự lấy cuốc mới trong túi.', effect: { pick: 50 }, price: 0, icon: 'pickaxe' },
   { id: 'lucky_chest', name: 'Rương Bí Ẩn', desc: 'Mở ra nhận vật phẩm ngẫu nhiên, có thể ra đồ VIP!', effect: { chest: 1 }, price: 5000, icon: 'chest' },
   { id: 'boss_chest', name: 'Rương Thủ Lĩnh', desc: 'Rương từ Boss, chắc chắn có đồ Hiếm trở lên', effect: { chest: 2 }, price: 20000, icon: 'chest_gold' },
   { id: 'tieu_chest_dong', name: 'Rương Tiêu Đồng', desc: 'Rương hàng văng ra khi xe Tiêu Đồng bị cướp. Mở nhận ngân lượng, Huyền Tinh.', effect: { tieuChest: 'dong' }, price: 600, icon: 'chest' },

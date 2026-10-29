@@ -49,6 +49,7 @@ world.daihoi = new (require('./game/daihoi').DaiHoi)(world, features, db);
 world.hoason = new (require('./game/hoason').HoaSon)(world, features, db);
 world.tongkim = new (require('./game/tongkim').TongKim)(world, features, db);
 world.cleanup = new (require('./game/cleanup').Cleanup)(world, features, db);
+world.mining = new (require('./game/mining').Mining)(world);
 world.referral = new (require('./game/referral').Referral)(world);
 const { Social } = require('./game/social');
 const social = new Social(world, features, db);
@@ -401,6 +402,7 @@ io.on('connection', socket => {
     if (!world.quickUse(player, kind, d && d.auto)) { if (d && d.auto) socket.emit('noPot', { kind }); else world.toast(player, 'Không còn thuốc!', 'error'); }
   }));
   on('equip', inGame(d => world.equip(player, d && d.uid, d && d.side)));
+  on('mine', inGame(d => world.mining.dig(player, d && d.id)));
   on('ref', inGame(d => world.referral.action(player, d)));
   on('title', inGame(d => world.selectTitle(player, d && typeof d.id === 'string' ? d.id : null)));
   on('unequip', inGame(d => world.unequip(player, d && d.slot)));

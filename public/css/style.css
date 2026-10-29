@@ -1872,3 +1872,15 @@ body.touch #wb-top { top: 108px; right: auto; left: 50%; transform: translateX(-
 .pg-logo.sm .pg-beta { top: -10px; right: -10px; font-size: 8px; }
 @keyframes pgBeta { 50% { box-shadow: 0 2px 8px rgba(0,0,0,.5), 0 0 18px rgba(255,120,80,.9); } }
 @media (prefers-reduced-motion: reduce) { .pg-beta { animation: none; } }
+/* khoáng động (mining.js): nút Đào khi đứng gần mỏ, đồng hồ đếm ngược lượt 60 phút */
+#btn-dig { position: absolute; left: 50%; bottom: 128px; transform: translateX(-50%); z-index: 12; display: flex; align-items: center; gap: 6px; font: 800 15px "Be Vietnam Pro", system-ui, sans-serif;
+  color: #2a1a00; background: linear-gradient(180deg, #ffe08a, #e0a020); border: 2px solid #fff2c0; border-radius: 22px; padding: 8px 20px; box-shadow: 0 4px 14px rgba(0,0,0,.55), 0 0 14px rgba(255,200,80,.6); cursor: pointer; animation: digPulse 1.2s ease-in-out infinite; }
+#btn-dig span { font-size: 14px; }
+#btn-dig.off { filter: grayscale(.8) brightness(.7); animation: none; }
+#btn-dig.hidden { display: none; }
+@keyframes digPulse { 50% { transform: translateX(-50%) scale(1.06); } }
+#mine-hud { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); z-index: 12; font: 800 12px "Be Vietnam Pro", system-ui, sans-serif; color: #ffe8a8; background: rgba(20,14,8,.82);
+  border: 1px solid rgba(255,215,106,.5); border-radius: 12px; padding: 3px 12px; pointer-events: none; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#mine-hud.warn { color: #ff9a7a; border-color: rgba(255,120,90,.7); }
+#mine-hud.hidden { display: none; }
+body.short #btn-dig { bottom: 96px; }

@@ -546,6 +546,14 @@ def title_token(ic, key):
     ic.paint(ic.m_poly([(29, 57), (35, 57), (37, 63), (27, 63)]), '#ff4a3a', '#8a0a0a', edge=0.2, shine=0)
     ic.spec([(24, 18), (26, 40)], 1, 0.35)
 
+def pickaxe(ic):   # Cuốc Chim: cán gỗ chéo, lưỡi sắt cong hai đầu nhọn, dây buộc
+    ic.paint(ic.m_line([(16, 56), (44, 14)], 4.2), *WOOD)
+    ic.paint(ic.m_poly([(18, 18), (30, 10), (44, 9), (56, 16), (58, 22), (50, 18), (42, 16), (34, 18), (24, 24), (14, 30)]), '#e8eef4', '#4a5464', ang=-60)
+    ic.paint(ic.m_poly([(38, 12), (48, 14), (46, 22), (36, 20)]), '#8a6a3a', '#3a2410', edge=0.3, shine=0.1)
+    for k in range(3): ic.paint(ic.m_line([(38, 14 + k * 3), (47, 16 + k * 3)], 1), '#c8a060', None, edge=0, shine=0)
+    ic.spec([(22, 18), (34, 12)], 1.2, 0.8)
+    ic.paint(ic.m_ell(48, 46, 6, 5), '#c070ff', '#4a1aa0', edge=0.4, shine=0); ic.dot(46, 44, 1.6, '#ffffff', 0.9)   # viên đá vừa đào
+
 def lantern(ic):
     ic.paint(ic.m_line([(32, 2), (32, 10)], 1.4), '#3a2010', None, edge=0, shine=0)
     ic.paint(ic.m_rect(26, 9, 38, 13), *GOLD)
@@ -653,7 +661,7 @@ SIMPLE = {
     'jh_book_cl': lambda ic: book(ic, ('#9a5ad8', '#24104a'), '雷'),
     'stone': stone, 'stone2': lambda ic: stone(ic, True), 'insure': insure, 'food': food, 'blood': blood,
     'chest': chest, 'chest_gold': lambda ic: chest(ic, True), 'ticket': ticket, 'lantern': lantern, 'saddle': saddle, 'gold': gold_icon,
-    'bag': bag,
+    'bag': bag, 'pickaxe': pickaxe,
     **{'title_' + k: (lambda k: lambda ic: title_token(ic, k))(k) for k in TITLE_TOKENS},
 }
 SIMPLE_GLOW = {**{'title_' + k: v[0] for k, v in TITLE_TOKENS.items()}, 'silk': '#e0c8ff', 'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'book_thunder': '#c090ff', 'book_shadow': '#ff3a6a', 'jh_book_tl': '#ffd040', 'jh_book_tv': '#ff7a2a', 'jh_book_dm': '#7affd0', 'jh_book_nd': '#8fff4a', 'jh_book_nm': '#ffb0e0', 'jh_book_ty': '#a8ecff', 'jh_book_cb': '#ffc040', 'jh_book_vd': '#b8d8ff', 'jh_book_cl': '#d8a4ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'bag': '#ffd040'}

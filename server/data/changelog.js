@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '29/10/2026',
     items: [
+      '⛏ KHOÁNG ĐỘNG ĐÀO ĐÁ làm lại: mua Vé Vào Khoáng Động (15 Nguyên Bảo) và Cuốc Chim (10 Nguyên Bảo, 50 lần đào) ở Kỳ Trân Các; Xa Phu không còn chở vào hang. Dùng vé để vào (cấp 25+, cấp 55+ vào Huyền Tinh Mật Cảnh ra đá cấp cao hơn). Trong hang không có quái, chỉ có mỏ đá: tới gần bấm ⛏ Đào (hoặc phím F), chờ 3 giây ra ngẫu nhiên đá khảm, vài món linh tinh (đá cường hoá, ngân lượng, thuốc…) hoặc không có gì. Mỏ vừa đào cạn 40 giây mới đào lại được. Mỗi ngày 3 lượt, mỗi lượt 60 phút, đồng hồ đếm ngược ở giữa trên màn hình; hết giờ tự về Tương Dương, rời hang giữa chừng là hết lượt đó.',
       '👹 Quái các bãi luyện từ cấp 45 trở lên trâu và đánh đau hơn: máu x3 ở cấp 50 (giảm dần còn x1,7 ở cấp 99 vì máu gốc đã cao), thủ và lực đánh tăng theo cấp. Bãi luyện cấp 50+ đông quái hơn 50%. Kinh nghiệm và ngân lượng mỗi con tăng bù theo máu.',
       '🧪 Thêm mác BETA TEST trên logo game: máy chủ đang trong giai đoạn thử nghiệm.',
       '🛡️ Chống tài khoản clone ăn quà Mời bạn: không tính tài khoản tạo trên máy đã có tài khoản khác, một mạng tạo quá nhiều tài khoản trong 24 giờ, hay tài khoản sau đó đăng nhập chung máy / chung mạng với người mời (chung mạng chỉ tính 1 người nhà). Bảng Mời bạn ghi rõ lý do người nào không được tính.',

@@ -395,6 +395,7 @@
     });
     Social.bind(s);
     Party.bind(s);
+    Mining.bind(s);
     Travel.bind(s);
     Dungeon.bind(s);
     SectUI.bind(s);
@@ -1422,6 +1423,7 @@
     const bubbles = [];
     WorldArt.visibleDecos(cam, vw, vh, list);
     Market.collect(list);
+    Mining.collect(list);
     Pet.collect(list, now);
     const nearPl = [s, ...G.players.values()];
     list.sort((a, b) => a.y - b.y);
@@ -1486,6 +1488,8 @@
         if (it.e.bubble) bubbles.push([it.e, it.e.y - (Assets.monsterTop(it.e.type) || (it.e.boss ? 120 : 56)) - 30]);   // lời thoại boss
       } else if (it.k === 'stall') {
         Market.draw(ctx, it.s, label);
+      } else if (it.k === 'ore') {
+        Mining.draw(ctx, it.o, now, label);
       } else if (it.k === 'corpse') {
         drawCorpse(it.c, now);
       } else if (it.k === 'cart') {
@@ -1543,6 +1547,7 @@
       if (ni) label(ni.x, ni.y - 34 + Math.sin(now / 200) * 2, '[F] Nhặt', '#ffe9a8', 11, true);
     }
     const taken = [];
+    Mining.drawBars(ctx, G.players, G.you);
     for (const [e, top] of bubbles) if (!Overhead.drawBubble(ctx, e.x, top, e.bubble, now, taken)) e.bubble = null;
 
     BossArt.drawOver(ctx, now);   // chiêu boss: nổ, gai đá / băng, sét, lốc xoáy đè lên nhân vật
