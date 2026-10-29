@@ -68,3 +68,15 @@ tr:hover td { background: #1a1524; }
   #view { padding: 10px; }
   table { font-size: 12px; } th, td { padding: 6px 4px; }
 }
+/* Cửa hàng NPC */
+.ic { image-rendering: auto; vertical-align: middle; border-radius: 6px; background: #1a1d26; }
+.ic.ph { display: inline-block; }
+.itemcard { display: flex; gap: 12px; align-items: flex-start; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.03); }
+.itemcard > div { display: grid; gap: 4px; min-width: 0; }
+.shres { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; margin: 8px 0; max-height: 320px; overflow: auto; }
+.shitem { display: grid; grid-template-columns: 40px 1fr; grid-template-rows: auto auto; column-gap: 8px; align-items: center; text-align: left; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.03); color: inherit; cursor: pointer; }
+.shitem img, .shitem .ic { grid-row: span 2; }
+.shitem span { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shitem small { color: #8a8f9c; font-size: 11px; }
+.shitem:hover { border-color: var(--gold); }
+.btn.danger { color: #ff8a8a; }

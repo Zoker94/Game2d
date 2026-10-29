@@ -14,6 +14,7 @@ const { JIANGHU, JH_SLOT, JH_DROP } = require('../data/jianghu');
 const { TITLES, statOf, unlocked: titleUnlocked } = require('../data/titles');
 const jhOf = c => (c.jh && c.jhs && c.jhs[c.jh] ? JIANGHU[c.jh] : null);   // tuyệt kỹ giang hồ đang chọn
 const { SKILL_MAX, scaleSkill, upgradeCost, skillPointsTotal, BOOKS } = require('../data/skillbooks');
+const SHOPS = require('./shops');
 const TK_REVIVE_KNB = 10;   // Tống Kim: giá hồi sinh tại chỗ
 const RARITY_IDX = { common: 0, rare: 1, epic: 2, legendary: 3, divine: 4 };
 const { KHAC, AFFIX, PROC_KEYS } = require('../data/affixes');
@@ -1692,9 +1693,9 @@ class World {
     const out = { id: npc.id, name: npc.name, talk: npc.talk, action: npc.action, sprite: npc.sprite, color: npc.color, enhance: !!npc.enhance };
     if (npc.shop) {
       const tier = MAPS[p.mapId].tier;
-      out.shop = npc.shop.filter(id => !npc.field || ITEMS[id].type !== 'equip' || ITEMS[id].tier <= tier + 1)
+      out.shop = npc.shop.filter(id => !npc.field || SHOPS.isCustom(npc.id) || ITEMS[id].type !== 'equip' || ITEMS[id].tier <= tier + 1)
         .filter(id => !npc.bookShop || !ITEMS[id].cls || (ITEMS[id].cls === p.c.cls && (!BOOKS[id] || !BOOKS[id].branch || BOOKS[id].branch === branchOf(p.c))))   // sách: đúng phái, đúng hệ đang tu
-        .map(id => ({ id, price: ITEMS[id].price }));
+        .map(id => ({ id, price: SHOPS.goldPrice(npc.id, id) }));   // giá có thể do quản trị viên sửa (server/game/shops.js)
     }
     if (npc.knbShop) out.knbShop = npc.knbShop.filter(x => this.shopAllowed(x.id));
     if (out.shop) out.shop = out.shop.filter(x => this.shopAllowed(x.id));
@@ -1826,7 +1827,7 @@ class World {
     } else {
       if (!(npc.shop || []).includes(id)) return;
       if (it.cls && it.cls !== c.cls) return this.toast(p, 'Sách này không thuộc môn phái của bạn', 'error');
-      const cost = it.price * qty;
+      const cost = SHOPS.goldPrice(npc.id, id) * qty;
       if (c.gold < cost) return this.toast(p, 'Không đủ ngân lượng', 'error');
       if (!U.addItem(c, id, qty, 0, null, true)) return this.toast(p, 'Túi đồ đầy', 'error');   // đồ mua ở NPC là đồ khoá
       c.gold -= cost;

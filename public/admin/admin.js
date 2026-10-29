@@ -56,7 +56,7 @@
   function openModal(title, html) { $('m-title').textContent = title; $('m-body').innerHTML = html; $('modal').classList.remove('hidden'); }
   function closeModal() { $('modal').classList.add('hidden'); }
 
-  const TITLES = { dashboard: 'Tổng quan', users: 'Quản lý người chơi', events: 'Sự kiện & Boss', broadcast: 'Gửi thông báo', guilds: 'Bang hội', giftcodes: 'Gift code', config: 'Cấu hình server', chat: 'Nhật ký chat', logs: 'Nhật ký hệ thống', cleanup: 'Dọn dẹp dữ liệu', account: 'Tài khoản quản trị' };
+  const TITLES = { dashboard: 'Tổng quan', users: 'Quản lý người chơi', events: 'Sự kiện & Boss', broadcast: 'Gửi thông báo', guilds: 'Bang hội', giftcodes: 'Gift code', shops: 'Cửa hàng NPC', config: 'Cấu hình server', chat: 'Nhật ký chat', logs: 'Nhật ký hệ thống', cleanup: 'Dọn dẹp dữ liệu', account: 'Tài khoản quản trị' };
   async function show(v) {
     view = v;
     document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.dataset.v === v));
@@ -135,6 +135,57 @@
       });
     },
 
+    // ---- Cửa hàng NPC: sửa hàng bán và giá của từng NPC (server/game/shops.js) ----
+    async shops(el) {
+      const [list, items] = await Promise.all([api('/shops'), getItems(), loadIcons().catch(() => null)]);
+      const byId = Object.fromEntries(items.map(i => [i.id, i]));
+      let cur = list[0] && list[0].id, edit = null;
+      const pick = id => { const n = list.find(x => x.id === id); cur = id; edit = { gold: n.gold.map(x => ({ ...x })), knb: n.knb.map(x => ({ ...x })) }; };
+      pick(cur);
+      const row = (x, k) => { const it = byId[x.id]; return `<tr data-k="${k}" data-id="${x.id}"><td>${iconImg(it)}</td><td><a href="#" data-info="${x.id}" style="color:${RCOL[it && it.rarity] || '#fff'}">${esc(it ? it.name : x.id)}</a><div class="small muted">${esc(x.id)}</div></td>
+        <td><input type="number" min="1" value="${k === 'gold' ? x.price : x.knb}" data-pr style="width:110px"> ${k === 'gold' ? '💰' : '💎'}${k === 'gold' && it && x.price !== it.price ? `<div class="small muted">gốc ${fmt(it.price)}</div>` : ''}</td>
+        <td><button class="btn small" data-up>▲</button><button class="btn small" data-down>▼</button><button class="btn small danger" data-del>✕</button></td></tr>`; };
+      function render() {
+        const n = list.find(x => x.id === cur);
+        el.innerHTML = `<div class="card"><div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><b>NPC:</b><select id="sh-npc">${list.map(x => `<option value="${x.id}" ${x.id === cur ? 'selected' : ''}>${esc(x.name)}${x.custom ? ' ✏️' : ''}</option>`).join('')}</select>
+          <span class="small muted">${n.custom ? '✏️ Đang dùng hàng do quản trị viên sửa' : 'Đang dùng hàng mặc định'}</span><span class="spacer"></span>
+          <button class="btn primary" id="sh-save">💾 Lưu cửa hàng</button><button class="btn" id="sh-reset">↺ Khôi phục mặc định</button></div>
+          <p class="small muted">Sửa giá ngay trong ô, ▲▼ đổi thứ tự hiện trong cửa hàng, ✕ bỏ khỏi cửa hàng. Bấm tên đồ để xem chi tiết. Nhớ bấm Lưu – người chơi mở lại NPC là thấy hàng mới.</p></div>
+          <div class="cols"><div class="card"><h3>💰 Bán bằng ngân lượng (${edit.gold.length})</h3><table><tbody>${edit.gold.map(x => row(x, 'gold')).join('') || '<tr><td class="muted">Trống</td></tr>'}</tbody></table></div>
+          <div class="card"><h3>💎 Bán bằng Nguyên Bảo (${edit.knb.length})</h3><table><tbody>${edit.knb.map(x => row(x, 'knb')).join('') || '<tr><td class="muted">Trống</td></tr>'}</tbody></table></div></div>
+          <div class="card"><h3>➕ Thêm vật phẩm vào cửa hàng</h3>
+            <input id="sh-q" type="search" style="width:100%;max-width:520px" placeholder="🔍 Tìm vật phẩm (VD: kiem than, ruong, ngoc, lv60, than binh)…" autocomplete="off">
+            <div id="sh-res" class="shres"></div><div id="sh-pick"></div></div>`;
+        $('sh-npc').onchange = e => { pick(e.target.value); render(); };
+        $('sh-save').onclick = () => run(async () => { const r = await api('/shops/' + cur, { gold: edit.gold, knb: edit.knb }); list.splice(0, list.length, ...r.list); pick(cur); render(); }, 'Đã lưu cửa hàng');
+        $('sh-reset').onclick = () => { if (confirm('Khôi phục hàng mặc định của NPC này?')) run(async () => { const r = await api('/shops/' + cur, { reset: 1 }); list.splice(0, list.length, ...r.list); pick(cur); render(); }, 'Đã khôi phục'); };
+        el.querySelectorAll('tr[data-id]').forEach(tr => {
+          const k = tr.dataset.k, arr = edit[k], idx = () => arr.findIndex(x => x.id === tr.dataset.id);
+          tr.querySelector('[data-pr]').onchange = e => { const v = Math.max(1, Math.round(+e.target.value || 1)); arr[idx()][k === 'gold' ? 'price' : 'knb'] = v; };
+          tr.querySelector('[data-del]').onclick = () => { arr.splice(idx(), 1); render(); };
+          tr.querySelector('[data-up]').onclick = () => { const i = idx(); if (i > 0) { [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]]; render(); } };
+          tr.querySelector('[data-down]').onclick = () => { const i = idx(); if (i < arr.length - 1) { [arr[i + 1], arr[i]] = [arr[i], arr[i + 1]]; render(); } };
+        });
+        el.querySelectorAll('[data-info]').forEach(a => a.onclick = e => { e.preventDefault(); openModal('Chi tiết vật phẩm', itemCard(byId[a.dataset.info])); });
+        // tìm đồ: hiện icon + tên, bấm vào xem chi tiết rồi nhập giá để thêm
+        const q = $('sh-q'), res = $('sh-res');
+        const keys = items.map(i => [i, fold(`${i.name} ${i.id.replace(/_/g, ' ')} ${RN[i.rarity] || ''} lv${i.lv || ''}`)]);
+        q.oninput = () => {
+          const words = fold(q.value).split(/\s+/).filter(Boolean);
+          if (!words.length) { res.innerHTML = ''; return; }
+          const found = keys.filter(([, t]) => words.every(w => t.includes(w))).slice(0, 40).map(([i]) => i);
+          res.innerHTML = found.map(i => `<button class="shitem" data-add="${i.id}" title="${esc(i.name)}">${iconImg(i, 40)}<span style="color:${RCOL[i.rarity] || '#fff'}">${esc(i.name)}</span><small>${RN[i.rarity] || ''}${i.lv ? ' · Lv' + i.lv : ''}</small></button>`).join('') || '<p class="muted">Không tìm thấy</p>';
+          res.querySelectorAll('[data-add]').forEach(b => b.onclick = () => {
+            const it = byId[b.dataset.add];
+            $('sh-pick').innerHTML = itemCard(it) + `<div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px"><label>Giá ngân lượng <input type="number" id="sh-pg" min="1" value="${it.price || 1000}" style="width:120px"></label><button class="btn primary" id="sh-addg">➕ Bán bằng ngân lượng</button>
+              <label>Giá Nguyên Bảo <input type="number" id="sh-pk" min="1" value="10" style="width:90px"></label><button class="btn primary" id="sh-addk">➕ Bán bằng Nguyên Bảo</button></div>`;
+            $('sh-addg').onclick = () => { if (edit.gold.some(x => x.id === it.id)) return toast('Đã có trong danh sách ngân lượng', true); edit.gold.push({ id: it.id, price: Math.max(1, Math.round(+$('sh-pg').value || it.price)) }); render(); toast('Đã thêm – nhớ bấm Lưu'); };
+            $('sh-addk').onclick = () => { if (edit.knb.some(x => x.id === it.id)) return toast('Đã có trong danh sách Nguyên Bảo', true); edit.knb.push({ id: it.id, knb: Math.max(1, Math.round(+$('sh-pk').value || 1)) }); render(); toast('Đã thêm – nhớ bấm Lưu'); };
+          });
+        };
+      }
+      render();
+    },
     async giftcodes(el) {
       const [codes, items] = await Promise.all([api('/giftcodes'), getItems()]);
       el.innerHTML = `<div class="card"><h3>Tạo gift code</h3><div class="row">
@@ -238,8 +289,35 @@
   };
 
   async function getItems() { if (!itemsCache) itemsCache = await api('/items'); return itemsCache; }
+  // ---- icon vật phẩm lấy từ bộ icon của game (/assets/icons.png + icons.json), cùng cách chọn ô như máy khách ----
+  let ICONS = null;
+  const GEAR_ICON = new Set(['weapon', 'w_sword', 'w_saber', 'w_staff', 'w_mace', 'w_dart', 'w_dual', 'w_glove', 'w_talisman', 'helmet', 'armor', 'boots', 'ring', 'amulet', 'gloves', 'pants', 'cloak']);
+  async function loadIcons() {
+    if (ICONS) return ICONS;
+    const [j, im] = await Promise.all([fetch('/assets/icons.json').then(r => r.json()), new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = '/assets/icons.png'; })]);
+    return (ICONS = { j, im, cache: {} });
+  }
+  function iconSrc(it) {
+    if (!ICONS || !it) return '';
+    let key = it.icon;
+    if (GEAR_ICON.has(it.icon)) key = it.icon + ':' + (it.tier >= 4 ? 2 : it.tier >= 2 ? 1 : 0) + ':' + (it.rarity || 'common');
+    if (ICONS.cache[key] != null) return ICONS.cache[key];
+    const i = ICONS.j.i[key];
+    if (i == null) return (ICONS.cache[key] = '');
+    const n = ICONS.j.size, cols = ICONS.j.cols, c = document.createElement('canvas'); c.width = c.height = n;
+    c.getContext('2d').drawImage(ICONS.im, (i % cols) * n, Math.floor(i / cols) * n, n, n, 0, 0, n, n);
+    return (ICONS.cache[key] = c.toDataURL());
+  }
+  const RCOL = { common: '#d0d0d0', rare: '#4fa3ff', epic: '#c060ff', legendary: '#ff9b2f', divine: '#ff3a3a' };
+  const STN = { atk: 'Tấn công', def: 'Phòng thủ', hp: 'Sinh lực', mp: 'Nội lực', crit: 'Chí mạng', spd: 'Tốc độ' };
+  const iconImg = (it, sz = 32) => { const s = iconSrc(it); return s ? `<img src="${s}" width="${sz}" height="${sz}" class="ic" alt="">` : `<span class="ic ph" style="width:${sz}px;height:${sz}px"></span>`; };
+  function itemCard(it) {
+    if (!it) return '';
+    const st = it.stats ? Object.entries(it.stats).map(([k, v]) => `<div>${STN[k] || k}: +${v}${k === 'crit' ? '%' : ''}</div>`).join('') : '';
+    return `<div class="itemcard">${iconImg(it, 64)}<div><b style="color:${RCOL[it.rarity] || '#fff'}">${esc(it.name)}</b><div class="small muted">${esc(it.id)} · ${RN[it.rarity] || 'Thường'}${it.lv ? ' · Cấp ' + it.lv : ''}${it.slot ? ' · ' + esc(it.slot) : ''} · Giá gốc ${fmt(it.price)} lượng</div>${st ? `<div class="small">${st}</div>` : ''}${it.desc ? `<div class="small muted">${esc(it.desc)}</div>` : ''}</div></div>`;
+  }
   async function getMaps() { if (!mapsCache) mapsCache = await api('/maps'); return mapsCache; }
-  const RN = { common: 'Thường', rare: 'Hiếm', epic: 'VIP', legendary: 'Truyền Kỳ' };
+  const RN = { common: 'Thường', rare: 'Hiếm', epic: 'VIP', legendary: 'Truyền Kỳ', divine: 'Thần Binh' };
   function itemOptions(items) { return items.map(i => `<option value="${i.id}">${esc(i.name)} [${RN[i.rarity]}] Lv${i.lv}</option>`).join(''); }
   // ô tìm vật phẩm phía trên danh sách chọn: gõ không dấu được, tìm theo tên, mã, độ hiếm, cấp ("lv40")
   const fold = t => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');

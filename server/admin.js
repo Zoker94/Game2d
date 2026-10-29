@@ -359,7 +359,26 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   });
 
   // ----- Dữ liệu tham chiếu -----
-  app.get('/api/admin/items', auth, (req, res) => res.json(Object.values(ITEMS).map(i => ({ id: i.id, name: i.name, type: i.type, rarity: i.rarity, lv: i.lv, slot: i.slot, price: i.price }))));
+  app.get('/api/admin/items', auth, (req, res) => res.json(Object.values(ITEMS).map(i => ({ id: i.id, name: i.name, type: i.type, rarity: i.rarity, lv: i.lv, slot: i.slot, price: i.price,
+    icon: i.icon, tier: i.tier, stats: i.stats, desc: i.desc, set: i.set }))));
+  // ---- Cửa hàng NPC: sửa danh sách hàng và giá (server/game/shops.js) ----
+  const SHOPS = require('./game/shops');
+  app.get('/api/admin/shops', auth, (req, res) => res.json(SHOPS.adminList(db)));
+  app.post('/api/admin/shops/:npc', auth, (req, res) => {
+    const id = req.params.npc;
+    if (!SHOPS.DEF[id]) return res.status(400).json({ error: 'NPC không bán đồ' });
+    const cfg = db.data.config, shops = cfg.shops || (cfg.shops = {});
+    if (req.body.reset) { delete shops[id]; act(req, `Khôi phục cửa hàng mặc định của ${id}`); }
+    else {
+      const clean = (arr, k) => (Array.isArray(arr) ? arr : []).slice(0, 300).filter(x => x && ITEMS[x.id]).map(x => ({ id: x.id, [k]: Math.max(0, Math.round(+x[k] || 0)) }));
+      const gold = clean(req.body.gold, 'price').map(x => ({ id: x.id, price: x.price || ITEMS[x.id].price }));
+      const knb = clean(req.body.knb, 'knb').filter(x => x.knb > 0);
+      shops[id] = { gold, knb };
+      act(req, `Sửa cửa hàng ${id}: ${gold.length} món bán bằng lượng, ${knb.length} món bằng Nguyên Bảo`);
+    }
+    SHOPS.apply(db); db.markDirty();
+    res.json({ ok: true, list: SHOPS.adminList(db) });
+  });
   app.get('/api/admin/maps', auth, (req, res) => res.json(Object.values(MAPS).filter(m => world.maps[m.id]).map(m => ({ id: m.id, name: m.name + (m.base ? ' · Khu ' + m.ch : m.chs ? ' · Khu 1' : ''), lv: m.lv, online: world.maps[m.id].players.size, monsters: [...world.maps[m.id].monsters.values()].filter(x => !x.dead).length }))));
   app.post('/api/admin/save', auth, (req, res) => { db.markDirty(); db.save(); act(req, 'Lưu dữ liệu thủ công'); res.json({ ok: true }); });
 };
