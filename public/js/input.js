@@ -318,6 +318,64 @@
     } catch (e) { }
     setTimeout(() => this.applyLayout(), 200);
   };
+  // ---------- Nhập chữ khi màn hình đang xoay ngang bằng CSS (iOS, lối tắt màn hình chính) ----------
+  // Bàn phím hệ thống vẫn dựng đứng nên chữ trong ô nhập bị nằm ngang. Chạm vào ô nhập: mở khung nhập dựng đứng
+  // phía trên bàn phím (nằm ngoài #app nên không bị xoay), gõ tới đâu chép ngược vào ô gốc tới đó.
+  // Ô nằm trong form (đăng nhập, đăng ký) thì hiện đủ các ô của form để điền liền một lượt.
+  const TYPE_OK = /^(text|password|number|search|email|tel|url)$/;
+  let typeOv = null;
+  function closeTypeOv(submit) {
+    if (!typeOv) return;
+    const { el, form, last } = typeOv; typeOv = null;
+    el.remove();
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    if (!submit) return;
+    if (form) { if (form.requestSubmit) form.requestSubmit(); else form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true })); }
+    else last.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true }));
+  }
+  function openTypeOv(t) {
+    const form = t.closest('form');
+    const vis = x => !x.disabled && !x.readOnly && x.offsetParent !== null && (x.tagName === 'TEXTAREA' || TYPE_OK.test(x.type || 'text'));
+    const fields = form ? [...form.querySelectorAll('input, textarea')].filter(vis) : [t];
+    if (!fields.includes(t)) fields.unshift(t);
+    const el = document.createElement('div'); el.id = 'type-ov';
+    el.innerHTML = '<div class="tov-box"></div>';
+    const box = el.firstChild, mirrors = [];
+    fields.forEach((src, i) => {
+      const m = document.createElement(src.tagName === 'TEXTAREA' ? 'textarea' : 'input');
+      if (m.tagName === 'INPUT') m.type = src.type || 'text';
+      for (const a of ['maxlength', 'min', 'max', 'step', 'inputmode', 'autocomplete', 'autocapitalize', 'spellcheck', 'name']) if (src.hasAttribute(a)) m.setAttribute(a, src.getAttribute(a));
+      m.placeholder = src.placeholder || ''; m.value = src.value; m.enterKeyHint = i < fields.length - 1 ? 'next' : (form || src.id === 'chat-input' ? 'send' : 'done');
+      m.oninput = () => { src.value = m.value; src.dispatchEvent(new Event('input', { bubbles: true })); };
+      m.onchange = () => src.dispatchEvent(new Event('change', { bubbles: true }));
+      m.onkeydown = e => {
+        if (e.key !== 'Enter' || m.tagName === 'TEXTAREA') return;
+        e.preventDefault();
+        if (i < fields.length - 1) mirrors[i + 1].focus(); else closeTypeOv(true);
+      };
+      if (src.placeholder) { const l = document.createElement('label'); l.textContent = src.placeholder; box.appendChild(l); }
+      box.appendChild(m); mirrors.push(m);
+    });
+    const row = document.createElement('div'); row.className = 'tov-row';
+    row.innerHTML = `<button type="button" class="btn small">Đóng</button><button type="button" class="btn small primary">${form ? 'Xác nhận' : 'Xong'}</button>`;
+    row.children[0].onclick = () => closeTypeOv(false);
+    row.children[1].onclick = () => closeTypeOv(!!form || t.id === 'chat-input');
+    box.appendChild(row);
+    el.addEventListener('pointerdown', e => { if (e.target === el) closeTypeOv(false); });
+    document.body.appendChild(el);
+    typeOv = { el, form, last: fields[fields.length - 1] };
+    t.blur();
+    const m = mirrors[fields.indexOf(t)];
+    m.focus();   // gọi ngay trong lượt chạm để iOS chịu mở bàn phím
+    try { const n = m.value.length; if (m.type !== 'number' && m.type !== 'email') m.setSelectionRange(n, n); } catch (e) { }
+  }
+  document.addEventListener('focusin', e => {
+    const t = e.target;
+    if (!Input.rotated || typeOv || !t || t.closest('#type-ov')) return;
+    if (!(t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && TYPE_OK.test(t.type || 'text')))) return;
+    openTypeOv(t);
+  });
+  Input.closeTypeOv = closeTypeOv;
   const relayout = () => setTimeout(() => Input.applyLayout(), 60);
   window.addEventListener('resize', relayout);
   window.addEventListener('orientationchange', relayout);

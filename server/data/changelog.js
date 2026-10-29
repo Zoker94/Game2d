@@ -4,6 +4,8 @@ const CHANGELOG = [
   {
     date: '29/10/2026',
     items: [
+      '📱 iPhone / lối tắt màn hình chính: khi màn hình đang xoay ngang, chạm vào ô nhập chữ (tài khoản, mật khẩu, tên nhân vật, chat…) sẽ mở khung nhập dựng đứng ngay trên bàn phím – không phải xoay điện thoại nữa. Form đăng nhập / đăng ký hiện đủ các ô để điền một lượt.',
+      '👆 Chỉ dẫn tận tay cho người mới: ở bước mặc vũ khí và học bí kíp võ công, màn hình phủ tối, khoanh sáng và có bàn tay chỉ đúng chỗ cần bấm (nút Túi → món đồ → Trang bị / Sử dụng → nút chiêu thức). Bấm ✕ để tắt.',
       '💰 BÁN NHANH ĐỒ RÁC ngay trong Túi đồ, ở bất kỳ đâu (không cần chạy về NPC): bấm "💰 Bán đồ rác", lọc theo phẩm chất (Thường / Hiếm / VIP / Truyền Kỳ), tuỳ chọn giữ đồ đã cường hoá, bán cả nguyên liệu thường, hoặc chạm chọn từng món rồi bán một lần. Đồ VIP / Truyền Kỳ / đã cường hoá luôn hỏi lại trước khi bán.',
       '🏯 Tăng lượt đi phó bản: mọi phó bản giờ được vào 5 lượt mỗi ngày (trước 2–3 lượt).',
       '🎨 NÂNG CẤP ĐỒ HOẠ NHÂN VẬT: 9 môn phái vẽ lại nét gấp đôi – tô khối 7 cấp sáng tối có viền sáng, khuôn mặt chi tiết (mắt có tròng, đồng tử, ánh sáng, lông mày, mũi, môi), tóc có sợi, áo có nếp vải, giáp chế tác (tấm ngực, lá vai tách lớp có đinh tán, bao tay, ống chân, viền màu phái); màu phẩm chất giáp kiểu kim loại thay kiểu phủ đặc. Máy tính tự dùng bản nét cao; điện thoại dùng bản thường (vẫn là hình mới, nhẹ như cũ), điện thoại mạnh có thể bật nét cao (đổi ở Cài đặt → Đồ họa → Hình nhân vật).',

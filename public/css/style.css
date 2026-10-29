@@ -1831,3 +1831,20 @@ body.touch #wb-top { top: 108px; right: auto; left: 50%; transform: translateX(-
 #mk-box .mk-bag .ic { cursor: pointer; border-radius: 6px; border: 2px solid transparent; }
 #mk-box .mk-bag .ic.sel { border-color: #3ee6b0; }
 #mk-box .warn { color: #ff8a6a; }
+/* khung nhập dựng đứng khi màn hình xoay ngang bằng CSS (iOS): nằm ngoài #app, trên bàn phím */
+#type-ov { position: fixed; inset: 0; z-index: 100000; background: rgba(6,5,10,.55); display: flex; align-items: flex-start; justify-content: center; padding: max(12px, env(safe-area-inset-top)) 12px 12px; }
+#type-ov .tov-box { width: 100%; max-width: 480px; background: #1b1722; border: 1px solid rgba(255,215,120,.35); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.6); }
+#type-ov label { font-size: 12px; color: #c9b98f; }
+#type-ov input, #type-ov textarea { font-size: 16px; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,215,120,.3); background: #0f0c14; color: #f3ead2; width: 100%; box-sizing: border-box; }
+#type-ov .tov-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+#type-ov .tov-row .btn { min-width: 90px; padding: 8px 14px; font-size: 14px; }
+/* chỉ dẫn tận tay (coach.js): phủ tối, khoanh sáng chỗ cần bấm, bàn tay chỉ vào – không chặn chạm */
+#coach { position: absolute; inset: 0; z-index: 50; pointer-events: none; overflow: hidden; }
+#coach .co-ring { position: absolute; border-radius: 10px; border: 2px solid #ffd76a; box-shadow: 0 0 0 200vmax rgba(0,0,0,.55), 0 0 14px 3px rgba(255,215,106,.85) inset, 0 0 18px 4px rgba(255,215,106,.7); animation: coRing 1.1s ease-in-out infinite; transition: left .2s, top .2s, width .2s, height .2s; }
+#coach .co-hand { position: absolute; font-size: 32px; line-height: 40px; width: 32px; text-align: center; filter: drop-shadow(0 2px 3px rgba(0,0,0,.8)); animation: coHand .8s ease-in-out infinite; }
+#coach .co-hand.down { transform: rotate(180deg); animation-name: coHandD; }
+#coach .co-tip { position: absolute; max-width: 260px; display: flex; align-items: center; gap: 8px; background: linear-gradient(180deg, #2e2414, #1a140c); border: 1px solid #ffd76a; color: #ffeec4; font-size: 13px; font-weight: 700; padding: 7px 8px 7px 12px; border-radius: 9px; box-shadow: 0 4px 14px rgba(0,0,0,.6); }
+#coach .co-tip button { pointer-events: auto; background: rgba(255,255,255,.08); border: 0; color: #c9b98f; border-radius: 6px; width: 22px; height: 22px; font-size: 12px; cursor: pointer; flex: none; }
+@keyframes coRing { 50% { border-color: #fff3c4; } }
+@keyframes coHand { 50% { transform: translateY(-8px); } }
+@keyframes coHandD { 0%, 100% { transform: rotate(180deg); } 50% { transform: rotate(180deg) translateY(-8px); } }

@@ -845,6 +845,7 @@
     UI.refreshPanel();
     G.sfx('click');
   };
+  UI.coachInfo = () => ({ panel, sel: panelState.sel });   // coach.js: biết bảng nào đang mở, món nào đang chọn
   UI.closePanel = function () { panel = null; npcData = null; $('panel').classList.add('hidden'); hideTip(); cmpKey = null; hideCmp(); };
   UI.refreshPanel = function (soft) {
     if (!panel || !G.me) return;
