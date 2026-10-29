@@ -1865,3 +1865,10 @@ body.touch #wb-top { top: 108px; right: auto; left: 50%; transform: translateX(-
 .rf-top { margin: 0; padding-left: 0; list-style: none; }
 .rf-top li { display: flex; justify-content: space-between; padding: 3px 0; border-top: 1px solid rgba(255,255,255,.05); font-size: 13px; }
 .rf-bad { color: #ff9a7a; }
+/* mác phiên bản thử nghiệm cạnh logo */
+.pg-logo { position: relative; }
+.pg-beta { position: absolute; right: -6px; top: -12px; transform: rotate(8deg); font: 900 10px/1 "Be Vietnam Pro", system-ui, sans-serif; letter-spacing: 1.2px; color: #fff;
+  background: linear-gradient(135deg, #ff4a3a, #c8102a); border: 1px solid #ffd76a; border-radius: 4px; padding: 3px 6px; box-shadow: 0 2px 8px rgba(0,0,0,.5), 0 0 10px rgba(255,74,58,.6); animation: pgBeta 2.2s ease-in-out infinite; white-space: nowrap; }
+.pg-logo.sm .pg-beta { top: -10px; right: -10px; font-size: 8px; }
+@keyframes pgBeta { 50% { box-shadow: 0 2px 8px rgba(0,0,0,.5), 0 0 18px rgba(255,120,80,.9); } }
+@media (prefers-reduced-motion: reduce) { .pg-beta { animation: none; } }

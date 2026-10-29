@@ -688,8 +688,10 @@ function generate(id, def = MAP_DEFS[id]) {
     const x = i % w, y = (i / w) | 0;
     return portals.every(p => Math.abs(p.x - x) + Math.abs(p.y - y) > 9) && def.npcs.every(n => Math.abs(n.x - x) + Math.abs(n.y - y) > 7);
   });
+  const dense = parseInt(def.lv) >= 50 && !def.instance ? 1.5 : 1;   // bãi luyện cấp 50 trở lên: nhiều quái hơn
   const spawns = def.spawns.map(([mon, count, fx, fy, fr], idx) => {
-    if (fx != null) return { mon, count, x: fx, y: fy, r: fr || 2 };   // vị trí đặt sẵn (bãi luyện mộc nhân)
+    if (fx != null) return { mon, count, x: fx, y: fy, r: fr || 2 };
+    count = Math.ceil(count * dense);   // vị trí đặt sẵn (bãi luyện mộc nhân)
     const pool = farFromPortals.length ? farFromPortals : walkable;
     // chia vùng theo thứ tự để bãi quái cấp thấp gần cổng vào
     const sorted = pool.slice().sort((a, b) => (a % w) - (b % w));

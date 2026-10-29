@@ -147,12 +147,25 @@ const MONSTERS = {
   tieu_tac3:    { name: 'Hắc Đạo Cướp Tiêu',  lv: 48, sprite: 'bandit',   color: '#1a0a3a', aggro: true,  speed: 125, range: 65 }
 };
 // hệ ngũ hành của quái theo loài
+// Quái cấp cao (từ cấp 45) trâu hơn hẳn: người chơi đủ đồ cấp cao trước đây hạ 1 con chỉ trong 1 chiêu.
+// Đo bằng đồ Truyền Kỳ +12 đúng bậc: trước đây cấp 50 chỉ cần ~1 chiêu, cấp 99 ~5 chiêu. Nhân máu để còn ~3 chiêu ở cấp 50, ~8 chiêu ở cấp 99
+// (máu gốc đã tăng nhanh theo cấp nên hệ số giảm dần: x3 ở cấp 50 -> x1,7 ở cấp 99). Thủ +1%/cấp, lực đánh +0,6%/cấp từ cấp 45.
+// KN / ngân lượng tăng bù theo máu để thời gian cày không thiệt.
+const HIGH_FROM = 45;
+const HIGH_HP = L => L < HIGH_FROM ? 1 : L < 50 ? 1 + (L - HIGH_FROM) * 0.4 : 3 - (Math.min(L, SOFT_FROM) - 50) * 0.0265;
+function highMon(m) {
+  const L = m.lv; if (L < HIGH_FROM) return;
+  const h = HIGH_HP(L), x = Math.min(L, SOFT_FROM) - HIGH_FROM;
+  m.hp = Math.round(m.hp * h); m.def = Math.round(m.def * (1 + x * 0.01)); m.atk = Math.round(m.atk * (1 + x * 0.006));
+  m.exp = Math.round(m.exp * (1 + (h - 1) * 0.6)); m.gold = Math.round(m.gold * (1 + (h - 1) * 0.4));
+}
 const MON_EL = { rabbit: 'moc', wolf: 'kim', bandit: 'kim', snake: 'moc', bear: 'tho', tiger: 'kim', monkey: 'moc', scorpion: 'tho', ghost: 'thuy', yeti: 'thuy', demon: 'hoa' };
 for (const id in MONSTERS) {
   const m = MONSTERS[id];
   m.id = id;
   m.el = m.el || MON_EL[m.sprite] || 'tho';
   Object.assign(m, stats(m.lv));
+  highMon(m);
   m.respawn = 8000;
   if (m.hpK) m.hp = Math.round(m.hp * m.hpK);   // quái đầu lĩnh trong phó bản
   if (m.pbBoss) { m.hp *= 40; m.atk = Math.round(m.atk * 2); m.def = Math.round(m.def * 1.4); m.exp *= 25; m.gold *= 30; }   // boss phó bản: rất trâu, đánh đau

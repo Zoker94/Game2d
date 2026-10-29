@@ -4,6 +4,8 @@ const CHANGELOG = [
   {
     date: '29/10/2026',
     items: [
+      '👹 Quái các bãi luyện từ cấp 45 trở lên trâu và đánh đau hơn: máu x3 ở cấp 50 (giảm dần còn x1,7 ở cấp 99 vì máu gốc đã cao), thủ và lực đánh tăng theo cấp. Bãi luyện cấp 50+ đông quái hơn 50%. Kinh nghiệm và ngân lượng mỗi con tăng bù theo máu.',
+      '🧪 Thêm mác BETA TEST trên logo game: máy chủ đang trong giai đoạn thử nghiệm.',
       '🛡️ Chống tài khoản clone ăn quà Mời bạn: không tính tài khoản tạo trên máy đã có tài khoản khác, một mạng tạo quá nhiều tài khoản trong 24 giờ, hay tài khoản sau đó đăng nhập chung máy / chung mạng với người mời (chung mạng chỉ tính 1 người nhà). Bảng Mời bạn ghi rõ lý do người nào không được tính.',
       '📣 MỜI BẠN NHẬN QUÀ (nút 📣 Mời bạn trên menu): mỗi người có link mời riêng, chia sẻ lên Facebook, Zalo, TikTok… Bạn bè tạo tài khoản qua link nhận quà nhập môn (Song Bội Kinh Nghiệm x2, Rương Bí Ẩn, thuốc, ngân lượng). Người mời nhận quà khi bạn đạt cấp 10 / 30 / 50 (Rương Bí Ẩn, Rương Thủ Lĩnh, Thiên Tinh Thạch, Nguyên Bảo) và quà lớn khi đủ 3 / 5 / 10 / 20 người đạt cấp 30 (Bạch Hổ, danh hiệu Hào Sảng Hiệp Khách, Danh Chấn Giang Hồ…). Có bảng mời nhiều nhất tuần. Không tính tài khoản tạo trên cùng máy với người mời.',
       '🏅 Sửa lỗi khung Danh hiệu ở bảng Nhân vật tự đóng lại khi đang cuộn xem hoặc vừa đổi danh hiệu.',
