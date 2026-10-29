@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '29/10/2026',
     items: [
+      '🤖 Treo máy không bị ngắt khi máy chủ cập nhật: ai đang bật Tự động ở bãi luyện (kể cả đã tắt màn hình / thoát game) thì máy chủ khởi động lại xong tự treo tiếp đúng chỗ cũ, bảng kết quả treo tính liền cả quãng trước và sau cập nhật. Đang mở game thì tự tải lại, vào lại và bật lại Tự động.',
       '🔄 Cài đặt → Chung: mục "Tự vào lại game khi máy chủ có bản cập nhật mới" (bật sẵn). Khi có bản mới, game đếm ngược 8 giây rồi tự tải lại và vào thẳng game, đang treo Tự động thì bật lại Tự động – không phải bấm gì. Bấm "Huỷ tự vào" nếu muốn đọc kỹ nội dung cập nhật.',
       '👥 Cài đặt tự động có mục Tổ đội: bật "Tự đồng ý khi được mời vào tổ đội", chọn nhận lời mời từ Mọi người hoặc chỉ Bạn bè & cùng bang. Có tác dụng cả khi không bật Tự động và khi đang treo máy trên máy chủ; người trong danh sách chặn vẫn bị từ chối.',
       '📱 iPhone / lối tắt màn hình chính: khi màn hình đang xoay ngang, chạm vào ô nhập chữ (tài khoản, mật khẩu, tên nhân vật, chat…) sẽ mở khung nhập dựng đứng ngay trên bàn phím – không phải xoay điện thoại nữa. Form đăng nhập / đăng ký hiện đủ các ô để điền một lượt.',

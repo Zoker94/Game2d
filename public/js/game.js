@@ -437,6 +437,7 @@
     sfx('portal');
     mapLoading(m);
     if (G._reAuto) { G._reAuto = false; setTimeout(() => { if (!G.auto) setAuto(true); }, 1500); }   // vào lại sau cập nhật: bật lại Tự động như trước
+    if (document.hidden && G.auto) setTimeout(() => { if (document.hidden) setAway(true); }, 2000);   // tải lại khi đang tắt màn / ẩn trang: giao máy chủ treo hộ luôn
     sendAutoSrv();   // vào lại / đổi map: báo lại máy chủ trạng thái và cài đặt tự động (cả khi đang tắt: tự vào tổ đội cần cài đặt này)
   }
   // màn hình chờ chuyển bản đồ: tải sẵn ảnh nhân vật phái mình, ảnh quái trên bản đồ, dựng sẵn nền quanh nhân vật

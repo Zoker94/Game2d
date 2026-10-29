@@ -59,6 +59,36 @@ class AutoSrv {
     return !!(a && a.on && !p.dead && def && !def.safe && !def.instance && !def.duelArena && !p.duel && p.mapId === a.homeMap && !this.w.escort.carts.has(p.userId));
   }
   goOffline(p) { p.offline = Date.now(); p.away = true; }
+  // máy chủ khởi động lại (cập nhật bản mới): ghi lại ai đang treo ở bãi luyện để khởi động xong treo tiếp cho họ
+  snapshot() {
+    const out = [];
+    for (const p of this.w.players.values()) {
+      if (!this.canOffline(p)) continue;
+      const a = p.autoSrv;
+      out.push({ uid: p.userId, cfg: a.cfg, home: a.home, homeMap: a.homeMap, block: [...(a.block || [])], offline: p.offline || 0,
+        since: a.active ? a.since : 0, base: a.active ? a.base : null, x: Math.round(p.x), y: Math.round(p.y) });
+    }
+    return out;
+  }
+  // khởi động xong: dựng lại nhân vật treo dở như đang treo offline (không có máy khách); người chơi vào lại là nhận lại nhân vật
+  restore(list) {
+    const NOSOCK = { id: 'offline', emit() { }, join() { }, leave() { }, disconnect() { }, connected: false };
+    let n = 0;
+    for (const r of list || []) {
+      const user = this.w.db.data.users[r.uid];
+      if (!user || !user.character || user.banned || this.w.players.has(r.uid) || !MAPS[r.homeMap]) continue;
+      if (r.offline && Date.now() - r.offline > OFFLINE_MAX) continue;
+      const c = user.character;
+      c.map = r.homeMap; c.x = r.x; c.y = r.y;
+      const p = this.w.addPlayer(user, NOSOCK);
+      if (p.mapId !== r.homeMap) { this.w.removePlayer(p); continue; }
+      const a = p.autoSrv = { skip: new Map(), on: true, cfg: Object.assign({}, DEF, r.cfg || {}), home: r.home || { x: p.x, y: p.y }, homeMap: r.homeMap, block: new Set(r.block || []) };
+      if (r.since && r.base) { a.active = true; a.since = r.since; a.base = r.base; }   // báo cáo treo tính liền cả quãng trước khi khởi động lại
+      p.offline = r.offline || Date.now(); p.away = true;
+      n++;
+    }
+    return n;
+  }
   // kết thúc treo offline (đăng nhập lại, chết, hết giờ): lưu kết quả để báo khi vào lại
   endOffline(p, why) {
     if (p.autoSrv && p.autoSrv.active) p.c._afk = Object.assign(this.report(p), { why, end: Date.now() });

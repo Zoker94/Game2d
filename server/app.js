@@ -52,6 +52,12 @@ world.cleanup = new (require('./game/cleanup').Cleanup)(world, features, db);
 const { Social } = require('./game/social');
 const social = new Social(world, features, db);
 world.start();
+// khởi động lại khi đang có người treo máy ở bãi luyện: treo tiếp cho họ (xem shutdown bên dưới)
+if (Array.isArray(db.data.resumeAuto)) {
+  const n = world.autoSrv.restore(db.data.resumeAuto);
+  delete db.data.resumeAuto; db.markDirty();
+  if (n) console.log(`Treo tiếp cho ${n} người chơi đang treo máy trước khi khởi động lại`);
+}
 
 // ---------------- Hỗ trợ xác thực ----------------
 function createSession(userId) {
@@ -488,6 +494,7 @@ async function shutdown() {
   if (shuttingDown) return;
   shuttingDown = true;
   console.log('Đang lưu dữ liệu...');
+  try { db.data.resumeAuto = world.autoSrv.snapshot(); } catch (e) { console.error(e); }   // ai đang treo máy: khởi động xong treo tiếp
   for (const p of [...world.players.values()]) world.removePlayer(p);
   try { await db.flush(); } catch (e) { console.error(e); }
   process.exit(0);
