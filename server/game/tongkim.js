@@ -76,7 +76,7 @@ class TongKim {
     const bonus = Math.min(15, vs.streak * 2);
     vs.streak = 0;
     const mapId = MAP;
-    setTimeout(() => this.respawn(t, mapId), RESPAWN);
+    // không tự hồi sinh nữa: chọn 10 Nguyên Bảo hồi tại chỗ hoặc về doanh trại phe mình (world.respawn)
     if (!this.active || !src || !src.c || !src.tk || src.tk === t.tk) return;
     const ks = this.score(src);
     // điểm theo lực chiến đối thủ so với mình; hạ cùng một người liên tục thì giảm dần

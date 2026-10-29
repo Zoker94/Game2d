@@ -125,9 +125,9 @@ for (const [sk, S] of Object.entries(DIVINE_SETS)) for (const [slot, nm] of Obje
   const id = `dv_${sk}_${slot}`;
   ITEMS[id] = { id, type: 'equip', slot, tier: t, rarity: 'divine', set: sk, name: `${S.name} ${nm}`, lv: 60, stats, price: 3000000, icon: slot };
 }
-// mảnh lệnh bài: rơi ở quái cấp 50+, tinh anh, boss; gom 50 mảnh (Sử dụng) thành 1 lệnh triệu hồi
+// mảnh lệnh bài: rơi ở quái cấp 50+, tinh anh, boss; gom 100 mảnh (Sử dụng) thành 1 lệnh triệu hồi
 for (const [sk, S] of Object.entries(DIVINE_SETS)) {
-  ITEMS[`dv_frag_${sk}`] = { id: `dv_frag_${sk}`, type: 'use', name: `Mảnh ${S.name} Lệnh`, desc: `Mảnh lệnh bài triệu hồi Boss ${S.name}. Rơi ở quái cấp 50 trở lên, quái tinh anh và Boss. Gom đủ 50 mảnh rồi Sử dụng để ghép thành ${S.name} Triệu Hồi Lệnh.`,
+  ITEMS[`dv_frag_${sk}`] = { id: `dv_frag_${sk}`, type: 'use', name: `Mảnh ${S.name} Lệnh`, desc: `Mảnh lệnh bài triệu hồi Boss ${S.name}. Rơi ở quái cấp 50 trở lên, quái tinh anh và Boss. Gom đủ 100 mảnh rồi Sử dụng để ghép thành ${S.name} Triệu Hồi Lệnh.`,
     effect: { dvFrag: sk }, price: 500, icon: 'dv_frag_' + sk, rarity: 'epic', stack: true };
   ITEMS[`dv_token_${sk}`] = { id: `dv_token_${sk}`, type: 'use', name: `${S.name} Triệu Hồi Lệnh`, desc: `Dùng ở bãi luyện công (không dùng trong thành, phó bản, khoáng động) để triệu hồi Boss ${S.name} – 500 triệu sinh lực, đánh rất đau. Toàn máy chủ được báo. Người ra đòn kết liễu được nhặt đồ trước 8 giây; có cơ hội rơi Thần Binh bộ ${S.name}.`,
     effect: { dvSummon: sk }, price: 0, icon: 'dv_token_' + sk, rarity: 'divine', stack: true };

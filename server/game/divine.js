@@ -1,4 +1,4 @@
-// Thần Binh & boss triệu hồi: gom 50 Mảnh Lệnh (rơi ở quái cấp 50+, tinh anh, boss) ghép thành Triệu Hồi Lệnh,
+// Thần Binh & boss triệu hồi: gom 100 Mảnh Lệnh (rơi ở quái cấp 50+, tinh anh, boss) ghép thành Triệu Hồi Lệnh,
 // dùng ở bãi luyện để gọi 1 trong 3 boss (500 triệu máu, toàn máy chủ được báo). Boss chết: người ra đòn kết liễu được
 // nhặt đồ trước 8 giây; tỉ lệ thấp rơi 1 món Thần Binh đúng bộ của boss.
 const U = require('./util');
@@ -7,8 +7,8 @@ const { ITEMS, DIVINE_SETS } = require('../data/items');
 const { SUMMON_BOSSES } = require('../data/monsters');
 const { GEM_KEYS, gemId } = require('../data/gems');
 
-const FRAG_NEED = 50, STAY = 60 * 60000, OWN_MS = 8000, MAX_ALIVE = 3;
-const PIECE_CHANCE = 0.2;   // tỉ lệ rơi 1 món Thần Binh mỗi lần hạ boss
+const FRAG_NEED = 100, STAY = 60 * 60000, OWN_MS = 8000, MAX_ALIVE = 3;
+const PIECE_CHANCE = () => 0.03 + Math.random() * 0.02;   // tỉ lệ rơi 1 món Thần Binh mỗi lần hạ boss: 3–5%
 const SET_KEYS = Object.keys(DIVINE_SETS);
 const DV_SLOTS = ['helmet', 'armor', 'pants', 'boots', 'gloves'];
 const bossOfSet = sk => Object.values(SUMMON_BOSSES).find(b => b.set === sk);
@@ -55,7 +55,7 @@ class Divine {
     this.alive.delete(mon.id);
     const owner = killer && killer.c ? killer.userId : null, drops = [];
     let piece = null;
-    if (Math.random() < PIECE_CHANCE * (w.db.data.config.dropRate || 1)) { piece = `dv_${tpl.set}_${DV_SLOTS[Math.floor(Math.random() * DV_SLOTS.length)]}`; drops.push(piece); }
+    if (Math.random() < PIECE_CHANCE() * (w.db.data.config.dropRate || 1)) { piece = `dv_${tpl.set}_${DV_SLOTS[Math.floor(Math.random() * DV_SLOTS.length)]}`; drops.push(piece); }
     for (let k = 0; k < 3; k++) drops.push('boss_chest');
     for (let k = 0, n = U.randInt(3, 5); k < n; k++) drops.push('stone2');
     for (let k = 0; k < 2; k++) drops.push(gemId(GEM_KEYS[Math.floor(Math.random() * GEM_KEYS.length)], Math.random() < 0.25 ? 4 : 3));

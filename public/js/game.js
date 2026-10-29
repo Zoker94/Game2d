@@ -351,10 +351,21 @@
     s.on('dead', d => {
       $('dead-msg').textContent = `${d.by && d.by !== '?' ? `Bạn đã bị ${d.by} đánh trọng thương.` : 'Bạn đã bị trọng thương.'}${d.lost ? ' Mất ' + d.lost + ' kinh nghiệm.' : ''}`;
       const c = d.cost || { gold: 0, knb: 0 }, me = G.me || {};
-      $('revive-gold').textContent = c.gold ? `${c.gold.toLocaleString('vi-VN')} 💰` : 'Miễn phí (tân thủ)';
-      $('revive-here').classList.toggle('poor', (me.gold || 0) < c.gold);
-      $('revive-knb').textContent = `Hoặc hồi sinh tại chỗ bằng ${c.knb} 💎 Nguyên Bảo`;
-      $('revive-knb').classList.toggle('hidden', (me.gold || 0) >= c.gold);
+      const rb = $('respawn-btn');
+      if (!rb._def) rb._def = rb.innerHTML;
+      if (d.tk) {   // Chiến Trường Tống Kim: về doanh trại phe mình (miễn phí) hoặc 10 Nguyên Bảo hồi tại chỗ
+        rb.innerHTML = '<b>🏕️ Về doanh trại</b><small>Hồi sinh đầy máu ở doanh trại phe mình</small><i>Miễn phí</i>';
+        $('revive-gold').textContent = `${c.knb} 💎 Nguyên Bảo`;
+        $('revive-here').classList.toggle('poor', (me.knb || 0) < c.knb);
+        $('revive-knb').classList.add('hidden');
+      } else {
+        rb.innerHTML = rb._def;
+        $('revive-gold').textContent = c.gold ? `${c.gold.toLocaleString('vi-VN')} 💰` : 'Miễn phí (tân thủ)';
+        $('revive-here').classList.toggle('poor', (me.gold || 0) < c.gold);
+        $('revive-knb').textContent = `Hoặc hồi sinh tại chỗ bằng ${c.knb} 💎 Nguyên Bảo`;
+        $('revive-knb').classList.toggle('hidden', (me.gold || 0) >= c.gold);
+      }
+      G._deadTk = !!d.tk;
       $('dead-overlay').classList.remove('hidden');
       G.auto && setAuto(false);
       sfx('die');
@@ -1508,11 +1519,11 @@
         if (pm) Overhead.drawUnder(ctx, e, e.x, e.y, pm, now);
         const elift = e.ap && e.ap[7] ? 24 : 0;
         if (e.bf && !e.dead) Auras.draw(ctx, e.x, e.y, e.bf, now, 'under', elift);
-        if (e.dv && !e.dead) DivineFX.under(ctx, e.x, e.y, now, e.dv);   // Thần Binh: vòng tím dưới chân
+        if (e.dv && !e.dead) DivineFX.under(ctx, e.x, e.y, now, e.dv, (e.id || '').length * 7 + (e.name || '').length);   // Thần Binh: vòng tím dưới chân
         if (e.iv) ctx.globalAlpha = 0.4;   // quản trị viên đang tàng hình (chỉ quản trị viên khác thấy)
         const top = drawHero(e.x, e.y, e.cls, e.dir, e.lastH, e.moving, e.atkUntil > now, e.ap, e.dead, e.x / 50, now, e);
         ctx.globalAlpha = 1;
-        if (e.dv && !e.dead) DivineFX.over(ctx, e.x, e.y, now, e.dv);
+        if (e.dv && !e.dead) DivineFX.over(ctx, e.x, e.y, now, e.dv, (e.id || '').length * 7 + (e.name || '').length);
         if (e.bf && !e.dead) Auras.draw(ctx, e.x, e.y, e.bf, now, 'over', elift);
         if (e.pm && !e.dead && !G.map.pvp) Escort.drawFlag(ctx, e.x, e.y, top, e.dir === 1 || e.dir === 2 ? e.dir : (e.lastH || 2), e.pm, now);
         if (pm) Overhead.drawOver(ctx, e, e.x, e.y, top, pm, now);
@@ -1531,11 +1542,12 @@
         const slift = me.ap && me.ap[7] ? 24 : 0;
         if (mbf && mbf.length) Auras.draw(ctx, s.x, s.y, mbf, now, 'under', slift);
         const sdv = me.dead ? 0 : DivineFX.count(me.equip, G.data.items);
-        if (sdv) DivineFX.under(ctx, s.x, s.y, now, sdv);
+        if (sdv) DivineFX.under(ctx, s.x, s.y, now, sdv, 0);
+        if (sdv >= 10) DivineFX.selfShake(now, 0);
         if (me.gm && me.gm.hide) ctx.globalAlpha = 0.4;   // đang tàng hình: tự thấy mình mờ
         const top = drawHero(s.x, s.y, me.cls, s.dir, s.lastH, s.moving, s.atkUntil > now, me.ap, me.dead, 0, now, s);
         ctx.globalAlpha = 1;
-        if (sdv) DivineFX.over(ctx, s.x, s.y, now, sdv);
+        if (sdv) DivineFX.over(ctx, s.x, s.y, now, sdv, 0);
         if (mbf && mbf.length) Auras.draw(ctx, s.x, s.y, mbf, now, 'over', slift);
         if (me.pkMode && !me.dead && !G.map.pvp) Escort.drawFlag(ctx, s.x, s.y, top, s.dir === 1 || s.dir === 2 ? s.dir : (s.lastH || 2), me.pkMode, now);
         if (sm) Overhead.drawOver(ctx, s, s.x, s.y, top, sm, now);

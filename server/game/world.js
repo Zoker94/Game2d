@@ -14,6 +14,7 @@ const { JIANGHU, JH_SLOT, JH_DROP } = require('../data/jianghu');
 const { TITLES, statOf, unlocked: titleUnlocked } = require('../data/titles');
 const jhOf = c => (c.jh && c.jhs && c.jhs[c.jh] ? JIANGHU[c.jh] : null);   // tuyệt kỹ giang hồ đang chọn
 const { SKILL_MAX, scaleSkill, upgradeCost, skillPointsTotal, BOOKS } = require('../data/skillbooks');
+const TK_REVIVE_KNB = 10;   // Tống Kim: giá hồi sinh tại chỗ
 const RARITY_IDX = { common: 0, rare: 1, epic: 2, legendary: 3, divine: 4 };
 const { KHAC, AFFIX, PROC_KEYS } = require('../data/affixes');
 // ngũ hành tương khắc: khắc +20% sát thương, bị khắc -15%
@@ -87,7 +88,12 @@ const WEATHER_TABLE = {
 };
 
 // số món Thần Binh đang mặc (máy khách vẽ vòng tím xoắn ốc dưới chân)
-const divineCount = c => { let n = 0; for (const k in c.equip) { const it = c.equip[k] && ITEMS[c.equip[k].id]; if (it && it.rarity === 'divine') n++; } return n; };
+// +10 khi mặc đủ 5 món cùng một bộ (máy khách vẽ thêm vụ nổ vàng nứt đất mỗi 5 giây)
+const divineCount = c => {
+  let n = 0; const sets = {};
+  for (const k in c.equip) { const it = c.equip[k] && ITEMS[c.equip[k].id]; if (it && it.rarity === 'divine') { n++; sets[it.set] = (sets[it.set] || 0) + 1; } }
+  return n + (Object.values(sets).some(v => v >= 5) ? 10 : 0);
+};
 class World {
   constructor(io, db) {
     this.io = io;
@@ -946,6 +952,7 @@ class World {
   // Boss đánh theo % sinh lực tối đa của người chơi: nhiều máu hay ít máu đều chịu số đòn như nhau.
   // Đánh thường: Boss thế giới 5%, Boss dã ngoại 3,5%, Boss phó bản 3%; chiêu: 4-5% × hệ số chiêu. Thủ cao giảm tối đa 30%.
   bossPctDmg(mon, p, mult, skill) {
+    if (mon.tpl.summon) return U.randInt(10000, 20000);   // boss triệu hồi Thần Binh: mọi đòn và chiêu đều 10.000–20.000
     const tpl = mon.tpl, def = p.stats.def || 0;
     const pct = skill ? (tpl.world ? 0.05 : 0.04) : tpl.world ? 0.05 : tpl.pbBoss ? 0.03 : 0.035;
     const cut = Math.min(0.3, def / (def + tpl.atk * 2));
@@ -1063,7 +1070,7 @@ class World {
       lost = Math.floor(t.c.exp * 0.05);
       t.c.exp -= lost;
     }
-    t.socket.emit('dead', { by: src ? (src.c ? src.c.name : src.tpl.name) : '?', lost, cost: this.reviveCost(t) });
+    t.socket.emit('dead', { by: src ? (src.c ? src.c.name : src.tpl.name) : '?', lost, cost: t.mapId === 'tong_kim' ? { gold: 0, knb: TK_REVIVE_KNB } : this.reviveCost(t), tk: t.mapId === 'tong_kim' ? 1 : 0 });
     this.fx(t.mapId, { t: 'death', id: t.id, x: t.x, y: t.y });
     if (src && src.c) {
       src.c.pvpKills = (src.c.pvpKills || 0) + 1;
@@ -1109,6 +1116,17 @@ class World {
   respawn(p, mode) {
     if (!p.dead) return;
     const now = Date.now();
+    if (p.mapId === 'tong_kim' && this.tongkim) {   // Chiến Trường Tống Kim: 10 Nguyên Bảo hồi tại chỗ, hoặc về doanh trại phe mình
+      if (mode === 'here' || mode === 'here_knb') {
+        if ((p.c.knb | 0) < TK_REVIVE_KNB) return this.toast(p, `Cần ${TK_REVIVE_KNB} Nguyên Bảo để hồi sinh tại chỗ`, 'error');
+        p.c.knb -= TK_REVIVE_KNB;
+        p.dead = false; p.weakUntil = 0; p.c.hp = p.stats.maxHp; p.c.mp = p.stats.maxMp; p.dodgeUntil = now + 3000; p.lastCombat = 0;
+        this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y, small: true });
+        this.toast(p, `✨ Hồi sinh tại chỗ (−${TK_REVIVE_KNB} Nguyên Bảo)`, 'reward');
+        p.dirtyMe = true; p.socket.emit('revived', { here: true });
+      } else this.tongkim.respawn(p, 'tong_kim');
+      return;
+    }
     if (mode === 'here' || mode === 'here_knb') {
       const cost = this.reviveCost(p), useKnb = mode === 'here_knb';
       if (!cost.gold) mode = 'here';
@@ -2342,7 +2360,8 @@ class World {
       if (d <= range + 10 && now >= mon.nextAtk) {
         mon.nextAtk = now + (mon.boss ? 1100 : 1300) * (slowed ? 1.4 : 1);
         let dmg, crit;
-        if (mon.boss || tpl.pbBoss) { crit = Math.random() < 0.1; dmg = this.bossPctDmg(mon, target, crit ? 1.5 : 1, false); }
+        if (tpl.summon) { crit = Math.random() < 0.15; dmg = U.randInt(10000, 20000); }   // boss triệu hồi Thần Binh: mỗi đòn 10.000–20.000
+        else if (mon.boss || tpl.pbBoss) { crit = Math.random() < 0.1; dmg = this.bossPctDmg(mon, target, crit ? 1.5 : 1, false); }
         else ({ dmg, crit } = this.calcDamage(tpl.atk, 3, target.stats.def, 1, 0.5));
         const [mem, mek] = elemMult(tpl.el, target.stats.del); dmg = Math.max(1, Math.round(dmg * mem));
         if (tpl.ranged || mon.boss) this.fx(mon.mapId, { t: 'bolt', from: mon.id, x: mon.x, y: mon.y, tx: target.x, ty: target.y, color: mon.boss ? '#ff3030' : '#c080ff' });
