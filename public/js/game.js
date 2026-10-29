@@ -420,7 +420,7 @@
     UI.closePanel(); if (window.BigMap) BigMap.close(); if (window.WorldMap) { WorldMap.close(); WorldMap.onEnterMap(); } if (window.QuestNav) QuestNav.onEnterMap();
     sfx('portal');
     mapLoading(m);
-    if (G.auto) sendAutoSrv();   // vào lại / đổi map: báo lại máy chủ trạng thái tự động
+    sendAutoSrv();   // vào lại / đổi map: báo lại máy chủ trạng thái và cài đặt tự động (cả khi đang tắt: tự vào tổ đội cần cài đặt này)
   }
   // màn hình chờ chuyển bản đồ: tải sẵn ảnh nhân vật phái mình, ảnh quái trên bản đồ, dựng sẵn nền quanh nhân vật
   const MAP_TIPS = ['Đứng yên trong thành 30 giây sẽ tự ngồi thiền, hồi phục nhanh và lĩnh ngộ kinh nghiệm.', 'Bảng Võ Công → Hệ phái: chọn Nội công hoặc Ngoại công.',
@@ -1219,7 +1219,7 @@
   }
 
   // ===== Cài đặt tự động =====
-  const AUTO_DEF = { pickPots: true, pickMats: true, pickup: true, pickGold: true, pickMin: 'common', pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, potAlways: true, townLow: false, townPct: 15, skills: true, range: 700 };
+  const AUTO_DEF = { pickPots: true, pickMats: true, pickup: true, pickGold: true, pickMin: 'common', pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, potAlways: true, townLow: false, townPct: 15, skills: true, range: 700, partyAuto: false, partyFrom: 'all' };
   function autoCfg() { return Object.assign({}, AUTO_DEF, G.autoCfg); }
   G.autoCfgGet = autoCfg;
   G.autoCfgSet = (k, v) => { G.autoCfg[k] = v; try { localStorage.setItem('vl_auto', JSON.stringify(G.autoCfg)); } catch (e) {} sendAutoSrv(); };
@@ -1935,7 +1935,7 @@
   function sendAutoSrv() {
     if (!G.socket || !G.inGame || !G.map) return;
     const h = G.autoHome || G.self;
-    G.socket.emit('autoSrv', { on: !!G.auto, cfg: autoCfg(), hx: h.x, hy: h.y });
+    G.socket.emit('autoSrv', { on: !!G.auto, cfg: autoCfg(), hx: h.x, hy: h.y, block: window.Social && Social.blockList ? Social.blockList() : [] });
   }
   G.sendAutoSrv = sendAutoSrv;
   function setAway(v) { if (!G.socket || !G.inGame) return; if (v) sendAutoSrv(); G.socket.emit('away', { v: v ? 1 : 0 }); }

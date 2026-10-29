@@ -1862,6 +1862,10 @@
         ${tg('potAlways', 'Luôn tự bơm, kể cả khi không bật Tự động')}
         ${tg('townLow', 'Hết bình máu thì dùng Hồi Thành Phù về thành')}${sl('townPct', 5, 50, 'Khi sinh lực dưới')}
         <p class="small ${totalHp < 10 ? 'warn' : 'muted'}">Còn ${totalHp} bình máu · ${totalMp} bình nội lực${totalHp < 10 ? ' — sắp hết, hãy mua thêm ở Hiệu Thuốc!' : ''}</p></div>
+      <div class="au-box"><h4>👥 Tổ đội</h4>
+        ${tg('partyAuto', 'Tự đồng ý khi được mời vào tổ đội')}
+        <div class="au-row"><span>Nhận lời mời từ</span><select data-s="partyFrom">${[['all', 'Mọi người'], ['friend', 'Bạn bè & cùng bang']].map(([v, n]) => `<option value="${v}" ${c.partyFrom === v ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+        <p class="small muted">Có tác dụng cả khi không bật Tự động và khi đang treo máy trên máy chủ. Người trong danh sách chặn vẫn bị từ chối.</p></div>
       <div class="au-box"><h4>⚔️ Đánh quái</h4>
         ${tg('skills', 'Dùng võ công (tắt = chỉ đánh thường)')}
         <div class="au-row"><span>Phạm vi tìm quái</span><select data-s="range">${[[400, 'Gần'], [700, 'Vừa'], [1000, 'Xa']].map(([v, n]) => `<option value="${v}" ${+c.range === v ? 'selected' : ''}>${n}</option>`).join('')}</select></div>

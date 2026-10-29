@@ -14,7 +14,7 @@ const OFFLINE_MAX = 8 * 3600e3;   // mất kết nối: treo tối đa 8 giờ r
 const IDLE_GRACE = 3000;          // máy khách im lặng 3 giây (không gửi di chuyển) thì máy chủ mới cầm lái
 const HB_LOST = 8000;             // mất nhịp tim 8 giây (điện thoại tắt màn / khoá máy, trang bị đóng băng): máy chủ cầm lái luôn
 const RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
-const DEF = { pickup: true, pickGold: true, pickMin: 'common', pickPots: true, pickMats: true, pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, skills: true, range: 700 };
+const DEF = { pickup: true, pickGold: true, pickMin: 'common', pickPots: true, pickMats: true, pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, skills: true, range: 700, partyAuto: false, partyFrom: 'all' };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, Number.isFinite(+v) ? +v : a));
 
 class AutoSrv {
@@ -27,8 +27,10 @@ class AutoSrv {
     for (const k in DEF) if (typeof src[k] === typeof DEF[k]) cfg[k] = src[k];
     cfg.hpPct = clamp(cfg.hpPct, 1, 99); cfg.mpPct = clamp(cfg.mpPct, 1, 99); cfg.range = clamp(cfg.range, 200, 1200);
     if (!(cfg.pickMin in RANK)) cfg.pickMin = 'common';
+    if (cfg.partyFrom !== 'all' && cfg.partyFrom !== 'friend') cfg.partyFrom = 'all';
     const a = p.autoSrv || (p.autoSrv = { skip: new Map() });
     a.on = !!d.on; a.cfg = cfg;
+    a.block = new Set(Array.isArray(d.block) ? d.block.slice(0, 200).filter(x => typeof x === 'string').map(x => x.toLowerCase().slice(0, 30)) : []);   // tên bị chặn (tự vào tổ đội bỏ qua)
     if (a.on) {
       const hx = +d.hx, hy = +d.hy, ok = Number.isFinite(hx) && Number.isFinite(hy) && Math.hypot(hx - p.x, hy - p.y) < 1500;
       a.home = ok ? { x: hx, y: hy } : { x: p.x, y: p.y }; a.homeMap = p.mapId;

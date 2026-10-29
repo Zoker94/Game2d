@@ -38,6 +38,12 @@ class Party {
     if (pt && pt.members.length >= MAX) return this.toast(p, `Tổ đội đã đủ ${MAX} người`, 'error');
     if (o.partyId) return this.toast(p, `${o.c.name} đã ở trong một tổ đội khác`, 'error');
     this.invites.set(o.userId, { from: p.userId, t: Date.now() });
+    // người được mời bật "Tự vào tổ đội" (Cài đặt tự động): đồng ý ngay, kể cả đang treo máy trên máy chủ
+    const ac = o.autoSrv && o.autoSrv.cfg;
+    if (ac && ac.partyAuto && !(o.autoSrv.block && o.autoSrv.block.has(p.c.name.toLowerCase())) && (ac.partyFrom === 'all' || (o.c.friends && o.c.friends[p.userId]) || (o.c.guildId && o.c.guildId === p.c.guildId))) {
+      this.toast(p, `👥 Đã mời ${o.c.name} vào tổ đội`);
+      return this.answer(o, true);
+    }
     o.socket.emit('partyReq', { id: p.id, name: p.c.name, level: p.c.level, cls: p.c.cls, n: pt ? pt.members.length : 1 });
     this.toast(p, `👥 Đã mời ${o.c.name} vào tổ đội`);
   }

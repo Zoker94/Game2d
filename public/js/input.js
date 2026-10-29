@@ -358,9 +358,11 @@
     });
     const row = document.createElement('div'); row.className = 'tov-row';
     row.innerHTML = `<button type="button" class="btn small">Đóng</button><button type="button" class="btn small primary">${form ? 'Xác nhận' : 'Xong'}</button>`;
+    const tipL = document.createElement('p'); tipL.className = 'tov-tip';
+    tipL.textContent = '📱 Muốn gõ phím ngang? Tắt "Khoá xoay màn hình" (vuốt mở Trung tâm điều khiển → bấm biểu tượng ổ khoá 🔒) rồi xoay ngang điện thoại: game và bàn phím sẽ cùng nằm ngang.';
     row.children[0].onclick = () => closeTypeOv(false);
     row.children[1].onclick = () => closeTypeOv(!!form || t.id === 'chat-input');
-    box.appendChild(row);
+    box.appendChild(row); box.appendChild(tipL);
     el.addEventListener('pointerdown', e => { if (e.target === el) closeTypeOv(false); });
     document.body.appendChild(el);
     typeOv = { el, form, last: fields[fields.length - 1] };

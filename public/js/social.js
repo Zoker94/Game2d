@@ -13,6 +13,7 @@
     const n = name.toLowerCase();
     blockList = blocked(n) ? blockList.filter(x => x !== n) : [...blockList, n];
     try { localStorage.setItem('vl_block', JSON.stringify(blockList)); } catch (e) {}
+    if (G.sendAutoSrv) G.sendAutoSrv();   // máy chủ cần danh sách chặn để tự vào tổ đội không nhận lời mời của người bị chặn
     UI.toast(blocked(n) ? `Đã chặn tin nhắn của ${name}` : `Đã bỏ chặn ${name}`, 'info');
   }
 
@@ -176,5 +177,5 @@
     s.on('me', () => { if (tradeData && !(document.activeElement && document.activeElement.id === 'tr-gold')) setTimeout(tradeWin, 0); });
   }
 
-  window.Social = { bind, menu, closeMenu, blocked };
+  window.Social = { bind, menu, closeMenu, blocked, blockList: () => blockList.slice(0, 200) };
 })();

@@ -1848,3 +1848,4 @@ body.touch #wb-top { top: 108px; right: auto; left: 50%; transform: translateX(-
 @keyframes coRing { 50% { border-color: #fff3c4; } }
 @keyframes coHand { 50% { transform: translateY(-8px); } }
 @keyframes coHandD { 0%, 100% { transform: rotate(180deg); } 50% { transform: rotate(180deg) translateY(-8px); } }
+#type-ov .tov-tip { margin: 2px 0 0; font-size: 11.5px; line-height: 1.4; color: #a99c7c; }

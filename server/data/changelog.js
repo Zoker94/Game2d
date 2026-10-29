@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '29/10/2026',
     items: [
+      '👥 Cài đặt tự động có mục Tổ đội: bật "Tự đồng ý khi được mời vào tổ đội", chọn nhận lời mời từ Mọi người hoặc chỉ Bạn bè & cùng bang. Có tác dụng cả khi không bật Tự động và khi đang treo máy trên máy chủ; người trong danh sách chặn vẫn bị từ chối.',
       '📱 iPhone / lối tắt màn hình chính: khi màn hình đang xoay ngang, chạm vào ô nhập chữ (tài khoản, mật khẩu, tên nhân vật, chat…) sẽ mở khung nhập dựng đứng ngay trên bàn phím – không phải xoay điện thoại nữa. Form đăng nhập / đăng ký hiện đủ các ô để điền một lượt.',
       '👆 Chỉ dẫn tận tay cho người mới: ở bước mặc vũ khí và học bí kíp võ công, màn hình phủ tối, khoanh sáng và có bàn tay chỉ đúng chỗ cần bấm (nút Túi → món đồ → Trang bị / Sử dụng → nút chiêu thức). Bấm ✕ để tắt.',
       '💰 BÁN NHANH ĐỒ RÁC ngay trong Túi đồ, ở bất kỳ đâu (không cần chạy về NPC): bấm "💰 Bán đồ rác", lọc theo phẩm chất (Thường / Hiếm / VIP / Truyền Kỳ), tuỳ chọn giữ đồ đã cường hoá, bán cả nguyên liệu thường, hoặc chạm chọn từng món rồi bán một lần. Đồ VIP / Truyền Kỳ / đã cường hoá luôn hỏi lại trước khi bán.',
