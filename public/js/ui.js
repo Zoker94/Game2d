@@ -910,20 +910,22 @@
   }
   // vứt nhanh: chạm chọn nhiều món rồi vứt một lần
   const dropMark = new Set();
-  let dropMode = false;
+  let dropMode = false, sellMode = false;   // sellMode: bán nhanh đồ rác ngay trong túi, không cần tới NPC
   function renderInventory(body) {
     const me = G.me;
     for (const u of [...dropMark]) if (!me.inv.some(s => s.uid === u)) dropMark.delete(u);
     let html = `<div class="small muted" style="margin-bottom:6px">💰 ${fmt(me.gold)} lượng · 💎 ${fmt(me.knb)} Nguyên Bảo · Túi ${me.inv.length}/${me.invMax || 48} · Lực chiến <b style="color:#ffd76a">${fmt(me.stats.power)}</b></div>`;
-    html += `<div class="inv-tools"><button class="btn small" id="inv-sort">🧹 Sắp xếp</button><button class="btn small ${dropMode ? 'red' : ''}" id="inv-drop">${dropMode ? '✕ Thoát vứt nhanh' : '🗑️ Vứt nhanh'}</button></div>`;
+    html += `<div class="inv-tools"><button class="btn small" id="inv-sort">🧹 Sắp xếp</button><button class="btn small ${sellMode ? 'green' : ''}" id="inv-sell">${sellMode ? '✕ Thoát bán nhanh' : '💰 Bán đồ rác'}</button><button class="btn small ${dropMode ? 'red' : ''}" id="inv-drop">${dropMode ? '✕ Thoát vứt nhanh' : '🗑️ Vứt nhanh'}</button></div>`;
+    if (sellMode) {
+      body.innerHTML = html + quickSellHtml() + invGrid(body, { noEquip: true, mark: sellMark }) + (sellMulti ? '' : itemActions());
+      bindInv(body); bindQuickSell(body); bindInvTools(); return;
+    }
     if (dropMode) html += `<div class="qs-box"><div class="small muted">Chạm vào các món muốn vứt để đánh dấu ✔. Đồ đang mặc không bị vứt. <a href="#" id="dm-common">Chọn đồ Thường</a> · <a href="#" id="dm-none">Bỏ chọn</a></div>
       <button class="btn red qs-go" id="dm-go" ${dropMark.size ? '' : 'disabled'}>🗑️ Vứt ${dropMark.size} món</button></div>`;
     html += invGrid(body, dropMode ? { mark: dropMark } : {});
     if (!dropMode) html += itemActions();
     body.innerHTML = html;
-    bindInv(body);
-    $('inv-sort').onclick = () => { emit('sortInv'); panelState.sel = null; G.sfx('click'); };
-    $('inv-drop').onclick = () => { dropMode = !dropMode; dropMark.clear(); panelState.sel = null; UI.refreshPanel(); };
+    bindInv(body); bindInvTools();
     if (!dropMode) return;
     body.querySelectorAll('.inv-grid [data-uid]').forEach(el => el.onclick = () => { const u = el.dataset.uid; dropMark.has(u) ? dropMark.delete(u) : dropMark.add(u); G.sfx('click'); UI.refreshPanel(); });
     $('dm-common').onclick = e => { e.preventDefault(); me.inv.forEach(s => { const it = G.data.items[s.id]; if (it.type === 'equip' && it.rarity === 'common' && !s.plus) dropMark.add(s.uid); }); UI.refreshPanel(); };
@@ -933,6 +935,11 @@
       const rare = list.filter(s => { const it = G.data.items[s.id]; return it.rarity === 'epic' || it.rarity === 'legendary' || (s.plus || 0) >= 5; }).length;
       G.modal(`Vứt bỏ ${list.length} món? Vật phẩm bị vứt sẽ mất hẳn.${rare ? `\n⚠️ Có ${rare} món VIP / Truyền Kỳ / đã cường hóa cao!` : ''}`, [{ t: '🗑️ Vứt', cls: 'primary', fn: () => { emit('discardMany', { uids: list.map(s => s.uid) }); dropMark.clear(); } }, { t: 'Hủy' }]);
     };
+  }
+  function bindInvTools() {
+    $('inv-sort').onclick = () => { emit('sortInv'); panelState.sel = null; G.sfx('click'); };
+    $('inv-sell').onclick = () => { sellMode = !sellMode; dropMode = false; sellMark.clear(); dropMark.clear(); panelState.sel = null; UI.refreshPanel(); };
+    $('inv-drop').onclick = () => { dropMode = !dropMode; sellMode = false; dropMark.clear(); sellMark.clear(); panelState.sel = null; UI.refreshPanel(); };
   }
   function itemActions(ctx = {}) {
     const s = selectedItem();

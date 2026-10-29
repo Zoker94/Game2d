@@ -1832,11 +1832,10 @@ class World {
     this.recalc(p); p.dirtyMe = true; this.db.markDirty();
   }
 
-  // bán nhiều món một lần (bán nhanh)
+  // bán nhiều món một lần (bán nhanh đồ rác): bán được ở bất kỳ đâu, ngay trong túi đồ
   sellMany(p, uids) {
     if (!Array.isArray(uids) || !uids.length) return;
     if (this.outlawBlock(p, 'mua bán với NPC')) return;
-    if (!MAPS[p.mapId].npcs.some(n => NPCS[n.id].shop && this.nearNpc(p, n.id))) return this.toast(p, 'Hãy đứng gần một NPC cửa hàng để bán', 'error');
     const c = p.c; let gold = 0, n = 0;
     for (const uid of new Set(uids.slice(0, 200))) {
       const st = c.inv.find(x => x.uid === uid);
