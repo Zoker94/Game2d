@@ -14,6 +14,16 @@
     autoCfg: (() => { try { return JSON.parse(localStorage.getItem('vl_auto') || '{}'); } catch (e) { return {}; } })()
   };
   G.saveSettings = () => localStorage.setItem('vl_settings', JSON.stringify(G.settings));
+  // link mời bạn (…/?ref=MÃ): nhớ mã 7 ngày, gửi kèm khi tạo tài khoản; mã thiết bị để máy chủ chặn tự mời chính mình
+  const authExtra = (() => {
+    const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } };
+    try {
+      const q = new URLSearchParams(location.search).get('ref');
+      if (q && /^[A-Za-z0-9]{4,12}$/.test(q)) { ls('vl_ref', JSON.stringify({ c: q.toUpperCase(), t: Date.now() })); history.replaceState(null, '', location.pathname + location.hash); }
+    } catch (e) { }
+    let dev = ls('vl_dev'); if (!dev) { dev = Math.random().toString(36).slice(2) + Date.now().toString(36); ls('vl_dev', dev); }
+    return () => { let r = null; try { r = JSON.parse(ls('vl_ref') || 'null'); } catch (e) { } return { dev, ref: r && Date.now() - r.t < 7 * 86400e3 ? r.c : '' }; };
+  })();
   // tự vào lại game sau khi tải lại vì máy chủ có bản mới (Cài đặt → Tự vào game khi có bản mới): { auto: đang bật Tự động }
   let reEnter = null;
   try { reEnter = JSON.parse(sessionStorage.getItem('vl_reenter') || 'null'); sessionStorage.removeItem('vl_reenter'); } catch (e) { }
@@ -134,7 +144,7 @@
     const username = $('li-user').value.trim(), password = $('li-pass').value;
     if (!username || !password) { $('login-msg').textContent = 'Nhập tên tài khoản và mật khẩu'; return; }
     loading(true, 'Đang đăng nhập...');
-    try { loginOk(await api('/api/auth/login', { body: { username, password } })); }
+    try { loginOk(await api('/api/auth/login', { body: Object.assign({ username, password }, authExtra()) })); }
     catch (err) { $('login-msg').textContent = err.message; }
     loading(false);
   };
@@ -145,7 +155,7 @@
     if (password.length < 6) { $('login-msg').textContent = 'Mật khẩu tối thiểu 6 ký tự'; return; }
     if (password !== $('rg-pass2').value) { $('login-msg').textContent = 'Mật khẩu nhập lại không khớp'; return; }
     loading(true, 'Đang tạo tài khoản...');
-    try { loginOk(await api('/api/auth/register', { body: { username, password } })); }
+    try { loginOk(await api('/api/auth/register', { body: Object.assign({ username, password }, authExtra()) })); }
     catch (err) { $('login-msg').textContent = err.message; }
     loading(false);
   };
@@ -165,7 +175,7 @@
   async function onGoogle(resp) {
     loading(true, 'Đang xác thực Google...');
     try {
-      const r = await api('/api/auth/google', { body: { credential: resp.credential } });
+      const r = await api('/api/auth/google', { body: Object.assign({ credential: resp.credential }, authExtra()) });
       loginOk(r);
     } catch (e) { $('login-msg').textContent = e.message; }
     loading(false);
@@ -176,7 +186,7 @@
     connect();
   }
   $('dev-btn').onclick = async () => {
-    try { loginOk(await api('/api/auth/dev', { body: { name: $('dev-name').value } })); } catch (e) { $('login-msg').textContent = e.message; }
+    try { loginOk(await api('/api/auth/dev', { body: Object.assign({ name: $('dev-name').value }, authExtra()) })); } catch (e) { $('login-msg').textContent = e.message; }
   };
   $('logout-btn').onclick = logout;
   async function logout() {
@@ -249,7 +259,7 @@
     if (G.socket) return;
     loading(true, 'Đang kết nối...');
     GameAudio.init();
-    const s = G.socket = io({ auth: { token: G.token }, transports: ['websocket', 'polling'] });
+    const s = G.socket = io({ auth: { token: G.token, dev: authExtra().dev }, transports: ['websocket', 'polling'] });
     function showUpdateGate(news) {
       if (document.getElementById('update-gate')) return;
       s.close();   // ngắt khỏi máy chủ: bản cũ không được chơi tiếp

@@ -1113,7 +1113,8 @@
           ${has ? (on ? '' : `<button class="btn small green" data-dragon="${el}">Dùng</button>`) : '<span class="small muted">Chưa học<br>(Bí kíp: Boss, Kỳ Trân Các, Hoa Đăng)</span>'}</div>`;
       }).join('')}</div>`;
     body.querySelectorAll('[data-dragon]').forEach(b => b.onclick = () => emit('dragon', { el: b.dataset.dragon }));
-    body.querySelectorAll('[data-title]').forEach(b => b.onclick = () => emit('title', { id: b.dataset.title }));
+    body.querySelectorAll('[data-title]').forEach(b => b.onclick = () => { ttlOpen = true; emit('title', { id: b.dataset.title }); });
+    { const d = body.querySelector('.ttl-box'); if (d) d.ontoggle = () => { ttlOpen = d.open; }; }
     bindAttr(body);
     const c = $('char-cv').getContext('2d'); c.imageSmoothingEnabled = false;
     if (Assets.has(me.cls)) { c.imageSmoothingEnabled = true; c.drawImage(Assets.charFrame(me.cls, 0, 'idle', 0, me.ap), 0, 0, 96, 96); setTimeout(() => { if ($('char-cv')) { c.clearRect(0, 0, 96, 96); c.drawImage(Assets.charFrame(me.cls, 0, 'idle', 0, me.ap), 0, 0, 96, 96); } }, 600); }
@@ -1121,6 +1122,7 @@
   }
 
   // ---------- Danh hiệu giang hồ: giành từ phó bản / Boss / sự kiện, chọn 1 để đeo ----------
+  let ttlOpen = null;   // người chơi mở / đóng khung danh hiệu: giữ nguyên khi bảng Nhân vật vẽ lại mỗi giây (trước đây cứ vẽ lại là tự đóng)
   function titlePanel(me) {
     const T = G.data.titles; if (!T) return '';
     const ach = me.ach || {}, list = Object.entries(T).filter(([, t]) => !t.admin || me.admin);   // danh hiệu Quản trị viên: chỉ Admin thấy
@@ -1133,7 +1135,7 @@
         <div class="sub">${esc(t.desc)}${ok ? '' : ` · <b>${Math.min(v, t.need)}/${t.need}</b>`}</div>${ok ? '' : `<div class="ttl-bar"><i style="width:${Math.round(Math.min(1, v / t.need) * 100)}%;background:${t.color}"></i></div>`}</div>
         ${ok ? (on ? '<button class="btn small" data-title="">Tháo</button>' : '<button class="btn small green" data-title="' + id + '">Đeo</button>') : '<span class="small muted">🔒</span>'}</div>`;
     }).join('');
-    return `<details class="card ttl-box"${me.title ? '' : ' open'}><summary><b>🏅 Danh hiệu</b> <span class="small muted">${got}/${list.length} đã mở</span> · Đang đeo: ${cur ? `<b style="color:${cur.color}">【${esc(cur.name)}】</b>` : '<span class="muted">không</span>'}</summary>
+    return `<details class="card ttl-box"${(ttlOpen === null ? !me.title : ttlOpen) ? ' open' : ''}><summary><b>🏅 Danh hiệu</b> <span class="small muted">${got}/${list.length} đã mở</span> · Đang đeo: ${cur ? `<b style="color:${cur.color}">【${esc(cur.name)}】</b>` : '<span class="muted">không</span>'}</summary>
       <p class="small muted">Danh hiệu không còn tính theo lực chiến – phải tự giành qua phó bản, Boss và sự kiện. Mở khoá là giữ mãi.</p>${rows}</details>`;
   }
 

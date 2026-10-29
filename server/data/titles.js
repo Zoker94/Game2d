@@ -21,6 +21,9 @@ const TITLES = {
   tk_win:   { name: 'Sa Trường Lão Tướng', color: '#ff8a5a', tier: 2, fx: 'pulse', src: 'Tống Kim', stat: 'tkWin', need: 10, desc: 'Thắng Chiến Trường Tống Kim 10 trận' },
   tk_mvp:   { name: 'Vạn Nhân Địch',       color: '#ff3a3a', tier: 3, fx: 'banner', src: 'Tống Kim', stat: 'tkMvp', need: 1,  desc: 'Đứng đầu điểm phe mình trong một trận Tống Kim' },
   hs_top3:  { name: 'Hoa Sơn Danh Kiếm',   color: '#a8d8ff', tier: 3, fx: 'sword', src: 'Hoa Sơn Luận Kiếm', stat: 'hsTop3', need: 1, desc: 'Vào top 3 Hoa Sơn Luận Kiếm' },
+  // ---- Mời bạn (server/game/referral.js): số người được mời đạt cấp 30 ----
+  ref_5:    { name: 'Hào Sảng Hiệp Khách', color: '#7fe0c8', tier: 2, fx: 'pulse', src: 'Mời bạn', stat: 'refs', need: 5,  desc: 'Mời 5 người chơi mới cùng đạt cấp 30' },
+  ref_20:   { name: 'Danh Chấn Giang Hồ',  color: '#ffb0e0', tier: 3, fx: 'lotus', src: 'Mời bạn', stat: 'refs', need: 20, desc: 'Mời 20 người chơi mới cùng đạt cấp 30' },
   dh_top3:  { name: 'Võ Lâm Hào Kiệt',     color: '#ffe060', tier: 3, fx: 'lotus', src: 'Đại Hội Võ Lâm', stat: 'dhTop3', need: 1, desc: 'Vào top 3 Đại Hội Võ Lâm' }
 };
 const statOf = (c, k) => k === 'bossKills' ? (c.bossKills | 0) : ((c.ach && c.ach[k]) | 0);

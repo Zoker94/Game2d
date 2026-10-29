@@ -49,6 +49,7 @@ world.daihoi = new (require('./game/daihoi').DaiHoi)(world, features, db);
 world.hoason = new (require('./game/hoason').HoaSon)(world, features, db);
 world.tongkim = new (require('./game/tongkim').TongKim)(world, features, db);
 world.cleanup = new (require('./game/cleanup').Cleanup)(world, features, db);
+world.referral = new (require('./game/referral').Referral)(world);
 const { Social } = require('./game/social');
 const social = new Social(world, features, db);
 world.start();
@@ -105,12 +106,15 @@ app.post('/api/auth/google', async (req, res) => {
     const pl = ticket.getPayload();
     if (!pl || !pl.sub) throw new Error('invalid');
     if (pl.email && pl.email_verified === false) return res.status(403).json({ error: 'Email Google chưa xác minh' });
-    let user = Object.values(db.data.users).find(u => u.googleId === pl.sub);
+    let user = Object.values(db.data.users).find(u => u.googleId === pl.sub), created = false;
     if (!user) {
+      created = true;
       const id = db.newId();
       user = db.data.users[id] = { id, googleId: pl.sub, email: pl.email || '', name: pl.name || 'Hiệp khách', avatar: pl.picture || '', createdAt: Date.now(), banned: false, muted: false };
       db.log('user', `Tài khoản mới liên kết Google: ${user.email}`);
     }
+    if (created) world.referral.apply(user, req.body.ref, req.ip, req.body.dev);   // tài khoản mới qua link mời
+    world.referral.touch(user, req.ip, req.body.dev);
     user.lastLogin = Date.now();
     if (pl.email) user.email = pl.email;
     if (isOwner(user)) { user.isAdmin = true; user.banned = false; } // chủ server luôn có quyền, không thể bị khóa
@@ -136,6 +140,8 @@ app.post('/api/auth/register', (req, res) => {
   if (findByUsername(username)) return res.status(409).json({ error: 'Tên tài khoản đã có người dùng' });
   const id = db.newId();
   const user = db.data.users[id] = { id, username, pass: db.hashPassword(password), email: '', name: username, avatar: '', createdAt: Date.now(), lastLogin: Date.now(), banned: false, muted: false };
+  world.referral.apply(user, req.body.ref, req.ip, req.body.dev);   // tạo qua link mời (trước khi ghi IP / thiết bị của chính mình)
+  world.referral.touch(user, req.ip, req.body.dev);
   db.log('user', `Đăng ký tài khoản mới: ${username}`);
   db.markDirty();
   res.json({ token: createSession(user.id), user: publicUser(user) });
@@ -146,6 +152,7 @@ app.post('/api/auth/login', (req, res) => {
   const user = findByUsername(req.body.username);
   if (!user || !user.pass || !db.verifyPassword(String(req.body.password || ''), user.pass)) return res.status(401).json({ error: 'Sai tên tài khoản hoặc mật khẩu' });
   if (user.banned) return res.status(403).json({ error: 'Tài khoản đã bị khóa' + (user.banReason ? ': ' + user.banReason : '') });
+  world.referral.touch(user, req.ip, req.body.dev);
   user.lastLogin = Date.now();
   db.markDirty();
   res.json({ token: createSession(user.id), user: publicUser(user) });
@@ -171,7 +178,9 @@ app.post('/api/auth/dev', (req, res) => {
   if (!user) {
     const id = db.newId();
     user = db.data.users[id] = { id, googleId: gid, email: key + '@dev.local', name: key, avatar: '', createdAt: Date.now(), banned: false, muted: false };
+    world.referral.apply(user, req.body.ref, req.ip, req.body.dev);
   }
+  world.referral.touch(user, req.ip, req.body.dev);
   if (user.banned) return res.status(403).json({ error: 'Tài khoản đã bị khóa' });
   user.lastLogin = Date.now();
   db.markDirty();
@@ -331,6 +340,10 @@ io.on('connection', socket => {
   const user = socket.user;
   let player = null;
 
+  { // nhớ IP / thiết bị cả khi vào bằng phiên cũ (không qua trang đăng nhập): link mời bạn chặn tự mời chính mình
+    const xff = String(socket.handshake.headers['x-forwarded-for'] || '').split(',').map(s => s.trim()).filter(Boolean);
+    world.referral.touch(user, xff.length ? xff[xff.length - 1] : socket.handshake.address, socket.handshake.auth && socket.handshake.auth.dev);
+  }
   const hello = () => socket.emit('hello', { user: publicUser(user), motd: db.data.config.motd, build: BUILD, news: CHANGELOG[0] || null });
   hello();
 
@@ -372,6 +385,7 @@ io.on('connection', socket => {
     }
     world.story.onJoin(player);
     world.autoSrv.greet(player);
+    world.referral.onEnter(player);
     if (!user.character.tutorial.done) socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', text: 'Mẹo: Làm theo khung Hướng Dẫn Tân Thủ ở góc trái để nhận quà!', t: Date.now() });
   });
 
@@ -387,6 +401,7 @@ io.on('connection', socket => {
     if (!world.quickUse(player, kind, d && d.auto)) { if (d && d.auto) socket.emit('noPot', { kind }); else world.toast(player, 'Không còn thuốc!', 'error'); }
   }));
   on('equip', inGame(d => world.equip(player, d && d.uid, d && d.side)));
+  on('ref', inGame(d => world.referral.action(player, d)));
   on('title', inGame(d => world.selectTitle(player, d && typeof d.id === 'string' ? d.id : null)));
   on('unequip', inGame(d => world.unequip(player, d && d.slot)));
   on('discard', inGame(d => world.discard(player, d && d.uid)));

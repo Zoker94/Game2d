@@ -478,6 +478,7 @@ class World {
       if (c.level % 10 === 0 && c.level >= 30) this.features.brag(`⚔️ ${c.name} (${CLASSES[c.cls].name}) đã đạt cấp ${c.level}!`);
       this.progressTutorial(p, 'level');
       this.story.on(p, 'level');
+      if (this.referral) this.referral.onLevel(p);
     }
     p.dirtyMe = true;
     return add;

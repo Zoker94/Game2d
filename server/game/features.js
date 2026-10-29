@@ -551,7 +551,7 @@ class Features {
         if (!id) return err('Bản đồ: ' + Object.keys(M).join(', '));
         w.teleport(p, id); break;
       }
-      case 'level': { const n = U.clamp(+args[0] | 0, 1, U.MAX_LEVEL); p.c.level = n; p.c.exp = 0; w.recalc(p); p.c.hp = p.stats.maxHp; ok('Cấp ' + n); break; }
+      case 'level': { const n = U.clamp(+args[0] | 0, 1, U.MAX_LEVEL), q = args[1] ? findPlayer(args.slice(1).join(' ')) : p; if (!q) return err('Người chơi không online'); q.c.level = n; q.c.exp = 0; w.recalc(q); q.c.hp = q.stats.maxHp; q.dirtyMe = true; if (w.referral) w.referral.onLevel(q); ok(`Cấp ${n}${q !== p ? ' cho ' + q.c.name : ''}`); break; }   // /level <cấp> [tên người chơi]
       case 'gold': p.c.gold = Math.max(0, +args[0] | 0); ok('Ngân lượng: ' + p.c.gold); break;
       case 'knb': p.c.knb = Math.max(0, +args[0] | 0); ok('Nguyên bảo: ' + p.c.knb); break;
       case 'tuyetky': {   // nhận đủ 9 bí kíp Tuyệt Kỹ Giang Hồ

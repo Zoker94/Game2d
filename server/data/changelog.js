@@ -4,6 +4,8 @@ const CHANGELOG = [
   {
     date: '29/10/2026',
     items: [
+      '📣 MỜI BẠN NHẬN QUÀ (nút 📣 Mời bạn trên menu): mỗi người có link mời riêng, chia sẻ lên Facebook, Zalo, TikTok… Bạn bè tạo tài khoản qua link nhận quà nhập môn (Song Bội Kinh Nghiệm x2, Rương Bí Ẩn, thuốc, ngân lượng). Người mời nhận quà khi bạn đạt cấp 10 / 30 / 50 (Rương Bí Ẩn, Rương Thủ Lĩnh, Thiên Tinh Thạch, Nguyên Bảo) và quà lớn khi đủ 3 / 5 / 10 / 20 người đạt cấp 30 (Bạch Hổ, danh hiệu Hào Sảng Hiệp Khách, Danh Chấn Giang Hồ…). Có bảng mời nhiều nhất tuần. Không tính tài khoản tạo trên cùng máy với người mời.',
+      '🏅 Sửa lỗi khung Danh hiệu ở bảng Nhân vật tự đóng lại khi đang cuộn xem hoặc vừa đổi danh hiệu.',
       '🤖 Treo máy không bị ngắt khi máy chủ cập nhật: ai đang bật Tự động ở bãi luyện (kể cả đã tắt màn hình / thoát game) thì máy chủ khởi động lại xong tự treo tiếp đúng chỗ cũ, bảng kết quả treo tính liền cả quãng trước và sau cập nhật. Đang mở game thì tự tải lại, vào lại và bật lại Tự động.',
       '🔄 Cài đặt → Chung: mục "Tự vào lại game khi máy chủ có bản cập nhật mới" (bật sẵn). Khi có bản mới, game đếm ngược 8 giây rồi tự tải lại và vào thẳng game, đang treo Tự động thì bật lại Tự động – không phải bấm gì. Bấm "Huỷ tự vào" nếu muốn đọc kỹ nội dung cập nhật.',
       '👥 Cài đặt tự động có mục Tổ đội: bật "Tự đồng ý khi được mời vào tổ đội", chọn nhận lời mời từ Mọi người hoặc chỉ Bạn bè & cùng bang. Có tác dụng cả khi không bật Tự động và khi đang treo máy trên máy chủ; người trong danh sách chặn vẫn bị từ chối.',
