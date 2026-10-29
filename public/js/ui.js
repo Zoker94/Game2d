@@ -1433,7 +1433,8 @@
     } else {
       html += `<div class="card"><h4>🎮 Lối chơi</h4>
           <button class="btn small primary" id="set-auto">🤖 Cài đặt tự động (nhặt đồ, bơm máu...)</button>
-          <label class="set-row"><input type="checkbox" id="set-qauto" ${s.questAuto !== false ? 'checked' : ''}> 🧭 Tự đi làm nhiệm vụ khi nhận nhiệm vụ mới (cốt truyện, môn phái)</label></div>
+          <label class="set-row"><input type="checkbox" id="set-qauto" ${s.questAuto !== false ? 'checked' : ''}> 🧭 Tự đi làm nhiệm vụ khi nhận nhiệm vụ mới (cốt truyện, môn phái)</label>
+          <label class="set-row"><input type="checkbox" data-set="autoUpdate" ${s.autoUpdate !== false ? 'checked' : ''}> 🔄 Tự vào lại game khi máy chủ có bản cập nhật mới (giữ trạng thái Tự động)</label></div>
         <div class="card"><h4>💬 Cộng đồng</h4><p class="small">Tham gia nhóm Zalo để nhận gift code, tin sự kiện và giao lưu với các đại hiệp khác.</p>
           <div class="row" style="justify-content:flex-start;gap:6px"><a class="zalo-btn" href="https://zalo.me/g/fkxw5crl6ksc0jotbzgp" target="_blank" rel="noopener">💬 Nhóm Zalo</a><button class="btn small" id="set-online">👥 Người chơi online</button><button class="btn small" id="set-news">📜 Lịch sử cập nhật</button>${G.user && G.user.owner ? '<button class="btn small primary" id="set-admin">🛡️ Trang quản trị</button>' : ''}</div></div>
         <div class="card"><h4>👤 Tài khoản</h4>

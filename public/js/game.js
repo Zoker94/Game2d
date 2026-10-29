@@ -10,10 +10,14 @@
     self: { x: 0, y: 0, dir: 0, moving: false, atkUntil: 0 },
     fx: [], floats: [], target: null, moveTo: null, npcGoal: null,
     cds: {}, pending: {}, auto: false, events: null, daily: null, inGame: false,
-    settings: Object.assign({ names: true, sound: true, shake: true }, JSON.parse(localStorage.getItem('vl_settings') || '{}')),
+    settings: Object.assign({ names: true, sound: true, shake: true, autoUpdate: true }, JSON.parse(localStorage.getItem('vl_settings') || '{}')),
     autoCfg: (() => { try { return JSON.parse(localStorage.getItem('vl_auto') || '{}'); } catch (e) { return {}; } })()
   };
   G.saveSettings = () => localStorage.setItem('vl_settings', JSON.stringify(G.settings));
+  // tự vào lại game sau khi tải lại vì máy chủ có bản mới (Cài đặt → Tự vào game khi có bản mới): { auto: đang bật Tự động }
+  let reEnter = null;
+  try { reEnter = JSON.parse(sessionStorage.getItem('vl_reenter') || 'null'); sessionStorage.removeItem('vl_reenter'); } catch (e) { }
+  if (reEnter && !(Date.now() - (reEnter.t || 0) < 120000)) reEnter = null;   // cờ cũ quá 2 phút: bỏ
 
   // ================== Màn hình ==================
   function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id)); }
@@ -107,7 +111,7 @@
       await Input.goLandscape();
       if (hasSession) connect(); else showLogin();
     };
-    if (!Input.isTouch) { setTimeout(go, 350); return; }
+    if (!Input.isTouch || (reEnter && hasSession)) { setTimeout(go, 350); return; }   // tự vào lại sau cập nhật: không chờ chạm
     // Điện thoại: cần một lần chạm để bật toàn màn hình & khóa xoay ngang
     $('splash-start').classList.remove('hidden');
     const scr = $('screen-splash');
@@ -256,10 +260,22 @@
       g.innerHTML = `<div class="ug-box"><div class="ug-icon">🎉</div><h2>Võ Lâm Pixel đã có phiên bản mới!</h2>
         <p>Máy chủ vừa cập nhật. Vui lòng tải lại trang để tiếp tục chơi.</p>${items}
         <button class="btn primary ug-btn">🔄 Tải lại để chơi tiếp</button></div>`;
-      g.querySelector('.ug-btn').onclick = () => location.reload();
+      const wasAuto = !!G.auto;
+      const reload = () => { if (G.settings.autoUpdate) try { sessionStorage.setItem('vl_reenter', JSON.stringify({ auto: wasAuto, t: Date.now() })); } catch (e) { } location.reload(); };
+      g.querySelector('.ug-btn').onclick = reload;
       // chặn mọi thao tác bàn phím phía sau, Enter / Space = tải lại
-      document.addEventListener('keydown', e => { e.stopImmediatePropagation(); e.preventDefault(); if (e.code === 'Enter' || e.code === 'Space') location.reload(); }, true);
+      document.addEventListener('keydown', e => { e.stopImmediatePropagation(); e.preventDefault(); if (e.code === 'Enter' || e.code === 'Space') reload(); }, true);
       document.body.appendChild(g);
+      if (G.settings.autoUpdate) {   // tự tải lại và vào lại game sau vài giây (giữ trạng thái Tự động)
+        let n = 8;
+        const p = document.createElement('p'); p.className = 'ug-auto';
+        const cancel = document.createElement('button'); cancel.className = 'btn small'; cancel.textContent = 'Huỷ tự vào';
+        const tick = () => { p.firstChild.textContent = `⏳ Tự tải lại và vào game sau ${n} giây${wasAuto ? ' (giữ Tự động)' : ''} `; };
+        p.appendChild(document.createTextNode('')); p.appendChild(cancel);
+        g.querySelector('.ug-btn').before(p); tick();
+        const iv = setInterval(() => { if (--n <= 0) { clearInterval(iv); reload(); } else tick(); }, 1000);
+        cancel.onclick = () => { clearInterval(iv); p.remove(); };
+      }
     }
     s.on('connect', () => { loading(false); if (G.pStatic) G.pStatic.clear(); });   // kết nối mới: máy chủ gửi lại phần tĩnh của người chơi
     s.on('connect_error', err => {
@@ -280,7 +296,7 @@
       G.user = d.user;
       try { if (d.user.character) localStorage.setItem('vl_cls', d.user.character.cls); } catch (e) { }
       if (G.inGame) { if (d.user.hasChar) s.emit('enter'); return; }
-      if (!d.user.hasChar) showCreate(); else showEnter();
+      if (!d.user.hasChar) showCreate(); else { showEnter(); if (reEnter) { const ra = reEnter; reEnter = null; G._reAuto = !!ra.auto; enterGame(); } }
       requestAnimationFrame(animPreview);
     });
     s.on('kicked', d => { G.inGame = false; s.close(); G.modal(d.reason || 'Bạn đã bị ngắt kết nối', [{ t: 'Tải lại', fn: () => location.reload() }]); });
@@ -420,6 +436,7 @@
     UI.closePanel(); if (window.BigMap) BigMap.close(); if (window.WorldMap) { WorldMap.close(); WorldMap.onEnterMap(); } if (window.QuestNav) QuestNav.onEnterMap();
     sfx('portal');
     mapLoading(m);
+    if (G._reAuto) { G._reAuto = false; setTimeout(() => { if (!G.auto) setAuto(true); }, 1500); }   // vào lại sau cập nhật: bật lại Tự động như trước
     sendAutoSrv();   // vào lại / đổi map: báo lại máy chủ trạng thái và cài đặt tự động (cả khi đang tắt: tự vào tổ đội cần cài đặt này)
   }
   // màn hình chờ chuyển bản đồ: tải sẵn ảnh nhân vật phái mình, ảnh quái trên bản đồ, dựng sẵn nền quanh nhân vật
