@@ -44,6 +44,9 @@ const AOI_X = 1150, AOI_Y = 800;   // vùng gửi trạng thái quanh mỗi ngư
 const PICKUP_R = 56;
 const GOLD_DROP_CHANCE = 0.35;   // quái thường rơi ngân lượng 35% số lần (gấp đôi lượng mỗi lần)
 const CLOAK_ODDS = { legendary: 0.005, epic: 0.06, rare: 0.3 };   // chế tạo áo choàng: còn lại là Thường
+// Rương Thủ Lĩnh: quái thường ~1/2.500 con, tinh anh 1,5%; boss dã ngoại rải BOSS_CHESTS rương
+const CHEST_DROP = { mob: 0.0004, elite: 0.015 };
+const BOSS_CHESTS = 4;
 const PVE_SKILL_K = 0.85;   // hệ số sát thương võ công lên quái / boss
 const AGGRO_R = 200;
 const LEASH_R = 650;
@@ -1195,6 +1198,7 @@ class World {
           const chance = i === 0 ? 1 : i < 3 ? 0.35 : i < 10 ? 0.1 : 0.02;
           if (Math.random() < chance * dr) legend(p);
           const items = i === 0 && tpl.id === 'boss_vumuc' ? [['vm_tamphap', 1]] : [];   // chỉ top 1 sát thương: anh linh Nhạc Vũ Mục truyền Tâm Pháp (cách học Di Thư)
+          if (i < 3) items.push(['boss_chest', 3 - i]);   // hạng 1-3: 3 / 2 / 1 Rương Thủ Lĩnh
           this.giveReward(p, { items, knb: i < 3 ? [200, 120, 80][i] : i < 10 ? 40 : 15 }, `Hạng ${i + 1} đánh ${tpl.name}`);
         });
       } else {
@@ -1210,10 +1214,10 @@ class World {
         for (let k = 0, n = U.randInt(4, 8); k < n; k++) drops.push('stone');
         if (tpl.lv >= 40 && Math.random() < 0.5 * dr) drops.push('stone2');
         if (tpl.lv >= 80 && Math.random() < 0.5 * dr) drops.push('stone2');
-        // 10 rương rải quanh boss, không thuộc về ai
-        for (let k = 0; k < 10; k++) {
+        // 4 Rương Thủ Lĩnh rải quanh boss, không thuộc về ai (trước: 2 Thủ Lĩnh + 8 Bí Ẩn)
+        for (let k = 0; k < BOSS_CHESTS; k++) {
           const a = Math.random() * Math.PI * 2, rr = 60 + Math.random() * 140;
-          this.createDrop(mon.mapId, mon.x + Math.cos(a) * rr, mon.y + Math.sin(a) * rr * 0.7, k < 2 ? 'boss_chest' : 'lucky_chest', 1, null, 0, 0);
+          this.createDrop(mon.mapId, mon.x + Math.cos(a) * rr, mon.y + Math.sin(a) * rr * 0.7, 'boss_chest', 1, null, 0, 0);
         }
       }
       const top = ranking[0] && this.players.get(ranking[0][0]);
@@ -1228,6 +1232,7 @@ class World {
         if (r() < 0.08 * dr) drops.push('stone2');
         if (r() < 0.12) drops.push('mount_food');
         if (r() < 0.04 * dr) drops.push('lucky_chest');
+        if (r() < CHEST_DROP.elite * dr) drops.push('boss_chest');
         if (r() < 0.15 * dr) drops.push('thien_tam_ti');
         if (killer && killer.c) this.toast(killer, `⭐ Hạ quái tinh anh ${tpl.name}!`, 'reward');
       }
@@ -1239,6 +1244,7 @@ class World {
       if (r() < (cfg.vipDropBase || 0.004) * 0.5 * dr) drops.push(equipId(rslot(), tier, 'epic'));   // sử thi: một nửa mức cấu hình
       if (r() < 0.00005 * dr) drops.push(equipId(rslot(), tier, 'legendary'));
       if (r() < 0.0015 * dr) drops.push('lucky_chest');
+      if (r() < CHEST_DROP.mob * dr) drops.push('boss_chest');   // Rương Thủ Lĩnh: rất hiếm ở quái thường
       if (r() < 0.01 * dr) drops.push('mount_food');
       if (tpl.lv >= 25 && r() < 0.001 * dr * (1 + tier)) drops.push('stone2');
       const gem = rollGemDrop(map.def.gemMine | 0, tpl.lv, r);   // đá khảm: nhiều ở khoáng động

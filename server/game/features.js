@@ -284,7 +284,7 @@ class Features {
     const info = EVENT_INFO[k];
     if (k === 'huntRace') {
       const top = Object.entries(e.scores || {}).sort((a, b) => b[1].n - a[1].n).slice(0, 10);
-      const rewards = [{ knb: 50, items: [['boss_chest', 1]] }, { knb: 30, items: [['lucky_chest', 2]] }, { knb: 15, items: [['lucky_chest', 1]] }];
+      const rewards = [{ knb: 50, items: [['boss_chest', 2]] }, { knb: 30, items: [['boss_chest', 1]] }, { knb: 15, items: [['boss_chest', 1]] }];
       top.slice(0, 3).forEach(([uid, s], i) => {
         const user = this.db.data.users[uid];
         if (!user || !user.character) return;
@@ -326,7 +326,7 @@ class Features {
       const lv = killer.c.level;
       const reward = r < 0.05 ? { items: [[equipId(['weapon', 'armor', 'ring'][U.randInt(0, 2)], tierOfLv(lv), 'epic'), 1]] }
         : r < 0.25 ? { knb: U.randInt(3, 10) }
-        : r < 0.5 ? { items: [['lucky_chest', 1]] }
+        : r < 0.33 ? { items: [['boss_chest', 1]] }   // Bảo Rương: 8% Rương Thủ Lĩnh (trước 25% Rương Bí Ẩn)
         : { gold: U.randInt(200, 800) * (1 + Math.floor(lv / 10)), items: [['stone', 1]] };
       this.w.giveReward(killer, reward, 'Bảo Rương');
       const e = this.events.treasure;

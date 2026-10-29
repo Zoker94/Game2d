@@ -19,8 +19,9 @@ const REWARDS = [
   { knb: 120, gold: 30000, items: [['boss_chest', 2]] },
   { knb: 80, gold: 20000, items: [['boss_chest', 1]] }
 ];
-const REWARD_TOP10 = { knb: 30, gold: 10000, items: [['lucky_chest', 2]] };
-const REWARD_JOIN = { gold: 3000, items: [['lucky_chest', 1]] };
+const JOIN_CHEST = 0.3;   // người tham gia ngoài top 10: 30% nhận 1 Rương Thủ Lĩnh
+const REWARD_TOP10 = { knb: 30, gold: 10000, items: [['boss_chest', 1]] };
+const REWARD_JOIN = { gold: 3000 };   // Rương Thủ Lĩnh cho người tham gia: tỉ lệ (xem end())
 
 class DaiHoi {
   constructor(world, features, db) {
@@ -87,7 +88,8 @@ class DaiHoi {
     const rank = this.ranking();
     const lines = [];
     rank.forEach(([uid, s], i) => {
-      const r = i < 3 ? REWARDS[i] : i < 10 ? REWARD_TOP10 : REWARD_JOIN;
+      let r = i < 3 ? REWARDS[i] : i < 10 ? REWARD_TOP10 : REWARD_JOIN;
+      if (r === REWARD_JOIN && Math.random() < JOIN_CHEST) r = Object.assign({}, r, { items: [['boss_chest', 1]] });
       const p = this.w.players.get(uid);
       if (p) this.w.giveReward(p, r, `Đại Hội Võ Lâm – hạng ${i + 1}`);
       else { const u = this.db.data.users[uid]; if (u && u.character) this.f.giveOffline(u.character, r); }
@@ -136,7 +138,7 @@ class DaiHoi {
       if (mon.tpl.id === 'dh_cao_thu') {
         this.add(killer, 20, null);
         this.f.announce(`🏆 ${killer.c.name} hạ gục Thiên Hạ Đệ Nhất Cao Thủ tại Đại Hội Võ Lâm (+20 điểm)!`);
-        this.w.giveReward(killer, { gold: 5000 + killer.c.level * 100, items: [['lucky_chest', 1]] }, 'Thiên Hạ Đệ Nhất Cao Thủ');
+        this.w.giveReward(killer, { gold: 5000 + killer.c.level * 100, items: [['boss_chest', 1]] }, 'Thiên Hạ Đệ Nhất Cao Thủ');
       } else {
         this.add(killer, 1, null);
         this.w.giveReward(killer, { gold: 200 + killer.c.level * 10 }, null);

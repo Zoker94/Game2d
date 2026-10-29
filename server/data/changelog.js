@@ -2,6 +2,12 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '29/10/2026',
+    items: [
+      '🎁 RƯƠNG THỦ LĨNH (chắc chắn ra đồ Hiếm trở lên) rơi rộng hơn: quái thường rất hiếm (~1/2.500 con), quái tinh anh 1,5%. Boss và sự kiện thay Rương Bí Ẩn bằng Rương Thủ Lĩnh: Boss dã ngoại rải 4 Rương Thủ Lĩnh; Boss Thế Giới hạng 1/2/3 nhận 3/2/1 rương; vượt phó bản thần tốc thêm 1 rương; Đại Hội Võ Lâm top 10 nhận 1 rương, người tham gia 30% nhận 1 rương; Hoa Sơn Luận Kiếm người tham gia 30% nhận 1 rương; Thiên Hạ Đệ Nhất Cao Thủ, Săn Quái top 3 và Bảo Rương (8%) đều ra Rương Thủ Lĩnh.'
+    ]
+  },
+  {
     date: '28/10/2026',
     items: [
       '🎯 Chọn mục tiêu dễ hơn: máy tính bấm chuột TRÁI vào người chơi để chọn mục tiêu, chuột PHẢI mới mở bảng Xem thông tin / Kết bạn / Thách đấu…; điện thoại chạm 1 lần để chọn mục tiêu, BẤM GIỮ 1,5 GIÂY (có vòng đếm); vùng chạm joystick thu nhỏ lại để dễ chạm nhân vật mới mở bảng. Nút / phím Đổi mục tiêu giờ lần lượt qua cả quái, người chơi và NPC ở gần (NPC: chạm khung mục tiêu để đi tới nói chuyện). Tuyệt Kỹ Giang Hồ khi PK trở lại sát thương như cũ.',

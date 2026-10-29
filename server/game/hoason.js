@@ -18,7 +18,8 @@ const REWARDS = [
   { knb: 180, gold: 50000, items: [['boss_chest', 2], ['stone', 20]] },
   { knb: 100, gold: 30000, items: [['boss_chest', 1], ['stone', 10]] }
 ];
-const REWARD_JOIN = { gold: 5000, items: [['lucky_chest', 1]] };
+const REWARD_JOIN = { gold: 5000 };
+const JOIN_CHEST = 0.3;   // người tham gia (ngoài top 3): 30% nhận 1 Rương Thủ Lĩnh
 
 class HoaSon {
   constructor(world, features, db) {
@@ -307,7 +308,7 @@ class HoaSon {
     const third = t.third;
     const top = [champ, runner, third];
     top.forEach((uid, i) => { if (uid) { this.give(uid, REWARDS[i], `Hoa Sơn Luận Kiếm – ${['Vô Địch', 'Á Quân', 'Hạng Ba'][i]}`); this.w.achieve(uid, 'hsTop3'); } });
-    for (const uid of Object.keys(t.names)) if (!top.includes(uid)) this.give(uid, REWARD_JOIN, 'Hoa Sơn Luận Kiếm – tham gia');
+    for (const uid of Object.keys(t.names)) if (!top.includes(uid)) this.give(uid, Math.random() < JOIN_CHEST ? Object.assign({}, REWARD_JOIN, { items: [['boss_chest', 1]] }) : REWARD_JOIN, 'Hoa Sơn Luận Kiếm – tham gia');
     if (champ) {
       this.data.champ = { uid: champ, name: this.name(champ), until: Date.now() + TITLE_DAYS * 86400000, at: Date.now() };
       const p = this.w.players.get(champ); if (p) p.dirtyMe = true;
