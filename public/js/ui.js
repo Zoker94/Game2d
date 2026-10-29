@@ -952,7 +952,7 @@
     else if (it.type === 'equip') btns += `<button class="btn small green" data-act="equip">Trang bị</button>`;
     else if (it.type === 'use') {
       btns += `<button class="btn small green" data-act="use">Sử dụng</button>`;
-      const e = it.effect || {}, multi = !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.mine || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr || e.changeClass || e.invExpand);
+      const e = it.effect || {}, multi = !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.mine || e.title || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr || e.changeClass || e.invExpand);
       if (multi && s.qty > 1) {   // dùng nhiều cái một lần (rương, bùa, vé quay...)
         const def = Math.min(s.qty, panelState.useN || 10);
         btns += `<span class="use-multi"><input type="number" id="use-n" min="1" max="${Math.min(200, s.qty)}" value="${def}"><button class="btn small green" data-act="usen">Dùng</button></span>`;
@@ -1125,8 +1125,13 @@
   let ttlOpen = null;   // người chơi mở / đóng khung danh hiệu: giữ nguyên khi bảng Nhân vật vẽ lại mỗi giây (trước đây cứ vẽ lại là tự đóng)
   function titlePanel(me) {
     const T = G.data.titles; if (!T) return '';
-    const ach = me.ach || {}, list = Object.entries(T).filter(([, t]) => !t.admin || me.admin);   // danh hiệu Quản trị viên: chỉ Admin thấy
+    const gifts = me.giftTitles || [];
+    // danh hiệu Quản trị viên: chỉ Admin thấy; danh hiệu quà tặng: chỉ hiện khi đã có (mục riêng bên dưới)
+    const ach = me.ach || {}, list = Object.entries(T).filter(([, t]) => (!t.admin || me.admin) && !t.gift);
     const isOk = t => t.admin ? !!me.admin : (ach[t.stat] | 0) >= t.need;
+    const giftRows = gifts.filter(id => T[id]).map(id => { const t = T[id], on = me.title === id;
+      return `<div class="ttl-row ok ${on ? 'on' : ''}"><div class="grow"><b style="color:${t.color}">【${esc(t.name)}】</b> <span class="ttl-src">Quà tặng</span><div class="sub">Có hiệu ứng riêng</div></div>
+        ${on ? '<button class="btn small" data-title="">Tháo</button>' : '<button class="btn small green" data-title="' + id + '">Đeo</button>'}</div>`; }).join('');
     const got = list.filter(([, t]) => isOk(t)).length;
     const cur = me.title && T[me.title];
     const rows = list.map(([id, t]) => {
@@ -1136,7 +1141,7 @@
         ${ok ? (on ? '<button class="btn small" data-title="">Tháo</button>' : '<button class="btn small green" data-title="' + id + '">Đeo</button>') : '<span class="small muted">🔒</span>'}</div>`;
     }).join('');
     return `<details class="card ttl-box"${(ttlOpen === null ? !me.title : ttlOpen) ? ' open' : ''}><summary><b>🏅 Danh hiệu</b> <span class="small muted">${got}/${list.length} đã mở</span> · Đang đeo: ${cur ? `<b style="color:${cur.color}">【${esc(cur.name)}】</b>` : '<span class="muted">không</span>'}</summary>
-      <p class="small muted">Danh hiệu không còn tính theo lực chiến – phải tự giành qua phó bản, Boss và sự kiện. Mở khoá là giữ mãi.</p>${rows}</details>`;
+      <p class="small muted">Danh hiệu không còn tính theo lực chiến – phải tự giành qua phó bản, Boss và sự kiện. Mở khoá là giữ mãi.</p>${giftRows ? `<h5 class="ttl-gift">🎁 Danh hiệu quà tặng (${gifts.length})</h5>${giftRows}<h5 class="ttl-gift">🏆 Danh hiệu thành tích</h5>` : ''}${rows}</details>`;
   }
 
   // ---------- Điểm tiềm năng: phân điểm tạm rồi bấm Xác nhận ----------

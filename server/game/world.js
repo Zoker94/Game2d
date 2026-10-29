@@ -355,7 +355,7 @@ class World {
       attr: c.attr || {}, attrFree: attrTotalOf(c) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
       branch: branchOf(c), skills: c.skills || {}, hotbar: c.hotbar, sp: spTotalOf(c) - (c.spSpent || 0),
       mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
-      sect: this.sect ? this.sect.meView(p) : null, mine: this.mining ? this.mining.view(p) : null,
+      sect: this.sect ? this.sect.meView(p) : null, giftTitles: c.giftTitles || [], mine: this.mining ? this.mining.view(p) : null,
       med: !!p.med, pvp: this.inPvp(p) ? 1 : 0, st: this.statusView(p), friends: Object.keys(c.friends || {}).length, friendIds: this.friendIds(c), pk: c.pk || 0,
       rank: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0
     };
@@ -1399,7 +1399,7 @@ class World {
   }
   batchable(it) {
     const e = it.effect || {};
-    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.mine || e.pardon || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr);
+    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.mine || e.title || e.pardon || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr);
   }
   useOne(p, uid) {
     const s = p.c.inv.find(x => x.uid === uid);
@@ -1432,6 +1432,16 @@ class World {
     }
     if (e.town) { this.startRecall(p); return; }   // niệm phép, xong mới trừ phù
     if (e.mine) return this.mining.useTicket(p, uid);   // Vé Vào Khoáng Động
+    if (e.title) {   // Lệnh Bài Danh Hiệu: mở khoá vĩnh viễn danh hiệu quà tặng và đeo luôn
+      const T = TITLES[e.title]; if (!T) return;
+      c.giftTitles = c.giftTitles || [];
+      if (c.giftTitles.includes(e.title)) return this.toast(p, `Bạn đã có danh hiệu 【${T.name}】 rồi – đổi ở bảng Nhân vật → Danh hiệu → Quà tặng. Lệnh bài này giữ lại để tặng người khác.`, 'error');
+      U.removeByUid(c, uid, 1);
+      c.giftTitles.push(e.title); c.title = e.title;
+      this.toast(p, `🏅 Đã mở khoá và đeo danh hiệu 【${T.name}】!`, 'reward');
+      if (T.tier >= 5) this.features.brag(`🏅 ${c.name} khoác lên danh hiệu 【${T.name}】!`);
+      p.dirtyMe = true; this.db.markDirty(); return;
+    }
     if (e.pick) return this.mining.usePick(p, uid);     // Cuốc Chim
     if (e.stall) return p.mapId === 'cho_phien' ? this.market.action(p, { op: 'mine' }) : this.toast(p, '🏪 Đến Chợ Phiên (đi Xa Phu, miễn phí) rồi dùng lệnh bài này hoặc bấm "🏪 Sạp hàng của tôi" để mở gian hàng ở bất kỳ chỗ trống nào.', 'info');
     if (e.pardon) {

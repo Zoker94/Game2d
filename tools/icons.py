@@ -533,7 +533,8 @@ def bag(ic):   # Thẻ Mở Rộng Hành Trang: túi gấm buộc dây, thêu ch
 TITLE_TOKENS = {'snow': ('#bfeaff', '#1b4a6a', '冰'), 'sakura': ('#ffb7d5', '#7a1a44', '桃'), 'dragon': ('#ffd24a', '#6a3a04', '龍'),
                 'phoenix': ('#ffa040', '#7a1a04', '鳳'), 'thunder': ('#7ad8ff', '#0a2a5a', '雷'), 'shadow': ('#ff4a5a', '#2a0410', '影'),
                 'jade': ('#6fe0a0', '#0a4a2a', '玉'), 'galaxy': ('#b8a0ff', '#20104a', '星'), 'moon': ('#fff2c0', '#2a2850', '月'),
-                'love': ('#ff8aa8', '#6a0a24', '緣'), 'rich': ('#ffd040', '#6a4004', '富'), 'yinyang': ('#f0f0f0', '#202020', '道'), 'rainbow': ('#e0b0ff', '#3a1a5a', '彩')}
+                'love': ('#ff8aa8', '#6a0a24', '緣'), 'rich': ('#ffd040', '#6a4004', '富'), 'yinyang': ('#f0f0f0', '#202020', '道'), 'rainbow': ('#e0b0ff', '#3a1a5a', '彩'),
+                'supreme': ('#ffd040', '#8a0a0a', '尊'), 'master': ('#a8d8ff', '#102a4a', '俠'), 'novice': ('#9ae0a0', '#14421a', '初')}
 def title_token(ic, key):
     col, deep, glyph = TITLE_TOKENS[key]
     outer = [(18, 14), (22, 8), (32, 5), (42, 8), (46, 14), (46, 48), (32, 54), (18, 48)]
