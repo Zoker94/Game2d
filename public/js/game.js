@@ -445,7 +445,7 @@
     WorldArt.setMap(d.map); G._camSnap = true;
     d.drops.forEach(x => { if (x.om) x.ownUntil = performance.now() + x.om; G.drops.set(x.id, x); });
     const m = d.map;
-    $('map-name').innerHTML = `${m.name} <span class="${m.pvp ? 'pvp' : m.safe ? 'safe' : 'muted'}">${m.pvp ? '[PK]' : m.safe ? '[An toàn]' : '[Cấp ' + m.lv + ']'}</span>${m.chs > 1 ? ` <b id="ch-tag" title="Đổi khu">Khu ${m.ch} ▾</b>` : ''}`;
+    $('map-name').innerHTML = `${m.name} <span class="${m.pvp ? 'pvp' : m.safe || m.noPk ? 'safe' : 'muted'}">${m.pvp ? '[PK]' : m.safe ? '[An toàn]' : m.noPk ? '[Cấm PK]' : '[Cấp ' + m.lv + ']'}</span>${m.chs > 1 ? ` <b id="ch-tag" title="Đổi khu">Khu ${m.ch} ▾</b>` : ''}`;
     const ct = $('ch-tag'); if (ct) ct.onclick = e => { e.stopPropagation(); G.socket.emit('channels'); };
     Weather.set(m.weather, WorldArt.theme, true);
     // nền minimap

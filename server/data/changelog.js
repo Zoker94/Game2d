@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '29/10/2026',
     items: [
+      '⛏ Khoáng Động: cấm PK (không ai đánh được ai, kể cả bật Đồ Sát); chia 5 khu như bãi luyện công (mỗi khu 10 người, mỏ đá riêng – bấm "Khu ▾" cạnh tên bản đồ để đổi); hang rộng gấp đôi với khoảng 70 mỏ đá mỗi khu.',
       '🤖 Bùa Tự Đào (10 Nguyên Bảo – Kỳ Trân Các): dùng trong Khoáng Động, nhân vật tự tìm mỏ đá gần nhất và đào liên tục tới hết lượt 60 phút (vẫn cần Cuốc Chim). Chạm khung đồng hồ ⛏ để tạm dừng / chạy tiếp; tự điều khiển thì tự đào nhường 3 giây.',
       '💀 Quái bãi luyện từ cấp 90 trở lên đánh cực đau (lực đánh x3 ở cấp 90, tăng dần theo cấp). Chuẩn bị đồ và bình máu thật kỹ!',
       '😊 Khung chat có nút biểu cảm: chạm 😊 chọn icon chèn vào tin nhắn – trên điện thoại gửi được ngay không cần bật bàn phím.',

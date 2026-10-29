@@ -354,16 +354,17 @@ const MAP_DEFS = {
     spawns: []
   },
   // ---- khoáng động: không có quái, chỉ có mỏ đá để đào (server/game/mining.js). Vào bằng Vé Vào Khoáng Động, không đi bằng Xa Phu. ----
+  // cấm PK (noPk), chia khu như bãi luyện (mỗi khu mỏ đá riêng)
   bao_thach_dong: {
-    name: 'Bảo Thạch Khoáng Động', theme: 'cave', w: 40, h: 32, seed: 91, lv: '25-35', tier: 3, minLv: 25, gemMine: 1,
+    name: 'Bảo Thạch Khoáng Động', theme: 'cave', w: 64, h: 48, seed: 91, lv: '25-35', tier: 3, minLv: 25, gemMine: 1, noPk: true,
     portals: [],
-    npcs: [{ id: 'xa_phu', x: 6, y: 16 }],
+    npcs: [{ id: 'xa_phu', x: 6, y: 24 }],
     spawns: []
   },
   huyen_tinh_canh: {
-    name: 'Huyền Tinh Mật Cảnh', theme: 'cave', w: 42, h: 34, seed: 93, lv: '55-70', tier: 5, minLv: 55, gemMine: 2,
+    name: 'Huyền Tinh Mật Cảnh', theme: 'cave', w: 66, h: 50, seed: 93, lv: '55-70', tier: 5, minLv: 55, gemMine: 2, noPk: true,
     portals: [],
-    npcs: [{ id: 'xa_phu', x: 36, y: 17 }],
+    npcs: [{ id: 'xa_phu', x: 60, y: 25 }],
     spawns: []
   },
   // Hoa Sơn Luận Kiếm: đỉnh núi phủ tuyết, sân đá có 5 vòng đài (giữa + 4 góc); ai cũng lên xem được, chỉ đấu thủ được giao chiến
@@ -721,7 +722,7 @@ function generate(id, def = MAP_DEFS[id]) {
 
   return {
     id, name: def.name, theme: def.theme, w, h, tiles: g, safe: !!def.safe, pvp: !!def.pvp, tourney: !!def.tourney, duelArena: !!def.duelArena, hoason: !!def.hoason, tongkim: !!def.tongkim, minLv: def.minLv || 1, lv: def.lv, tier: def.tier ?? 0, town: !!def.town,
-    portals, npcs: def.npcs, spawns, walkable, buildings, props, sect: def.sect || null, noPk: !!def.noPk,
+    portals, npcs: def.npcs, spawns, walkable, buildings, props, sect: def.sect || null, noPk: !!def.noPk, gemMine: def.gemMine || 0,
     boss: def.temple ? { x: cx, y: cy - 4 } : { x: bossSpot % w, y: (bossSpot / w) | 0 },   // miếu: Boss đứng giữa sân
     center: { x: cx, y: cy }
   };
@@ -752,7 +753,7 @@ function isSolidAt(map, px, py) {
 // Khu: mỗi bản đồ luyện công có CHANNELS bản sao chạy độc lập (quái, đồ rơi, người chơi riêng), dùng chung địa hình.
 // Khu 1 giữ id gốc (dữ liệu cũ không đổi), khu n là "<id>~n". Thành, môn phái, lôi đài, chiến trường, Đại Hội chỉ có 1 khu.
 const CHANNELS = 5, CH_CAP = 10;
-const hasChannels = m => !m.town && !m.safe && !m.pvp && !m.sect && !m.duelArena && !m.instance && !m.tourney && m.id !== 'dai_hoi' && (m.spawns || []).length > 0;
+const hasChannels = m => !m.town && !m.safe && !m.pvp && !m.sect && !m.duelArena && !m.instance && !m.tourney && m.id !== 'dai_hoi' && ((m.spawns || []).length > 0 || !!m.gemMine);   // khoáng động: không quái nhưng vẫn chia khu
 // Bia Chuyển Khu: đặt cạnh mỗi cổng của bản đồ có khu (ô trống gần nhất, lùi vào trong 2 ô, lệch sang 2 ô)
 function placeKhuBia(m) {
   const free = (x, y) => x > 0 && y > 0 && x < m.w - 1 && y < m.h - 1 && !SOLID.has(m.tiles[y * m.w + x]) && !m.npcs.some(n => Math.abs(n.x - x) + Math.abs(n.y - y) < 2) && !m.portals.some(p => Math.abs(p.x - x) + Math.abs(p.y - y) < 2);

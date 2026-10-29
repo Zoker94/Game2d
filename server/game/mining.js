@@ -6,7 +6,8 @@ const { MAPS, TILE, isSolidAt, baseOf } = require('../data/maps');
 const { ITEMS } = require('../data/items');
 const { GEM_KEYS, gemId } = require('../data/gems');
 
-const SESSION = 60 * 60000, DAILY = 3, DIG_MS = 3000, NODE_CD = 40000, PICK_USES = 50, RANGE = 80, NODES = 30;
+const SESSION = 60 * 60000, DAILY = 3, DIG_MS = 3000, NODE_CD = 40000, PICK_USES = 50, RANGE = 80;
+const NODE_AREA = 44;   // 1 mỏ đá mỗi ~44 ô (hang 64x48 ~70 mỏ)
 // hang theo cấp: cấp 55 trở lên vào Huyền Tinh Mật Cảnh (đá cấp cao hơn)
 const CAVES = { bao_thach_dong: { minLv: 25, tier: 1 }, huyen_tinh_canh: { minLv: 55, tier: 2 } };
 // kết quả mỗi lần đào: [tỉ lệ, loại]. gem: [cấp, tỉ lệ cộng dồn]
@@ -38,7 +39,7 @@ class Mining {
     const def = MAPS[mapId];
     let s = 7; for (const ch of mapId) s = (s * 31 + ch.charCodeAt(0)) % 2147483647; const rnd = () => { s = (s * 16807 + 11) % 2147483647; return s / 2147483647; };
     list = [];
-    for (let tries = 0; list.length < NODES && tries < 4000; tries++) {
+    for (let tries = 0; list.length < Math.round(def.w * def.h / NODE_AREA) && tries < 8000; tries++) {
       const tx = 2 + Math.floor(rnd() * (def.w - 4)), ty = 2 + Math.floor(rnd() * (def.h - 4));
       const x = (tx + 0.5) * TILE, y = (ty + 0.5) * TILE;
       if (isSolidAt(def, x, y) || isSolidAt(def, x, y + TILE * 0.4)) continue;
