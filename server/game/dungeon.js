@@ -8,27 +8,27 @@ const U = require('./util');
 
 const DUNGEONS = {
   hac_phong: {
-    name: 'Hắc Phong Sơn Trại', minLv: 15, maxLv: 34, lv: '15-34', rLv: 22, theme: 'ruins', w: 46, h: 24, seed: 501, time: 15 * 60000, daily: 3, party: '1-3 người',
+    name: 'Hắc Phong Sơn Trại', minLv: 15, maxLv: 34, lv: '15-34', rLv: 22, theme: 'ruins', w: 46, h: 24, seed: 501, time: 15 * 60000, daily: 5, party: '1-3 người',
     desc: 'Sơn trại thổ phỉ hoành hành quanh Tương Dương. Quét sạch lâu la, hạ Trại Chủ để đoạt kho báu.',
     waves: [[['pb1_lau_la', 8]], [['pb1_lau_la', 6], ['pb1_dao_thu', 5]], [['pb1_dao_thu', 6], ['pb1_ho_phap', 2]]], boss: 'pb1_boss', knb: 5
   },
   co_mo: {
-    name: 'Cổ Mộ Huyền Cung', minLv: 35, maxLv: 59, lv: '35-59', rLv: 42, theme: 'tomb', w: 46, h: 24, seed: 503, time: 18 * 60000, daily: 3, party: '2-4 người',
+    name: 'Cổ Mộ Huyền Cung', minLv: 35, maxLv: 59, lv: '35-59', rLv: 42, theme: 'tomb', w: 46, h: 24, seed: 503, time: 18 * 60000, daily: 5, party: '2-4 người',
     desc: 'Huyền Cung dưới lòng đất đầy thi binh và oán hồn canh giữ. Kẻ phá được Thi Vương sẽ nhận bảo vật mộ thất.',
     waves: [[['pb2_thi_binh', 9]], [['pb2_thi_binh', 6], ['pb2_oan_hon', 6]], [['pb2_oan_hon', 6], ['pb2_mo_tuong', 3]]], boss: 'pb2_boss', knb: 10
   },
   ma_cung: {
-    name: 'Huyết Ma Cung', minLv: 60, maxLv: 84, lv: '60-84', rLv: 68, theme: 'demon', w: 46, h: 24, seed: 507, time: 20 * 60000, daily: 2, party: '3-6 người',
+    name: 'Huyết Ma Cung', minLv: 60, maxLv: 84, lv: '60-84', rLv: 68, theme: 'demon', w: 46, h: 24, seed: 507, time: 20 * 60000, daily: 5, party: '3-6 người',
     desc: 'Sào huyệt của Huyết Ma Giáo. Thần lang, hộ pháp và Huyết Ma Cung Chủ – chỉ tổ đội mạnh mới mong toàn mạng trở ra.',
     waves: [[['pb3_ma_ve', 9]], [['pb3_ma_ve', 6], ['pb3_ma_lang', 7]], [['pb3_ma_lang', 6], ['pb3_ho_phap', 3]]], boss: 'pb3_boss', knb: 20
   },
   thien_cung: {
-    name: 'Thiên Cung Bí Cảnh', minLv: 85, maxLv: 104, lv: '85-104', rLv: 95, theme: 'snow', w: 48, h: 24, seed: 509, time: 22 * 60000, daily: 2, party: '3-6 người',
+    name: 'Thiên Cung Bí Cảnh', minLv: 85, maxLv: 104, lv: '85-104', rLv: 95, theme: 'snow', w: 48, h: 24, seed: 509, time: 22 * 60000, daily: 5, party: '3-6 người',
     desc: 'Cõi tiên trên mây, thần binh và thần thú canh giữ Kiếm Đế. Chỉ những cao thủ đã vượt Huyết Ma Cung mới được bước vào.',
     waves: [[['pb4_than_binh', 9]], [['pb4_than_binh', 6], ['pb4_tien_nu', 6]], [['pb4_tien_nu', 6], ['pb4_than_thu', 3]]], boss: 'pb4_boss', knb: 30
   },
   luyen_nguc: {
-    name: 'Cửu U Luyện Ngục', minLv: 105, maxLv: 120, lv: '105-120', rLv: 113, theme: 'demon', w: 48, h: 24, seed: 511, time: 25 * 60000, daily: 2, party: '4-6 người',
+    name: 'Cửu U Luyện Ngục', minLv: 105, maxLv: 120, lv: '105-120', rLv: 113, theme: 'demon', w: 48, h: 24, seed: 511, time: 25 * 60000, daily: 5, party: '4-6 người',
     desc: 'Tầng sâu nhất của Cửu U. Ma lang, quỷ tướng, ma hồn và Luyện Ngục Vương – thử thách tối thượng của võ lâm.',
     waves: [[['pb5_ma_lang', 10]], [['pb5_ma_lang', 6], ['pb5_quy_tuong', 6]], [['pb5_quy_tuong', 6], ['pb5_ma_hon', 3]]], boss: 'pb5_boss', knb: 45
   }
