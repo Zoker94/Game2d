@@ -64,7 +64,7 @@
   const ORDER = ['helmet', 'amulet', 'cloak', 'weapon', 'armor', 'gloves', 'ring', 'pants', 'ring2', null, 'boots'];
   let bw = null, sig = '', lastTap = { k: null, t: 0 };
   function slotHtml(s, it, attr) {
-    return `<div class="slot r-${it.rarity}" ${attr}>${UI.plusRing(s.plus | 0)}<img src="${UI.iconUrl(s.id)}" class="ic" width="32" height="32">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}${it.type === 'equip' ? UI.brBadge(s) + UI.gemDots(it, s) : ''}</div>`;
+    return `<div class="slot r-${it.rarity}" ${attr}>${UI.plusRing(s.plus | 0)}<img src="${UI.iconUrl(s.id)}" class="ic" width="32" height="32">${s.qty > 1 ? `<span class="q">${s.qty}</span>` : ''}${s.plus ? `<span class="plus">+${s.plus}</span>` : ''}${it.type === 'equip' ? UI.brBadge(s) + UI.gemDots(it, s) + UI.lvBadge(s.id) : ''}</div>`;
   }
   function renderBag(force) {
     if (!bw || !G.me) return;
