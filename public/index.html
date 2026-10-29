@@ -169,19 +169,14 @@
           <div id="mini-wrap"><canvas id="minimap" width="150" height="112"></canvas><button id="btn-menu-min" title="Thu gọn / mở các nút menu">▴<i class="dot hidden"></i></button></div>
         </div>
         <div id="menu-buttons">
-          <button data-panel="inventory" title="Túi đồ (I)">🎒<span>Túi</span></button>
-          <button data-panel="character" title="Nhân vật (C)">🧍<span>Nhân vật</span></button>
-          <button data-panel="skills" title="Võ công (K)">📖<span>Võ công</span></button>
+          <button data-panel="inventory" data-hero="1" title="Nhân vật: Túi đồ (I) · Thông tin (C) · Võ công (K)">🎒<span>Nhân vật</span><i class="dot hidden" id="hero-dot"></i></button>
           <button data-panel="mount" title="Thú cưỡi (M)">🐎<span>Thú cưỡi</span></button>
           <button data-panel="quests" title="Nhiệm vụ (J)">📜<span>Nhiệm vụ</span></button>
           <button data-panel="guild" title="Bang hội (G)">🏯<span>Bang hội</span></button>
           <button data-panel="friends" title="Bằng hữu (B)">🤝<span>Bạn bè</span></button>
           <button data-panel="events" title="Sự kiện (O)">🎉<span>Sự kiện</span><i class="dot hidden" id="event-dot"></i></button>
           <button data-panel="leaderboard" title="Xếp hạng (L)">🏆<span>Xếp hạng</span></button>
-          <button data-panel="invite" title="Mời bạn nhận quà">📣<span>Mời bạn</span><i class="dot hidden" id="ref-dot"></i></button>
-          <button data-panel="giftcode" title="Gift Code (U)">🎁<span>Gift code</span><i class="dot hidden" id="gift-dot"></i></button>
-          <a class="zalo-menu" href="https://zalo.me/g/fkxw5crl6ksc0jotbzgp" target="_blank" rel="noopener" title="Tham gia nhóm Zalo cộng đồng">💬<span>Nhóm Zalo</span></a>
-          <button data-panel="settings" title="Cài đặt">⚙️<span>Cài đặt</span></button>
+          <button data-panel="settings" title="Cài đặt · Mời bạn · Gift code · Nhóm Zalo">⚙️<span>Cài đặt</span><i class="dot hidden" id="gift-dot"></i><i class="dot hidden" id="ref-dot"></i></button>
           <button id="btn-admin" class="hidden admin-btn" title="Trang quản trị">🛡️<span>Quản trị</span></button>
         </div>
       </div>
@@ -237,7 +232,7 @@
     <div id="toasts"></div>
     <div id="announce"></div>
     <div id="pin-ticker"></div>
-    <div id="panel" class="hidden"><div class="panel-box"><div class="panel-head"><h3 id="panel-title"></h3><button id="panel-close">✕</button></div><div id="panel-body"></div></div></div>
+    <div id="panel" class="hidden"><div class="panel-box"><div class="panel-head"><h3 id="panel-title"></h3><button id="panel-close">✕</button></div><div id="panel-tabs" class="hidden"></div><div id="panel-body"></div></div></div>
     <div id="dead-overlay" class="hidden"><div class="dead-box"><h2>☠ Trọng thương!</h2><p id="dead-msg"></p>
       <div class="dead-opts">
         <button class="dead-opt" id="respawn-btn"><b>🏯 Về thành</b><small>Hồi sinh ở Tương Dương với 10% sinh lực, hồi phục chậm trong 45 giây</small><i>Miễn phí</i></button>

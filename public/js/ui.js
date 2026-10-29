@@ -500,7 +500,7 @@
     updateTutorial();
     const sk = JSON.stringify(me.story);
     if (sk !== UI._storyKey) { UI._storyKey = sk; if (panel === 'quests' && panelState.tab === 'story') UI.refreshPanel(true); }
-    { const b = document.querySelector('#menu-buttons [data-panel="character"]'); if (b) { let d = b.querySelector('.dot'); if (!d) { d = document.createElement('i'); d.className = 'dot'; b.appendChild(d); } d.classList.toggle('hidden', !(me.attrFree > 0)); } }
+    { const d = $('hero-dot'); if (d) d.classList.toggle('hidden', !(me.attrFree > 0)); }   // còn điểm tiềm năng: chấm đỏ trên nút Nhân vật
     // bảng đang mở: chỉ dựng lại khi dữ liệu nhân vật đổi (bỏ qua máu / nội lực / kinh nghiệm nhảy liên tục).
     // Trước đây dựng lại toàn bộ innerHTML (cả túi 40-90 ô) tới 5 lần/giây mỗi khi nhận gói 'me'.
     if (panel === 'inventory' || panel === 'character' || panel === 'mount' || panel === 'skills' || panel === 'bank' || panel === 'escort' || (panel === 'npc' && npcData)) {
@@ -837,12 +837,26 @@
   });
   UI.panelName = () => panel;
   UI.pmTo = name => { UI.closePanel(); $('chat-ch').value = 'pm'; $('chat-to').value = name; $('chat-to').classList.remove('hidden'); UI.focusChat(); };
-  UI.togglePanel = function (name) { if (panel === name) UI.closePanel(); else UI.openPanel(name); };
+  // Túi đồ / Thông tin nhân vật / Võ công chung một bảng (một nút "Nhân vật" trên menu), đổi qua lại bằng tab ở đầu bảng
+  const HERO_TABS = [['inventory', '🎒 Túi đồ'], ['character', '🧍 Nhân vật'], ['skills', '📖 Võ công']];
+  const isHero = n => HERO_TABS.some(([k]) => k === n);
+  function heroTabs() {
+    const el = $('panel-tabs'); if (!el) return;
+    const on = isHero(panel);
+    el.classList.toggle('hidden', !on);
+    if (!on) return;
+    el.innerHTML = HERO_TABS.map(([k, t]) => `<button class="${k === panel ? 'on' : ''}" data-hero="${k}">${t}</button>`).join('');
+    el.querySelectorAll('[data-hero]').forEach(b => b.onclick = () => { if (b.dataset.hero !== panel) UI.openPanel(b.dataset.hero); });
+  }
+  UI.togglePanel = function (name) {
+    if (panel === name || (name === 'inventory' && isHero(panel))) UI.closePanel(); else UI.openPanel(name);
+  };
   UI.openPanel = function (name, state) {
     panel = name;
     panelState = Object.assign({}, state || {});
     $('panel').classList.remove('hidden');
     $('panel-title').textContent = TITLES[name] || (UI.extraPanels[name] && UI.extraPanels[name].title) || '';
+    heroTabs();
     if (name === 'guild') emit('guild');
     if (name === 'leaderboard') emit('lb');
     if (name === 'events') emit('eventPanel');
@@ -853,7 +867,7 @@
     G.sfx('click');
   };
   UI.coachInfo = () => ({ panel, sel: panelState.sel });   // coach.js: biết bảng nào đang mở, món nào đang chọn
-  UI.closePanel = function () { panel = null; npcData = null; $('panel').classList.add('hidden'); hideTip(); cmpKey = null; hideCmp(); };
+  UI.closePanel = function () { panel = null; heroTabs(); npcData = null; $('panel').classList.add('hidden'); hideTip(); cmpKey = null; hideCmp(); };
   UI.refreshPanel = function (soft) {
     if (!panel || !G.me) return;
     const body = $('panel-body');
@@ -1450,7 +1464,7 @@
           <label class="set-row"><input type="checkbox" id="set-qauto" ${s.questAuto !== false ? 'checked' : ''}> 🧭 Tự đi làm nhiệm vụ khi nhận nhiệm vụ mới (cốt truyện, môn phái)</label>
           <label class="set-row"><input type="checkbox" data-set="autoUpdate" ${s.autoUpdate !== false ? 'checked' : ''}> 🔄 Tự vào lại game khi máy chủ có bản cập nhật mới (giữ trạng thái Tự động)</label></div>
         <div class="card"><h4>💬 Cộng đồng</h4><p class="small">Tham gia nhóm Zalo để nhận gift code, tin sự kiện và giao lưu với các đại hiệp khác.</p>
-          <div class="row" style="justify-content:flex-start;gap:6px"><a class="zalo-btn" href="https://zalo.me/g/fkxw5crl6ksc0jotbzgp" target="_blank" rel="noopener">💬 Nhóm Zalo</a><button class="btn small" id="set-online">👥 Người chơi online</button><button class="btn small" id="set-news">📜 Lịch sử cập nhật</button>${G.user && G.user.owner ? '<button class="btn small primary" id="set-admin">🛡️ Trang quản trị</button>' : ''}</div></div>
+          <div class="row" style="justify-content:flex-start;gap:6px;flex-wrap:wrap"><button class="btn small primary" id="set-invite">📣 Mời bạn nhận quà${(() => { const d = $('ref-dot'); return d && !d.classList.contains('hidden') ? ' 🔴' : ''; })()}</button><button class="btn small primary" id="set-gift">🎁 Gift code${(() => { const d = $('gift-dot'); return d && !d.classList.contains('hidden') ? ' 🔴' : ''; })()}</button><a class="zalo-btn" href="https://zalo.me/g/fkxw5crl6ksc0jotbzgp" target="_blank" rel="noopener">💬 Nhóm Zalo</a><button class="btn small" id="set-online">👥 Người chơi online</button><button class="btn small" id="set-news">📜 Lịch sử cập nhật</button>${G.user && G.user.owner ? '<button class="btn small primary" id="set-admin">🛡️ Trang quản trị</button>' : ''}</div></div>
         <div class="card"><h4>👤 Tài khoản</h4>
           <div class="small muted">${G.user && G.user.username ? 'Tài khoản: <b>' + esc(G.user.username) + '</b>' : 'Đăng nhập bằng Google: ' + esc(G.user && G.user.email)}</div>
           ${G.user && G.user.username ? `<div class="row" style="justify-content:flex-start;margin-top:6px"><input id="pw-old" type="password" placeholder="Mật khẩu cũ" style="width:130px"><input id="pw-new" type="password" placeholder="Mật khẩu mới" style="width:130px"><button class="btn small" id="pw-change">Đổi mật khẩu</button></div>` : ''}
@@ -1483,6 +1497,8 @@
     on('au-svol', 'oninput', e => { GameAudio.set('sfxVol', +e.target.value); e.target.nextElementSibling.textContent = Math.round(e.target.value * 100) + '%'; GameAudio.sfx('coin', 150); });
     on('set-voice', 'onchange', e => { try { localStorage.setItem('vl_introVoice', e.target.checked ? '1' : '0'); } catch (er) { } });
     on('set-online', 'onclick', () => UI.openPanel('online'));
+    on('set-invite', 'onclick', () => UI.openPanel('invite'));
+    on('set-gift', 'onclick', () => UI.openPanel('giftcode'));
     on('set-news', 'onclick', () => UI.openPanel('changelog'));
     on('set-admin', 'onclick', () => emit('adminPanel'));
     on('set-logout', 'onclick', () => G.logout());

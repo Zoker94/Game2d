@@ -1897,3 +1897,9 @@ body.calm .slot.r-divine::after { animation: none; }
 .dv-set { margin-top: 4px; padding-top: 4px; border-top: 1px dashed rgba(255,90,90,.4); font-size: 12px; }
 .dv-set b { color: #ff6a5a; }
 .dv-set .on { color: #ffd0c0; } .dv-set .off { color: #8a7a78; }
+/* tab Túi đồ / Nhân vật / Võ công chung một bảng */
+#panel-tabs { display: flex; gap: 6px; padding: 6px 12px 0; justify-content: center; flex-wrap: wrap; }
+#panel-tabs.hidden { display: none; }
+#panel-tabs button { font: 700 12.5px "Be Vietnam Pro", system-ui, sans-serif; color: #d8ccb0; background: rgba(255,255,255,.06); border: 1px solid rgba(255,215,106,.25); border-radius: 999px; padding: 5px 14px; cursor: pointer; }
+#panel-tabs button.on { color: #2a1a00; background: linear-gradient(180deg, #ffe08a, #e0a020); border-color: #fff2c0; }
+#menu-buttons button .dot + .dot { right: 10px; }
