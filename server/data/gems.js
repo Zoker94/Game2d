@@ -11,7 +11,7 @@ const GEM_KEYS = Object.keys(GEM_TYPES);
 const GEM_MAX = 5;
 const LV_NAME = ['Sơ', 'Trung', 'Thượng', 'Cực', 'Thần'];
 // số lỗ khảm theo độ hiếm
-const SOCKETS = { common: 1, rare: 1, epic: 2, legendary: 3 };
+const SOCKETS = { common: 1, rare: 1, epic: 2, legendary: 3, divine: 3 };
 // luyện đá: 3 viên cấp L -> 1 viên cấp L+1 (thất bại mất 1 viên)
 const UPGRADE = { need: 3, rate: [1, 0.85, 0.65, 0.45], gold: [2000, 10000, 40000, 150000] };
 // phí khảm / tháo đá theo cấp đá

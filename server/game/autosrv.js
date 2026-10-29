@@ -13,7 +13,7 @@ const U = require('./util');
 const OFFLINE_MAX = 8 * 3600e3;   // mất kết nối: treo tối đa 8 giờ rồi tự thoát
 const IDLE_GRACE = 3000;          // máy khách im lặng 3 giây (không gửi di chuyển) thì máy chủ mới cầm lái
 const HB_LOST = 8000;             // mất nhịp tim 8 giây (điện thoại tắt màn / khoá máy, trang bị đóng băng): máy chủ cầm lái luôn
-const RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
+const RANK = { common: 0, rare: 1, epic: 2, legendary: 3, divine: 4 };
 const DEF = { pickup: true, pickGold: true, pickMin: 'common', pickPots: true, pickMats: true, pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, skills: true, range: 700, partyAuto: false, partyFrom: 'all' };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, Number.isFinite(+v) ? +v : a));
 

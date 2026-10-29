@@ -204,4 +204,17 @@ for (const id in BOSSES) {
   b.gold = s.gold * (b.goldK || 80);
 }
 
-module.exports = { MONSTERS, BOSSES };
+// Boss triệu hồi Thần Binh (server/game/divine.js): không theo giờ, người chơi dùng Triệu Hồi Lệnh gọi ra ở bãi luyện.
+// 500 triệu máu, đánh rất đau; ở lại tối đa 60 phút. Người ra đòn kết liễu được nhặt đồ trước 8 giây.
+const SUMMON_BOSSES = {
+  boss_xichviem: { name: 'Xích Viêm Ma Tôn', set: 'xv', el: 'hoa', sprite: 'demon', color: '#ff5a2a' },
+  boss_huyenbang: { name: 'Huyền Băng Thánh Mẫu', set: 'hb', el: 'thuy', sprite: 'bandit', color: '#8ae0ff' },
+  boss_loidinh: { name: 'Lôi Đình Chiến Thần', set: 'ld', el: 'kim', sprite: 'bandit', color: '#b890ff' }
+};
+for (const id in SUMMON_BOSSES) {
+  const b = SUMMON_BOSSES[id], s = stats(95, 1);
+  Object.assign(b, { id, lv: 95, boss: true, summon: true, aggro: true, speed: 112, range: 125, size: 1.8,
+    hp: 500000000, atk: 2600, def: 650, exp: s.exp * 260, gold: s.gold * 300, respawn: 0 });
+}
+
+module.exports = { MONSTERS, BOSSES, SUMMON_BOSSES };

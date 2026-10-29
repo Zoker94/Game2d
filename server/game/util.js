@@ -1,7 +1,7 @@
 const { CLASSES, branchOf } = require('../data/classes');
 const { BRANCH_BONUS } = require('../data/branches');
 const { scaleSkill } = require('../data/skillbooks');
-const { ITEMS, BR_ATTR, brPoints, brStats } = require('../data/items');
+const { ITEMS, BR_ATTR, brPoints, brStats, DIVINE_SETS } = require('../data/items');
 const { mountStats } = require('../data/mounts');
 const { rollAffixes, elementBonus, CAP, GEAR_CAP, rescaleFx } = require('../data/affixes');
 const Power = require('../../public/js/power');
@@ -197,6 +197,19 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
       if (gb.fx) fx[gb.fx[0]] = (fx[gb.fx[0]] || 0) + gb.fx[1];
     }
   }
+  // Thần Binh: 3/5 món cùng bộ mở dòng ẩn, đủ 5 món mở thêm dòng thứ hai (items.js DIVINE_SETS)
+  const dvCount = {};
+  for (const slot in c.equip) { const it = c.equip[slot] && ITEMS[c.equip[slot].id]; if (it && it.set) dvCount[it.set] = (dvCount[it.set] || 0) + 1; }
+  const dvSets = [];
+  for (const sk in dvCount) {
+    const S = DIVINE_SETS[sk], n = dvCount[sk];
+    if (!S || n < 3) continue;
+    dvSets.push({ set: sk, n });
+    for (const b of n >= 5 ? [S.b3, S.b5] : [S.b3]) {
+      if (b.atk) s.atk *= 1 + b.atk; if (b.hp) s.maxHp *= 1 + b.hp; if (b.def) s.def *= 1 + b.def; if (b.crit) s.crit += b.crit;
+      for (const [k, v] of b.fx || []) fx[k] = (fx[k] || 0) + v;
+    }
+  }
   // bộ ngũ hành: 3 món cùng hệ +6%, 5 món +12% chỉ số chính của hệ đó
   let setEl = null, setN = 0;
   for (const k in elCount) if (elCount[k] > setN) { setN = elCount[k]; setEl = k; }
@@ -206,7 +219,7 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
     else if (setEl === 'thuy') { s.maxMp *= 1 + bonus; s.def *= 1 + bonus / 2; } else if (setEl === 'hoa') s.crit += bonus * 50; else if (setEl === 'tho') s.def *= 1 + bonus;
   }
   for (const k in fx) fx[k] = Math.round(Math.min(GEAR_CAP[k] || CAP[k] || 100, fx[k]) * 10) / 10;   // trần riêng cho cả bộ trang bị
-  s.fx = fx; s.set = setN >= 3 ? { el: setEl, n: setN } : null; s.gearAttr = gearAttr;
+  s.fx = fx; s.set = setN >= 3 ? { el: setEl, n: setN } : null; s.gearAttr = gearAttr; s.dvSets = dvSets;
   s.el = c.equip.weapon && c.equip.weapon.el || null;      // hệ tấn công
   s.del = c.equip.armor && c.equip.armor.el || null;       // hệ phòng thủ
   if (fx.regen) s.regen += fx.regen / 100;

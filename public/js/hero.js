@@ -1,7 +1,7 @@
 // Nhân vật chi tiết (1 điểm ảnh = 1px trên khung 64x64), thú cưỡi, ánh sáng phát quang.
 (function () {
   const shade = Sprites.shade;
-  const METAL = ['#c4c9d4', '#63aefc', '#bd78ff', '#ffb43c'];       // theo độ hiếm
+  const METAL = ['#c4c9d4', '#63aefc', '#bd78ff', '#ffb43c', '#ff3c3c'];       // theo độ hiếm
   const OUTLINE = [22, 16, 28];
 
   function mk(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; return [c, x]; }

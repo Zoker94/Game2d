@@ -128,7 +128,7 @@
   function frameCount(cls, state) { const m = META[cls], a = m && m.anims[STATE_ANIM[state]]; return a ? a.n : 1; }
   function frameMs(cls, state) { const m = META[cls], a = m && m.anims[STATE_ANIM[state]]; return a ? a.ms : [100]; }
   // ----- trang bị -> kiểu hình -----
-  const METAL = ['#a8b0bc', '#4fa3ff', '#b060ff', '#ffb02a'];   // Thường / Hiếm / VIP / Truyền Kỳ
+  const METAL = ['#a8b0bc', '#4fa3ff', '#b060ff', '#ffb02a', '#ff3030'];   // Thường / Hiếm / VIP / Truyền Kỳ / Thần Binh
   // ap = [bậc vũ khí, độ hiếm vũ khí, +vũ khí, bậc áo, độ hiếm áo, +áo, bậc nón, thú cưỡi, độ hiếm nón]
   function lookOf(ap) {
     ap = ap || [];

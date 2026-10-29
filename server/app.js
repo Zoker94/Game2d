@@ -8,7 +8,7 @@ const { OAuth2Client } = require('google-auth-library');
 const db = require('./db');
 const { CLASSES } = require('./data/classes');
 const { ITEMS, RARITY, SLOTS } = require('./data/items');
-const { MONSTERS, BOSSES } = require('./data/monsters');
+const { MONSTERS, BOSSES, SUMMON_BOSSES } = require('./data/monsters');
 const { MAPS } = require('./data/maps');
 const { NPCS } = require('./data/npcs');
 const { World } = require('./game/world');
@@ -49,6 +49,7 @@ world.daihoi = new (require('./game/daihoi').DaiHoi)(world, features, db);
 world.hoason = new (require('./game/hoason').HoaSon)(world, features, db);
 world.tongkim = new (require('./game/tongkim').TongKim)(world, features, db);
 world.cleanup = new (require('./game/cleanup').Cleanup)(world, features, db);
+world.divine = new (require('./game/divine').Divine)(world);
 world.mining = new (require('./game/mining').Mining)(world);
 world.referral = new (require('./game/referral').Referral)(world);
 const { Social } = require('./game/social');
@@ -205,7 +206,7 @@ let gamedataCache = null;
 app.get('/api/gamedata', (req, res) => {
   if (!gamedataCache) {
     const mons = {};
-    for (const m of [...Object.values(MONSTERS), ...Object.values(BOSSES)]) mons[m.id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: m.el, art: m.art, size: m.size, world: m.world };
+    for (const m of [...Object.values(MONSTERS), ...Object.values(BOSSES), ...Object.values(SUMMON_BOSSES)]) mons[m.id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: m.el, art: m.art, size: m.size, world: m.world };
     mons.chest = { name: 'Bảo Rương', lv: 1, sprite: 'chest', color: '#ffd700' };
     for (const [id, m] of Object.entries(require('./game/daihoi').DH_MONS)) mons[id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: 'kim', art: m.art };
     for (const [id, m] of Object.entries(require('./game/tongkim').TK_MONS)) mons[id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: 'kim', art: m.art, tk: m.side };
@@ -224,7 +225,7 @@ app.get('/api/gamedata', (req, res) => {
     for (let l = 1; l <= M.MOUNT_MAX; l++) mountExp[l] = M.mountExpNext(l);
     gamedataCache = { enhance: { max: E.ENHANCE_MAX, safe: E.ENHANCE_SAFE, rate: E.ENHANCE_RATE, cost: Array.from({ length: 15 }, (_, p) => Array.from({ length: require('./data/items').TIERS.length }, (_, t) => E.enhanceCost(p, t))) },
       skillMax: require('./data/skillbooks').SKILL_MAX,
-      branchFreeLv: require('./data/branches').BRANCH_FREE_LV, dragons: require('./data/dragons').DRAGONS, jianghu: require('./data/jianghu').JIANGHU, titles: require('./data/titles').TITLES, mounts: M.MOUNTS, mountMax: M.MOUNT_MAX, mountExp, classes: CLASSES, story: require('./data/story'), gems: require('./data/gems').clientConfig(), attrs: require('./data/attrs').ATTRS, attrSuggest: require('./data/attrs').ATTR_SUGGEST, attrPerLv: require('./data/attrs').ATTR_PER_LEVEL, items: ITEMS, rarity: RARITY, brStat: require('./data/items').BR_STAT, brOffK: require('./data/items').BR_OFF_K, brAttr: require('./data/items').BR_ATTR, gearCap: require('./data/affixes').GEAR_CAP, critMax: 5, slots: Object.assign(Object.fromEntries(Object.entries(SLOTS).map(([k, v]) => [k, v.name])), { ring2: 'Nhẫn' }), monsters: mons, maps, npcs,
+      branchFreeLv: require('./data/branches').BRANCH_FREE_LV, dragons: require('./data/dragons').DRAGONS, jianghu: require('./data/jianghu').JIANGHU, titles: require('./data/titles').TITLES, divineSets: require('./data/items').DIVINE_SETS, mounts: M.MOUNTS, mountMax: M.MOUNT_MAX, mountExp, classes: CLASSES, story: require('./data/story'), gems: require('./data/gems').clientConfig(), attrs: require('./data/attrs').ATTRS, attrSuggest: require('./data/attrs').ATTR_SUGGEST, attrPerLv: require('./data/attrs').ATTR_PER_LEVEL, items: ITEMS, rarity: RARITY, brStat: require('./data/items').BR_STAT, brOffK: require('./data/items').BR_OFF_K, brAttr: require('./data/items').BR_ATTR, gearCap: require('./data/affixes').GEAR_CAP, critMax: 5, slots: Object.assign(Object.fromEntries(Object.entries(SLOTS).map(([k, v]) => [k, v.name])), { ring2: 'Nhẫn' }), monsters: mons, maps, npcs,
       elements: require('./data/affixes').ELEMENTS, affixes: Object.fromEntries(Object.entries(require('./data/affixes').AFFIX).map(([k, a]) => [k, { name: a.name, text: a.text }])), khac: require('./data/affixes').KHAC };
   }
   // nén gzip một lần rồi giữ lại (dữ liệu ~260KB -> ~40KB)

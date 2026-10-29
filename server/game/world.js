@@ -14,7 +14,7 @@ const { JIANGHU, JH_SLOT, JH_DROP } = require('../data/jianghu');
 const { TITLES, statOf, unlocked: titleUnlocked } = require('../data/titles');
 const jhOf = c => (c.jh && c.jhs && c.jhs[c.jh] ? JIANGHU[c.jh] : null);   // tuyệt kỹ giang hồ đang chọn
 const { SKILL_MAX, scaleSkill, upgradeCost, skillPointsTotal, BOOKS } = require('../data/skillbooks');
-const RARITY_IDX = { common: 0, rare: 1, epic: 2, legendary: 3 };
+const RARITY_IDX = { common: 0, rare: 1, epic: 2, legendary: 3, divine: 4 };
 const { KHAC, AFFIX, PROC_KEYS } = require('../data/affixes');
 // ngũ hành tương khắc: khắc +20% sát thương, bị khắc -15%
 function elemMult(ae, de) { if (!ae || !de) return [1, 0]; if (KHAC[ae] === de) return [1.2, 1]; if (KHAC[de] === ae) return [0.85, -1]; return [1, 0]; }
@@ -86,6 +86,8 @@ const WEATHER_TABLE = {
   cave:     [['clear', 1]]
 };
 
+// số món Thần Binh đang mặc (máy khách vẽ vòng tím xoắn ốc dưới chân)
+const divineCount = c => { let n = 0; for (const k in c.equip) { const it = c.equip[k] && ITEMS[c.equip[k].id]; if (it && it.rarity === 'divine') n++; } return n; };
 class World {
   constructor(io, db) {
     this.io = io;
@@ -1186,6 +1188,7 @@ class World {
     const dr = cfg.dropRate || 1;
     const drops = [];
     const rslot = () => DROP_SLOTS[U.randInt(0, DROP_SLOTS.length - 1)];
+    if (tpl.summon) { this.divine.onKill(mon, killer); map.monsters.delete(mon.id); return; }   // boss triệu hồi Thần Binh
     if (mon.boss) {
       // Tàn quyển Võ Mục chỉ rơi từ Boss phó bản.
       // Boss thế giới (500 triệu máu, 4 giờ / lần): hạng 1 chắc chắn, hạng 2-3 35%, hạng 4-10 10%, ai góp ≥0,5% sát thương 2%.
@@ -1227,6 +1230,7 @@ class World {
           this.createDrop(mon.mapId, mon.x + Math.cos(a) * rr, mon.y + Math.sin(a) * rr * 0.7, 'boss_chest', 1, null, 0, 0);
         }
       }
+      if (this.divine) this.divine.bossFrags(mon, ranking);   // mảnh lệnh triệu hồi Thần Binh
       const top = ranking[0] && this.players.get(ranking[0][0]);
       this.features.announce(`👑 Boss ${tpl.name} đã bị tiêu diệt! ${top ? top.c.name + ' gây sát thương cao nhất.' : ''}`);
       this.features.onBossKilled(mon);
@@ -1260,6 +1264,7 @@ class World {
       if (tpl.lv >= 20 && r() < 0.0005 * dr) drops.push('mount_stone');
       if (this.features.isActive('lantern') && r() < 0.3) drops.push('event_token');
       if (tpl.lv >= 10 && r() < 0.006 * dr) drops.push('thien_tam_ti');   // nguyên liệu áo choàng
+      if (this.divine) this.divine.mobDrops(tpl, drops, r);   // mảnh lệnh triệu hồi Thần Binh (cấp 50+)
     }
     drops.forEach((id, i) => {
       const a = (i / Math.max(1, drops.length)) * Math.PI * 2;
@@ -1344,9 +1349,9 @@ class World {
     const it = ITEMS[U.resolveItem(p.c, dr.itemId)];
     this.toast(p, `Nhặt được ${it.name}${dr.qty > 1 ? ' x' + dr.qty : ''}`, 'item:' + it.rarity);
     if (dr.jh) this.features.brag(`⚡ ${p.c.name} đã nhặt được ${it.name}!`);
-    if (it.rarity === 'epic' || it.rarity === 'legendary') {
+    if (it.rarity === 'epic' || it.rarity === 'legendary' || it.rarity === 'divine') {
       // chỉ khoe trang bị Truyền Kỳ (đá, nguyên liệu VIP rơi nhiều làm trôi kênh Thế Giới)
-      if (it.type === 'equip' && it.rarity === 'legendary') this.features.brag(`✨ ${p.c.name} nhặt được [${it.name}] (${RARITY[it.rarity].name}) tại ${m.def.name}!`);
+      if (it.type === 'equip' && (it.rarity === 'legendary' || it.rarity === 'divine')) this.features.brag(`${it.rarity === 'divine' ? '🔴' : '✨'} ${p.c.name} nhặt được [${it.name}] (${RARITY[it.rarity].name}) tại ${m.def.name}!`);
       this.db.log('drop', `${p.c.name} nhặt ${it.name}`, { user: p.userId });
     }
     p.dirtyMe = true;
@@ -1399,7 +1404,7 @@ class World {
   }
   batchable(it) {
     const e = it.effect || {};
-    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.mine || e.title || e.pardon || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr);
+    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.mine || e.title || e.dvFrag || e.dvSummon || e.pardon || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr);
   }
   useOne(p, uid) {
     const s = p.c.inv.find(x => x.uid === uid);
@@ -1443,6 +1448,8 @@ class World {
       p.dirtyMe = true; this.db.markDirty(); return;
     }
     if (e.pick) return this.mining.usePick(p, uid);     // Cuốc Chim
+    if (e.dvFrag) return this.divine.useFrag(p, uid, e.dvFrag);       // ghép mảnh lệnh
+    if (e.dvSummon) return this.divine.summon(p, uid, e.dvSummon);    // triệu hồi boss Thần Binh
     if (e.stall) return p.mapId === 'cho_phien' ? this.market.action(p, { op: 'mine' }) : this.toast(p, '🏪 Đến Chợ Phiên (đi Xa Phu, miễn phí) rồi dùng lệnh bài này hoặc bấm "🏪 Sạp hàng của tôi" để mở gian hàng ở bất kỳ chỗ trống nào.', 'info');
     if (e.pardon) {
       if (!(c.pk > 0)) return this.toast(p, 'Bạn không mang sát khí, không cần xoá tội', 'error');
@@ -2195,6 +2202,7 @@ class World {
     this.escort.tick(now, TICK);
     this.autoSrv.tick(now);
     if (this.mining) this.mining.tick(now);
+    if (this.divine) this.divine.tick(now);
     this.market.tick(now);
     if (this.tickN % 5 === 0) this.duel.tick(now);
     for (const id in this.maps) {
@@ -2472,7 +2480,7 @@ class World {
       const st = [p.c.name, p.c.cls, p.c.level, g ? g.name : '', p.user.isAdmin ? 1 : 0, this.appearance(p.c), p.stats.maxHp,
         p.stats.power || 0, p.stats.el || '', (rank && rank.get(p.userId)) || 0, p.c.pk || 0, p.c.pkMode | 0, p.c.robUntil > now ? 1 : 0,
         this.titleFlags(p), p.buffs.length ? p.buffs.filter(b => b.until > now && b.aura).map(b => [b.aura, b.color]) : 0,
-        p.med ? 1 : 0, 0, this.tongkim ? this.tongkim.tag(p) : 0, this.titleOf(p.c, p.user.isAdmin)];
+        p.med ? 1 : 0, 0, this.tongkim ? this.tongkim.tag(p) : 0, this.titleOf(p.c, p.user.isAdmin), divineCount(p.c)];
       const key = JSON.stringify(st);
       if (key !== p._sk) { p._sk = key; p._sv = ((p._sv || 0) + 1) % 1e6; }
       const hide = this.gmOn(p, 'hide');

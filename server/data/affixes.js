@@ -71,11 +71,11 @@ const CAP = { freeze: 25, stun: 25, poison: 60, burn: 60, bleed: 60, slow: 60, l
 function rollAffixes(it) {
   if (!it || it.type !== 'equip') return {};
   const el = EL_KEYS[Math.floor(Math.random() * EL_KEYS.length)];
-  const n = it.rarity === 'legendary' ? 2 : it.rarity === 'epic' ? 1 : 0;
+  const n = it.rarity === 'divine' ? 3 : it.rarity === 'legendary' ? 2 : it.rarity === 'epic' ? 1 : 0;
   const pool = (SLOT_POOL[it.slot] || []).slice(), fx = [];
   for (let i = 0; i < n && pool.length; i++) {
     const k = pool.splice(Math.floor(Math.random() * pool.length), 1)[0], a = AFFIX[k];
-    const v = (a.base + a.step * it.tier) * (it.rarity === 'legendary' ? 1.25 : 1) * (0.85 + Math.random() * 0.3);
+    const v = (a.base + a.step * it.tier) * (it.rarity === 'divine' ? 1.4 : it.rarity === 'legendary' ? 1.25 : 1) * (0.85 + Math.random() * 0.3);
     fx.push([k, fxVal(k, v)]);
   }
   return fx.length ? { el, fx } : { el };

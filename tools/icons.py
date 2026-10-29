@@ -23,8 +23,8 @@ def mix(a, b, t):
 def dark(c, t=0.3): return mix(c, '#140c18', t)
 def light(c, t=0.3): return mix(c, '#ffffff', t)
 
-METAL = {'common': ('#f2f4f8', '#6c7484'), 'rare': ('#e4f2ff', '#2f6ec8'), 'epic': ('#f4e4ff', '#7a2fc8'), 'legendary': ('#fff4c8', '#d86a08')}
-GLOW = {'epic': '#c060ff', 'legendary': '#ffa020'}
+METAL = {'divine': ('#ffe4dc', '#c01010'), 'common': ('#f2f4f8', '#6c7484'), 'rare': ('#e4f2ff', '#2f6ec8'), 'epic': ('#f4e4ff', '#7a2fc8'), 'legendary': ('#fff4c8', '#d86a08')}
+GLOW = {'epic': '#c060ff', 'legendary': '#ffa020', 'divine': '#ff2020'}
 GOLD = ('#fff2a8', '#9a6208')
 WOOD = ('#c89058', '#4e2c12')
 LEATHER = ('#b07a4c', '#42240e')
@@ -555,6 +555,22 @@ def pickaxe(ic):   # Cuốc Chim: cán gỗ chéo, lưỡi sắt cong hai đầu
     ic.spec([(22, 18), (34, 12)], 1.2, 0.8)
     ic.paint(ic.m_ell(48, 46, 6, 5), '#c070ff', '#4a1aa0', edge=0.4, shine=0); ic.dot(46, 44, 1.6, '#ffffff', 0.9)   # viên đá vừa đào
 
+# Mảnh lệnh / Triệu Hồi Lệnh boss Thần Binh
+DV_SETS = {'xv': ('#ff7a3a', '#7a1004', '炎'), 'hb': ('#8ae0ff', '#0a3a6a', '冰'), 'ld': ('#c8a8ff', '#2a1460', '雷')}
+def dv_token(ic, key):
+    col, deep, g = DV_SETS[key]
+    ic.paint(ic.m_poly([(32, 4), (52, 14), (52, 44), (32, 60), (12, 44), (12, 14)]), '#ff6a5a', '#6a0404', ang=-60)
+    ic.paint(ic.m_poly([(32, 10), (46, 18), (46, 42), (32, 53), (18, 42), (18, 18)]), light(col, 0.1), deep, ang=-70, edge=0.3, shine=0.2)
+    ic.text(g, 32, 31, 16, '#ffffff')
+    for (x, y) in ((32, 6), (51, 15), (51, 43), (32, 58), (13, 43), (13, 15)): ic.dot(x, y, 1.8, '#ffd040')
+    ic.spec([(20, 18), (24, 36)], 1, 0.4)
+def dv_frag(ic, key):
+    col, deep, g = DV_SETS[key]
+    ic.paint(ic.m_poly([(20, 12), (44, 8), (50, 30), (38, 36), (42, 54), (18, 50), (24, 32)]), light(col, 0.1), deep, ang=-60)
+    ic.paint(ic.m_line([(24, 32), (38, 36)], 1.2), '#ffd040', None, edge=0, shine=0)
+    ic.text(g, 33, 22, 11, '#ffffff')
+    ic.spec([(24, 14), (28, 28)], 1.2, 0.6)
+
 def lantern(ic):
     ic.paint(ic.m_line([(32, 2), (32, 10)], 1.4), '#3a2010', None, edge=0, shine=0)
     ic.paint(ic.m_rect(26, 9, 38, 13), *GOLD)
@@ -663,9 +679,11 @@ SIMPLE = {
     'stone': stone, 'stone2': lambda ic: stone(ic, True), 'insure': insure, 'food': food, 'blood': blood,
     'chest': chest, 'chest_gold': lambda ic: chest(ic, True), 'ticket': ticket, 'lantern': lantern, 'saddle': saddle, 'gold': gold_icon,
     'bag': bag, 'pickaxe': pickaxe,
+    **{'dv_token_' + k: (lambda k: lambda ic: dv_token(ic, k))(k) for k in DV_SETS},
+    **{'dv_frag_' + k: (lambda k: lambda ic: dv_frag(ic, k))(k) for k in DV_SETS},
     **{'title_' + k: (lambda k: lambda ic: title_token(ic, k))(k) for k in TITLE_TOKENS},
 }
-SIMPLE_GLOW = {**{'title_' + k: v[0] for k, v in TITLE_TOKENS.items()}, 'silk': '#e0c8ff', 'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'book_thunder': '#c090ff', 'book_shadow': '#ff3a6a', 'jh_book_tl': '#ffd040', 'jh_book_tv': '#ff7a2a', 'jh_book_dm': '#7affd0', 'jh_book_nd': '#8fff4a', 'jh_book_nm': '#ffb0e0', 'jh_book_ty': '#a8ecff', 'jh_book_cb': '#ffc040', 'jh_book_vd': '#b8d8ff', 'jh_book_cl': '#d8a4ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'bag': '#ffd040'}
+SIMPLE_GLOW = {**{'dv_token_' + k: '#ff3020' for k in DV_SETS}, **{'title_' + k: v[0] for k, v in TITLE_TOKENS.items()}, 'silk': '#e0c8ff', 'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'book_thunder': '#c090ff', 'book_shadow': '#ff3a6a', 'jh_book_tl': '#ffd040', 'jh_book_tv': '#ff7a2a', 'jh_book_dm': '#7affd0', 'jh_book_nd': '#8fff4a', 'jh_book_nm': '#ffb0e0', 'jh_book_ty': '#a8ecff', 'jh_book_cb': '#ffc040', 'jh_book_vd': '#b8d8ff', 'jh_book_cl': '#d8a4ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'bag': '#ffd040'}
 
 def build():
     tiles, index = [], {}
@@ -675,6 +693,9 @@ def build():
             for rar in ('common', 'rare', 'epic', 'legendary'):
                 ic = Icon(); fn(ic, rar, g)
                 add(f'{key}:{g}:{rar}', ic.finish(GLOW.get(rar)))
+    # Thần Binh: chỉ nón / áo / quần / giày / găng, một kiểu (bậc cao nhất)
+    for key in ('helmet', 'armor', 'pants', 'boots', 'gloves'):
+        ic = Icon(); GEAR[key](ic, 'divine', 2); add(f'{key}:2:divine', ic.finish(GLOW['divine']))
     for key in POT:
         ic = Icon(); potion(ic, key); add(key, ic.finish(SIMPLE_GLOW.get(key)))
     for key, fn in SIMPLE.items():

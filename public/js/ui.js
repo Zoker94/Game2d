@@ -41,7 +41,7 @@
   function iconUrl(itemId) { const id = resolveId(itemId); return iconUrlCache[id] || (iconUrlCache[id] = iconCanvas(id).toDataURL()); }
   UI.iconUrl = id => iconUrl(id); UI.esc = esc; UI.itemName = (id, plus) => itemName(id, plus);
   const bdLine = inst => inst && inst.bd ? '<div class="small" style="color:#ffb454">🔒 Đồ khoá – không thể giao dịch / bán ở chợ</div>' : '';
-  UI.itemTip = (e, id, plus, inst) => tip(e, `<b>${itemName(id, plus)}</b>${bdLine(inst)}${statsHtml(G.data.items[resolveId(id)], plus, inst && inst.br)}${elemFxHtml(G.data.items[resolveId(id)], inst)}`);
+  UI.itemTip = (e, id, plus, inst) => tip(e, `<b>${itemName(id, plus)}</b>${bdLine(inst)}${statsHtml(G.data.items[resolveId(id)], plus, inst && inst.br)}${elemFxHtml(G.data.items[resolveId(id)], inst)}${dvSetHtml(G.data.items[resolveId(id)])}`);
   UI.hideTip = () => hideTip();
   function itemName(id, plus) { const it = G.data.items[resolveId(id)]; return `<span class="r-${it.rarity}-t">${esc(it.name)}${plus ? ' +' + plus : ''}</span>`; }
   // chỉ số gốc theo hệ Nội / Ngoại của món (trùng server/data/items.js brStats)
@@ -55,6 +55,13 @@
     if (o.mp === 0) delete o.mp;
     if (o.crit) o.crit = Math.min(G.data.critMax || 5, o.crit);
     return o;
+  }
+  // Thần Binh: dòng bộ (3/5 món cùng bộ mở dòng ẩn, đủ 5 món mở dòng thứ hai) – chưa đủ món thì hiện ???
+  function dvSetHtml(it) {
+    const S = it && it.set && G.data.divineSets && G.data.divineSets[it.set];
+    if (!S) return '';
+    let n = 0; for (const k in G.me.equip || {}) { const e = G.me.equip[k], x = e && G.data.items[e.id]; if (x && x.set === it.set) n++; }
+    return `<div class="dv-set"><b>🔴 Bộ Thần Binh ${esc(S.name)} (${n}/5)</b><div class="${n >= 3 ? 'on' : 'off'}">(3 món) Dòng ẩn: ${n >= 3 ? esc(S.d3) : '??? – mặc đủ 3 món cùng bộ để mở'}</div><div class="${n >= 5 ? 'on' : 'off'}">(5 món) ${n >= 5 ? esc(S.d5) : '??? – mặc đủ 5 món cùng bộ để mở'}</div></div>`;
   }
   function statsHtml(it, plus, br) {
     const st = brSt(it, br);
@@ -274,7 +281,7 @@
     const clsLine = it.cls ? `<div class="small" style="color:${it.cls === G.me.cls ? '#4ade80' : '#ff6a6a'}">${it.wtype} · Chỉ dành cho ${G.data.classes[it.cls].name}</div>` : it.generic ? '<div class="small muted">Nhặt / mua sẽ thành vũ khí môn phái của bạn</div>' : '';
     return `<h4>${itemName(id, plus)}</h4>
       <div class="muted small">${it.type === 'equip' ? G.data.slots[it.slot] + ' · ' : ''}<span style="color:${rar.color}">${rar.name}</span> · Yêu cầu cấp ${it.lv || 1}</div>${clsLine}${bdLine(inst)}
-      ${statsHtml(it, plus, inst && inst.br)}${brLine(it, inst, plus)}${elemFxHtml(it, inst)}${it.effect && it.effect.vmStudy ? `<div class="small ${(G.me.vmb | 0) >= 5 ? 'warn' : 'ok-t'}">📜 Đã lĩnh hội ${G.me.vmb | 0}/5 lần${(G.me.vmb | 0) >= 5 ? ' – đã đạt tối đa, không thể học thêm (có thể bán / giao dịch cho người khác)' : ''}</div>${(G.me.vmb | 0) < 5 ? (() => { const n = G.me.inv.filter(x => x.id === 'vm_tamphap').reduce((a, x) => a + x.qty, 0); return `<div class="small ${n ? 'ok-t' : 'warn'}">Cần 1 Võ Mục Tâm Pháp mỗi lần học (đang có ${n})</div>`; })() : ''}` : ''}${it.desc ? `<div class="small">${esc(it.desc)}</div>` : ''}
+      ${statsHtml(it, plus, inst && inst.br)}${brLine(it, inst, plus)}${elemFxHtml(it, inst)}${dvSetHtml(it)}${it.effect && it.effect.vmStudy ? `<div class="small ${(G.me.vmb | 0) >= 5 ? 'warn' : 'ok-t'}">📜 Đã lĩnh hội ${G.me.vmb | 0}/5 lần${(G.me.vmb | 0) >= 5 ? ' – đã đạt tối đa, không thể học thêm (có thể bán / giao dịch cho người khác)' : ''}</div>${(G.me.vmb | 0) < 5 ? (() => { const n = G.me.inv.filter(x => x.id === 'vm_tamphap').reduce((a, x) => a + x.qty, 0); return `<div class="small ${n ? 'ok-t' : 'warn'}">Cần 1 Võ Mục Tâm Pháp mỗi lần học (đang có ${n})</div>`; })() : ''}` : ''}${it.desc ? `<div class="small">${esc(it.desc)}</div>` : ''}
       <div class="small muted">Giá bán: ${fmt(Math.floor(it.price * 0.3 * (1 + (plus || 0) * 0.2)))} lượng</div>`;
   }
 
@@ -952,7 +959,7 @@
     else if (it.type === 'equip') btns += `<button class="btn small green" data-act="equip">Trang bị</button>`;
     else if (it.type === 'use') {
       btns += `<button class="btn small green" data-act="use">Sử dụng</button>`;
-      const e = it.effect || {}, multi = !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.mine || e.title || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr || e.changeClass || e.invExpand);
+      const e = it.effect || {}, multi = !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.mine || e.title || e.dvFrag || e.dvSummon || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr || e.changeClass || e.invExpand);
       if (multi && s.qty > 1) {   // dùng nhiều cái một lần (rương, bùa, vé quay...)
         const def = Math.min(s.qty, panelState.useN || 10);
         btns += `<span class="use-multi"><input type="number" id="use-n" min="1" max="${Math.min(200, s.qty)}" value="${def}"><button class="btn small green" data-act="usen">Dùng</button></span>`;

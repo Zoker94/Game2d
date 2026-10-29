@@ -147,7 +147,7 @@
   // Mốc cấp: 10 / 25 / 40 / 50 (tối đa). Độ hiếm càng cao càng dày, sáng và mở hiệu ứng sớm hơn:
   //   hạt sáng bay lên (10+) · vệt chạy riêng từng con (25+, hiếm trở lên từ 10) · trận đồ dưới chân (25+, thường từ 40)
   //   · sóng toả (40+, hiếm trở lên) · hiệu ứng đặc trưng (40+, sử thi / truyền thuyết) · cột sáng (cấp 50, sử thi trở lên)
-  const RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
+  const RANK = { common: 0, rare: 1, epic: 2, legendary: 3, divine: 4 };
   const THEME = {
     ngua_nau:     { c: '#ffd27a', c2: '#c89a50', trail: 'dust',   pal: 'gold' },
     bach_ma:      { c: '#ffffff', c2: '#a8d8ff', trail: 'wind',   pal: 'holy' },

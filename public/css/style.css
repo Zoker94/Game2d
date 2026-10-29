@@ -1885,3 +1885,15 @@ body.touch #wb-top { top: 108px; right: auto; left: 50%; transform: translateX(-
 #mine-hud.hidden { display: none; }
 body.short #btn-dig { bottom: 96px; }
 .ttl-gift { margin: 8px 0 2px; color: #ffd76a; font-size: 12.5px; }
+/* Thần Binh (đỏ): ô đồ nền son, viền sáng chạy vòng quanh mép ô */
+@property --dva { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.slot.r-divine { background: radial-gradient(circle at 50% 40%, #a01818 0%, #4a0606 55%, #1e0202 100%); border-color: #ff3a3a; box-shadow: inset 0 0 14px rgba(255,60,60,.5), 0 0 12px rgba(255,40,40,.75); }
+.slot.r-divine::after { content: ''; position: absolute; inset: -2px; z-index: 2; pointer-events: none; border-radius: inherit; padding: 2px;
+  background: conic-gradient(from var(--dva), transparent 0 55%, #ff3a3a 70%, #ffe9a0 80%, #ff3a3a 90%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: dvSpin 1.8s linear infinite; }
+@keyframes dvSpin { to { --dva: 360deg; } }
+body.calm .slot.r-divine::after { animation: none; }
+.r-divine-t { color: #ff4a4a; text-shadow: 0 0 6px rgba(255,60,60,.6); }
+.dv-set { margin-top: 4px; padding-top: 4px; border-top: 1px dashed rgba(255,90,90,.4); font-size: 12px; }
+.dv-set b { color: #ff6a5a; }
+.dv-set .on { color: #ffd0c0; } .dv-set .off { color: #8a7a78; }

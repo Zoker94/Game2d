@@ -511,7 +511,7 @@
       if (q && e.sv !== p[8]) {
         e.sv = p[8];
         e.name = q[0]; e.cls = q[1]; e.level = q[2]; e.guild = q[3]; e.gm = q[4]; e.ap = q[5]; e.maxHp = q[6]; e.pw = q[7] || 0; e.el = q[8] || '';
-        e.rk = q[9] || 0; e.k = q[10] || 0; e.pm = q[11] || 0; e.rb = q[12] || 0; e.mc = q[13] || 0; e.bf = q[14] || null; e.md = q[15] || 0; e.iv = q[16] || 0; e.tk = q[17] || 0; e.ttl = q[18] || '';
+        e.rk = q[9] || 0; e.k = q[10] || 0; e.pm = q[11] || 0; e.rb = q[12] || 0; e.mc = q[13] || 0; e.bf = q[14] || null; e.md = q[15] || 0; e.iv = q[16] || 0; e.tk = q[17] || 0; e.ttl = q[18] || ''; e.dv = q[19] || 0;
         e.apLite = null;
         if (e.cls) Assets.loadClass(e.cls);
       }
@@ -1253,7 +1253,7 @@
   G.autoCfgGet = autoCfg;
   G.autoCfgSet = (k, v) => { G.autoCfg[k] = v; try { localStorage.setItem('vl_auto', JSON.stringify(G.autoCfg)); } catch (e) {} sendAutoSrv(); };
   G.noPot = {};
-  const RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
+  const RANK = { common: 0, rare: 1, epic: 2, legendary: 3, divine: 4 };
   G.dropSkip = new Map();
   function pickableDrop(now, home, cfg) {
     const s = G.self, invFull = G.me.inv.length >= (G.me.invMax || 48);   // túi đã mở rộng thì tính theo số ô thật
@@ -1392,7 +1392,7 @@
     for (const d of G.drops.values()) {
       if (!inViewXY(d.x, d.y)) continue;
       const bob = Math.sin(now / 300 + d.x) * 3;
-      const col = { common: '#ffffff', rare: '#4fa3ff', epic: '#c060ff', legendary: '#ff9b2f' }[d.rarity];
+      const col = { common: '#ffffff', rare: '#4fa3ff', epic: '#c060ff', legendary: '#ff9b2f', divine: '#ff3a3a' }[d.rarity] || '#ffffff';
       if (d.rarity !== 'common' || d.gold) {
         const gc = d.gold ? '#ffd040' : col;
         ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.45 + Math.sin(now / 250 + d.x) * 0.15;
@@ -1508,9 +1508,11 @@
         if (pm) Overhead.drawUnder(ctx, e, e.x, e.y, pm, now);
         const elift = e.ap && e.ap[7] ? 24 : 0;
         if (e.bf && !e.dead) Auras.draw(ctx, e.x, e.y, e.bf, now, 'under', elift);
+        if (e.dv && !e.dead) DivineFX.under(ctx, e.x, e.y, now, e.dv);   // Thần Binh: vòng tím dưới chân
         if (e.iv) ctx.globalAlpha = 0.4;   // quản trị viên đang tàng hình (chỉ quản trị viên khác thấy)
         const top = drawHero(e.x, e.y, e.cls, e.dir, e.lastH, e.moving, e.atkUntil > now, e.ap, e.dead, e.x / 50, now, e);
         ctx.globalAlpha = 1;
+        if (e.dv && !e.dead) DivineFX.over(ctx, e.x, e.y, now, e.dv);
         if (e.bf && !e.dead) Auras.draw(ctx, e.x, e.y, e.bf, now, 'over', elift);
         if (e.pm && !e.dead && !G.map.pvp) Escort.drawFlag(ctx, e.x, e.y, top, e.dir === 1 || e.dir === 2 ? e.dir : (e.lastH || 2), e.pm, now);
         if (pm) Overhead.drawOver(ctx, e, e.x, e.y, top, pm, now);
@@ -1528,9 +1530,12 @@
         const tnow = Date.now(), mbf = me.dead ? null : me.buffs.filter(b => b.until > tnow && b.aura).map(b => [b.aura, b.color]);
         const slift = me.ap && me.ap[7] ? 24 : 0;
         if (mbf && mbf.length) Auras.draw(ctx, s.x, s.y, mbf, now, 'under', slift);
+        const sdv = me.dead ? 0 : DivineFX.count(me.equip, G.data.items);
+        if (sdv) DivineFX.under(ctx, s.x, s.y, now, sdv);
         if (me.gm && me.gm.hide) ctx.globalAlpha = 0.4;   // đang tàng hình: tự thấy mình mờ
         const top = drawHero(s.x, s.y, me.cls, s.dir, s.lastH, s.moving, s.atkUntil > now, me.ap, me.dead, 0, now, s);
         ctx.globalAlpha = 1;
+        if (sdv) DivineFX.over(ctx, s.x, s.y, now, sdv);
         if (mbf && mbf.length) Auras.draw(ctx, s.x, s.y, mbf, now, 'over', slift);
         if (me.pkMode && !me.dead && !G.map.pvp) Escort.drawFlag(ctx, s.x, s.y, top, s.dir === 1 || s.dir === 2 ? s.dir : (s.lastH || 2), me.pkMode, now);
         if (sm) Overhead.drawOver(ctx, s, s.x, s.y, top, sm, now);

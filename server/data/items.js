@@ -101,6 +101,38 @@ Object.keys(SLOTS).forEach(slot => {
   });
 });
 
+// ---- THẦN BINH (đỏ): chỉ rơi từ 3 boss triệu hồi (server/game/divine.js). 3 bộ × 5 món (nón, áo, quần, giày, găng).
+// Chỉ số trên cả Truyền Kỳ bậc cao nhất, 3 dòng hiệu ứng, 3 lỗ khảm. Mặc 3/5 món cùng bộ mở dòng ẩn, đủ 5 món mở thêm dòng thứ hai.
+// b3 / b5: atk / hp / def = % cộng thêm; crit = điểm chí mạng; fx = dòng hiệu ứng cộng vào bộ
+const DIVINE_SETS = {
+  xv: { name: 'Xích Viêm', color: '#ff5a2a', boss: 'boss_xichviem', b3: { atk: 0.12, fx: [['burn', 8]] }, b5: { atk: 0.10, fx: [['pierce', 8]] },
+        d3: 'Tấn công +12%, Thiêu đốt +8%', d5: 'Tấn công thêm +10%, Xuyên giáp +8%' },
+  hb: { name: 'Huyền Băng', color: '#5ad0ff', boss: 'boss_huyenbang', b3: { hp: 0.15, fx: [['freeze', 5]] }, b5: { def: 0.10, fx: [['dmgred', 8]] },
+        d3: 'Sinh lực +15%, Đóng băng +5%', d5: 'Phòng thủ +10%, Giảm sát thương +8%' },
+  ld: { name: 'Lôi Đình', color: '#b890ff', boss: 'boss_loidinh', b3: { crit: 6, fx: [['critdmg', 20]] }, b5: { fx: [['double', 8], ['stun', 5]] },
+        d3: 'Chí mạng +6%, Bạo kích +20%', d5: 'Liên kích +8%, Choáng +5%' }
+};
+const DV_SLOTS = { helmet: 'Thần Khôi', armor: 'Thần Giáp', pants: 'Thần Khố', boots: 'Thần Ngoa', gloves: 'Thần Thủ' };
+RARITY.divine = { name: 'Thần Binh', color: '#ff3a3a', mult: 3.3 };
+for (const [sk, S] of Object.entries(DIVINE_SETS)) for (const [slot, nm] of Object.entries(DV_SLOTS)) {
+  const t = TIER_MAX, base = slotStats(slot, t), stats = {};
+  for (const k in base) stats[k] = Math.round(base[k] * RARITY.divine.mult * 10) / 10;
+  stats.crit = Math.round(((stats.crit || 0) + 4 + t) * 10) / 10;
+  stats.hp = Math.round((stats.hp || 0) + 80 + t * 60);
+  stats.atk = Math.round((stats.atk || 0) + 10 + t * 9);
+  for (const k in stats) if (k !== 'spd') stats[k] = Math.round(stats[k] * (k === 'hp' ? ITEM_HP_K : ITEM_K) * 10) / 10;
+  if (stats.crit) stats.crit = Math.min(CRIT_MAX, Math.round(stats.crit * 0.25 * 10) / 10);
+  const id = `dv_${sk}_${slot}`;
+  ITEMS[id] = { id, type: 'equip', slot, tier: t, rarity: 'divine', set: sk, name: `${S.name} ${nm}`, lv: 60, stats, price: 3000000, icon: slot };
+}
+// mảnh lệnh bài: rơi ở quái cấp 50+, tinh anh, boss; gom 50 mảnh (Sử dụng) thành 1 lệnh triệu hồi
+for (const [sk, S] of Object.entries(DIVINE_SETS)) {
+  ITEMS[`dv_frag_${sk}`] = { id: `dv_frag_${sk}`, type: 'use', name: `Mảnh ${S.name} Lệnh`, desc: `Mảnh lệnh bài triệu hồi Boss ${S.name}. Rơi ở quái cấp 50 trở lên, quái tinh anh và Boss. Gom đủ 50 mảnh rồi Sử dụng để ghép thành ${S.name} Triệu Hồi Lệnh.`,
+    effect: { dvFrag: sk }, price: 500, icon: 'dv_frag_' + sk, rarity: 'epic', stack: true };
+  ITEMS[`dv_token_${sk}`] = { id: `dv_token_${sk}`, type: 'use', name: `${S.name} Triệu Hồi Lệnh`, desc: `Dùng ở bãi luyện công (không dùng trong thành, phó bản, khoáng động) để triệu hồi Boss ${S.name} – 500 triệu sinh lực, đánh rất đau. Toàn máy chủ được báo. Người ra đòn kết liễu được nhặt đồ trước 8 giây; có cơ hội rơi Thần Binh bộ ${S.name}.`,
+    effect: { dvSummon: sk }, price: 0, icon: 'dv_token_' + sk, rarity: 'divine', stack: true };
+}
+
 // Vũ khí riêng của từng môn phái (cùng chỉ số với binh khí chung cùng bậc/độ hiếm).
 // Binh khí chung (weapon_<bậc>_<độ hiếm>) rơi ra / mua ở tiệm sẽ tự đổi thành vũ khí môn phái của người nhận.
 const CLASS_WEAPON = {
@@ -114,7 +146,7 @@ const CLASS_WEAPON = {
   vodang:     { type: 'Kiếm',     icon: 'w_sword',    names: ['Mộc Kiếm', 'Thanh Đồng Kiếm', 'Thái Cực Kiếm', 'Chân Vũ Kiếm', 'Thất Tinh Kiếm', 'Huyền Thiên Kiếm', 'Thái Cực Thần Kiếm', 'Tử Tiêu Tiên Kiếm', 'Cửu Long Chân Vũ Kiếm', 'Vô Cực Thánh Kiếm'] },
   conlon:     { type: 'Phù chú',  icon: 'w_talisman', names: ['Hoàng Phù', 'Lôi Phù', 'Tử Kim Phù', 'Thiên Sư Phù', 'Cửu Thiên Lôi Phù', 'Thái Thượng Phù', 'Côn Lôn Thần Phù', 'Tử Tiêu Tiên Phù', 'Cửu Long Lôi Phù', 'Ngọc Thanh Thánh Phù'] }
 };
-TIERS.forEach((lv, t) => Object.keys(RARITY).forEach(rk => {
+TIERS.forEach((lv, t) => ['common', 'rare', 'epic', 'legendary'].forEach(rk => {
   const g = ITEMS[`weapon_${t}_${rk}`];
   g.generic = true;
   g.name = `Binh Khí ${TIER_PREFIX[t]}${rk === 'common' ? '' : ' (' + RARITY[rk].name + ')'}`;
@@ -225,4 +257,4 @@ for (const g of require('./gems').gemItems()) ITEMS[g.id] = g;
 
 function equipId(slot, t, rarity) { return `${slot}_${t}_${rarity}`; }
 
-module.exports = { ITEMS, RARITY, SLOTS, TIERS, TIER_MAX, tierOfLv, DROP_SLOTS, EQUIP_SLOTS, SLOT_TYPE, equipId, CLASS_WEAPON, BR_ATTR, brPoints, BR_STAT, BR_OFF_K, brStats };
+module.exports = { DIVINE_SETS, ITEMS, RARITY, SLOTS, TIERS, TIER_MAX, tierOfLv, DROP_SLOTS, EQUIP_SLOTS, SLOT_TYPE, equipId, CLASS_WEAPON, BR_ATTR, brPoints, BR_STAT, BR_OFF_K, brStats };
