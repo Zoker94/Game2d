@@ -2,6 +2,12 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '30/10/2026',
+    items: [
+      '📉 Đá cường hoá rơi ở bãi luyện công hiếm hơn nữa: Huyền Tinh Thạch ở quái thường còn 1/3 (~1/200 con), Thiên Tinh Thạch còn khoảng 1/3; quái tinh anh không còn chắc chắn rơi Huyền Tinh Thạch (35%), Thiên Tinh Thạch 3%. Đá vẫn có nhiều ở Khoáng Động, Boss và phó bản.'
+    ]
+  },
+  {
     date: '29/10/2026',
     items: [
       '⛏ Khoáng Động: mỗi lượt vé còn 10 phút nhưng mỗi nhát đào thưởng dày hơn – nhiều ngân lượng hơn, ra nhiều đá cường hoá (Huyền Tinh Thạch, Thiên Tinh Thạch) và Long Huyết Thạch để đột phá thú cưỡi.',
