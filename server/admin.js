@@ -379,6 +379,19 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     SHOPS.apply(db); db.markDirty();
     res.json({ ok: true, list: SHOPS.adminList(db) });
   });
+  // boss: chỉ số, giờ xuất hiện, đồ rơi thêm
+  const BOSSCFG = require('./game/bosscfg');
+  app.get('/api/admin/bosscfg', auth, (req, res) => res.json(BOSSCFG.adminList(db)));
+  app.post('/api/admin/bosscfg/:id', auth, (req, res) => {
+    const id = req.params.id;
+    if (!BOSSCFG.ALL[id]) return res.status(400).json({ error: 'Không có boss này' });
+    const cfg = db.data.config, all = cfg.bosses || (cfg.bosses = {});
+    if (req.body.reset) { delete all[id]; act(req, `Khôi phục boss ${BOSSCFG.ALL[id].name} về mặc định`); }
+    else { all[id] = BOSSCFG.clean(req.body); act(req, `Sửa boss ${BOSSCFG.ALL[id].name}: ${all[id].drops.length} đồ rơi thêm${all[id].noDefault ? ', tắt đồ rơi mặc định' : ''}`); }
+    BOSSCFG.apply(db); db.markDirty();
+    res.json({ ok: true, list: BOSSCFG.adminList(db) });
+  });
+
   // tỉ lệ cường hoá (không ghi nhật ký quản trị)
   const ENH = require('./data/enhance');
   const enhView = () => ({ rate: ENH.ENHANCE_RATE, def: ENH.DEFAULT_RATE, safe: ENH.ENHANCE_SAFE, max: ENH.ENHANCE_MAX, custom: Array.isArray(db.data.config.enhanceRate),

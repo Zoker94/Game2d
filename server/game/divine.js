@@ -54,7 +54,10 @@ class Divine {
     const w = this.w, tpl = mon.tpl, S = DIVINE_SETS[tpl.set];
     this.alive.delete(mon.id);
     const owner = killer && killer.c ? killer.userId : null, drops = [];
+    const BOSSCFG = require('./bosscfg');
+    BOSSCFG.onKill(w, mon, [...(mon.dmgBy || new Map()).entries()].sort((a, b) => b[1] - a[1]));   // đồ rơi thêm do quản trị viên đặt
     let piece = null;
+    if (BOSSCFG.noDefault(tpl.id)) { w.features.announce(`👑 ${killer && killer.c ? killer.c.name : 'Ai đó'} đã ra đòn kết liễu Boss ${tpl.name}!`); return; }
     if (Math.random() < PIECE_CHANCE() * (w.db.data.config.dropRate || 1)) { piece = `dv_${tpl.set}_${DV_SLOTS[Math.floor(Math.random() * DV_SLOTS.length)]}`; drops.push(piece); }
     for (let k = 0; k < 3; k++) drops.push('boss_chest');
     for (let k = 0, n = U.randInt(3, 5); k < n; k++) drops.push('stone2');

@@ -15,6 +15,7 @@ const { TITLES, statOf, unlocked: titleUnlocked } = require('../data/titles');
 const jhOf = c => (c.jh && c.jhs && c.jhs[c.jh] ? JIANGHU[c.jh] : null);   // tuyệt kỹ giang hồ đang chọn
 const { SKILL_MAX, scaleSkill, upgradeCost, skillPointsTotal, BOOKS } = require('../data/skillbooks');
 const SHOPS = require('./shops');
+const BOSSCFG = require('./bosscfg');   // đồ rơi / chỉ số boss do quản trị viên sửa
 const TK_REVIVE_KNB = 10;   // Tống Kim: giá hồi sinh tại chỗ
 const RARITY_IDX = { common: 0, rare: 1, epic: 2, legendary: 3, divine: 4 };
 const { KHAC, AFFIX, PROC_KEYS } = require('../data/affixes');
@@ -953,9 +954,10 @@ class World {
   // Boss đánh theo % sinh lực tối đa của người chơi: nhiều máu hay ít máu đều chịu số đòn như nhau.
   // Đánh thường: Boss thế giới 5%, Boss dã ngoại 3,5%, Boss phó bản 3%; chiêu: 4-5% × hệ số chiêu. Thủ cao giảm tối đa 30%.
   bossPctDmg(mon, p, mult, skill) {
-    if (mon.tpl.summon) return U.randInt(10000, 20000);   // boss triệu hồi Thần Binh: mọi đòn và chiêu đều 10.000–20.000
+    if (mon.tpl.summon) return U.randInt(mon.tpl.dmgMin || 10000, mon.tpl.dmgMax || 20000);   // boss triệu hồi Thần Binh: mọi đòn và chiêu đều 10.000–20.000 (quản trị viên sửa được)
     const tpl = mon.tpl, def = p.stats.def || 0;
-    const pct = skill ? (tpl.world ? 0.05 : 0.04) : tpl.world ? 0.05 : tpl.pbBoss ? 0.03 : 0.035;
+    let pct = skill ? (tpl.world ? 0.05 : 0.04) : tpl.world ? 0.05 : tpl.pbBoss ? 0.03 : 0.035;
+    if (tpl.hitPct) pct *= tpl.hitPct / (tpl.world ? 0.05 : 0.035);   // quản trị viên đặt % sát thương đòn thường; chiêu thức tăng theo cùng tỉ lệ
     const cut = Math.min(0.3, def / (def + tpl.atk * 2));
     return Math.max(1, Math.round(p.stats.maxHp * pct * mult * U.rand(0.9, 1.1) * (1 - cut)));
   }
@@ -1224,13 +1226,13 @@ class World {
           const p = this.players.get(uid);
           if (!p || d / total < 0.005) return;
           this.achieve(p, 'wbJoin'); if (i === 0) this.achieve(p, 'wbTop1');
-          const chance = i === 0 ? 1 : i < 3 ? 0.35 : i < 10 ? 0.1 : 0.02;
-          if (Math.random() < chance * dr) legend(p);
-          const items = i === 0 && tpl.id === 'boss_vumuc' ? [['vm_tamphap', 1]] : [];   // chỉ top 1 sát thương: anh linh Nhạc Vũ Mục truyền Tâm Pháp (cách học Di Thư)
-          if (i < 3) items.push(['boss_chest', 3 - i]);   // hạng 1-3: 3 / 2 / 1 Rương Thủ Lĩnh
+          const chance = i === 0 ? 1 : i < 3 ? 0.35 : i < 10 ? 0.1 : 0.02, off = BOSSCFG.noDefault(tpl.id);   // off: quản trị viên tắt đồ rơi mặc định (vẫn phát Nguyên Bảo)
+          if (!off && Math.random() < chance * dr) legend(p);
+          const items = !off && i === 0 && tpl.id === 'boss_vumuc' ? [['vm_tamphap', 1]] : [];   // chỉ top 1 sát thương: anh linh Nhạc Vũ Mục truyền Tâm Pháp (cách học Di Thư)
+          if (!off && i < 3) items.push(['boss_chest', 3 - i]);   // hạng 1-3: 3 / 2 / 1 Rương Thủ Lĩnh
           this.giveReward(p, { items, knb: i < 3 ? [200, 120, 80][i] : i < 10 ? 40 : 15 }, `Hạng ${i + 1} đánh ${tpl.name}`);
         });
-      } else {
+      } else if (!BOSSCFG.noDefault(tpl.id)) {
         // Boss dã ngoại (theo giờ) chỉ rơi: trang bị, đá cường hóa và 10 rương văng khắp nơi (ai nhanh tay thì được).
         // Trang bị: 2 món cho người sát thương cao nhất (Hiếm 60% / Sử Thi 35% / Truyền Kỳ thấp 3–8% theo cấp boss)
         const topP = ranking[0] && this.players.get(ranking[0][0]);
@@ -1249,7 +1251,8 @@ class World {
           this.createDrop(mon.mapId, mon.x + Math.cos(a) * rr, mon.y + Math.sin(a) * rr * 0.7, 'boss_chest', 1, null, 0, 0);
         }
       }
-      if (this.divine) this.divine.bossFrags(mon, ranking);   // mảnh lệnh triệu hồi Thần Binh
+      if (this.divine && !BOSSCFG.noDefault(tpl.id)) this.divine.bossFrags(mon, ranking);   // mảnh lệnh triệu hồi Thần Binh
+      BOSSCFG.onKill(this, mon, ranking);   // đồ rơi thêm do quản trị viên đặt
       const top = ranking[0] && this.players.get(ranking[0][0]);
       this.features.announce(`👑 Boss ${tpl.name} đã bị tiêu diệt! ${top ? top.c.name + ' gây sát thương cao nhất.' : ''}`);
       this.features.onBossKilled(mon);
@@ -2363,7 +2366,7 @@ class World {
       if (d <= range + 10 && now >= mon.nextAtk) {
         mon.nextAtk = now + (mon.boss ? 1100 : 1300) * (slowed ? 1.4 : 1);
         let dmg, crit;
-        if (tpl.summon) { crit = Math.random() < 0.15; dmg = U.randInt(10000, 20000); }   // boss triệu hồi Thần Binh: mỗi đòn 10.000–20.000
+        if (tpl.summon) { crit = Math.random() < 0.15; dmg = U.randInt(tpl.dmgMin || 10000, tpl.dmgMax || 20000); }   // boss triệu hồi Thần Binh: mỗi đòn 10.000–20.000
         else if (mon.boss || tpl.pbBoss) { crit = Math.random() < 0.1; dmg = this.bossPctDmg(mon, target, crit ? 1.5 : 1, false); }
         else ({ dmg, crit } = this.calcDamage(tpl.atk, 3, target.stats.def, 1, 0.5));
         const [mem, mek] = elemMult(tpl.el, target.stats.del); dmg = Math.max(1, Math.round(dmg * mem));

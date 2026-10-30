@@ -56,7 +56,7 @@
   function openModal(title, html) { $('m-title').textContent = title; $('m-body').innerHTML = html; $('modal').classList.remove('hidden'); }
   function closeModal() { $('modal').classList.add('hidden'); }
 
-  const TITLES = { dashboard: 'Tổng quan', users: 'Quản lý người chơi', events: 'Sự kiện & Boss', broadcast: 'Gửi thông báo', guilds: 'Bang hội', giftcodes: 'Gift code', shops: 'Cửa hàng NPC', enhance: 'Tỉ lệ cường hoá', config: 'Cấu hình server', chat: 'Nhật ký chat', logs: 'Nhật ký hệ thống', cleanup: 'Dọn dẹp dữ liệu', account: 'Tài khoản quản trị' };
+  const TITLES = { dashboard: 'Tổng quan', users: 'Quản lý người chơi', events: 'Sự kiện & Boss', broadcast: 'Gửi thông báo', guilds: 'Bang hội', giftcodes: 'Gift code', shops: 'Cửa hàng NPC', enhance: 'Tỉ lệ cường hoá', bosscfg: 'Boss & đồ rơi', config: 'Cấu hình server', chat: 'Nhật ký chat', logs: 'Nhật ký hệ thống', cleanup: 'Dọn dẹp dữ liệu', account: 'Tài khoản quản trị' };
   async function show(v) {
     view = v;
     document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.dataset.v === v));
@@ -209,6 +209,78 @@
         if (r) { toast('Đã tạo mã ' + r.code); show('giftcodes'); }
       };
       el.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await run(() => api('/giftcodes/' + encodeURIComponent(b.dataset.del), null, 'DELETE'), 'Đã xóa'); show('giftcodes'); });
+    },
+
+    // boss: chỉ số, giờ xuất hiện, đồ rơi thêm (tỉ lệ, số lượng, ai nhận)
+    async bosscfg(el) {
+      const [list0, items] = await Promise.all([api('/bosscfg'), getItems(), loadIcons().catch(() => null)]);
+      let list = list0, cur = list[0].id, edit = null;
+      const byId = Object.fromEntries(items.map(i => [i.id, i]));
+      const KIND = { field: 'Boss dã ngoại (theo giờ)', world: '🌍 Boss thế giới', summon: '🔴 Boss triệu hồi Thần Binh' };
+      const TO = { ground: '🎁 Rơi ra đất (ai nhặt được)', top: '🥇 Vào túi người sát thương cao nhất', all: '👥 Mỗi người tham gia tự quay' };
+      const pick = id => { const b = list.find(x => x.id === id); cur = id; edit = { ...b.ov, noDefault: b.noDefault, drops: b.drops.map(x => ({ ...x })) }; };
+      pick(cur);
+      const pctTxt = v => (Math.round(v * 10000) / 100);
+      function render() {
+        const b = list.find(x => x.id === cur);
+        const dropRows = edit.drops.map((x, i) => { const it = byId[x.id]; return `<tr data-i="${i}"><td>${iconImg(it)}</td><td><a href="#" data-info="${x.id}" style="color:${RCOL[it && it.rarity] || '#fff'}">${esc(it ? it.name : x.id)}</a><div class="small muted">${esc(x.id)}</div></td>
+          <td><input type="number" data-f="chance" min="0" max="100" step="0.1" value="${pctTxt(x.chance)}" style="width:80px"> %</td>
+          <td><input type="number" data-f="min" min="1" value="${x.min}" style="width:64px"> – <input type="number" data-f="max" min="1" value="${x.max}" style="width:64px"></td>
+          <td><select data-f="to">${Object.entries(TO).map(([k, t]) => `<option value="${k}" ${x.to === k ? 'selected' : ''}>${t}</option>`).join('')}</select></td>
+          <td><button class="btn small danger" data-del>✕</button></td></tr>`; }).join('');
+        const num = (k, label, def, hint, step = 1) => `<label>${label}<input type="number" id="bc-${k}" min="0" step="${step}" value="${edit[k] || ''}" placeholder="${def}" style="width:150px"><span class="small muted">${hint}</span></label>`;
+        el.innerHTML = `<div class="card en-guide"><h3>📖 Hướng dẫn</h3><ol>
+            <li>Chọn boss ở ô <b>Boss</b>. Boss có dấu ✏️ là đang dùng cấu hình đã sửa.</li>
+            <li><b>Chỉ số</b>: để trống = giữ mặc định (số mờ trong ô). Sinh lực / phòng thủ áp dụng cho <b>lần xuất hiện kế tiếp</b> (boss đang sống giữ nguyên). Boss đánh theo <b>% sinh lực tối đa</b> người trúng – VD 3.5 = mỗi đòn thường mất 3,5% máu (chiêu thức tăng theo cùng tỉ lệ). Boss triệu hồi đánh số cố định (mặc định 10.000–20.000).</li>
+            <li><b>Chu kỳ xuất hiện</b> (boss dã ngoại / thế giới): số phút giữa 2 lần ra. VD 60 = mỗi giờ.</li>
+            <li><b>Đồ rơi thêm</b>: tìm vật phẩm ở ô cuối trang → bấm để thêm. Mỗi dòng: <b>tỉ lệ %</b> (100 = chắc chắn, 0.5 = 1/200 lần hạ), <b>số lượng</b> ngẫu nhiên từ–đến, <b>người nhận</b>:
+              <ul><li>🎁 <b>Rơi ra đất</b>: rải quanh xác boss, ai nhanh tay thì nhặt.</li><li>🥇 <b>Người sát thương cao nhất</b>: vào thẳng túi (đầy túi thì gửi thư).</li><li>👥 <b>Mỗi người tham gia</b>: mọi người góp ≥0,5% sát thương đều được quay tỉ lệ riêng.</li></ul>
+              Tỉ lệ ở đây là con số chính xác, <b>không</b> nhân với "hệ số rơi đồ" ở Cấu hình server.</li>
+            <li><b>Tắt đồ rơi mặc định</b>: bỏ hết đồ boss vốn rơi (xem mô tả bên dưới), chỉ rơi danh sách bạn đặt. Boss thế giới vẫn phát Nguyên Bảo theo hạng.</li>
+            <li>Bấm <b>💾 Lưu boss</b> – đồ rơi áp dụng ngay từ lần hạ boss kế tiếp. <b>↺ Mặc định</b> xoá mọi chỉnh sửa của boss đang chọn.</li></ol></div>
+          <div class="card"><div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><b>Boss:</b><select id="bc-boss">${list.map(x => `<option value="${x.id}" ${x.id === cur ? 'selected' : ''}>${x.custom ? '✏️ ' : ''}${esc(x.name)} (cấp ${x.lv})</option>`).join('')}</select>
+            <span class="small muted">${KIND[b.kind]}${b.map ? ' · ' + esc(b.map) : ''}</span><span class="spacer" style="flex:1"></span>
+            <button class="btn primary" id="bc-save">💾 Lưu boss</button><button class="btn" id="bc-reset">↺ Mặc định</button></div></div>
+          <div class="card"><h3>⚙️ Chỉ số</h3><div class="row" style="gap:12px;flex-wrap:wrap">
+            ${num('hp', 'Sinh lực', fmt(b.def.hp), 'Hiện tại: ' + fmt(b.cur.hp))}
+            ${num('def', 'Phòng thủ', fmt(b.def.def), 'Hiện tại: ' + fmt(b.cur.def))}
+            ${b.kind === 'summon' ? num('dmgMin', 'Sát thương thấp nhất', '10000', 'mỗi đòn') + num('dmgMax', 'Sát thương cao nhất', '20000', 'mỗi đòn')
+              : num('pct', 'Sát thương mỗi đòn (% máu)', b.def.pct, 'mặc định ' + b.def.pct + '%', 0.1)}
+            ${b.def.every ? num('every', 'Chu kỳ xuất hiện (phút)', b.def.every, 'Hiện tại: ' + b.cur.every + ' phút') : ''}</div></div>
+          <div class="card"><h3>🎁 Đồ rơi mặc định</h3><p class="small">${esc(b.defaultText)}</p>
+            <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="bc-nodef" ${edit.noDefault ? 'checked' : ''}> <b>Tắt đồ rơi mặc định</b> – chỉ rơi danh sách bên dưới</label></div>
+          <div class="card"><h3>➕ Đồ rơi thêm (${edit.drops.length})</h3><div style="overflow:auto"><table><tr><th></th><th>Vật phẩm</th><th>Tỉ lệ</th><th>Số lượng</th><th>Người nhận</th><th></th></tr>${dropRows || '<tr><td colspan="6" class="muted">Chưa có – tìm vật phẩm bên dưới để thêm</td></tr>'}</table></div>
+            <input id="bc-q" type="search" style="width:100%;max-width:520px;margin-top:10px" placeholder="🔍 Tìm vật phẩm để thêm (VD: ruong, thien tinh, truyen ky lv60, than binh)…" autocomplete="off">
+            <div id="bc-res" class="shres"></div><div id="bc-pick"></div></div>`;
+        const sync = () => { for (const k of ['hp', 'def', 'pct', 'dmgMin', 'dmgMax', 'every']) { const i = $('bc-' + k); if (i) edit[k] = +i.value || 0; } edit.noDefault = $('bc-nodef').checked; };
+        $('bc-boss').onchange = e => { pick(e.target.value); render(); };
+        $('bc-save').onclick = () => run(async () => { sync(); const r = await api('/bosscfg/' + cur, edit); list = r.list; pick(cur); render(); }, 'Đã lưu boss');
+        $('bc-reset').onclick = () => { if (confirm('Xoá mọi chỉnh sửa của boss này, về mặc định?')) run(async () => { const r = await api('/bosscfg/' + cur, { reset: 1 }); list = r.list; pick(cur); render(); }, 'Đã về mặc định'); };
+        el.querySelectorAll('tr[data-i]').forEach(tr => {
+          const x = edit.drops[+tr.dataset.i];
+          tr.querySelectorAll('[data-f]').forEach(inp => inp.onchange = () => { const f = inp.dataset.f; x[f] = f === 'to' ? inp.value : f === 'chance' ? Math.min(100, Math.max(0, +inp.value || 0)) / 100 : Math.max(1, Math.round(+inp.value || 1)); if (x.max < x.min) x.max = x.min; });
+          tr.querySelector('[data-del]').onclick = () => { sync(); edit.drops.splice(+tr.dataset.i, 1); render(); };
+        });
+        el.querySelectorAll('[data-info]').forEach(a => a.onclick = e => { e.preventDefault(); openModal('Chi tiết vật phẩm', itemCard(byId[a.dataset.info])); });
+        const q = $('bc-q'), res = $('bc-res');
+        const keys = items.map(i => [i, fold(`${i.name} ${i.id.replace(/_/g, ' ')} ${RN[i.rarity] || ''} lv${i.lv || ''}`)]);
+        q.oninput = () => {
+          const words = fold(q.value).split(/\s+/).filter(Boolean);
+          if (!words.length) { res.innerHTML = ''; return; }
+          const found = keys.filter(([, t]) => words.every(w => t.includes(w))).slice(0, 40).map(([i]) => i);
+          res.innerHTML = found.map(i => `<button class="shitem" data-add="${i.id}" title="${esc(i.name)}">${iconImg(i, 40)}<span style="color:${RCOL[i.rarity] || '#fff'}">${esc(i.name)}</span><small>${RN[i.rarity] || ''}${i.lv ? ' · Lv' + i.lv : ''}</small></button>`).join('') || '<p class="muted">Không tìm thấy</p>';
+          res.querySelectorAll('[data-add]').forEach(btn => btn.onclick = () => {
+            const it = byId[btn.dataset.add];
+            $('bc-pick').innerHTML = itemCard(it) + `<div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px;align-items:flex-end">
+              <label>Tỉ lệ %<input type="number" id="bp-ch" min="0" max="100" step="0.1" value="10" style="width:80px"></label>
+              <label>Số lượng từ<input type="number" id="bp-min" min="1" value="1" style="width:70px"></label><label>đến<input type="number" id="bp-max" min="1" value="1" style="width:70px"></label>
+              <label>Người nhận<select id="bp-to">${Object.entries(TO).map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}</select></label>
+              <button class="btn primary" id="bp-add">➕ Thêm vào đồ rơi</button></div>`;
+            $('bp-add').onclick = () => { sync(); const min = Math.max(1, Math.round(+$('bp-min').value || 1)); edit.drops.push({ id: it.id, chance: Math.min(100, Math.max(0, +$('bp-ch').value || 0)) / 100, min, max: Math.max(min, Math.round(+$('bp-max').value || min)), to: $('bp-to').value }); render(); toast('Đã thêm – nhớ bấm Lưu boss'); };
+          });
+        };
+      }
+      render();
     },
 
     // tỉ lệ cường hoá thành công từng cấp (+0→+1 … +14→+15)

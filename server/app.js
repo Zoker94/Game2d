@@ -50,6 +50,7 @@ world.hoason = new (require('./game/hoason').HoaSon)(world, features, db);
 world.tongkim = new (require('./game/tongkim').TongKim)(world, features, db);
 world.cleanup = new (require('./game/cleanup').Cleanup)(world, features, db);
 require('./game/shops').apply(db);   // cửa hàng NPC do quản trị viên sửa
+require('./game/bosscfg').apply(db);   // chỉ số / giờ xuất hiện boss do quản trị viên sửa
 require('./data/enhance').applyRates(db.data.config.enhanceRate);   // tỉ lệ cường hoá do quản trị viên sửa
 world.divine = new (require('./game/divine').Divine)(world);
 world.mining = new (require('./game/mining').Mining)(world);
