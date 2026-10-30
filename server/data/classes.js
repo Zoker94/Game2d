@@ -96,7 +96,7 @@ const CLASSES = {
       { id: 'ty0', name: 'Song Đao Liên Trảm', lv: 1, mp: 0, cd: 550, type: 'single', mult: 0.95, range: 85, fx: 'slash2', color: '#87cefa' },
       { id: 'ty1', name: 'Băng Tâm Tiên Tử', lv: 3, mp: 14, cd: 3500, type: 'single', mult: 2.6, range: 100, fx: 'slash2', color: '#00bfff' },
       { id: 'ty2', name: 'Phong Hoa Tuyết Nguyệt', lv: 6, mp: 28, cd: 8500, type: 'aoe', mult: 1.8, radius: 130, range: 0, fx: 'blades', color: '#add8e6' },
-      { id: 'ty3', name: 'Ảnh Tung', lv: 20, mp: 35, cd: 22000, type: 'buff', buff: { spd: 0.35, crit: 20, dur: 10000 }, fx: 'aura', color: '#e0ffff' },
+      { id: 'ty3', name: 'Ảnh Tung', lv: 20, mp: 35, cd: 22000, type: 'buff', buff: { spd: 0.35, crit: 10, atk: 0.2, dur: 10000 }, fx: 'aura', color: '#e0ffff' },
       { id: 'ty4', name: 'Thuấn Ảnh Sát', lv: 35, mp: 40, cd: 6000, type: 'dash', mult: 3.4, range: 360, fx: 'dash', color: '#5ad1ff' },
       { id: 'ty5', name: 'Băng Phong Vạn Lý', lv: 50, mp: 80, cd: 30000, type: 'aoe', mult: 4.3, radius: 180, range: 0, fx: 'frost', color: '#9be8ff' }
     ]
@@ -165,7 +165,7 @@ const EXTRA = {
                { id: 'nd7', name: 'Ngũ Độc Bách Thể', lv: 40, type: 'passive', passive: { hp: 0.06, ccres: 15 }, color: '#5acd32', desc: 'Bách độc bất xâm: +6% sinh lực, giảm 15% thời gian bị khống chế.' }],
   ngamy:      [{ id: 'nm6', name: 'Phật Quang Phổ Chiếu', lv: 25, mp: 55, cd: 32000, type: 'buff', buff: { regen: 0.03, def: 0.2, dur: 15000 }, aura: 'lotus', fx: 'aura', color: '#ff8ac8', desc: 'Phật quang che chở: hồi 3% sinh lực mỗi giây, +20% phòng thủ.' },
                { id: 'nm7', name: 'Nga My Tâm Pháp', lv: 40, type: 'passive', passive: { mp: 0.12, regen: 0.005 }, color: '#ff69b4', desc: 'Tâm pháp thanh tịnh: +12% nội lực, hồi 0,5% sinh lực mỗi giây.' }],
-  thuyyen:    [{ id: 'ty6', name: 'Băng Tâm Quyết', lv: 25, mp: 45, cd: 28000, type: 'buff', buff: { crit: 15, critdmg: 30, dur: 12000 }, aura: 'ice', fx: 'aura', color: '#9ae8ff', desc: 'Tâm như băng tuyết: +15% chí mạng, +30% sát thương bạo kích.' },
+  thuyyen:    [{ id: 'ty6', name: 'Băng Tâm Quyết', lv: 25, mp: 45, cd: 28000, type: 'buff', buff: { crit: 8, critdmg: 45, atk: 0.12, dur: 12000 }, aura: 'ice', fx: 'aura', color: '#9ae8ff', desc: 'Tâm như băng tuyết: +12% tấn công, +8% chí mạng, +45% sát thương bạo kích.' },
                { id: 'ty7', name: 'Lăng Ba Vi Bộ', lv: 40, type: 'passive', passive: { spd: 0.06, dodge: 5 }, color: '#bfefff', desc: 'Bộ pháp nhẹ như sóng: +6% tốc độ, +5% né tránh.' }],
   caibang:    [{ id: 'cb6', name: 'Hàng Long Hộ Thể', lv: 25, mp: 50, cd: 30000, type: 'buff', buff: { def: 0.3, reflect: 15, dur: 12000 }, aura: 'dragon', fx: 'aura', color: '#ffc040', desc: 'Long khí hộ thân: +30% phòng thủ, phản lại 15% sát thương.' },
                { id: 'cb7', name: 'Cái Bang Tâm Pháp', lv: 40, type: 'passive', passive: { hp: 0.08, atk: 0.05 }, color: '#daa520', desc: 'Nội lực hùng hậu: +8% sinh lực, +5% tấn công.' }],
@@ -189,6 +189,14 @@ for (const k in CLASSES) {
   };
   for (const b of Object.values(cl.branches)) { b.skills.forEach(s => { if (s.branch == null && s !== cl.skills[3]) s.branch = b.key; }); b.passive.branch = b.key; }
   cl.defBranch = info.def;
+}
+// cân bằng sát thương giữa các phái / hệ (mô phỏng cấp 99, đồ Truyền Kỳ +12, võ công cấp tối đa, xoay chiêu 1 mục tiêu):
+// cận chiến thuần sát thương cao nhất, đánh xa thấp hơn chút, đỡ đòn / hồi máu thấp hơn nhưng trâu hoặc có hồi phục. Nhân vào hệ số sát thương mọi chiêu của hệ.
+const DMG_BAL = { thienvuong: { ngoai: 0.8, noi: 0.86 }, thuyyen: { ngoai: 0.87, noi: 1 }, conlon: { ngoai: 0.89, noi: 1.04 }, vodang: { ngoai: 0.96, noi: 1.25 },
+  ngudoc: { ngoai: 0.97, noi: 1.25 }, caibang: { ngoai: 1.11, noi: 1.15 }, duongmon: { ngoai: 1.16, noi: 1.37 }, ngamy: { ngoai: 1.38, noi: 1.4 }, thieulam: { ngoai: 1.32, noi: 1.35 } };
+for (const k in DMG_BAL) for (const b in DMG_BAL[k]) {
+  const br = CLASSES[k].branches[b], f = DMG_BAL[k][b];
+  if (br && f !== 1) for (const s of br.skills) if (s.mult) s.mult = Math.round(s.mult * f * 100) / 100;
 }
 const branchOf = c => (c && CLASSES[c.cls] && CLASSES[c.cls].branches[c.branch]) ? c.branch : (c && CLASSES[c.cls] ? CLASSES[c.cls].defBranch : 'noi');
 // lấy võ công theo ô: 0-5 chiêu môn phái, 7 buff chủ động, 8 nội công bị động (6 là Long Ấn, xem dragons.js); theo hệ đang tu

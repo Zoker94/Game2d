@@ -4,6 +4,8 @@ const CHANGELOG = [
   {
     date: '30/10/2026',
     items: [
+      '🐛 Sửa lỗi bật chiêu hỗ trợ (VD Ảnh Tung, Băng Tâm Quyết của Thúy Yên) làm Lực chiến tụt: chí mạng vượt giới hạn 75% khiến lực chiến bị trừ oan. Giờ lực chiến giữ nguyên khi bật buff.',
+      '⚖️ Cân bằng 9 môn phái: Thiên Vương, Côn Lôn, Thúy Yên (Ngoại) giảm sát thương; Thiếu Lâm, Nga My, Đường Môn, Võ Đang (Nội), Ngũ Độc (Nội), Cái Bang tăng sát thương. Thúy Yên: Ảnh Tung +20% tấn công, +10% chí mạng; Băng Tâm Quyết +12% tấn công, +8% chí mạng, +45% sát thương bạo kích (không còn phí chí mạng khi chạm giới hạn).',
       '⚖️ Quái bãi luyện cấp 90+: giảm lực đánh (x2 ở cấp 90 thay vì x3) nhưng thủ cao hơn (+20%). Đồ +11/+12 vẫn thấy đau, đồ +15 chịu đòn tốt hơn hẳn.',
       '📉 Đá cường hoá rơi ở bãi luyện công hiếm hơn nữa: Huyền Tinh Thạch ở quái thường còn 1/3 (~1/200 con), Thiên Tinh Thạch còn khoảng 1/3; quái tinh anh không còn chắc chắn rơi Huyền Tinh Thạch (35%), Thiên Tinh Thạch 3%. Đá vẫn có nhiều ở Khoáng Động, Boss và phó bản.'
     ]

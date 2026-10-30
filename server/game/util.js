@@ -244,7 +244,7 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
     for (const k of FXK) if (pv[k]) fx[k] = Math.min(CAP[k] || 100, (fx[k] || 0) + pv[k]);
   }
   // lực chiến không tính buff tạm thời (chiêu hỗ trợ, thuốc...): ghi lại hệ số buff và hiệu ứng trước buff để tính riêng
-  const fxNoBuff = Object.assign({}, fx), bm = { maxHp: 1, atk: 1, def: 1, crit: 0 };
+  const fxNoBuff = Object.assign({}, fx), bm = { maxHp: 1, atk: 1, def: 1, crit: 0 }, critNoBuff = s.crit;   // chí mạng trước buff (giới hạn 75% áp sau buff, không được trừ ngược)
   for (const b of buffs) {
     if (b.hp) bm.maxHp *= 1 + b.hp; if (b.atk) bm.atk *= 1 + b.atk; if (b.def) bm.def *= 1 + b.def; if (b.crit) bm.crit += b.crit;
     if (b.hp) s.maxHp *= 1 + b.hp;
@@ -272,7 +272,7 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
   let sl = 0, sn = 0;
   for (let i = 1; i <= 5; i++) { const sk = br.skills[i]; const lv = sk && c.skills && c.skills[sk.id]; if (lv) { sl += lv - 1; sn++; } }
   const skillK = 1 + 0.1 * (sn ? sl / sn : 0) * Math.min(1, sn / 5);   // mỗi tầng võ công +10% sát thương (trung bình 5 chiêu)
-  s.pc = { atk: Math.round(s.atk / bm.atk), crit: Math.max(0, s.crit - bm.crit), def: Math.round(s.def / bm.def), hp: Math.round(s.maxHp / bm.maxHp), mp: s.maxMp,
+  s.pc = { atk: Math.round(s.atk / bm.atk), crit: Math.round(Math.min(critNoBuff, 75) * 10) / 10, def: Math.round(s.def / bm.def), hp: Math.round(s.maxHp / bm.maxHp), mp: s.maxMp,
     bonus: Math.round(bonus * 1000) / 1000, per: bb ? bb.per : 0, attr: bb ? bb.attr : null, skillK: Math.round(skillK * 1000) / 1000, fx: fxNoBuff };
   s.mul = { atk: +mul.atk.toFixed(4), def: +mul.def.toFixed(4), hp: +mul.maxHp.toFixed(4), mp: +mul.maxMp.toFixed(4) };
   s.power = Power.calc(s.pc);
