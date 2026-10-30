@@ -159,9 +159,9 @@ function highMon(m) {
   m.hp = Math.round(m.hp * h); m.def = Math.round(m.def * (1 + x * 0.01)); m.atk = Math.round(m.atk * (1 + x * 0.006));
   m.exp = Math.round(m.exp * (1 + (h - 1) * 0.6)); m.gold = Math.round(m.gold * (1 + (h - 1) * 0.4));
 }
-// Quái bãi luyện cấp 90+ đánh cực đau: lực đánh x3 ở cấp 90, +6%/cấp (cấp 99 ~x3,5). Người đủ đồ Truyền Kỳ +7 chịu ~7–8 đòn, +12 ~11 đòn
-// (trước đây 25–45 đòn). Không áp cho quái / boss phó bản (đã có hệ số riêng).
-const BRUTAL_FROM = 90, BRUTAL = L => L < BRUTAL_FROM ? 1 : 3 + (Math.min(L, 120) - BRUTAL_FROM) * 0.06;
+// Quái bãi luyện cấp 90+: thủ cao (x1,2), lực đánh x2 ở cấp 90, +4%/cấp (cấp 99 ~x2,36). Đồ Truyền Kỳ +11/+12 chịu ~11–16 đòn (đau),
+// +15 chịu ~15–21 đòn; đồ kém hơn vẫn rất đau. Không áp cho quái / boss phó bản (đã có hệ số riêng).
+const BRUTAL_FROM = 90, BRUTAL = L => L < BRUTAL_FROM ? 1 : 2 + (Math.min(L, 120) - BRUTAL_FROM) * 0.04;
 const MON_EL = { rabbit: 'moc', wolf: 'kim', bandit: 'kim', snake: 'moc', bear: 'tho', tiger: 'kim', monkey: 'moc', scorpion: 'tho', ghost: 'thuy', yeti: 'thuy', demon: 'hoa' };
 for (const id in MONSTERS) {
   const m = MONSTERS[id];
@@ -169,7 +169,7 @@ for (const id in MONSTERS) {
   m.el = m.el || MON_EL[m.sprite] || 'tho';
   Object.assign(m, stats(m.lv));
   highMon(m);
-  if (!m.pbBoss && !m.hpK && !/^pb\d/.test(id)) m.atk = Math.round(m.atk * BRUTAL(m.lv));
+  if (!m.pbBoss && !m.hpK && !/^pb\d/.test(id)) { m.atk = Math.round(m.atk * BRUTAL(m.lv)); if (m.lv >= BRUTAL_FROM) m.def = Math.round(m.def * 1.2); }
   m.respawn = 8000;
   if (m.hpK) m.hp = Math.round(m.hp * m.hpK);   // quái đầu lĩnh trong phó bản
   if (m.pbBoss) { m.hp *= 40; m.atk = Math.round(m.atk * 2); m.def = Math.round(m.def * 1.4); m.exp *= 25; m.gold *= 30; }   // boss phó bản: rất trâu, đánh đau

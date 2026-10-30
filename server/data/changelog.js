@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '30/10/2026',
     items: [
+      '⚖️ Quái bãi luyện cấp 90+: giảm lực đánh (x2 ở cấp 90 thay vì x3) nhưng thủ cao hơn (+20%). Đồ +11/+12 vẫn thấy đau, đồ +15 chịu đòn tốt hơn hẳn.',
       '📉 Đá cường hoá rơi ở bãi luyện công hiếm hơn nữa: Huyền Tinh Thạch ở quái thường còn 1/3 (~1/200 con), Thiên Tinh Thạch còn khoảng 1/3; quái tinh anh không còn chắc chắn rơi Huyền Tinh Thạch (35%), Thiên Tinh Thạch 3%. Đá vẫn có nhiều ở Khoáng Động, Boss và phó bản.'
     ]
   },
