@@ -3,7 +3,7 @@
 // Mỏ vừa đào cạn, một lúc sau mới đào lại được. Hết giờ tự đưa về Tương Dương; rời hang giữa chừng là hết lượt đó.
 const U = require('./util');
 const { MAPS, TILE, isSolidAt, baseOf } = require('../data/maps');
-const { ITEMS, equipId, tierOfLv } = require('../data/items');
+const { ITEMS } = require('../data/items');
 const { GEM_KEYS, gemId } = require('../data/gems');
 
 const SESSION = 10 * 60000, DAILY = 3, DIG_MS = 3000, NODE_CD = 40000, PICK_USES = 50, RANGE = 80;
@@ -11,20 +11,12 @@ const NODE_AREA = 44;   // 1 mỏ đá mỗi ~44 ô (hang 64x48 ~70 mỏ)
 // hang theo cấp: cấp 55 trở lên vào Huyền Tinh Mật Cảnh (đá cấp cao hơn)
 const CAVES = { bao_thach_dong: { minLv: 25, tier: 1 }, huyen_tinh_canh: { minLv: 55, tier: 2 } };
 // kết quả mỗi lần đào: [tỉ lệ, loại]. gem: [cấp, tỉ lệ cộng dồn]
-// equip: tỉ lệ ra 1 món trang bị Truyền Kỳ (đồ vàng) đúng bậc cấp người đào; misc: [id, ít nhất, nhiều nhất, trọng số]
-// lượt chỉ 10 phút nên mỗi nhát đào được thưởng dày hơn: nhiều đá cường hoá (Huyền Tinh / Thiên Tinh) và Long Huyết Thạch đột phá thú cưỡi
+// misc: [id, ít nhất, nhiều nhất, trọng số]
+// lượt chỉ 10 phút nên mỗi nhát đào được thưởng dày hơn: nhiều ngân lượng, đá cường hoá (Huyền Tinh / Thiên Tinh) và Long Huyết Thạch đột phá thú cưỡi
 const LOOT = {
-  1: { equip: 0.012, none: 0.28, gem: 0.35, gemLv: [[1, 0.85], [2, 1]], misc: [['stone', 1, 3, 34], ['gold', 500, 2000, 20], ['hp3', 2, 4, 8], ['mp3', 2, 4, 8], ['mount_food', 1, 2, 8], ['stone2', 1, 1, 7], ['mount_stone', 1, 1, 7], ['scroll_town', 1, 1, 2]] },
-  2: { equip: 0.018, none: 0.25, gem: 0.37, gemLv: [[1, 0.35], [2, 0.75], [3, 0.96], [4, 1]], misc: [['stone', 2, 5, 30], ['gold', 2000, 7000, 18], ['hp5', 1, 3, 7], ['mount_food', 2, 4, 7], ['stone2', 1, 2, 15], ['mount_stone', 1, 2, 13], ['lucky_chest', 1, 1, 5]] }
+  1: { none: 0.28, gem: 0.35, gemLv: [[1, 0.85], [2, 1]], misc: [['stone', 1, 3, 34], ['gold', 500, 2000, 28], ['hp3', 2, 4, 8], ['mp3', 2, 4, 8], ['mount_food', 1, 2, 8], ['stone2', 1, 1, 7], ['mount_stone', 1, 1, 7], ['scroll_town', 1, 1, 2]] },
+  2: { none: 0.25, gem: 0.37, gemLv: [[1, 0.35], [2, 0.75], [3, 0.96], [4, 1]], misc: [['stone', 2, 5, 30], ['gold', 2000, 7000, 26], ['hp5', 1, 3, 7], ['mount_food', 2, 4, 7], ['stone2', 1, 2, 15], ['mount_stone', 1, 2, 13], ['lucky_chest', 1, 1, 5]] }
 };
-const EQ_SLOTS = ['weapon', 'helmet', 'armor', 'boots', 'ring', 'amulet', 'gloves', 'pants'];
-// món Truyền Kỳ ngẫu nhiên hợp cấp / phái người đào (vũ khí theo phái nếu có)
-function legendaryFor(c, rnd) {
-  const t = tierOfLv(c.level), slot = EQ_SLOTS[Math.floor(rnd() * EQ_SLOTS.length)];
-  const id = equipId(slot, t, 'legendary');
-  if (slot === 'weapon' && ITEMS[id + '_' + c.cls]) return id + '_' + c.cls;
-  return ITEMS[id] ? id : null;
-}
 
 class Mining {
   constructor(world) { this.w = world; this.nodes = new Map(); }   // id bản đồ (khu) -> [{ id, x, y, k, ready, busy }]
@@ -145,10 +137,9 @@ class Mining {
     const n = this.nodesOf(d.map)[d.id];
     n.busy = null; n.ready = Date.now() + NODE_CD;
     c.pickUses = Math.max(0, (c.pickUses | 0) - 1);
-    const got = this.roll(CAVES[baseOf(d.map)].tier, n.k, Math.random, c);
+    const got = this.roll(CAVES[baseOf(d.map)].tier, n.k);
     let text;
-    if (got && got.equip) { w.giveItem(p, got.id, 1); text = `⛏ Đào trúng trang bị Truyền Kỳ [${ITEMS[got.id].name}]!`; w.features.brag(`🟡 ${c.name} đào được trang bị Truyền Kỳ [${ITEMS[got.id].name}] trong ${MAPS[baseOf(d.map)].name}!`); }
-    else if (!got) text = '⛏ Chỉ toàn đá vụn, không có gì…';
+    if (!got) text = '⛏ Chỉ toàn đá vụn, không có gì…';
     else if (got.gold) { c.gold += got.gold; text = `⛏ Đào được ${got.gold.toLocaleString('vi-VN')} lượng`; }
     else { w.giveItem(p, got.id, got.n); text = `⛏ Đào được ${ITEMS[got.id].name}${got.n > 1 ? ' x' + got.n : ''}`; if (got.gem && got.lv >= 3) w.features.brag(`💎 ${c.name} đào được ${ITEMS[got.id].name} trong ${MAPS[baseOf(d.map)].name}!`); }
     w.toast(p, text, got ? 'reward' : 'info');
@@ -157,10 +148,8 @@ class Mining {
     p.dirtyMe = true; w.db.markDirty();
   }
   // tier: 1 / 2; kind: màu mỏ – đá đúng màu mỏ ra nhiều hơn
-  roll(tier, kind, rnd = Math.random, c = null) {
-    const L = LOOT[tier];
-    if (c && rnd() < L.equip) { const id = legendaryFor(c, rnd); if (id) return { id, n: 1, equip: true }; }
-    const x = rnd();
+  roll(tier, kind, rnd = Math.random) {
+    const L = LOOT[tier], x = rnd();
     if (x < L.none) return null;
     if (x < L.none + L.gem) {
       const y = rnd(), lv = L.gemLv.find(([, cum]) => y < cum)[0];

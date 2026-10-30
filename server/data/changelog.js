@@ -4,7 +4,7 @@ const CHANGELOG = [
   {
     date: '29/10/2026',
     items: [
-      '⛏ Khoáng Động: mỗi lượt vé còn 10 phút nhưng mỗi nhát đào thưởng dày hơn – có tỉ lệ đào trúng trang bị Truyền Kỳ (đồ vàng) đúng bậc cấp, ra nhiều đá cường hoá (Huyền Tinh Thạch, Thiên Tinh Thạch) và Long Huyết Thạch để đột phá thú cưỡi.',
+      '⛏ Khoáng Động: mỗi lượt vé còn 10 phút nhưng mỗi nhát đào thưởng dày hơn – nhiều ngân lượng hơn, ra nhiều đá cường hoá (Huyền Tinh Thạch, Thiên Tinh Thạch) và Long Huyết Thạch để đột phá thú cưỡi.',
       '⛏ Khoáng Động: cấm PK (không ai đánh được ai, kể cả bật Đồ Sát); chia 5 khu như bãi luyện công (mỗi khu 10 người, mỏ đá riêng – bấm "Khu ▾" cạnh tên bản đồ để đổi); hang rộng gấp đôi với khoảng 70 mỏ đá mỗi khu.',
       '🤖 Bùa Tự Đào (10 Nguyên Bảo – Kỳ Trân Các): dùng trong Khoáng Động, nhân vật tự tìm mỏ đá gần nhất và đào liên tục tới hết lượt (vẫn cần Cuốc Chim). Chạm khung đồng hồ ⛏ để tạm dừng / chạy tiếp; tự điều khiển thì tự đào nhường 3 giây.',
       '💀 Quái bãi luyện từ cấp 90 trở lên đánh cực đau (lực đánh x3 ở cấp 90, tăng dần theo cấp). Chuẩn bị đồ và bình máu thật kỹ!',
