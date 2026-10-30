@@ -80,3 +80,10 @@ tr:hover td { background: #1a1524; }
 .shitem small { color: #8a8f9c; font-size: 11px; }
 .shitem:hover { border-color: var(--gold); }
 .btn.danger { color: #ff8a8a; }
+/* tỉ lệ cường hoá */
+.en-tbl { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.en-tbl th, .en-tbl td { padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,.07); text-align: left; }
+.en-tbl tr.risky td:first-child { color: #ff9a8a; }
+.en-tbl input.warn { border-color: #e04040; }
+.tag.red { background: #5a1a1a; color: #fca5a5; } .tag.gold { background: #5a420a; color: #fcd34d; } .tag:not(.on):not(.off):not(.ban):not(.mute):not(.gm):not(.red):not(.gold) { background: #2a2338; color: var(--muted); }
+.en-guide ol { margin: 6px 0 6px 18px; padding: 0; line-height: 1.6; } .en-guide li { margin-bottom: 3px; }

@@ -379,6 +379,24 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     SHOPS.apply(db); db.markDirty();
     res.json({ ok: true, list: SHOPS.adminList(db) });
   });
+  // tỉ lệ cường hoá (không ghi nhật ký quản trị)
+  const ENH = require('./data/enhance');
+  const enhView = () => ({ rate: ENH.ENHANCE_RATE, def: ENH.DEFAULT_RATE, safe: ENH.ENHANCE_SAFE, max: ENH.ENHANCE_MAX, custom: Array.isArray(db.data.config.enhanceRate),
+    cost: Array.from({ length: ENH.ENHANCE_MAX }, (_, p) => ENH.enhanceCost(p, 0)) });
+  app.get('/api/admin/enhance', auth, (req, res) => res.json(enhView()));
+  app.post('/api/admin/enhance', auth, (req, res) => {
+    const cfg = db.data.config;
+    if (req.body.reset) delete cfg.enhanceRate;
+    else {
+      const r = req.body.rate;
+      if (!Array.isArray(r) || r.length !== ENH.ENHANCE_MAX) return res.status(400).json({ error: 'Dữ liệu tỉ lệ không hợp lệ' });
+      cfg.enhanceRate = r.map(v => Math.round(Math.min(1, Math.max(0, +v || 0)) * 10000) / 10000);
+    }
+    ENH.applyRates(cfg.enhanceRate);
+    io.emit('enhRate', ENH.ENHANCE_RATE);
+    db.markDirty();
+    res.json({ ok: true, ...enhView() });
+  });
   app.get('/api/admin/maps', auth, (req, res) => res.json(Object.values(MAPS).filter(m => world.maps[m.id]).map(m => ({ id: m.id, name: m.name + (m.base ? ' · Khu ' + m.ch : m.chs ? ' · Khu 1' : ''), lv: m.lv, online: world.maps[m.id].players.size, monsters: [...world.maps[m.id].monsters.values()].filter(x => !x.dead).length }))));
   app.post('/api/admin/save', auth, (req, res) => { db.markDirty(); db.save(); act(req, 'Lưu dữ liệu thủ công'); res.json({ ok: true }); });
 };

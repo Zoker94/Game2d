@@ -3,6 +3,14 @@ const ENHANCE_MAX = 15;
 const ENHANCE_SAFE = 10; // cấp bắt đầu rủi ro
 // Tỉ lệ thành công khi cường hóa từ cấp hiện tại (index) lên cấp kế tiếp
 const ENHANCE_RATE = [1, 1, 0.95, 0.9, 0.8, 0.7, 0.6, 0.5, 0.42, 0.35, 0.22, 0.15, 0.1, 0.06, 0.03];
+const DEFAULT_RATE = ENHANCE_RATE.slice();
+// quản trị viên sửa tỉ lệ (db.data.config.enhanceRate, mỗi phần tử 0–1): ghi đè tại chỗ để mọi nơi dùng ENHANCE_RATE thấy ngay
+function applyRates(arr) {
+  for (let i = 0; i < ENHANCE_RATE.length; i++) {
+    const v = Array.isArray(arr) ? +arr[i] : NaN;
+    ENHANCE_RATE[i] = Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : DEFAULT_RATE[i];
+  }
+}
 function enhanceCost(plus, tier) {
   const next = plus + 1;
   return {
@@ -11,4 +19,4 @@ function enhanceCost(plus, tier) {
     gold: Math.round(next * next * 250 * (1 + tier) * (next > 10 ? 3 : 1))
   };
 }
-module.exports = { ENHANCE_MAX, ENHANCE_SAFE, ENHANCE_RATE, enhanceCost };
+module.exports = { ENHANCE_MAX, ENHANCE_SAFE, ENHANCE_RATE, DEFAULT_RATE, applyRates, enhanceCost };

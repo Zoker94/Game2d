@@ -56,7 +56,7 @@
   function openModal(title, html) { $('m-title').textContent = title; $('m-body').innerHTML = html; $('modal').classList.remove('hidden'); }
   function closeModal() { $('modal').classList.add('hidden'); }
 
-  const TITLES = { dashboard: 'Tổng quan', users: 'Quản lý người chơi', events: 'Sự kiện & Boss', broadcast: 'Gửi thông báo', guilds: 'Bang hội', giftcodes: 'Gift code', shops: 'Cửa hàng NPC', config: 'Cấu hình server', chat: 'Nhật ký chat', logs: 'Nhật ký hệ thống', cleanup: 'Dọn dẹp dữ liệu', account: 'Tài khoản quản trị' };
+  const TITLES = { dashboard: 'Tổng quan', users: 'Quản lý người chơi', events: 'Sự kiện & Boss', broadcast: 'Gửi thông báo', guilds: 'Bang hội', giftcodes: 'Gift code', shops: 'Cửa hàng NPC', enhance: 'Tỉ lệ cường hoá', config: 'Cấu hình server', chat: 'Nhật ký chat', logs: 'Nhật ký hệ thống', cleanup: 'Dọn dẹp dữ liệu', account: 'Tài khoản quản trị' };
   async function show(v) {
     view = v;
     document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.dataset.v === v));
@@ -209,6 +209,50 @@
         if (r) { toast('Đã tạo mã ' + r.code); show('giftcodes'); }
       };
       el.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await run(() => api('/giftcodes/' + encodeURIComponent(b.dataset.del), null, 'DELETE'), 'Đã xóa'); show('giftcodes'); });
+    },
+
+    // tỉ lệ cường hoá thành công từng cấp (+0→+1 … +14→+15)
+    async enhance(el) {
+      let d = await api('/enhance');
+      const pct = v => Math.round(v * 1000) / 10;
+      const draw = () => {
+        const rows = d.rate.map((v, i) => {
+          const c = d.cost[i], risky = i >= d.safe;
+          return `<tr${risky ? ' class="risky"' : ''}><td><b>+${i} → +${i + 1}</b>${risky ? ' <span class="tag red">rủi ro</span>' : ''}</td>
+            <td><input type="number" class="en-in" data-i="${i}" min="0" max="100" step="0.5" value="${pct(v)}" style="width:90px"> %</td>
+            <td class="muted">${pct(d.def[i])}%</td>
+            <td class="muted">${c.stone} Huyền Tinh${c.stone2 ? ` + ${c.stone2} Thiên Tinh` : ''}</td>
+            <td class="muted en-avg" data-i="${i}"></td></tr>`;
+        }).join('');
+        el.innerHTML = `<div class="card en-guide"><h3>📖 Hướng dẫn</h3>
+          <ol>
+            <li>Mỗi dòng là <b>một lần đập</b> từ cấp hiện tại lên cấp kế tiếp. Ví dụ dòng <b>+9 → +10</b> = 35% nghĩa là cứ 100 lần đập đồ +9 thì khoảng 35 lần lên +10.</li>
+            <li>Nhập số <b>phần trăm (0–100)</b>, cho phép số lẻ (VD 2.5). <b>100</b> = chắc chắn thành công, <b>0</b> = không bao giờ lên được cấp đó.</li>
+            <li>Từ <b>+${d.safe}</b> trở lên (dòng màu đỏ) là cấp <b>rủi ro</b>: thất bại mà không có Bảo Hiểm Phù thì đồ <b>rớt về +1</b>. Dưới +${d.safe} thất bại chỉ mất nguyên liệu, giữ nguyên cấp.</li>
+            <li>Cột <b>"Trung bình cần"</b> cho biết trung bình phải đập bao nhiêu lần mới lên được cấp đó (= 100 ÷ tỉ lệ). Dùng để ước lượng lượng đá người chơi phải bỏ ra.</li>
+            <li>Bấm <b>💾 Lưu tỉ lệ</b>: áp dụng <b>ngay lập tức</b> cho lần đập kế tiếp, không cần khởi động lại máy chủ. Bảng Thợ Rèn của người chơi đang online tự cập nhật con số hiển thị.</li>
+            <li><b>↺ Về mặc định</b>: trả toàn bộ về tỉ lệ gốc của game (cột "Mặc định").</li>
+            <li>Nút nhanh <b>×0.5 / ×0.8 / ×1.2 / ×1.5</b> nhân toàn bộ bảng (chỉ điền vào ô, chưa lưu) – xem lại rồi mới bấm Lưu.</li>
+            <li>Thay đổi ở trang này <b>không ghi vào nhật ký hệ thống</b> và <b>không thông báo</b> cho người chơi. Lưu ý: bảng Thợ Rèn trong game hiển thị tỉ lệ đang áp dụng (người chơi luôn thấy đúng con số khi đập).</li>
+          </ol>
+          <p class="muted">Gợi ý: cấp càng cao tỉ lệ nên càng thấp; tránh để cấp sau cao hơn cấp trước. Mặc định +12→+15 lần lượt 10% · 6% · 3%.</p></div>
+          <div class="card"><div class="row" style="gap:6px;flex-wrap:wrap;align-items:center">
+            <b>Trạng thái:</b> ${d.custom ? '<span class="tag gold">Đang dùng tỉ lệ tuỳ chỉnh</span>' : '<span class="tag">Đang dùng mặc định</span>'}
+            <span style="flex:1"></span>
+            ${[0.5, 0.8, 1.2, 1.5].map(k => `<button class="btn small" data-k="${k}">×${k}</button>`).join('')}
+            <button class="btn primary" id="en-save">💾 Lưu tỉ lệ</button><button class="btn" id="en-reset">↺ Về mặc định</button></div>
+          <table class="tbl en-tbl"><thead><tr><th>Lần đập</th><th>Tỉ lệ thành công</th><th>Mặc định</th><th>Nguyên liệu (đá)</th><th>Trung bình cần</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        const avg = () => el.querySelectorAll('.en-in').forEach(inp => { const v = +inp.value, a = el.querySelector(`.en-avg[data-i="${inp.dataset.i}"]`); a.textContent = v > 0 ? `~${(100 / v).toFixed(v >= 50 ? 1 : 0)} lần` : 'không thể'; inp.classList.toggle('warn', v < 0 || v > 100); });
+        el.querySelectorAll('.en-in').forEach(i => i.oninput = avg); avg();
+        el.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { el.querySelectorAll('.en-in').forEach(i => { i.value = Math.min(100, Math.round(+i.value * +b.dataset.k * 10) / 10); }); avg(); });
+        $('en-save').onclick = () => run(async () => {
+          const rate = [...el.querySelectorAll('.en-in')].map(i => +i.value);
+          if (rate.some(v => !Number.isFinite(v) || v < 0 || v > 100)) throw new Error('Tỉ lệ phải từ 0 đến 100');
+          d = await api('/enhance', { rate: rate.map(v => v / 100) }); draw(); toast('Đã lưu tỉ lệ cường hoá – áp dụng ngay');
+        });
+        $('en-reset').onclick = () => { if (!confirm('Trả toàn bộ tỉ lệ cường hoá về mặc định?')) return; run(async () => { d = await api('/enhance', { reset: 1 }); draw(); toast('Đã về tỉ lệ mặc định'); }); };
+      };
+      draw();
     },
 
     async config(el) {

@@ -310,6 +310,7 @@
       requestAnimationFrame(animPreview);
     });
     s.on('kicked', d => { G.inGame = false; s.close(); G.modal(d.reason || 'Bạn đã bị ngắt kết nối', [{ t: 'Tải lại', fn: () => location.reload() }]); });
+    s.on('enhRate', r => { if (G.data && G.data.enhance && Array.isArray(r)) G.data.enhance.rate = r; });
     s.on('init', d => { Market.onStalls([]); onInit(d); });   // đổi bản đồ: xoá gian hàng (máy chủ gửi lại nếu là Chợ Phiên)
     s.on('snap', onSnap);
     s.on('leave', id => G.players.delete(id));
@@ -439,6 +440,7 @@
   // ================== Dữ liệu thế giới ==================
   let minimapBase = null;
   function onInit(d) {
+    if (d.enhRate && G.data && G.data.enhance) G.data.enhance.rate = d.enhRate;
     G.you = d.you; G.map = d.map; G.solid = new Set(d.solid);
     G.self.x = d.x; G.self.y = d.y; G.moveTo = null; G.npcGoal = null; G.target = null; Duel.clearRings();
     G.players.clear(); G.monsters.clear(); G.drops.clear(); G.carts.clear(); G.fx = []; G.corpses = [];
