@@ -48,6 +48,9 @@ world.sect = new (require('./game/sect').Sect)(world);
 world.daihoi = new (require('./game/daihoi').DaiHoi)(world, features, db);
 world.hoason = new (require('./game/hoason').HoaSon)(world, features, db);
 world.tongkim = new (require('./game/tongkim').TongKim)(world, features, db);
+new (require('./game/siege').Siege)(world, features, db);   // gắn world.siege
+new (require('./game/mentor').Mentor)(world, db);   // gắn world.mentor (sư đồ)
+new (require('./game/night').Night)(world, features, db);   // gắn world.night (quái đêm, rương ẩn, Thương Nhân Bí Ẩn)
 world.cleanup = new (require('./game/cleanup').Cleanup)(world, features, db);
 require('./game/shops').apply(db);   // cửa hàng NPC do quản trị viên sửa
 require('./game/bosscfg').apply(db);   // chỉ số / giờ xuất hiện boss do quản trị viên sửa
@@ -241,7 +244,9 @@ app.get('/api/gamedata', (req, res) => {
     const mons = {};
     for (const m of [...Object.values(MONSTERS), ...Object.values(BOSSES), ...Object.values(SUMMON_BOSSES)]) mons[m.id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: m.el, art: m.art, size: m.size, world: m.world };
     mons.chest = { name: 'Bảo Rương', lv: 1, sprite: 'chest', color: '#ffd700' };
+    mons.dem_ruong = { name: 'Dạ Minh Rương', lv: 1, sprite: 'chest', color: '#a080ff', hidden: 1 };
     for (const [id, m] of Object.entries(require('./game/daihoi').DH_MONS)) mons[id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: 'kim', art: m.art };
+    for (const [id, m] of Object.entries(require('./game/siege').SIEGE_MONS)) mons[id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: false, el: 'kim', seal: 1 };
     for (const [id, m] of Object.entries(require('./game/tongkim').TK_MONS)) mons[id] = { name: m.name, lv: m.lv, sprite: m.sprite, color: m.color, boss: !!m.boss, el: 'kim', art: m.art, tk: m.side };
     const maps = {};
     for (const id in MAPS) {
@@ -423,6 +428,7 @@ io.on('connection', socket => {
     features.ensureDaily(player);
     socket.emit('events', features.eventsView());
     socket.emit('daily', features.dailyView(player));
+    socket.emit('checkin', features.checkinState(player));   // chưa điểm danh hôm nay: máy khách nhắc + chấm đỏ
     socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', text: db.data.config.motd, t: Date.now() });
     (db.data.config.pins || []).forEach((x, i) => setTimeout(() => socket.connected && features.showPin(x, socket), 4000 + i * 20000));   // vào game thấy ngay thông báo ghim
     if (world.isGm(player)) features.sendPins(player);
@@ -487,6 +493,9 @@ io.on('connection', socket => {
   }));
   on('hoason', inGame(d => world.hoason.action(player, d)));
   on('tongkim', inGame(d => world.tongkim.action(player, d)));
+  on('siege', inGame(d => world.siege.action(player, d)));
+  on('mentor', inGame(d => world.mentor.action(player, d)));
+  on('mystery', inGame(d => world.night.action(player, d)));
   on('sellMany', inGame(d => world.sellMany(player, d && d.uids)));
   on('enhance', inGame(d => world.enhance(player, d || {})));
   on('gem', inGame(d => world.gems.action(player, d)));
@@ -515,7 +524,7 @@ io.on('connection', socket => {
   on('dailyClaim', inGame(d => features.claimDaily(player, d && d.id)));
   on('eventPanel', inGame(() => socket.emit('eventPanel', features.eventPanel(player))));
   on('wheel', inGame(() => features.spinWheel(player)));
-  on('checkin', inGame(() => features.doCheckin(player)));
+  on('checkin', inGame(d => features.doCheckin(player, !!(d && d.fix))));
   on('giftcode', inGame(d => features.redeemCode(player, d && d.code)));
   on('giftcodes', inGame(() => socket.emit('giftcodes', features.giftView(player))));
   on('lantern', inGame(d => features.exchangeLantern(player, d && d.idx)));

@@ -36,6 +36,7 @@
       ['💌', 'Trò chuyện riêng', () => UI.pmTo(e.name)],
       ['🔄', 'Giao dịch', () => emit('trade', { op: 'request', id: e.id })],
       canInvite ? ['🏯', 'Mời vào bang', () => emit('ginvite', { op: 'invite', id: e.id })] : null,
+      G.me.level >= 5 && G.me.level < 30 && !G.me.master && e.level >= 60 ? ['🙇', 'Bái sư', () => Mentor.ask(e)] : null,
       ['🚶', G.follow === e.id ? 'Thôi đi theo' : 'Đi theo', () => { G.follow = G.follow === e.id ? null : e.id; UI.toast(G.follow ? `Đang đi theo ${e.name}` : 'Đã thôi đi theo', 'info'); }],
       !Duel.active && !(G.map && G.map.pvp) ? ['🥋', 'Thách đấu', () => Duel.request(e)] : null,
       G.map && G.map.pvp ? ['⚔️', 'Tấn công', () => { G.target = e.id; G.chase = { id: e.id, skill: 0 }; }] : null,
@@ -95,7 +96,7 @@
   // ---------- bạn bè ----------
   UI.registerPanel('friends', '🤝 Bằng Hữu', body => {
     const list = friendsData;
-    let html = `<div class="row" style="margin-bottom:8px"><input id="fr-name" placeholder="Tên nhân vật muốn kết bạn" maxlength="14"><button class="btn small primary" id="fr-add">Kết bạn</button></div>`;
+    let html = `<div class="row" style="margin-bottom:8px"><input id="fr-name" placeholder="Tên nhân vật muốn kết bạn" maxlength="14"><button class="btn small primary" id="fr-add">Kết bạn</button><button class="btn small" id="fr-mentor" title="Sư phụ / đồ đệ">🎓 Sư đồ</button></div>`;
     if (!list) html += '<p class="muted">Đang tải...</p>';
     else if (!list.length) html += '<p class="muted">Chưa có bằng hữu nào. Bấm vào nhân vật người chơi khác để kết bạn!</p>';
     else html += `<p class="small muted">${list.filter(f => f.online).length}/${list.length} đang trực tuyến</p><div class="list">` + list.map(f => `<div class="li ${f.online ? 'done' : ''}">
@@ -103,6 +104,7 @@
       <div class="sub">${f.online ? '📍 ' + esc(f.map) : 'Ngoại tuyến'}</div></div>
       ${f.online ? `<button class="btn small" data-pm="${esc(f.name)}">💌</button>` : ''}<button class="btn small red" data-rm="${f.uid}">✕</button></div>`).join('') + '</div>';
     body.innerHTML = html;
+    $('fr-mentor').onclick = () => UI.openPanel('mentor');
     $('fr-add').onclick = () => { const n = $('fr-name').value.trim(); if (n) emit('friend', { op: 'add', name: n }); };
     body.querySelectorAll('[data-pm]').forEach(b => b.onclick = () => UI.pmTo(b.dataset.pm));
     body.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => G.modal('Xóa người này khỏi danh sách bằng hữu?', [{ t: 'Xóa', cls: 'red', fn: () => emit('friend', { op: 'remove', uid: b.dataset.rm }) }, { t: 'Không' }]));
@@ -122,7 +124,7 @@
     w.innerHTML = `<div class="tr-box"><div class="panel-head"><h3>🔄 Giao dịch với ${esc(th.name)}</h3><button id="tr-x">✕</button></div>
       <div class="tr-body"><div class="tr-sides">${side(me, true)}${side(th, false)}</div>
       ${me.lock ? '' : `<div class="small muted">Chọn vật phẩm trong túi để đưa (chọn lại để bỏ):</div><div class="tr-inv">${inv}</div>
-      <div class="row"><label class="small">💰 Lượng</label><input id="tr-gold" type="number" min="0" max="${G.me.gold}" value="${me.gold}" style="width:110px"><button class="btn small" id="tr-setgold">Đặt</button></div>`}
+      <div class="row"><label class="small">💰 Lượng</label><input id="tr-gold" type="number" min="0" max="${G.me.gold}" value="${me.gold}" style="width:110px"><button class="btn small" id="tr-setgold">Đặt</button></div><div class="small muted">Thuế giao dịch: bên nhận ngân lượng chịu 3%.</div>`}
       <div class="row tr-btns">${me.lock ? '<button class="btn small" id="tr-unlock">🔓 Mở khóa</button>' : '<button class="btn small" id="tr-lock">🔒 Khóa</button>'}
         <button class="btn small green" id="tr-ok" ${me.lock && th.lock && !me.ok ? '' : 'disabled'}>✔ Xác nhận</button><button class="btn small red" id="tr-cancel">Hủy</button></div>
       <p class="small muted">Hai bên khóa rồi cùng bấm Xác nhận thì giao dịch mới diễn ra.</p></div></div>`;

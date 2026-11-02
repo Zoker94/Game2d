@@ -1,5 +1,9 @@
 // Vẽ trên đầu nhân vật: số sát thương bay lên, hiệu ứng trạng thái (choáng, băng, độc...), bong bóng chat
 (function () {
+  // bang làm chủ Lâm An Thành (Công Thành Chiến): huy hiệu 🏯 + chữ vàng
+  const ownG = g => !!(g && G.me && G.me.ctOwner && G.me.ctOwner === g);
+  const gLbl = g => (ownG(g) ? '🏯«' : '«') + g + '»';
+  const gCol = g => ownG(g) ? '#ffd860' : '#7fb8ff';
   const TEXT_K = 0.88;   // cỡ chữ vẽ trên bản đồ (tên, danh hiệu, nhãn) nhỏ lại cho cân đối; bong bóng chat giữ nguyên
   const TAU = Math.PI * 2;
   const ST = {
@@ -412,19 +416,19 @@
       ctx.fillStyle = g; ctx.fillRect(Math.round(x - mw / 2 - 4), top - 30, Math.round(mw + 8), 14); ctx.restore();
       outlined(ctx, mt, x, top - 23, 11, ks ? '#c8ecff' : '#ffe060', ks ? '#0a2a4a' : '#5a1a00', 900);
       let yTop = top - 31;
-      if (o.guild) { outlined(ctx, '«' + o.guild + '»', x, top - 37, 10, '#7fb8ff', '#000', 600); yTop = top - 44; }
+      if (o.guild) { outlined(ctx, gLbl(o.guild), x, top - 37, 10, gCol(o.guild), '#000', 600); yTop = top - 44; }
       return yTop;
     }
     // danh hiệu giang hồ (giành từ phó bản / Boss / sự kiện): chữ nhỏ có khung, bậc cao có viền sáng; chưa đeo thì chỉ hiện bang
     if (!t) {
-      if (o.guild) { outlined(ctx, '«' + o.guild + '»', x, top - 23, 10, '#7fb8ff', '#000', 600); return top - 30; }
+      if (o.guild) { outlined(ctx, gLbl(o.guild), x, top - 23, 10, gCol(o.guild), '#000', 600); return top - 30; }
       return top - 17;
     }
     // khung + hiệu ứng theo từng danh hiệu (public/js/titlefx.js); bậc cao có hiệu ứng nhô lên trên nên đẩy tên bang cao hơn
     // khung danh hiệu (cả viền kép, cánh) đặt cao hơn tên để không đè lên chữ tên
     TitleFX.draw(ctx, t, x, top - 30, performance.now(), !!o.lite);
     let yTop = top - 37;
-    if (o.guild) { const gy = t.tier >= 3 ? top - 49 : top - 44; outlined(ctx, '«' + o.guild + '»', x, gy, 10, '#7fb8ff', '#000', 600); yTop = gy - 7; }
+    if (o.guild) { const gy = t.tier >= 3 ? top - 49 : top - 44; outlined(ctx, gLbl(o.guild), x, gy, 10, gCol(o.guild), '#000', 600); yTop = gy - 7; }
     return yTop;
   }
   // sát khí: khói đen quanh người

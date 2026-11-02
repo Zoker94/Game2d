@@ -1,5 +1,6 @@
 // Tương tác giữa người chơi: xem thông tin, kết bạn, giao dịch, mời vào bang
 const U = require('./util');
+const TRADE_TAX = 0.03;   // thuế giao dịch ngân lượng giữa người chơi
 const { ITEMS } = require('../data/items');
 const { MAPS } = require('../data/maps');
 
@@ -218,8 +219,11 @@ class Social {
     if (frees(a, oa) < need(ob) || frees(b, ob) < need(oa)) return this.tradeEnd(t, 'Giao dịch thất bại: túi đồ không đủ chỗ');
     const take = (p, o) => o.items.map(x => { const s = p.c.inv.find(i => i.uid === x.uid); const r = { id: s.id, qty: x.qty, plus: s.plus || 0, extra: s.el ? Object.assign({ el: s.el, fx: s.fx, br: s.br }, s.gems ? { gems: s.gems.slice() } : {}) : null }; U.removeByUid(p.c, x.uid, x.qty); return r; });
     const ga = take(a, oa), gb = take(b, ob);
+    // thuế giao dịch: bên nhận ngân lượng mất 3% (chống lạm phát, rút bớt vàng khỏi nền kinh tế; 30% về quỹ bang giữ thành)
+    const tax = g => Math.floor(g * TRADE_TAX), ta = tax(oa.gold), tb = tax(ob.gold);
     a.c.gold -= oa.gold; b.c.gold -= ob.gold;
-    a.c.gold += ob.gold; b.c.gold += oa.gold;
+    a.c.gold += ob.gold - tb; b.c.gold += oa.gold - ta;
+    if (ta + tb) this.w.collectTax(ta + tb, 'trade');
     for (const it of gb) U.addItem(a.c, it.id, it.qty, it.plus, it.extra);
     for (const it of ga) U.addItem(b.c, it.id, it.qty, it.plus, it.extra);
     const desc = (g, gold) => [...g.map(i => `${(ITEMS[i.id] || {}).name || i.id}${i.plus ? ' +' + i.plus : ''} x${i.qty}`), gold ? gold + ' lượng' : ''].filter(Boolean).join(', ') || 'không có gì';
@@ -227,7 +231,8 @@ class Social {
     a.dirtyMe = b.dirtyMe = true;
     this.db.markDirty();
     this.tradeEnd(t, null);
-    this.toast(a, '✅ Giao dịch thành công!', 'reward'); this.toast(b, '✅ Giao dịch thành công!', 'reward');
+    const okMsg = t => '✅ Giao dịch thành công!' + (t ? ` (thuế giao dịch 3%: −${t.toLocaleString('vi-VN')} lượng)` : '');
+    this.toast(a, okMsg(tb), 'reward'); this.toast(b, okMsg(ta), 'reward');
   }
   leave(p) {
     if (p.trade) this.tradeEnd(p.trade, `${p.c.name} đã rời đi, giao dịch bị hủy`);

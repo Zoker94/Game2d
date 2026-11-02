@@ -369,6 +369,14 @@
     s.on('tongkim', d => TongKim.onState(d));
     s.on('tongkimNpc', d => TongKim.onNpc(d));
     s.on('tongkimPts', d => TongKim.onPts(d));
+    s.on('checkin', d => UI.onCheckin(d));
+    s.on('siege', d => Siege.onState(d));
+    s.on('siegeNpc', d => Siege.onNpc(d));
+    s.on('siegeCap', d => Siege.onCap(d));
+    s.on('siegeCall', d => Siege.onCall(d));
+    s.on('npcList', list => { if (G.map && G.map.id === 'tuong_duong') G.map.npcs = list; });
+    s.on('mystery', d => Mystery.onData(d));
+    s.on('siegeOwner', d => { if (G.me) G.me.ctOwner = d.name; });
     s.on('gmList', d => GM.onList(d));
     s.on('pin', d => UI.pin(d));
     s.on('pinOff', id => UI.pinOff(id));
@@ -460,6 +468,7 @@
       if (d.id === G.you && (d.k === 'stun' || d.k === 'freeze')) { G.moveTo = null; G.chase = null; }
     });
     Social.bind(s);
+    Mentor.bind(s);
     Party.bind(s);
     Mining.bind(s);
     Captcha.bind(s);
@@ -915,9 +924,12 @@
   }
   G.useSkill = useSkill;
 
+  // Dạ Minh Rương (ban đêm): chỉ hiện khi đứng gần
+  const HIDE_R = 230;
+  function hiddenFar(m) { const d = G.data.monsters[m.type]; return !!(d && d.hidden && G.self && Math.hypot(m.x - G.self.x, m.y - G.self.y) > HIDE_R); }
   function enemies() {
     const list = [];
-    for (const m of G.monsters.values()) if (!TongKim.friendly(m)) list.push(m);   // lính cùng phe Tống Kim: không nhắm
+    for (const m of G.monsters.values()) if (!TongKim.friendly(m) && !hiddenFar(m)) list.push(m);   // lính cùng phe Tống Kim / rương ẩn ở xa: không nhắm
     for (const p of G.players.values()) if (Escort.canHarm(p)) list.push(p);
     for (const c of G.carts.values()) if (Escort.canHitCart(c)) list.push(c);
     return list;
@@ -1500,7 +1512,7 @@
     for (const n of m.npcs) if (inViewXY((n.x + 0.5) * TILE, (n.y + 0.5) * TILE)) list.push({ y: (n.y + 0.5) * TILE + 20, k: 'npc', n });   // trước đây vẽ mọi NPC của map
     if (G.corpses.length) G.corpses = G.corpses.filter(c => now - c.t0 < 1500);
     for (const c of G.corpses) list.push({ y: c.y - 1, k: 'corpse', c });
-    for (const e of G.monsters.values()) if (inView(e)) list.push({ y: e.y, k: 'mon', e });
+    for (const e of G.monsters.values()) if (inView(e) && !hiddenFar(e)) list.push({ y: e.y, k: 'mon', e });
     markLod(s);
     for (const e of G.players.values()) if (inView(e)) list.push({ y: e.y, k: 'pl', e });
     for (const e of G.carts.values()) if (inView(e)) list.push({ y: e.y, k: 'cart', e });
@@ -1531,6 +1543,7 @@
     DaiHoi.drawGround(ctx, now);
     HoaSon.drawGround(ctx, now);
     TongKim.drawGround(ctx, now);
+    Siege.drawGround(ctx, now);
     BossFX.drawGround(ctx, now);
     Duel.draw(ctx, now);
     drawGhosts(now);
@@ -1776,6 +1789,14 @@
   }
   function drawMonster(e, now) {
     const info = G.data.monsters[e.type] || { sprite: 'wolf', color: '#888', name: '?' };
+    if (info.seal) { Siege.drawSeal(ctx, e, now); return; }   // Long Ấn Công Thành: vẽ riêng
+    if (info.hidden && G.self) {   // Dạ Minh Rương: hiện dần khi lại gần, ánh tím lập loè
+      const d = Math.hypot(e.x - G.self.x, e.y - G.self.y), a = Math.max(0, Math.min(1, (HIDE_R - d) / 90));
+      ctx.save(); ctx.globalAlpha = a; ctx.globalCompositeOperation = 'lighter';
+      const g = ctx.createRadialGradient(e.x, e.y - 20, 4, e.x, e.y - 20, 60); g.addColorStop(0, `rgba(170,120,255,${0.45 + Math.sin(now / 200) * 0.15})`); g.addColorStop(1, 'rgba(120,80,255,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(e.x, e.y - 20, 60, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.globalAlpha = a;
+    }
     const hit = e.hitAt && now - e.hitAt < 120;
     const [state, fi] = monsterAnim(e, now, info);
     const mf = Assets.monsterFrame(e.type, state, fi, e.dir);
@@ -1791,7 +1812,8 @@
         ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, -top / 2, top, 0, Math.PI * 2); ctx.fill();
       }
       ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(0, 0, half, Math.max(4, half * 0.28), 0, 0, Math.PI * 2); ctx.fill();
-      if (e.elite) {
+      if (e.elite === 3) nightAura(half, mf.top, now);
+      else if (e.elite) {
         eliteAura(half, mf.top, now, e.elite === 2);
         if (Math.random() < 0.12) FX.emit(1, e.x + (Math.random() - 0.5) * half * 2, e.y - Math.random() * mf.top, { speed: 5, vy: -30, life: 800, size: 2.4, color: e.elite === 2 ? '#ff6040' : Math.random() < 0.5 ? '#ffc040' : '#c890ff' });
       }
@@ -1811,6 +1833,7 @@
       }
       ctx.restore();
       monsterLabel(e, info, -top * (e.elite === 1 ? 1.2 : 1) - 8);
+      if (info.hidden && G.self) ctx.restore();
       return;
     }
     const frame = e.moving ? Math.floor(now / 160 + e.x / 70) % 4 : Math.floor(now / 500) % 2;
@@ -1837,6 +1860,7 @@
     }
     ctx.restore();
     monsterLabel(e, info, e.boss ? -130 : -62);
+    if (info.hidden && G.self) ctx.restore();
   }
   // xác quái: khung ngã rồi mờ dần
   function drawCorpse(c, now) {
@@ -1851,6 +1875,16 @@
     ctx.restore();
   }
   // hào quang quái tinh anh (vàng tím) / boss phó bản (đỏ): vòng trận đồ xoay dưới chân + quầng sáng
+  // quái đêm: khói tím đen bốc lên, mắt đỏ
+  function nightAura(half, top, now) {
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(0, -top / 2, 4, 0, -top / 2, top);
+    g.addColorStop(0, `rgba(140,60,255,${0.26 + Math.sin(now / 300) * 0.07})`); g.addColorStop(1, 'rgba(80,20,200,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, -top / 2, top, 0, Math.PI * 2); ctx.fill();
+    ctx.scale(1, 0.38); ctx.rotate(-now / 1100); ctx.strokeStyle = 'rgba(170,110,255,.75)'; ctx.lineWidth = 2;
+    for (let k = 0; k < 4; k++) { const a = k / 4 * Math.PI * 2; ctx.beginPath(); ctx.arc(0, 0, half + 8, a, a + 0.9); ctx.stroke(); }
+    ctx.restore();
+  }
   function eliteAura(half, top, now, boss) {
     const r = half + 10, c1 = boss ? '255,60,40' : '255,190,60', c2 = boss ? '255,120,60' : '200,120,255';
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
@@ -1868,6 +1902,11 @@
     if (e.elite === 1) {   // luôn hiện tên tinh anh
       label(e.x, e.y + top - 6, `⭐ Tinh Anh · ${info.name}${info.lv ? ' Lv' + info.lv : ''}`, '#ffc040', 12, true);
       hpBar(e.x, e.y + top, 60, e.hp / e.maxHp, '#ffa020');
+      return;
+    }
+    if (e.elite === 3) {   // quái đêm
+      label(e.x, e.y + top - 6, `🌙 Dạ · ${info.name}${info.lv ? ' Lv' + info.lv : ''}`, '#c8a0ff', 12, true);
+      hpBar(e.x, e.y + top, 60, e.hp / e.maxHp, '#9a60ff');
       return;
     }
     if (e.elite === 2) {   // boss phó bản

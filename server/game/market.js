@@ -145,6 +145,7 @@ class Market {
     it.s.qty -= qty;
     if (it.s.qty <= 0) st.items.splice(i, 1);
     const get = Math.floor(cost * (1 - TAX)), name = (ITEMS[part.id] || {}).name || part.id;
+    if (!knb) this.w.collectTax(cost - get, 'market');
     if (knb) st.earnedKnb = (st.earnedKnb || 0) + get; else st.earned = (st.earned || 0) + get;
     st.sold = (st.sold || 0) + qty;
     const seller = this.w.players.get(uid);

@@ -50,6 +50,7 @@ const MAP_DEFS = {
       { id: 'dh_su_gia',  x: 17, y: 20 },
       { id: 'hs_su_gia',  x: 21, y: 20 },
       { id: 'tk_mo_binh', x: 13, y: 20 },
+      { id: 'ct_thanh_quan', x: 24, y: 21 },
       { id: 'chi_dan', x: 17, y: 13 },
       { id: 'pho_ban',    x: 26, y: 15 }
     ],
@@ -380,6 +381,13 @@ const MAP_DEFS = {
     name: 'Chiến Trường Tống Kim', theme: 'plains', w: 72, h: 34, seed: 141, lv: '30+', safe: true, tongkim: true, minLv: 1,
     portals: [],
     npcs: [{ id: 'tk_quan_nhu', x: 3, y: 17 }, { id: 'tk_quan_nhu', x: 68, y: 17 }],
+    spawns: []
+  },
+  // Công Thành Chiến: Lâm An Thành – nội thành tường đá vây quanh Long Ấn, cổng Nam / Tây / Đông; ngoài là đồng cỏ
+  cong_thanh: {
+    name: 'Lâm An Thành (Công Thành)', theme: 'plains', w: 56, h: 44, seed: 151, lv: '40+', safe: true, siege: true, minLv: 1,
+    portals: [],
+    npcs: [],
     spawns: []
   },
   // lôi đài riêng cho thách đấu 1-1: không cổng, không quái; chỉ vào được khi thách đấu, đấu xong tự đưa về chỗ cũ
@@ -718,11 +726,28 @@ function generate(id, def = MAP_DEFS[id]) {
       for (const [ox, oy] of [[0, 0], [1, 0], [0, 1]]) { g[(cy2 + oy) * w + cx2 + ox] = t; g[(cy2 + oy) * w + (w - 1 - cx2 - ox)] = t; }
     }
   }
+  if (def.siege) {   // Công Thành: tường nội thành (18..38 x 12..32, khớp server/game/siege.js), cổng rộng 3 ô ở 3 phía
+    const K = { x0: 18, y0: 12, x1: 38, y1: 32 }, mx = (K.x0 + K.x1) >> 1, my = (K.y0 + K.y1) >> 1;
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const inK = x >= K.x0 && x <= K.x1 && y >= K.y0 && y <= K.y1;
+      g[y * w + x] = inK ? T.FLOOR : (Math.abs(x - mx) <= 1 && y > K.y1) || (Math.abs(y - my) <= 1 && (x < K.x0 || x > K.x1)) ? T.PATH : T.GRASS;
+    }
+    for (let x = K.x0; x <= K.x1; x++) for (const y of [K.y0, K.y1]) if (!(y === K.y1 && Math.abs(x - mx) <= 1)) g[y * w + x] = T.WALL;
+    for (let y = K.y0; y <= K.y1; y++) for (const x of [K.x0, K.x1]) if (Math.abs(y - my) > 1) g[y * w + x] = T.WALL;
+    for (const [tx, ty] of [[K.x0 + 3, K.y0 + 3], [K.x1 - 3, K.y0 + 3], [K.x0 + 3, K.y1 - 3], [K.x1 - 3, K.y1 - 3]]) props.push({ x: tx, y: ty, k: 'brazier' });
+    for (const [tx, ty] of [[mx - 3, K.y1 + 1], [mx + 3, K.y1 + 1], [K.x0 - 1, my - 3], [K.x0 - 1, my + 3], [K.x1 + 1, my - 3], [K.x1 + 1, my + 3]]) props.push({ x: tx, y: ty, k: 'banner' });
+    for (let k = 0; k < 18; k++) {   // lùm cây / tảng đá ở ngoại thành làm chỗ nấp
+      const tx = 2 + Math.floor(r() * (w - 4)), ty = 2 + Math.floor(r() * (h - 4));
+      if (tx >= K.x0 - 3 && tx <= K.x1 + 3 && ty >= K.y0 - 3 && ty <= K.y1 + 3) continue;
+      if (Math.abs(tx - mx) <= 2 || Math.abs(ty - my) <= 2) continue;
+      g[ty * w + tx] = r() < 0.6 ? T.TREE : T.ROCK;
+    }
+  }
   // Ô có thể dùng làm điểm hồi sinh/bãi boss
   const bossSpot = farFromPortals.length ? farFromPortals[Math.floor(r() * farFromPortals.length)] : start;
 
   return {
-    id, name: def.name, theme: def.theme, w, h, tiles: g, safe: !!def.safe, pvp: !!def.pvp, tourney: !!def.tourney, duelArena: !!def.duelArena, hoason: !!def.hoason, tongkim: !!def.tongkim, minLv: def.minLv || 1, lv: def.lv, tier: def.tier ?? 0, town: !!def.town,
+    id, name: def.name, theme: def.theme, w, h, tiles: g, safe: !!def.safe, pvp: !!def.pvp, tourney: !!def.tourney, duelArena: !!def.duelArena, hoason: !!def.hoason, tongkim: !!def.tongkim, siege: !!def.siege, minLv: def.minLv || 1, lv: def.lv, tier: def.tier ?? 0, town: !!def.town,
     portals, npcs: def.npcs, spawns, walkable, buildings, props, sect: def.sect || null, noPk: !!def.noPk, gemMine: def.gemMine || 0,
     boss: def.temple ? { x: cx, y: cy - 4 } : { x: bossSpot % w, y: (bossSpot / w) | 0 },   // miếu: Boss đứng giữa sân
     center: { x: cx, y: cy }
@@ -756,7 +781,7 @@ function isSolidAt(map, px, py) {
 const CHANNELS = 20, CH_CAP = 10;
 // Khu VIP (khu 21): cấm đồ sát, chỉ người còn hạn Vé Treo Máy được vào; tối đa VIP_CAP người
 const VIP_CH = CHANNELS + 1, VIP_CAP = 20;
-const hasChannels = m => !m.town && !m.safe && !m.pvp && !m.sect && !m.duelArena && !m.instance && !m.tourney && m.id !== 'dai_hoi' && ((m.spawns || []).length > 0 || !!m.gemMine);   // khoáng động: không quái nhưng vẫn chia khu
+const hasChannels = m => !m.town && !m.safe && !m.pvp && !m.sect && !m.duelArena && !m.instance && !m.tourney && m.id !== 'dai_hoi' && !m.siege && ((m.spawns || []).length > 0 || !!m.gemMine);   // khoáng động: không quái nhưng vẫn chia khu
 // Bia Chuyển Khu: đặt cạnh mỗi cổng của bản đồ có khu (ô trống gần nhất, lùi vào trong 2 ô, lệch sang 2 ô)
 function placeKhuBia(m) {
   const free = (x, y) => x > 0 && y > 0 && x < m.w - 1 && y < m.h - 1 && !SOLID.has(m.tiles[y * m.w + x]) && !m.npcs.some(n => Math.abs(n.x - x) + Math.abs(n.y - y) < 2) && !m.portals.some(p => Math.abs(p.x - x) + Math.abs(p.y - y) < 2);

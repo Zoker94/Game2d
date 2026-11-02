@@ -17,6 +17,7 @@ const EVENT_INFO = {
   daiHoi:    { name: 'Đại Hội Võ Lâm', desc: 'Hỗn chiến tranh ngôi Võ Lâm Minh Chủ tại lôi đài Đại Hội (cấp 20+, gặp Sứ Giả Đại Hội ở Tương Dương). Hạ người chơi, Hộ Pháp và Thiên Hạ Đệ Nhất Cao Thủ để ghi điểm. 20:30 Chủ Nhật hằng tuần (1 tuần 1 lần). Minh Chủ giữ danh hiệu 7 ngày.', icon: '⚔️' },
   hoaSon:    { name: 'Hoa Sơn Luận Kiếm', desc: 'Giải đấu loại trực tiếp 1 chọi 1 trên đỉnh Hoa Sơn (cấp 30+, ghi danh với Sứ Giả Hoa Sơn ở Tương Dương). Vô địch nhận danh hiệu Hoa Sơn Kiếm Thánh 7 ngày, Á quân và hạng Ba có thưởng. Ai cũng lên núi xem được. 20:00 Thứ 7 hằng tuần.', icon: '⛰️' },
   tongKim:   { name: 'Chiến Trường Tống Kim', desc: 'Phe Tống đối đầu phe Kim (cấp 30+, báo danh với Mộ Binh Quan ở Tương Dương từ 21:30). Máy chia phe cân bằng theo lực chiến. Hạ người phe địch, lính và Đại Tướng để ghi điểm; phe nhiều điểm hơn thắng. Thưởng kinh nghiệm + Công Trạng đổi rương, ngân lượng, đá cường hoá, đá khảm cấp 4-5. 22:00 mỗi tối.', icon: '🏯' },
+  congThanh: { name: 'Công Thành Chiến', desc: 'Các bang hội tranh đoạt Lâm An Thành (Bang chủ / Trưởng lão báo danh với Thành Quan ở Tương Dương, 50.000 quỹ bang; thành viên cấp 40+). Phá Long Ấn giữa nội thành để chiếm; hết giờ bang giữ Long Ấn làm chủ thành 7 ngày: +10% kinh nghiệm cả bang, nhận 30% thuế chợ & giao dịch toàn máy chủ. 20:30 Thứ 6 hằng tuần.', icon: '🏯' },
   lantern:   { name: 'Lễ Hội Hoa Đăng', desc: 'Quái rơi Hoa Đăng, đổi quà tại Lễ Quan. Tự động cả ngày Thứ 7 & Chủ Nhật.', icon: '🏮' }
 };
 
@@ -57,10 +58,17 @@ const WHEEL = [
   { name: 'Mã Linh Đan x10', w: 10, r: { items: [['mount_food', 10]] } }
 ];
 
+// Điểm danh 7 ngày liên tiếp (lỡ 1 ngày thì bù bằng Nguyên Bảo để giữ chuỗi), ngày 7 quà lớn; cộng dồn tổng số ngày để mở mốc thưởng
 const CHECKIN = [
-  { gold: 300 }, { items: [['hp1', 10], ['mp1', 10]] }, { gold: 1000 }, { items: [['stone', 2]] },
-  { knb: 5, items: [['mount_food', 10]] }, { items: [['exp_x2', 1], ['stone2', 1]] }, { knb: 20, items: [['lucky_chest', 1], ['insure', 1]] }
+  { gold: 2000, items: [['hp1', 20], ['mp1', 20]] }, { gold: 5000, items: [['stone', 3]] }, { knb: 5, items: [['mount_food', 10]] }, { gold: 10000, items: [['exp_x2', 1]] },
+  { knb: 10, items: [['stone', 5], ['lucky_chest', 1]] }, { gold: 20000, items: [['stone2', 1], ['exp_x2', 1]] }, { knb: 30, items: [['auto_ticket', 1], ['boss_chest', 1], ['insure', 1]] }
 ];
+const CHECKIN_MILESTONES = [
+  { n: 7, r: { items: [['lucky_chest', 2]] } }, { n: 15, r: { knb: 20, items: [['stone2', 3], ['exp_x2', 2]] } },
+  { n: 30, r: { knb: 50, items: [['boss_chest', 2], ['auto_ticket', 2]] } }, { n: 60, r: { knb: 100, items: [['boss_chest', 3], ['insure', 3]] } },
+  { n: 100, r: { knb: 200, items: [['boss_chest', 5], ['auto_ticket', 5]] } }
+];
+const CHECKIN_FIX_KNB = 10;   // bù điểm danh (lỡ đúng 1 ngày)
 
 const LANTERN_EXCHANGE = [
   { cost: 10, name: 'Rương Bí Ẩn', r: { items: [['lucky_chest', 1]] } },
@@ -149,6 +157,8 @@ class Features {
     if (this.w.daihoi) this.w.daihoi.tick(now);
     if (this.w.hoason) this.w.hoason.tick(now);
     if (this.w.tongkim) this.w.tongkim.tick(now);
+    if (this.w.siege) this.w.siege.tick(now);
+    if (this.w.night) this.w.night.tick(now);
     if (now - this.lastLb > 30000) { this.lastLb = now; this.computeLeaderboard(); }
   }
 
@@ -179,6 +189,7 @@ class Features {
     }
     if (this.w.hoason) this.w.hoason.onMinute(mod);   // Hoa Sơn Luận Kiếm 20:00 Thứ 7
     if (this.w.tongkim) this.w.tongkim.onMinute(mod);   // Chiến Trường Tống Kim 22:00 mỗi tối
+    if (this.w.siege) this.w.siege.onMinute(mod);   // Công Thành Chiến 20:30 Thứ 6
     if (mod === 4 * 60 + 7 && this.w.cleanup) this.w.cleanup.auto();   // 04:07 mỗi ngày: tự dọn tài khoản bỏ lâu, chat cũ
     if ((dow === 0 || dow === 6) && !this.isActive('lantern')) this.startEvent('lantern', (24 * 60 - mod));
     if (this.lastMinute % 5 === 0) this.broadcastEvents();
@@ -254,6 +265,8 @@ class Features {
       this.w.daihoi.start(minutes);
     } else if (k === 'tongKim') {
       if (this.w.tongkim && !this.w.tongkim.start(minutes)) e.active = false;
+    } else if (k === 'congThanh') {
+      if (this.w.siege && !this.w.siege.start(minutes)) e.active = false;
     } else if (k === 'hoaSon') {   // giải tự báo tin; không đủ người thì tắt luôn
       if (this.w.hoason && !this.w.hoason.running && !this.w.hoason.start(true)) e.active = false;
     } else if (k === 'treasure') {
@@ -283,6 +296,7 @@ class Features {
     e.active = false;
     if (k === 'hoaSon' && this.w.hoason && this.w.hoason.running) this.w.hoason.abort();
     if (k === 'tongKim' && this.w.tongkim) this.w.tongkim.end();
+    if (k === 'congThanh' && this.w.siege) this.w.siege.end();
     const info = EVENT_INFO[k];
     if (k === 'huntRace') {
       const top = Object.entries(e.scores || {}).sort((a, b) => b[1].n - a[1].n).slice(0, 10);
@@ -323,6 +337,7 @@ class Features {
   }
 
   onEventMonsterKilled(mon, killer) {
+    if (mon.event === 'nightchest') return this.w.night && this.w.night.onChest(mon, killer);
     if (mon.event === 'treasure' && killer && killer.c) {
       const r = Math.random();
       const lv = killer.c.level;
@@ -419,17 +434,33 @@ class Features {
   }
   checkinState(p) {
     const ci = p.c.checkin;
-    const today = U.vnDay();
-    return { done: ci.date === today, streak: ci.streak || 0, rewards: CHECKIN };
+    const today = U.vnDay(), d2 = this.dayAgo(2), d1 = this.dayAgo(1);
+    const total = ci.total || 0;
+    return { done: ci.date === today, streak: ci.date === today || ci.date === d1 || (ci.date === d2) ? ci.streak || 0 : 0, rewards: CHECKIN,
+      canFix: ci.date === d2 && (ci.streak || 0) > 0, fixKnb: CHECKIN_FIX_KNB, total,
+      miles: CHECKIN_MILESTONES.map(m => ({ n: m.n, r: m.r, got: total >= m.n })) };
   }
-  doCheckin(p) {
+  dayAgo(n) { return new Date(Date.now() + 7 * 3600e3 - n * 86400e3).toISOString().slice(0, 10); }
+  // fix: lỡ đúng 1 ngày (lần cuối là hôm kia) – trả Nguyên Bảo để chuỗi không bị đứt
+  doCheckin(p, fix) {
     const ci = p.c.checkin, today = U.vnDay();
     if (ci.date === today) return this.w.toast(p, 'Hôm nay đã điểm danh rồi', 'error');
-    const y = new Date(Date.now() + 7 * 3600e3 - 86400e3).toISOString().slice(0, 10);
-    ci.streak = ci.date === y ? (ci.streak % 7) + 1 : 1;
+    let keep = ci.date === this.dayAgo(1);
+    if (fix && ci.date === this.dayAgo(2) && ci.streak > 0) {
+      if ((p.c.knb | 0) < CHECKIN_FIX_KNB) return this.w.toast(p, `Cần ${CHECKIN_FIX_KNB} Nguyên Bảo để bù điểm danh`, 'error');
+      p.c.knb -= CHECKIN_FIX_KNB; keep = true;
+      this.w.toast(p, `🗓️ Đã bù ngày lỡ (−${CHECKIN_FIX_KNB} Nguyên Bảo), chuỗi điểm danh được giữ!`, 'reward');
+    }
+    ci.streak = keep ? (ci.streak % 7) + 1 : 1;
     ci.date = today;
+    ci.total = (ci.total || 0) + 1;
     this.w.giveReward(p, CHECKIN[ci.streak - 1], `Điểm danh ngày ${ci.streak}`);
+    const m = CHECKIN_MILESTONES.find(x => x.n === ci.total);
+    if (m) { this.w.giveReward(p, m.r, `🎉 Mốc điểm danh ${m.n} ngày`); if (m.n >= 30) this.brag(`🗓️ ${p.c.name} đã điểm danh tròn ${m.n} ngày!`); }
+    if (ci.streak === 7) this.brag(`🗓️ ${p.c.name} điểm danh đủ 7 ngày liên tiếp, nhận quà lớn!`);
+    p.dirtyMe = true; this.db.markDirty();
     p.socket.emit('eventPanel', this.eventPanel(p));
+    p.socket.emit('checkin', this.checkinState(p));
   }
   redeemCode(p, code) {
     code = String(code || '').trim().toUpperCase();
@@ -561,7 +592,7 @@ class Features {
         if (!id) return err('Bản đồ: ' + Object.keys(M).join(', '));
         w.teleport(p, id); break;
       }
-      case 'level': { const n = U.clamp(+args[0] | 0, 1, U.MAX_LEVEL), q = args[1] ? findPlayer(args.slice(1).join(' ')) : p; if (!q) return err('Người chơi không online'); q.c.level = n; q.c.exp = 0; w.recalc(q); q.c.hp = q.stats.maxHp; q.dirtyMe = true; if (w.referral) w.referral.onLevel(q); ok(`Cấp ${n}${q !== p ? ' cho ' + q.c.name : ''}`); break; }   // /level <cấp> [tên người chơi]
+      case 'level': { const n = U.clamp(+args[0] | 0, 1, U.MAX_LEVEL), q = args[1] ? findPlayer(args.slice(1).join(' ')) : p; if (!q) return err('Người chơi không online'); const old = q.c.level; q.c.level = n; q.c.exp = 0; w.recalc(q); q.c.hp = q.stats.maxHp; q.dirtyMe = true; if (w.referral) w.referral.onLevel(q); if (w.mentor && n > old) w.mentor.onLevel(q); ok(`Cấp ${n}${q !== p ? ' cho ' + q.c.name : ''}`); break; }   // /level <cấp> [tên người chơi]
       case 'gold': p.c.gold = Math.max(0, +args[0] | 0); ok('Ngân lượng: ' + p.c.gold); break;
       case 'knb': p.c.knb = Math.max(0, +args[0] | 0); ok('Nguyên bảo: ' + p.c.knb); break;
       case 'tuyetky': {   // nhận đủ 9 bí kíp Tuyệt Kỹ Giang Hồ

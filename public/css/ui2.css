@@ -485,3 +485,35 @@ body.touch #chat-emo { min-width: 36px; font-size: 16px; }
 .enh-forge.fx-drop .fg-stage::after, .enh-forge.fx-fail .fg-stage::after { content: '💢'; position: absolute; left: 50%; top: 32%; transform: translate(-50%,-50%); font-size: 46px; opacity: 0; animation: fgZap .7s ease-out; pointer-events: none; }
 .enh-forge.fx-drop .fg-stage::after { content: '💥'; font-size: 64px; }
 @media (max-width: 480px) { .fg-anvil { width: 74px; } .fg-eslot.eq { width: 60px; height: 60px; } }
+/* Công Thành Chiến (siege.js) */
+#ct-hud { position: absolute; left: 8px; top: 80px; z-index: 12; width: 270px; padding: 6px 9px; border-radius: 12px; font-size: 10.5px; color: #eee6d8;
+  background: linear-gradient(180deg, rgba(34,24,12,.93), rgba(12,10,14,.93)); border: 1px solid rgba(255,210,100,.5); box-shadow: 0 4px 14px rgba(0,0,0,.55); }
+#ct-hud.min > :not(.tk-h):not(.ct-bar) { display: none; }
+#ct-hud .tk-h { display: flex; align-items: center; gap: 6px; font-weight: 800; color: #ffd78a; }
+#ct-hud .tk-h span { flex: 1; } #ct-hud .tk-h b { color: #fff; }
+#ct-hud .ct-holder { margin: 3px 0; } #ct-hud .ct-holder b { color: #ffd860; } #ct-hud .ct-holder.me b { color: #6ef08a; }
+#ct-hud .ct-bar { position: relative; height: 15px; margin: 3px 0 5px; border-radius: 8px; background: #2a1a10; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(0,0,0,.6); }
+#ct-hud .ct-bar i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, #a06a10, #ffd040); transition: width .4s; }
+#ct-hud .ct-bar.sh i { background: linear-gradient(90deg, #2a6ab8, #9fd8ff); }
+#ct-hud .ct-bar span { position: absolute; inset: 0; text-align: center; line-height: 15px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px #000; font-size: 9.5px; }
+#ct-hud .ct-gl > div { display: flex; gap: 6px; padding: 1px 0; font-size: 9.5px; } #ct-hud .ct-gl span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#ct-hud .ct-gl i { font-style: normal; opacity: .85; } #ct-hud .ct-gl .me span { color: #6ef08a; font-weight: 800; }
+#ct-hud .tk-me { margin: 3px 0; }
+body.touch #ct-hud { width: 236px; font-size: 9.5px; }
+body:has(#ct-hud) #tracker { display: none !important; }
+.ct-hero .dh-emb { background: radial-gradient(circle, #a07a1a, #2a1a06); }
+.ct-own-n { font-size: 15px; font-weight: 800; color: #ffd860; text-shadow: 0 0 8px rgba(255,180,40,.5); }
+.ct-chip { display: inline-block; padding: 1px 7px; margin: 2px; border-radius: 10px; background: rgba(255,210,120,.12); border: 1px solid rgba(255,210,120,.3); }
+.ct-chip.me { background: rgba(80,220,120,.18); border-color: #4ade80; }
+/* Sư đồ (mentor.js) */
+.mt-row { display: flex; align-items: center; gap: 8px; }
+.mt-prog { height: 5px; margin: 3px 0; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; max-width: 180px; }
+.mt-prog i { display: block; height: 100%; background: linear-gradient(90deg, #4ade80, #ffd76a); }
+/* điểm danh */
+.checkin-row div { position: relative; }
+.checkin-row div.big { border-color: #c8963a; background: linear-gradient(180deg, rgba(120,70,10,.45), rgba(40,20,6,.6)); }
+.checkin-row div i { position: absolute; right: 3px; top: 1px; font-style: normal; color: #4ade80; font-weight: 900; }
+.checkin-row div.today { box-shadow: 0 0 10px rgba(255,215,106,.55); animation: ciPulse 1.4s ease-in-out infinite; }
+@keyframes ciPulse { 50% { box-shadow: 0 0 16px rgba(255,215,106,.9); } }
+body.calm .checkin-row div.today { animation: none; }
+.my-hero .dh-emb { background: radial-gradient(circle, #5a3ab8, #140a2a); }

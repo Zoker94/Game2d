@@ -4,6 +4,11 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🏯 Công Thành Chiến (20:30 thứ Sáu): các bang tranh Lâm An Thành. Bang chủ / Trưởng lão báo danh với Thành Quan Lâm An ở Tương Dương (50.000 quỹ bang), thành viên cấp 40+ vào trận. Phá Long Ấn giữa nội thành để chiếm – Long Ấn bắn sét kẻ địch đứng gần. Bang giữ Long Ấn tới hết giờ làm chủ thành 7 ngày: +10% kinh nghiệm cả bang, 30% thuế chợ & giao dịch toàn máy chủ vào quỹ bang, huy hiệu 🏯 vàng cạnh tên bang',
+      '🎓 Sư đồ (Bạn bè › Sư đồ, hoặc bấm vào người chơi › Bái sư): người cấp 5-29 bái sư người cấp 60+ (tối đa 3 đồ đệ). Đồ đệ luyện công cùng bản đồ với sư phụ +20% kinh nghiệm (+30% nếu chung tổ đội); đồ đệ lên cấp sư phụ nhận Sư Đức + ngân lượng; cấp 30 xuất sư – cả hai nhận quà lớn. Sư Đức đổi rương, đá, Bảo Hiểm Phù',
+      '🌙 Ban đêm (19:30 – 4:30): Quái Đêm xuất hiện ở bãi luyện (khoẻ hơn, kinh nghiệm x2,2, rơi Huyền Tinh Thạch, đá khảm, rương). Dạ Minh Rương ẩn trong bóng tối, chỉ hiện khi đứng gần. 0:00 – 0:30 Thương Nhân Bí Ẩn ghé Tương Dương bán 6 món hiếm giá rẻ (đổi mỗi đêm)',
+      '🗓️ Điểm danh mới: quà mỗi ngày nhiều hơn, ngày 7 nhận Vé Treo Máy + Rương Thủ Lĩnh + 30 Nguyên Bảo. Lỡ 1 ngày có thể bù bằng 10 Nguyên Bảo để giữ chuỗi. Thêm mốc tổng 7 / 15 / 30 / 60 / 100 ngày. Vào game chưa điểm danh sẽ được nhắc',
+      '💰 Thuế giao dịch: ngân lượng chuyển qua giao dịch giữa người chơi chịu 3% (chợ vẫn 5%); 30% tiền thuế vào quỹ bang đang giữ Lâm An Thành, phần còn lại rút khỏi nền kinh tế để chống lạm phát',
       '🕐 Bỏ mác BETA TEST ở màn đăng nhập và bản đồ mini; góc bản đồ mini giờ hiện giờ trong game (☀️ ngày / 🌙 đêm)',
       '🌙 Ngày & đêm theo giờ thật Việt Nam: 4:30 bình minh ửng hồng, 6:30 trời sáng, 17:00 hoàng hôn ám cam, 19:30 trời tối hẳn. Ban đêm quanh nhân vật, người chơi, NPC, đèn lồng, vạc lửa, cổng dịch chuyển có quầng sáng. Giờ hiện ở góc bản đồ mini; tắt được trong Cài đặt › Đồ hoạ',
       '✨ Viền chạy quanh ô đồ theo cấp cường hoá rõ hơn hẳn, chia 6 mốc: +1 bạc, +4 lục, +7 lam, +10 tím (có quầng sáng), +13 vàng kim (lấp lánh), +15 cầu vồng. Sửa lỗi viền cũ bị khuất gần hết trên điện thoại',

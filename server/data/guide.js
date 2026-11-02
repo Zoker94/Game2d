@@ -7,7 +7,7 @@ const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', 
 const every = m => m % 60 ? `${m} phút` : `${m / 60} giờ`;
 
 function build() {
-  const fields = Object.values(MAPS).filter(m => !m.base && !m.town && !m.safe && !m.instance && (m.spawns || []).length && !m.sect && !m.tongkim && !m.gemMine);
+  const fields = Object.values(MAPS).filter(m => !m.base && !m.town && !m.safe && !m.instance && (m.spawns || []).length && !m.sect && !m.tongkim && !m.siege && !m.gemMine);
   const bosses = Object.values(BOSSES).sort((a, b) => a.lv - b.lv);
   const { DUNGEONS } = require('../game/dungeon');
   const dgs = Object.values(DUNGEONS || {});
@@ -74,18 +74,22 @@ function build() {
       '<b>Chiến Trường Tống Kim</b>: 22:00 mỗi tối (35 phút), cấp 30+. Báo danh với <b>Mộ Binh Quan</b> ở Tương Dương từ 21:30 (đang đánh vẫn vào thẳng được). Kiếm Công Trạng đổi rương, đá khảm, ngân lượng.',
       '<b>Hoa Sơn Luận Kiếm</b>: 20:00 thứ Bảy, cấp 30+ – đăng ký với Sứ Giả Hoa Sơn ở Tương Dương, đấu loại 1-1, vô địch nhận danh hiệu Kiếm Thánh 7 ngày.',
       '<b>Đại Hội Võ Lâm</b>: 20:30 Chủ Nhật, cấp 20+ – Võ Lâm Minh Chủ giữ danh hiệu 1 tuần.',
+      '<b>Công Thành Chiến</b>: 20:30 thứ Sáu – bang hội tranh <b>Lâm An Thành</b> (Bang chủ báo danh với <b>Thành Quan Lâm An</b> ở Tương Dương, thành viên cấp 40+). Phá Long Ấn giữa nội thành để chiếm; bang giữ thành 7 ngày được +10% kinh nghiệm và 30% thuế chợ.',
+      '🌙 <b>Ban đêm</b> (19:30 – 4:30 giờ Việt Nam): Quái Đêm khoẻ hơn, kinh nghiệm x2,2, rơi đá / đá khảm; <b>Dạ Minh Rương</b> ẩn ở bãi luyện, chỉ hiện khi lại gần; 0:00 – 0:30 <b>Thương Nhân Bí Ẩn</b> bán hàng hiếm ở Tương Dương.',
       'Nhân đôi kinh nghiệm 12:00 và 20:00, Săn Quái 19:00 / 21:30, Đố Vui mỗi 15 phút, Lễ Hội Đèn Lồng cuối tuần.',
-      '<b>Lễ Quan</b> ở Tương Dương: điểm danh, vòng quay may mắn.']) },
+      '<b>Lễ Quan</b> ở Tương Dương: điểm danh (7 ngày liên tiếp, ngày 7 nhận Vé Treo Máy + Rương Thủ Lĩnh; lỡ 1 ngày bù bằng 10 Nguyên Bảo; mốc 7/15/30/60/100 ngày), vòng quay may mắn.']) },
     { k: 'money', icon: '💰', title: 'Kiếm ngân lượng & Nguyên Bảo', html: li([
       'Ngân lượng: đánh quái, nhiệm vụ ngày (<b>Sứ Giả Nhiệm Vụ</b>), nhiệm vụ môn phái, áp tiêu, phó bản, boss, Tống Kim.',
       'Gửi đồ / ngân lượng ở <b>Thủ Kho Tiền Trang</b>.',
       '<b>Chợ Phiên</b> (đi Xa Phu): mở sạp bằng Lệnh Bài Bán Hàng để bán đồ cho người chơi khác, bán được cả khi offline.',
+      'Thuế: Chợ Phiên 5%, giao dịch ngân lượng giữa người chơi 3% (30% tiền thuế vào quỹ bang đang giữ Lâm An Thành).',
       '🔒 Chống tài khoản clone: phải đạt <b>cấp 30</b> mới được giao dịch với người chơi khác, mở sạp / mua đồ ở Chợ Phiên và nhận thưởng mời bạn.',
       'Nguyên Bảo: boss thế giới, áp tiêu vàng, Tống Kim, gift code, sự kiện. Tiêu ở <b>Kỳ Trân Các</b>.']) },
     { k: 'sect', icon: '⛩️', title: 'Môn phái & bang hội', html: li([
       'Về bản đồ môn phái của mình (Xa Phu, miễn phí): nhận <b>nhiệm vụ môn phái</b> lấy cống hiến, lên cấp bậc (+công / thủ / máu).',
       'Bản đồ môn phái cấm PK (chỉ thách đấu).',
-      '<b>Bang hội</b>: gặp Bang Hội Sứ Giả ở Tương Dương để lập / vào bang; bang càng cao cấp càng tăng chỉ số cho thành viên.']) },
+      '<b>Bang hội</b>: gặp Bang Hội Sứ Giả ở Tương Dương để lập / vào bang; bang càng cao cấp càng tăng chỉ số cho thành viên.',
+      '🎓 <b>Sư đồ</b> (Bạn bè → Sư đồ): người cấp 5-29 bái sư người cấp 60+. Đồ đệ luyện công cùng bản đồ với sư phụ +20% kinh nghiệm (+30% chung tổ đội); đồ đệ lên cấp sư phụ nhận Sư Đức; cấp 30 xuất sư, cả hai nhận quà lớn.']) },
     { k: 'pk', icon: '⚔️', title: 'PK – chế độ chiến đấu', html: li([
       'Nút chế độ PK ở góc trên: <b>Luyện công</b> (không đánh ai), <b>Đeo cờ PK</b> (đánh người cũng đeo cờ, cướp tiêu), <b>Đồ sát</b> (đánh tất cả).',
       'Giết người đang luyện công tăng <b>sát khí</b> (☠ trước tên). Từ 3 điểm là Đồ sát đỏ: không đi Xa Phu, không mua bán, bị khoá chế độ Đồ sát tới khi hết sát khí.',

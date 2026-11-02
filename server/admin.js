@@ -75,6 +75,8 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
       guilds: Object.keys(db.data.guilds).length,
       totalGold: chars.reduce((s, u) => s + (u.character.gold || 0), 0),
       totalKnb: chars.reduce((s, u) => s + (u.character.knb || 0), 0),
+      taxToday: (() => { const t = db.data.taxStats && db.data.taxStats.days[U.vnDay()]; return t ? (t.market || 0) + (t.trade || 0) : 0; })(),
+      taxTotal: (db.data.taxStats && db.data.taxStats.total) || 0,
       avgLevel: chars.length ? +(chars.reduce((s, u) => s + u.character.level, 0) / chars.length).toFixed(1) : 0,
       byClass: Object.fromEntries(Object.entries(byClass).map(([k, v]) => [CLASSES[k].name, v])),
       byMap: Object.fromEntries(Object.entries(byMap).map(([k, v]) => [MAPS[k].name, v])),

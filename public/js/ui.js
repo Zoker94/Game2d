@@ -803,8 +803,30 @@
   function renderChat() { $('chat-log').innerHTML = ''; chatLog.filter(m => chatFilter === 'all' || m.ch === chatFilter).forEach(appendChat); }
   UI.focusChat = function () { $('chat').classList.remove('collapsed'); $('chat-input').focus(); };
 
+  // điểm danh: chấm đỏ ở nút Sự kiện khi chưa điểm danh; vào game lần đầu trong ngày thì nhắc
+  let ciState = null, lastEv = null;
+  UI.onCheckin = function (c) {
+    ciState = c;
+    if (lastEv) UI.onEvents(lastEv); else $('event-dot').classList.toggle('hidden', c.done);
+    if (c.done) return;
+    let k = ''; try { k = localStorage.getItem('vl_ci_remind') || ''; } catch (e) { }
+    const today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+    if (k === today) return;
+    let tries = 0;
+    const remind = () => {   // chờ vào game xong, không đè thông báo / cốt truyện đang mở
+      if (!ciState || ciState.done) return;
+      const busy = !G.me || (window.Story && Story.open) || !$('modal-msg').classList.contains('hidden');
+      if (busy) { if (++tries < 30) setTimeout(remind, 2000); return; }
+      if (G.me.level < 3) return;
+      try { localStorage.setItem('vl_ci_remind', today); } catch (e) { }
+      G.modal(`🗓️ Hôm nay bạn chưa điểm danh! Chuỗi hiện tại: ${ciState.streak} ngày${ciState.canFix ? ' (hôm qua bị lỡ – có thể bù)' : ''}. Ngày 7 nhận Vé Treo Máy + Rương Thủ Lĩnh + 30 Nguyên Bảo.`, [
+        { t: '🗓️ Điểm danh ngay', cls: 'primary', fn: () => UI.openPanel('events', { tab: 'checkin' }) }, { t: 'Để sau' }]);
+    };
+    setTimeout(remind, 5000);
+  };
   UI.onEvents = function (d) {
-    const anyActive = d.list.some(e => e.active) || d.bosses.some(b => b.alive);
+    lastEv = d;
+    const anyActive = d.list.some(e => e.active) || d.bosses.some(b => b.alive) || !!(ciState && !ciState.done);
     $('event-dot').classList.toggle('hidden', !anyActive);
     if (panel === 'events') UI.refreshPanel(true);
   };
@@ -1383,8 +1405,14 @@
       html += `<div class="wheel-wrap"><canvas id="wheel-canvas" width="480" height="480"></canvas><div><p>Lượt miễn phí hôm nay: <b>${w ? w.free : '-'}</b><br>Lượt thêm (vé): <b>${w ? w.extra : '-'}</b></p><button class="btn primary big" id="wheel-spin" ${wheelSpinning ? 'disabled' : ''}>QUAY</button><p class="small muted">Mua Vé Vòng Quay tại Tạp Hóa hoặc Kỳ Trân Các.</p><p id="wheel-res" style="color:#ffd76a"></p></div></div>`;
     } else if (tab === 'checkin') {
       const c = evPanel && evPanel.checkin;
-      if (c) html += `<div class="card"><h4>Điểm danh 7 ngày liên tiếp</h4><div class="checkin-row">${c.rewards.map((r, i) => `<div class="${i < c.streak ? 'got' : ''} ${(!c.done && i === c.streak % 7) ? 'today' : ''}"><b>Ngày ${i + 1}</b><br>${rewardText(r)}</div>`).join('')}</div>
-        <div class="row" style="margin-top:8px"><button class="btn green" id="checkin-btn" ${c.done ? 'disabled' : ''}>${c.done ? 'Đã điểm danh hôm nay' : 'Điểm danh'}</button></div></div>`;
+      if (c) {
+        const st = !c.done && c.streak >= 7 ? 0 : c.streak;   // tròn 7 ngày: vòng mới
+        html += `<div class="card"><h4>🗓️ Điểm danh 7 ngày liên tiếp</h4><div class="checkin-row">${c.rewards.map((r, i) => `<div class="${i < st ? 'got' : ''} ${(!c.done && i === st) ? 'today' : ''} ${i === 6 ? 'big' : ''}"><b>${i === 6 ? '🎁 ' : ''}Ngày ${i + 1}</b><br>${rewardText(r)}${i < st ? '<i>✔</i>' : ''}</div>`).join('')}</div>
+          <div class="row" style="margin-top:8px;gap:6px;flex-wrap:wrap"><button class="btn green" id="checkin-btn" ${c.done ? 'disabled' : ''}>${c.done ? '✅ Đã điểm danh hôm nay' : '🗓️ Điểm danh'}</button>
+          ${!c.done && c.canFix ? `<button class="btn" id="checkin-fix" title="Hôm qua bạn lỡ điểm danh">🔁 Bù ngày lỡ + điểm danh (${c.fixKnb} 💎)</button><span class="small warn">Hôm qua bạn lỡ điểm danh – bù để giữ chuỗi ${c.streak} ngày!</span>` : ''}</div>
+          <div class="small muted" style="margin-top:4px">Lỡ 1 ngày: bù bằng ${c.fixKnb} Nguyên Bảo để giữ chuỗi. Lỡ từ 2 ngày: chuỗi tính lại từ ngày 1.</div></div>
+          <div class="card"><h4>🏅 Mốc tổng số ngày điểm danh: <span style="color:#ffd76a">${c.total}</span></h4><div class="list">${c.miles.map(m => `<div class="li ${m.got ? 'done' : ''}"><div class="grow"><b>${m.n} ngày</b><div class="sub">${rewardText(m.r)}</div></div>${m.got ? '<span class="ok-t">✔ Đã nhận</span>' : `<span class="small muted">còn ${m.n - c.total} ngày</span>`}</div>`).join('')}</div></div>`;
+      }
     } else if (tab === 'lantern') {
       const l = evPanel;
       html += `<p>Bạn có <b>${l ? l.tokens : 0}</b> 🏮 Hoa Đăng. Hoa Đăng rơi từ quái khi diễn ra Lễ Hội Hoa Đăng.</p><div class="list">${l ? l.lantern.map((x, i) => `<div class="li"><div class="grow"><b>${esc(x.name)}</b><div class="sub">Cần ${x.cost} Hoa Đăng</div></div><button class="btn small green" data-lantern="${i}" ${l.tokens >= x.cost ? '' : 'disabled'}>Đổi</button></div>`).join('') : ''}</div>`;
@@ -1396,6 +1424,7 @@
     updateCountdowns();
     if (tab === 'wheel') { drawWheel(); const b = $('wheel-spin'); if (b) b.onclick = () => { if (!wheelSpinning) emit('wheel'); }; }
     const ci = $('checkin-btn'); if (ci) ci.onclick = () => emit('checkin');
+    const cf = $('checkin-fix'); if (cf) cf.onclick = () => emit('checkin', { fix: true });
     const gc = $('gc-open'); if (gc) gc.onclick = () => UI.openPanel('giftcode');
     body.querySelectorAll('[data-lantern]').forEach(b => b.onclick = () => emit('lantern', { idx: +b.dataset.lantern }));
   }
@@ -1512,7 +1541,7 @@
           <label class="set-row"><input type="checkbox" id="set-qauto" ${s.questAuto !== false ? 'checked' : ''}> 🧭 Tự đi làm nhiệm vụ khi nhận nhiệm vụ mới (cốt truyện, môn phái)</label>
           <label class="set-row"><input type="checkbox" data-set="autoUpdate" ${s.autoUpdate !== false ? 'checked' : ''}> 🔄 Tự vào lại game khi máy chủ có bản cập nhật mới (giữ trạng thái Tự động)</label></div>
         <div class="card"><h4>🚫 Chặn lời mời</h4>
-          ${[['party', '👥 Mời vào tổ đội'], ['friend', '🤝 Kết bạn'], ['trade', '💰 Giao dịch'], ['duel', '⚔️ Thách đấu tỷ thí'], ['guild', '🏯 Mời vào bang hội']].map(([k, n]) => `<label class="set-row"><input type="checkbox" data-binv="${k}" ${G.me && G.me.blockInv && G.me.blockInv[k] ? 'checked' : ''}> Chặn lời mời: ${n}</label>`).join('')}
+          ${[['party', '👥 Mời vào tổ đội'], ['friend', '🤝 Kết bạn'], ['trade', '💰 Giao dịch'], ['duel', '⚔️ Thách đấu tỷ thí'], ['guild', '🏯 Mời vào bang hội'], ['mentor', '🎓 Bái sư']].map(([k, n]) => `<label class="set-row"><input type="checkbox" data-binv="${k}" ${G.me && G.me.blockInv && G.me.blockInv[k] ? 'checked' : ''}> Chặn lời mời: ${n}</label>`).join('')}
           <div class="small muted">Người khác mời sẽ nhận thông báo bạn đang chặn, bạn không bị làm phiền. Muốn tự từ chối mọi lời mời chỉ khi đang treo máy: vào Cài đặt tự động.</div></div>
         <div class="card"><h4>💬 Cộng đồng</h4><p class="small">Tham gia nhóm Zalo để nhận gift code, tin sự kiện và giao lưu với các đại hiệp khác.</p>
           <div class="row" style="justify-content:flex-start;gap:6px;flex-wrap:wrap"><button class="btn small primary" id="set-invite">📣 Mời bạn nhận quà${(() => { const d = $('ref-dot'); return d && !d.classList.contains('hidden') ? ' 🔴' : ''; })()}</button><button class="btn small primary" id="set-gift">🎁 Gift code${(() => { const d = $('gift-dot'); return d && !d.classList.contains('hidden') ? ' 🔴' : ''; })()}</button><a class="zalo-btn" href="https://zalo.me/g/fkxw5crl6ksc0jotbzgp" target="_blank" rel="noopener">💬 Nhóm Zalo</a><button class="btn small" id="set-online">👥 Người chơi online</button><button class="btn small" id="set-news">📜 Lịch sử cập nhật</button>${G.user && G.user.owner ? '<button class="btn small primary" id="set-admin">🛡️ Trang quản trị</button>' : ''}</div></div>
@@ -1746,6 +1775,8 @@
     if (d.action === 'daihoi') { DaiHoi.open(d); return; }
     if (d.action === 'hoason') { HoaSon.open(d); return; }
     if (d.action === 'tongkim') { TongKim.open(d); return; }
+    if (d.action === 'siege') { Siege.open(d); return; }
+    if (d.action === 'mystery') { Mystery.open(d); return; }
     if (d.action === 'dungeon') { Dungeon.open(d); return; }
     if (d.action === 'market') { Market.openNpc(d); return; }
     if (d.action === 'sect') { SectUI.open(d); return; }

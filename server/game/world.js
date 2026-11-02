@@ -11,7 +11,7 @@ const { NPCS, TELEPORTS } = require('../data/npcs');
 const { TUTORIAL } = require('../data/quests');
 const { MOUNTS, MOUNT_MAX, mountExpNext, isBreakLevel } = require('../data/mounts');
 // bản đồ sự kiện không cho cưỡi thú
-const NO_MOUNT_MAPS = { tong_kim: 'Chiến trường Tống Kim', hoa_son_ld: 'Hoa Sơn Luận Kiếm', dai_hoi: 'Đại Hội Võ Lâm' };
+const NO_MOUNT_MAPS = { tong_kim: 'Chiến trường Tống Kim', hoa_son_ld: 'Hoa Sơn Luận Kiếm', dai_hoi: 'Đại Hội Võ Lâm', cong_thanh: 'Công Thành Chiến' };
 const { DRAGONS, DRAGON_SLOT } = require('../data/dragons');
 const { JIANGHU, JH_SLOT, JH_DROP } = require('../data/jianghu');
 const { TITLES, statOf, unlocked: titleUnlocked } = require('../data/titles');
@@ -300,6 +300,7 @@ class World {
     if (this.mining) this.mining.onEnterMap(p);
     if (this.hoason && mapId === 'hoa_son_ld') this.hoason.sync(p);
     if (this.tongkim && mapId === 'tong_kim') this.tongkim.onEnter(p);
+    if (this.siege && mapId === 'cong_thanh') this.siege.onEnter(p);
     this.progressTutorial(p, 'map', { map: baseOf(mapId) });
     this.story.on(p, 'map', { map: baseOf(mapId) });
   }
@@ -402,7 +403,7 @@ class World {
       expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, gm: this.isGm(p) ? { hide: !!(c.gm && c.gm.hide), safe: !!(c.gm && c.gm.safe) } : null, owner: isOwner(p.user) ? 1 : 0, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null, jhs: c.jhs || {}, jh: c.jh || null,
-      minhChu: this.titleFlags(p), title: this.titleOf(c, p.user.isAdmin), ach: Object.assign({ bossKills: c.bossKills | 0 }, c.ach || {}), tk: this.tongkim ? this.tongkim.tag(p) : 0, congTrang: c.congTrang || 0,
+      minhChu: this.titleFlags(p), title: this.titleOf(c, p.user.isAdmin), ach: Object.assign({ bossKills: c.bossKills | 0 }, c.ach || {}), tk: this.tongkim ? this.tongkim.tag(p) : 0, congTrang: c.congTrang || 0, ctOwner: this.siege ? this.siege.ownerName() : null, master: c.master && c.master.uid && !c.master.grad ? c.master.name : null, nDisc: Object.keys(c.disciples || {}).length,
       attr: c.attr || {}, attrFree: attrTotalOf(c) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
       branch: branchOf(c), skills: c.skills || {}, hotbar: c.hotbar, sp: spTotalOf(c) - (c.spSpent || 0),
       blockInv: c.blockInv || {}, mailbox: (c.mailbox || []).slice(0, 60).map(e => [e.id, e.qty, e.plus || 0]), mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, autoTicket: c.autoTicket > Date.now() ? c.autoTicket : 0, pkMode: c.pkMode | 0, pkLock: !!((c.pkLock || c.pk >= PK_OUTLAW) && c.pk > 0), escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
@@ -515,7 +516,7 @@ class World {
   }
   // Chặn lời mời (Cài đặt → Chung): từng loại; hoặc đang bật Tự động mà chọn "từ chối mọi lời mời khi treo máy". Trả lời nhắn cho người mời, null = cho qua
   invBlock(o, kind) {
-    const NAME = { party: 'tổ đội', friend: 'kết bạn', guild: 'vào bang', trade: 'giao dịch', duel: 'tỷ thí' };
+    const NAME = { party: 'tổ đội', friend: 'kết bạn', guild: 'vào bang', trade: 'giao dịch', duel: 'tỷ thí', mentor: 'bái sư' };
     if (o.c.blockInv && o.c.blockInv[kind]) return `${o.c.name} đang chặn lời mời ${NAME[kind]}`;
     const a = o.autoSrv;
     if (a && a.on && a.cfg && a.cfg.blockInvAuto) return `${o.c.name} đang treo máy, không nhận lời mời`;
@@ -524,7 +525,7 @@ class World {
   setBlockInv(p, d) {
     if (!d || typeof d !== 'object') return;
     const b = {};
-    for (const k of ['party', 'friend', 'guild', 'trade', 'duel']) if (d[k]) b[k] = 1;
+    for (const k of ['party', 'friend', 'guild', 'trade', 'duel', 'mentor']) if (d[k]) b[k] = 1;
     p.c.blockInv = b; p.dirtyMe = true; this.db.markDirty();
   }
   // Hòm Đồ: phần thưởng không vừa túi (phó bản, sự kiện, boss, thưởng gửi lúc offline...) nằm ở đây, không bao giờ mất
@@ -555,6 +556,8 @@ class World {
     if (p.c.expBuffUntil > Date.now()) m *= 2;
     if (p.stats && p.stats.fx && p.stats.fx.expup) m *= 1 + p.stats.fx.expup / 100;
     m *= 1 + this.pkZoneBonus(p.mapId) / 100;
+    if (this.siege && this.siege.isOwnerMember(p)) m *= 1.1;   // bang làm chủ Lâm An Thành: +10% kinh nghiệm
+    if (this.mentor) m *= this.mentor.expBonus(p);   // đồ đệ luyện công cùng bản đồ với sư phụ: +20% (+30% chung tổ đội)
     return m;
   }
   // khu thường của bãi luyện (cho phép PK) được cộng thêm % kinh nghiệm so với khu VIP an toàn (cấu hình pkExpBonus, mặc định 20)
@@ -585,6 +588,7 @@ class World {
       this.progressTutorial(p, 'level');
       this.story.on(p, 'level');
       if (this.referral) this.referral.onLevel(p);
+      if (this.mentor) this.mentor.onLevel(p);
     }
     p.dirtyMe = true;
     return add;
@@ -774,7 +778,7 @@ class World {
   enemiesOf(p) {
     const m = this.maps[p.mapId];
     const list = [];
-    for (const mon of m.monsters.values()) if (!mon.dead && !(mon.tkSide && p.tk === mon.tkSide)) list.push(mon);   // lính cùng phe Tống Kim
+    for (const mon of m.monsters.values()) if (!mon.dead && !(mon.tkSide && p.tk === mon.tkSide) && !(mon.ctSeal && this.siege.sealFriendly(p, mon))) list.push(mon);   // lính cùng phe Tống Kim
     for (const o of m.players) if (this.canHarm(p, o)) list.push(o);
     for (const c of this.escort.targetsFor(p)) list.push(c);
     return list;
@@ -1090,6 +1094,10 @@ class World {
   applyDamage(t, dmg, src, kind, ek = 0, preScaled = false) {
     if (src && src.c && t && !t.c && !t.cart) src.lastHitMon = Date.now();   // thú cưng biết chủ đang giao chiến
     if (t.dead) return 0;
+    if (t.ctSeal && this.siege) {   // Long Ấn Công Thành: bang đang giữ không đánh được, mỗi đòn tối đa 0,6% máu, khiên 8 giây sau khi đổi chủ
+      dmg = src && src.c && this.siege.sealFriendly(src, t) ? 0 : this.siege.capDamage(t, dmg);
+      if (!dmg) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return 0; }
+    }
     if (t.c && src && t.dodgeUntil > Date.now()) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return 0; }   // đang lướt né
     const reflected = kind === 'reflect';   // sát thương phản đòn đã tính xong ở phía người bị đánh: không giảm thêm lần nữa
     if (t.c && src && src.c && t !== src && preScaled) { t.lastPvp = src.lastPvp = Date.now(); }   // độc PK (đã tính theo % máu): vẫn tính là đang giao tranh
@@ -1155,6 +1163,7 @@ class World {
     if (src && !src.c && (src.boss || (src.tpl && src.tpl.pbBoss))) this.bossSay(src, 'kill', { name: t.c.name });
     if (this.daihoi) this.daihoi.onPlayerKilled(t, src && src.c ? src : null);
     if (this.tongkim) this.tongkim.onPlayerKilled(t, src && src.c ? src : null);
+    if (this.siege) this.siege.onPlayerKilled(t, src && src.c ? src : null);
     if (t.duel) this.duel.onLost(t, `${t.c.name} bị kẻ khác hạ gục`);
     t.dead = true; t.c.hp = 0; t.c.deaths = (t.c.deaths || 0) + 1; t.st = {}; t.dots = [];
     if (t.c.riding) { t.c.riding = false; this.recalc(t); }
@@ -1164,7 +1173,7 @@ class World {
       lost = Math.floor(t.c.exp * 0.05);
       t.c.exp -= lost;
     }
-    t.socket.emit('dead', { by: src ? (src.c ? src.c.name : src.tpl.name) : '?', lost, cost: t.mapId === 'tong_kim' ? { gold: 0, knb: TK_REVIVE_KNB } : this.reviveCost(t), tk: t.mapId === 'tong_kim' ? 1 : 0 });
+    t.socket.emit('dead', { by: src ? (src.c ? src.c.name : src.tpl.name) : '?', lost, cost: t.mapId === 'tong_kim' || t.mapId === 'cong_thanh' ? { gold: 0, knb: TK_REVIVE_KNB } : this.reviveCost(t), tk: t.mapId === 'tong_kim' || t.mapId === 'cong_thanh' ? 1 : 0 });
     this.fx(t.mapId, { t: 'death', id: t.id, x: t.x, y: t.y });
     if (src && src.c) {
       src.c.pvpKills = (src.c.pvpKills || 0) + 1;
@@ -1211,7 +1220,7 @@ class World {
   respawn(p, mode) {
     if (!p.dead) return;
     const now = Date.now();
-    if (p.mapId === 'tong_kim' && this.tongkim) {   // Chiến Trường Tống Kim: 10 Nguyên Bảo hồi tại chỗ, hoặc về doanh trại phe mình
+    if ((p.mapId === 'tong_kim' && this.tongkim) || (p.mapId === 'cong_thanh' && this.siege)) {   // Tống Kim / Công Thành: 10 Nguyên Bảo hồi tại chỗ, hoặc về doanh trại
       if (mode === 'here' || mode === 'here_knb') {
         if ((p.c.knb | 0) < TK_REVIVE_KNB) return this.toast(p, `Cần ${TK_REVIVE_KNB} Nguyên Bảo để hồi sinh tại chỗ`, 'error');
         p.c.knb -= TK_REVIVE_KNB;
@@ -1219,7 +1228,7 @@ class World {
         this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y, small: true });
         this.toast(p, `✨ Hồi sinh tại chỗ (−${TK_REVIVE_KNB} Nguyên Bảo)`, 'reward');
         p.dirtyMe = true; p.socket.emit('revived', { here: true });
-      } else this.tongkim.respawn(p, 'tong_kim');
+      } else if (p.mapId === 'cong_thanh') this.siege.respawn(p); else this.tongkim.respawn(p, 'tong_kim');
       return;
     }
     if (mode === 'here' || mode === 'here_knb') {
@@ -1259,6 +1268,7 @@ class World {
     if ((mon.boss || tpl.pbBoss) && !mon.event) this.rollJhBook(mon, tpl);
     if (mon.event === 'daihoi') { this.daihoi.onMonsterKilled(mon, killer); map.monsters.delete(mon.id); return; }
     if (mon.event === 'tongkim') { this.tongkim.onMonsterKilled(mon, killer); map.monsters.delete(mon.id); return; }
+    if (mon.event === 'siege') { this.siege.onMonsterKilled(mon, killer); return; }
     if (mon.event) { this.features.onEventMonsterKilled(mon, killer); map.monsters.delete(mon.id); return; }
     if (mon.story) { this.rewardStoryElite(mon, killer); this.story.onEliteKilled(mon, killer); map.monsters.delete(mon.id); return; }
 
@@ -1362,6 +1372,7 @@ class World {
         if (r() < 0.15 * dr) drops.push('thien_tam_ti');
         if (killer && killer.c) this.toast(killer, `⭐ Hạ quái tinh anh ${tpl.name}!`, 'reward');
       }
+      if (tpl.night && this.night) this.night.extraDrops(drops, dr);   // quái đêm: đá, đá khảm, rương
       // quái thường (đã giảm để bãi quái không ngập đồ; Truyền Kỳ ~1/20.000 con)
       if (r() < 0.04) drops.push(tier >= 7 ? (r() < 0.5 ? 'hp5' : 'mp5') : tier >= 5 ? (r() < 0.5 ? 'hp4' : 'mp4') : tier >= 4 ? (r() < 0.5 ? 'hp3' : 'mp3') : tier >= 2 ? (r() < 0.5 ? 'hp2' : 'mp2') : (r() < 0.5 ? 'hp1' : 'mp1'));
       if (r() < 0.005 * dr) drops.push('stone');   // Huyền Tinh Thạch ~1/200 con
@@ -1815,6 +1826,8 @@ class World {
     if (npc.action === 'daihoi') Object.assign(out, this.daihoi.npcView(p));
     if (npc.action === 'hoason' && this.hoason) Object.assign(out, this.hoason.npcView(p));
     if (npc.action === 'tongkim' && this.tongkim) Object.assign(out, this.tongkim.npcView(p));
+    if (npc.action === 'siege' && this.siege) Object.assign(out, this.siege.npcView(p));
+    if (npc.action === 'mystery' && this.night) out.mystery = this.night.view(p);
     if (npc.action === 'cloak') out.cloak = this.cloakView(p);
     if (npc.action === 'guide') out.guide = require('../data/guide').guide();   // Bia Chỉ Dẫn Giang Hồ
     if (npc.action === 'market') out.market = this.market.view(p.userId, p.userId) || { mine: true, none: true, tokens: U.countItem(p.c, 'stall_token') };
@@ -2311,6 +2324,23 @@ class World {
     this.io.to('map:' + mapId).emit('weather', this.weatherOf(mapId));
     return true;
   }
+  // Thu thuế (chợ 5%, giao dịch 3%): 30% vào quỹ bang đang giữ thành (Công Thành Chiến), phần còn lại bị rút khỏi nền kinh tế.
+  // Thống kê theo ngày cho trang quản trị.
+  collectTax(amount, src) {
+    amount = Math.floor(amount); if (!(amount > 0)) return;
+    const d = this.db.data, day = U.vnDay();
+    const st = d.taxStats || (d.taxStats = { total: 0, days: {} });
+    st.total += amount;
+    const t = st.days[day] || (st.days[day] = { market: 0, trade: 0, guild: 0 });
+    t[src] = (t[src] || 0) + amount;
+    const keys = Object.keys(st.days).sort(); while (keys.length > 30) delete st.days[keys.shift()];
+    const own = this.siege && this.siege.owner();
+    if (own) {
+      const g = d.guilds[own.gid];
+      if (g) { const cut = Math.floor(amount * 0.3); g.fund = (g.fund || 0) + cut; g.taxIn = (g.taxIn || 0) + cut; t.guild += cut; }
+    }
+    this.db.markDirty();
+  }
   rollWeather(now) {
     this.weather = this.weather || {};
     for (const id in this.maps) {
@@ -2424,7 +2454,7 @@ class World {
 
   updateMonster(mon, m, now, dt) {
     if (mon.dead) {
-      if (mon.robber || mon.inst) { m.monsters.delete(mon.id); return; }   // quái phó bản không hồi sinh
+      if (mon.robber || mon.inst || mon.nightMon) { m.monsters.delete(mon.id); return; }   // quái đêm: không hồi sinh (night.js tự bổ sung)   // quái phó bản không hồi sinh
       if (!mon.boss && !mon.event && now >= mon.respawnAt) {
         const pos = this.randomSpotNear(m.def, mon.sp.x + 0.5, mon.sp.y + 0.5, mon.sp.r);
         if (mon.base && !mon.story) { mon.tpl = this.rollElite(m, mon.base); mon.maxHp = mon.tpl.hp; }   // hồi sinh: tung lại tỉ lệ tinh anh
@@ -2432,6 +2462,7 @@ class World {
       }
       return;
     }
+    if (mon.tpl.static) { mon.moving = false; return; }   // vật thể đứng yên (Long Ấn Công Thành)
     if (mon.tpl.static) return;
     if (mon.pending && mon.pending.length) this.bossAI.resolve(mon, m, now);   // chiêu boss đến lúc nổ (kể cả khi boss bị khống chế)
     // Độc / bỏng / chảy máu
@@ -2631,7 +2662,7 @@ class World {
     const ms = [];
     for (const mon of m.monsters.values()) {
       if (mon.dead) continue;
-      ms.push([mon.id, mon.tpl.id, Math.round(mon.x), Math.round(mon.y), mon.dir, mon.moving ? 1 : 0, Math.max(0, Math.round(mon.hp)), mon.maxHp, mon.boss ? 1 : 0, mon.tpl.elite ? 1 : mon.tpl.pbBoss ? 2 : 0, mon.event ? 1 : 0, mon.frozenUntil > now ? 1 : 0, stMask(mon, now)]);
+      ms.push([mon.id, mon.tpl.id, Math.round(mon.x), Math.round(mon.y), mon.dir, mon.moving ? 1 : 0, Math.max(0, Math.round(mon.hp)), mon.maxHp, mon.boss ? 1 : 0, mon.tpl.elite ? 1 : mon.tpl.pbBoss ? 2 : mon.tpl.night ? 3 : 0, mon.event ? 1 : 0, mon.frozenUntil > now ? 1 : 0, stMask(mon, now)]);
     }
     const cs = m.carts && m.carts.size ? this.escort.snapshot(m.def.id) : null;
     const hs = m.def.hoason;   // Hoa Sơn Luận Kiếm: đấu thủ đang đấu luôn gửi cho mọi người xem (camera xem thi đấu ở xa nhân vật)
