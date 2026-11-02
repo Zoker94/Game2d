@@ -385,7 +385,9 @@ class World {
     const now = Date.now();
     p.buffs = p.buffs.filter(b => b.until > now);
     const g = p.c.guildId && this.db.data.guilds[p.c.guildId];
-    p.stats = U.calcStats(p.c, p.buffs, g ? g.level : 0, p.c.riding);
+    const fb = this.fishing && this.fishing.foodBuff(p.c);   // món ăn đang có hiệu lực
+    p.stats = U.calcStats(p.c, fb ? p.buffs.concat(fb) : p.buffs, g ? g.level : 0, p.c.riding);
+    if (fb) p._foodOn = true;
     p.c.power = p.stats.power;
     p.c.hp = Math.min(p.c.hp, p.stats.maxHp);
     p.c.mp = Math.min(p.c.mp, p.stats.maxMp);
@@ -400,7 +402,7 @@ class World {
       gold: c.gold, knb: c.knb, hp: c.hp, mp: c.mp, stats: p.stats,
       inv: c.inv, invMax: U.invSize(c), vmb: Math.min(5, c.vmb | 0), equip: c.equip, kills: c.kills, pvpKills: c.pvpKills, bossKills: c.bossKills,
       tutorial: this.tutorialView(c), gemTut: c.gemTut | 0, guild: g ? { id: g.id, name: g.name, role: g.members[p.userId] } : null,
-      expBuffUntil: c.expBuffUntil, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
+      expBuffUntil: c.expBuffUntil, food: c.food && c.food.until > Date.now() ? { id: c.food.id, until: c.food.until } : null, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, gm: this.isGm(p) ? { hide: !!(c.gm && c.gm.hide), safe: !!(c.gm && c.gm.safe) } : null, owner: isOwner(p.user) ? 1 : 0, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null, jhs: c.jhs || {}, jh: c.jh || null,
       minhChu: this.titleFlags(p), title: this.titleOf(c, p.user.isAdmin), ach: Object.assign({ bossKills: c.bossKills | 0 }, c.ach || {}), tk: this.tongkim ? this.tongkim.tag(p) : 0, congTrang: c.congTrang || 0, ctOwner: this.siege ? this.siege.ownerName() : null, master: c.master && c.master.uid && !c.master.grad ? c.master.name : null, nDisc: Object.keys(c.disciples || {}).length,
@@ -557,7 +559,8 @@ class World {
     if (p.stats && p.stats.fx && p.stats.fx.expup) m *= 1 + p.stats.fx.expup / 100;
     m *= 1 + this.pkZoneBonus(p.mapId) / 100;
     if (this.siege && this.siege.isOwnerMember(p)) m *= 1.1;   // bang làm chủ Lâm An Thành: +10% kinh nghiệm
-    if (this.mentor) m *= this.mentor.expBonus(p);   // đồ đệ luyện công cùng bản đồ với sư phụ: +20% (+30% chung tổ đội)
+    if (this.mentor) m *= this.mentor.expBonus(p);
+    if (this.fishing) m *= this.fishing.expMul(p.c);   // món ăn   // đồ đệ luyện công cùng bản đồ với sư phụ: +20% (+30% chung tổ đội)
     return m;
   }
   // khu thường của bãi luyện (cho phép PK) được cộng thêm % kinh nghiệm so với khu VIP an toàn (cấu hình pkExpBonus, mặc định 20)
@@ -621,6 +624,7 @@ class World {
     if (d > 0.5) this.wake(p, now);
     p.mvAllow = allow - d;
     p.x = x; p.y = y;
+    if (p.fishing) this.fishing.onMove(p);   // đi khỏi chỗ câu: thu cần
     p.dir = (data.d | 0) & 3;
     p.moving = !!data.m;
     // Cổng dịch chuyển
@@ -1139,6 +1143,7 @@ class World {
     if (t.c) { // người chơi
       if (this.duel.onDamage(t, dmg, src)) return dmg;   // đòn kết liễu trong trận thách đấu: dừng ở 1 máu
       t.c.hp -= dmg; t.lastCombat = Date.now(); t.dirtyMe = true;
+      if (t.fishing) this.fishing.onHurt(t);
       if (t.recall) this.cancelRecall(t, 'Bị tấn công');
       if (t.c.hp <= 0) this.killPlayer(t, src);
     } else if (t.cart) {   // xe tiêu
@@ -1530,7 +1535,7 @@ class World {
   }
   batchable(it) {
     const e = it.effect || {};
-    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.mine || e.title || e.dvFrag || e.dvSummon || e.pardon || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr);
+    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.mine || e.title || e.dvFrag || e.dvSummon || e.pardon || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr || e.fish || e.food);
   }
   useOne(p, uid) {
     const s = p.c.inv.find(x => x.uid === uid);
@@ -1567,6 +1572,8 @@ class World {
     }
     if (e.town) { this.startRecall(p); return; }   // niệm phép, xong mới trừ phù
     if (e.mine) return this.mining.useTicket(p, uid);   // Vé Vào Khoáng Động
+    if (e.fish) return this.fishing && this.fishing.cast(p);   // Cần Câu: thả câu (không mất cần)
+    if (e.food) { if (this.fishing && this.fishing.eat(p, e.food)) { U.removeByUid(c, uid, 1); p.dirtyMe = true; this.db.markDirty(); } return; }   // món ăn
     if (e.title) {   // Lệnh Bài Danh Hiệu: mở khoá vĩnh viễn danh hiệu quà tặng và đeo luôn
       const T = TITLES[e.title]; if (!T) return;
       c.giftTitles = c.giftTitles || [];
@@ -1828,6 +1835,7 @@ class World {
     if (npc.action === 'tongkim' && this.tongkim) Object.assign(out, this.tongkim.npcView(p));
     if (npc.action === 'siege' && this.siege) Object.assign(out, this.siege.npcView(p));
     if (npc.action === 'mystery' && this.night) out.mystery = this.night.view(p);
+    if (npc.cook && this.fishing) out.cook = this.fishing.cookView(p);
     if (npc.action === 'cloak') out.cloak = this.cloakView(p);
     if (npc.action === 'guide') out.guide = require('../data/guide').guide();   // Bia Chỉ Dẫn Giang Hồ
     if (npc.action === 'market') out.market = this.market.view(p.userId, p.userId) || { mine: true, none: true, tokens: U.countItem(p.c, 'stall_token') };

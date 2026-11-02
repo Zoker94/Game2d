@@ -159,6 +159,7 @@ class Features {
     if (this.w.tongkim) this.w.tongkim.tick(now);
     if (this.w.siege) this.w.siege.tick(now);
     if (this.w.night) this.w.night.tick(now);
+    if (this.w.fishing) this.w.fishing.tick(now);
     if (now - this.lastLb > 30000) { this.lastLb = now; this.computeLeaderboard(); }
   }
 

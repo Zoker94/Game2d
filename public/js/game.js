@@ -469,6 +469,7 @@
     });
     Social.bind(s);
     Mentor.bind(s);
+    Fishing.bind(s);
     Party.bind(s);
     Mining.bind(s);
     Captcha.bind(s);
@@ -1671,6 +1672,7 @@
       const ni = nearItem(80);
       if (ni) label(ni.x, ni.y - 34 + Math.sin(now / 200) * 2, '[F] Nhặt', '#ffe9a8', 11, true);
     }
+    Fishing.draw(ctx, now);   // dây câu + phao
     DayNight.draw(ctx, cam, vw, vh, zoom, now);   // ngày / đêm theo giờ thật (đè lên nhân vật, dưới bong bóng chat & hiệu ứng)
     const taken = [];
     Mining.drawBars(ctx, G.players, G.you);

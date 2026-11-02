@@ -517,3 +517,13 @@ body:has(#ct-hud) #tracker { display: none !important; }
 @keyframes ciPulse { 50% { box-shadow: 0 0 16px rgba(255,215,106,.9); } }
 body.calm .checkin-row div.today { animation: none; }
 .my-hero .dh-emb { background: radial-gradient(circle, #5a3ab8, #140a2a); }
+/* câu cá (fishing.js) */
+#fish-ui { position: absolute; left: 50%; bottom: 128px; transform: translateX(-50%); z-index: 12; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+#fish-ui.hidden { display: none; }
+#btn-fish { font: 800 15px "Be Vietnam Pro", system-ui, sans-serif; color: #062a3a; background: linear-gradient(180deg, #9fe6ff, #3aa8e0); border: 2px solid #e0f8ff; border-radius: 22px; padding: 8px 20px; box-shadow: 0 4px 14px rgba(0,0,0,.55), 0 0 12px rgba(80,190,255,.6); cursor: pointer; }
+#btn-fish.wait { background: linear-gradient(180deg, #3a5068, #22323f); color: #cfe6f5; border-color: #6a8aa6; box-shadow: 0 4px 14px rgba(0,0,0,.55); }
+#btn-fish.bite { font-size: 18px; color: #3a0a00; background: linear-gradient(180deg, #ffe060, #ff8a20); border-color: #fff; animation: fishBite .3s ease-in-out infinite alternate; }
+@keyframes fishBite { from { transform: scale(1); box-shadow: 0 0 10px #ffb020; } to { transform: scale(1.12); box-shadow: 0 0 26px #ffd040; } }
+.fish-loop { font-size: 11px; color: #e8f4ff; text-shadow: 0 1px 2px #000; background: rgba(0,0,0,.45); padding: 1px 8px; border-radius: 10px; display: flex; gap: 4px; align-items: center; cursor: pointer; }
+body:has(#btn-dig:not(.hidden)) #fish-ui { bottom: 180px; }
+.ck-row { display: flex; align-items: center; gap: 8px; } .ck-cur { color: #ffd76a; }

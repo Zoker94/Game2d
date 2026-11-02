@@ -89,6 +89,7 @@ function build() {
       'Về bản đồ môn phái của mình (Xa Phu, miễn phí): nhận <b>nhiệm vụ môn phái</b> lấy cống hiến, lên cấp bậc (+công / thủ / máu).',
       'Bản đồ môn phái cấm PK (chỉ thách đấu).',
       '<b>Bang hội</b>: gặp Bang Hội Sứ Giả ở Tương Dương để lập / vào bang; bang càng cao cấp càng tăng chỉ số cho thành viên.',
+      '🎣 <b>Câu cá</b>: mua Cần Câu + Mồi Câu ở <b>Đầu Bếp Tửu Lâu</b> (Tương Dương), đứng sát mép nước bấm 🎣, phao chìm thì GIẬT CẦN. Mang cá về Đầu Bếp nấu món ăn tăng kinh nghiệm / công / thủ / máu.',
       '🎓 <b>Sư đồ</b> (Bạn bè → Sư đồ): người cấp 5-29 bái sư người cấp 60+. Đồ đệ luyện công cùng bản đồ với sư phụ +20% kinh nghiệm (+30% chung tổ đội); đồ đệ lên cấp sư phụ nhận Sư Đức; cấp 30 xuất sư, cả hai nhận quà lớn.']) },
     { k: 'pk', icon: '⚔️', title: 'PK – chế độ chiến đấu', html: li([
       'Nút chế độ PK ở góc trên: <b>Luyện công</b> (không đánh ai), <b>Đeo cờ PK</b> (đánh người cũng đeo cờ, cướp tiêu), <b>Đồ sát</b> (đánh tất cả).',

@@ -62,6 +62,8 @@ const NPCS = {
     talk: 'Biên cương nguy cấp! 22:00 mỗi tối, Chiến Trường Tống Kim khai chiến. Báo danh tại ta, lập công thì đổi Công Trạng lấy thưởng.' },
   tk_quan_nhu: { name: 'Quân Nhu Quan', sprite: 'official', color: '#b08a3a', action: 'tongkim',
     talk: 'Hậu doanh là chốn an toàn. Cần gì cứ hỏi ta, muốn về thành cũng được.' },
+  dau_bep: { name: 'Đầu Bếp Tửu Lâu', sprite: 'merchant', color: '#c8602a', action: 'shop', cook: true, shop: ['can_cau', 'moi_cau'],
+    talk: 'Cá tươi từ sông hồ đem tới đây, ta nấu thành món ngon bồi bổ công lực! Cần câu, mồi câu ta cũng có bán.' },
   ct_thanh_quan: { name: 'Thành Quan Lâm An', sprite: 'official', color: '#d8a030', action: 'siege',
     talk: 'Lâm An Thành chỉ thuộc về bang hội mạnh nhất! Thứ 6 hằng tuần 20:30, các bang đã báo danh vào thành tranh đoạt Long Ấn.' },
   dem_thuong_nhan: { name: 'Thương Nhân Bí Ẩn', sprite: 'merchant', color: '#6a4ab8', action: 'mystery',

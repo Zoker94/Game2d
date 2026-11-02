@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🎣 Câu cá & nấu ăn: mua Cần Câu + Mồi Câu ở Đầu Bếp Tửu Lâu (Tương Dương), đứng sát mép sông hồ ở bất kỳ bản đồ nào (kể cả thành, khu VIP) rồi bấm 🎣. Phao chìm "Cá cắn câu!" thì bấm GIẬT CẦN (hoặc phím Space) – có chế độ Câu liên tục, có Vé Treo Máy thì tự giật. 7 loại cá (Kim Long Ngư cực hiếm), có cả rác và rương báu; bãi cấp cao và ban đêm dễ ra cá hiếm; lưu kỷ lục cân nặng. Mang cá về Đầu Bếp nấu 5 món ăn: +10% đến +25% kinh nghiệm, + công / thủ / máu trong 30-60 phút',
       '🏯 Công Thành Chiến (20:30 thứ Sáu): các bang tranh Lâm An Thành. Bang chủ / Trưởng lão báo danh với Thành Quan Lâm An ở Tương Dương (50.000 quỹ bang), thành viên cấp 40+ vào trận. Phá Long Ấn giữa nội thành để chiếm – Long Ấn bắn sét kẻ địch đứng gần. Bang giữ Long Ấn tới hết giờ làm chủ thành 7 ngày: +10% kinh nghiệm cả bang, 30% thuế chợ & giao dịch toàn máy chủ vào quỹ bang, huy hiệu 🏯 vàng cạnh tên bang',
       '🎓 Sư đồ (Bạn bè › Sư đồ, hoặc bấm vào người chơi › Bái sư): người cấp 5-29 bái sư người cấp 60+ (tối đa 3 đồ đệ). Đồ đệ luyện công cùng bản đồ với sư phụ +20% kinh nghiệm (+30% nếu chung tổ đội); đồ đệ lên cấp sư phụ nhận Sư Đức + ngân lượng; cấp 30 xuất sư – cả hai nhận quà lớn. Sư Đức đổi rương, đá, Bảo Hiểm Phù',
       '🌙 Ban đêm (19:30 – 4:30): Quái Đêm xuất hiện ở bãi luyện (khoẻ hơn, kinh nghiệm x2,2, rơi Huyền Tinh Thạch, đá khảm, rương). Dạ Minh Rương ẩn trong bóng tối, chỉ hiện khi đứng gần. 0:00 – 0:30 Thương Nhân Bí Ẩn ghé Tương Dương bán 6 món hiếm giá rẻ (đổi mỗi đêm)',

@@ -722,6 +722,7 @@
         const parts = [];
         const t = Date.now();
         if (me.expBuffUntil > t) parts.push(`📗 x2 KN ${Math.ceil((me.expBuffUntil - t) / 60000)}p`);
+        if (me.food && me.food.until > t) parts.push(`🍲 ${(G.data.items[me.food.id] || {}).name || 'Món ăn'} ${Math.ceil((me.food.until - t) / 60000)}p`);
         if (G.events) for (const e of G.events.list) if (e.active && e.key !== 'quiz') parts.push(`${e.icon} ${e.name}`);
         for (const b of me.buffs) if (b.until > t) parts.push(`✨ ${b.name} ${Math.ceil((b.until - t) / 1000)}s`);
         const h = parts.map(p => `<span>${esc(p)}</span>`).join('');
@@ -1784,7 +1785,7 @@
     if (d.action === 'escortDest') { UI.toast(G.me.escort && G.me.escort.id ? 'Đưa xe tiêu tới sát bên Phân Đà để giao tiêu!' : d.talk); return; }
     npcData = d;
     panel = 'npc';
-    panelState = { tab: d.shop ? 'buy' : d.knbShop ? 'knb' : 'talk' };
+    panelState = { tab: d.cook ? 'cook' : d.shop ? 'buy' : d.knbShop ? 'knb' : 'talk' };
     $('panel').classList.remove('hidden');
     $('panel-title').textContent = d.name;
     UI.refreshPanel();
@@ -1846,6 +1847,7 @@
     const tab = panelState.tab;
     let html = `<div class="npc-head"><canvas width="64" height="64" id="npc-cv"></canvas><p>"${esc(d.talk)}"</p></div>`;
     const tl = [];
+    if (d.cook) tl.push(['cook', '🍲 Nấu ăn']);
     if (d.shop) tl.push(['buy', '🛒 Mua'], ['sell', '💰 Bán']);
     if (d.knbShop) tl.push(['knb', '💎 Kỳ Trân'], ['sell', '💰 Bán']);
     if (d.enhance) tl.push(['enhance', '🔨 Cường hóa'], ['inherit', '♻️ Kế thừa'], ['gem', '💎 Khảm đá'], ['gemup', '🔥 Luyện đá']);
@@ -1871,6 +1873,8 @@
     } else if (tab === 'gem') {
       html += gemTutHtml() + '<div class="small muted">Chọn trang bị (kể cả đang mặc) để khảm đá. Đồ Thường / Hiếm 1 lỗ, VIP 2 lỗ, Truyền Kỳ 3 lỗ. Mỗi món chỉ khảm 1 viên mỗi loại.</div>' +
         invGrid(body, { filter: s => G.data.items[s.id].type === 'equip' }) + gemSocketBox();
+    } else if (tab === 'cook') {
+      html += '<div id="cook-host"></div>';
     } else if (tab === 'gemup') {
       html += gemTutHtml() + '<div id="forge-host"></div>';
     } else if (tab === 'inherit') {
@@ -1885,6 +1889,7 @@
         <h4 class="tp-h">🏮 Môn phái</h4><div class="list">${d.teleports.filter(t => t.sect).map(t => row(Object.assign({}, t, { name: (t.mine ? '⭐ ' : '') + t.name }))).join('')}</div>`;
     }
     body.innerHTML = html;
+    if (tab === 'cook' && window.Fishing && $('cook-host')) Fishing.mountCook($('cook-host'), d);
     if ((tab === 'gemup' || tab === 'enhance') && window.Forge && $('forge-host')) Forge.mount($('forge-host'), tab === 'gemup' ? 'gem' : 'enh', d.id);
     const c = $('npc-cv').getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(Sprites.npcSprite(d.sprite, d.color, 0), 0, 0);
     bindTabs(body);

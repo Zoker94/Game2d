@@ -409,6 +409,56 @@
   }
 
   // Biểu tượng vật phẩm 32x32 (lưới 16)
+  // icon câu cá / nấu ăn (vẽ nét mượt trên ô 32x32)
+  function fishIcon(x, icon) {
+    const FC = { fish_c: ['#c8a050', '#e8c878', '#8a6a2a'], fish_c2: ['#7a8a5a', '#a8b880', '#4a5a30'], fish_c3: ['#6a6a7a', '#9a9aaa', '#3a3a4a'],
+      fish_r: ['#4a6a3a', '#8ab070', '#2a3a1a'], fish_r2: ['#5a4a3a', '#a08a6a', '#2a2018'], fish_e: ['#3a7ab8', '#9ad8ff', '#1a3a6a'], fish_l: ['#e8a020', '#fff0a0', '#a05a00'] };
+    const fish = (col, s) => {
+      x.save(); x.translate(16, 17); x.rotate(-0.35); x.scale(s || 1, s || 1);
+      x.fillStyle = col[2]; x.beginPath(); x.moveTo(8, 0); x.lineTo(14, -6); x.lineTo(13, 0); x.lineTo(14, 6); x.closePath(); x.fill();   // đuôi
+      const g = x.createLinearGradient(0, -6, 0, 6); g.addColorStop(0, col[1]); g.addColorStop(1, col[0]);
+      x.fillStyle = g; x.beginPath(); x.ellipse(-2, 0, 11, 5.5, 0, 0, Math.PI * 2); x.fill();
+      x.strokeStyle = col[2]; x.lineWidth = 1; x.stroke();
+      x.fillStyle = col[2]; x.beginPath(); x.moveTo(-4, -5); x.lineTo(2, -9); x.lineTo(4, -4); x.fill();   // vây lưng
+      x.strokeStyle = 'rgba(0,0,0,.25)'; for (let i = 0; i < 3; i++) { x.beginPath(); x.arc(-1 + i * 3, 0, 3, -1, 1); x.stroke(); }   // vảy
+      x.fillStyle = '#fff'; x.beginPath(); x.arc(-9, -1.5, 1.8, 0, Math.PI * 2); x.fill(); x.fillStyle = '#000'; x.beginPath(); x.arc(-9.3, -1.5, 0.9, 0, Math.PI * 2); x.fill();
+      x.restore();
+    };
+    if (FC[icon]) {
+      fish(FC[icon], icon === 'fish_l' || icon === 'fish_e' ? 1.05 : 0.95);
+      if (icon === 'fish_l') { x.fillStyle = '#fff'; for (const [a, b] of [[6, 6], [26, 9], [22, 26]]) { x.fillRect(a, b - 2, 1, 5); x.fillRect(a - 2, b, 5, 1); } }
+      return true;
+    }
+    if (icon === 'rod') {
+      x.strokeStyle = '#7a5a2a'; x.lineWidth = 3; x.beginPath(); x.moveTo(5, 28); x.lineTo(26, 4); x.stroke();
+      x.strokeStyle = '#a07a3a'; x.lineWidth = 1; for (const t of [0.3, 0.55, 0.8]) { x.beginPath(); x.arc(5 + 21 * t, 28 - 24 * t, 2, 0, Math.PI * 2); x.stroke(); }
+      x.strokeStyle = 'rgba(230,230,230,.9)'; x.beginPath(); x.moveTo(26, 4); x.quadraticCurveTo(30, 14, 26, 22); x.stroke();
+      x.fillStyle = '#e83a2a'; x.beginPath(); x.arc(26, 23, 2.5, 0, Math.PI * 2); x.fill();
+      x.fillStyle = '#3a2a1a'; x.fillRect(5, 22, 5, 5); return true;
+    }
+    if (icon === 'bait') {
+      x.fillStyle = '#6a4a2a'; x.beginPath(); x.ellipse(16, 22, 11, 6, 0, 0, Math.PI * 2); x.fill();
+      x.strokeStyle = '#e88a8a'; x.lineWidth = 3; x.lineCap = 'round';
+      x.beginPath(); x.moveTo(8, 18); x.bezierCurveTo(12, 8, 18, 22, 24, 12); x.stroke();
+      x.beginPath(); x.moveTo(12, 22); x.bezierCurveTo(16, 14, 20, 24, 22, 18); x.stroke(); return true;
+    }
+    if (icon === 'junk') {
+      x.fillStyle = '#5a4a3a'; x.beginPath(); x.moveTo(5, 24); x.lineTo(5, 12); x.lineTo(14, 10); x.lineTo(16, 18); x.lineTo(27, 20); x.lineTo(27, 25); x.closePath(); x.fill();
+      x.fillStyle = '#2a2018'; x.fillRect(5, 24, 22, 3); x.fillStyle = '#7ab0d0'; x.fillRect(18, 8, 2, 4); x.fillRect(22, 10, 2, 3); return true;
+    }
+    const DC = { dish1: ['#c8602a', '#8a3a10'], dish2: ['#e8a040', '#c84a2a'], dish3: ['#d03a2a', '#7a2a1a'], dish4: ['#3a8ad0', '#e8f4ff'], dish5: ['#ffd040', '#c87a10'] };
+    if (DC[icon]) {
+      const [a, b] = DC[icon];
+      x.fillStyle = 'rgba(255,255,255,.55)'; for (let i = 0; i < 3; i++) { x.beginPath(); x.ellipse(11 + i * 5, 6 + (i % 2) * 2, 1.5, 3, 0, 0, Math.PI * 2); x.fill(); }   // khói
+      x.fillStyle = '#e8e0d0'; x.beginPath(); x.ellipse(16, 21, 13, 6, 0, 0, Math.PI * 2); x.fill();   // đĩa / bát
+      x.fillStyle = '#b8b0a0'; x.beginPath(); x.ellipse(16, 22, 13, 5, 0, 0, Math.PI); x.fill();
+      if (icon === 'dish1') { x.save(); x.translate(16, 17); x.rotate(-0.15); x.fillStyle = a; x.beginPath(); x.ellipse(0, 0, 10, 4, 0, 0, Math.PI * 2); x.fill(); x.strokeStyle = b; x.lineWidth = 1.5; for (let i = -6; i <= 6; i += 4) { x.beginPath(); x.moveTo(i, -3); x.lineTo(i + 2, 3); x.stroke(); } x.restore(); }
+      else { x.fillStyle = a; x.beginPath(); x.ellipse(16, 18, 11, 4.5, 0, 0, Math.PI * 2); x.fill(); x.fillStyle = b; for (const [u, v] of [[11, 17], [17, 19], [21, 16]]) { x.beginPath(); x.arc(u, v, 1.8, 0, Math.PI * 2); x.fill(); } x.fillStyle = '#4a9a3a'; x.fillRect(13, 15, 3, 1.5); x.fillRect(19, 18, 3, 1.5); }
+      if (icon === 'dish5') { x.strokeStyle = '#fff6c0'; x.lineWidth = 1; x.beginPath(); x.arc(16, 18, 12, Math.PI * 1.1, Math.PI * 1.9); x.stroke(); }
+      return true;
+    }
+    return false;
+  }
   function itemIcon(icon, rarity, rcolor) {
     const k = 'icon:' + icon + ':' + rarity;
     if (cache[k]) return cache[k];
@@ -479,7 +529,8 @@
         break;
       }
       case 'lantern': p(5, 1, 6, 1, '#ffd700'); p(4, 2, 8, 10, '#e53935'); p(5, 3, 6, 8, '#ff7043'); p(7, 5, 2, 4, '#ffeb3b'); p(7, 12, 2, 3, '#ffd700'); break;
-      default: p(3, 3, 10, 10, '#888');
+      default:
+        if (!fishIcon(ctx, icon)) p(3, 3, 10, 10, '#888');
     }
     cache[k] = c;
     return c;

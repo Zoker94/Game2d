@@ -176,6 +176,22 @@ const CONSUMABLES = [
   { id: 'thien_tam_ti', name: 'Thiên Tàm Ti', desc: 'Tơ tằm trời quý hiếm. Nguyên liệu chế tạo Áo choàng ở bản đồ môn phái (NPC Chưởng Phi Phong). Rơi ít từ quái, nhiều hơn ở tinh anh và Boss; đổi được bằng điểm cống hiến môn phái.', price: 600, icon: 'silk', material: true, rarity: 'rare' },
   { id: 'stone2', name: 'Thiên Tinh Thạch', desc: 'Nguyên liệu quý để cường hóa +11 đến +15. Rơi từ Boss, quái cấp cao, sự kiện.', price: 8000, icon: 'stone2', material: true },
   { id: 'insure', name: 'Bảo Hiểm Phù', desc: 'Khi cường hóa từ +10 trở lên mà thất bại, giữ nguyên cấp thay vì rớt về +1.', price: 15000, icon: 'insure', material: true },
+  // ---- câu cá & nấu ăn (server/game/fishing.js) ----
+  { id: 'can_cau', name: 'Cần Câu Trúc', desc: 'Đứng sát mép nước (sông, hồ – kể cả trong thành) rồi Sử dụng hoặc bấm nút 🎣 để câu cá. Mỗi lần câu tốn 1 Mồi Câu. Không mất khi dùng.', effect: { fish: 1 }, price: 3000, icon: 'rod' },
+  { id: 'moi_cau', name: 'Mồi Câu', desc: 'Mồi giun trộn cám. Mỗi lần thả câu tốn 1 mồi.', price: 30, icon: 'bait', material: true },
+  { id: 'fish_chep', name: 'Cá Chép', desc: 'Cá thường. Nguyên liệu nấu ăn ở Đầu Bếp Tửu Lâu (Tương Dương).', price: 120, icon: 'fish_c', material: true },
+  { id: 'fish_tram', name: 'Cá Trắm', desc: 'Cá thường. Nguyên liệu nấu ăn.', price: 150, icon: 'fish_c2', material: true },
+  { id: 'fish_ro', name: 'Cá Rô Đồng', desc: 'Cá thường. Nguyên liệu nấu ăn.', price: 90, icon: 'fish_c3', material: true },
+  { id: 'fish_qua', name: 'Cá Quả', desc: 'Cá hiếm. Nguyên liệu nấu món ngon.', price: 600, icon: 'fish_r', material: true, rarity: 'rare' },
+  { id: 'fish_chinh', name: 'Cá Chình Sông', desc: 'Cá hiếm, ưa nước sâu. Nguyên liệu nấu món ngon.', price: 900, icon: 'fish_r2', material: true, rarity: 'rare' },
+  { id: 'fish_tam', name: 'Tầm Long Ngư', desc: 'Cá quý cực hiếm. Nấu Tầm Long Ngư Thang hoặc bán được giá cao.', price: 4000, icon: 'fish_e', material: true, rarity: 'epic' },
+  { id: 'fish_kimlong', name: 'Kim Long Ngư', desc: 'Cá thần vảy vàng trong truyền thuyết – vạn lần câu mới gặp. Nấu Kim Long Yến (món mạnh nhất) hoặc bán giá rất cao.', price: 30000, icon: 'fish_l', material: true, rarity: 'legendary' },
+  { id: 'fish_junk', name: 'Giày Rách', desc: 'Câu phải rác… bán cho NPC được vài đồng.', price: 5, icon: 'junk', material: true },
+  { id: 'dish_nuong', name: 'Cá Nướng Than Hồng', desc: 'Ăn: +10% kinh nghiệm trong 30 phút (mỗi lúc chỉ 1 món ăn, ăn món mới thay món cũ).', effect: { food: 'dish_nuong' }, price: 400, icon: 'dish1' },
+  { id: 'dish_canh', name: 'Canh Cá Chua', desc: 'Ăn: +8% công, +8% thủ trong 30 phút.', effect: { food: 'dish_canh' }, price: 1500, icon: 'dish2', rarity: 'rare' },
+  { id: 'dish_lau', name: 'Lẩu Cá Thập Cẩm', desc: 'Ăn: +15% kinh nghiệm, +10% sinh lực tối đa trong 45 phút.', effect: { food: 'dish_lau' }, price: 4000, icon: 'dish3', rarity: 'rare' },
+  { id: 'dish_tam', name: 'Tầm Long Ngư Thang', desc: 'Ăn: +18% kinh nghiệm, +6% công trong 45 phút.', effect: { food: 'dish_tam' }, price: 9000, icon: 'dish4', rarity: 'epic' },
+  { id: 'dish_kimlong', name: 'Kim Long Yến', desc: 'Ăn: +25% kinh nghiệm, +12% công, thủ, sinh lực tối đa trong 60 phút.', effect: { food: 'dish_kimlong' }, price: 40000, icon: 'dish5', rarity: 'legendary' },
   { id: 'mount_food', name: 'Mã Linh Đan', desc: 'Thức ăn cho thú cưỡi, +100 kinh nghiệm thú cưỡi.', price: 400, icon: 'food', material: true },
   { id: 'mount_stone', name: 'Long Huyết Thạch', desc: 'Dùng để đột phá thú cưỡi ở cấp 10, 20, 30, 40.', price: 6000, icon: 'blood', material: true },
   { id: 'title_supreme', name: 'Lệnh Bài: Thiên Hạ Đệ Nhất', desc: 'Dùng để mở khoá vĩnh viễn danh hiệu quà tặng 【Thiên Hạ Đệ Nhất】 có hiệu ứng riêng và đeo ngay. Chưa dùng thì tặng, giao dịch hay bán ở chợ được.', effect: { title: 'g_supreme' }, price: 0, icon: 'title_supreme', rarity: 'legendary' },
@@ -221,7 +237,7 @@ const CONSUMABLES = [
   { id: 'event_token', name: 'Hoa Đăng', desc: 'Vật phẩm sự kiện. Đổi quà tại Lễ Quan.', price: 0, icon: 'lantern', material: true }
 ];
 CONSUMABLES.forEach(c => { ITEMS[c.id] = Object.assign({ type: 'use', lv: c.lv || 1, rarity: 'common', stack: true }, c); });
-for (const id of ['stone', 'stone2', 'insure', 'mount_food', 'mount_stone']) ITEMS[id].type = 'material';
+for (const id of ['stone', 'stone2', 'insure', 'mount_food', 'mount_stone', 'moi_cau', 'fish_chep', 'fish_tram', 'fish_ro', 'fish_qua', 'fish_chinh', 'fish_tam', 'fish_kimlong', 'fish_junk']) ITEMS[id].type = 'material';
 ITEMS.stone2.rarity = 'epic'; ITEMS.insure.rarity = 'rare'; ITEMS.mount_stone.rarity = 'rare';
 
 // Sách võ công môn phái
