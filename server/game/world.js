@@ -202,6 +202,7 @@ class World {
     const c = user.character;
     this.syncTester(user);
     this.dropHacLong(c);
+    if (c.mailbox && c.mailbox.length) setTimeout(() => { if (this.players.get(user.id) && c.mailbox && c.mailbox.length) this.toast(this.players.get(user.id), `📦 Hòm Đồ có ${c.mailbox.reduce((a, e) => a + e.qty, 0)} vật phẩm đang chờ (phần thưởng lúc túi đầy) – mở Túi đồ để nhận.`, 'reward'); }, 4000);
     const old = this.players.get(user.id);
     if (old && old.offline) this.autoSrv.endOffline(old, 'back');   // đang được máy chủ treo hộ: vào lại thì nhận lại nhân vật
     else if (old) { old.socket.emit('notice', { text: 'Tài khoản đăng nhập ở nơi khác.', type: 'error' }); this.removePlayer(old); old.socket.disconnect(true); }
@@ -394,7 +395,7 @@ class World {
       minhChu: this.titleFlags(p), title: this.titleOf(c, p.user.isAdmin), ach: Object.assign({ bossKills: c.bossKills | 0 }, c.ach || {}), tk: this.tongkim ? this.tongkim.tag(p) : 0, congTrang: c.congTrang || 0,
       attr: c.attr || {}, attrFree: attrTotalOf(c) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
       branch: branchOf(c), skills: c.skills || {}, hotbar: c.hotbar, sp: spTotalOf(c) - (c.spSpent || 0),
-      mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, autoTicket: c.autoTicket > Date.now() ? c.autoTicket : 0, pkMode: c.pkMode | 0, pkLock: !!((c.pkLock || c.pk >= PK_OUTLAW) && c.pk > 0), escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
+      mailbox: (c.mailbox || []).slice(0, 60).map(e => [e.id, e.qty, e.plus || 0]), mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, autoTicket: c.autoTicket > Date.now() ? c.autoTicket : 0, pkMode: c.pkMode | 0, pkLock: !!((c.pkLock || c.pk >= PK_OUTLAW) && c.pk > 0), escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
       sect: this.sect ? this.sect.meView(p) : null, giftTitles: c.giftTitles || [], mine: this.mining ? this.mining.view(p) : null,
       med: !!p.med, pvp: this.inPvp(p) ? 1 : 0, st: this.statusView(p), friends: Object.keys(c.friends || {}).length, friendIds: this.friendIds(c), pk: c.pk || 0,
       rank: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0
@@ -489,11 +490,31 @@ class World {
   giveItem(p, id, qty = 1, plus = 0, bind = false) {
     bind = bind || !!p._bindUse;   // vật phẩm mở ra từ rương / túi khoá cũng là đồ khoá
     if (!U.addItem(p.c, id, qty, plus, null, bind)) {
-      const dr = this.createDrop(p.mapId, p.x, p.y, id, qty, p.userId, plus, bind ? 120000 : 15000);
-      if (bind) dr.bd = 1;   // đồ khoá rơi ra: chỉ chủ nhặt được
-      this.toast(p, 'Túi đồ đầy! Vật phẩm rơi dưới chân.', 'error');
+      this.stash(p.c, id, qty, plus, bind);   // túi đầy: gửi vào Hòm Đồ, không rơi đất (tránh mất khi rời phó bản / sự kiện)
+      if (!(p._stashMsg > Date.now())) { p._stashMsg = Date.now() + 3000; this.toast(p, `📦 Túi đồ đầy! ${ITEMS[id] ? ITEMS[id].name : id} đã được gửi vào Hòm Đồ – mở Túi đồ để nhận.`, 'error'); }
     }
     p.dirtyMe = true;
+  }
+  // Hòm Đồ: phần thưởng không vừa túi (phó bản, sự kiện, boss, thưởng gửi lúc offline...) nằm ở đây, không bao giờ mất
+  stash(c, id, qty = 1, plus = 0, bind = false) {
+    if (!ITEMS[id] || qty <= 0) return;
+    const box = c.mailbox || (c.mailbox = []);
+    if (U.isStack(id)) { const s = box.find(x => x.id === id && !x.bd === !bind); if (s) { s.qty += qty; this.db.markDirty(); return; } }
+    box.push(Object.assign({ id, qty, t: Date.now() }, plus ? { plus } : null, bind ? { bd: 1 } : null));
+    this.db.markDirty();
+  }
+  claimMailbox(p) {
+    const c = p.c, box = c.mailbox || [];
+    if (!box.length) return this.toast(p, 'Hòm Đồ trống', 'info');
+    let got = 0;
+    for (const e of box) {
+      if (U.isStack(e.id)) { if (U.addItem(c, e.id, e.qty, 0, null, !!e.bd)) { got += e.qty; e.qty = 0; } continue; }
+      while (e.qty > 0 && U.addItem(c, e.id, 1, e.plus || 0, null, !!e.bd)) { e.qty--; got++; }
+    }
+    c.mailbox = box.filter(e => e.qty > 0);
+    const left = c.mailbox.reduce((a, e) => a + e.qty, 0);
+    this.toast(p, got ? `📦 Đã nhận ${got} vật phẩm từ Hòm Đồ${left ? ` – còn ${left} món, hãy dọn thêm chỗ trong túi` : ''}.` : 'Túi đồ đầy, hãy dọn chỗ rồi nhận lại.', got ? 'reward' : 'error');
+    p.dirtyMe = true; this.db.markDirty();
   }
 
   expMultiplier(p) {

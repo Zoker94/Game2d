@@ -409,6 +409,7 @@ io.on('connection', socket => {
   on('dodge', inGame(d => world.dodge(player, d)));
   on('story', inGame(d => world.story.action(player, d)));
   on('pickup', inGame(d => world.pickupItem(player, d && typeof d.id === 'string' ? d.id : null)));
+  on('mailbox', inGame(() => world.claimMailbox(player)));
   on('useItem', inGame(d => world.useItem(player, d && d.uid, d && d.n)));
   on('quickUse', inGame(d => {
     const kind = d && d.kind === 'mp' ? 'mp' : 'hp';

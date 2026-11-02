@@ -975,6 +975,12 @@
     const me = G.me;
     for (const u of [...dropMark]) if (!me.inv.some(s => s.uid === u)) dropMark.delete(u);
     let html = `<div class="small muted" style="margin-bottom:6px">💰 ${fmt(me.gold)} lượng · 💎 ${fmt(me.knb)} Nguyên Bảo · Túi ${me.inv.length}/${me.invMax || 48} · Lực chiến <b style="color:#ffd76a">${fmt(me.stats.power)}</b></div>`;
+    if (me.mailbox && me.mailbox.length) {   // Hòm Đồ: phần thưởng lúc túi đầy
+      const n = me.mailbox.reduce((a, e) => a + e[1], 0);
+      html += `<div class="mailbox-bar"><div class="mb-t">📦 <b>Hòm Đồ</b> · ${n} vật phẩm đang chờ<div class="small muted">Phần thưởng nhận lúc túi đầy (phó bản, sự kiện, boss...) được giữ ở đây, không bị mất.</div></div>
+        <div class="mb-items">${me.mailbox.slice(0, 12).map(e => `<span class="mb-it" title="${esc((G.data.items[resolveId(e[0])] || {}).name || e[0])}${e[2] ? ' +' + e[2] : ''} x${e[1]}"><img src="${iconUrl(e[0])}" width="28" height="28">${e[1] > 1 ? `<i>${e[1]}</i>` : ''}</span>`).join('')}${me.mailbox.length > 12 ? '<span class="small muted">…</span>' : ''}</div>
+        <button class="btn small green" id="mb-claim">Nhận</button></div>`;
+    }
     html += `<div class="inv-tools"><button class="btn small" id="inv-sort">🧹 Sắp xếp</button><button class="btn small ${sellMode ? 'green' : ''}" id="inv-sell">${sellMode ? '✕ Thoát bán nhanh' : '💰 Bán đồ rác'}</button><button class="btn small ${dropMode ? 'red' : ''}" id="inv-drop">${dropMode ? '✕ Thoát vứt nhanh' : '🗑️ Vứt nhanh'}</button></div>`;
     if (sellMode) {
       body.innerHTML = html + quickSellHtml() + invGrid(body, { noEquip: true, mark: sellMark }) + (sellMulti ? '' : itemActions());
@@ -986,6 +992,7 @@
     if (!dropMode) html += itemActions();
     body.innerHTML = html;
     bindInv(body); bindInvTools();
+    const mb = body.querySelector('#mb-claim'); if (mb) mb.onclick = () => emit('mailbox');
     if (!dropMode) return;
     body.querySelectorAll('.inv-grid [data-uid]').forEach(el => el.onclick = () => { const u = el.dataset.uid; dropMark.has(u) ? dropMark.delete(u) : dropMark.add(u); G.sfx('click'); UI.refreshPanel(); });
     $('dm-common').onclick = e => { e.preventDefault(); me.inv.forEach(s => { const it = G.data.items[s.id]; if (it.type === 'equip' && it.rarity === 'common' && !s.plus) dropMark.add(s.uid); }); UI.refreshPanel(); };

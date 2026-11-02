@@ -308,7 +308,7 @@ class Features {
   giveOffline(c, r) {
     if (r.gold) c.gold += r.gold;
     if (r.knb) c.knb += r.knb;
-    for (const [id, q] of r.items || []) U.addItem(c, id, q);
+    for (const [id, q] of r.items || []) if (!U.addItem(c, id, q)) this.w.stash(c, id, q);   // túi đầy: vào Hòm Đồ
     this.db.markDirty();
   }
 
