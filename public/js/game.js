@@ -438,8 +438,9 @@
         : { t: `${c.cur ? '📍 ' : ''}Khu ${c.ch} · ${c.n}/${c.cap}`, cls: 'ch' + (c.cur ? ' cur' : c.n >= c.cap ? ' full' : c.n ? ' busy' : ''), fn: () => { if (!c.cur) G.socket.emit('channel', { ch: c.ch }); } }).concat([{ t: 'Đóng', cls: 'ch-close' }]));
       $('modal-btns').classList.add('ch-grid');   // 20 khu: xếp lưới
     }
+    s.on('ticketEnd', () => { if (G.auto) G.setAuto(false); });   // Vé Treo Máy hết hạn: tắt Tự động
     s.on('autoSrvReport', r => {
-      const why = r.why === 'dead' ? ' Nhân vật bị hạ gục nên đã dừng.' : r.why === 'time' ? ' Đã đủ 8 giờ nên tự dừng.' : '';
+      const why = r.why === 'dead' ? ' Nhân vật bị hạ gục nên đã dừng.' : r.why === 'time' ? ' Đã đủ 8 giờ nên tự dừng.' : r.why === 'ticket' ? ' Vé Treo Máy hết hạn nên đã dừng.' : '';
       const text = `🤖 Máy chủ đã treo máy hộ ${r.mins} phút${r.offline ? ' lúc bạn thoát' : ''}: hạ ${r.kills} quái, ${r.gold >= 0 ? '+' : ''}${(r.gold || 0).toLocaleString('vi-VN')} lượng${r.lv > 0 ? `, lên ${r.lv} cấp (cấp ${r.lvNow})` : ''}.${why}`;
       UI.toast(text, 'reward'); UI.chatMsg({ ch: 'sys', from: 'Hệ Thống', text, t: Date.now() });
     });
@@ -2100,7 +2101,7 @@
         tkWarned[m] = 1; UI.toast(`🎫 Vé Treo Máy còn ${m} phút – mua thêm ở Kỳ Trân Các để máy chủ tiếp tục treo hộ`, 'error');
       }
     } else {
-      if (!b.classList.contains('hidden')) { b.classList.add('hidden'); $('btn-auto').title = 'Tự động đánh (R)'; if (tkHad) UI.toast('🎫 Vé Treo Máy đã hết hạn: máy chủ không treo hộ khi thoát game, không vào được Khu VIP.', 'error'); }
+      if (!b.classList.contains('hidden')) { b.classList.add('hidden'); $('btn-auto').title = 'Tự động đánh (R)'; }   // hết hạn: máy chủ báo (ticketEnd) và tắt Tự động
       tkHad = 0;
     }
   }, 1000);

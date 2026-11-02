@@ -110,9 +110,16 @@ class AutoSrv {
 
   tick(now) {
     for (const p of [...this.w.players.values()]) {
-      const a = p.autoSrv;
+      const a = p.autoSrv, tk = hasTicket(p.c);
+      // Vé Treo Máy vừa hết hạn: dừng treo máy (offline: đưa ra khỏi game; đang mở game: tắt Tự động ở máy người chơi)
+      const expired = p._tk && !tk; p._tk = tk;
+      if (p.offline && (now - p.offline > OFFLINE_MAX || !tk)) { this.endOffline(p, tk ? 'time' : 'ticket'); continue; }
+      if (expired && !p.offline) {
+        if (a) { a.on = false; a.active = false; p.moving = false; }
+        p.socket.emit('ticketEnd');
+        this.w.toast(p, '🎫 Vé Treo Máy đã hết hạn: đã tắt Tự động. Mua vé mới ở Kỳ Trân Các để tiếp tục treo máy và vào Khu VIP.', 'error');
+      }
       if (!a) continue;
-      if (p.offline && (now - p.offline > OFFLINE_MAX || !hasTicket(p.c))) { this.endOffline(p, 'time'); continue; }
       if (this.captchaTick(p, a, now)) continue;   // bị đưa ra khỏi game
       const on = a.on && hasTicket(p.c) && (p.offline || (p.away && now - (p.lastClientMove || 0) > IDLE_GRACE) || (p.lastHb && now - p.lastHb > HB_LOST));
       if (!on) { if (a.active) { a.active = false; p.moving = false; } continue; }
