@@ -19,7 +19,7 @@ CFG = {
     'bach_ma': dict(h=100, front=6, back=3, side=7, seat_fx=0.40, seat_dy=8, down=0.16, cut=0.44, ftop=0.15, shadow=None, hole=(9, 250)),
     # mask='color': nền xám nhạt nhiều tông + bóng chân -> lấy điểm ảnh đậm màu/tối làm hình; fly: cánh vỗ cả lúc đứng yên
     'thanh_long': dict(h=118, front=6, back=6, side=6, seat_fx=0.50, seat_dy=8, down=0.07, cut=0.46, ftop=0.10, shadow=None, hole=(20, 60), mask='color', fly=True),
-    'phuong_hoang': dict(h=122, front=6, back=6, side=6, seat_fx=0.55, seat_dy=8, down=0.12, cut=0.50, ftop=0.10, shadow=None, hole=(20, 60), mask='color', fly=True),
+    'phuong_hoang': dict(h=122, front=6, back=6, side=6, side_b=8, seat_fx=0.62, seat_dy=8, down=0.12, cut=0.50, ftop=0.10, shadow=None, hole=(20, 60), mask='color', fly=True),
     # fy/fx: vùng lớp đè người cưỡi ở hướng trước (tỉ lệ cao/rộng); rùa: chỉ đầu + chân trước, bò: cả cặp sừng rộng
     'kim_quy': dict(h=82, front=6, back=6, side=5, seat_fx=0.52, seat_dy=6, down=0.04, cut=0.72, up=0.14, ftop=0.0, fy=(0.58, 1.0), fx=(0.15, 0.85), shadow=(159, 160, 139), hole=(20, 60)),
     'kim_nguu': dict(h=96, front=6, back=6, side=5, seat_fx=0.45, seat_dy=6, down=0.22, cut=0.42, ftop=0.0, fy=(0.38, 0.95), fx=(0.0, 1.0), shadow=(181, 154, 145), hole=(20, 60)),
@@ -88,7 +88,8 @@ def build(mid):
     raw = lambda nm: Image.open(os.path.join(src, nm + '.png')).convert('RGBA')
     names = [f'side_{k}' for k in range(cfg['side'])] + [f'front_{k}' for k in range(cfg['front'])] + [f'back_{k}' for k in range(cfg['back'])]
     # khôi phục pixel art: về lưới ô gốc (~4,16px ở ảnh 2000px), bảng màu chung, viền rõ, phóng bội số nguyên
-    fr, SCALE = pixfix.prepare({nm: raw(nm) for nm in names}, off, cfg.get('b', 4.16), cfg['h'], names[:cfg['side']], cfg.get('colors', 112))
+    bsz = lambda nm: cfg['side_b'] if nm.startswith('side') and 'side_b' in cfg else cfg.get('b', 4.16)
+    fr, SCALE = pixfix.prepare({nm: raw(nm) for nm in names}, off, bsz, cfg['h'], names[:cfg['side']], cfg.get('colors', 112))
     K = SCALE
     side = [fr[f'side_{k}'] for k in range(cfg['side'])]
     front = [fr[f'front_{k}'] for k in range(cfg['front'])]

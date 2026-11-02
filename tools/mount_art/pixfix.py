@@ -82,7 +82,8 @@ def prepare(raws, offs, b, h_side, side_names, colors=112):
     """raws: {tên: ảnh gốc}, offs: {tên: khoảng cách tới đỉnh hàng (px gốc)} -> ({tên: (ảnh sheet, off sheet)}, scale)"""
     nat = {}
     for nm, im in raws.items():
-        n_, (ox, oy) = native(im, b); nat[nm] = (enhance(n_), (offs[nm] + oy) / b)
+        bb = b(nm) if callable(b) else b   # cỡ ô có thể khác theo khung (vd. hình ngang vẽ riêng)
+        n_, (ox, oy) = native(im, bb); nat[nm] = (enhance(n_), (offs[nm] + oy) / bb)
     pal = palette([v[0] for v in nat.values()], colors)
     hn = float(np.median([nat[nm][0].height for nm in side_names]))
     n = max(2, math.ceil(2 * h_side / hn))
