@@ -420,9 +420,10 @@
       return top - 17;
     }
     // khung + hiệu ứng theo từng danh hiệu (public/js/titlefx.js); bậc cao có hiệu ứng nhô lên trên nên đẩy tên bang cao hơn
-    TitleFX.draw(ctx, t, x, top - 23, performance.now(), !!o.lite);
-    let yTop = top - 30;
-    if (o.guild) { const gy = t.tier >= 3 ? top - 42 : top - 37; outlined(ctx, '«' + o.guild + '»', x, gy, 10, '#7fb8ff', '#000', 600); yTop = gy - 7; }
+    // khung danh hiệu (cả viền kép, cánh) đặt cao hơn tên để không đè lên chữ tên
+    TitleFX.draw(ctx, t, x, top - 30, performance.now(), !!o.lite);
+    let yTop = top - 37;
+    if (o.guild) { const gy = t.tier >= 3 ? top - 49 : top - 44; outlined(ctx, '«' + o.guild + '»', x, gy, 10, '#7fb8ff', '#000', 600); yTop = gy - 7; }
     return yTop;
   }
   // sát khí: khói đen quanh người

@@ -37,7 +37,12 @@ cols = [(side[0], front[0], back[0])] + [(side[k], front[fb_idx[k]], back[fb_idx
 NT = len(cols)
 allf = [f for c in cols for f in c]
 CW = max(im.width for im, _ in allf) + 2 * PAD
-base = max(o + im.height for im, o in allf)                  # đáy chung (chân chạm đất)
+# mỗi hướng có đường đáy riêng (ảnh gốc mỗi hàng cao khác nhau): dời hàng cho móng chạm cùng một đường đất
+def gnd(fr): return max(o + im.height for im, o in fr)
+GS, GF = gnd(side), gnd(front)
+GB = min(o + im.height for im, o in back)   # sau lưng: vài khung chân sau bước về phía người nhìn thò thấp hơn – lấy khung đứng làm mặt đất
+base = max(GS, GF, GB) + 2
+DS, DF, DB = base - GS, base - GF, base - GB
 CH = base + PAD
 sheet = Image.new('RGBA', (CW * NT, CH * 5))
 seats = {'side': [], 'down': [], 'up': []}
@@ -53,7 +58,7 @@ SIDE_SEAT_FX, SIDE_SEAT_DY = 0.43, 16      # yên ngựa: 43% bề ngang (tính 
 for ci, ((si, so), (fi, fo), (bi, bo)) in enumerate(cols):
     x0 = ci * CW
     # ngang: căn theo thân (nửa trên), chân chạm đáy chung
-    cx = centre_x(si); px = round(CW / 2 - cx); py = so
+    cx = centre_x(si); px = round(CW / 2 - cx); py = so + DS
     sheet.alpha_composite(si, (x0 + px, py))
     sx = SIDE_SEAT_FX * si.width
     seats['side'].append([round(px + sx, 1), round(py + top_at(si, sx) + SIDE_SEAT_DY, 1)])
@@ -62,6 +67,7 @@ for ci, ((si, so), (fi, fo), (bi, bo)) in enumerate(cols):
     m = np.zeros((h, w), bool); c0 = int(w * 0.27); c1 = int(w * 0.73); m[:int(h * 0.62), c0:c1] = True
     over = fa.copy(); over[~m] = 0
     pxf = round(CW / 2 - w / 2)
+    fo += DF
     sheet.alpha_composite(fi, (x0 + pxf, CH + fo))
     sheet.alpha_composite(Image.fromarray(over, 'RGBA'), (x0 + pxf, 2 * CH + fo))
     ftop = np.nonzero((fa[..., 3] > 0).any(1))[0][0]
@@ -70,6 +76,7 @@ for ci, ((si, so), (fi, fo), (bi, bo)) in enumerate(cols):
     ba = np.asarray(bi).copy(); h2, w2 = ba.shape[:2]
     cut = int(h2 * 0.42); over2 = ba.copy(); over2[:cut] = 0
     pxb = round(CW / 2 - w2 / 2)
+    bo += DB
     sheet.alpha_composite(bi, (x0 + pxb, 3 * CH + bo))
     sheet.alpha_composite(Image.fromarray(over2, 'RGBA'), (x0 + pxb, 4 * CH + bo))
     btop = np.nonzero((ba[..., 3] > 0).any(1))[0][0]
@@ -77,7 +84,7 @@ for ci, ((si, so), (fi, fo), (bi, bo)) in enumerate(cols):
 
 sheet.quantize(colors=255, method=Image.FASTOCTREE, dither=Image.NONE).save(OUT + 'mounts/hac_ma.png', optimize=True)   # 255 màu: 1,2MB -> ~0,3MB
 meta = json.load(open(OUT + 'mounts.json'))
-meta['per']['hac_ma'] = {'cell': [CW, CH], 'foot': [CW / 2, int(base) - 1], 'footFB': [CW / 2, int(base) - 1],
+meta['per']['hac_ma'] = {'cell': [CW, CH], 'foot': [CW / 2, int(base) - 3], 'footFB': [CW / 2, int(base) - 3],
                          'frames': {'idle': [0, 1], 'run': [1, NR]}, 'rows': {'side': [0], 'down': [1, 2], 'up': [3, 4]},
                          'scale': 0.5, 'runMs': 95, 'idleMs': 700}
 meta['seats']['hac_ma'] = seats
