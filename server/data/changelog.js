@@ -2,6 +2,12 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '02/11/2026',
+    items: [
+      '👆 Điện thoại: bấm giữ vào người chơi chỉ cần 0,5 giây (trước 1,5 giây) là hiện bảng Xem thông tin / Kết bạn / Thách đấu.'
+    ]
+  },
+  {
     date: '30/10/2026',
     items: [
       '🐛 Sửa lỗi bật chiêu hỗ trợ (VD Ảnh Tung, Băng Tâm Quyết của Thúy Yên) làm Lực chiến tụt: chí mạng vượt giới hạn 75% khiến lực chiến bị trừ oan. Giờ lực chiến giữ nguyên khi bật buff.',
