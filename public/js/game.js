@@ -1312,6 +1312,22 @@
     }
     return best;
   }
+  // cảnh báo có người bật đồ sát quanh mình (khu không cấm PK): dải đỏ trên màn hình, bấm để chọn mục tiêu người gần nhất
+  let pkWarnT = 0, pkWarnEl = null, pkNearest = null;
+  function pkWarn(now) {
+    if (now - pkWarnT < 400 || !G.me || !G.map || !G.self) return; pkWarnT = now;
+    const m = G.map, off = m.safe || m.pvp || m.noPk;
+    const list = off ? [] : [...G.players.values()].filter(e => e.pm && !e.dead && !Party.has(e.id) && Math.hypot(e.x - G.self.x, e.y - G.self.y) < 1100)
+      .sort((a, b) => Math.hypot(a.x - G.self.x, a.y - G.self.y) - Math.hypot(b.x - G.self.x, b.y - G.self.y));
+    if (!pkWarnEl) {
+      pkWarnEl = document.createElement('div'); pkWarnEl.id = 'pk-warn'; pkWarnEl.className = 'hidden'; document.body.appendChild(pkWarnEl);
+      pkWarnEl.onclick = () => { if (pkNearest) { G.target = pkNearest; UI.toast('🎯 Đã chọn ' + ((G.players.get(pkNearest) || {}).name || ''), 'info'); } };
+    }
+    pkNearest = list.length ? list[0].id : null;
+    const ds = list.filter(e => e.pm === 2).length, cp = list.length - ds;
+    const html = list.length ? `${ds ? '☠' : '🚩'} Cảnh báo: ${ds ? `<b>${ds}</b> người bật ĐỒ SÁT` : ''}${ds && cp ? ', ' : ''}${cp ? `<b>${cp}</b> người đeo CỜ PK` : ''} gần bạn – ${list.slice(0, 3).map(e => (e.pm === 2 ? '☠' : '🚩') + UI.esc(e.name)).join(', ')}${list.length > 3 ? '…' : ''}` : '';
+    if (pkWarnEl._h !== html) { pkWarnEl._h = html; pkWarnEl.innerHTML = html; pkWarnEl.classList.toggle('hidden', !html); pkWarnEl.classList.toggle('red', list.some(e => e.pm === 2)); }
+  }
   // tự bơm máu / nội lực (chạy cả khi không bật tự động nếu chọn "luôn bơm")
   function autoPotion(now) {
     const me = G.me, st = me.stats, cfg = autoCfg();
@@ -1544,6 +1560,8 @@
         if (e.bf && !e.dead) Auras.draw(ctx, e.x, e.y, e.bf, now, 'under', elift);
         if (e.dv && !e.dead) DivineFX.under(ctx, e.x, e.y, now, e.dv, (e.id || '').length * 7 + (e.name || '').length);   // Thần Binh: vòng tím dưới chân
         if (e.iv) ctx.globalAlpha = 0.4;   // quản trị viên đang tàng hình (chỉ quản trị viên khác thấy)
+        const epk = e.pm && !e.dead && !G.map.pvp ? e.pm : 0;
+        if (epk) Escort.drawPkRing(ctx, e.x, e.y, epk, now);
         const top = drawHero(e.x, e.y, e.cls, e.dir, e.lastH, e.moving, e.atkUntil > now, e.ap, e.dead, e.x / 50, now, e);
         ctx.globalAlpha = 1;
         if (e.dv && !e.dead) DivineFX.over(ctx, e.x, e.y, now, e.dv, (e.id || '').length * 7 + (e.name || '').length);
@@ -1551,7 +1569,8 @@
         if (e.pm && !e.dead && !G.map.pvp) Escort.drawFlag(ctx, e.x, e.y, top, e.dir === 1 || e.dir === 2 ? e.dir : (e.lastH || 2), e.pm, now);
         if (pm) Overhead.drawOver(ctx, e, e.x, e.y, top, pm, now);
         let ptop = top - 6;
-        if (G.settings.names) ptop = Overhead.drawNameplate(ctx, e.x, top, { name: e.name, level: e.level, gm: e.gm, guild: e.guild, power: e.pw, myPower: G.me.stats.power, title: e.ttl, lite: !!e.lod, rank: e.rk, pk: e.k, mc: e.mc, tk: e.tk, party: Party.has(e.id) });
+        if (G.settings.names) ptop = Overhead.drawNameplate(ctx, e.x, top, { name: e.name, level: e.level, gm: e.gm, guild: e.guild, power: e.pw, myPower: G.me.stats.power, title: e.ttl, lite: !!e.lod, rank: e.rk, pk: e.k, pm: epk, mc: e.mc, tk: e.tk, party: Party.has(e.id) });
+        if (epk) { ptop -= 10; Escort.drawPkBadge(ctx, e.x, ptop, epk, now); ptop -= 8; }   // nhãn ĐỒ SÁT trên cùng, không bị che
         hpBar(e.x, top - 4, 40, e.hp / e.maxHp, '#4ade80');
         if (e.rb && !e.dead) { ptop -= 14; label(e.x, ptop, '💰 Truy nã · Cướp Tiêu', '#ff5050', 11, true); }
         if (e.bubble) bubbles.push([e, ptop + 4]);
@@ -1568,6 +1587,8 @@
         if (sdv) DivineFX.under(ctx, s.x, s.y, now, sdv, 0);
         if (sdv >= 10) DivineFX.selfShake(now, 0);
         if (me.gm && me.gm.hide) ctx.globalAlpha = 0.4;   // đang tàng hình: tự thấy mình mờ
+        const spk = me.pkMode && !me.dead && !G.map.pvp ? me.pkMode : 0;
+        if (spk) Escort.drawPkRing(ctx, s.x, s.y, spk, now);
         const top = drawHero(s.x, s.y, me.cls, s.dir, s.lastH, s.moving, s.atkUntil > now, me.ap, me.dead, 0, now, s);
         ctx.globalAlpha = 1;
         if (sdv) DivineFX.over(ctx, s.x, s.y, now, sdv, 0);
@@ -1575,7 +1596,8 @@
         if (me.pkMode && !me.dead && !G.map.pvp) Escort.drawFlag(ctx, s.x, s.y, top, s.dir === 1 || s.dir === 2 ? s.dir : (s.lastH || 2), me.pkMode, now);
         if (sm) Overhead.drawOver(ctx, s, s.x, s.y, top, sm, now);
         let stop = top - 6;
-        if (G.settings.names) stop = Overhead.drawNameplate(ctx, s.x, top, { self: true, name: me.name, gm: me.admin, guild: me.guild && me.guild.name, power: me.stats.power, title: me.title, rank: me.rank, pk: me.pk, mc: me.minhChu, tk: me.tk });
+        if (G.settings.names) stop = Overhead.drawNameplate(ctx, s.x, top, { self: true, name: me.name, gm: me.admin, guild: me.guild && me.guild.name, power: me.stats.power, title: me.title, rank: me.rank, pk: me.pk, pm: spk, mc: me.minhChu, tk: me.tk });
+        if (spk) { stop -= 10; Escort.drawPkBadge(ctx, s.x, stop, spk, now); stop -= 8; }
         hpBar(s.x, top - 4, 40, me.hp / me.stats.maxHp, '#ff5050');
         if (me.robUntil > Date.now() && !me.dead) { stop -= 14; label(s.x, stop, '💰 Truy nã · Cướp Tiêu', '#ff5050', 11, true); }
         if (s.bubble) bubbles.push([s, stop + 4]);
@@ -2057,7 +2079,7 @@
     gfx.k = budget ? budget / 16.67 : 1;
     if (!G._mlCover && budget !== 50) gfxTick(now - last, now);   // khung chậm lúc tải map / lúc vẽ thưa khi để yên không tính vào tự hạ độ nét
     last = now;
-    try { update(dt); if (!G._mlCover) draw(now); UI.frame(now); } catch (e) { console.error(e); }
+    try { update(dt); if (!G._mlCover) draw(now); UI.frame(now); pkWarn(now); } catch (e) { console.error(e); }
     PerfHud.frame(now);
     if (G.inGame) requestAnimationFrame(loop);
   }

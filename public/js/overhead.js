@@ -380,6 +380,7 @@
     const t = earned(o.title), pk = pkLevel(o.pk);
     let nameCol = o.self ? '#ffd76a' : relColor(o.power, o.myPower).color;
     if (pk) nameCol = pk === 2 ? '#c00010' : '#ff5a5a';
+    else if (o.pm) nameCol = o.pm === 2 ? '#ff3030' : '#ff8a3a';   // đang bật đồ sát: tên đỏ cam
     else if (o.party) nameCol = '#5dff8a';
     const name = (o.pk > 0 ? '☠' + o.pk + ' ' : '') +   // điểm sát khí hiện ngay trước tên
        (o.party ? '👥 ' : '') + (o.gm ? '[GM] ' : '') + o.name + (o.level ? ' Lv' + o.level : '');

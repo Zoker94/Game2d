@@ -55,6 +55,33 @@
     ctx.restore();
   }
 
+  // vòng đỏ nhấp nháy dưới chân người bật đồ sát (thấy rõ từ xa, không bị tên / danh hiệu / thú cưỡi che)
+  function drawPkRing(ctx, x, y, mode, now) {
+    if (!mode) return;
+    const t = (now % 1200) / 1200, red = mode === 2;
+    ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.42);
+    ctx.globalAlpha = 0.55; ctx.lineWidth = 3; ctx.strokeStyle = red ? '#ff1a1a' : '#ff6a20';
+    ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = 0.6 * (1 - t); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, 30 + t * 22, 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = 0.18; ctx.fillStyle = red ? '#ff0000' : '#ff5a10'; ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  // nhãn trên cùng (vẽ sau tên, danh hiệu): cam = Đeo cờ PK, đen viền đỏ = Đồ sát
+  function drawPkBadge(ctx, x, y, mode, now) {
+    if (!mode) return;
+    const red = mode === 2, txt = red ? '☠ ĐỒ SÁT' : '🚩 CỜ PK';
+    ctx.save();
+    ctx.font = '900 10px Be Vietnam Pro, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const w = Math.ceil(ctx.measureText(txt).width) + 12, h = 14, pulse = 0.5 + 0.5 * Math.sin(now / 180);
+    ctx.shadowColor = red ? 'rgba(255,0,0,.9)' : 'rgba(255,90,20,.9)'; ctx.shadowBlur = 6 + pulse * 6;
+    ctx.fillStyle = red ? '#120408' : '#c01010';
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - w / 2, y - h / 2, w, h, 4) : ctx.rect(x - w / 2, y - h / 2, w, h); ctx.fill();
+    ctx.shadowBlur = 0; ctx.lineWidth = 1.2; ctx.strokeStyle = red ? '#ff3030' : '#ffe08a'; ctx.stroke();
+    ctx.fillStyle = red ? '#ff4040' : '#fff4d0'; ctx.fillText(txt, x, y + 0.5);
+    ctx.restore();
+  }
+
   // ---------- xe tiêu ----------
   const cartCache = {};
   function cartSprite(tier, view, wheel) {
@@ -267,5 +294,5 @@
 
   setInterval(() => { if (G.inGame && G.me) { pkButton(); hud(); } }, 400);
 
-  window.Escort = { canHarm, canHitCart, drawFlag, drawCart, open, drawArrow, PK_MODES };
+  window.Escort = { canHarm, canHitCart, drawFlag, drawPkRing, drawPkBadge, drawCart, open, drawArrow, PK_MODES };
 })();

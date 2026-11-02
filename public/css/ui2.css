@@ -358,3 +358,9 @@ body.touch #chat-emo { min-width: 36px; font-size: 16px; }
 #modal-btns.ch-grid .btn.ch-vip { grid-column: 1 / -1; background: linear-gradient(90deg, #6a4a10, #c8922c, #6a4a10) !important; color: #fff6d0 !important; border-color: #ffd76a !important; font-weight: 800; text-shadow: 0 1px 0 #3a2400; box-shadow: 0 0 10px rgba(255,200,80,.45); }
 #modal-btns.ch-grid .btn.ch-vip.locked { filter: saturate(.55) brightness(.85); }
 #ch-tag.vip { color: #ffd76a; text-shadow: 0 0 6px rgba(255,200,80,.8); }
+
+/* cảnh báo có người bật đồ sát gần đây */
+#pk-warn { position: fixed; top: 44px; left: 50%; transform: translateX(-50%); z-index: 30; padding: 4px 12px; border-radius: 14px; font-size: 11.5px; font-weight: 700; color: #fff4e0; background: linear-gradient(90deg, rgba(120,10,10,.92), rgba(200,30,20,.92), rgba(120,10,10,.92)); border: 1px solid #ff8a6a; box-shadow: 0 0 12px rgba(255,40,20,.6); cursor: pointer; white-space: nowrap; max-width: min(92vw, 520px); overflow: hidden; text-overflow: ellipsis; animation: pkwarn 1.2s ease-in-out infinite; }
+#pk-warn.red { background: linear-gradient(90deg, rgba(20,4,8,.95), rgba(90,0,10,.95), rgba(20,4,8,.95)); border-color: #ff3030; color: #ff8080; }
+#pk-warn.hidden { display: none; }
+@keyframes pkwarn { 50% { box-shadow: 0 0 22px rgba(255,40,20,.95); } }
