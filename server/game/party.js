@@ -44,6 +44,7 @@ class Party {
       this.toast(p, `👥 Đã mời ${o.c.name} vào tổ đội`);
       return this.answer(o, true);
     }
+    const bl = this.w.invBlock(o, 'party'); if (bl) { this.invites.delete(o.userId); return this.toast(p, '🚫 ' + bl, 'error'); }
     o.socket.emit('partyReq', { id: p.id, name: p.c.name, level: p.c.level, cls: p.c.cls, n: pt ? pt.members.length : 1 });
     this.toast(p, `👥 Đã mời ${o.c.name} vào tổ đội`);
   }

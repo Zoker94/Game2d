@@ -14,7 +14,7 @@ const OFFLINE_MAX = 8 * 3600e3;   // mất kết nối: treo tối đa 8 giờ r
 const IDLE_GRACE = 3000;          // máy khách im lặng 3 giây (không gửi di chuyển) thì máy chủ mới cầm lái
 const HB_LOST = 8000;             // mất nhịp tim 8 giây (điện thoại tắt màn / khoá máy, trang bị đóng băng): máy chủ cầm lái luôn
 const RANK = { common: 0, rare: 1, epic: 2, legendary: 3, divine: 4 };
-const DEF = { pickup: true, pickGold: true, pickMin: 'common', pickPots: true, pickMats: true, pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, skills: true, range: 700, partyAuto: false, partyFrom: 'all' };
+const DEF = { pickup: true, pickGold: true, pickMin: 'common', pickPots: true, pickMats: true, pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, skills: true, range: 700, partyAuto: false, partyFrom: 'all', blockInvAuto: false };
 // Vé Treo Máy: còn hạn thì máy chủ treo hộ khi rời trang / tắt game. Không có vé vẫn bật Tự động được nhưng chỉ khi đang mở game,
 // và cứ mỗi lượt 5–30 phút bị hỏi mã xác nhận ngẫu nhiên: 15 giây không bấm đúng thì bị đưa ra khỏi game (chống treo bỏ mặc).
 const FAST = !!process.env.CAP_FAST;   // chỉ để kiểm thử: hỏi mã sau 5–10 giây

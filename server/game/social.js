@@ -65,6 +65,7 @@ class Social {
       // người kia đã mời mình trước -> thành bạn luôn
       const mine = this.friendReq.get(p.userId);
       if (mine && mine.has(o.userId)) return this.makeFriends(p, o);
+      const bl = this.w.invBlock(o, 'friend'); if (bl) return this.toast(p, '🚫 ' + bl, 'error');
       let m = this.friendReq.get(o.userId); if (!m) this.friendReq.set(o.userId, m = new Map());
       m.set(p.userId, Date.now());
       o.socket.emit('friendReq', { id: p.id, name: p.c.name, cls: p.c.cls, level: p.c.level });
@@ -115,6 +116,7 @@ class Social {
       const o = this.byEntity(a.id);
       if (!o) return this.toast(p, 'Không tìm thấy người chơi', 'error');
       if (o.c.guildId) return this.toast(p, `${o.c.name} đã có bang hội`, 'error');
+      const bl = this.w.invBlock(o, 'guild'); if (bl) return this.toast(p, '🚫 ' + bl, 'error');
       this.guildInv.set(o.userId, { gid: g.id, from: p.userId, t: Date.now() });
       o.socket.emit('guildInvite', { name: p.c.name, guild: g.name });
       return this.toast(p, `Đã mời ${o.c.name} vào bang`, 'reward');
@@ -144,6 +146,7 @@ class Social {
         if (!o || o === p) return this.toast(p, 'Không tìm thấy người chơi', 'error');
         if (o.mapId !== p.mapId || U.dist(o, p) > 400) return this.toast(p, 'Hãy đứng gần người kia để giao dịch', 'error');
         if (p.trade || o.trade) return this.toast(p, 'Một bên đang giao dịch', 'error');
+        const bl = this.w.invBlock(o, 'trade'); if (bl) return this.toast(p, '🚫 ' + bl, 'error');
         this.tradeReq.set(o.userId, { from: p.userId, t: Date.now() });
         o.socket.emit('tradeReq', { id: p.id, name: p.c.name });
         return this.toast(p, `Đã gửi lời mời giao dịch tới ${o.c.name}`, 'info');

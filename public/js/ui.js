@@ -1508,6 +1508,9 @@
           <button class="btn small primary" id="set-auto">🤖 Cài đặt tự động (nhặt đồ, bơm máu...)</button>
           <label class="set-row"><input type="checkbox" id="set-qauto" ${s.questAuto !== false ? 'checked' : ''}> 🧭 Tự đi làm nhiệm vụ khi nhận nhiệm vụ mới (cốt truyện, môn phái)</label>
           <label class="set-row"><input type="checkbox" data-set="autoUpdate" ${s.autoUpdate !== false ? 'checked' : ''}> 🔄 Tự vào lại game khi máy chủ có bản cập nhật mới (giữ trạng thái Tự động)</label></div>
+        <div class="card"><h4>🚫 Chặn lời mời</h4>
+          ${[['party', '👥 Mời vào tổ đội'], ['friend', '🤝 Kết bạn'], ['trade', '💰 Giao dịch'], ['duel', '⚔️ Thách đấu tỷ thí'], ['guild', '🏯 Mời vào bang hội']].map(([k, n]) => `<label class="set-row"><input type="checkbox" data-binv="${k}" ${G.me && G.me.blockInv && G.me.blockInv[k] ? 'checked' : ''}> Chặn lời mời: ${n}</label>`).join('')}
+          <div class="small muted">Người khác mời sẽ nhận thông báo bạn đang chặn, bạn không bị làm phiền. Muốn tự từ chối mọi lời mời chỉ khi đang treo máy: vào Cài đặt tự động.</div></div>
         <div class="card"><h4>💬 Cộng đồng</h4><p class="small">Tham gia nhóm Zalo để nhận gift code, tin sự kiện và giao lưu với các đại hiệp khác.</p>
           <div class="row" style="justify-content:flex-start;gap:6px;flex-wrap:wrap"><button class="btn small primary" id="set-invite">📣 Mời bạn nhận quà${(() => { const d = $('ref-dot'); return d && !d.classList.contains('hidden') ? ' 🔴' : ''; })()}</button><button class="btn small primary" id="set-gift">🎁 Gift code${(() => { const d = $('gift-dot'); return d && !d.classList.contains('hidden') ? ' 🔴' : ''; })()}</button><a class="zalo-btn" href="https://zalo.me/g/fkxw5crl6ksc0jotbzgp" target="_blank" rel="noopener">💬 Nhóm Zalo</a><button class="btn small" id="set-online">👥 Người chơi online</button><button class="btn small" id="set-news">📜 Lịch sử cập nhật</button>${G.user && G.user.owner ? '<button class="btn small primary" id="set-admin">🛡️ Trang quản trị</button>' : ''}</div></div>
         <div class="card"><h4>👤 Tài khoản</h4>
@@ -1519,6 +1522,10 @@
     bindTabs(body, 'stab');
     const on = (id, ev, fn) => { const e = $(id); if (e) e[ev] = fn; };
     body.querySelectorAll('[data-set]').forEach(c => c.onchange = () => { G.settings[c.dataset.set] = c.checked; G.saveSettings(); });
+    body.querySelectorAll('[data-binv]').forEach(c => c.onchange = () => {
+      const b = {}; body.querySelectorAll('[data-binv]').forEach(x => { if (x.checked) b[x.dataset.binv] = 1; });
+      if (G.me) G.me.blockInv = b; emit('blockInv', b); UI.toast(c.checked ? '🚫 Đã bật chặn lời mời' : 'Đã bỏ chặn lời mời', 'info');
+    });
     body.querySelectorAll('[data-gfx]').forEach(b => b.onclick = () => { G.setGfx(b.dataset.gfx); UI.refreshPanel(); });
     body.querySelectorAll('[data-uipref]').forEach(b => b.onclick = () => { if (b.dataset.uipref === Input.uiPref) return; try { localStorage.setItem('vl_ui', b.dataset.uipref); } catch (e) {} location.reload(); });
     on('set-view', 'oninput', e => { const v = +e.target.value; $('set-view-v').textContent = v + '%'; G.setView(v / 100); });
@@ -1942,10 +1949,11 @@
         ${tg('potAlways', 'Luôn tự bơm, kể cả khi không bật Tự động')}
         ${tg('townLow', 'Hết bình máu thì dùng Hồi Thành Phù về thành')}${sl('townPct', 5, 50, 'Khi sinh lực dưới')}
         <p class="small ${totalHp < 10 ? 'warn' : 'muted'}">Còn ${totalHp} bình máu · ${totalMp} bình nội lực${totalHp < 10 ? ' — sắp hết, hãy mua thêm ở Hiệu Thuốc!' : ''}</p></div>
-      <div class="au-box"><h4>👥 Tổ đội</h4>
+      <div class="au-box"><h4>👥 Tổ đội & lời mời</h4>
         ${tg('partyAuto', 'Tự đồng ý khi được mời vào tổ đội')}
         <div class="au-row"><span>Nhận lời mời từ</span><select data-s="partyFrom">${[['all', 'Mọi người'], ['friend', 'Bạn bè & cùng bang']].map(([v, n]) => `<option value="${v}" ${c.partyFrom === v ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
-        <p class="small muted">Có tác dụng cả khi không bật Tự động và khi đang treo máy trên máy chủ. Người trong danh sách chặn vẫn bị từ chối.</p></div>
+        <p class="small muted">Có tác dụng cả khi không bật Tự động và khi đang treo máy trên máy chủ. Người trong danh sách chặn vẫn bị từ chối.</p>
+        ${tg('blockInvAuto', '🚫 Đang bật Tự động thì từ chối mọi lời mời (kết bạn, giao dịch, tỷ thí, bang, tổ đội – trừ "Tự đồng ý vào tổ đội" ở trên)')}</div>
       <div class="au-box"><h4>⚔️ Đánh quái</h4>
         ${tg('skills', 'Dùng võ công (tắt = chỉ đánh thường)')}
         <div class="au-row"><span>Phạm vi tìm quái</span><select data-s="range">${[[400, 'Gần'], [700, 'Vừa'], [1000, 'Xa']].map(([v, n]) => `<option value="${v}" ${+c.range === v ? 'selected' : ''}>${n}</option>`).join('')}</select></div>

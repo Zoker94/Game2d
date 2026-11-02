@@ -37,6 +37,7 @@ class Duel {
     if (this.w.maps[p.mapId].def.instance) return this.toast(p, 'Không thể thách đấu trong phó bản', 'error');
     if (this.w.maps[p.mapId].def.hoason) return this.toast(p, 'Đỉnh Hoa Sơn chỉ dành cho các trận Luận Kiếm', 'error');
     if (p.duelCd > now) return this.toast(p, `Đợi ${Math.ceil((p.duelCd - now) / 1000)} giây nữa mới thách đấu tiếp được`, 'error');
+    const bl = this.w.invBlock(o, 'duel'); if (bl) return this.toast(p, '🚫 ' + bl, 'error');
     const old = this.reqs.get(o.userId);
     if (old && old.from === p.userId && now - old.t < REQ_TTL) return this.toast(p, 'Đã gửi lời thách đấu, hãy chờ trả lời', 'info');
     this.reqs.set(o.userId, { from: p.userId, t: now });

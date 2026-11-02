@@ -1277,7 +1277,7 @@
   }
 
   // ===== Cài đặt tự động =====
-  const AUTO_DEF = { pickPots: true, pickMats: true, pickup: true, pickGold: true, pickMin: 'common', pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, potAlways: true, townLow: false, townPct: 15, skills: true, range: 700, partyAuto: false, partyFrom: 'all' };
+  const AUTO_DEF = { pickPots: true, pickMats: true, pickup: true, pickGold: true, pickMin: 'common', pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, potAlways: true, townLow: false, townPct: 15, skills: true, range: 700, partyAuto: false, partyFrom: 'all', blockInvAuto: false };
   function autoCfg() { return Object.assign({}, AUTO_DEF, G.autoCfg); }
   G.autoCfgGet = autoCfg;
   G.autoCfgSet = (k, v) => { G.autoCfg[k] = v; try { localStorage.setItem('vl_auto', JSON.stringify(G.autoCfg)); } catch (e) {} sendAutoSrv(); };
