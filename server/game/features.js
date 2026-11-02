@@ -192,9 +192,11 @@ class Features {
     if (cur && cur.mon && !cur.mon.dead) return false;
     const map = MAPS[tpl.map];
     const pos = this.w.randomSpotNear(map, map.boss.x + 0.5, map.boss.y + 0.5, 1);
-    const mon = this.w.spawnMonster(tpl.map, tpl, { x: map.boss.x, y: map.boss.y, r: 3 }, { pos });
-    this.bosses[id] = { mon, spawnedAt: Date.now() };
-    this.announce(`🔥 Boss ${tpl.name} (cấp ${tpl.lv}) đã xuất hiện tại ${map.name}! Các đại hiệp mau đến tiêu diệt!`);
+    // bản đồ chia khu: boss ra ngẫu nhiên ở 1 trong các khu thường (không bao giờ ở khu VIP – người không có vé không vào săn được)
+    const ch = map.chs ? U.randInt(1, map.chs) : 1, mid = chId(tpl.map, ch);
+    const mon = this.w.spawnMonster(mid, tpl, { x: map.boss.x, y: map.boss.y, r: 3 }, { pos });
+    this.bosses[id] = { mon, ch, spawnedAt: Date.now() };
+    this.announce(`🔥 Boss ${tpl.name} (cấp ${tpl.lv}) đã xuất hiện tại ${map.name}${map.chs ? ` – Khu ${ch}` : ''}! Các đại hiệp mau đến tiêu diệt!`);
     this.db.log('boss', `Boss ${tpl.name} xuất hiện`);
     this.broadcastEvents();
     return true;
@@ -228,7 +230,7 @@ class Features {
       const k = ((mod - b.offset) % b.every + b.every) % b.every;
       const next = k === 0 ? b.every : b.every - k;
       const alive = this.bosses[b.id] && this.bosses[b.id].mon && !this.bosses[b.id].mon.dead;
-      return { id: b.id, name: b.name, lv: b.lv, map: b.map, mapName: MAPS[b.map].name, alive: !!alive, next,
+      return { id: b.id, name: b.name, lv: b.lv, map: b.map, mapName: MAPS[b.map].name + (alive && MAPS[b.map].chs ? ` – Khu ${this.bosses[b.id].ch || 1}` : ''), alive: !!alive, next,
         hp: alive ? this.bosses[b.id].mon.hp : 0, maxHp: b.hp, every: b.every };
     });
   }

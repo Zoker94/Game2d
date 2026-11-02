@@ -431,9 +431,9 @@
       if (!d || !d.list.length) return UI.toast('Bản đồ này không chia khu', 'info');
       // khu VIP (cấm đồ sát, cần Vé Treo Máy) xếp đầu, nổi bật
       const list = d.list.filter(c => c.vip).concat(d.list.filter(c => !c.vip));
-      G.modal(`${d.name} – chọn khu (mỗi khu tối đa ${d.list[0].cap} người)`, list.map(c => c.vip
-        ? { t: `${c.cur ? '📍 ' : ''}👑 Khu VIP · ${c.n}/${c.cap} · cấm đồ sát${c.ok ? '' : ' 🔒'}`, cls: 'ch ch-vip' + (c.cur ? ' cur' : c.n >= c.cap ? ' full' : '') + (c.ok ? '' : ' locked'),
-            fn: () => { if (c.cur) return; if (!c.ok) return G.modal('👑 Khu VIP chỉ dành cho người đang dùng Vé Treo Máy.<br>Khu VIP cấm đồ sát, treo máy an toàn, tối đa ' + c.cap + ' người.<br>Mua Vé Treo Máy ở Kỳ Trân Các.', [{ t: 'Đã hiểu', cls: 'primary' }]); G.socket.emit('channel', { ch: c.ch }); } }
+      G.modal(`${d.name} – chọn khu (mỗi khu tối đa ${d.list[0].cap} người)${d.xpb ? `\n⚔ Khu thường cho phép PK: +${d.xpb}% kinh nghiệm, boss có thể xuất hiện ở bất kỳ khu nào` : ''}`, list.map(c => c.vip
+        ? { t: `${c.cur ? '📍 ' : ''}👑 Khu VIP · ${c.n}/${c.cap} · cấm đồ sát · không có boss${c.ok ? '' : ' 🔒'}`, cls: 'ch ch-vip' + (c.cur ? ' cur' : c.n >= c.cap ? ' full' : '') + (c.ok ? '' : ' locked'),
+            fn: () => { if (c.cur) return; if (!c.ok) return G.modal('👑 Khu VIP chỉ dành cho người đang dùng Vé Treo Máy.\nKhu VIP cấm đồ sát, treo máy an toàn, tối đa ' + c.cap + ' người.\nMua Vé Treo Máy ở Kỳ Trân Các.', [{ t: 'Đã hiểu', cls: 'primary' }]); G.socket.emit('channel', { ch: c.ch }); } }
         : { t: `${c.cur ? '📍 ' : ''}Khu ${c.ch} · ${c.n}/${c.cap}`, cls: 'ch' + (c.cur ? ' cur' : c.n >= c.cap ? ' full' : c.n ? ' busy' : ''), fn: () => { if (!c.cur) G.socket.emit('channel', { ch: c.ch }); } }).concat([{ t: 'Đóng', cls: 'ch-close' }]));
       $('modal-btns').classList.add('ch-grid');   // 20 khu: xếp lưới
     }
@@ -501,7 +501,7 @@
     WorldArt.setMap(d.map); G._camSnap = true;
     d.drops.forEach(x => { if (x.om) x.ownUntil = performance.now() + x.om; G.drops.set(x.id, x); });
     const m = d.map;
-    $('map-name').innerHTML = `${m.name} <span class="${m.pvp ? 'pvp' : m.safe || m.noPk ? 'safe' : 'muted'}">${m.pvp ? '[PK]' : m.safe ? '[An toàn]' : m.noPk ? '[Cấm PK]' : '[Cấp ' + m.lv + ']'}</span>${m.chs > 1 ? ` <b id="ch-tag" class="${m.vip ? 'vip' : ''}" title="Đổi khu">${m.vip ? '👑 Khu VIP' : 'Khu ' + m.ch} ▾</b>` : ''}`;
+    $('map-name').innerHTML = `${m.name} <span class="${m.pvp ? 'pvp' : m.safe || m.noPk ? 'safe' : 'muted'}">${m.pvp ? '[PK]' : m.safe ? '[An toàn]' : m.noPk ? '[Cấm PK]' : '[Cấp ' + m.lv + ']'}</span>${m.chs > 1 ? ` <b id="ch-tag" class="${m.vip ? 'vip' : ''}" title="Đổi khu">${m.vip ? '👑 Khu VIP' : 'Khu ' + m.ch} ▾</b>` : ''}${m.xpb ? ` <span class="xpb-tag" title="Khu thường cho phép PK: kinh nghiệm cao hơn Khu VIP">⚔ +${m.xpb}% KN</span>` : ''}`;
     const ct = $('ch-tag'); if (ct) ct.onclick = e => { e.stopPropagation(); G.socket.emit('channels'); };
     Weather.set(m.weather, WorldArt.theme, true);
     // nền minimap

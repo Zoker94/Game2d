@@ -288,7 +288,7 @@ class World {
     p.socket.emit('init', {
       you: p.id, enhRate: ENHANCE_RATE,   // tỉ lệ cường hoá hiện hành (quản trị viên có thể đã sửa)
       // id: bản đồ gốc (máy khách tra dữ liệu theo id này); key: id thật của khu; ch / chs: khu hiện tại / số khu
-      map: { id: baseOf(d.id), key: d.id, ch: chOf(d.id), chs: d.chs || 1, vip: !!d.vip, name: d.name, theme: d.theme, w: d.w, h: d.h, tiles: d.tiles, safe: d.safe, pvp: d.pvp, noPk: !!d.noPk, lv: d.lv,
+      map: { id: baseOf(d.id), key: d.id, ch: chOf(d.id), chs: d.chs || 1, vip: !!d.vip, xpb: this.pkZoneBonus(d.id), name: d.name, theme: d.theme, w: d.w, h: d.h, tiles: d.tiles, safe: d.safe, pvp: d.pvp, noPk: !!d.noPk, lv: d.lv,
         weather: this.weatherOf(mapId), spawns: (d.spawns || []).map(s => [s.mon, s.x, s.y]), portals: d.portals, buildings: d.buildings || [], props: d.props || [], sect: d.sect || null, npcs: d.npcs.map(n => ({ ...n, name: NPCS[n.id].name, sprite: NPCS[n.id].sprite, color: NPCS[n.id].color, action: NPCS[n.id].action })) },
       x, y, solid: SOLID, tile: TILE,
       drops: [...m.drops.values()].map(dr => this.dropView(dr))
@@ -360,7 +360,7 @@ class World {
     const list = [];
     for (let i = 1; i <= def.chs; i++) list.push({ ch: i, n: this.maps[chId(base, i)].players.size, cap: CH_CAP, cur: chOf(p.mapId) === i });
     if (def.vipCh) list.push({ ch: VIP_CH, vip: true, n: this.maps[chId(base, VIP_CH)].players.size, cap: VIP_CAP, cur: chOf(p.mapId) === VIP_CH, ok: vipOk(p.c) });
-    return { base, name: def.name, list };
+    return { base, name: def.name, list, xpb: this.pkZoneBonus(base) };
   }
   switchChannel(p, ch) {
     ch = ch | 0;
@@ -554,7 +554,14 @@ class World {
     if (this.features && this.features.isActive('doubleExp')) m *= 2;
     if (p.c.expBuffUntil > Date.now()) m *= 2;
     if (p.stats && p.stats.fx && p.stats.fx.expup) m *= 1 + p.stats.fx.expup / 100;
+    m *= 1 + this.pkZoneBonus(p.mapId) / 100;
     return m;
+  }
+  // khu thường của bãi luyện (cho phép PK) được cộng thêm % kinh nghiệm so với khu VIP an toàn (cấu hình pkExpBonus, mặc định 20)
+  pkZoneBonus(mapId) {
+    const m = this.maps[mapId], d = m && m.def;
+    if (!d || !d.chs || d.vip || d.noPk || d.safe) return 0;
+    const v = this.db.data.config.pkExpBonus; return v == null ? 20 : Math.max(0, v | 0);
   }
 
   gainExp(p, amount, raw = false) {

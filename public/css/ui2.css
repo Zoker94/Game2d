@@ -374,3 +374,6 @@ body.touch #chat-emo { min-width: 36px; font-size: 16px; }
 .hs-cf-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; margin: 4px 0 12px; }
 .hs-cf-bar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #ff4a2a, #ffd76a); }
 .hs-cf-go { width: 100%; padding: 12px; font-size: 15px; font-weight: 900; margin-bottom: 6px; animation: pkwarn 1s ease-in-out infinite; }
+
+.xpb-tag { color: #ffb27a; font-size: 10.5px; font-weight: 800; text-shadow: 0 0 4px rgba(255,120,40,.6); }
+#modal-text { white-space: pre-line; }
