@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🐴 Hắc Mã (ngựa ô truy chiến giáp) có hình 4 hướng mới vẽ tay: mặt trước, sau lưng và nhìn ngang với dáng chạy 8 nhịp, giáp xích, chùm lông đỏ trên mũ.',
       '📦 HÒM ĐỒ: khi túi đầy, phần thưởng phó bản, sự kiện, boss, áp tiêu và quà gửi lúc offline không còn rơi xuống đất hay bị mất nữa mà được giữ trong Hòm Đồ. Mở Túi đồ → bấm "Nhận" khi đã dọn chỗ.',
       '💰 Giảm mạnh giá bán trang bị cho NPC, tính theo độ hiếm và cấp đồ: thường 15–35, Hiếm 50–110, VIP (tím) 180–420, Truyền Kỳ 730–1.680 lượng (+20% mỗi cấp cường hoá).',
       '🧪 Bình máu và bình nội lực có hồi chiêu 3 giây (mỗi loại tính riêng). Nút bình hiện vòng đếm ngược; tự bơm máu chờ hết hồi chiêu mới dùng tiếp, không làm kẹt việc bơm nội lực.',
