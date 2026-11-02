@@ -183,9 +183,23 @@ class World {
     if (!user.tester && has) { c.giftTitles = g.filter(x => x !== 'tester'); if (c.title === 'tester') c.title = ''; return true; }
     return false;
   }
+  // Hắc Long đã gỡ khỏi game: ai đang có thì đổi sang Thanh Long (giữ cấp); đã có Thanh Long thì giữ cấp cao hơn và hoàn 8000 Nguyên Bảo.
+  dropHacLong(c) {
+    if (!c) return;
+    const sw = a => { if (Array.isArray(a)) for (const x of a) if (x && x.id === 'mount_hac_long') x.id = 'mount_thanh_long'; };
+    sw(c.inv); sw(c.bank && c.bank.items);
+    const m = c.mounts && c.mounts.hac_long;
+    if (!m) return;
+    const t = c.mounts.thanh_long;
+    if (!t) { c.mounts.thanh_long = m; c.hacLongNote = 'swap'; }
+    else { if ((m.lv | 0) > (t.lv | 0)) c.mounts.thanh_long = m; c.knb = (c.knb | 0) + 8000; c.hacLongNote = 'refund'; }
+    delete c.mounts.hac_long;
+    if (c.mount === 'hac_long') c.mount = 'thanh_long';
+  }
   addPlayer(user, socket) {
     const c = user.character;
     this.syncTester(user);
+    this.dropHacLong(c);
     const old = this.players.get(user.id);
     if (old && old.offline) this.autoSrv.endOffline(old, 'back');   // đang được máy chủ treo hộ: vào lại thì nhận lại nhân vật
     else if (old) { old.socket.emit('notice', { text: 'Tài khoản đăng nhập ở nơi khác.', type: 'error' }); this.removePlayer(old); old.socket.disconnect(true); }
@@ -220,6 +234,7 @@ class World {
       setTimeout(() => { if (this.players.get(user.id) === p) { this.giveItem(p, 'pet_hong_long', 1); this.toast(p, '🐉 Đã gửi Hồng Long Ấu Thú (thú cưng thử nghiệm) vào túi đồ. Vào túi → Sử dụng để triệu hồi.', 'reward'); this.db.markDirty(); } }, 2500);
     }
     // quản trị viên: tặng đủ 9 bí kíp Tuyệt Kỹ Giang Hồ một lần (túi đầy thì lần đăng nhập sau tặng tiếp; nhận thêm bằng /tuyetky)
+    if (c.hacLongNote) { const nt = c.hacLongNote; delete c.hacLongNote; setTimeout(() => { if (this.players.get(user.id) === p) this.toast(p, nt === 'swap' ? '🐉 Thú cưỡi Hắc Long đã ngừng phát hành: đã đổi sang Thanh Long, giữ nguyên cấp.' : '🐉 Thú cưỡi Hắc Long đã ngừng phát hành: đã hoàn 8000 Nguyên Bảo (giữ cấp cao hơn cho Thanh Long).', 'reward'); }, 3500); this.db.markDirty(); }
     if ((isOwner(user) || user.isAdmin) && !c.jhGift) setTimeout(() => { if (this.players.get(user.id) === p && !c.jhGift && this.giveJhBooks(p)) { c.jhGift = 1; this.toast(p, '⚡ Đã gửi 9 bí kíp Tuyệt Kỹ Giang Hồ vào túi đồ (quản trị viên). Nhận thêm: /tuyetky', 'reward'); } }, 3000);
     const st = this.db.data.stats;
     st.peakOnline = Math.max(st.peakOnline || 0, this.players.size);

@@ -14,6 +14,8 @@ class Market {
   constructor(world) {
     this.w = world;
     this.db = world.db;
+    // Hắc Long đã gỡ khỏi game: đồ đang bày bán đổi thành Thanh Long
+    for (const st of Object.values(this.stalls)) for (const it of st.items || []) if (it.s && it.s.id === 'mount_hac_long') it.s.id = 'mount_thanh_long';
   }
   get stalls() { return this.db.data.stalls || (this.db.data.stalls = {}); }
   toast(p, t, k) { this.w.toast(p, t, k || 'info'); }
