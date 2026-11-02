@@ -39,6 +39,14 @@
     $('modal-msg').classList.remove('hidden');
   };
 
+  // bảo trì: hiện lý do + giờ dự kiến + nút vào nhóm Zalo
+  const ZALO_URL = 'https://zalo.me/g/fkxw5crl6ksc0jotbzgp';
+  G.maintModal = function (msg, eta) {
+    const text = '🛠 Máy chủ đang bảo trì' + (msg ? '\n\nLý do: ' + msg : '') + (eta ? '\nDự kiến xong: ' + eta : '') + '\n\nVào nhóm Zalo để nhận tin mở lại máy chủ nhé!';
+    G.modal(text, [{ t: '💬 Vào nhóm Zalo', cls: 'zalo', fn: () => { window.open(ZALO_URL, '_blank', 'noopener'); setTimeout(() => G.maintModal(msg, eta), 300); } }, { t: 'Thử lại', fn: () => location.reload() }]);
+  };
+  async function maintInfo() { try { const c = await (await fetch('/api/config')).json(); return [c.maintMsg || '', c.maintEta || '']; } catch (e) { return ['', '']; } }
+
   async function api(path, opts = {}) {
     const res = await fetch(path, { method: opts.body ? 'POST' : 'GET', headers: Object.assign({ 'Content-Type': 'application/json' }, G.token ? { Authorization: 'Bearer ' + G.token } : {}), body: opts.body ? JSON.stringify(opts.body) : undefined });
     const j = await res.json().catch(() => ({}));
@@ -162,7 +170,7 @@
 
   function showLogin() {
     show('screen-login');
-    if (G.config.maintenance) $('login-msg').textContent = '⚠ Máy chủ đang bảo trì.';
+    if (G.config.maintenance) { $('login-msg').textContent = '⚠ Máy chủ đang bảo trì.' + (G.config.maintMsg ? ' Lý do: ' + G.config.maintMsg : '') + (G.config.maintEta ? ' · Dự kiến xong: ' + G.config.maintEta : ''); G.maintModal(G.config.maintMsg, G.config.maintEta); }
     if (G.config.devLogin) $('login-dev').classList.remove('hidden');
     if (!G.config.googleClientId) { $('google-wrap').classList.add('hidden'); return; }
     const init = () => {
@@ -244,6 +252,7 @@
     enterGame();
   };
   function enterGame() {
+    if (!G.socket) return location.reload();   // mất kết nối (VD máy chủ đang bảo trì): tải lại để hiện thông báo
     Pregame.Scene.stop();   // tắt nền cảnh động của các màn trước khi vào game
     G.inGame = true;
     Input.inGame = true;
@@ -293,7 +302,7 @@
       const m = err.message;
       if (m === 'auth') { localStorage.removeItem('vl_token'); G.token = null; s.close(); G.socket = null; showLogin(); }
       else if (m === 'banned') { s.close(); G.modal('Tài khoản của bạn đã bị khóa.', [{ t: 'Đăng xuất', fn: logout }]); }
-      else if (m === 'maintenance') { s.close(); G.modal('Máy chủ đang bảo trì, vui lòng quay lại sau.', [{ t: 'Thử lại', fn: () => location.reload() }]); }
+      else if (m === 'maintenance') { s.close(); maintInfo().then(([msg, eta]) => G.maintModal(msg, eta)); }
     });
     s.on('disconnect', reason => {
       if (reason === 'io server disconnect') return;
@@ -309,7 +318,7 @@
       if (!d.user.hasChar) showCreate(); else { showEnter(); if (reEnter) { const ra = reEnter; reEnter = null; G._reAuto = !!ra.auto; enterGame(); } }
       requestAnimationFrame(animPreview);
     });
-    s.on('kicked', d => { G.inGame = false; s.close(); G.modal(d.reason || 'Bạn đã bị ngắt kết nối', [{ t: 'Tải lại', fn: () => location.reload() }]); });
+    s.on('kicked', d => { G.inGame = false; s.close(); if (d.maint) return G.maintModal(d.msg, d.eta); G.modal(d.reason || 'Bạn đã bị ngắt kết nối', [{ t: 'Tải lại', fn: () => location.reload() }]); });
     s.on('enhRate', r => { if (G.data && G.data.enhance && Array.isArray(r)) G.data.enhance.rate = r; });
     s.on('init', d => { Market.onStalls([]); onInit(d); });   // đổi bản đồ: xoá gian hàng (máy chủ gửi lại nếu là Chợ Phiên)
     s.on('snap', onSnap);

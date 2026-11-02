@@ -295,3 +295,5 @@ body.touch.pvp-on.tk-on #chat.collapsed { display: flex; }
 body.touch #emo-pop button { font-size: 21px; padding: 5px 0; }
 body.touch #chat-emo { min-width: 36px; font-size: 16px; }
 #mine-hud.auto { pointer-events: auto; cursor: pointer; }
+/* nút vào nhóm Zalo (bảng bảo trì) */
+#modal-btns .btn.zalo { background: linear-gradient(180deg, #2a8cff, #0a5ad8); border-color: #6ab0ff; color: #fff; }

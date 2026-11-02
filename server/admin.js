@@ -240,9 +240,12 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     for (const k of ['expRate', 'dropRate', 'goldRate']) if (b[k] != null) c[k] = U.clamp(+b[k] || 1, 0.1, 100);
     if (b.vipDropBase != null) c.vipDropBase = U.clamp(+b.vipDropBase || 0, 0, 1);
     if (b.motd != null) c.motd = String(b.motd).slice(0, 300);
+    if (b.maintMsg != null) c.maintMsg = String(b.maintMsg).slice(0, 500);    // lý do bảo trì (hiện cho người chơi)
+    if (b.maintEta != null) c.maintEta = String(b.maintEta).slice(0, 80);     // dự kiến xong (chữ tự do, VD "15:30 hôm nay")
     if (b.maintenance != null) {
+      const was = c.maintenance;
       c.maintenance = !!b.maintenance;
-      if (c.maintenance) for (const p of [...world.players.values()]) if (!p.user.isAdmin) { p.socket.emit('kicked', { reason: 'Máy chủ đang bảo trì' }); world.removePlayer(p); p.socket.disconnect(true); }
+      if (c.maintenance && !was) for (const p of [...world.players.values()]) if (!p.user.isAdmin) { p.socket.emit('kicked', { maint: 1, msg: c.maintMsg || '', eta: c.maintEta || '', reason: 'Máy chủ đang bảo trì' }); world.removePlayer(p); p.socket.disconnect(true); }
     }
     if (b.autoEvents != null) c.autoEvents = !!b.autoEvents;
     if (b.serverMode === 'test' || b.serverMode === 'open') c.serverMode = b.serverMode;   // Open Test: NPC bán thêm rương mở đồ; Open chính thức: không bán
