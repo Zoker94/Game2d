@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🪧 Bia Chỉ Dẫn Giang Hồ ở các thành được vẽ lại thành bia đá thật: đội trên lưng rùa, mái ngói cong, chữ "CHỈ DẪN" mạ vàng, ánh vàng lấp lánh cho người mới dễ thấy.',
       '🎫 Vé Treo Máy hết hạn: tự tắt Tự động ngay (kể cả đang treo offline trên máy chủ – nhân vật được đưa ra khỏi game, báo cáo ghi rõ do hết vé) và đưa người đang ở Khu VIP về khu thường.',
       '🎫 Nút Tự động hiện thời gian còn lại của Vé Treo Máy (VD 🎫5g33 = 5 giờ 33 phút; cam khi dưới 30 phút, đỏ nhấp nháy khi dưới 5 phút). Giữ chuột lên nút để xem giờ hết hạn. Có nhắc khi vé còn 30, 10, 1 phút và khi vé hết.',
       '📣 Tin triệu hồi Boss Thần Binh và rơi Thần Binh giờ chạy ngang trên cùng màn hình thay vì bật hộp thoại che màn hình.',

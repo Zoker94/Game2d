@@ -1545,9 +1545,24 @@
         const n = it.n, nx = (n.x + 0.5) * TILE, ny = (n.y + 0.5) * TILE;
         const dxp = G.self.x - nx, dyp = G.self.y - (ny + 20);
         const near = Math.hypot(dxp, dyp) < TILE * 3.5, side = near && Math.abs(dxp) > Math.abs(dyp) * 1.2;
-        const nf = n.id === 'khu_bia' ? null : Assets.npcFrame(n.id, Math.floor(now / 320 + n.x) % 4, side);
+        const nf = n.id === 'khu_bia' || n.id === 'chi_dan' ? null : Assets.npcFrame(n.id, Math.floor(now / 320 + n.x) % 4, side);
         let ntop = ny - 50;
-        if (n.id === 'khu_bia') {   // bia đá chuyển khu (vẽ sẵn một lần)
+        if (n.id === 'chi_dan') {   // Bia Chỉ Dẫn Giang Hồ: bia đá đội trên lưng rùa, ánh vàng nhấp nháy cho người mới để ý
+          const st = guideStele(), w = st.width / 2, h = st.height / 2, by = ny + 26 - h;
+          const pl = 0.5 + 0.5 * Math.sin(now / 600);
+          ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.18 + pl * 0.14;
+          const gg = ctx.createRadialGradient(nx, by + h * 0.45, 4, nx, by + h * 0.45, h * 0.62);
+          gg.addColorStop(0, '#ffd76a'); gg.addColorStop(1, 'rgba(255,200,80,0)'); ctx.fillStyle = gg;
+          ctx.fillRect(nx - h * 0.62, by - h * 0.17, h * 1.24, h * 1.24); ctx.restore();
+          ctx.drawImage(st, nx - w / 2, by, w, h);
+          for (let i = 0; i < 4; i++) {   // đốm sáng bay lên
+            const t = ((now / 2200) + i * 0.27) % 1, sx = nx + Math.sin(i * 2.3 + now / 900) * (w * 0.32);
+            ctx.globalAlpha = (1 - t) * 0.85; ctx.fillStyle = i % 2 ? '#fff4c0' : '#ffd040';
+            ctx.fillRect(Math.round(sx), Math.round(by + h * 0.75 - t * h * 0.8), 2, 2);
+          }
+          ctx.globalAlpha = 1;
+          ntop = by - 6;
+        } else if (n.id === 'khu_bia') {   // bia đá chuyển khu (vẽ sẵn một lần)
           const st = steleSprite();
           ctx.drawImage(st, nx - st.width / 4, ny + 22 - st.height / 2, st.width / 2, st.height / 2);
           ntop = ny + 22 - st.height / 2 - 6;
@@ -1559,7 +1574,7 @@
           ctx.restore();
           ntop = fy - 76;
         } else ctx.drawImage(Sprites.npcSprite(n.sprite, n.color, 0), nx - 32, ny - 44);
-        label(nx, ntop, n.id === 'khu_bia' ? `Chuyển Khu (đang Khu ${G.map.ch || 1})` : n.name, n.id === 'khu_bia' ? '#9fe3ff' : '#7fffd4', 12, true);
+        label(nx, ntop, n.id === 'khu_bia' ? `Chuyển Khu (đang Khu ${G.map.ch || 1})` : n.name, n.id === 'khu_bia' ? '#9fe3ff' : n.id === 'chi_dan' ? '#ffd76a' : '#7fffd4', 12, true);
         const tut = G.me && G.me.tutorial;
         if (Story.wantsNpc(n.id) || (tut && !tut.done && ((tut.type === 'talk' && tut.npc === n.id) || (tut.type === 'buy' && n.action === 'shop') || (tut.type === 'daily' && n.id === 'su_gia')))) {
           const by = Math.sin(now / 200) * 4;
@@ -1595,7 +1610,7 @@
         if (e.bf && !e.dead) Auras.draw(ctx, e.x, e.y, e.bf, now, 'under', elift);
         if (e.dv && !e.dead) DivineFX.under(ctx, e.x, e.y, now, e.dv, (e.id || '').length * 7 + (e.name || '').length);   // Thần Binh: vòng tím dưới chân
         if (e.iv) ctx.globalAlpha = 0.4;   // quản trị viên đang tàng hình (chỉ quản trị viên khác thấy)
-        const epk = e.pm && !e.dead && !G.map.pvp ? e.pm : 0;
+        const epk = e.pm && !e.dead && !G.map.pvp && !G.map.safe && !G.map.noPk ? e.pm : 0;   // thành / khu cấm PK: không hiện
         if (epk) Escort.drawPkRing(ctx, e.x, e.y, epk, now);
         const top = drawHero(e.x, e.y, e.cls, e.dir, e.lastH, e.moving, e.atkUntil > now, e.ap, e.dead, e.x / 50, now, e);
         ctx.globalAlpha = 1;
@@ -1622,7 +1637,7 @@
         if (sdv) DivineFX.under(ctx, s.x, s.y, now, sdv, 0);
         if (sdv >= 10) DivineFX.selfShake(now, 0);
         if (me.gm && me.gm.hide) ctx.globalAlpha = 0.4;   // đang tàng hình: tự thấy mình mờ
-        const spk = me.pkMode && !me.dead && !G.map.pvp ? me.pkMode : 0;
+        const spk = me.pkMode && !me.dead && !G.map.pvp && !G.map.safe && !G.map.noPk ? me.pkMode : 0;
         if (spk) Escort.drawPkRing(ctx, s.x, s.y, spk, now);
         const top = drawHero(s.x, s.y, me.cls, s.dir, s.lastH, s.moving, s.atkUntil > now, me.ap, me.dead, 0, now, s);
         ctx.globalAlpha = 1;
@@ -1695,6 +1710,56 @@
     for (const [t, y] of [['K', 60], ['H', 80], ['U', 100]]) { x.strokeText(t, 44, y); x.fillText(t, 44, y); }
     x.fillStyle = 'rgba(255,255,255,0.18)'; x.fillRect(18, 40, 4, 66);   // vệt sáng
     return (steleCv = c);
+  }
+  // Bia Chỉ Dẫn Giang Hồ: bia đá xanh rêu viền vàng trên lưng rùa (bia cổ), mái ngói cong, chữ "CHỈ DẪN" + cuộn sách khắc nổi – vẽ x2 rồi thu nhỏ
+  let guideCv = null;
+  function guideStele() {
+    if (guideCv) return guideCv;
+    const c = document.createElement('canvas'); c.width = 132; c.height = 196; const x = c.getContext('2d');
+    const P = (col, f) => { x.fillStyle = col; x.beginPath(); f(); x.fill(); };
+    x.lineJoin = 'round';
+    // bóng
+    x.fillStyle = 'rgba(0,0,0,0.34)'; x.beginPath(); x.ellipse(66, 184, 56, 10, 0, 0, Math.PI * 2); x.fill();
+    // rùa đội bia: chân, mai, đầu
+    for (const [fx, fy] of [[22, 176], [110, 176], [34, 160], [98, 160]]) P('#3e5a3a', () => x.ellipse(fx, fy, 11, 7, 0, 0, Math.PI * 2));
+    const gs = x.createLinearGradient(0, 142, 0, 186); gs.addColorStop(0, '#6f8a5a'); gs.addColorStop(1, '#2e4228');
+    P(gs, () => x.ellipse(66, 166, 52, 20, 0, 0, Math.PI * 2)); x.strokeStyle = '#1a2614'; x.lineWidth = 3; x.stroke();
+    x.strokeStyle = 'rgba(20,34,16,.75)'; x.lineWidth = 2;
+    for (const [hx, hy] of [[40, 166], [66, 160], [92, 166], [53, 176], [79, 176]]) { x.beginPath(); for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; x[k ? 'lineTo' : 'moveTo'](hx + Math.cos(a) * 9, hy + Math.sin(a) * 5.5); } x.closePath(); x.stroke(); }
+    P('#5e7a4e', () => x.ellipse(66, 184, 14, 8, 0, 0, Math.PI * 2)); x.strokeStyle = '#1a2614'; x.lineWidth = 2.5; x.stroke();   // đầu rùa
+    P('#111', () => x.arc(60, 183, 1.8, 0, Math.PI * 2)); P('#111', () => x.arc(72, 183, 1.8, 0, Math.PI * 2));
+    // bệ dưới bia
+    const gb = x.createLinearGradient(0, 138, 0, 152); gb.addColorStop(0, '#9a9484'); gb.addColorStop(1, '#5a554a');
+    x.fillStyle = gb; x.fillRect(24, 138, 84, 14); x.strokeStyle = '#2e2a24'; x.lineWidth = 2.5; x.strokeRect(24, 138, 84, 14);
+    x.fillStyle = '#c8a050'; x.fillRect(24, 138, 84, 3);
+    // thân bia đá xanh rêu
+    const gb2 = x.createLinearGradient(30, 0, 102, 0); gb2.addColorStop(0, '#9fb0a0'); gb2.addColorStop(0.45, '#6f8478'); gb2.addColorStop(1, '#3e4c44');
+    x.fillStyle = gb2; x.beginPath(); x.moveTo(30, 140); x.lineTo(30, 52); x.lineTo(102, 52); x.lineTo(102, 140); x.closePath(); x.fill();
+    x.strokeStyle = '#1e2622'; x.lineWidth = 3.5; x.stroke();
+    // viền khắc mạ vàng + mặt bia sẫm
+    x.strokeStyle = '#e0b04a'; x.lineWidth = 3; x.strokeRect(37, 59, 58, 74);
+    x.fillStyle = '#2a3430'; x.fillRect(41, 63, 50, 66);
+    x.strokeStyle = 'rgba(255,230,150,.35)'; x.lineWidth = 1; x.strokeRect(43, 65, 46, 62);
+    // chữ CHỈ DẪN mạ vàng
+    x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '900 17px "Be Vietnam Pro", system-ui, sans-serif';
+    x.lineWidth = 4; x.strokeStyle = '#3a2204'; x.fillStyle = '#ffd76a';
+    for (const [t, y] of [['CHỈ', 80], ['DẪN', 100]]) { x.strokeText(t, 66, y); x.fillText(t, 66, y); }
+    // cuộn sách khắc nổi
+    x.fillStyle = '#e8d4a0'; x.fillRect(52, 112, 28, 10); x.strokeStyle = '#6a4a18'; x.lineWidth = 1.5; x.strokeRect(52, 112, 28, 10);
+    P('#c89a4a', () => x.ellipse(52, 117, 3.5, 6, 0, 0, Math.PI * 2)); P('#c89a4a', () => x.ellipse(80, 117, 3.5, 6, 0, 0, Math.PI * 2));
+    x.strokeStyle = 'rgba(90,60,20,.7)'; x.lineWidth = 1; for (let i = 0; i < 3; i++) { x.beginPath(); x.moveTo(57, 114.5 + i * 2.5); x.lineTo(75, 114.5 + i * 2.5); x.stroke(); }
+    x.fillStyle = 'rgba(255,255,255,0.16)'; x.fillRect(33, 54, 4, 84);   // vệt sáng
+    // mái ngói cong hai đầu + chóp ngọc
+    const gr = x.createLinearGradient(0, 22, 0, 56); gr.addColorStop(0, '#7a2a1a'); gr.addColorStop(1, '#3e1208');
+    x.fillStyle = gr; x.beginPath(); x.moveTo(10, 40); x.quadraticCurveTo(20, 46, 30, 42); x.quadraticCurveTo(66, 16, 102, 42); x.quadraticCurveTo(112, 46, 122, 40);
+    x.lineTo(118, 52); x.quadraticCurveTo(108, 58, 98, 54); x.lineTo(34, 54); x.quadraticCurveTo(24, 58, 14, 52); x.closePath(); x.fill();
+    x.strokeStyle = '#1e0804'; x.lineWidth = 3; x.stroke();
+    x.strokeStyle = '#e0b04a'; x.lineWidth = 2; x.beginPath(); x.moveTo(30, 52); x.lineTo(102, 52); x.stroke();
+    x.strokeStyle = 'rgba(255,170,120,.35)'; x.lineWidth = 1.5; for (let i = 0; i < 7; i++) { const tx = 38 + i * 9.5; x.beginPath(); x.moveTo(tx, 36 + Math.abs(i - 3) * 1.5); x.lineTo(tx - 2, 51); x.stroke(); }
+    x.fillStyle = '#e0b04a'; x.fillRect(63, 14, 6, 12);
+    P('#5ae0b0', () => x.arc(66, 12, 6, 0, Math.PI * 2)); x.strokeStyle = '#1a4a3a'; x.lineWidth = 2; x.stroke();
+    P('rgba(255,255,255,.7)', () => x.arc(64, 10, 2, 0, Math.PI * 2));
+    return (guideCv = c);
   }
   function inViewXY(x, y) { return x > cam.x - 150 && x < cam.x + W / zoom + 150 && y > cam.y - 150 && y < cam.y + H / zoom + 200; }
   function inView(e) { return inViewXY(e.x, e.y); }
