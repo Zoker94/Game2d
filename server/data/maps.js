@@ -754,6 +754,8 @@ function isSolidAt(map, px, py) {
 // Khu: mỗi bản đồ luyện công có CHANNELS bản sao chạy độc lập (quái, đồ rơi, người chơi riêng), dùng chung địa hình.
 // Khu 1 giữ id gốc (dữ liệu cũ không đổi), khu n là "<id>~n". Thành, môn phái, lôi đài, chiến trường, Đại Hội chỉ có 1 khu.
 const CHANNELS = 20, CH_CAP = 10;
+// Khu VIP (khu 21): cấm đồ sát, chỉ người còn hạn Vé Treo Máy được vào; tối đa VIP_CAP người
+const VIP_CH = CHANNELS + 1, VIP_CAP = 20;
 const hasChannels = m => !m.town && !m.safe && !m.pvp && !m.sect && !m.duelArena && !m.instance && !m.tourney && m.id !== 'dai_hoi' && ((m.spawns || []).length > 0 || !!m.gemMine);   // khoáng động: không quái nhưng vẫn chia khu
 // Bia Chuyển Khu: đặt cạnh mỗi cổng của bản đồ có khu (ô trống gần nhất, lùi vào trong 2 ô, lệch sang 2 ô)
 function placeKhuBia(m) {
@@ -773,9 +775,12 @@ for (const id of Object.keys(MAPS)) {
   m.chs = CHANNELS;
   placeKhuBia(m);
   for (let n = 2; n <= CHANNELS; n++) MAPS[id + '~' + n] = Object.assign({}, m, { id: id + '~' + n, base: id, ch: n });
+  if (m.gemMine) continue;   // khoáng động: đã cấm PK, vào bằng vé riêng – không cần khu VIP
+  m.vipCh = VIP_CH;
+  MAPS[id + '~' + VIP_CH] = Object.assign({}, m, { id: id + '~' + VIP_CH, base: id, ch: VIP_CH, vip: true, noPk: true });
 }
 const baseOf = id => (MAPS[id] && MAPS[id].base) || id;     // id bản đồ gốc (để so với dữ liệu: cốt truyện, áp tiêu, cổng...)
 const chOf = id => (MAPS[id] && MAPS[id].ch) || 1;
 const chId = (base, n) => (n > 1 && MAPS[base + '~' + n]) ? base + '~' + n : base;
 
-module.exports = { MAPS, MAP_DEFS, TILE, T, SOLID: [...SOLID], isSolidAt, generateInstance, CHANNELS, CH_CAP, baseOf, chOf, chId };
+module.exports = { MAPS, MAP_DEFS, TILE, T, SOLID: [...SOLID], isSolidAt, generateInstance, CHANNELS, CH_CAP, VIP_CH, VIP_CAP, baseOf, chOf, chId };

@@ -353,3 +353,8 @@ body.touch #chat-emo { min-width: 36px; font-size: 16px; }
 .mailbox-bar .mb-items { display: flex; gap: 3px; flex-wrap: wrap; }
 .mailbox-bar .mb-it { position: relative; display: inline-block; width: 28px; height: 28px; border-radius: 4px; background: rgba(0,0,0,.35); }
 .mailbox-bar .mb-it i { position: absolute; right: 1px; bottom: -1px; font-style: normal; font-size: 9px; font-weight: 800; text-shadow: 0 0 2px #000, 0 1px 0 #000; }
+
+/* Khu VIP (cấm đồ sát, cần Vé Treo Máy) */
+#modal-btns.ch-grid .btn.ch-vip { grid-column: 1 / -1; background: linear-gradient(90deg, #6a4a10, #c8922c, #6a4a10) !important; color: #fff6d0 !important; border-color: #ffd76a !important; font-weight: 800; text-shadow: 0 1px 0 #3a2400; box-shadow: 0 0 10px rgba(255,200,80,.45); }
+#modal-btns.ch-grid .btn.ch-vip.locked { filter: saturate(.55) brightness(.85); }
+#ch-tag.vip { color: #ffd76a; text-shadow: 0 0 6px rgba(255,200,80,.8); }

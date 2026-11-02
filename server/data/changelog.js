@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '👑 KHU VIP ở mọi bản đồ luyện công: cấm đồ sát, tối đa 20 người, chỉ dành cho người đang dùng Vé Treo Máy. Vào từ Bia Chuyển Khu hoặc bấm tên khu cạnh tên bản đồ. Vé hết hạn sẽ tự về khu thường.',
       '🚫 Chặn lời mời: Cài đặt → Chung có thể chặn riêng từng loại (tổ đội, kết bạn, giao dịch, tỷ thí, bang hội). Cài đặt tự động có thêm "Đang bật Tự động thì từ chối mọi lời mời" – treo máy không bị làm phiền. Người mời sẽ được báo là bạn đang chặn.',
       '🐴 Ngựa Nâu có hình 4 hướng mới vẽ tay: mặt trước, sau lưng (đuôi bay theo nhịp), nhìn ngang phi nước kiệu với yên và túi hành lý.',
       '🔥 Phượng Hoàng nhìn ngang vẽ lại đúng dáng chim hai chân: bước chân luân phiên, cánh lửa vỗ theo nhịp, người cưỡi ngồi trên lưng.',

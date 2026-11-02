@@ -5,7 +5,8 @@ const { ITEMS, RARITY, TIERS, equipId, tierOfLv, DROP_SLOTS } = require('../data
 const { MONSTERS, BOSSES } = require('../data/monsters');
 const BOSS_LINES = require('../data/bosslines');
 const VM_IDS = ['vm_tq1', 'vm_tq2', 'vm_tq3', 'vm_tq4', 'vm_tq5', 'vm_tq6', 'vm_tq7'];
-const { MAPS, TILE, isSolidAt, SOLID, CHANNELS, CH_CAP, baseOf, chOf, chId } = require('../data/maps');
+const { MAPS, TILE, isSolidAt, SOLID, CHANNELS, CH_CAP, VIP_CH, VIP_CAP, baseOf, chOf, chId } = require('../data/maps');
+const vipOk = c => (c.autoTicket || 0) > Date.now();   // khu VIP: còn hạn Vé Treo Máy
 const { NPCS, TELEPORTS } = require('../data/npcs');
 const { TUTORIAL } = require('../data/quests');
 const { MOUNTS, MOUNT_MAX, mountExpNext, isBreakLevel } = require('../data/mounts');
@@ -267,6 +268,7 @@ class World {
       if (p.mapId) return;
       const t = MAPS.tuong_duong; mapId = 'tuong_duong'; x = (t.center.x + 0.5) * TILE; y = (t.center.y + 2.5) * TILE;
     }
+    if (MAPS[mapId] && MAPS[mapId].vip && !vipOk(p.c)) mapId = this.pickChannel(MAPS[mapId].base, 1);   // hết Vé Treo Máy: không vào khu VIP
     const prev = p.mapId ? { mapId: p.mapId, x: p.x, y: p.y } : null;
     if (p.duel && p.duel.mapId !== mapId) this.duel.onLost(p, `${p.c.name} đã rời bản đồ`);
     if (this.tongkim && p.mapId === 'tong_kim' && mapId !== 'tong_kim') this.tongkim.onLeaveMap(p);
@@ -286,7 +288,7 @@ class World {
     p.socket.emit('init', {
       you: p.id, enhRate: ENHANCE_RATE,   // tỉ lệ cường hoá hiện hành (quản trị viên có thể đã sửa)
       // id: bản đồ gốc (máy khách tra dữ liệu theo id này); key: id thật của khu; ch / chs: khu hiện tại / số khu
-      map: { id: baseOf(d.id), key: d.id, ch: chOf(d.id), chs: d.chs || 1, name: d.name, theme: d.theme, w: d.w, h: d.h, tiles: d.tiles, safe: d.safe, pvp: d.pvp, noPk: !!d.noPk, lv: d.lv,
+      map: { id: baseOf(d.id), key: d.id, ch: chOf(d.id), chs: d.chs || 1, vip: !!d.vip, name: d.name, theme: d.theme, w: d.w, h: d.h, tiles: d.tiles, safe: d.safe, pvp: d.pvp, noPk: !!d.noPk, lv: d.lv,
         weather: this.weatherOf(mapId), spawns: (d.spawns || []).map(s => [s.mon, s.x, s.y]), portals: d.portals, buildings: d.buildings || [], props: d.props || [], sect: d.sect || null, npcs: d.npcs.map(n => ({ ...n, name: NPCS[n.id].name, sprite: NPCS[n.id].sprite, color: NPCS[n.id].color, action: NPCS[n.id].action })) },
       x, y, solid: SOLID, tile: TILE,
       drops: [...m.drops.values()].map(dr => this.dropView(dr))
@@ -336,11 +338,16 @@ class World {
   // ---------- Khu ----------
   // khu để vào bản đồ base: ưu tiên khu pref nếu chưa đủ CH_CAP người, không thì khu thấp nhất còn chỗ,
   // tất cả đều đầy thì khu vắng nhất
-  pickChannel(base, pref = 1) {
+  pickChannel(base, pref = 1, p = null) {
     base = baseOf(base);
     const def = MAPS[base];
     if (!def || !def.chs) return base;
     const n = id => (this.maps[id] ? this.maps[id].players.size : 0);
+    if (pref === VIP_CH) {   // đang ở khu VIP qua cổng: sang khu VIP bản đồ kia nếu còn vé và còn chỗ
+      const v = chId(base, VIP_CH);
+      if (p && vipOk(p.c) && MAPS[v] && n(v) < VIP_CAP) return v;
+      pref = 1;
+    }
     const want = chId(base, pref);
     if (n(want) < CH_CAP) return want;
     let best = base;
@@ -352,22 +359,25 @@ class World {
     if (!def || !def.chs) return { base, list: [] };
     const list = [];
     for (let i = 1; i <= def.chs; i++) list.push({ ch: i, n: this.maps[chId(base, i)].players.size, cap: CH_CAP, cur: chOf(p.mapId) === i });
+    if (def.vipCh) list.push({ ch: VIP_CH, vip: true, n: this.maps[chId(base, VIP_CH)].players.size, cap: VIP_CAP, cur: chOf(p.mapId) === VIP_CH, ok: vipOk(p.c) });
     return { base, name: def.name, list };
   }
   switchChannel(p, ch) {
     ch = ch | 0;
     const base = baseOf(p.mapId), def = MAPS[base], now = Date.now();
     if (!def || !def.chs) return this.toast(p, 'Bản đồ này không chia khu', 'error');
-    if (ch < 1 || ch > def.chs || ch === chOf(p.mapId)) return;
+    const vip = ch === VIP_CH && !!def.vipCh;
+    if (ch < 1 || (ch > def.chs && !vip) || ch === chOf(p.mapId)) return;
+    if (vip && !vipOk(p.c)) return this.toast(p, '👑 Khu VIP chỉ dành cho người đang dùng Vé Treo Máy (mua ở Kỳ Trân Các)', 'error');
     if (p.dead || p.duel || p.trade) return this.toast(p, 'Không thể đổi khu lúc này', 'error');
     if (now - (p.lastCombat || 0) < 8000) return this.toast(p, 'Đang giao chiến, đợi 8 giây rồi đổi khu', 'error');
     if (now < (p.chCd || 0)) return this.toast(p, `Đợi ${Math.ceil((p.chCd - now) / 1000)} giây nữa mới đổi khu được`, 'error');
     if (this.escort.carts.has(p.userId)) return this.toast(p, 'Đang áp tiêu, không thể đổi khu', 'error');
     const id = chId(base, ch);
-    if (this.maps[id].players.size >= CH_CAP) return this.toast(p, `Khu ${ch} đã đủ ${CH_CAP} người`, 'error');
+    if (this.maps[id].players.size >= (vip ? VIP_CAP : CH_CAP)) return this.toast(p, `${vip ? 'Khu VIP' : 'Khu ' + ch} đã đủ ${vip ? VIP_CAP : CH_CAP} người`, 'error');
     p.chCd = now + 10000;
     this.enterMap(p, id, p.x, p.y);
-    this.toast(p, `Đã chuyển sang ${def.name} – Khu ${ch}`, 'info');
+    this.toast(p, vip ? `👑 Đã vào ${def.name} – Khu VIP (cấm đồ sát)` : `Đã chuyển sang ${def.name} – Khu ${ch}`, vip ? 'reward' : 'info');
   }
 
   recalc(p) {
@@ -606,7 +616,7 @@ class World {
           p.socket.emit('pos', { x: p.x, y: p.y });
           return;
         }
-        this.enterMap(p, this.pickChannel(pt.to, chOf(p.mapId)), (pt.tx + 0.5) * TILE, (pt.ty + 0.5) * TILE, true);   // qua cổng: giữ số khu nếu còn chỗ
+        this.enterMap(p, this.pickChannel(pt.to, chOf(p.mapId), p), (pt.tx + 0.5) * TILE, (pt.ty + 0.5) * TILE, true);   // qua cổng: giữ số khu nếu còn chỗ
         return;
       }
     }
@@ -2329,6 +2339,13 @@ class World {
       for (const p of this.players.values()) {
         if (p.buffs.length && p.buffs.some(b => b.until <= now)) this.recalc(p);
         if (p.dirtyMe && !p.offline) { p.dirtyMe = false; p.socket.emit('me', this.meDelta(p, this.meView(p))); }
+      }
+    }
+    if (sec) for (const p of [...this.players.values()]) {   // hết hạn Vé Treo Máy trong khu VIP: đưa về khu thường
+      const m = this.maps[p.mapId];
+      if (m && m.def.vip && !vipOk(p.c) && !p.dead) {
+        this.enterMap(p, this.pickChannel(m.def.base, 1), p.x, p.y);
+        this.toast(p, '👑 Vé Treo Máy đã hết hạn – rời Khu VIP về khu thường', 'error');
       }
     }
     if (this.features) this.features.tick(now);
