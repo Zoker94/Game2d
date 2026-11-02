@@ -12,7 +12,16 @@ PAD = 6
 off = json.load(open(SRC + 'offsets.json'))
 
 def crisp(im):
-    a = np.asarray(im).copy(); a[..., 3] = np.where(a[..., 3] > 120, 255, 0); return Image.fromarray(a, 'RGBA')
+    from scipy import ndimage as nd
+    a = np.asarray(im).copy(); a[..., 3] = np.where(a[..., 3] > 120, 255, 0)
+    for _ in range(2):   # khử viền sáng sót màu nền (xám nhạt) ở mép hình
+        al = a[..., 3] > 0; edge = al & ~nd.binary_erosion(al)
+        rgb = a[..., :3].astype(int); light = (rgb.min(2) > 115) & (rgb.max(2) - rgb.min(2) < 40)
+        a[edge & light, 3] = 0
+    al = a[..., 3] > 0; lab, n = nd.label(al)
+    if n > 1:   # bỏ chấm lẻ
+        sz = nd.sum(al, lab, range(1, n + 1)); a[np.isin(lab, [i + 1 for i, z in enumerate(sz) if z < 40]), 3] = 0
+    return Image.fromarray(a, 'RGBA')
 def load(name, flip=False):
     im = Image.open(SRC + name + '.png').convert('RGBA')
     if flip: im = im.transpose(Image.FLIP_LEFT_RIGHT)
@@ -66,7 +75,7 @@ for ci, ((si, so), (fi, fo), (bi, bo)) in enumerate(cols):
     btop = np.nonzero((ba[..., 3] > 0).any(1))[0][0]
     seats['up'].append([round(CW / 2, 1), round(bo + cut + 2, 1)])
 
-sheet.save(OUT + 'mounts/hac_ma.png', optimize=True)
+sheet.quantize(colors=255, method=Image.FASTOCTREE, dither=Image.NONE).save(OUT + 'mounts/hac_ma.png', optimize=True)   # 255 màu: 1,2MB -> ~0,3MB
 meta = json.load(open(OUT + 'mounts.json'))
 meta['per']['hac_ma'] = {'cell': [CW, CH], 'foot': [CW / 2, int(base) - 1], 'footFB': [CW / 2, int(base) - 1],
                          'frames': {'idle': [0, 1], 'run': [1, NR]}, 'rows': {'side': [0], 'down': [1, 2], 'up': [3, 4]},
