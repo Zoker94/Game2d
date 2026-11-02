@@ -16,6 +16,9 @@ NR = 8
 CFG = {
     # side=7: khung ngang thứ 8 dính logo góc ảnh -> bỏ; hole: (ngưỡng màu, cỡ tối thiểu) lỗ hở kín giữa chân/cổ cần khoét (thân trắng gần màu nền: ngưỡng thấp)
     'bach_ma': dict(h=100, front=6, back=3, side=7, seat_fx=0.40, seat_dy=8, down=0.16, cut=0.44, ftop=0.15, shadow=None, hole=(9, 250)),
+    # mask='color': nền xám nhạt nhiều tông + bóng chân -> lấy điểm ảnh đậm màu/tối làm hình; fly: cánh vỗ cả lúc đứng yên
+    'thanh_long': dict(h=118, front=6, back=6, side=6, seat_fx=0.50, seat_dy=8, down=0.07, cut=0.46, ftop=0.10, shadow=None, hole=(20, 60), mask='color', fly=True),
+    'phuong_hoang': dict(h=122, front=6, back=6, side=6, seat_fx=0.55, seat_dy=8, down=0.12, cut=0.50, ftop=0.10, shadow=None, hole=(20, 60), mask='color', fly=True),
     'hoa_ky_lan': dict(h=104, front=6, back=6, side=7, seat_fx=0.47, seat_dy=8, down=0.17, cut=0.44, ftop=0.10, shadow=(147, 120, 112), hole=(26, 25)),
 }
 
@@ -35,9 +38,16 @@ def extract(mid, path):
     a = np.asarray(Image.open(path).convert('RGB')).astype(int)
     bg = np.median(np.concatenate([a[:, :10], a[:, -10:]], 1), 1)[:, None, :]
     d = np.abs(a - bg).sum(2)
-    lab, n = nd.label(d < 34)
-    border = set(lab[0, :]) | set(lab[-1, :]) | set(lab[:, 0]) | set(lab[:, -1]); border.discard(0)
-    fg = ~np.isin(lab, list(border))
+    if cfg.get('mask') == 'color':
+        mx, mn = a.max(2), a.min(2)
+        fg = ((mx - mn) > 42) | (mx < 115)
+        fg = nd.binary_fill_holes(nd.binary_closing(fg, iterations=1))
+        fg &= ~(((mx - mn) < 62) & (mn > 120) & (a[..., 1] - a[..., 2] > 18))   # bóng chân xanh-be
+        d = np.where((mx - mn < 28) & (mn > 175), 0, 99)   # lỗ hở kín (màu nền) giữa chân / cánh
+    else:
+        lab, n = nd.label(d < 34)
+        border = set(lab[0, :]) | set(lab[-1, :]) | set(lab[:, 0]) | set(lab[:, -1]); border.discard(0)
+        fg = ~np.isin(lab, list(border))
     if cfg['shadow'] is not None:   # bóng tròn dưới chân (game tự vẽ bóng)
         fg &= np.abs(a - np.array(cfg['shadow'])).sum(2) > 48
     fg = nd.binary_opening(fg, iterations=1)
@@ -118,6 +128,7 @@ def build(mid):
     meta['per'][mid] = {'cell': [CW, CH], 'foot': [CW / 2, int(base) - 3], 'footFB': [CW / 2, int(base) - 3],
                         'frames': {'idle': [0, 1], 'run': [1, NR]}, 'rows': {'side': [0], 'down': [1, 2], 'up': [3, 4]},
                         'scale': 0.5, 'runMs': 95, 'idleMs': 700}
+    if cfg.get('fly'): meta['per'][mid].update({'frames': {'idle': [1, NR], 'run': [1, NR]}, 'idleMs': 190, 'runMs': 110})   # bay: đứng yên vẫn vỗ cánh
     meta['seats'][mid] = seats; meta['seat'][mid] = seats['side']
     open(OUT + 'mounts.json', 'w').write(json.dumps(meta, default=float))
     print(mid, CW, CH, NT, 'K=%.2f' % K)

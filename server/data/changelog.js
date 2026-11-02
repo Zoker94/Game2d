@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🐉 Thanh Long và Phượng Hoàng có hình 4 hướng mới vẽ tay: dang cánh vỗ theo nhịp ở mọi hướng (cả lúc đứng yên), đuôi uốn lượn khi bay.',
       '🦄 Bạch Mã và Hỏa Kỳ Lân có hình 4 hướng mới vẽ tay: mặt trước, sau lưng, nhìn ngang với dáng chạy; bờm và đuôi đung đưa theo nhịp.',
       '🔧 Sửa Hắc Mã trông như đang bay (móng ngựa giờ chạm đất ở cả 4 hướng). Khung danh hiệu dời lên cao hơn, không còn che tên nhân vật.',
       '🐴 Hắc Mã (ngựa ô truy chiến giáp) có hình 4 hướng mới vẽ tay: mặt trước, sau lưng và nhìn ngang với dáng chạy 8 nhịp, giáp xích, chùm lông đỏ trên mũ.',
