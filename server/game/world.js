@@ -2060,7 +2060,7 @@ class World {
       if (lv >= SKILL_MAX) return this.toast(p, 'Võ công đã đạt cảnh giới tối đa', 'error');
       const cost = upgradeCost(idx === DRAGON_SLOT || idx === JH_SLOT ? 5 : idx, lv);
       const sp = spTotalOf(c) - (c.spSpent || 0);
-      if (sp < cost.sp) return this.toast(p, `Cần ${cost.sp} điểm võ học (mỗi cấp nhân vật nhận ~3,4 điểm)`, 'error');
+      if (sp < cost.sp) return this.toast(p, `Cần ${cost.sp} điểm võ học (mỗi cấp nhân vật nhận ~3,8 điểm)`, 'error');
       if (c.gold < cost.gold) return this.toast(p, `Cần ${cost.gold.toLocaleString('vi-VN')} lượng`, 'error');
       // nâng tầng phải có thêm 1 cuốn chính võ công đó (sách môn phái / bí kíp Long Ấn / bí kíp Tuyệt Kỹ); đánh thường không cần
       const book = idx === 0 ? null : idx === DRAGON_SLOT ? base.book : idx === JH_SLOT ? base.book : 'sk_' + base.id;

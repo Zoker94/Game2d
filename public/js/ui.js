@@ -1550,7 +1550,7 @@
     const br = G.myBranch(), cl = G.data.classes[me.cls];
     const baseOf = i => i === 6 ? G.data.dragons[me.dragon] : i === 9 ? G.data.jianghu[me.jh] : i === 7 ? cl.extra[0] : i === 8 ? br.passive : br.skills[i];
     const ico = (s, i) => Assets.skillIconHTML(me.cls, s) || (i === 0 ? '⚔️' : i === 6 ? '🐉' : '✦');
-    let html = `<div class="sk-head"><div>📜 Điểm võ học: <b style="color:#ffd76a">${me.sp}</b> <span class="small muted">(mỗi cấp nhân vật +3,4 điểm · cấp 120 đủ tối đa)</span></div><div class="small">Hệ: <b class="br-tag br-${br.key}">${br.kind || ''} · ${esc(br.name || '')}</b></div><div class="small muted">Sách võ công bán tại <b>Tàng Kinh Các</b> – Tương Dương</div></div>`;
+    let html = `<div class="sk-head"><div>📜 Điểm võ học: <b style="color:#ffd76a">${me.sp}</b> <span class="small muted">(mỗi cấp nhân vật +3,8 điểm · cấp 120 đủ nâng tối đa cả 10 võ công)</span></div><div class="small">Hệ: <b class="br-tag br-${br.key}">${br.kind || ''} · ${esc(br.name || '')}</b></div><div class="small muted">Sách võ công bán tại <b>Tàng Kinh Các</b> – Tương Dương</div></div>`;
     html += tabs([['branch', '🔀 Hệ phái'], ['keys', '⌨️ Gán phím'], ['attack', '⚔️ Chiêu thức'], ['support', '✨ Hỗ trợ'], ['passive', '☯ Nội công'], ['dragon', '🐉 Long Ấn'], ['jianghu', '⚡ Tuyệt Kỹ']], tab);
     if (tab === 'branch' && cl.branches) {
       const freeLv = G.data.branchFreeLv || 20, wash = (me.inv || []).filter(x => x.id === 'tay_tuy_kinh').reduce((a, x) => a + x.qty, 0);

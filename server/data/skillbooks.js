@@ -32,8 +32,8 @@ function upgradeCost(idx, lv) {
   const w = idx === 7 ? 4 : idx === 8 ? 5 : idx;
   return { sp: lv, gold: Math.round(400 * lv * lv * (w + 1)) };
 }
-// Điểm võ học: mỗi cấp nhân vật ~3,4 điểm (cấp 120 = 405 điểm, vừa đủ nâng mọi võ công lên tối đa)
-const SP_PER_LV = 3.4;
+// Điểm võ học: mỗi cấp nhân vật ~3,8 điểm (cấp 120 = 452 điểm, đủ nâng cả 10 võ công lên tối đa: 8 ô môn phái + Long Ấn + Tuyệt Kỹ = 450)
+const SP_PER_LV = 3.8;
 const skillPointsTotal = level => Math.max(0, Math.round((level - 1) * SP_PER_LV));
 
 const BOOKS = {};       // itemId -> { cls, skillId, idx }
