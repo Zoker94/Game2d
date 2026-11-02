@@ -380,3 +380,10 @@ body.touch #chat-emo { min-width: 36px; font-size: 16px; }
 
 /* tin boss Thần Binh chạy ngang: chữ đỏ vàng nổi bật */
 #pin-ticker .p.boss { color: #ffe08a; font-weight: 800; text-shadow: 0 0 6px rgba(255,60,30,.9), 0 1px 0 #000; }
+
+/* thời gian còn lại của Vé Treo Máy trên nút Tự động */
+#btn-auto { position: relative; }
+#btn-auto .qb-tk { position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); padding: 0 4px; border-radius: 6px; font-size: 8.5px; font-weight: 800; line-height: 12px; white-space: nowrap; color: #eaffea; background: #1f5a2a; border: 1px solid #8fdc8f; pointer-events: none; }
+#btn-auto .qb-tk.low { background: #6a3a08; border-color: #ffb040; color: #ffe0a0; }
+#btn-auto .qb-tk.crit { background: #7a1010; border-color: #ff5a5a; color: #fff; animation: pkwarn 1s ease-in-out infinite; }
+#btn-auto .qb-tk.hidden { display: none; }

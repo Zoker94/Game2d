@@ -2084,6 +2084,26 @@
     el.querySelector('.bo-info').textContent = `${me.name} · Cấp ${me.level} (${ep}%)\nSinh lực ${Math.max(0, Math.round(me.hp)).toLocaleString('vi-VN')}/${me.stats.maxHp.toLocaleString('vi-VN')}${me.dead ? ' – ĐÃ BỊ HẠ' : ''}\n💰 ${me.gold.toLocaleString('vi-VN')} lượng\n🤖 Tự động: ${G.auto ? (G.map && G.map.safe ? 'bật (đang ở thành – không đánh)' : (hasTicket() ? 'bật – máy chủ đang treo hộ' : 'bật – máy đang tự chạy (không có Vé Treo Máy: vẫn bị hỏi mã xác nhận)')) : 'tắt'}`;
   }
   const hasTicket = () => !!(G.me && G.me.autoTicket > Date.now());   // Vé Treo Máy: chỉ người có vé mới được máy chủ treo hộ
+  // thời gian còn lại của Vé Treo Máy: nhãn trên nút Tự động + nhắc khi sắp hết (30 / 10 / 1 phút) và khi hết hạn
+  const tkFmt = ms => { const m = Math.ceil(ms / 60000); return m >= 60 ? `${Math.floor(m / 60)}g${String(m % 60).padStart(2, '0')}` : m + 'p'; };
+  let tkWarned = {}, tkHad = 0;
+  setInterval(() => {
+    const b = document.querySelector('#btn-auto .qb-tk'); if (!b || !G.me) return;
+    const left = (G.me.autoTicket || 0) - Date.now();
+    if (left > 0) {
+      const txt = '🎫' + tkFmt(left);
+      if (b._t !== txt) { b._t = txt; b.textContent = txt; }
+      b.classList.remove('hidden'); b.classList.toggle('low', left < 30 * 60000); b.classList.toggle('crit', left < 5 * 60000);
+      $('btn-auto').title = `Tự động đánh (R) · Vé Treo Máy còn ${Math.floor(left / 3600e3)} giờ ${Math.floor(left % 3600e3 / 60000)} phút (hết lúc ${new Date(G.me.autoTicket).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })})`;
+      if (G.me.autoTicket !== tkHad) { tkHad = G.me.autoTicket; tkWarned = {}; }   // mua thêm vé: nhắc lại từ đầu
+      for (const m of [30, 10, 1]) if (left <= m * 60000 && left > (m - 1) * 60000 - 1 && !tkWarned[m]) {
+        tkWarned[m] = 1; UI.toast(`🎫 Vé Treo Máy còn ${m} phút – mua thêm ở Kỳ Trân Các để máy chủ tiếp tục treo hộ`, 'error');
+      }
+    } else {
+      if (!b.classList.contains('hidden')) { b.classList.add('hidden'); $('btn-auto').title = 'Tự động đánh (R)'; if (tkHad) UI.toast('🎫 Vé Treo Máy đã hết hạn: máy chủ không treo hộ khi thoát game, không vào được Khu VIP.', 'error'); }
+      tkHad = 0;
+    }
+  }, 1000);
   G.setBlackout = on => {
     on = !!on;
     if (on === !!G.blackout || (on && !G.inGame)) return;
