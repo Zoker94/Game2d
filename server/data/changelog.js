@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🐢 Kim Quy và Kim Ngưu có hình 4 hướng mới vẽ tay: mặt trước, sau lưng, nhìn ngang với dáng bước chậm chắc.',
       '🐉 Thanh Long và Phượng Hoàng có hình 4 hướng mới vẽ tay: dang cánh vỗ theo nhịp ở mọi hướng (cả lúc đứng yên), đuôi uốn lượn khi bay.',
       '🦄 Bạch Mã và Hỏa Kỳ Lân có hình 4 hướng mới vẽ tay: mặt trước, sau lưng, nhìn ngang với dáng chạy; bờm và đuôi đung đưa theo nhịp.',
       '🔧 Sửa Hắc Mã trông như đang bay (móng ngựa giờ chạm đất ở cả 4 hướng). Khung danh hiệu dời lên cao hơn, không còn che tên nhân vật.',

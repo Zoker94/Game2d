@@ -19,6 +19,9 @@ CFG = {
     # mask='color': nền xám nhạt nhiều tông + bóng chân -> lấy điểm ảnh đậm màu/tối làm hình; fly: cánh vỗ cả lúc đứng yên
     'thanh_long': dict(h=118, front=6, back=6, side=6, seat_fx=0.50, seat_dy=8, down=0.07, cut=0.46, ftop=0.10, shadow=None, hole=(20, 60), mask='color', fly=True),
     'phuong_hoang': dict(h=122, front=6, back=6, side=6, seat_fx=0.55, seat_dy=8, down=0.12, cut=0.50, ftop=0.10, shadow=None, hole=(20, 60), mask='color', fly=True),
+    # fy/fx: vùng lớp đè người cưỡi ở hướng trước (tỉ lệ cao/rộng); rùa: chỉ đầu + chân trước, bò: cả cặp sừng rộng
+    'kim_quy': dict(h=82, front=6, back=6, side=5, seat_fx=0.52, seat_dy=6, down=0.04, cut=0.72, up=0.14, ftop=0.0, fy=(0.58, 1.0), fx=(0.15, 0.85), shadow=(159, 160, 139), hole=(20, 60)),
+    'kim_nguu': dict(h=96, front=6, back=6, side=5, seat_fx=0.45, seat_dy=6, down=0.22, cut=0.42, ftop=0.0, fy=(0.38, 0.95), fx=(0.0, 1.0), shadow=(181, 154, 145), hole=(20, 60)),
     'hoa_ky_lan': dict(h=104, front=6, back=6, side=7, seat_fx=0.47, seat_dy=8, down=0.17, cut=0.44, ftop=0.10, shadow=(147, 120, 112), hole=(26, 25)),
 }
 
@@ -114,7 +117,8 @@ def build(mid):
         seats['side'].append([round(float(px + sx), 1), round(float(py + top_at(si, sx) + cfg['seat_dy']), 1)])
         fa = np.asarray(fi).copy(); h, w = fa.shape[:2]
         ft = np.nonzero((fa[..., 3] > 0).any(1))[0][0]   # sừng / gạc trên đỉnh đầu (ftop) vẽ sau người cưỡi, không đâm lên mặt
-        m = np.zeros((h, w), bool); m[ft + int(h * cfg['ftop']):int(h * 0.62), int(w * 0.24):int(w * 0.76)] = True
+        y0, y1 = cfg.get('fy', (cfg['ftop'], 0.62)); x0f, x1f = cfg.get('fx', (0.24, 0.76))
+        m = np.zeros((h, w), bool); m[ft + int(h * y0):int(h * y1), int(w * x0f):int(w * x1f)] = True
         over = fa.copy(); over[~m] = 0; pxf = round(CW / 2 - w / 2); fo += DF
         sheet.alpha_composite(fi, (x0 + pxf, CH + fo)); sheet.alpha_composite(Image.fromarray(over, 'RGBA'), (x0 + pxf, 2 * CH + fo))
         ftop = np.nonzero((fa[..., 3] > 0).any(1))[0][0]
@@ -122,7 +126,8 @@ def build(mid):
         ba = np.asarray(bi).copy(); h2, w2 = ba.shape[:2]; cut = int(h2 * cfg['cut'])
         over2 = ba.copy(); over2[:cut] = 0; pxb = round(CW / 2 - w2 / 2); bo += DB
         sheet.alpha_composite(bi, (x0 + pxb, 3 * CH + bo)); sheet.alpha_composite(Image.fromarray(over2, 'RGBA'), (x0 + pxb, 4 * CH + bo))
-        seats['up'].append([round(CW / 2, 1), round(float(bo + cut + 2), 1)])
+        btop = np.nonzero((ba[..., 3] > 0).any(1))[0][0]   # up: chỗ ngồi tính từ đỉnh hình (rùa: trên đỉnh mai), mặc định ngay trên lớp đè
+        seats['up'].append([round(CW / 2, 1), round(float(bo + (btop + h2 * cfg['up'] if 'up' in cfg else cut + 2)), 1)])
     sheet.quantize(colors=255, method=Image.FASTOCTREE, dither=Image.NONE).save(OUT + 'mounts/' + mid + '.png', optimize=True)
     meta = json.load(open(OUT + 'mounts.json'))
     meta['per'][mid] = {'cell': [CW, CH], 'foot': [CW / 2, int(base) - 3], 'footFB': [CW / 2, int(base) - 3],
