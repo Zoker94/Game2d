@@ -23,16 +23,14 @@
   const LABEL = { day: ['☀️', 'Ban ngày'], dusk: ['🌇', 'Hoàng hôn'], night: ['🌙', 'Ban đêm'], dawn: ['🌄', 'Bình minh'] };
   const enabled = () => !(G.settings && G.settings.daynight === false) && WorldArt.theme !== 'cave';
 
-  function tag(st, now) {
-    if (now - tagAt < 5000 && document.getElementById('dn-tag')) return;
+  function tag(st, now) {   // giờ hiện ở góc bản đồ mini
+    if (now - tagAt < 5000) return;
     tagAt = now;
-    const mn = document.getElementById('map-name'); if (!mn) return;
-    let t = document.getElementById('dn-tag');
-    if (!t) { t = document.createElement('span'); t.id = 'dn-tag'; mn.appendChild(t); }
+    const t = document.getElementById('mini-time'); if (!t) return;
     const hh = Math.floor(st.h), mm = Math.floor((st.h - hh) * 60);
     const key = st.phase + hh + ':' + mm;
     if (key === lastKey) return; lastKey = key;
-    t.textContent = ` ${LABEL[st.phase][0]} ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+    t.textContent = `${LABEL[st.phase][0]} ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
     t.title = `${LABEL[st.phase][1]} – giờ Việt Nam. Trời tối từ 19:30, sáng từ 6:30`;
     t.className = 'dn-' + st.phase;
   }
@@ -55,9 +53,10 @@
 
   // gọi trong toạ độ thế giới (sau khi vẽ nhân vật, trước bong bóng chat / số sát thương / hiệu ứng chiêu)
   function draw(ctx, cam, vw, vh, zoom, now) {
-    if (!G.map || !enabled()) { const t = document.getElementById('dn-tag'); if (t && G.settings && G.settings.daynight === false) t.remove(); return; }
+    if (!G.map) return;
     const st = state();
-    tag(st, now);
+    tag(st, now);   // giờ luôn hiện, kể cả khi tắt hiệu ứng ngày đêm / trong hang
+    if (!enabled()) return;
     const tint = Math.max(st.dusk, st.dawn);
     if (st.dark <= 0.01 && tint <= 0.01) return;
     ctx.save();

@@ -539,7 +539,6 @@ body.touch #menu-buttons { max-width: 236px; }
 .bank-gold { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,215,0,.05); margin-bottom: 6px; }
 .bank-grid { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; background: rgba(0,0,0,.2); border-radius: 6px; max-height: 220px; overflow: auto; margin-bottom: 6px; }
 #weather-tag { font-weight: 600; color: #cfe3ff; font-size: 10.5px; }
-#dn-tag { font-weight: 600; font-size: 10.5px; color: #ffe08a; } #dn-tag.dn-night { color: #a8c0ff; } #dn-tag.dn-dusk { color: #ffa060; } #dn-tag.dn-dawn { color: #ffb0d0; }
 #weather-tag.wt-sun { color: #ffb84a; } #weather-tag.wt-storm { color: #b8a8ff; } #weather-tag.wt-snow, #weather-tag.wt-blizzard { color: #e8f6ff; }
 
 /* ---------- Chế độ PK ---------- */
@@ -1874,13 +1873,7 @@ body.touch #wb-top { top: 108px; right: auto; left: 50%; transform: translateX(-
 .rf-top { margin: 0; padding-left: 0; list-style: none; }
 .rf-top li { display: flex; justify-content: space-between; padding: 3px 0; border-top: 1px solid rgba(255,255,255,.05); font-size: 13px; }
 .rf-bad { color: #ff9a7a; }
-/* mác phiên bản thử nghiệm cạnh logo */
 .pg-logo { position: relative; }
-.pg-beta { position: absolute; right: -6px; top: -12px; transform: rotate(8deg); font: 900 10px/1 "Be Vietnam Pro", system-ui, sans-serif; letter-spacing: 1.2px; color: #fff;
-  background: linear-gradient(135deg, #ff4a3a, #c8102a); border: 1px solid #ffd76a; border-radius: 4px; padding: 3px 6px; box-shadow: 0 2px 8px rgba(0,0,0,.5), 0 0 10px rgba(255,74,58,.6); animation: pgBeta 2.2s ease-in-out infinite; white-space: nowrap; }
-.pg-logo.sm .pg-beta { top: -10px; right: -10px; font-size: 8px; }
-@keyframes pgBeta { 50% { box-shadow: 0 2px 8px rgba(0,0,0,.5), 0 0 18px rgba(255,120,80,.9); } }
-@media (prefers-reduced-motion: reduce) { .pg-beta { animation: none; } }
 /* khoáng động (mining.js): nút Đào khi đứng gần mỏ, đồng hồ đếm ngược lượt 60 phút */
 #btn-dig { position: absolute; left: 50%; bottom: 128px; transform: translateX(-50%); z-index: 12; display: flex; align-items: center; gap: 6px; font: 800 15px "Be Vietnam Pro", system-ui, sans-serif;
   color: #2a1a00; background: linear-gradient(180deg, #ffe08a, #e0a020); border: 2px solid #fff2c0; border-radius: 22px; padding: 8px 20px; box-shadow: 0 4px 14px rgba(0,0,0,.55), 0 0 14px rgba(255,200,80,.6); cursor: pointer; animation: digPulse 1.2s ease-in-out infinite; }
@@ -1912,7 +1905,9 @@ body.calm .slot.r-divine::after { animation: none; }
 #panel-tabs button { font: 700 12.5px "Be Vietnam Pro", system-ui, sans-serif; color: #d8ccb0; background: rgba(255,255,255,.06); border: 1px solid rgba(255,215,106,.25); border-radius: 999px; padding: 5px 14px; cursor: pointer; }
 #panel-tabs button.on { color: #2a1a00; background: linear-gradient(180deg, #ffe08a, #e0a020); border-color: #fff2c0; }
 #menu-buttons button .dot + .dot { right: 10px; }
-/* mác BETA TEST mờ ở góc trên bản đồ mini (không chặn chạm, vẫn nhìn xuyên được bản đồ) */
+/* giờ (ngày / đêm theo giờ thật) ở góc trên bản đồ mini (không chặn chạm) */
 #mini-wrap { position: relative; }
-#mini-beta { position: absolute; top: 4px; right: 4px; z-index: 3; pointer-events: none; font: 900 8px/1 "Be Vietnam Pro", system-ui, sans-serif; letter-spacing: .8px;
-  color: rgba(255,255,255,.85); background: rgba(200,20,30,.38); border: 1px solid rgba(255,215,106,.45); border-radius: 3px; padding: 2px 4px; opacity: .7; text-shadow: 0 1px 1px rgba(0,0,0,.6); }
+#mini-time { position: absolute; top: 4px; right: 4px; z-index: 3; pointer-events: none; font: 800 9.5px/1 "Be Vietnam Pro", system-ui, sans-serif; letter-spacing: .3px;
+  color: #ffe08a; background: rgba(8,10,24,.62); border: 1px solid rgba(255,215,106,.35); border-radius: 4px; padding: 2px 4px; text-shadow: 0 1px 1px rgba(0,0,0,.7); }
+#mini-time:empty { display: none; }
+#mini-time.dn-night { color: #b8ccff; border-color: rgba(150,180,255,.4); } #mini-time.dn-dusk { color: #ffa860; } #mini-time.dn-dawn { color: #ffb8d8; }

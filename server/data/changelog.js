@@ -4,7 +4,8 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
-      '🌙 Ngày & đêm theo giờ thật Việt Nam: 4:30 bình minh ửng hồng, 6:30 trời sáng, 17:00 hoàng hôn ám cam, 19:30 trời tối hẳn. Ban đêm quanh nhân vật, người chơi, NPC, đèn lồng, vạc lửa, cổng dịch chuyển có quầng sáng. Giờ hiện cạnh tên bản đồ; tắt được trong Cài đặt › Đồ hoạ',
+      '🕐 Bỏ mác BETA TEST ở màn đăng nhập và bản đồ mini; góc bản đồ mini giờ hiện giờ trong game (☀️ ngày / 🌙 đêm)',
+      '🌙 Ngày & đêm theo giờ thật Việt Nam: 4:30 bình minh ửng hồng, 6:30 trời sáng, 17:00 hoàng hôn ám cam, 19:30 trời tối hẳn. Ban đêm quanh nhân vật, người chơi, NPC, đèn lồng, vạc lửa, cổng dịch chuyển có quầng sáng. Giờ hiện ở góc bản đồ mini; tắt được trong Cài đặt › Đồ hoạ',
       '✨ Viền chạy quanh ô đồ theo cấp cường hoá rõ hơn hẳn, chia 6 mốc: +1 bạc, +4 lục, +7 lam, +10 tím (có quầng sáng), +13 vàng kim (lấp lánh), +15 cầu vồng. Sửa lỗi viền cũ bị khuất gần hết trên điện thoại',
       '🔥 Lò Luyện Đá mới ở Thợ Rèn: bỏ đủ 5 viên đá cùng loại, cùng cấp vào 5 ô quanh lò rồi bấm Luyện để ra 1 viên cấp cao hơn. Thành công lò bừng sáng vàng, thất bại lò nứt đỏ và vỡ 1 viên',
       '🔨 Đe Cường Hoá mới: đặt trang bị lên đe, bỏ Huyền Tinh Thạch / Thiên Tinh Thạch và Bảo Hiểm Phù vào ô riêng rồi nện búa. Có hiệu ứng tia lửa khi thành công, rung đỏ khi thất bại, vỡ vụn khi rớt cấp',
