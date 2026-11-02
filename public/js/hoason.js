@@ -166,5 +166,31 @@
     if (d.running && !wasRunning && inMap() && !(window.Duel && Duel.active)) setWatch(true, true);   // giải bắt đầu: tự bật xem
     hud();
   }
-  window.HoaSon = { open, onNpc, onState, drawGround, camFocus, blocked, get watching() { return watch; } };
+  // tới lượt đấu: bảng xác nhận 10 giây (không bấm = xử thua – chống người treo máy vẫn được xếp đấu)
+  let cfEl = null, cfTimer = 0;
+  function onConfirm(d) {
+    const close = () => { if (cfEl) { cfEl.remove(); cfEl = null; } clearInterval(cfTimer); };
+    if (d.close) return close();
+    if (d.done) { if (cfEl) { const b = cfEl.querySelector('.hs-cf-go'); b.disabled = true; b.textContent = d.wait ? '✔ Đã xác nhận – chờ đối thủ…' : '⚔️ Vào trận!'; } if (!d.wait) setTimeout(close, 800); return; }
+    close();
+    const end = performance.now() + (d.ms || 10000);
+    cfEl = document.createElement('div'); cfEl.className = 'hs-cf';
+    cfEl.innerHTML = `<div class="hs-cf-box"><div class="hs-cf-t">⛰️ HOA SƠN LUẬN KIẾM · ${UI.esc(d.round || '')}</div>
+      <div class="hs-cf-vs">Đến lượt bạn đấu với <b>${UI.esc(d.vs)}</b>${d.vsLv ? ` (cấp ${d.vsLv})` : ''}</div>
+      <div class="hs-cf-n">10</div><div class="hs-cf-bar"><i></i></div>
+      <button class="btn primary hs-cf-go">⚔️ XÁC NHẬN VÀO TRẬN</button>
+      <div class="small muted">Không xác nhận trong 10 giây sẽ bị xử thua.</div></div>`;
+    document.body.appendChild(cfEl);
+    cfEl.querySelector('.hs-cf-go').onclick = () => emit('hoason', { op: 'confirm' });
+    G.sfx && G.sfx('bossHorn');
+    const tick = () => {
+      if (!cfEl) return;
+      const left = Math.max(0, end - performance.now());
+      cfEl.querySelector('.hs-cf-n').textContent = Math.ceil(left / 1000);
+      cfEl.querySelector('.hs-cf-bar i').style.width = (left / (d.ms || 10000) * 100) + '%';
+      if (left <= 0) close();
+    };
+    tick(); cfTimer = setInterval(tick, 200);
+  }
+  window.HoaSon = { open, onNpc, onState, onConfirm, drawGround, camFocus, blocked, get watching() { return watch; } };
 })();

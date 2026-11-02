@@ -365,6 +365,7 @@
     s.on('daihoi', d => DaiHoi.onState(d));
     s.on('hoason', d => HoaSon.onState(d));
     s.on('hoasonNpc', d => HoaSon.onNpc(d));
+    s.on('hsConfirm', d => HoaSon.onConfirm(d));
     s.on('tongkim', d => TongKim.onState(d));
     s.on('tongkimNpc', d => TongKim.onNpc(d));
     s.on('tongkimPts', d => TongKim.onPts(d));

@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '⛰️ Hoa Sơn Luận Kiếm: tới lượt đấu sẽ hiện bảng xác nhận 10 giây. Không bấm "Xác nhận vào trận" (đang treo máy, rời máy…) sẽ bị xử thua; cả hai cùng không bấm thì cả hai bị loại.',
       '🔒 Chống nuôi tài khoản clone: phải đạt CẤP 30 mới được giao dịch với người chơi khác, mở sạp / mua đồ ở Chợ Phiên và nhận thưởng mời bạn. Quà mời bạn bắt đầu từ mốc bạn được mời đạt cấp 30 (gộp quà mốc cấp 10 cũ vào); quà nhập môn của người được mời phát khi đạt cấp 30.',
       '🛡️ Chống tạo tài khoản clone: mỗi thiết bị chỉ được tạo tối đa 3 tài khoản (đổi IP, xoá dữ liệu trình duyệt hay mở ẩn danh vẫn tính). Thiết bị vi phạm có thể bị khoá toàn bộ.',
       '⚡ Giảm giật: ảnh thú cưỡi giờ chiếm ít bộ nhớ hơn ~13 lần (122MB → 9MB khi đã xem đủ 8 con), tải nhanh hơn – hình vẫn nét như cũ. Nhãn đồ sát và vòng hồi chiêu bình thuốc vẽ nhẹ hơn.',

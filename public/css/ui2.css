@@ -364,3 +364,13 @@ body.touch #chat-emo { min-width: 36px; font-size: 16px; }
 #pk-warn.red { background: linear-gradient(90deg, rgba(20,4,8,.95), rgba(90,0,10,.95), rgba(20,4,8,.95)); border-color: #ff3030; color: #ff8080; }
 #pk-warn.hidden { display: none; }
 @keyframes pkwarn { 50% { box-shadow: 0 0 22px rgba(255,40,20,.95); } }
+
+/* Hoa Sơn: xác nhận vào trận 10 giây */
+.hs-cf { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.55); }
+.hs-cf-box { width: min(92vw, 360px); padding: 16px 18px; text-align: center; border-radius: 14px; background: linear-gradient(180deg, #2a1c12, #140c08); border: 2px solid #ffd76a; box-shadow: 0 0 24px rgba(255,200,80,.5); color: #fff4d8; }
+.hs-cf-t { font-weight: 900; color: #ffd76a; letter-spacing: .5px; }
+.hs-cf-vs { margin: 8px 0 2px; font-size: 14px; }
+.hs-cf-n { font-size: 42px; font-weight: 900; color: #ff6a4a; text-shadow: 0 0 10px rgba(255,80,40,.7); line-height: 1.1; }
+.hs-cf-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; margin: 4px 0 12px; }
+.hs-cf-bar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #ff4a2a, #ffd76a); }
+.hs-cf-go { width: 100%; padding: 12px; font-size: 15px; font-weight: 900; margin-bottom: 6px; animation: pkwarn 1s ease-in-out infinite; }

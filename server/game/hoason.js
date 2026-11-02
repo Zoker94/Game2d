@@ -12,7 +12,8 @@ const { CLASSES } = require('../data/classes');
 const MAP = 'hoa_son_ld';
 const MIN_LV = 30, MAX_REG = 64, TITLE_DAYS = 7, RY = 0.62;   // RY: tỉ lệ dọc của đài bầu dục
 const DOW = 6, HOUR = 20;                 // Thứ 7, 20:00 (giờ Việt Nam)
-const PREP = 45000, BREAK = 12000;        // chờ người chơi vào sân trước trận đầu; nghỉ giữa các vòng
+const PREP = process.env.HS_FAST ? 3000 : 45000, BREAK = 12000;        // chờ người chơi vào sân trước trận đầu; nghỉ giữa các vòng
+const CONFIRM_MS = 10000;                 // tới lượt đấu: 10 giây bấm xác nhận (người treo máy / vắng mặt không bấm = xử thua)
 const REWARDS = [
   { knb: 300, gold: 80000, items: [['boss_chest', 3], ['stone', 30]] },
   { knb: 180, gold: 50000, items: [['boss_chest', 2], ['stone', 20]] },
@@ -80,6 +81,7 @@ class HoaSon {
     if (d.op === 'enter' && this.w.nearNpc(p, 'hs_su_gia')) return this.enter(p);
     if (d.op === 'leave' && p.mapId === MAP) return this.leave(p);
     if (d.op === 'view') return this.sync(p);
+    if (d.op === 'confirm') return this.confirm(p);
   }
   register(p) {
     const reg = this.data.reg;
@@ -158,7 +160,7 @@ class HoaSon {
     ids.sort((a, b) => pw(b) - pw(a));
     const seeded = [];
     for (let i = 0, j = ids.length - 1; i <= j; i++, j--) { seeded.push(ids[i]); if (i !== j) seeded.push(ids[j]); }
-    this.t = { names: {}, cur: seeded, next: [], queue: [], live: new Map(), round: 0, phase: 'prep', at: Date.now() + PREP,
+    this.t = { names: {}, cur: seeded, next: [], queue: [], live: new Map(), pend: new Map(), round: 0, phase: 'prep', at: Date.now() + PREP,
       semiLosers: [], semi: false, out: [], log: [], third: null, fourth: null, total: ids.length };
     for (const uid of ids) this.t.names[uid] = reg[uid].name;
     this.data.reg = {}; this.db.markDirty();
@@ -206,7 +208,9 @@ class HoaSon {
     if (now < t.at) return;
     if (t.phase === 'prep' || t.phase === 'break') this.newRound();
     // mở trận vào các đài còn trống: nhiều trận thì 4 đài phụ (bán kết 2 đài), trận cuối cùng của chặng ở đài chính
-    const used = new Set([...t.live.values()].map(m => m.slot)), n = t.queue.length + t.live.size;
+    this.tickConfirm(now);
+    if (this.t !== t) return;
+    const used = new Set([...t.live.values(), ...t.pend.values()].map(m => m.slot)), n = t.queue.length + t.live.size + t.pend.size;
     const slots = t.phase === 'round' && n > 1 ? (t.semi ? [1, 2] : [1, 2, 3, 4]) : [0];
     for (const slot of slots) {
       if (!t.queue.length) break;
@@ -215,7 +219,7 @@ class HoaSon {
       this.launch(a, b, slot);
       used.add(slot);
     }
-    if (!t.queue.length && !t.live.size && this.t === t) this.endStage();
+    if (!t.queue.length && !t.live.size && !t.pend.size && this.t === t) this.endStage();
   }
   // đấu thủ có mặt và sẵn sàng?
   ready(uid) {
@@ -228,14 +232,49 @@ class HoaSon {
     if (p.dead) { p.dead = false; p.c.hp = p.stats.maxHp; p.dirtyMe = true; }
     return p.duel ? null : p;
   }
+  // tới lượt: hỏi hai đấu thủ xác nhận trong 10 giây (chống người treo máy / bỏ đi vẫn được xếp đấu)
   launch(a, b, slot) {
     const t = this.t, pa = this.ready(a), pb = this.ready(b);
-    if (!pa || !pb) {
-      if (!pa && !pb) { t.log.unshift(`${this.name(a)} và ${this.name(b)} đều vắng mặt – cả hai bị loại`); this.eliminate(a); this.eliminate(b); return; }
-      const w = pa ? a : b, l = pa ? b : a;
-      t.log.unshift(`${this.name(w)} thắng do ${this.name(l)} vắng mặt`);
-      return this.result(w, l, null);
+    if (!pa || !pb) return this.absent(a, b, pa, pb);
+    const m = { a, b, slot, ok: {}, until: Date.now() + CONFIRM_MS };
+    t.pend.set(a + '|' + b, m);
+    for (const [me, op] of [[pa, pb], [pb, pa]]) me.socket.emit('hsConfirm', { vs: op.c.name, vsLv: op.c.level, round: this.roundLabel(), ms: CONFIRM_MS });
+    this.announce(`⏳ [${this.roundLabel()}] ${pa.c.name} ⚔ ${pb.c.name}: chờ hai bên xác nhận vào trận (10 giây)…`, 'map:' + MAP);
+  }
+  absent(a, b, pa, pb, why = 'vắng mặt') {
+    const t = this.t;
+    if (!pa && !pb) { t.log.unshift(`${this.name(a)} và ${this.name(b)} đều ${why} – cả hai bị loại`); this.eliminate(a); this.eliminate(b); return; }
+    const w = pa ? a : b, l = pa ? b : a;
+    t.log.unshift(`${this.name(w)} thắng do ${this.name(l)} ${why}`);
+    this.announce(`⛰️ Hoa Sơn: ${this.name(l)} ${why} – xử thua, ${this.name(w)} đi tiếp.`, 'map:' + MAP);
+    return this.result(w, l, why);
+  }
+  confirm(p) {
+    const t = this.t;
+    if (!t || !t.pend) return;
+    for (const [key, m] of t.pend) {
+      if (m.a !== p.userId && m.b !== p.userId) continue;
+      if (m.ok[p.userId]) return;
+      m.ok[p.userId] = 1;
+      p.socket.emit('hsConfirm', { done: 1, wait: !(m.ok[m.a] && m.ok[m.b]) });
+      if (m.ok[m.a] && m.ok[m.b]) { t.pend.delete(key); this.begin(m.a, m.b, m.slot); }
+      return;
     }
+  }
+  tickConfirm(now) {
+    const t = this.t;
+    for (const [key, m] of t.pend) {
+      if (now < m.until) continue;
+      t.pend.delete(key);
+      for (const uid of [m.a, m.b]) { const q = this.w.players.get(uid); if (q && !q.offline) q.socket.emit('hsConfirm', { close: 1 }); }
+      const pa = m.ok[m.a] ? this.ready(m.a) : null, pb = m.ok[m.b] ? this.ready(m.b) : null;
+      this.absent(m.a, m.b, pa, pb, 'không xác nhận vào trận');
+      if (this.t !== t) return;
+    }
+  }
+  begin(a, b, slot) {
+    const t = this.t, pa = this.ready(a), pb = this.ready(b);
+    if (!pa || !pb) return this.absent(a, b, pa, pb);
     const R = this.rings()[slot];
     const m = { a, b, slot, ai: pa.id, bi: pb.id, start: Date.now() };
     t.live.set(a + '|' + b, m);
@@ -340,7 +379,7 @@ class HoaSon {
     if (!t) return out;
     const R = this.rings();
     out.phase = t.phase; out.label = this.roundLabel(); out.at = t.at; out.total = t.total;
-    out.left = t.cur.length && t.phase !== 'round' ? t.cur.length : t.next.length + t.queue.length * 2 + t.live.size * 2;
+    out.left = t.cur.length && t.phase !== 'round' ? t.cur.length : t.next.length + t.queue.length * 2 + t.live.size * 2 + (t.pend ? t.pend.size * 2 : 0);
     out.live = [...t.live.values()].map(m => ({ a: this.name(m.a), b: this.name(m.b), ai: m.ai, bi: m.bi, slot: m.slot, cx: R[m.slot].cx, cy: R[m.slot].cy, r: R[m.slot].r }));
     out.ry = RY;
     out.queue = t.queue.slice(0, 6).map(([a, b]) => [this.name(a), this.name(b)]);
