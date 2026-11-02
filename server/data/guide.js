@@ -44,7 +44,7 @@ function build() {
       '<b>Khoáng Động</b> (nguồn chính): mua <b>Vé Vào Khoáng Động</b> + <b>Cuốc Chim</b> ở <b>Kỳ Trân Các</b>, Sử dụng vé là vào hang. Cấp 25+ vào <b>Bảo Thạch Khoáng Động</b>, cấp 55+ vào <b>Huyền Tinh Mật Cảnh</b> (đá cấp cao hơn). Mỗi ngày 3 lượt, mỗi lượt 10 phút, cấm PK.',
       'Trong hang tới gần mỏ đá bấm <b>⛏ Đào</b> (3 giây). Mua <b>Bùa Tự Đào</b> để nhân vật tự đi đào.',
       'Còn rơi lẻ tẻ từ quái cấp 15+, boss triệu hồi, và đổi <b>Công Trạng</b> ở Tống Kim (đá cấp 4–5).',
-      'Khảm / tháo / luyện đá: <b>Thợ Rèn</b>. Đồ càng xịn càng nhiều lỗ khảm. 3 viên cùng cấp luyện lên 1 viên cấp cao hơn.']) },
+      'Khảm / tháo / luyện đá: <b>Thợ Rèn</b>. Đồ càng xịn càng nhiều lỗ khảm. 5 viên cùng loại, cùng cấp bỏ vào lò luyện lên 1 viên cấp cao hơn (thất bại vỡ 1 viên). Cường hoá: tab Cường hoá – bỏ trang bị, đá, Bảo Hiểm Phù vào đe rèn rồi bấm Cường hoá.']) },
     { k: 'skill', icon: '📖', title: 'Võ công – học và nâng', html: li([
       'Mua sách võ công ở <b>Tàng Kinh Các</b> (Tương Dương), dùng sách để học chiêu.',
       'Nâng tầng chiêu ở bảng <b>Võ công</b>: tốn điểm võ học + ngân lượng + 1 cuốn sách chiêu đó. Cấp 120 đủ điểm nâng tối đa cả 10 võ công.',

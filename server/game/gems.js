@@ -1,4 +1,4 @@
-// Khảm đá tại Thợ Rèn: khảm / tháo đá trên trang bị, luyện 3 viên thành 1 viên cấp trên,
+// Khảm đá tại Thợ Rèn: khảm / tháo đá trên trang bị, luyện 5 viên thành 1 viên cấp trên,
 // và chuỗi hướng dẫn khảm do Thợ Rèn Vương chỉ dạy (c.gemTut: 0 chưa gặp, 1 đã nhận đá, 2 đã khảm, 3 xong).
 const U = require('./util');
 const { ITEMS } = require('../data/items');
@@ -74,7 +74,7 @@ class Gems {
     p.dirtyMe = true; this.w.db.markDirty();
   }
 
-  // luyện đá: n lần, mỗi lần 3 viên cấp L -> 1 viên cấp L+1
+  // luyện đá: n lần, mỗi lần 5 viên cấp L -> 1 viên cấp L+1 (lò luyện: người chơi bỏ đủ 5 viên rồi bấm Luyện)
   upgrade(p, { gem, n, npc }) {
     if (!this.smith(p, npc)) return;
     const c = p.c, g = G.parseGem(gem);
@@ -127,9 +127,9 @@ class Gems {
     } else if (st === 2) {
       p.socket.emit('storyScene', { title: 'Thợ Rèn Vương – Thuật Khảm Đá', kind: 'talk', lines: [
         [smith, 'Khéo tay lắm! Thấy chỉ số tăng chưa?'],
-        [smith, 'Đá cấp thấp thì yếu. Gom đủ 3 viên cùng loại cùng cấp, lão sẽ luyện thành 1 viên cấp cao hơn. Đá có 5 cấp, cấp càng cao càng khó luyện, thất bại sẽ vỡ mất 1 viên.'],
-        [smith, 'Ngươi còn 2 viên Hồng Ngọc… thiếu 1 viên. Lão bù cho ngươi một viên – thử luyện đi!']] });
-      this.w.giveReward(p, { items: [['gem_ruby_1', 1]] }, 'Thợ Rèn Vương tặng', { bind: true });
+        [smith, 'Đá cấp thấp thì yếu. Gom đủ 5 viên cùng loại cùng cấp, bỏ vào lò luyện của lão sẽ thành 1 viên cấp cao hơn. Đá có 5 cấp, cấp càng cao càng khó luyện, thất bại sẽ vỡ mất 1 viên.'],
+        [smith, 'Ngươi còn 2 viên Hồng Ngọc… thiếu 3 viên. Lão bù cho ngươi – mở tab "🔥 Luyện đá", bỏ đủ 5 viên vào lò rồi luyện thử đi!']] });
+      this.w.giveReward(p, { items: [['gem_ruby_1', 3]] }, 'Thợ Rèn Vương tặng', { bind: true });
     } else if (st === 3) {
       p.socket.emit('storyScene', { title: 'Thợ Rèn Vương – Thuật Khảm Đá', kind: 'talk', lines: [
         [smith, 'Thành rồi! Ngươi đã nắm được thuật khảm đá.'],

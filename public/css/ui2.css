@@ -387,3 +387,101 @@ body.touch #chat-emo { min-width: 36px; font-size: 16px; }
 #btn-auto .qb-tk.low { background: #6a3a08; border-color: #ffb040; color: #ffe0a0; }
 #btn-auto .qb-tk.crit { background: #7a1010; border-color: #ff5a5a; color: #fff; animation: pkwarn 1s ease-in-out infinite; }
 #btn-auto .qb-tk.hidden { display: none; }
+
+/* ===== Lò luyện đá & đe cường hoá (forge.js) ===== */
+.forge { position: relative; margin-top: 6px; }
+.forge .fg-stage { position: relative; height: 210px; border-radius: 10px; overflow: hidden; margin-bottom: 8px;
+  background: radial-gradient(circle at 50% 58%, #4a2410 0%, #22120a 45%, #0d0806 100%); border: 1px solid #5a3a1e; box-shadow: inset 0 0 30px #000; }
+.fg-info { text-align: center; font-size: 13px; line-height: 1.6; min-height: 42px; }
+.fg-btns { justify-content: center; gap: 6px; margin: 6px 0 8px; flex-wrap: wrap; }
+.fg-bag { display: flex; flex-wrap: wrap; gap: 5px; margin: 4px 0 8px; }
+.fg-item { position: relative; width: 44px; height: 44px; padding: 3px; border-radius: 7px; background: #1b2232; border: 1px solid #3a4a66; cursor: pointer; }
+.fg-item img { width: 100%; height: 100%; image-rendering: pixelated; }
+.fg-item i { position: absolute; right: 2px; bottom: 0; font: bold 11px sans-serif; font-style: normal; color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000; }
+.fg-item u { position: absolute; left: 1px; top: 0; font-size: 9px; text-decoration: none; background: #2a7a3a; color: #fff; border-radius: 3px; padding: 0 2px; }
+.fg-item:hover:not(.dim) { border-color: var(--gold); transform: translateY(-1px); }
+.fg-item.sel { border-color: var(--gold); box-shadow: 0 0 8px #f0c45a99; }
+.fg-item.dim { opacity: .35; cursor: default; }
+.forge.busy .fg-item, .forge.busy .fg-btns .btn { pointer-events: none; opacity: .6; }
+.fg-res { font-weight: bold; font-size: 15px; margin-top: 2px; animation: fgPop .45s cubic-bezier(.2,1.6,.4,1); }
+.fg-res.win { color: #ffd76a; text-shadow: 0 0 8px #ff9a20; }
+.fg-res.lose { color: #ff6050; text-shadow: 0 0 6px #900; }
+@keyframes fgPop { 0% { transform: scale(.3); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
+@keyframes fgShake { 0%,100% { transform: translate(0,0) } 20% { transform: translate(-6px,2px) } 40% { transform: translate(5px,-2px) } 60% { transform: translate(-4px,1px) } 80% { transform: translate(3px,-1px) } }
+
+/* lò luyện đá: 5 ô quanh lò */
+.fg-ring { position: absolute; left: 50%; top: 50%; width: 190px; height: 190px; transform: translate(-50%,-50%); }
+.fg-ring::before { content: ''; position: absolute; inset: 22px; border-radius: 50%; border: 2px dashed #8a5a2a; opacity: .6; animation: fgSpin 18s linear infinite; }
+@keyframes fgSpin { to { transform: rotate(360deg) } }
+.fg-slot { position: absolute; width: 42px; height: 42px; margin: -21px 0 0 -21px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: #1a0e08; border: 2px solid #6a4420; color: #8a6a4a; font-size: 18px; cursor: pointer; transition: left .55s ease-in, top .55s ease-in, transform .55s, opacity .55s; z-index: 2; }
+.fg-slot img { width: 32px; height: 32px; image-rendering: pixelated; }
+.fg-slot.full { border-color: #d89a3a; box-shadow: 0 0 10px #ff9a2088; background: #2e1a0c; }
+.fg-core { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; transform: translate(-50%,-50%); border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle, #ffb040 0%, #c04010 45%, #3a1206 75%); box-shadow: 0 0 22px #ff6a10aa; z-index: 1; animation: fgGlow 1.6s ease-in-out infinite; }
+@keyframes fgGlow { 50% { box-shadow: 0 0 34px #ff8a20dd; } }
+.fg-core img { width: 40px; height: 40px; image-rendering: pixelated; }
+.fg-core .fg-ghost { opacity: .35; filter: grayscale(.4); }
+.fg-flame { font-size: 26px; animation: fgFlick .5s ease-in-out infinite alternate; }
+@keyframes fgFlick { to { transform: scale(1.12) translateY(-2px) } }
+/* đang luyện: đá bay vào lò */
+.gem-forge.charge .fg-slot.full { left: 50% !important; top: 50% !important; transform: scale(.4); opacity: 0; }
+.gem-forge.charge .fg-core { animation: fgCharge .65s ease-in forwards; }
+@keyframes fgCharge { to { transform: translate(-50%,-50%) scale(1.35); box-shadow: 0 0 60px #ffd040, 0 0 120px #ff8a20; } }
+/* thành công: bừng sáng vàng */
+.gem-forge.win .fg-stage::after { content: ''; position: absolute; left: 50%; top: 50%; width: 20px; height: 20px; margin: -10px; border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, #ffe070 35%, #ff9a2000 70%); animation: fgBurst .9s ease-out forwards; pointer-events: none; }
+@keyframes fgBurst { 0% { transform: scale(1); opacity: 1 } 100% { transform: scale(18); opacity: 0 } }
+.gem-forge.win .fg-stage { background: radial-gradient(circle at 50% 50%, #8a5a10 0%, #3a2008 50%, #0d0806 100%); }
+.gem-forge.win .fg-out { width: 48px; height: 48px; animation: fgOut .7s cubic-bezier(.2,1.8,.4,1); filter: drop-shadow(0 0 6px #fff) drop-shadow(0 0 10px #ffd040); }
+@keyframes fgOut { 0% { transform: scale(0) rotate(-180deg) } 100% { transform: scale(1) rotate(0) } }
+.gem-forge.win .fg-ring::before { border-color: #ffd76a; opacity: 1; animation-duration: 2s; }
+/* thất bại: lò nứt đỏ, rung, 1 viên vỡ */
+.gem-forge.lose .fg-stage { animation: fgShake .45s; background: radial-gradient(circle at 50% 58%, #5a0a0a 0%, #2a0606 50%, #0d0606 100%); }
+.gem-forge.lose .fg-core { background: radial-gradient(circle, #ff5040 0%, #801010 50%, #2a0606 80%); box-shadow: 0 0 26px #ff2020; animation: none; }
+.fg-slot.crack { border-color: #ff3030; animation: fgBreak 1s forwards; }
+@keyframes fgBreak { 0% { transform: scale(1.2); box-shadow: 0 0 20px #f00 } 40% { transform: scale(1.3) rotate(15deg) } 100% { transform: scale(.2) rotate(60deg); opacity: 0; filter: grayscale(1) } }
+.gem-forge.lose .fg-stage::after { content: '⚡'; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-size: 70px; color: #ff4040; opacity: 0; animation: fgZap .6s ease-out; pointer-events: none; }
+@keyframes fgZap { 30% { opacity: 1 } 100% { opacity: 0; transform: translate(-50%,-50%) scale(1.6) } }
+
+/* đe cường hoá */
+.fg-anvil-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-around; padding: 0 8px; }
+.fg-eslot { position: relative; width: 58px; height: 58px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-direction: column;
+  background: #1a120c; border: 2px dashed #6a4a2a; color: #8a6a4a; font-size: 18px; cursor: pointer; }
+.fg-eslot.eq { width: 70px; height: 70px; }
+.fg-eslot.full { border-style: solid; border-color: #d8a040; box-shadow: 0 0 10px #f0b04066; background: #2a1c10; }
+.fg-eslot img { width: 70%; height: 70%; image-rendering: pixelated; }
+.fg-eslot i { position: absolute; right: 2px; top: 0; font: bold 11px sans-serif; font-style: normal; color: #fff; text-shadow: 0 0 2px #000; }
+.fg-eslot b { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 10px; font-weight: normal; color: #d8c8a8; margin-top: 2px; }
+.fg-mats { display: flex; flex-direction: column; gap: 14px; transform: scale(.82); }
+.fg-mats .fg-eslot { width: 46px; height: 46px; }
+.fg-eslot.ins.full { border-color: #4ade80; box-shadow: 0 0 10px #4ade8066; }
+.fg-anvil { position: relative; width: 96px; height: 50px; margin-top: 50px; border-radius: 6px 6px 3px 3px;
+  background: linear-gradient(#7a828e, #3a404a 55%, #23272e); box-shadow: inset 0 2px 0 #aab, 0 4px 10px #000; }
+.fg-anvil::before { content: ''; position: absolute; left: 22px; right: 22px; top: 100%; height: 22px; background: linear-gradient(#3a404a, #1a1d22); }
+.fg-anvil::after { content: ''; position: absolute; left: -16px; top: 4px; border: 10px solid transparent; border-right: 16px solid #5a626e; border-left: 0; }
+.fg-hammer { position: absolute; left: 50%; top: -58px; font-size: 38px; transform-origin: 80% 80%; transform: translateX(-30%) rotate(-25deg); transition: transform .2s; filter: drop-shadow(0 2px 2px #000); }
+.fg-sparks { position: absolute; left: 50%; top: 0; width: 4px; height: 4px; border-radius: 50%; }
+.fg-plus { position: absolute; left: 50%; top: -30px; transform: translateX(-50%); font: bold 30px sans-serif; color: #ffd76a; text-shadow: 0 0 6px #ff8a00, 0 2px 0 #7a3a00; animation: fgFloat 1.6s ease-out forwards; }
+@keyframes fgFloat { 0% { transform: translate(-50%, 10px) scale(.3); opacity: 0 } 25% { transform: translate(-50%, 0) scale(1.3); opacity: 1 } 100% { transform: translate(-50%, -40px) scale(1); opacity: 0 } }
+.enh-forge.fx-swing .fg-hammer { animation: fgSwing .55s ease-in forwards; }
+@keyframes fgSwing { 0% { transform: translateX(-30%) rotate(-25deg) } 60% { transform: translateX(-30%) translateY(-14px) rotate(-70deg) } 100% { transform: translateX(-30%) translateY(18px) rotate(20deg) } }
+.enh-forge[class*="fx-"]:not(.fx-swing) .fg-hammer { transform: translateX(-30%) translateY(18px) rotate(20deg); }
+/* thành công: tia lửa vàng */
+.enh-forge.fx-ok .fg-sparks { box-shadow: 0 -30px 0 #ffd040, 24px -22px 0 #ffb020, -24px -22px 0 #ffe080, 36px -6px 0 #ff9a20, -36px -6px 0 #ffd040, 14px -40px 0 #fff, -14px -40px 0 #ffe080, 44px -30px 0 #ffb020, -44px -30px 0 #ffd040;
+  animation: fgSpark .8s ease-out forwards; }
+@keyframes fgSpark { 0% { transform: scale(.2); opacity: 1 } 100% { transform: scale(2.4); opacity: 0 } }
+.enh-forge.fx-ok .fg-stage { background: radial-gradient(circle at 50% 60%, #7a5a10 0%, #2e1c08 50%, #0d0806 100%); }
+.enh-forge.fx-ok .fg-eslot.eq { animation: fgShine 1.2s ease-out; }
+@keyframes fgShine { 0%,100% { box-shadow: 0 0 10px #f0b04066 } 30% { box-shadow: 0 0 30px #ffe070, 0 0 50px #ffb020; transform: scale(1.12) } }
+/* thất bại */
+.enh-forge.fx-fail .fg-stage, .enh-forge.fx-insured .fg-stage, .enh-forge.fx-drop .fg-stage { animation: fgShake .45s; }
+.enh-forge.fx-fail .fg-sparks, .enh-forge.fx-drop .fg-sparks { box-shadow: 0 -20px 0 #ff4030, 20px -12px 0 #ff2020, -20px -12px 0 #ff6040, 30px -26px 0 #a01010, -30px -26px 0 #ff3020; animation: fgSpark .6s ease-out forwards; }
+.enh-forge.fx-fail .fg-stage, .enh-forge.fx-drop .fg-stage { background: radial-gradient(circle at 50% 60%, #5a0a0a 0%, #2a0606 50%, #0d0606 100%); }
+.enh-forge.fx-insured .fg-stage { background: radial-gradient(circle at 50% 60%, #0a4a2a 0%, #062a16 50%, #060d08 100%); }
+.enh-forge.fx-insured .fg-eslot.ins { animation: fgShine 1.2s ease-out; border-color: #4ade80; }
+.enh-forge.fx-drop .fg-eslot.eq { animation: fgShatter 1.2s ease-out; }
+@keyframes fgShatter { 0% { filter: none } 20% { transform: scale(1.2) rotate(-8deg); filter: brightness(2) hue-rotate(-40deg) } 50% { transform: scale(.85) rotate(6deg); filter: grayscale(1) brightness(.6) } 100% { transform: none; filter: none } }
+.enh-forge.fx-drop .fg-stage::after, .enh-forge.fx-fail .fg-stage::after { content: '💢'; position: absolute; left: 50%; top: 32%; transform: translate(-50%,-50%); font-size: 46px; opacity: 0; animation: fgZap .7s ease-out; pointer-events: none; }
+.enh-forge.fx-drop .fg-stage::after { content: '💥'; font-size: 64px; }
+@media (max-width: 480px) { .fg-anvil { width: 74px; } .fg-eslot.eq { width: 60px; height: 60px; } }

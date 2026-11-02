@@ -1064,7 +1064,7 @@
     const st = G.me.gemTut | 0;
     if (st >= 3) return '';
     if (st === 0) return `<div class="gem-tut"><b>📖 Thuật khảm đá</b><div class="small">${G.me.level < 15 ? 'Đạt cấp 15 rồi nói chuyện với Thợ Rèn Vương để được chỉ dạy cách khảm đá và nhận đá tặng.' : 'Nói chuyện lại với Thợ Rèn Vương để được chỉ dạy và nhận đá tặng.'}</div></div>`;
-    const steps = [['Nhận đá từ Thợ Rèn', true], ['Khảm 1 viên đá vào trang bị (tab 💎 Khảm đá)', st >= 2], ['Luyện 3 viên Hồng Ngọc cấp 1 thành cấp 2 (tab 🔥 Luyện đá)', st >= 3]];
+    const steps = [['Nhận đá từ Thợ Rèn', true], ['Khảm 1 viên đá vào trang bị (tab 💎 Khảm đá)', st >= 2], ['Bỏ 5 viên Hồng Ngọc cấp 1 vào lò, luyện thành cấp 2 (tab 🔥 Luyện đá)', st >= 3]];
     return `<div class="gem-tut"><b>📖 Hướng dẫn khảm đá của Thợ Rèn</b>${steps.map(([t, ok]) => `<div class="small ${ok ? 'ok' : ''}">${ok ? '✔' : '➤'} ${t}</div>`).join('')}</div>`;
   }
   function gemSocketBox() {
@@ -1104,9 +1104,9 @@
         <button class="btn small primary" data-gem-up="${x.id}" data-n="1" ${can >= 1 ? '' : 'disabled'}>Luyện</button>${can > 1 ? `<button class="btn small" data-gem-up="${x.id}" data-n="${can}">Luyện hết (${can})</button>` : ''}</div>`;
     }).join('') + '</div>';
   }
-  UI.onGem = function () { UI.refreshPanel(); };
+  UI.onGem = function (d) { if (!(window.Forge && d && Forge.onGem(d))) UI.refreshPanel(); };
 
-  UI.onEnhance = function (d) { panelState.enhRes = d.result; UI.refreshPanel(); setTimeout(() => { panelState.enhRes = null; }, 2500); };
+  UI.onEnhance = function (d) { if (window.Forge && Forge.onEnhance(d)) return; panelState.enhRes = d.result; UI.refreshPanel(); setTimeout(() => { panelState.enhRes = null; }, 2500); };
 
   function bindInv(body, ctx = {}) {
     const ins = body.querySelector('#enh-insure');
@@ -1833,13 +1833,12 @@
     } else if (tab === 'sell') {
       html += quickSellHtml() + invGrid(body, { noEquip: true, mark: sellMark }) + (sellMulti ? '' : itemActions({ shop: true }));
     } else if (tab === 'enhance') {
-      html += '<div class="small muted">Chọn trang bị (kể cả đang mặc) để cường hóa, tối đa +15. Từ +10 trở lên nếu thất bại mà không có Bảo Hiểm Phù sẽ rớt về +1. Huyền Tinh Thạch: ' + G.me.inv.filter(x => x.id === 'stone').reduce((s, x) => s + x.qty, 0) + '</div>' +
-        invGrid(body, { filter: s => G.data.items[s.id].type === 'equip' }) + itemActions({ enhance: true });
+      html += '<div class="small muted">Đặt trang bị lên đe, bỏ Huyền Tinh Thạch (cấp cao cần thêm Thiên Tinh Thạch) rồi nện búa. Tối đa +15. Từ +10 trở lên thất bại mà không có Bảo Hiểm Phù sẽ rớt về +1.</div><div id="forge-host"></div>';
     } else if (tab === 'gem') {
       html += gemTutHtml() + '<div class="small muted">Chọn trang bị (kể cả đang mặc) để khảm đá. Đồ Thường / Hiếm 1 lỗ, VIP 2 lỗ, Truyền Kỳ 3 lỗ. Mỗi món chỉ khảm 1 viên mỗi loại.</div>' +
         invGrid(body, { filter: s => G.data.items[s.id].type === 'equip' }) + gemSocketBox();
     } else if (tab === 'gemup') {
-      html += gemTutHtml() + gemUpgradeHtml();
+      html += gemTutHtml() + '<div id="forge-host"></div>';
     } else if (tab === 'inherit') {
       html += inheritHtml();
     } else if (d.cloak) {
@@ -1852,6 +1851,7 @@
         <h4 class="tp-h">🏮 Môn phái</h4><div class="list">${d.teleports.filter(t => t.sect).map(t => row(Object.assign({}, t, { name: (t.mine ? '⭐ ' : '') + t.name }))).join('')}</div>`;
     }
     body.innerHTML = html;
+    if ((tab === 'gemup' || tab === 'enhance') && window.Forge && $('forge-host')) Forge.mount($('forge-host'), tab === 'gemup' ? 'gem' : 'enh', d.id);
     const c = $('npc-cv').getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(Sprites.npcSprite(d.sprite, d.color, 0), 0, 0);
     bindTabs(body);
     body.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => {
@@ -1861,7 +1861,7 @@
     body.querySelectorAll('[data-tp]').forEach(b => b.onclick = () => emit('teleport', { map: b.dataset.tp }));
     body.querySelectorAll('[data-cloak]').forEach(b => b.onclick = () => emit('craftCloak', { t: +b.dataset.cloak, br: panelState.buyBr || G.me.branch }));
     body.querySelectorAll('[data-bbr]').forEach(b => b.onclick = () => { panelState.buyBr = b.dataset.bbr; G.sfx('click'); UI.refreshPanel(); });
-    if (tab === 'sell' || tab === 'enhance' || tab === 'gem') bindInv(body, { shop: tab === 'sell', enhance: tab === 'enhance' });
+    if (tab === 'sell' || tab === 'gem') bindInv(body, { shop: tab === 'sell' });
     body.querySelectorAll('[data-gem-sock]').forEach(b => b.onclick = () => { const s = selectedItem(); if (s) emit('gem', { op: 'socket', uid: s.uid, gem: b.dataset.gemSock, npc: d.id }); });
     body.querySelectorAll('[data-gem-unsock]').forEach(b => b.onclick = () => { const s = selectedItem(); if (s) emit('gem', { op: 'unsocket', uid: s.uid, idx: +b.dataset.gemUnsock, npc: d.id }); });
     body.querySelectorAll('[data-gem-up]').forEach(b => b.onclick = () => emit('gem', { op: 'upgrade', gem: b.dataset.gemUp, n: +b.dataset.n || 1, npc: d.id }));
