@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🧭 Thú cưỡi có đủ 4 hướng: đi xuống thấy mặt trước (đầu, ngực, chân trước), đi lên thấy lưng (mông, đuôi); Phượng Hoàng và Thanh Long dang cánh vỗ theo nhịp ở cả hướng trước/sau.',
       '🐎 Vẽ lại toàn bộ thú cưỡi: Ngựa Nâu, Bạch Mã, Hắc Mã (chiến mã giáp), Kim Ngưu, Kim Quy, Hỏa Kỳ Lân, Phượng Hoàng, Thanh Long – có hoạt ảnh đứng và chạy. Thanh Long và Phượng Hoàng vỗ cánh khi bay, không còn che người cưỡi.',
       '🐉 Gỡ thú cưỡi Hắc Long khỏi game: ai đang có được đổi sang Thanh Long (giữ cấp); nếu đã có Thanh Long thì giữ cấp cao hơn và được hoàn 8000 Nguyên Bảo.',
       '🌐 Mỗi địa chỉ mạng (IP) chỉ được tối đa 3 tài khoản đăng nhập cùng lúc. Tài khoản thứ 4 sẽ được báo thoát bớt 1 tài khoản rồi vào lại.',
