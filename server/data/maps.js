@@ -752,7 +752,7 @@ function isSolidAt(map, px, py) {
 
 // Khu: mỗi bản đồ luyện công có CHANNELS bản sao chạy độc lập (quái, đồ rơi, người chơi riêng), dùng chung địa hình.
 // Khu 1 giữ id gốc (dữ liệu cũ không đổi), khu n là "<id>~n". Thành, môn phái, lôi đài, chiến trường, Đại Hội chỉ có 1 khu.
-const CHANNELS = 5, CH_CAP = 10;
+const CHANNELS = 20, CH_CAP = 10;
 const hasChannels = m => !m.town && !m.safe && !m.pvp && !m.sect && !m.duelArena && !m.instance && !m.tourney && m.id !== 'dai_hoi' && ((m.spawns || []).length > 0 || !!m.gemMine);   // khoáng động: không quái nhưng vẫn chia khu
 // Bia Chuyển Khu: đặt cạnh mỗi cổng của bản đồ có khu (ô trống gần nhất, lùi vào trong 2 ô, lệch sang 2 ô)
 function placeKhuBia(m) {

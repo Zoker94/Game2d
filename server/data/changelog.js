@@ -4,6 +4,8 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🐛 Sửa lỗi bấm Sử dụng Võ Mục Tâm Pháp bị mất vật phẩm: giờ chưa có Võ Mục Di Thư thì hiện hướng dẫn (gom đủ 7 tàn quyển → ghép Di Thư → dùng Di Thư) và giữ nguyên Tâm Pháp; đã có Di Thư thì lĩnh hội luôn. Các nguyên liệu khác (VD Thiên Tàm Ti) bấm Sử dụng cũng không còn bị mất.',
+      '🗺️ Mỗi bản đồ luyện công và Khoáng Động nay có 20 khu (trước 5 khu), mỗi khu tối đa 10 người – bấm "Khu ▾" cạnh tên bản đồ để chọn.',
       '🎫 TREO MÁY: thêm Vé Treo Máy (10 Nguyên Bảo – Kỳ Trân Các), mỗi vé 6–8 giờ, cộng dồn. Có vé: bật Tự động không bị hỏi mã, tắt game / rời trang ở bãi luyện thì máy chủ vẫn treo hộ tới khi hết vé. Không có vé: vẫn bật Tự động được khi đang mở game, nhưng cứ 5–30 phút sẽ hiện mã xác nhận 4 số – bấm đúng mã trong 15 giây để treo tiếp, không thì bị đưa ra khỏi game; tắt game thì không còn được máy chủ treo hộ.',
       '☠️ Đồ sát: điểm sát khí hiện trước tên nhân vật (☠5) và trên nút chế độ PK. Đã thành Đồ sát đỏ (sát khí từ 3) thì bị khoá ở chế độ Đồ sát, không tắt được tới khi xoá hết sát khí. Lệnh Bài Xoá Tội nay trừ 5 điểm sát khí mỗi lá (không còn xoá sạch); sát khí vẫn tự giảm 1 điểm mỗi 15 phút.',
       '👆 Điện thoại: bấm giữ vào người chơi chỉ cần 0,5 giây (trước 1,5 giây) là hiện bảng Xem thông tin / Kết bạn / Thách đấu.'

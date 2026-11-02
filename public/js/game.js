@@ -34,7 +34,7 @@
   function loading(on, text) { $('loading').classList.toggle('hidden', !on); if (text) $('loading-text').textContent = text; }
   G.modal = function (text, buttons = [{ t: 'OK' }]) {
     $('modal-text').textContent = text;
-    const box = $('modal-btns'); box.innerHTML = '';
+    const box = $('modal-btns'); box.innerHTML = ''; box.classList.remove('ch-grid');
     buttons.forEach(b => { const el = document.createElement('button'); el.className = 'btn ' + (b.cls || ''); el.textContent = b.t; el.onclick = () => { $('modal-msg').classList.add('hidden'); b.fn && b.fn(); }; box.appendChild(el); });
     $('modal-msg').classList.remove('hidden');
   };
@@ -388,11 +388,12 @@
     s.on('cd', d => { const sk = mySkills()[d.idx]; if (sk) { G.cds[sk.id] = G.cds[d.idx] = { until: performance.now() + d.until, total: d.until, id: sk.id }; } G.pending[d.idx] = 0; });
     s.on('toast', d => UI.toast(d.text, d.type));
     s.on('notice', d => G.modal((d.type === 'admin' ? '📢 Thông báo từ quản trị viên:\n' : '') + d.text));
-    // chọn khu: mỗi bản đồ luyện công có 5 khu, mỗi khu tối đa 10 người
+    // chọn khu: mỗi bản đồ luyện công có 20 khu, mỗi khu tối đa 10 người
     s.on('channels', d => showChannels(d));
     function showChannels(d) {
       if (!d || !d.list.length) return UI.toast('Bản đồ này không chia khu', 'info');
-      G.modal(`${d.name} – chọn khu (mỗi khu tối đa ${d.list[0].cap} người)`, d.list.map(c => ({ t: `${c.cur ? '📍 ' : ''}Khu ${c.ch} · ${c.n}/${c.cap}${c.n >= c.cap ? ' (đầy)' : ''}`, fn: () => { if (!c.cur) G.socket.emit('channel', { ch: c.ch }); } })).concat([{ t: 'Đóng' }]));
+      G.modal(`${d.name} – chọn khu (mỗi khu tối đa ${d.list[0].cap} người)`, d.list.map(c => ({ t: `${c.cur ? '📍 ' : ''}Khu ${c.ch} · ${c.n}/${c.cap}`, cls: 'ch' + (c.cur ? ' cur' : c.n >= c.cap ? ' full' : c.n ? ' busy' : ''), fn: () => { if (!c.cur) G.socket.emit('channel', { ch: c.ch }); } })).concat([{ t: 'Đóng', cls: 'ch-close' }]));
+      $('modal-btns').classList.add('ch-grid');   // 20 khu: xếp lưới
     }
     s.on('autoSrvReport', r => {
       const why = r.why === 'dead' ? ' Nhân vật bị hạ gục nên đã dừng.' : r.why === 'time' ? ' Đã đủ 8 giờ nên tự dừng.' : '';

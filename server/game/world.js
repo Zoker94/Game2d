@@ -1582,6 +1582,13 @@ class World {
       p.dirtyMe = true; this.db.markDirty();
       return;
     }
+    if (e.vmTam) {   // bấm dùng Tâm Pháp: không tự mất – hướng dẫn, đủ điều kiện thì lĩnh hội Di Thư luôn
+      if ((c.vmb | 0) >= 5) return this.toast(p, 'Bạn đã lĩnh hội trọn vẹn Võ Mục Di Thư (5/5) – Tâm Pháp này không cần dùng nữa, có thể giữ lại hoặc bán.', 'error');
+      const book = c.inv.find(x => x.id === 'vm_dithu');
+      if (book) return this.useOneRaw(p, book.uid);   // có Di Thư: nghiền ngẫm luôn (tiêu 1 Di Thư + 1 Tâm Pháp)
+      const have = VM_IDS.filter(id => U.countItem(c, id)).length;
+      return this.toast(p, `📜 Chưa dùng được Tâm Pháp: cần có Võ Mục Di Thư. Gom đủ 7 Võ Mục Tàn Quyển (đang có ${have}/7, rơi từ Boss phó bản) rồi Sử dụng tàn quyển để ghép Di Thư, sau đó Sử dụng Di Thư – mỗi lần lĩnh hội tiêu 1 Di Thư + 1 Tâm Pháp. Tâm Pháp vẫn được giữ nguyên.`, 'error');
+    }
     if (e.vmStudy) {   // nghiền ngẫm binh thư: tăng chỉ số vĩnh viễn
       if ((c.vmb | 0) >= 5) return this.toast(p, 'Bạn đã lĩnh hội trọn vẹn Võ Mục Di Thư (5/5)', 'error');
       if (!U.countItem(c, 'vm_tamphap')) return this.toast(p, 'Cần 1 Võ Mục Tâm Pháp mới lĩnh hội được Di Thư – hạ boss thế giới Nhạc Vũ Mục Anh Linh để nhận', 'error');
@@ -1608,6 +1615,7 @@ class World {
       p.dirtyMe = true;
       return;
     }
+    if (it.material) return this.toast(p, 'Đây là nguyên liệu, không sử dụng trực tiếp được', 'error');   // nguyên liệu không bị mất khi bấm Sử dụng
     U.removeByUid(c, uid, 1);
     p.dirtyMe = true;
   }
