@@ -925,10 +925,11 @@
   }
 
   // ---------- Túi đồ ----------
-  // vòng sáng xoay quanh ô đồ theo cấp cường hóa: +5 xanh, +8 tím, +11 vàng kim, +14 cầu vồng
+  // vòng sáng chạy quanh ô đồ theo cấp cường hóa: +1 bạc, +4 lục, +7 lam, +10 tím, +13 vàng kim, +15 cầu vồng
   function plusRing(plus) {
-    const t = plus >= 14 ? 4 : plus >= 11 ? 3 : plus >= 8 ? 2 : plus >= 5 ? 1 : 0;
-    return t ? `<span class="pfx-aura pfx-aura-${t}"></span><span class="pfx pfx-${t}"></span>${t >= 3 ? `<span class="pfx-glow pfx-glow-${t}"></span>` : ''}${t >= 4 ? '<span class="pfx-spark">✦</span><span class="pfx-spark s2">✦</span>' : ''}` : '';
+    const t = plus >= 15 ? 6 : plus >= 13 ? 5 : plus >= 10 ? 4 : plus >= 7 ? 3 : plus >= 4 ? 2 : plus >= 1 ? 1 : 0;
+    if (!t) return '';
+    return `${t >= 4 ? `<span class="pfx-aura pfx-aura-${t}"></span><span class="pfx-glow pfx-glow-${t}"></span>` : ''}<span class="pfx pfx-${t}"></span>${t >= 5 ? `<span class="pfx-spark ${t === 6 ? 's6' : ''}">✦</span><span class="pfx-spark s2 ${t === 6 ? 's6' : ''}">✦</span>` : ''}`;
   }
   UI.plusRing = plusRing;
   // nhãn cấp đồ (góc dưới phải ô trang bị): đỏ nếu chưa đủ cấp mặc
