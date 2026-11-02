@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🦄 Bạch Mã và Hỏa Kỳ Lân có hình 4 hướng mới vẽ tay: mặt trước, sau lưng, nhìn ngang với dáng chạy; bờm và đuôi đung đưa theo nhịp.',
       '🔧 Sửa Hắc Mã trông như đang bay (móng ngựa giờ chạm đất ở cả 4 hướng). Khung danh hiệu dời lên cao hơn, không còn che tên nhân vật.',
       '🐴 Hắc Mã (ngựa ô truy chiến giáp) có hình 4 hướng mới vẽ tay: mặt trước, sau lưng và nhìn ngang với dáng chạy 8 nhịp, giáp xích, chùm lông đỏ trên mũ.',
       '📦 HÒM ĐỒ: khi túi đầy, phần thưởng phó bản, sự kiện, boss, áp tiêu và quà gửi lúc offline không còn rơi xuống đất hay bị mất nữa mà được giữ trong Hòm Đồ. Mở Túi đồ → bấm "Nhận" khi đã dọn chỗ.',
