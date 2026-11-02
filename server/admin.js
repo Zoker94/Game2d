@@ -380,7 +380,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
       const clean = (arr, k) => (Array.isArray(arr) ? arr : []).slice(0, 300).filter(x => x && ITEMS[x.id]).map(x => ({ id: x.id, [k]: Math.max(0, Math.round(+x[k] || 0)) }));
       const gold = clean(req.body.gold, 'price').map(x => ({ id: x.id, price: x.price || ITEMS[x.id].price }));
       const knb = clean(req.body.knb, 'knb').filter(x => x.knb > 0);
-      shops[id] = { gold, knb };
+      shops[id] = { gold, knb, base: SHOPS.baseOf(id) };   // base: món mặc định lúc lưu – món mới thêm vào game sau này vẫn tự hiện
       act(req, `Sửa cửa hàng ${id}: ${gold.length} món bán bằng lượng, ${knb.length} món bằng Nguyên Bảo`);
     }
     SHOPS.apply(db); db.markDirty();
