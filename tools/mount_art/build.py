@@ -9,6 +9,29 @@ SEAT={'kim_quy':(95,16),'hoa_ky_lan':(92,88),'kim_nguu':(100,24),'ngua_nau':(100
 # biên độ đung đưa chân (tỉ lệ chiều cao), độ nhún thân (px x2), tốc độ khung
 GAIT={'kim_quy':(0.07,2,150),'kim_nguu':(0.09,3,120),'hoa_ky_lan':(0.11,4,95),'hac_ma':(0.11,4,100),'bach_ma':(0.11,4,100),'phuong_hoang':(0.09,4,105),'thanh_long':(0.09,4,105)}
 PAD=16
+# cánh (toạ độ ảnh đã chuẩn hoá x2, quay phải): vùng chọn + gốc cánh (trục vỗ)
+WING={'thanh_long':dict(x1=152,y1=98,ex=(86,134,86),piv=(128,97)),
+      'phuong_hoang':dict(x1=158,y1=128,ex=(126,170,78),piv=(150,100))}
+def wing_mask(a,name):
+    w=WING[name];h,wd=a.shape[:2];yy,xx=np.mgrid[0:h,0:wd]
+    m=(a[...,3]>0)&(xx<w['x1'])&(yy<w['y1'])
+    ex0,ex1,ey=w['ex'];m&=~((xx>=ex0)&(xx<=ex1)&(yy>=ey))
+    lab,n=nd.label(m)
+    if n>1:   # giữ mảng lớn nhất (cánh)
+        sz=nd.sum(m,lab,range(1,n+1));m=lab==(np.argmax(sz)+1)
+    return m
+def flap(wing,piv,th,sc):
+    # xoay + ép dọc cánh quanh gốc (ánh xạ ngược, không thủng lỗ)
+    h,w=wing.shape[:2];out=np.zeros_like(wing);px,py=piv
+    yy,xx=np.mgrid[0:h,0:w].astype(float);c,s_=math.cos(th),math.sin(th)
+    dx,dy=xx-px,yy-py
+    sx=c*dx+s_*dy;sy=(-s_*dx+c*dy)/max(sc,0.2)
+    srcx=np.round(sx+px).astype(int);srcy=np.round(sy+py).astype(int)
+    ok=(srcx>=0)&(srcx<w)&(srcy>=0)&(srcy<h)
+    out[ok]=wing[srcy[ok],srcx[ok]]
+    return out
+RUN_FLAP=[(-28,1.08),(-12,.95),(12,.7),(30,.45),(14,.68),(-10,.95)]
+IDLE_FLAP=[(-6,1.02),(4,.9),(12,.78),(4,.9)]
 def legs_split(im):
     a=np.asarray(im);al=a[...,3]>0;h,w=al.shape
     cnt=al.sum(1);mx=cnt.max()
@@ -25,7 +48,10 @@ def legs_split(im):
     comps.sort(key=lambda c:c[0])
     return cut,[m for _,m in comps]
 def walk_frames(im,name,n=6):
-    A,B,ms=GAIT[name];a=np.asarray(im);h,w=a.shape[:2]
+    A,B,ms=GAIT[name];a=np.asarray(im).copy();h,w=a.shape[:2]
+    wing=None
+    if name in WING:
+        wm=wing_mask(a,name);wing=np.where(wm[...,None],a,0).astype(np.uint8);a[wm]=0;im=Image.fromarray(a,'RGBA')
     cut,legs=legs_split(im)
     allleg=np.zeros((h,w),bool)
     for m in legs: allleg|=m
@@ -46,8 +72,18 @@ def walk_frames(im,name,n=6):
             s=math.sin(ph+off);amp=A*h
             lift=max(0.0,math.cos(ph+off))*B*0.8
             put(a,m,lambda y,s=s:round(amp*s*(y-cut)/max(1,h-cut)),lambda y,l=lift:-round(l*(y-cut)/max(1,h-cut)))
+        if wing is not None:   # cánh vỗ theo nhịp chạy, vẽ đè lên thân
+            th,sc=RUN_FLAP[k%len(RUN_FLAP)];fw=flap(wing,WING[name]['piv'],math.radians(th),sc)
+            wl=np.zeros_like(cv);wl[PAD-bob:PAD-bob+h,PAD:PAD+w]=fw;m2=wl[...,3]>0;cv[m2]=wl[m2]
         frames.append(Image.fromarray(cv,'RGBA'))
     return frames,ms
+def idle_wing(im,name):
+    a=np.asarray(im).copy();h,w=a.shape[:2];wm=wing_mask(a,name);wing=np.where(wm[...,None],a,0).astype(np.uint8);a[wm]=0;out=[]
+    for th,sc in IDLE_FLAP:
+        cv=np.zeros((h+PAD,w+2*PAD,4),np.uint8);cv[PAD:,PAD:PAD+w]=a
+        fw=flap(wing,WING[name]['piv'],math.radians(th),sc);m2=fw[...,3]>0;sub=cv[PAD:,PAD:PAD+w];sub[m2]=fw[m2]
+        out.append(Image.fromarray(cv,'RGBA'))
+    return out
 def idle_frames(im,n=2):
     a=np.asarray(im);h,w=a.shape[:2];out=[]
     for k in range(n):
@@ -77,18 +113,19 @@ for name,h in H.items():
         seats=[list(seat0)]*2+[[seat0[0],seat0[1]+(-4 if k%3==1 else 0)+ (idl[0].height-run[0].height)] for k in range(6)]
     else:
         im=norm(Image.open(name+'_cut.png'),h)
-        idl=idle_frames(im);run,ms=walk_frames(im,name)
+        idl=idle_wing(im,name) if name in WING else idle_frames(im);run,ms=walk_frames(im,name)
         W=max(f.width for f in idl+run);HH=max(f.height for f in idl+run)
         cells=[]
         for f in idl+run:
             cv=Image.new('RGBA',(W,HH));cv.alpha_composite(f,(0,HH-f.height));cells.append(cv)
         A,B,_=GAIT[name];sx,sy=SEAT[name]
-        seats=[[sx+PAD,sy+PAD],[sx+PAD,sy+PAD-RES]]+[[sx+PAD,sy+PAD-round(B*abs(math.sin(2*math.pi*k/6)))] for k in range(6)]
-    sheet=Image.new('RGBA',(W*8,HH))
+        seats=([[sx+PAD,sy+PAD]]*len(idl) if name in WING else [[sx+PAD,sy+PAD],[sx+PAD,sy+PAD-RES]])+[[sx+PAD,sy+PAD-round(B*abs(math.sin(2*math.pi*k/6)))] for k in range(6)]
+    NI=len(cells)-6
+    sheet=Image.new('RGBA',(W*len(cells),HH))
     for i,c in enumerate(cells): sheet.alpha_composite(c,(i*W,0))
     sheet.save(OUT+'mounts/'+name+'.png')
     s=1/RES
-    meta['per'][name]={'cell':[W,HH],'foot':[W/2,HH-1],'footFB':[W/2,HH-1],'frames':{'idle':[0,2],'run':[2,6]},'rows':{'side':[0]},'scale':s,'runMs':ms,'idleMs':700}
+    meta['per'][name]={'cell':[W,HH],'foot':[W/2,HH-1],'footFB':[W/2,HH-1],'frames':{'idle':[0,NI],'run':[NI,6]},'rows':{'side':[0]},'scale':s,'runMs':ms,'idleMs':(240 if NI>2 else 700)}
     meta['seats'][name]={'side':[[round(x,1),round(y,1)] for x,y in seats]}
     meta['seat'][name]=meta['seats'][name]['side']
     preview.append(sheet)
