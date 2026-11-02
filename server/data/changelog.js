@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '☠️ Đồ sát: điểm sát khí hiện trước tên nhân vật (☠5) và trên nút chế độ PK. Đã thành Đồ sát đỏ (sát khí từ 3) thì bị khoá ở chế độ Đồ sát, không tắt được tới khi xoá hết sát khí. Lệnh Bài Xoá Tội nay trừ 5 điểm sát khí mỗi lá (không còn xoá sạch); sát khí vẫn tự giảm 1 điểm mỗi 15 phút.',
       '👆 Điện thoại: bấm giữ vào người chơi chỉ cần 0,5 giây (trước 1,5 giây) là hiện bảng Xem thông tin / Kết bạn / Thách đấu.'
     ]
   },

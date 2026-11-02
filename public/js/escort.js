@@ -153,8 +153,8 @@
       b.onclick = ev => { ev.stopPropagation(); pkMenu(); };
     }
     if (!b || !G.me) return;
-    const m = PK_MODES[G.me.pkMode | 0];
-    const html = `<i>${m.icon}</i><span>${m.name}</span>`;
+    const m = PK_MODES[G.me.pkMode | 0], pk = G.me.pk | 0;
+    const html = `<i>${m.icon}</i><span>${m.name}${pk ? ` <b class="pk-pts">☠${pk}</b>` : ''}</span>`;
     if (b.innerHTML !== html) { b.innerHTML = html; b.style.color = m.color; b.title = 'Chế độ PK: ' + m.name + ' (phím P)'; b.classList.toggle('pk-on', (G.me.pkMode | 0) > 0); }
   }
   function pkMenu() {
@@ -163,7 +163,7 @@
     box = document.createElement('div'); box.id = 'pk-menu';
     const cur = G.me.pkMode | 0;
     box.innerHTML = `<div class="pk-h">Chế độ PK<span class="pk-x" data-close>✕</span></div><div class="pk-opts">` + PK_MODES.map((m, i) => `<button data-pk="${i}" class="${i === cur ? 'on' : ''}"><b style="color:${m.color}">${m.icon} ${m.name}</b><small>${m.desc}</small></button>`).join('') + '</div>' +
-      `<div class="pk-f small">Bản đồ an toàn (trong thành) không thể giao chiến. Đổi xuống chế độ thấp hơn cần 10 giây không giao chiến.</div>`;
+      `<div class="pk-f small">${(G.me.pk | 0) ? `<b style="color:#ff5a5a">☠ Sát khí: ${G.me.pk} điểm</b>${G.me.pkLock ? ' – <b>đã thành Đồ sát đỏ: không tắt được Đồ sát tới khi xoá hết sát khí</b>' : ''} (giảm 1 điểm / 15 phút; Lệnh Bài Xoá Tội trừ 5 điểm).<br>` : ''}Bản đồ an toàn (trong thành) không thể giao chiến. Đổi xuống chế độ thấp hơn cần 10 giây không giao chiến.</div>`;
     $('screen-game').appendChild(box);
     box.querySelector('[data-close]').onclick = () => box.remove();
     box.querySelectorAll('[data-pk]').forEach(el => el.onclick = () => { emit('pkMode', { mode: +el.dataset.pk }); box.remove(); G.sfx && G.sfx('click'); });

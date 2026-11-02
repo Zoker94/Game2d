@@ -381,7 +381,8 @@
     let nameCol = o.self ? '#ffd76a' : relColor(o.power, o.myPower).color;
     if (pk) nameCol = pk === 2 ? '#c00010' : '#ff5a5a';
     else if (o.party) nameCol = '#5dff8a';
-    const name = (pk ? '☠ ' : '') + (o.party ? '👥 ' : '') + (o.gm ? '[GM] ' : '') + o.name + (o.level ? ' Lv' + o.level : '');
+    const name = (o.pk > 0 ? '☠' + o.pk + ' ' : '') +   // điểm sát khí hiện ngay trước tên
+       (o.party ? '👥 ' : '') + (o.gm ? '[GM] ' : '') + o.name + (o.level ? ' Lv' + o.level : '');
     const w = textW('bold 10.5px Be Vietnam Pro, system-ui, sans-serif', name);
     if (o.gm) rainbowName(ctx, name, x, top - 10, w);   // quản trị viên: tên 7 sắc cầu vồng lấp lánh
     else outlined(ctx, name, x, top - 10, 12, nameCol, '#000', 700);

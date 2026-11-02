@@ -364,7 +364,7 @@ class World {
       minhChu: this.titleFlags(p), title: this.titleOf(c, p.user.isAdmin), ach: Object.assign({ bossKills: c.bossKills | 0 }, c.ach || {}), tk: this.tongkim ? this.tongkim.tag(p) : 0, congTrang: c.congTrang || 0,
       attr: c.attr || {}, attrFree: attrTotalOf(c) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
       branch: branchOf(c), skills: c.skills || {}, hotbar: c.hotbar, sp: spTotalOf(c) - (c.spSpent || 0),
-      mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
+      mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, pkMode: c.pkMode | 0, pkLock: !!((c.pkLock || c.pk >= PK_OUTLAW) && c.pk > 0), escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
       sect: this.sect ? this.sect.meView(p) : null, giftTitles: c.giftTitles || [], mine: this.mining ? this.mining.view(p) : null,
       med: !!p.med, pvp: this.inPvp(p) ? 1 : 0, st: this.statusView(p), friends: Object.keys(c.friends || {}).length, friendIds: this.friendIds(c), pk: c.pk || 0,
       rank: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0
@@ -733,6 +733,7 @@ class World {
     if (mode === cur) return;
     if (mode > 0 && c.level < 10) return this.toast(p, 'Cần đạt cấp 10 mới được tham gia PK', 'error');
     if (p.pkModeCd && p.pkModeCd > now) return this.toast(p, `Đợi ${Math.ceil((p.pkModeCd - now) / 1000)} giây nữa mới đổi chế độ được`, 'error');
+    if (mode < cur && (c.pkLock || c.pk >= PK_OUTLAW) && c.pk > 0) return this.toast(p, `☠️ Bạn đã thành Đồ sát đỏ (sát khí ${c.pk}): không thể tắt Đồ sát tới khi xoá hết sát khí. Dùng Lệnh Bài Xoá Tội (−${PARDON_PTS} điểm) hoặc chờ giảm 1 điểm / 15 phút.`, 'error');
     if (mode < cur && now - p.lastCombat < 10000) return this.toast(p, 'Đang giao chiến, chưa thể hạ chế độ PK', 'error');
     c.pkMode = mode;
     p.pkModeCd = now + 5000;
@@ -1079,6 +1080,7 @@ class World {
       src.c.pvpKills = (src.c.pvpKills || 0) + 1;
       // giết người lương thiện (đang luyện công, không mang sát khí) ngoài lôi đài mới tăng sát khí
       if (!map.def.pvp && !(t.c.pk >= 3) && !((t.c.pkMode | 0) >= 1)) src.c.pk = Math.min(30, (src.c.pk || 0) + 1);
+      if (src.c.pk >= PK_OUTLAW && !src.c.pkLock) { src.c.pkLock = true; src.c.pkMode = 2; this.toast(src, `☠️ Bạn đã thành Đồ sát đỏ (sát khí ${src.c.pk}): bị khoá ở chế độ Đồ sát tới khi xoá hết sát khí.`, 'error'); }
       src.pkDecayAt = Date.now() + 15 * 60000;
       this.features.questProgress(src, 'pvp', 1);
       this.escort.onKill(t, src);
@@ -1478,8 +1480,9 @@ class World {
     if (e.pardon) {
       if (!(c.pk > 0)) return this.toast(p, 'Bạn không mang sát khí, không cần xoá tội', 'error');
       U.removeByUid(c, uid, 1);
-      const was = c.pk; c.pk = 0; p.pkDecayAt = 0;
-      this.toast(p, `📜 Lệnh Bài Xoá Tội: đã xoá ${was} điểm sát khí. Bạn lại là người lương thiện.`, 'reward');
+      const was = c.pk; c.pk = Math.max(0, c.pk - PARDON_PTS);
+      if (!c.pk) { p.pkDecayAt = 0; c.pkLock = false; }
+      this.toast(p, c.pk ? `📜 Lệnh Bài Xoá Tội: trừ ${was - c.pk} điểm sát khí, còn ${c.pk} điểm.` : `📜 Lệnh Bài Xoá Tội: đã xoá hết sát khí. Bạn lại là người lương thiện, có thể tắt Đồ sát.`, 'reward');
       p.dirtyMe = true; this.db.markDirty(); return;
     }
     if (e.rename) { p.socket.emit('renamePrompt', { uid }); return; }   // nhập tên mới ở máy khách
@@ -2291,7 +2294,7 @@ class World {
   }
 
   regen(p, m, now) {
-    if (p.c.pk > 0) { if (!p.pkDecayAt) p.pkDecayAt = now + 15 * 60000; else if (now >= p.pkDecayAt) { p.c.pk--; p.pkDecayAt = now + 15 * 60000; } }
+    if (p.c.pk > 0) { if (!p.pkDecayAt) p.pkDecayAt = now + 15 * 60000; else if (now >= p.pkDecayAt) { p.c.pk--; p.pkDecayAt = now + 15 * 60000; if (!p.c.pk && p.c.pkLock) { p.c.pkLock = false; this.toast(p, '☮️ Sát khí đã hết – bạn có thể tắt Đồ sát.', 'info'); } p.dirtyMe = true; } }
     if (p.dead) return;
     this.meditate(p, m, now);
     const s = p.stats, c = p.c;
@@ -2592,6 +2595,7 @@ const POISON_PVP = 0.007;                        // PK: mỗi nhịp độc tr�
 const MELEE_PVP_ATK = 1.15, MELEE_PVP_DEF = 0.85, MELEE_PVP_CC = 0.7;   // PK: cận chiến gây +15% sát thương, nhận 85% sát thương, bị khống chế 70% thời gian
 const STUN_IMMUNE = 3000;
 // PvP: sát thương người chơi lên người chơi, hồi máu khi đang giao tranh, bình máu (hồi chiêu, tối đa % máu mỗi bình)
+const PARDON_PTS = 5;   // mỗi Lệnh Bài Xoá Tội trừ 5 điểm sát khí
 const PK_OUTLAW = 3;   // sát khí từ 3 (tên đỏ) là kẻ đồ sát
 const PVP_DMG = 0.0285, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;
 const MED_AFTER = 30000;                        // đứng yên trong thành bao lâu thì ngồi thiền (ms)

@@ -297,3 +297,4 @@ body.touch #chat-emo { min-width: 36px; font-size: 16px; }
 #mine-hud.auto { pointer-events: auto; cursor: pointer; }
 /* nút vào nhóm Zalo (bảng bảo trì) */
 #modal-btns .btn.zalo { background: linear-gradient(180deg, #2a8cff, #0a5ad8); border-color: #6ab0ff; color: #fff; }
+#btn-pk .pk-pts { color: #ff4a4a; font-weight: 900; text-shadow: 0 0 4px rgba(255,0,0,.6); }
