@@ -340,9 +340,10 @@
         <label style="margin-top:6px">Lý do bảo trì (người chơi thấy khi bị đá ra / mở game)<textarea id="c-mmsg" rows="2" maxlength="500" placeholder="VD: Cập nhật phiên bản mới, thêm phó bản và sửa lỗi">${esc(c.maintMsg || '')}</textarea></label>
         <label style="margin-top:6px">Dự kiến xong<input id="c-meta" maxlength="80" placeholder="VD: 15:30 hôm nay" value="${esc(c.maintEta || '')}"></label>
         <p class="small muted">Người chơi thấy kèm nút 💬 Vào nhóm Zalo để theo dõi tin. Nhập lý do trước rồi mới tích Chế độ bảo trì và bấm Lưu.</p>
+        <label style="margin-top:8px">Số tài khoản đăng nhập cùng lúc tối đa trên 1 địa chỉ IP (0 = không giới hạn)<input id="c-iplim" type="number" min="0" max="50" value="${c.ipLimit == null ? 3 : c.ipLimit}" style="width:90px"></label>
         <label style="margin-top:8px">Chế độ máy chủ<select id="c-mode"><option value="test" ${c.serverMode === 'test' ? 'selected' : ''}>🧪 Open Test – NPC bán thêm rương mở đồ (Rương Bí Ẩn, Rương Thủ Lĩnh)</option><option value="open" ${c.serverMode !== 'test' ? 'selected' : ''}>🚀 Open chính thức – NPC KHÔNG bán rương mở đồ</option></select></label></div>
         <button class="btn primary" id="c-save">💾 Lưu cấu hình</button>`;
-      $('c-save').onclick = () => run(() => api('/config', { expRate: +$('c-exp').value, dropRate: +$('c-drop').value, goldRate: +$('c-gold').value, vipDropBase: +$('c-vip').value, motd: $('c-motd').value, autoEvents: $('c-auto').checked, maintenance: $('c-maint').checked, maintMsg: $('c-mmsg').value, maintEta: $('c-meta').value, serverMode: $('c-mode').value }), 'Đã lưu cấu hình');
+      $('c-save').onclick = () => run(() => api('/config', { expRate: +$('c-exp').value, dropRate: +$('c-drop').value, goldRate: +$('c-gold').value, vipDropBase: +$('c-vip').value, motd: $('c-motd').value, autoEvents: $('c-auto').checked, maintenance: $('c-maint').checked, maintMsg: $('c-mmsg').value, maintEta: $('c-meta').value, serverMode: $('c-mode').value, ipLimit: +$('c-iplim').value }), 'Đã lưu cấu hình');
     },
 
     async chat(el) {

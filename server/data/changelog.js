@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🌐 Mỗi địa chỉ mạng (IP) chỉ được tối đa 3 tài khoản đăng nhập cùng lúc. Tài khoản thứ 4 sẽ được báo thoát bớt 1 tài khoản rồi vào lại.',
       '🚫 Không còn mua bán / giao dịch bằng Nguyên Bảo giữa người chơi: Chợ Phiên chỉ rao bán bằng ngân lượng. Món đang rao bằng Nguyên Bảo không mua được nữa – chủ gian hàng thu về và rao lại bằng ngân lượng.',
       '🪧 BIA CHỈ DẪN GIANG HỒ ở giữa mọi thành (Tương Dương, Thành Đô, Lan Châu, Long Môn): cẩm nang A–Z cho người mới – đi lại, luyện cấp ở đâu, cường hoá, đá khảm, võ công, lịch boss, săn Võ Mục Di Thư, phó bản, Thần Binh, áp tiêu, sự kiện, kiếm tiền, môn phái, PK, treo máy. Có ô tìm nhanh (VD gõ "đá khảm").',
       '💰 Cân bằng ngân lượng: quái rơi ngân lượng ít hơn (25% số lần, lượng mỗi lần giảm); bán đồ cho NPC còn 10% giá gốc với trang bị và 15% với vật phẩm khác (trước 30%). Tổng ngân lượng kiếm được khi cày quái còn khoảng 1/3 – cường hoá đồ cần tích luỹ lâu hơn.',

@@ -251,6 +251,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
       c.maintenance = !!b.maintenance;
       if (c.maintenance && !was) for (const p of [...world.players.values()]) if (!p.user.isAdmin && !p.user.tester) { p.socket.emit('kicked', { maint: 1, msg: c.maintMsg || '', eta: c.maintEta || '', reason: 'Máy chủ đang bảo trì' }); world.removePlayer(p); p.socket.disconnect(true); }
     }
+    if (b.ipLimit != null) c.ipLimit = U.clamp(+b.ipLimit | 0, 0, 50);   // số tài khoản tối đa cùng lúc / 1 IP (0 = không giới hạn)
     if (b.autoEvents != null) c.autoEvents = !!b.autoEvents;
     if (b.serverMode === 'test' || b.serverMode === 'open') c.serverMode = b.serverMode;   // Open Test: NPC bán thêm rương mở đồ; Open chính thức: không bán
     if (b.disablePasswordAdmin != null) {

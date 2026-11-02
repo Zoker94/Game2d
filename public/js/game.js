@@ -305,6 +305,7 @@
       const m = err.message;
       if (m === 'auth') { localStorage.removeItem('vl_token'); G.token = null; s.close(); G.socket = null; showLogin(); }
       else if (m === 'banned') { s.close(); G.modal('Tài khoản của bạn đã bị khóa.', [{ t: 'Đăng xuất', fn: logout }]); }
+      else if (m === 'iplimit') { s.close(); G.modal(`⚠ Địa chỉ mạng (IP) của bạn đã có đủ ${(err.data && err.data.lim) || 3} tài khoản đang đăng nhập cùng lúc.\nHãy thoát bớt 1 tài khoản rồi thử lại.`, [{ t: 'Thử lại', fn: () => location.reload() }]); }
       else if (m === 'maintenance') { s.close(); maintInfo().then(([msg, eta]) => G.maintModal(msg, eta)); }
     });
     s.on('disconnect', reason => {

@@ -326,6 +326,15 @@ io.use((socket, next) => {
   if (!user) return next(new Error('auth'));
   if (user.banned) return next(new Error('banned'));
   if (db.data.config.maintenance && !user.isAdmin && !user.tester) return next(new Error('maintenance'));   // Tester do quản trị viên chọn được vào cả khi bảo trì
+  // giới hạn số tài khoản đăng nhập cùng lúc trên 1 địa chỉ IP (cấu hình ipLimit, mặc định 3; 0 = tắt). Quản trị viên không tính.
+  const xff = String(socket.handshake.headers['x-forwarded-for'] || '').split(',').map(s => s.trim()).filter(Boolean);
+  socket.ip = xff.length ? xff[xff.length - 1] : socket.handshake.address;
+  const lim = db.data.config.ipLimit == null ? 3 : db.data.config.ipLimit | 0;
+  if (lim > 0 && !user.isAdmin && !isOwner(user)) {
+    const ids = new Set();
+    for (const s of io.sockets.sockets.values()) if (s.ip === socket.ip && s.user && s.user.id !== user.id && !s.user.isAdmin) ids.add(s.user.id);
+    if (ids.size >= lim) return next(Object.assign(new Error('iplimit'), { data: { lim } }));
+  }
   socket.user = user;
   next();
 });
