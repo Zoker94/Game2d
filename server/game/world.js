@@ -9,6 +9,8 @@ const { MAPS, TILE, isSolidAt, SOLID, CHANNELS, CH_CAP, baseOf, chOf, chId } = r
 const { NPCS, TELEPORTS } = require('../data/npcs');
 const { TUTORIAL } = require('../data/quests');
 const { MOUNTS, MOUNT_MAX, mountExpNext, isBreakLevel } = require('../data/mounts');
+// bản đồ sự kiện không cho cưỡi thú
+const NO_MOUNT_MAPS = { tong_kim: 'Chiến trường Tống Kim', hoa_son_ld: 'Hoa Sơn Luận Kiếm', dai_hoi: 'Đại Hội Võ Lâm' };
 const { DRAGONS, DRAGON_SLOT } = require('../data/dragons');
 const { JIANGHU, JH_SLOT, JH_DROP } = require('../data/jianghu');
 const { TITLES, statOf, unlocked: titleUnlocked } = require('../data/titles');
@@ -271,6 +273,10 @@ class World {
     if (old) { old.players.delete(p); p.socket.leave('map:' + p.mapId); this.io.to('map:' + p.mapId).emit('leave', p.id); }
     if (old && old.def.instance && p.mapId !== mapId && this.dungeon) this.dungeon.onExit(p, p.mapId);
     if (p.recall) this.cancelRecall(p);
+    if (p.c.riding && NO_MOUNT_MAPS[mapId]) {   // sự kiện (Tống Kim, Hoa Sơn Luận Kiếm, Đại Hội Võ Lâm): xuống ngựa
+      p.c.riding = false; this.recalc(p); p.dirtyMe = true;
+      this.toast(p, `🐎 ${NO_MOUNT_MAPS[mapId]} không được dùng thú cưỡi – đã xuống thú.`, 'info');
+    }
     const m = this.maps[mapId];
     p.mapId = mapId; p.x = x; p.y = y; p.c.map = mapId; p.target = null; p.lastMove = Date.now(); this.wake(p, Date.now());
     m.players.add(p);
@@ -2183,6 +2189,7 @@ class World {
     if (a.op === 'ride') {
       if (!c.mount || !c.mounts[c.mount]) return err('Bạn chưa có thú cưỡi. Mua tại Mã Phu ở Tương Dương.');
       if (p.dead) return;
+      if (!c.riding && NO_MOUNT_MAPS[p.mapId]) return err(`${NO_MOUNT_MAPS[p.mapId]} không được dùng thú cưỡi.`);
       c.riding = !c.riding;
       this.fx(p.mapId, { t: 'death', id: p.id, x: p.x, y: p.y, small: true });
     } else if (a.op === 'select') {

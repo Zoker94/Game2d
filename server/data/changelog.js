@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🚫🐎 Không được dùng thú cưỡi trong sự kiện: Chiến trường Tống Kim, Hoa Sơn Luận Kiếm, Đại Hội Võ Lâm. Vào sự kiện sẽ tự xuống thú, ra khỏi sự kiện thì cưỡi lại bình thường.',
       '🧭 Thú cưỡi có đủ 4 hướng: đi xuống thấy mặt trước (đầu, ngực, chân trước), đi lên thấy lưng (mông, đuôi); Phượng Hoàng và Thanh Long dang cánh vỗ theo nhịp ở cả hướng trước/sau.',
       '🐎 Vẽ lại toàn bộ thú cưỡi: Ngựa Nâu, Bạch Mã, Hắc Mã (chiến mã giáp), Kim Ngưu, Kim Quy, Hỏa Kỳ Lân, Phượng Hoàng, Thanh Long – có hoạt ảnh đứng và chạy. Thanh Long và Phượng Hoàng vỗ cánh khi bay, không còn che người cưỡi.',
       '🐉 Gỡ thú cưỡi Hắc Long khỏi game: ai đang có được đổi sang Thanh Long (giữ cấp); nếu đã có Thanh Long thì giữ cấp cao hơn và được hoàn 8000 Nguyên Bảo.',
