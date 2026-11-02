@@ -413,7 +413,7 @@
     for (const k of ['hp', 'mp']) {
       const d = document.createElement('div');
       d.className = 'skill'; d.id = 'pot-' + k;
-      d.innerHTML = `<i class="ico-pot"></i><span class="key">${k === 'hp' ? 'Z' : 'X'}</span><span class="cnt"></span>`;
+      d.innerHTML = `<i class="ico-pot"></i><span class="key">${k === 'hp' ? 'Z' : 'X'}</span><span class="cnt"></span><div class="cdo"></div><div class="cdt"></div>`;
       d.onclick = () => emit('quickUse', { kind: k });
       bar.appendChild(d);
     }
@@ -685,6 +685,18 @@
       if (o) cdSet(o, Math.round(dr * 100));
       if (t && t._t !== dtx) { t.textContent = dtx; t._t = dtx; }
       if (el._r !== !dr) { el.classList.toggle('ready', !dr); el._r = !dr; }
+    }
+    // hồi chiêu bình máu / nội lực (thanh kỹ năng + nút trên điện thoại)
+    for (const k of ['hp', 'mp']) {
+      const until = (G.potCd && G.potCd[k]) || 0, tot = (G.potCdTot && G.potCdTot[k]) || 1;
+      const r = until > now ? (until - now) / tot : 0, txt = r ? Math.ceil((until - now) / 1000) : '';
+      for (const id of ['pot-' + k, 'btn-' + k]) {
+        const el = $(id); if (!el) continue;
+        let o = el._cdo, t = el._cdt;
+        if (!o || !o.isConnected) { o = el.querySelector('.cdo'); t = el.querySelector('.cdt'); if (!o) { o = document.createElement('div'); o.className = 'cdo'; t = document.createElement('div'); t.className = 'cdt'; el.append(o, t); } el._cdo = o; el._cdt = t; }
+        cdSet(o, Math.round(r * 100));
+        if (t._t !== txt) { t.textContent = txt; t._t = txt; }
+      }
     }
     // hồi chiêu
     G.mySkills().forEach((s, i) => {

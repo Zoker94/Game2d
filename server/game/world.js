@@ -1480,8 +1480,12 @@ class World {
     if (e.hp || e.mp || e.hpPct || e.mpPct) {
       // bình máu và bình nội lực hồi chiêu riêng; đang giao tranh với người chơi: bình máu hồi chiêu dài, hồi ít
       const isHp = !!(e.hp || e.hpPct), ck = isHp ? '_potCdHp' : '_potCdMp', pvp = isHp && this.inPvp(p);
-      if (p[ck] && p[ck] > Date.now()) { if (pvp && !p._autoUse) this.toast(p, `Đang giao tranh: bình máu hồi chiêu ${Math.ceil((p[ck] - Date.now()) / 1000)} giây`, 'error'); return; }
-      p[ck] = Date.now() + (pvp ? PVP_POT_CD : 500);
+      if (p[ck] && p[ck] > Date.now()) {
+        if (!p._autoUse && !(p._potMsg > Date.now())) { p._potMsg = Date.now() + 1000; this.toast(p, `${pvp ? 'Đang giao tranh: ' : ''}${isHp ? 'bình máu' : 'bình nội lực'} hồi chiêu ${Math.ceil((p[ck] - Date.now()) / 1000)} giây`, 'error'); }
+        return;
+      }
+      const cdMs = pvp ? PVP_POT_CD : POT_CD;
+      p[ck] = Date.now() + cdMs; p.socket.emit('potCd', { kind: isHp ? 'hp' : 'mp', ms: cdMs });
       let hv = (e.hp || 0) + Math.round(p.stats.maxHp * (e.hpPct || 0) / 100);
       if (pvp) hv = Math.min(hv, Math.round(p.stats.maxHp * PVP_POT_MAX));
       const mv = (e.mp || 0) + Math.round(p.stats.maxMp * (e.mpPct || 0) / 100);
@@ -2638,6 +2642,7 @@ const STUN_IMMUNE = 3000;
 // PvP: sát thương người chơi lên người chơi, hồi máu khi đang giao tranh, bình máu (hồi chiêu, tối đa % máu mỗi bình)
 const PARDON_PTS = 5;   // mỗi Lệnh Bài Xoá Tội trừ 5 điểm sát khí
 const PK_OUTLAW = 3;   // sát khí từ 3 (tên đỏ) là kẻ đồ sát
+const POT_CD = 3000;   // hồi chiêu bình máu / bình nội lực (mỗi loại riêng)
 const PVP_DMG = 0.0285, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;
 const MED_AFTER = 30000;                        // đứng yên trong thành bao lâu thì ngồi thiền (ms)
 const MED_EXP = 0.00001;                        // mỗi 5 giây ngồi thiền: 0,001% kinh nghiệm cấp hiện tại (≈0,7%/giờ)                       // kháng choáng sau khi hết choáng (ms)

@@ -431,6 +431,7 @@
     s.on('events', d => { G.events = d; UI.onEvents(d); });
     s.on('daily', d => { G.daily = d; UI.updateDaily(); });
     s.on('dropAdd', d => { if (d.om) d.ownUntil = performance.now() + d.om; G.drops.set(d.id, d); });
+    s.on('potCd', d => { G.potCd[d.kind] = performance.now() + d.ms; G.potCdTot[d.kind] = d.ms; });
     s.on('noPot', d => { const now = performance.now(); if (!G.noPot[d.kind] || G.noPot[d.kind] < now) UI.toast(d.kind === 'mp' ? '⚠️ Hết bình nội lực! Hãy mua thêm ở Hiệu Thuốc.' : '⚠️ Hết bình máu! Hãy mua thêm ở Hiệu Thuốc.', 'error'); G.noPot[d.kind] = now + 20000; });
     s.on('dropDel', id => G.drops.delete(id));
     s.on('npc', d => { if (d.action === 'channel') return showChannels(d.channels); if (d.action === 'guide') return Guide.open(d); UI.openNpc(d); });   // Bia Chuyển Khu: mở thẳng bảng chọn khu
@@ -1280,7 +1281,7 @@
   function autoCfg() { return Object.assign({}, AUTO_DEF, G.autoCfg); }
   G.autoCfgGet = autoCfg;
   G.autoCfgSet = (k, v) => { G.autoCfg[k] = v; try { localStorage.setItem('vl_auto', JSON.stringify(G.autoCfg)); } catch (e) {} sendAutoSrv(); };
-  G.noPot = {};
+  G.noPot = {}; G.potCd = {}; G.potCdTot = {};
   const RANK = { common: 0, rare: 1, epic: 2, legendary: 3, divine: 4 };
   G.dropSkip = new Map();
   function pickableDrop(now, home, cfg) {
@@ -1312,8 +1313,8 @@
     if (me.dead || !G.map || G.map.safe) return;
     if (!G.auto && !cfg.potAlways) return;
     if (G._autoPot && now - G._autoPot < 700) return;
-    if (cfg.hp && me.hp < st.maxHp * cfg.hpPct / 100 && !(G.noPot.hp > now)) { G.socket.emit('quickUse', { kind: 'hp', auto: 1 }); G._autoPot = now; return; }
-    if (cfg.mp && me.mp < st.maxMp * cfg.mpPct / 100 && !(G.noPot.mp > now)) { G.socket.emit('quickUse', { kind: 'mp', auto: 1 }); G._autoPot = now; return; }
+    if (cfg.hp && me.hp < st.maxHp * cfg.hpPct / 100 && !(G.noPot.hp > now) && !(G.potCd.hp > now)) { G.socket.emit('quickUse', { kind: 'hp', auto: 1 }); G._autoPot = now; return; }
+    if (cfg.mp && me.mp < st.maxMp * cfg.mpPct / 100 && !(G.noPot.mp > now) && !(G.potCd.mp > now)) { G.socket.emit('quickUse', { kind: 'mp', auto: 1 }); G._autoPot = now; return; }
     // hết bình máu và máu quá thấp: dùng Hồi Thành Phù về thành
     if (G.auto && cfg.townLow && G.noPot.hp > now && me.hp < st.maxHp * cfg.townPct / 100) {
       const sc = me.inv.find(x => x.id === 'scroll_town');
