@@ -9,9 +9,8 @@
 // Dữ liệu nằm trên tài khoản (user.ref), không phải nhân vật: { code, by, at, ms: {10,30,50: lúc đạt}, got: {'uid:lv': 1}, tier: {n: 1}, gift, day: {d, n} }
 const U = require('./util');
 
-const LV_REWARDS = {   // người mời nhận khi một người được mời đạt cấp
-  10: { items: [['lucky_chest', 1], ['exp_x2', 1]], gold: 20000 },
-  30: { items: [['boss_chest', 1], ['exp_x2', 2]], knb: 30 },
+const LV_REWARDS = {   // người mời nhận khi một người được mời đạt cấp (chống clone: mốc đầu tiên là cấp 30 – gộp quà mốc 10 cũ vào)
+  30: { items: [['boss_chest', 1], ['lucky_chest', 1], ['exp_x2', 3]], knb: 30, gold: 20000 },
   50: { items: [['boss_chest', 2], ['stone2', 2]], knb: 60 }
 };
 const TIER_REWARDS = {   // tổng số người được mời đã đạt cấp 30
@@ -101,24 +100,32 @@ class Referral {
   reached(rid, lv) { const r = this.users[rid]; return this.invitees(rid).filter(u => u.ref.ms && u.ref.ms[lv] && !this.suspect(u, r)).length; }
 
   // vào game: người được mời nhận quà tân thủ một lần
+  // chống clone: quà nhập môn chỉ phát khi người được mời đạt cấp tradeLv (30); vào game lần đầu chỉ báo trước
   onEnter(p) {
     const r = p.user.ref;
     if (!r || !r.by || r.gift) return;
-    r.gift = 1;
+    if (p.c.level >= this.w.tradeLv()) return this.giveNewbie(p);
+    if (r.told) return;
+    r.told = 1; this.w.db.markDirty();
+    setTimeout(() => { if (this.w.players.get(p.userId) === p) this.w.toast(p, `🎁 Bạn vào game qua lời mời: đạt cấp ${this.w.tradeLv()} sẽ nhận Quà nhập môn (${this.describe(NEWBIE_GIFT)})`, 'info'); }, 4000);
+  }
+  giveNewbie(p) {
+    const r = p.user.ref; if (!r || r.gift) return;
+    r.gift = 1; this.w.db.markDirty();
     const by = this.users[r.by], name = by && by.character ? by.character.name : 'bằng hữu';
     setTimeout(() => {
       if (this.w.players.get(p.userId) !== p) { r.gift = 0; return; }
       this.grant(p, NEWBIE_GIFT);
       this.w.toast(p, `🎁 Quà nhập môn từ lời mời của ${name}: ${this.describe(NEWBIE_GIFT)}`, 'reward');
-    }, 4000);
-    this.w.db.markDirty();
+    }, 1500);
   }
   // người được mời lên cấp: ghi mốc, báo người mời
   onLevel(p) {
     const r = p.user.ref;
     if (!r || !r.by) return;
     r.ms = r.ms || {};
-    for (const lv of [10, 30, 50]) {
+    if (p.c.level >= this.w.tradeLv()) this.giveNewbie(p);
+    for (const lv of [30, 50]) {
       if (p.c.level < lv || r.ms[lv]) continue;
       r.ms[lv] = Date.now();
       this.w.db.markDirty();
@@ -159,11 +166,11 @@ class Referral {
       newbie: this.describe(NEWBIE_GIFT), cap: DAY_CAP, top: this.top(), by: rr.by && this.users[rr.by] && this.users[rr.by].character ? this.users[rr.by].character.name : null
     };
   }
-  // bảng xếp hạng tuần: số người được mời đạt cấp 10 trong tuần này (tính từ thứ Hai)
+  // bảng xếp hạng tuần: số người được mời đạt cấp 30 trong tuần này (tính từ thứ Hai)
   top() {
     const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
     const since = d.getTime(), cnt = new Map();
-    for (const u of Object.values(this.users)) { const t = u.ref && u.ref.by && u.ref.ms && u.ref.ms[10]; if (t && t >= since && !this.suspect(u)) cnt.set(u.ref.by, (cnt.get(u.ref.by) || 0) + 1); }
+    for (const u of Object.values(this.users)) { const t = u.ref && u.ref.by && u.ref.ms && u.ref.ms[30]; if (t && t >= since && !this.suspect(u)) cnt.set(u.ref.by, (cnt.get(u.ref.by) || 0) + 1); }
     return [...cnt].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([id, n]) => { const x = this.users[id]; return { name: x && x.character ? x.character.name : '?', n }; });
   }
 
@@ -171,6 +178,7 @@ class Referral {
     if (!d) return;
     if (d.op === 'view') return p.socket.emit('ref', this.view(p));
     const u = p.user, rr = this.ref(u);
+    if ((d.op === 'claim' || d.op === 'tier') && this.w.lowLv(p, 'nhận thưởng mời bạn')) return;
     if (d.op === 'claim') {   // nhận quà mốc cấp của một người được mời
       const x = this.users[d.uid], lv = +d.lv, rw = LV_REWARDS[lv];
       if (!x || !x.ref || x.ref.by !== u.id || !rw || !(x.ref.ms && x.ref.ms[lv])) return;

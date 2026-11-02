@@ -144,6 +144,8 @@ class Social {
       case 'request': {
         const o = this.byEntity(a.id);
         if (!o || o === p) return this.toast(p, 'Không tìm thấy người chơi', 'error');
+        if (this.w.lowLv(p, 'giao dịch')) return;
+        if (o.c.level < this.w.tradeLv() && !this.w.isGm(o)) return this.toast(p, `🔒 ${o.c.name} chưa đạt cấp ${this.w.tradeLv()} nên chưa giao dịch được`, 'error');
         if (o.mapId !== p.mapId || U.dist(o, p) > 400) return this.toast(p, 'Hãy đứng gần người kia để giao dịch', 'error');
         if (p.trade || o.trade) return this.toast(p, 'Một bên đang giao dịch', 'error');
         const bl = this.w.invBlock(o, 'trade'); if (bl) return this.toast(p, '🚫 ' + bl, 'error');
@@ -158,6 +160,7 @@ class Social {
         if (!o || Date.now() - r.t > REQ_TTL) return this.toast(p, 'Lời mời đã hết hạn', 'error');
         if (a.op === 'decline') return this.toast(o, `${p.c.name} từ chối giao dịch`, 'info');
         if (p.trade || o.trade) return this.toast(p, 'Một bên đang giao dịch', 'error');
+        if (this.w.lowLv(p, 'giao dịch') || this.w.lowLv(o, 'giao dịch')) return;
         if (o.mapId !== p.mapId) return this.toast(p, 'Hai bên phải ở cùng bản đồ', 'error');
         const t = { a: o, b: p, offer: new Map([[o, { items: [], gold: 0 }], [p, { items: [], gold: 0 }]]), lock: new Set(), ok: new Set() };
         o.trade = p.trade = t;

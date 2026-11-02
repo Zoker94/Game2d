@@ -51,6 +51,7 @@ class Market {
   }
 
   open(p, name) {
+    if (this.w.lowLv(p, 'mở sạp ở Chợ Phiên')) return;
     if (p.mapId !== MAP) return this.toast(p, 'Chỉ mở gian hàng được ở Chợ Phiên', 'error');
     const cur = this.stalls[p.userId];
     if (this.live(cur)) return this.toast(p, 'Bạn đang có gian hàng rồi', 'error');
@@ -71,6 +72,7 @@ class Market {
   add(p, uid, qty, price, cur) {
     if (cur === 'knb') return this.toast(p, 'Chợ chỉ mua bán bằng ngân lượng – không giao dịch Nguyên Bảo giữa người chơi', 'error');
     cur = 'gold';
+    if (this.w.lowLv(p, 'bày hàng ở Chợ Phiên')) return;
     const st = this.stalls[p.userId];
     if (!this.live(st)) return this.toast(p, 'Bạn chưa mở gian hàng', 'error');
     if (st.items.length >= MAX_ITEMS) return this.toast(p, `Gian hàng tối đa ${MAX_ITEMS} món`, 'error');
@@ -124,6 +126,7 @@ class Market {
   }
 
   buy(p, uid, k, qty) {
+    if (this.w.lowLv(p, 'mua đồ ở Chợ Phiên')) return;
     const st = this.stalls[uid];
     if (!this.live(st)) return this.toast(p, 'Gian hàng đã đóng', 'error');
     if (uid === p.userId) return this.toast(p, 'Không mua được đồ của chính mình', 'error');

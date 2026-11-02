@@ -505,6 +505,14 @@ class World {
     }
     p.dirtyMe = true;
   }
+  // Chống nuôi clone: tài khoản dưới cấp này chưa được giao dịch, mở sạp / mua ở chợ, nhận thưởng mời bạn (cấu hình tradeLv, mặc định 30)
+  tradeLv() { const v = this.db.data.config.tradeLv; return v == null ? 30 : v | 0; }
+  lowLv(p, what) {
+    const L = this.tradeLv();
+    if (this.isGm(p) || p.c.level >= L) return false;
+    this.toast(p, `🔒 Cần đạt cấp ${L} mới được ${what} (chống tài khoản clone)`, 'error');
+    return true;
+  }
   // Chặn lời mời (Cài đặt → Chung): từng loại; hoặc đang bật Tự động mà chọn "từ chối mọi lời mời khi treo máy". Trả lời nhắn cho người mời, null = cho qua
   invBlock(o, kind) {
     const NAME = { party: 'tổ đội', friend: 'kết bạn', guild: 'vào bang', trade: 'giao dịch', duel: 'tỷ thí' };

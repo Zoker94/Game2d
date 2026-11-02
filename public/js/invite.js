@@ -38,13 +38,13 @@
       <div class="card rf-link"><h4>🔗 Link mời của bạn</h4>
         <div class="rf-url"><input readonly value="${esc(link())}" id="rf-url"><button class="btn small" id="rf-copy">📋 Chép</button></div>
         <div class="row rf-share">${navigator.share ? '<button class="btn green" id="rf-share">📤 Chia sẻ</button>' : ''}<button class="btn" id="rf-fb">Facebook</button><button class="btn" id="rf-zalo">Zalo</button><button class="btn" id="rf-msg">Chép kèm lời mời</button></div>
-        <p class="small muted">Bạn bè bấm link rồi tạo tài khoản mới là được tính cho bạn. Người được mời nhận quà nhập môn: ${esc(d.newbie)}.${d.by ? ` Bạn vào game qua lời mời của <b>${esc(d.by)}</b>.` : ''}</p></div>
+        <p class="small muted">Bạn bè bấm link rồi tạo tài khoản mới là được tính cho bạn. Người được mời nhận quà nhập môn khi đạt cấp 30: ${esc(d.newbie)}. Người mời cần đạt cấp 30 mới nhận được quà mời bạn.${d.by ? ` Bạn vào game qua lời mời của <b>${esc(d.by)}</b>.` : ''}</p></div>
       <div class="card"><h4>🎁 Quà mỗi người bạn mời</h4>
         <div class="small rf-lv">${Object.entries(L).map(([lv, t]) => `<div><b>Đạt cấp ${lv}:</b> ${esc(t)}</div>`).join('')}</div>
         <h4 style="margin-top:8px">👥 Đã mời ${d.total} người · ${d.n30} người đạt cấp 30</h4>${rows}</div>
       <div class="card"><h4>🏆 Quà theo số người</h4>${tiers}</div>
       <div class="card"><h4>📅 Mời nhiều nhất tuần này</h4><ol class="rf-top">${top}</ol>
-        <p class="small muted">Tính số người được mời đạt cấp 10 trong tuần (từ thứ Hai). Tài khoản clone không được tính: dùng chung máy với bạn, tạo trên máy đã có tài khoản khác, hay nhiều tài khoản chung mạng với bạn (chỉ tính 1 người nhà). Tối đa ${d.cap} người mỗi ngày.</p></div></div>`;
+        <p class="small muted">Tính số người được mời đạt cấp 30 trong tuần (từ thứ Hai). Tài khoản clone không được tính: dùng chung máy với bạn, tạo trên máy đã có tài khoản khác, hay nhiều tài khoản chung mạng với bạn (chỉ tính 1 người nhà). Tối đa ${d.cap} người mỗi ngày.</p></div></div>`;
     const done = t => UI.toast(t, 'reward');
     $('rf-copy').onclick = async () => { if (await copy(link())) done('Đã chép link mời'); else $('rf-url').select(); };
     $('rf-msg').onclick = async () => { if (await copy(shareText() + ' ' + link())) done('Đã chép lời mời kèm link – dán vào Zalo, Facebook, TikTok…'); };

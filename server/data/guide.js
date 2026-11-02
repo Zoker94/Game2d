@@ -80,6 +80,7 @@ function build() {
       'Ngân lượng: đánh quái, nhiệm vụ ngày (<b>Sứ Giả Nhiệm Vụ</b>), nhiệm vụ môn phái, áp tiêu, phó bản, boss, Tống Kim.',
       'Gửi đồ / ngân lượng ở <b>Thủ Kho Tiền Trang</b>.',
       '<b>Chợ Phiên</b> (đi Xa Phu): mở sạp bằng Lệnh Bài Bán Hàng để bán đồ cho người chơi khác, bán được cả khi offline.',
+      '🔒 Chống tài khoản clone: phải đạt <b>cấp 30</b> mới được giao dịch với người chơi khác, mở sạp / mua đồ ở Chợ Phiên và nhận thưởng mời bạn.',
       'Nguyên Bảo: boss thế giới, áp tiêu vàng, Tống Kim, gift code, sự kiện. Tiêu ở <b>Kỳ Trân Các</b>.']) },
     { k: 'sect', icon: '⛩️', title: 'Môn phái & bang hội', html: li([
       'Về bản đồ môn phái của mình (Xa Phu, miễn phí): nhận <b>nhiệm vụ môn phái</b> lấy cống hiến, lên cấp bậc (+công / thủ / máu).',
