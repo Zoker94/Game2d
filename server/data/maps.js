@@ -50,6 +50,7 @@ const MAP_DEFS = {
       { id: 'dh_su_gia',  x: 17, y: 20 },
       { id: 'hs_su_gia',  x: 21, y: 20 },
       { id: 'tk_mo_binh', x: 13, y: 20 },
+      { id: 'chi_dan', x: 17, y: 13 },
       { id: 'pho_ban',    x: 26, y: 15 }
     ],
     spawns: []
@@ -191,7 +192,7 @@ const MAP_DEFS = {
     name: 'Thành Đô Phủ', theme: 'town', w: 36, h: 28, seed: 111, safe: true, lv: '20+', town: true, music: 'town',
     portals: [{ side: 'N', to: 'hoa_son' }],
     npcs: [
-      { id: 'thanh_chu_thanh_do', x: 17, y: 8 },
+      { id: 'thanh_chu_thanh_do', x: 17, y: 8 }, { id: 'chi_dan', x: 17, y: 13 },
       { id: 'tho_ren',    x: 12, y: 13 },
       { id: 'hieu_may',   x: 12, y: 16 },
       { id: 'kim_hoan',   x: 15, y: 18 },
@@ -209,7 +210,7 @@ const MAP_DEFS = {
     name: 'Lan Châu Thành', theme: 'town', w: 36, h: 28, seed: 113, safe: true, lv: '30+', town: true, music: 'town',
     portals: [{ side: 'S', to: 'sa_mac' }],
     npcs: [
-      { id: 'thanh_chu_lan_chau', x: 17, y: 8 },
+      { id: 'thanh_chu_lan_chau', x: 17, y: 8 }, { id: 'chi_dan', x: 17, y: 13 },
       { id: 'tho_ren',    x: 12, y: 13 },
       { id: 'hieu_may',   x: 12, y: 16 },
       { id: 'kim_hoan',   x: 15, y: 18 },
@@ -227,7 +228,7 @@ const MAP_DEFS = {
     name: 'Long Môn Trấn', theme: 'town', w: 36, h: 28, seed: 117, safe: true, lv: '55+', town: true, music: 'town', minLv: 50,
     portals: [{ side: 'W', to: 'u_minh' }, { side: 'E', to: 'con_lon' }],
     npcs: [
-      { id: 'thanh_chu_long_mon', x: 17, y: 8 },
+      { id: 'thanh_chu_long_mon', x: 17, y: 8 }, { id: 'chi_dan', x: 17, y: 13 },
       { id: 'tho_ren',    x: 12, y: 13 },
       { id: 'hieu_may',   x: 12, y: 16 },
       { id: 'kim_hoan',   x: 15, y: 18 },

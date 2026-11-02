@@ -432,7 +432,7 @@
     s.on('dropAdd', d => { if (d.om) d.ownUntil = performance.now() + d.om; G.drops.set(d.id, d); });
     s.on('noPot', d => { const now = performance.now(); if (!G.noPot[d.kind] || G.noPot[d.kind] < now) UI.toast(d.kind === 'mp' ? '⚠️ Hết bình nội lực! Hãy mua thêm ở Hiệu Thuốc.' : '⚠️ Hết bình máu! Hãy mua thêm ở Hiệu Thuốc.', 'error'); G.noPot[d.kind] = now + 20000; });
     s.on('dropDel', id => G.drops.delete(id));
-    s.on('npc', d => { if (d.action === 'channel') return showChannels(d.channels); UI.openNpc(d); });   // Bia Chuyển Khu: mở thẳng bảng chọn khu
+    s.on('npc', d => { if (d.action === 'channel') return showChannels(d.channels); if (d.action === 'guide') return Guide.open(d); UI.openNpc(d); });   // Bia Chuyển Khu: mở thẳng bảng chọn khu
     s.on('renameFreeUsed', () => UI.renameFreeUsed());
     s.on('guild', d => UI.onGuild(d));
     s.on('lb', d => UI.onLeaderboard(d));

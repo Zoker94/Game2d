@@ -99,6 +99,7 @@ const NPCS = {
   truyen_cong: { name: 'Truyền Công Trưởng Lão', sprite: 'elder', color: '#5a4a8a', action: 'shop', bookShop: true,
     talk: 'Võ học bổn môn bác đại tinh thâm. Mua bí kíp rồi rèn luyện trong bảng Võ Công (phím K).',
     shop: ['tay_tuy_kinh', 'tay_tiem_nang', ...Object.keys(require('./skillbooks').BOOKS)] },
+  chi_dan: { name: 'Bia Chỉ Dẫn Giang Hồ', sprite: 'stele', color: '#d8b060', action: 'guide', talk: 'Cẩm nang võ lâm từ A đến Z: đi đâu, làm gì, kiếm đồ ở đâu – người mới hãy đọc kỹ!' },
   khu_bia: { name: 'Bia Chuyển Khu', sprite: 'stele', color: '#8a8a94', action: 'channel',
     talk: 'Bia đá khắc tên các khu của bản đồ này. Chạm vào để chọn khu (mỗi khu tối đa 10 người).' },
   phi_phong: { name: 'Chưởng Phi Phong', sprite: 'lady', color: '#7a4ab0', action: 'cloak',

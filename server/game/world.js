@@ -1731,6 +1731,7 @@ class World {
     if (npc.action === 'hoason' && this.hoason) Object.assign(out, this.hoason.npcView(p));
     if (npc.action === 'tongkim' && this.tongkim) Object.assign(out, this.tongkim.npcView(p));
     if (npc.action === 'cloak') out.cloak = this.cloakView(p);
+    if (npc.action === 'guide') out.guide = require('../data/guide').guide();   // Bia Chỉ Dẫn Giang Hồ
     if (npc.action === 'market') out.market = this.market.view(p.userId, p.userId) || { mine: true, none: true, tokens: U.countItem(p.c, 'stall_token') };
     if (npc.action === 'channel') out.channels = this.channelsView(p);
     if (npc.action === 'teleport') {

@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🪧 BIA CHỈ DẪN GIANG HỒ ở giữa mọi thành (Tương Dương, Thành Đô, Lan Châu, Long Môn): cẩm nang A–Z cho người mới – đi lại, luyện cấp ở đâu, cường hoá, đá khảm, võ công, lịch boss, săn Võ Mục Di Thư, phó bản, Thần Binh, áp tiêu, sự kiện, kiếm tiền, môn phái, PK, treo máy. Có ô tìm nhanh (VD gõ "đá khảm").',
       '💰 Cân bằng ngân lượng: quái rơi ngân lượng ít hơn (25% số lần, lượng mỗi lần giảm); bán đồ cho NPC còn 10% giá gốc với trang bị và 15% với vật phẩm khác (trước 30%). Tổng ngân lượng kiếm được khi cày quái còn khoảng 1/3 – cường hoá đồ cần tích luỹ lâu hơn.',
       '📜 Điểm võ học: mỗi cấp nhân vật nay được ~3,8 điểm (trước 3,4). Cấp 120 có 452 điểm – đủ nâng tối đa cả 10 võ công (5 chiêu môn phái, đánh thường, buff, nội công, Long Ấn, Tuyệt Kỹ Giang Hồ). Nhân vật cũ được cộng bù ngay theo cấp hiện tại.',
       '🐛 Sửa lỗi bấm Sử dụng Võ Mục Tâm Pháp bị mất vật phẩm: giờ chưa có Võ Mục Di Thư thì hiện hướng dẫn (gom đủ 7 tàn quyển → ghép Di Thư → dùng Di Thư) và giữ nguyên Tâm Pháp; đã có Di Thư thì lĩnh hội luôn. Các nguyên liệu khác (VD Thiên Tàm Ti) bấm Sử dụng cũng không còn bị mất.',
