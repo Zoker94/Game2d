@@ -539,6 +539,7 @@ body.touch #menu-buttons { max-width: 236px; }
 .bank-gold { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,215,0,.05); margin-bottom: 6px; }
 .bank-grid { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; background: rgba(0,0,0,.2); border-radius: 6px; max-height: 220px; overflow: auto; margin-bottom: 6px; }
 #weather-tag { font-weight: 600; color: #cfe3ff; font-size: 10.5px; }
+#dn-tag { font-weight: 600; font-size: 10.5px; color: #ffe08a; } #dn-tag.dn-night { color: #a8c0ff; } #dn-tag.dn-dusk { color: #ffa060; } #dn-tag.dn-dawn { color: #ffb0d0; }
 #weather-tag.wt-sun { color: #ffb84a; } #weather-tag.wt-storm { color: #b8a8ff; } #weather-tag.wt-snow, #weather-tag.wt-blizzard { color: #e8f6ff; }
 
 /* ---------- Chế độ PK ---------- */

@@ -692,7 +692,14 @@
     } else ctx.drawImage(img, tx * TILE, by - img.height);
   }
 
-  window.WorldArt = { setMap, prebuild, drawGround, visibleDecos, drawDeco, drawTall, ambient, drawAmbient, overlay, get theme() { return theme; } };
+  // nguồn sáng ban đêm (daynight.js): đồ trang trí có quầng sáng trong khung nhìn
+  function lights(cam, vw, vh) {
+    const out = [], tmp = [];
+    visibleDecos(cam, vw, vh, tmp);
+    for (const it of tmp) if (it.d.glow) out.push(it.d);
+    return out;
+  }
+  window.WorldArt = { setMap, prebuild, drawGround, visibleDecos, lights, drawDeco, drawTall, ambient, drawAmbient, overlay, get theme() { return theme; } };
 })();
 // giữ hàm vẽ vật thể cao cũ cho nhà, đá, trúc, xương rồng...
 Sprites.tallTileOld = Sprites.tallTile;

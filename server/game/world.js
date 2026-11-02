@@ -2319,6 +2319,7 @@ class World {
       const tbl = WEATHER_TABLE[this.maps[id].def.theme] || WEATHER_TABLE.plains;
       let r = Math.random() * tbl.reduce((a, x) => a + x[1], 0), k = 'clear';
       for (const [kk, w] of tbl) { if ((r -= w) < 0) { k = kk; break; } }
+      if (k === 'sun') { const h = new Date(now + 7 * 3600e3).getUTCHours(); if (h < 9 || h >= 16) k = 'clear'; }   // nắng gắt chỉ ban ngày (giờ VN)
       const dur = k === 'clear' ? (8 + Math.random() * 6) * 60000 : (1.5 + Math.random() * 1.5) * 60000;   // trời quang kéo dài, thời tiết xấu ngắn
       const changed = !cur || cur.k !== k;
       this.weather[id] = { k, until: now + dur };

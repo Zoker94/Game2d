@@ -25,7 +25,8 @@
     let t = document.getElementById('weather-tag');
     if (!t) { t = document.createElement('span'); t.id = 'weather-tag'; mn.appendChild(t); }
     const label = k === 'wind' && theme === 'desert' ? 'Bão cát' : INFO[k][1];
-    t.textContent = ` ${INFO[k][0]} ${label}`;
+    const night = k === 'clear' && window.DayNight && DayNight.isNight() && theme !== 'cave';
+    t.textContent = ` ${night ? '✨' : INFO[k][0]} ${label}`;
     t.title = 'Thời tiết hiện tại';
     t.className = 'wt-' + k;
   }

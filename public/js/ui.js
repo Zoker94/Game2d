@@ -1476,6 +1476,7 @@
         <div class="card"><h4>🎨 Chất lượng đồ họa</h4>
           <div class="row gfx-row" style="justify-content:flex-start;align-items:center;gap:4px">${[['auto', 'Tự động'], ['high', 'Cao'], ['medium', 'Vừa'], ['low', 'Thấp'], ['ultra', 'Siêu thấp (máy yếu)']].map(([k, n]) => `<button class="btn small ${(s.gfx || 'auto') === k ? 'primary' : ''}" data-gfx="${k}">${n}</button>`).join('')}</div>
           <div class="small muted" style="margin-top:4px">Độ nét hiện tại: ${Math.round(G.gfx.scale * 100)}%${G.gfx.lowFx ? ' · tiết kiệm hiệu ứng' : ''}${G.gfx.weak ? ' · máy cấu hình thấp' : ''}</div>
+          <label class="set-row"><input type="checkbox" id="set-daynight" ${s.daynight !== false ? 'checked' : ''}> 🌙 Ngày & đêm theo giờ thật (tối từ 19:30, sáng từ 6:30)</label>
           <label class="set-row"><input type="checkbox" id="set-lowfx" ${s.lowfx ? 'checked' : ''}> ✨ Giảm hiệu ứng nặng (hạt, thời tiết, hoạt ảnh lặp trên giao diện)</label>
           ${ck('hideOtherFx', '🙈 Ẩn hiệu ứng chiêu của người chơi khác – mượt hơn nhiều ở chỗ đông')}
           <label class="set-row"><input type="checkbox" id="set-battery" ${G.battery() ? 'checked' : ''}> 🔋 Tiết kiệm pin: 30 FPS, độ nét tối đa 150%, để yên lâu thì vẽ thưa hơn</label></div>
@@ -1541,6 +1542,7 @@
     on('set-awake', 'onchange', e => { s.keepAwake = e.target.checked; G.saveSettings(); if (window.Awake) Awake.sync(); });
     on('set-qauto', 'onchange', e => { G.settings.questAuto = e.target.checked; G.saveSettings(); });
     on('set-black', 'onclick', () => { UI.closePanel(); G.setBlackout(true); });
+    on('set-daynight', 'onchange', e => { G.settings.daynight = e.target.checked; G.saveSettings(); });
     on('set-lowfx', 'onchange', e => { G.setLowFx(e.target.checked); UI.refreshPanel(); });
     on('set-fs', 'onclick', () => Input.toggleFullscreen());
     on('set-keys', 'onclick', () => UI.openPanel('keys'));
