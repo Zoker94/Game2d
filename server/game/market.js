@@ -67,7 +67,8 @@ class Market {
 
   // cur: 'gold' (ngân lượng) hoặc 'knb' (Nguyên Bảo)
   add(p, uid, qty, price, cur) {
-    cur = cur === 'knb' ? 'knb' : 'gold';
+    if (cur === 'knb') return this.toast(p, 'Chợ chỉ mua bán bằng ngân lượng – không giao dịch Nguyên Bảo giữa người chơi', 'error');
+    cur = 'gold';
     const st = this.stalls[p.userId];
     if (!this.live(st)) return this.toast(p, 'Bạn chưa mở gian hàng', 'error');
     if (st.items.length >= MAX_ITEMS) return this.toast(p, `Gian hàng tối đa ${MAX_ITEMS} món`, 'error');
@@ -129,6 +130,7 @@ class Market {
     const i = st.items.findIndex(x => x.k === k);
     if (i < 0) return this.toast(p, 'Món này vừa có người mua mất', 'error');
     const it = st.items[i];
+    if (it.cur === 'knb') return this.toast(p, 'Chợ đã ngưng mua bán bằng Nguyên Bảo – món này chủ gian hàng cần thu về và rao lại bằng ngân lượng', 'error');
     qty = U.clamp(qty | 0 || 1, 1, it.s.qty);
     const cost = it.price * qty, knb = it.cur === 'knb', unit = knb ? 'Nguyên Bảo' : 'lượng', key = knb ? 'knb' : 'gold';
     if ((p.c[key] || 0) < cost) return this.toast(p, knb ? 'Không đủ Nguyên Bảo' : 'Không đủ ngân lượng', 'error');
