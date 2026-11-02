@@ -13,8 +13,14 @@
   let lastDailyHtml = '';
 
   const UI = window.UI = {};
-  // giá bán lại cho NPC (1 cái) – khớp server/game/util.js sellUnit: trang bị 10%, vật phẩm khác 15%, +20%/cấp cường hoá
-  UI.sellUnit = (it, plus = 0) => it ? Math.floor((it.price || 0) * (it.type === 'equip' ? 0.1 : 0.15) * (1 + (plus || 0) * 0.2)) : 0;
+  // giá bán lại cho NPC (1 cái) – khớp server/game/util.js sellUnit: trang bị theo độ hiếm + cấp, vật phẩm khác 15%, +20%/cấp cường hoá
+  const SELL_EQ = { common: 25, rare: 80, epic: 300, legendary: 1200, divine: 5000 };
+  UI.sellUnit = (it, plus = 0) => {
+    if (!it) return 0;
+    const pm = 1 + (plus || 0) * 0.2;
+    if (it.type === 'equip') return Math.max(1, Math.round((SELL_EQ[it.rarity] || 25) * (0.6 + 0.8 * Math.min(1, (it.lv || 1) / 90)) * pm));
+    return Math.floor((it.price || 0) * 0.15 * pm);
+  };
 
   // binh khí chung -> vũ khí môn phái của mình (để hiện đúng tên/biểu tượng)
   function resolveId(id) {

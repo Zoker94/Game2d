@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '💰 Giảm mạnh giá bán trang bị cho NPC, tính theo độ hiếm và cấp đồ: thường 15–35, Hiếm 50–110, VIP (tím) 180–420, Truyền Kỳ 730–1.680 lượng (+20% mỗi cấp cường hoá).',
       '🧪 Bình máu và bình nội lực có hồi chiêu 3 giây (mỗi loại tính riêng). Nút bình hiện vòng đếm ngược; tự bơm máu chờ hết hồi chiêu mới dùng tiếp, không làm kẹt việc bơm nội lực.',
       '🚫🐎 Không được dùng thú cưỡi trong sự kiện: Chiến trường Tống Kim, Hoa Sơn Luận Kiếm, Đại Hội Võ Lâm. Vào sự kiện sẽ tự xuống thú, ra khỏi sự kiện thì cưỡi lại bình thường.',
       '🧭 Thú cưỡi có đủ 4 hướng: đi xuống thấy mặt trước (đầu, ngực, chân trước), đi lên thấy lưng (mông, đuôi); Phượng Hoàng và Thanh Long dang cánh vỗ theo nhịp ở cả hướng trước/sau.',

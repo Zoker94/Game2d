@@ -71,7 +71,14 @@ function rollBranch(c) {
   return Math.random() < 0.8 ? mine : (mine === 'noi' ? 'ngoai' : 'noi');
 }
 // giá bán lại cho NPC (1 cái): trang bị 10% giá gốc, vật phẩm khác 15% (cường hoá +20%/cấp) – bán đồ rác không còn là nguồn vàng chính
-function sellUnit(it, plus = 0) { return it ? Math.floor((it.price || 0) * (it.type === 'equip' ? 0.1 : 0.15) * (1 + (plus || 0) * 0.2)) : 0; }
+// giá bán lại cho NPC: trang bị theo độ hiếm (đồ VIP tím ~180–420 lượng tuỳ cấp), +20%/cấp cường hoá; vật phẩm khác 15% giá mua
+const SELL_EQ = { common: 25, rare: 80, epic: 300, legendary: 1200, divine: 5000 };
+function sellUnit(it, plus = 0) {
+  if (!it) return 0;
+  const pm = 1 + (plus || 0) * 0.2;
+  if (it.type === 'equip') return Math.max(1, Math.round((SELL_EQ[it.rarity] || 25) * (0.6 + 0.8 * Math.min(1, (it.lv || 1) / 90)) * pm));
+  return Math.floor((it.price || 0) * 0.15 * pm);
+}
 function isStack(id) { const it = ITEMS[id]; return it && it.type !== 'equip'; }
 
 // binh khí chung -> vũ khí môn phái của nhân vật
