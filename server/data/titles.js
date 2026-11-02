@@ -25,6 +25,7 @@ const TITLES = {
   ref_5:    { name: 'Hào Sảng Hiệp Khách', color: '#7fe0c8', tier: 2, fx: 'pulse', src: 'Mời bạn', stat: 'refs', need: 5,  desc: 'Mời 5 người chơi mới cùng đạt cấp 30' },
   ref_20:   { name: 'Danh Chấn Giang Hồ',  color: '#ffb0e0', tier: 3, fx: 'lotus', src: 'Mời bạn', stat: 'refs', need: 20, desc: 'Mời 20 người chơi mới cùng đạt cấp 30' },
   // ---- Quà tặng: chỉ có được khi dùng vật phẩm Lệnh Bài Danh Hiệu (item title_*). Không hiện trong danh sách thành tích; đã có thì hiện ở mục "Quà tặng" để đổi qua lại ----
+  tester: { name: 'Tester', color: '#3affc8', tier: 5, fx: 'tester', src: 'Quản trị viên', gift: true, desc: 'Người thử nghiệm game – được vào máy chủ cả khi bảo trì. Do quản trị viên cấp.' },
   g_supreme: { name: 'Thiên Hạ Đệ Nhất', color: '#ffd040', tier: 5, fx: 'supreme', src: 'Quà tặng', gift: true, desc: 'Danh hiệu quà tặng – nhận bằng Lệnh Bài Danh Hiệu' },
   g_master: { name: 'Cao Thủ Võ Lâm', color: '#a8d8ff', tier: 4, fx: 'master', src: 'Quà tặng', gift: true, desc: 'Danh hiệu quà tặng – nhận bằng Lệnh Bài Danh Hiệu' },
   g_novice: { name: 'Sơ Nhập Giang Hồ', color: '#9ae0a0', tier: 2, fx: 'novice', src: 'Quà tặng', gift: true, desc: 'Danh hiệu quà tặng – nhận bằng Lệnh Bài Danh Hiệu' },

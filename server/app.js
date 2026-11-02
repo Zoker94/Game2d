@@ -325,7 +325,7 @@ io.use((socket, next) => {
   const user = userFromToken(socket.handshake.auth && socket.handshake.auth.token);
   if (!user) return next(new Error('auth'));
   if (user.banned) return next(new Error('banned'));
-  if (db.data.config.maintenance && !user.isAdmin) return next(new Error('maintenance'));
+  if (db.data.config.maintenance && !user.isAdmin && !user.tester) return next(new Error('maintenance'));   // Tester do quản trị viên chọn được vào cả khi bảo trì
   socket.user = user;
   next();
 });

@@ -86,7 +86,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   // ----- Người chơi -----
   const userRow = u => ({
     id: u.id, email: u.email || (u.username ? '(tài khoản) ' + u.username : ''), username: u.username || '', gname: u.name, createdAt: u.createdAt, lastLogin: u.lastLogin, banned: !!u.banned, banReason: u.banReason || '',
-    muted: u.muted === true || (u.muted && u.muted > Date.now()) ? u.muted : false, isGM: !!u.isAdmin, online: world.players.has(u.id),
+    muted: u.muted === true || (u.muted && u.muted > Date.now()) ? u.muted : false, isGM: !!u.isAdmin, tester: !!u.tester, online: world.players.has(u.id),
     character: u.character ? { name: u.character.name, cls: u.character.cls, clsName: CLASSES[u.character.cls].name, level: u.character.level, gold: u.character.gold, knb: u.character.knb, map: u.character.map, power: u.character.power, kills: u.character.kills } : null
   });
   app.get('/api/admin/users', auth, (req, res) => {
@@ -135,6 +135,10 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
       if (b.heal && p) { c.hp = p.stats.maxHp; c.mp = p.stats.maxMp; p.dead = false; }
     }
     if (b.isGM != null) u.isAdmin = !!b.isGM;
+    if (b.tester != null) {   // Tester: vào được cả khi bảo trì + danh hiệu 【Tester】
+      u.tester = !!b.tester;
+      if (world.syncTester(u) && p) { world.recalc(p); p.dirtyMe = true; world.toast(p, u.tester ? '🧪 Bạn được cấp quyền Tester: vào game được cả khi bảo trì, nhận danh hiệu 【Tester】.' : 'Quyền Tester của bạn đã được gỡ.', u.tester ? 'reward' : 'info'); }
+    }
     act(req, `Cập nhật người chơi ${c ? c.name : u.email}: ${JSON.stringify(b)}`);
     if (p) world.toast(p, 'Tài khoản của bạn vừa được quản trị viên cập nhật', 'info');
   }));
@@ -245,7 +249,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     if (b.maintenance != null) {
       const was = c.maintenance;
       c.maintenance = !!b.maintenance;
-      if (c.maintenance && !was) for (const p of [...world.players.values()]) if (!p.user.isAdmin) { p.socket.emit('kicked', { maint: 1, msg: c.maintMsg || '', eta: c.maintEta || '', reason: 'Máy chủ đang bảo trì' }); world.removePlayer(p); p.socket.disconnect(true); }
+      if (c.maintenance && !was) for (const p of [...world.players.values()]) if (!p.user.isAdmin && !p.user.tester) { p.socket.emit('kicked', { maint: 1, msg: c.maintMsg || '', eta: c.maintEta || '', reason: 'Máy chủ đang bảo trì' }); world.removePlayer(p); p.socket.disconnect(true); }
     }
     if (b.autoEvents != null) c.autoEvents = !!b.autoEvents;
     if (b.serverMode === 'test' || b.serverMode === 'open') c.serverMode = b.serverMode;   // Open Test: NPC bán thêm rương mở đồ; Open chính thức: không bán

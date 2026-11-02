@@ -175,8 +175,17 @@ class World {
   }
 
   // ---------- Người chơi vào / rời ----------
+  // Tester (quản trị viên chọn): có danh hiệu 【Tester】; lần đầu được cấp thì đeo luôn. Bỏ Tester thì gỡ danh hiệu.
+  syncTester(user) {
+    const c = user.character; if (!c) return false;
+    const g = c.giftTitles || (c.giftTitles = []), has = g.includes('tester');
+    if (user.tester && !has) { g.push('tester'); c.title = 'tester'; return true; }
+    if (!user.tester && has) { c.giftTitles = g.filter(x => x !== 'tester'); if (c.title === 'tester') c.title = ''; return true; }
+    return false;
+  }
   addPlayer(user, socket) {
     const c = user.character;
+    this.syncTester(user);
     const old = this.players.get(user.id);
     if (old && old.offline) this.autoSrv.endOffline(old, 'back');   // đang được máy chủ treo hộ: vào lại thì nhận lại nhân vật
     else if (old) { old.socket.emit('notice', { text: 'Tài khoản đăng nhập ở nơi khác.', type: 'error' }); this.removePlayer(old); old.socket.disconnect(true); }

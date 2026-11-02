@@ -49,6 +49,33 @@
 
   const FX = {
     plain(ctx, T, x, y) { const p = box(T, x, y); text(ctx, p.txt, x, y, T.color, '#000'); },
+    // Tester: khung neon xanh kiểu màn hình máy tính, vạch quét chạy ngang, góc nhấp nháy, mã 0/1 bay lên
+    tester(ctx, T, x, y, t, lite) {
+      const p = box(T, x, y), k = 0.5 + Math.sin(t / 380) * 0.5;
+      ctx.save();
+      ctx.shadowColor = '#3affc8'; ctx.shadowBlur = lite ? 0 : 6 + k * 6;
+      frame(ctx, p, 'rgba(4,30,26,.82)', rgba('#3affc8', 0.65 + k * 0.35));
+      ctx.shadowBlur = 0;
+      if (!lite) {
+        const sx = p.l + ((t / 6) % (p.w + 20)) - 10;   // vạch quét
+        const g = ctx.createLinearGradient(sx - 10, 0, sx + 10, 0);
+        g.addColorStop(0, 'rgba(58,255,200,0)'); g.addColorStop(0.5, 'rgba(160,255,230,.55)'); g.addColorStop(1, 'rgba(58,255,200,0)');
+        ctx.save(); ctx.beginPath(); ctx.rect(p.l, p.top, p.w, p.h); ctx.clip(); ctx.fillStyle = g; ctx.fillRect(sx - 10, p.top, 20, p.h);
+        ctx.fillStyle = 'rgba(58,255,200,.08)'; for (let yy = p.top + 1; yy < p.top + p.h; yy += 2) ctx.fillRect(p.l, yy, p.w, 1);   // vân màn hình
+        ctx.restore();
+        ctx.fillStyle = (t / 250 | 0) % 2 ? '#ffffff' : '#3affc8';   // 4 góc nhấp nháy
+        for (const [cx, cy] of [[p.l, p.top], [p.l + p.w - 3, p.top], [p.l, p.top + p.h - 3], [p.l + p.w - 3, p.top + p.h - 3]]) ctx.fillRect(cx, cy, 3, 3);
+        ctx.font = '700 7px monospace'; ctx.textAlign = 'center';
+        for (let i = 0; i < 6; i++) {   // mã 0 / 1 bay lên
+          const ph = ((t / 1400) + R(i + 3)) % 1, bx = p.l + 4 + R(i * 7.1) * (p.w - 8);
+          ctx.globalAlpha = (1 - ph) * 0.85; ctx.fillStyle = i % 2 ? '#3affc8' : '#b8fff0';
+          ctx.fillText(R(i + Math.floor(t / 600)) > 0.5 ? '1' : '0', bx, p.top - 2 - ph * 16);
+        }
+        ctx.globalAlpha = 1;
+      }
+      ctx.restore();
+      text(ctx, p.txt, x, y, (t / 1600 | 0) % 2 ? '#b8fff0' : T.color, '#00261e');
+    },
     pulse(ctx, T, x, y, t, lite) {
       const p = box(T, x, y), k = 0.5 + Math.sin(t / 700) * 0.5;
       frame(ctx, p, rgba(T.color, 0.14 + k * 0.12), rgba(T.color, 0.5 + k * 0.4));

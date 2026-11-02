@@ -87,3 +87,4 @@ tr:hover td { background: #1a1524; }
 .en-tbl input.warn { border-color: #e04040; }
 .tag.red { background: #5a1a1a; color: #fca5a5; } .tag.gold { background: #5a420a; color: #fcd34d; } .tag:not(.on):not(.off):not(.ban):not(.mute):not(.gm):not(.red):not(.gold) { background: #2a2338; color: var(--muted); }
 .en-guide ol { margin: 6px 0 6px 18px; padding: 0; line-height: 1.6; } .en-guide li { margin-bottom: 3px; }
+.tag.tester { background: #063a30; color: #3affc8; }

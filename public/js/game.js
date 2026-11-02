@@ -170,7 +170,10 @@
 
   function showLogin() {
     show('screen-login');
-    if (G.config.maintenance) { $('login-msg').textContent = '⚠ Máy chủ đang bảo trì.' + (G.config.maintMsg ? ' Lý do: ' + G.config.maintMsg : '') + (G.config.maintEta ? ' · Dự kiến xong: ' + G.config.maintEta : ''); G.maintModal(G.config.maintMsg, G.config.maintEta); }
+    if (G.config.maintenance) {   // không chặn màn đăng nhập: Tester / GM vẫn đăng nhập được; người thường vào sẽ thấy bảng bảo trì
+      const m = $('login-msg'); m.textContent = '⚠ Máy chủ đang bảo trì.' + (G.config.maintMsg ? ' Lý do: ' + G.config.maintMsg : '') + (G.config.maintEta ? ' · Dự kiến xong: ' + G.config.maintEta : '') + ' ';
+      const a = document.createElement('a'); a.href = ZALO_URL; a.target = '_blank'; a.rel = 'noopener'; a.className = 'zalo-btn'; a.textContent = '💬 Vào nhóm Zalo'; m.appendChild(a);
+    }
     if (G.config.devLogin) $('login-dev').classList.remove('hidden');
     if (!G.config.googleClientId) { $('google-wrap').classList.add('hidden'); return; }
     const init = () => {

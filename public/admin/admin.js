@@ -88,7 +88,7 @@
         $('u-list').innerHTML = `<p class="muted small">${r.total} kết quả${r.total > 200 ? ' (hiện 200)' : ''}</p><div style="overflow:auto"><table><tr><th>Nhân vật</th><th>Môn phái</th><th>Cấp</th><th>Ngân lượng</th><th>KNB</th><th>Tài khoản / Email</th><th>Đăng nhập cuối</th><th>Trạng thái</th><th></th></tr>
           ${r.users.map(u => `<tr><td><b>${esc(u.character ? u.character.name : '—')}</b></td><td>${esc(u.character ? u.character.clsName : '')}</td><td>${u.character ? u.character.level : ''}</td><td>${u.character ? fmt(u.character.gold) : ''}</td><td>${u.character ? fmt(u.character.knb) : ''}</td>
           <td class="small">${esc(u.email)}</td><td class="small">${dt(u.lastLogin)}</td>
-          <td>${u.online ? '<span class="tag on">Online</span>' : '<span class="tag off">Offline</span>'} ${u.banned ? '<span class="tag ban">Khóa</span>' : ''} ${u.muted ? '<span class="tag mute">Cấm chat</span>' : ''} ${u.isGM ? '<span class="tag gm">GM</span>' : ''}</td>
+          <td>${u.online ? '<span class="tag on">Online</span>' : '<span class="tag off">Offline</span>'} ${u.banned ? '<span class="tag ban">Khóa</span>' : ''} ${u.muted ? '<span class="tag mute">Cấm chat</span>' : ''} ${u.isGM ? '<span class="tag gm">GM</span>' : ''} ${u.tester ? '<span class="tag tester">🧪 Tester</span>' : ''}</td>
           <td><button class="btn small" data-u="${u.id}">Chi tiết</button></td></tr>`).join('')}</table></div>`;
         $('u-list').querySelectorAll('[data-u]').forEach(b => b.onclick = () => userDetail(b.dataset.u, load));
       };
@@ -336,7 +336,7 @@
         <label>Tỉ lệ rơi đồ VIP cơ bản (0-1)<input id="c-vip" type="number" step="0.001" value="${c.vipDropBase}"></label></div></div>
         <div class="card"><h3>Server</h3><label>Thông điệp chào mừng (MOTD)<textarea id="c-motd" rows="2">${esc(c.motd)}</textarea></label>
         <label style="flex-direction:row;align-items:center;gap:6px;margin-top:8px"><input type="checkbox" id="c-auto" ${c.autoEvents ? 'checked' : ''}> Tự động chạy sự kiện theo lịch</label>
-        <label style="flex-direction:row;align-items:center;gap:6px;margin-top:8px"><input type="checkbox" id="c-maint" ${c.maintenance ? 'checked' : ''}> <b style="color:#ff8a8a">Chế độ bảo trì</b> (đá tất cả người chơi không phải GM ra)</label>
+        <label style="flex-direction:row;align-items:center;gap:6px;margin-top:8px"><input type="checkbox" id="c-maint" ${c.maintenance ? 'checked' : ''}> <b style="color:#ff8a8a">Chế độ bảo trì</b> (đá tất cả người chơi ra, trừ GM và Tester – cấp quyền Tester ở trang Người chơi)</label>
         <label style="margin-top:6px">Lý do bảo trì (người chơi thấy khi bị đá ra / mở game)<textarea id="c-mmsg" rows="2" maxlength="500" placeholder="VD: Cập nhật phiên bản mới, thêm phó bản và sửa lỗi">${esc(c.maintMsg || '')}</textarea></label>
         <label style="margin-top:6px">Dự kiến xong<input id="c-meta" maxlength="80" placeholder="VD: 15:30 hôm nay" value="${esc(c.maintEta || '')}"></label>
         <p class="small muted">Người chơi thấy kèm nút 💬 Vào nhóm Zalo để theo dõi tin. Nhập lý do trước rồi mới tích Chế độ bảo trì và bấm Lưu.</p>
@@ -468,7 +468,7 @@
     const itemName = iid => { const it = items.find(x => x.id === iid); return it ? `<span class="r-${it.rarity}">${esc(it.name)}</span>` : iid; };
     openModal(`${c ? c.name : '(Chưa tạo nhân vật)'} · ${u.email}`, `
       <div class="small muted">ID: ${u.id} · Tên Google: ${esc(u.gname)} · Tạo: ${dt(u.createdAt)} · Đăng nhập: ${dt(u.lastLogin)}</div>
-      <div style="margin:6px 0">${u.online ? '<span class="tag on">Online</span>' : '<span class="tag off">Offline</span>'} ${u.banned ? `<span class="tag ban">Khóa: ${esc(u.banReason)}</span>` : ''} ${u.muted ? '<span class="tag mute">Cấm chat</span>' : ''} ${u.isGM ? '<span class="tag gm">GM</span>' : ''}</div>
+      <div style="margin:6px 0">${u.online ? '<span class="tag on">Online</span>' : '<span class="tag off">Offline</span>'} ${u.banned ? `<span class="tag ban">Khóa: ${esc(u.banReason)}</span>` : ''} ${u.muted ? '<span class="tag mute">Cấm chat</span>' : ''} ${u.isGM ? '<span class="tag gm">GM</span>' : ''} ${u.tester ? '<span class="tag tester">🧪 Tester</span>' : ''}</div>
       ${c ? `<div class="card"><h3>Chỉnh sửa nhân vật (${esc(u.character.clsName)})</h3><div class="row">
         <label>Tên<input id="e-name" value="${esc(c.name)}" style="width:130px"></label><label>Cấp<input id="e-level" type="number" value="${c.level}" style="width:80px"></label>
         <label>Ngân lượng<input id="e-gold" type="number" value="${c.gold}" style="width:120px"></label><label>Nguyên bảo<input id="e-knb" type="number" value="${c.knb}" style="width:100px"></label>
@@ -483,7 +483,8 @@
         <label>Lý do khóa<input id="e-reason" value="${esc(u.banReason)}"></label>${u.banned ? '<button class="btn ok" id="e-unban">Mở khóa</button>' : '<button class="btn danger" id="e-ban">Khóa tài khoản</button>'}
         <label>Cấm chat (phút, 0 = bỏ)<input id="e-mute" type="number" value="60" style="width:100px"></label><button class="btn" id="e-mutebtn">Áp dụng</button>
         ${u.online ? '<button class="btn" id="e-kick">Kick</button>' : ''}
-        <button class="btn" id="e-gm">${u.isGM ? 'Bỏ quyền GM' : 'Cấp quyền GM'}</button></div>
+        <button class="btn" id="e-gm">${u.isGM ? 'Bỏ quyền GM' : 'Cấp quyền GM'}</button>
+        <button class="btn" id="e-tester" title="Tester: vào game được cả khi máy chủ bảo trì, có danh hiệu 【Tester】 hiệu ứng riêng">${u.tester ? '🧪 Bỏ Tester' : '🧪 Cấp quyền Tester'}</button></div>
         <div class="row" style="margin-top:10px">${c ? '<button class="btn danger" id="e-reset">Xóa nhân vật</button>' : ''}<button class="btn danger" id="e-del">Xóa tài khoản</button></div></div>`);
     const again = async () => { await userDetail(id, reload); reload && reload(); };
     const on = (bid, fn) => { const b = $(bid); if (b) b.onclick = fn; };
@@ -499,6 +500,7 @@
     on('e-mutebtn', async () => { await run(() => api(`/users/${id}/mute`, { minutes: +$('e-mute').value }), 'Đã áp dụng'); again(); });
     on('e-kick', async () => { await run(() => api(`/users/${id}/kick`, {}), 'Đã kick'); again(); });
     on('e-gm', async () => { await run(() => api(`/users/${id}/update`, { isGM: !u.isGM }), 'Đã cập nhật'); again(); });
+    on('e-tester', async () => { await run(() => api(`/users/${id}/update`, { tester: !u.tester }), u.tester ? 'Đã bỏ quyền Tester' : 'Đã cấp quyền Tester – vào được cả khi bảo trì'); again(); });
     on('e-reset', async () => { if (confirm('XÓA nhân vật? Không thể hoàn tác!')) { await run(() => api(`/users/${id}/reset-char`, {}), 'Đã xóa nhân vật'); again(); } });
     on('e-del', async () => { if (confirm('XÓA toàn bộ tài khoản? Không thể hoàn tác!')) { await run(() => api(`/users/${id}`, null, 'DELETE'), 'Đã xóa tài khoản'); closeModal(); reload && reload(); } });
     document.querySelectorAll('#m-body [data-rm]').forEach(a => a.onclick = async () => { await run(() => api(`/users/${id}/remove-item`, { uid: a.dataset.rm }), 'Đã xóa'); again(); });
