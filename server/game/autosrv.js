@@ -15,6 +15,11 @@ const IDLE_GRACE = 3000;          // máy khách im lặng 3 giây (không gửi
 const HB_LOST = 8000;             // mất nhịp tim 8 giây (điện thoại tắt màn / khoá máy, trang bị đóng băng): máy chủ cầm lái luôn
 const RANK = { common: 0, rare: 1, epic: 2, legendary: 3, divine: 4 };
 const DEF = { pickup: true, pickGold: true, pickMin: 'common', pickPots: true, pickMats: true, pickBooks: true, hp: true, hpPct: 50, mp: true, mpPct: 25, skills: true, range: 700, partyAuto: false, partyFrom: 'all' };
+// Vé Treo Máy: còn hạn thì máy chủ treo hộ khi rời trang / tắt game. Không có vé vẫn bật Tự động được nhưng chỉ khi đang mở game,
+// và cứ mỗi lượt 5–30 phút bị hỏi mã xác nhận ngẫu nhiên: 15 giây không bấm đúng thì bị đưa ra khỏi game (chống treo bỏ mặc).
+const FAST = !!process.env.CAP_FAST;   // chỉ để kiểm thử: hỏi mã sau 5–10 giây
+const CAP_MIN = FAST ? 5000 : 5 * 60000, CAP_MAX = FAST ? 10000 : 30 * 60000, CAP_TIME = 15000;
+const hasTicket = c => (c.autoTicket || 0) > Date.now();
 const clamp = (v, a, b) => Math.max(a, Math.min(b, Number.isFinite(+v) ? +v : a));
 
 class AutoSrv {
@@ -30,6 +35,8 @@ class AutoSrv {
     if (cfg.partyFrom !== 'all' && cfg.partyFrom !== 'friend') cfg.partyFrom = 'all';
     const a = p.autoSrv || (p.autoSrv = { skip: new Map() });
     a.on = !!d.on; a.cfg = cfg;
+    if (a.on && !(p.capAt > Date.now())) p.capAt = Date.now() + CAP_MIN + Math.random() * (CAP_MAX - CAP_MIN);   // lịch hỏi mã (giữ lịch cũ nếu bật lại)
+    if (!a.on && p.cap) { p.cap = null; p.socket.emit('captcha', { close: 1 }); }
     a.block = new Set(Array.isArray(d.block) ? d.block.slice(0, 200).filter(x => typeof x === 'string').map(x => x.toLowerCase().slice(0, 30)) : []);   // tên bị chặn (tự vào tổ đội bỏ qua)
     if (a.on) {
       const hx = +d.hx, hy = +d.hy, ok = Number.isFinite(hx) && Number.isFinite(hy) && Math.hypot(hx - p.x, hy - p.y) < 1500;
@@ -56,7 +63,7 @@ class AutoSrv {
   // mất kết nối khi đang bật tự động ở bãi luyện: giữ nhân vật lại cho máy chủ treo hộ
   canOffline(p) {
     const a = p.autoSrv, def = MAPS[p.mapId];
-    return !!(a && a.on && !p.dead && def && !def.safe && !def.instance && !def.duelArena && !p.duel && p.mapId === a.homeMap && !this.w.escort.carts.has(p.userId));
+    return !!(a && a.on && hasTicket(p.c) && !p.dead && def && !def.safe && !def.instance && !def.duelArena && !p.duel && p.mapId === a.homeMap && !this.w.escort.carts.has(p.userId));
   }
   goOffline(p) { p.offline = Date.now(); p.away = true; }
   // máy chủ khởi động lại (cập nhật bản mới): ghi lại ai đang treo ở bãi luyện để khởi động xong treo tiếp cho họ
@@ -105,8 +112,9 @@ class AutoSrv {
     for (const p of [...this.w.players.values()]) {
       const a = p.autoSrv;
       if (!a) continue;
-      if (p.offline && now - p.offline > OFFLINE_MAX) { this.endOffline(p, 'time'); continue; }
-      const on = a.on && (p.offline || (p.away && now - (p.lastClientMove || 0) > IDLE_GRACE) || (p.lastHb && now - p.lastHb > HB_LOST));
+      if (p.offline && (now - p.offline > OFFLINE_MAX || !hasTicket(p.c))) { this.endOffline(p, 'time'); continue; }
+      if (this.captchaTick(p, a, now)) continue;   // bị đưa ra khỏi game
+      const on = a.on && hasTicket(p.c) && (p.offline || (p.away && now - (p.lastClientMove || 0) > IDLE_GRACE) || (p.lastHb && now - p.lastHb > HB_LOST));
       if (!on) { if (a.active) { a.active = false; p.moving = false; } continue; }
       if (!a.active) {
         a.active = true; a.since = now; a.goal = null; a.target = null; a.drop = null; a.chase = null;
@@ -114,6 +122,49 @@ class AutoSrv {
       }
       this.step(p, a, now);
     }
+  }
+
+  // ---------- mã xác nhận khi treo không có vé ----------
+  captchaTick(p, a, now) {
+    if (p.offline || !a.on || hasTicket(p.c) || this.w.isGm(p)) { if (p.cap) { p.cap = null; p.socket.emit('captcha', { close: 1 }); } return; }
+    if (p.cap) { if (now > p.cap.until) { this.captchaFail(p); return true; } return; }
+    if (now >= (p.capAt || Infinity)) this.captchaAsk(p, now);
+  }
+  captchaAsk(p, now, keepUntil) {
+    const code = String(Math.floor(1000 + Math.random() * 9000));
+    p.cap = { code, until: keepUntil || now + CAP_TIME, tries: p.cap ? p.cap.tries : 0 };
+    p.socket.emit('captcha', { code, left: p.cap.until - now });
+  }
+  captchaAnswer(p, d) {
+    const cap = p.cap;
+    if (!cap) return;
+    if (String(d && d.code || '') === cap.code) {
+      p.cap = null; p.capAt = Date.now() + CAP_MIN + Math.random() * (CAP_MAX - CAP_MIN);
+      p.socket.emit('captcha', { ok: 1 });
+      return;
+    }
+    if (++cap.tries >= 3) return this.captchaFail(p);
+    this.captchaAsk(p, Date.now(), cap.until);   // sai: mã mới, vẫn trong 15 giây cũ
+    p.socket.emit('toast', { text: `Sai mã xác nhận (còn ${3 - cap.tries} lần)`, type: 'error' });
+  }
+  captchaFail(p) {
+    p.cap = null; p.capAt = 0;
+    if (p.autoSrv) p.autoSrv.on = false;
+    p.socket.emit('kicked', { reason: '⏰ Bạn không xác nhận mã treo máy trong 15 giây nên đã bị đưa ra khỏi game.\n\nMua "Vé Treo Máy" ở Kỳ Trân Các để treo máy 6–8 giờ không bị hỏi mã và được máy chủ treo hộ khi tắt game.' });
+    this.w.db.log('auto', `${p.c.name} bị đưa ra khỏi game vì không xác nhận mã treo máy`);
+    this.w.removePlayer(p);
+    try { p.socket.disconnect(true); } catch (e) { }
+  }
+  // dùng Vé Treo Máy: cộng 6–8 giờ treo (cộng dồn vào thời hạn còn lại)
+  useTicket(p, uid) {
+    const c = p.c, now = Date.now(), add = Math.round((6 + Math.random() * 2) * 3600e3);
+    if (hasTicket(c) && c.autoTicket - now > 16 * 3600e3) return this.w.toast(p, 'Thời hạn treo máy còn hơn 16 giờ, dùng sau nhé', 'error');
+    U.removeByUid(c, uid, 1);
+    c.autoTicket = Math.max(now, c.autoTicket || 0) + add;
+    if (p.cap) { p.cap = null; p.socket.emit('captcha', { close: 1 }); }
+    const h = Math.floor(add / 3600e3), m = Math.round(add % 3600e3 / 60000), left = c.autoTicket - now;
+    this.w.toast(p, `🎫 Vé Treo Máy: +${h} giờ ${m} phút (còn tổng ${Math.floor(left / 3600e3)} giờ ${Math.round(left % 3600e3 / 60000)} phút). Treo máy không bị hỏi mã, tắt game máy chủ vẫn treo hộ.`, 'reward');
+    p.dirtyMe = true; this.w.db.markDirty();
   }
 
   step(p, a, now) {
@@ -226,4 +277,4 @@ class AutoSrv {
     return best;
   }
 }
-module.exports = { AutoSrv, OFFLINE_MAX };
+module.exports = { hasTicket, AutoSrv, OFFLINE_MAX };

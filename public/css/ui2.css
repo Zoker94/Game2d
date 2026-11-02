@@ -298,3 +298,23 @@ body.touch #chat-emo { min-width: 36px; font-size: 16px; }
 /* nút vào nhóm Zalo (bảng bảo trì) */
 #modal-btns .btn.zalo { background: linear-gradient(180deg, #2a8cff, #0a5ad8); border-color: #6ab0ff; color: #fff; }
 #btn-pk .pk-pts { color: #ff4a4a; font-weight: 900; text-shadow: 0 0 4px rgba(255,0,0,.6); }
+/* mã xác nhận treo máy */
+#captcha { position: fixed; inset: 0; z-index: 100001; background: rgba(0,0,0,.65); display: flex; align-items: center; justify-content: center; }
+#captcha .cp-box { width: 300px; max-width: 92vw; background: #171c26; border: 2px solid #ffd76a; border-radius: 16px; padding: 14px; text-align: center; color: #eee; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+#captcha h3 { margin: 0 0 6px; color: #ffd76a; }
+#captcha canvas { display: block; margin: 8px auto; border-radius: 10px; border: 1px solid #3a4a60; }
+#captcha .cp-val { font: 900 24px "Be Vietnam Pro", monospace; letter-spacing: 4px; color: #fff; margin: 4px 0 8px; }
+#captcha .cp-keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+#captcha .cp-keys button { padding: 10px 0; font: 800 20px "Be Vietnam Pro", sans-serif; border-radius: 10px; border: 1px solid #3a4a60; background: #232b3a; color: #fff; cursor: pointer; }
+#captcha .cp-keys button:active { background: #33405a; }
+#captcha .cp-keys button[data-k="✓"] { background: linear-gradient(180deg, #3ad07a, #168a48); border-color: #6af0a0; }
+#captcha .cp-time { position: relative; height: 16px; margin: 10px 0 4px; border-radius: 8px; background: #2a1a1a; overflow: hidden; }
+#captcha .cp-time i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, #ff5a3a, #ffd76a); transition: width .2s linear; }
+#captcha .cp-time span { position: relative; font-size: 11px; font-weight: 800; line-height: 16px; }
+#captcha .cp-box .cp-keys { margin-top: 8px; }
+@media (max-height: 560px) {
+  #captcha .cp-box { width: 560px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: center; padding: 10px 12px; }
+  #captcha .cp-box .cp-keys { margin-top: 0; }
+  #captcha .cp-keys button { padding: 7px 0; font-size: 18px; }
+  #captcha h3 { font-size: 15px; }
+}

@@ -417,6 +417,7 @@
     Social.bind(s);
     Party.bind(s);
     Mining.bind(s);
+    Captcha.bind(s);
     Travel.bind(s);
     Dungeon.bind(s);
     SectUI.bind(s);
@@ -1992,7 +1993,7 @@
   // quay lại tab: bỏ khoảng thời gian ẩn khỏi đo đạc (rAF tự dừng khi tab ẩn nên không tốn pin lúc đó)
   // Rời trang (chuyển tab, điện thoại thoát ra màn hình chính / tắt màn hình) hoặc bật màn đen: trình duyệt dừng
   // vòng lặp của trang, nên giao tự động cho máy chủ treo hộ (server/game/autosrv.js). Quay lại thì máy chủ trả lái
-  // và gửi vị trí thật (sự kiện 'pos'). Mất kết nối khi đang tự động: máy chủ vẫn treo hộ tối đa 8 giờ.
+  // và gửi vị trí thật (sự kiện 'pos'). Chỉ người có Vé Treo Máy mới được máy chủ treo hộ (mất kết nối: tới khi hết vé, tối đa 8 giờ).
   function sendAutoSrv() {
     if (!G.socket || !G.inGame || !G.map) return;
     const h = G.autoHome || G.self;
@@ -2013,8 +2014,9 @@
     if (!el || !me) return;
     const ep = me.expNext ? (me.exp / me.expNext * 100).toFixed(1) : '0';
     el.style.transform = `translate(${(Math.random() - 0.5) * 120 | 0}px, ${(Math.random() - 0.5) * 160 | 0}px)`;   // dịch chữ: màn OLED không lưu ảnh khi treo lâu
-    el.querySelector('.bo-info').textContent = `${me.name} · Cấp ${me.level} (${ep}%)\nSinh lực ${Math.max(0, Math.round(me.hp)).toLocaleString('vi-VN')}/${me.stats.maxHp.toLocaleString('vi-VN')}${me.dead ? ' – ĐÃ BỊ HẠ' : ''}\n💰 ${me.gold.toLocaleString('vi-VN')} lượng\n🤖 Tự động: ${G.auto ? (G.map && G.map.safe ? 'bật (đang ở thành – không đánh)' : 'bật – máy chủ đang treo hộ') : 'tắt'}`;
+    el.querySelector('.bo-info').textContent = `${me.name} · Cấp ${me.level} (${ep}%)\nSinh lực ${Math.max(0, Math.round(me.hp)).toLocaleString('vi-VN')}/${me.stats.maxHp.toLocaleString('vi-VN')}${me.dead ? ' – ĐÃ BỊ HẠ' : ''}\n💰 ${me.gold.toLocaleString('vi-VN')} lượng\n🤖 Tự động: ${G.auto ? (G.map && G.map.safe ? 'bật (đang ở thành – không đánh)' : (hasTicket() ? 'bật – máy chủ đang treo hộ' : 'bật – máy đang tự chạy (không có Vé Treo Máy: vẫn bị hỏi mã xác nhận)')) : 'tắt'}`;
   }
+  const hasTicket = () => !!(G.me && G.me.autoTicket > Date.now());   // Vé Treo Máy: chỉ người có vé mới được máy chủ treo hộ
   G.setBlackout = on => {
     on = !!on;
     if (on === !!G.blackout || (on && !G.inGame)) return;
@@ -2030,14 +2032,14 @@
     el.classList.toggle('hidden', !on);
     document.body.classList.toggle('blackout', on);
     clearInterval(boTimer);
-    if (on) { G.moveTo = null; boInfo(); boTimer = setInterval(boInfo, 3000); setAway(true); return; }
+    if (on) { boInfo(); boTimer = setInterval(boInfo, 3000); if (hasTicket()) { G.moveTo = null; setAway(true); } return; }   // không vé: máy tự chạy tiếp dưới màn đen
     setAway(false);
     last = performance.now(); gfx.win = []; G.lastInput = last;
     if (loopParked) { loopParked = false; requestAnimationFrame(loop); }
   };
   document.addEventListener('keydown', e => { if (G.blackout && e.code === 'Escape') G.setBlackout(false); });
   function loop(now) {
-    if (G.blackout) { loopParked = true; return; }   // màn đen: dừng hẳn vòng lặp, bật lại thì chạy tiếp
+    if (G.blackout && hasTicket()) { loopParked = true; return; }   // màn đen (có vé): dừng hẳn vòng lặp cho máy chủ treo hộ, bật lại thì chạy tiếp
     const budget = frameBudget(now);
     if (budget && now - last < budget - 4) { if (G.inGame) requestAnimationFrame(loop); return; }   // bỏ khung (màn 60/120Hz)
     const dt = Math.min(0.1, (now - last) / 1000);   // khung chậm vẫn đi đúng quãng (trước giới hạn 0,05 làm nhân vật như bị hãm lại)
