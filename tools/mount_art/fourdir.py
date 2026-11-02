@@ -3,7 +3,7 @@
 #   Ghép sheet vào game:               python3 fourdir.py build [id ...]
 # Chạy SAU build.py / views.py (ghi đè public/assets/mounts/<id>.png). Hắc Mã dùng hacma.py.
 # Hàng sheet: 0 ngang (quay phải) | 1 trước-lớp sau | 2 trước-lớp đè người cưỡi (đầu, cổ, ngực) | 3 sau-lớp sau | 4 sau-lớp đè (mông, đuôi)
-import json, os, sys
+import json, math, os, sys
 import numpy as np
 from PIL import Image
 from scipy import ndimage as nd
@@ -91,7 +91,8 @@ def build(mid):
     # khôi phục pixel art: về lưới ô gốc (~4,16px ở ảnh 2000px), bảng màu chung, viền rõ, phóng bội số nguyên
     bsz = lambda nm: cfg['side_b'] if nm.startswith('side') and 'side_b' in cfg else cfg.get('b', 4.16)
     fr, SCALE = pixfix.prepare({nm: raw(nm) for nm in names}, off, bsz, cfg['h'], names[:cfg['side']], cfg.get('colors', 112))
-    K = SCALE
+    K = SCALE; n = pixfix.LAST_N
+    S_ = lambda v: int(round(v / n)) * n; UPn = lambda v: -(-int(math.ceil(v)) // n) * n   # căn theo lưới điểm ảnh gốc
     side = [fr[f'side_{k}'] for k in range(cfg['side'])]
     front = [fr[f'front_{k}'] for k in range(cfg['front'])]
     back = [fr[f'back_{k}'] for k in range(cfg['back'])]
@@ -100,12 +101,12 @@ def build(mid):
     si_ = [round(k * len(side) / NR) % len(side) for k in range(NR)]
     cols = [(side[0], front[0], back[0])] + [(side[si_[k]], front[fi_[k]], back[bi_[k]]) for k in range(NR)]
     allf = [f for c in cols for f in c]
-    CW = max(im.width for im, _ in allf) + 2 * PAD
+    CW = UPn(max(im.width for im, _ in allf) + 2 * PAD)
     gnd = lambda fr, f=max: f(o + im.height for im, o in fr)
     GS, GF, GB = gnd(side), gnd(front), gnd(back, min)
-    base = max(GS, GF, GB) + 2
+    base = max(GS, GF, GB) + n
     DS, DF, DB = base - GS, base - GF, base - GB
-    CH = base + PAD
+    CH = UPn(base + PAD)
     NT = len(cols)
     sheet = Image.new('RGBA', (CW * NT, CH * 5)); seats = {'side': [], 'down': [], 'up': []}
     def top_at(im, x):
@@ -113,7 +114,7 @@ def build(mid):
     for ci, ((si, so), (fi, fo), (bi, bo)) in enumerate(cols):
         x0 = ci * CW
         al = np.asarray(si)[..., 3] > 0; ys, xs = np.nonzero(al[:int(al.shape[0] * 0.6)])
-        px = round(CW / 2 - xs.mean()); py = so + DS
+        px = S_(CW / 2 - xs.mean()); py = so + DS
         sheet.alpha_composite(si, (x0 + px, py))
         sx = cfg['seat_fx'] * si.width
         seats['side'].append([round(float(px + sx), 1), round(float(py + top_at(si, sx) + cfg['seat_dy']), 1)])
@@ -121,20 +122,23 @@ def build(mid):
         ft = np.nonzero((fa[..., 3] > 0).any(1))[0][0]   # sừng / gạc trên đỉnh đầu (ftop) vẽ sau người cưỡi, không đâm lên mặt
         y0, y1 = cfg.get('fy', (cfg['ftop'], 0.62)); x0f, x1f = cfg.get('fx', (0.24, 0.76))
         m = np.zeros((h, w), bool); m[ft + int(h * y0):int(h * y1), int(w * x0f):int(w * x1f)] = True
-        over = fa.copy(); over[~m] = 0; pxf = round(CW / 2 - w / 2); fo += DF
+        over = fa.copy(); over[~m] = 0; pxf = S_(CW / 2 - w / 2); fo += DF
         sheet.alpha_composite(fi, (x0 + pxf, CH + fo)); sheet.alpha_composite(Image.fromarray(over, 'RGBA'), (x0 + pxf, 2 * CH + fo))
         ftop = np.nonzero((fa[..., 3] > 0).any(1))[0][0]
         seats['down'].append([round(CW / 2, 1), round(float(fo + ftop + h * cfg['down']), 1)])
         ba = np.asarray(bi).copy(); h2, w2 = ba.shape[:2]; cut = int(h2 * cfg['cut'])
-        over2 = ba.copy(); over2[:cut] = 0; pxb = round(CW / 2 - w2 / 2); bo += DB
+        over2 = ba.copy(); over2[:cut] = 0; pxb = S_(CW / 2 - w2 / 2); bo += DB
         sheet.alpha_composite(bi, (x0 + pxb, 3 * CH + bo)); sheet.alpha_composite(Image.fromarray(over2, 'RGBA'), (x0 + pxb, 4 * CH + bo))
         btop = np.nonzero((ba[..., 3] > 0).any(1))[0][0]   # up: chỗ ngồi tính từ đỉnh hình (rùa: trên đỉnh mai), mặc định ngay trên lớp đè
         seats['up'].append([round(CW / 2, 1), round(float(bo + (btop + h2 * cfg['up'] if 'up' in cfg else cut + 2)), 1)])
+    # lưu ở kích thước điểm ảnh gốc (game vẽ phóng to giữ nét): bộ nhớ giảm n² lần
+    sheet = sheet.resize((sheet.width // n, sheet.height // n), Image.NEAREST)
     sheet.quantize(colors=255, method=Image.FASTOCTREE, dither=Image.NONE).save(OUT + 'mounts/' + mid + '.png', optimize=True)
+    seats = {k: [[round(x / n, 2), round(y / n, 2)] for x, y in v] for k, v in seats.items()}
     meta = json.load(open(OUT + 'mounts.json'))
-    meta['per'][mid] = {'cell': [CW, CH], 'foot': [CW / 2, int(base) - 3], 'footFB': [CW / 2, int(base) - 3],
+    meta['per'][mid] = {'cell': [CW // n, CH // n], 'foot': [CW / 2 / n, (base - 3) / n], 'footFB': [CW / 2 / n, (base - 3) / n],
                         'frames': {'idle': [0, 1], 'run': [1, NR]}, 'rows': {'side': [0], 'down': [1, 2], 'up': [3, 4]},
-                        'scale': round(SCALE, 4), 'runMs': 95, 'idleMs': 700}
+                        'scale': round(SCALE * n, 4), 'runMs': 95, 'idleMs': 700}
     if cfg.get('fly'): meta['per'][mid].update({'frames': {'idle': [1, NR], 'run': [1, NR]}, 'idleMs': 190, 'runMs': 110})   # bay: đứng yên vẫn vỗ cánh
     meta['seats'][mid] = seats; meta['seat'][mid] = seats['side']
     open(OUT + 'mounts.json', 'w').write(json.dumps(meta, default=float))

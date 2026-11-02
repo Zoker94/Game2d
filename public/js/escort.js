@@ -74,10 +74,10 @@
     ctx.save();
     ctx.font = '900 10px Be Vietnam Pro, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     const w = Math.ceil(ctx.measureText(txt).width) + 12, h = 14, pulse = 0.5 + 0.5 * Math.sin(now / 180);
-    ctx.shadowColor = red ? 'rgba(255,0,0,.9)' : 'rgba(255,90,20,.9)'; ctx.shadowBlur = 6 + pulse * 6;
-    ctx.fillStyle = red ? '#120408' : '#c01010';
-    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - w / 2, y - h / 2, w, h, 4) : ctx.rect(x - w / 2, y - h / 2, w, h); ctx.fill();
-    ctx.shadowBlur = 0; ctx.lineWidth = 1.2; ctx.strokeStyle = red ? '#ff3030' : '#ffe08a'; ctx.stroke();
+    // viền sáng nhấp nháy bằng khung to hơn trong suốt (không dùng shadowBlur – rất nặng khi vẽ mỗi khung hình)
+    ctx.globalAlpha = 0.25 + pulse * 0.35; ctx.fillStyle = red ? '#ff1a1a' : '#ff6a20'; ctx.fillRect(x - w / 2 - 2, y - h / 2 - 2, w + 4, h + 4); ctx.globalAlpha = 1;
+    ctx.fillStyle = red ? '#120408' : '#c01010'; ctx.fillRect(x - w / 2, y - h / 2, w, h);
+    ctx.beginPath(); ctx.rect(x - w / 2, y - h / 2, w, h); ctx.lineWidth = 1.2; ctx.strokeStyle = red ? '#ff3030' : '#ffe08a'; ctx.stroke();
     ctx.fillStyle = red ? '#ff4040' : '#fff4d0'; ctx.fillText(txt, x, y + 0.5);
     ctx.restore();
   }

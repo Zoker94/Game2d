@@ -88,4 +88,5 @@ def prepare(raws, offs, b, h_side, side_names, colors=112):
     hn = float(np.median([nat[nm][0].height for nm in side_names]))
     n = max(2, math.ceil(2 * h_side / hn))
     out = {nm: (up(outline(apply(im, pal)), n), round(o) * n) for nm, (im, o) in nat.items()}
+    global LAST_N; LAST_N = n   # hệ số phóng: bộ ghép căn vị trí theo bội số n rồi thu sheet về kích thước gốc (nhẹ bộ nhớ)
     return out, h_side / (hn * n)

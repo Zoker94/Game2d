@@ -696,8 +696,9 @@
     for (const k of ['hp', 'mp']) {
       const until = (G.potCd && G.potCd[k]) || 0, tot = (G.potCdTot && G.potCdTot[k]) || 1;
       const r = until > now ? (until - now) / tot : 0, txt = r ? Math.ceil((until - now) / 1000) : '';
-      for (const id of ['pot-' + k, 'btn-' + k]) {
-        const el = $(id); if (!el) continue;
+      const els = UI._potEls && UI._potEls[0].isConnected ? UI._potEls : (UI._potEls = ['pot-hp', 'btn-hp', 'pot-mp', 'btn-mp'].map(id => $(id) || { isConnected: false }));
+      for (const el of k === 'hp' ? els.slice(0, 2) : els.slice(2)) {
+        if (!el.isConnected) continue;
         let o = el._cdo, t = el._cdt;
         if (!o || !o.isConnected) { o = el.querySelector('.cdo'); t = el.querySelector('.cdt'); if (!o) { o = document.createElement('div'); o.className = 'cdo'; t = document.createElement('div'); t.className = 'cdt'; el.append(o, t); } el._cdo = o; el._cdt = t; }
         cdSet(o, Math.round(r * 100));
@@ -1719,7 +1720,7 @@
       html += '<div class="card"><p>Bạn chưa có thú cưỡi. Hãy đến <b>Mã Phu Lão Trương</b> ở Tương Dương để mua Ngựa Nâu, hoặc săn Boss / mở Kỳ Trân Các để có thú cưỡi hiếm như Bạch Hổ, Hỏa Kỳ Lân, Thanh Long!</p></div>';
     }
     body.innerHTML = html;
-    body.querySelectorAll('[data-mcv]').forEach(cv => { const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; const f = Assets.mountFrame(cv.dataset.mcv, false, 0); if (f) { c.imageSmoothingEnabled = true; c.drawImage(f.img, f.sx, f.sy + f.ch * 0.25, f.cw, f.ch * 0.75, 0, 0, 96, 72); } else { c.drawImage(Sprites.mountSprite(cv.dataset.mcv, all[cv.dataset.mcv], 0), 0, 0); if ((UI._mcvTry = (UI._mcvTry || 0) + 1) < 6) setTimeout(() => panel === 'mount' && UI.refreshPanel(true), 400); } });
+    body.querySelectorAll('[data-mcv]').forEach(cv => { const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; const f = Assets.mountFrame(cv.dataset.mcv, false, 0); if (f) { c.imageSmoothingEnabled = false; const k = Math.min(96 / f.cw, 72 / (f.ch * 0.75)); c.drawImage(f.img, f.sx, f.sy + f.ch * 0.25, f.cw, f.ch * 0.75, (96 - f.cw * k) / 2, (72 - f.ch * 0.75 * k) / 2, f.cw * k, f.ch * 0.75 * k); } else { c.drawImage(Sprites.mountSprite(cv.dataset.mcv, all[cv.dataset.mcv], 0), 0, 0); if ((UI._mcvTry = (UI._mcvTry || 0) + 1) < 6) setTimeout(() => panel === 'mount' && UI.refreshPanel(true), 400); } });
     body.querySelectorAll('[data-mount]').forEach(el => el.onclick = () => { if (owned[el.dataset.mount]) { panelState.sel = el.dataset.mount; UI.refreshPanel(); } });
     body.querySelectorAll('[data-mop]').forEach(b => b.onclick = () => emit('mount', { op: b.dataset.mop, id: sel, n: +b.dataset.n || 1 }));
   }
