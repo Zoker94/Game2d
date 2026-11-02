@@ -45,7 +45,7 @@ const TICK = 50;            // 20 tick/giây
 const SNAP_EVERY = 2;       // gửi trạng thái 10 lần/giây
 const AOI_X = 1150, AOI_Y = 800;   // vùng gửi trạng thái quanh mỗi người chơi (màn hình rộng nhất ~1920x1080 ở mức thu phóng 0,8 + lề)
 const PICKUP_R = 56;
-const GOLD_DROP_CHANCE = 0.35;   // quái thường rơi ngân lượng 35% số lần (gấp đôi lượng mỗi lần)
+const GOLD_DROP_CHANCE = 0.25, GOLD_DROP_K = 1.5;   // quái thường rơi ngân lượng 25% số lần (x1,5 lượng mỗi lần) – ≈ 37% lượng gốc
 const CLOAK_ODDS = { legendary: 0.005, epic: 0.06, rare: 0.3 };   // chế tạo áo choàng: còn lại là Thường
 // Rương Thủ Lĩnh: quái thường ~1/2.500 con, tinh anh 1,5%; boss dã ngoại rải BOSS_CHESTS rương
 const CHEST_DROP = { mob: 0.0004, elite: 0.015 };
@@ -1193,7 +1193,7 @@ class World {
       const gained = this.gainExp(p, exp);
       const gold = Math.round(tpl.gold * U.rand(0.7, 1.3) * (cfg.goldRate || 1) * (mon.boss ? share : 1));
       if (mon.boss) { p.c.gold += gold; this.features.questProgress(p, 'gold', gold); }
-      else if (Math.random() < GOLD_DROP_CHANCE) this.createGoldDrop(mon.mapId, mon.x + U.rand(-14, 14), mon.y + U.rand(-8, 8), Math.round(gold * 2), p.userId);   // không rơi mỗi con: đỡ kín màn (≈70% ngân lượng cũ)
+      else if (Math.random() < GOLD_DROP_CHANCE) this.createGoldDrop(mon.mapId, mon.x + U.rand(-14, 14), mon.y + U.rand(-8, 8), Math.round(gold * GOLD_DROP_K), p.userId);   // không rơi mỗi con: đỡ kín màn
       p.c.kills = (p.c.kills || 0) + (mon.boss ? 0 : 1);
       p.socket.emit('gain', { exp: gained, gold: mon.boss ? gold : 0, x: mon.x, y: mon.y });
       if (mon.boss) {
@@ -1872,7 +1872,7 @@ class World {
     if (!MAPS[p.mapId].npcs.some(n => NPCS[n.id].shop && this.nearNpc(p, n.id))) return this.toast(p, 'Hãy đứng gần một NPC cửa hàng để bán', 'error');
     qty = U.clamp(qty | 0 || s.qty, 1, s.qty);
     const it = ITEMS[s.id];
-    const price = Math.floor(it.price * 0.3 * (1 + (s.plus || 0) * 0.2)) * qty;
+    const price = U.sellUnit(it, s.plus) * qty;
     U.removeByUid(c, uid, qty);
     c.gold += price;
     this.toast(p, `Bán ${it.name} x${qty} được ${price} lượng`, 'reward');
@@ -1913,7 +1913,7 @@ class World {
       if (!st) continue;
       const it = ITEMS[st.id];
       if (!it || !it.price) continue;
-      gold += Math.floor(it.price * 0.3 * (1 + (st.plus || 0) * 0.2)) * st.qty;
+      gold += U.sellUnit(it, st.plus) * st.qty;
       n += st.qty;
       U.removeByUid(c, uid, st.qty);
     }

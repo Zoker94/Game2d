@@ -70,6 +70,8 @@ function rollBranch(c) {
   const mine = c && c.cls ? branchOf(c) : 'ngoai';
   return Math.random() < 0.8 ? mine : (mine === 'noi' ? 'ngoai' : 'noi');
 }
+// giá bán lại cho NPC (1 cái): trang bị 10% giá gốc, vật phẩm khác 15% (cường hoá +20%/cấp) – bán đồ rác không còn là nguồn vàng chính
+function sellUnit(it, plus = 0) { return it ? Math.floor((it.price || 0) * (it.type === 'equip' ? 0.1 : 0.15) * (1 + (plus || 0) * 0.2)) : 0; }
 function isStack(id) { const it = ITEMS[id]; return it && it.type !== 'equip'; }
 
 // binh khí chung -> vũ khí môn phái của nhân vật
@@ -290,5 +292,5 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
 
 module.exports = {
   MAX_LEVEL, INV_SIZE, INV_EXTRA_MAX, invSize, expNext, levelGapK, vnDate, vnDay, vnMinuteOfDay, rand, randInt, dist, clamp, newUid,
-  plusMult, newCharacter, addItem, resolveItem, migrateItems, freeSlots, countItem, removeItemById, removeByUid, calcStats, isStack
+  plusMult, newCharacter, addItem, resolveItem, migrateItems, freeSlots, countItem, removeItemById, removeByUid, calcStats, isStack, sellUnit
 };

@@ -13,6 +13,8 @@
   let lastDailyHtml = '';
 
   const UI = window.UI = {};
+  // giá bán lại cho NPC (1 cái) – khớp server/game/util.js sellUnit: trang bị 10%, vật phẩm khác 15%, +20%/cấp cường hoá
+  UI.sellUnit = (it, plus = 0) => it ? Math.floor((it.price || 0) * (it.type === 'equip' ? 0.1 : 0.15) * (1 + (plus || 0) * 0.2)) : 0;
 
   // binh khí chung -> vũ khí môn phái của mình (để hiện đúng tên/biểu tượng)
   function resolveId(id) {
@@ -282,7 +284,7 @@
     return `<h4>${itemName(id, plus)}</h4>
       <div class="muted small">${it.type === 'equip' ? G.data.slots[it.slot] + ' · ' : ''}<span style="color:${rar.color}">${rar.name}</span> · Yêu cầu cấp ${it.lv || 1}</div>${clsLine}${bdLine(inst)}
       ${statsHtml(it, plus, inst && inst.br)}${brLine(it, inst, plus)}${elemFxHtml(it, inst)}${dvSetHtml(it)}${it.effect && it.effect.vmStudy ? `<div class="small ${(G.me.vmb | 0) >= 5 ? 'warn' : 'ok-t'}">📜 Đã lĩnh hội ${G.me.vmb | 0}/5 lần${(G.me.vmb | 0) >= 5 ? ' – đã đạt tối đa, không thể học thêm (có thể bán / giao dịch cho người khác)' : ''}</div>${(G.me.vmb | 0) < 5 ? (() => { const n = G.me.inv.filter(x => x.id === 'vm_tamphap').reduce((a, x) => a + x.qty, 0); return `<div class="small ${n ? 'ok-t' : 'warn'}">Cần 1 Võ Mục Tâm Pháp mỗi lần học (đang có ${n})</div>`; })() : ''}` : ''}${it.desc ? `<div class="small">${esc(it.desc)}</div>` : ''}
-      <div class="small muted">Giá bán: ${fmt(Math.floor(it.price * 0.3 * (1 + (plus || 0) * 0.2)))} lượng</div>`;
+      <div class="small muted">Giá bán: ${fmt(UI.sellUnit(it, plus))} lượng</div>`;
   }
 
   // ================= HUD =================
@@ -999,7 +1001,7 @@
       }
     }
     if (!s.equipped && (s.id.startsWith('hp') || s.id.startsWith('mp'))) btns += `<button class="btn small" data-act="quick">Đặt thuốc nhanh</button>`;
-    if (ctx.shop && !s.equipped) btns += `<button class="btn small" data-act="sell">Bán (${fmt(Math.floor(it.price * 0.3 * (1 + (s.plus || 0) * 0.2)) * s.qty)})</button>`;
+    if (ctx.shop && !s.equipped) btns += `<button class="btn small" data-act="sell">Bán (${fmt(UI.sellUnit(it, s.plus) * s.qty)})</button>`;
     let extra = '';
     if (ctx.enhance && it.type === 'equip') {
       extra = enhanceBox(s, it);
@@ -1842,7 +1844,7 @@
   const QS_KEY = 'vl_quicksell';
   let qs = { common: true, rare: false, epic: false, legendary: false, keepPlus: true, mats: false };
   try { Object.assign(qs, JSON.parse(localStorage.getItem(QS_KEY) || '{}')); } catch (e) { }
-  const sellPrice = s => { const it = G.data.items[s.id]; return Math.floor((it.price || 0) * 0.3 * (1 + (s.plus || 0) * 0.2)) * s.qty; };
+  const sellPrice = s => UI.sellUnit(G.data.items[s.id], s.plus) * s.qty;
   // món khớp bộ lọc: trang bị theo phẩm chất (+ tuỳ chọn giữ đồ đã cường hoá), nguyên liệu rác nếu bật
   function quickList() {
     return G.me.inv.filter(s => {
