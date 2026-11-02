@@ -90,7 +90,8 @@ class Fishing {
     if (f.st !== 'bite') return;
     this.useBait(p);
     this.stop(p, true);
-    this.land(p);
+    const got = this.land(p);
+    if (got) this.w.io.to('map:' + p.mapId).emit('fishLine', { id: p.id, off: 1, got });
   }
   tick(now) {
     for (const p of this.w.players.values()) {
@@ -99,6 +100,7 @@ class Fishing {
       if (f.st === 'wait' && now >= f.biteAt) {
         f.st = 'bite'; f.end = now + BITE_MS;
         p.socket.emit('fish', { st: 'bite', ms: BITE_MS });
+        this.w.io.to('map:' + p.mapId).emit('fishLine', { id: p.id, bite: 1 });   // người xung quanh thấy cần oằn
         if (f.auto) f.autoAt = now + 450;
       } else if (f.st === 'bite') {
         if (f.autoAt && now >= f.autoAt) {   // Vé Treo Máy: tự giật cần
@@ -126,14 +128,14 @@ class Fishing {
   land(p) {
     const c = p.c, g = this.roll(p);
     c.fishN = (c.fishN || 0) + 1;
-    if (g === 'junk') { this.w.giveItem(p, 'fish_junk', 1); p.socket.emit('fish', { st: 'got', id: 'fish_junk' }); return; }
+    if (g === 'junk') { this.w.giveItem(p, 'fish_junk', 1); p.socket.emit('fish', { st: 'got', id: 'fish_junk' }); return 'fish_junk'; }
     if (g === 'treasure') {
       const GEMS = ['ruby', 'emerald', 'sapphire', 'topaz', 'amethyst'], x = Math.random();
       const id = x < 0.45 ? 'stone' : x < 0.75 ? `gem_${GEMS[U.randInt(0, 4)]}_${Math.random() < 0.75 ? 1 : 2}` : x < 0.95 ? 'lucky_chest' : 'boss_chest';
       this.w.giveItem(p, id, id === 'stone' ? U.randInt(2, 4) : 1);
       p.socket.emit('fish', { st: 'got', id, treasure: 1 });
       if (id === 'boss_chest') this.f.brag(`🎣 ${c.name} câu được Rương Thủ Lĩnh dưới đáy ${MAPS[p.mapId].name}!`);
-      return;
+      return 'fish_junk';
     }
     const pool = BY_G(g), id = pool[U.randInt(0, pool.length - 1)], fd = FISH[id];
     const kg = Math.round((fd.kg[0] + Math.pow(Math.random(), 2.2) * (fd.kg[1] - fd.kg[0])) * 10) / 10;
@@ -145,6 +147,7 @@ class Fishing {
     p.socket.emit('fish', { st: 'got', id, kg, rec });
     if (g === 'l') this.f.brag(`🐉 ${c.name} câu được ${ITEMS[id].name} nặng ${kg} cân tại ${MAPS[p.mapId].name}!`);
     else if (g === 'e' && kg >= 20) this.f.brag(`🎣 ${c.name} câu được ${ITEMS[id].name} ${kg} cân!`);
+    return id;
   }
 
   // ---------- nấu ăn ----------
