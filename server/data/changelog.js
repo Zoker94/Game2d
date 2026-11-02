@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '📣 Tin triệu hồi Boss Thần Binh và rơi Thần Binh giờ chạy ngang trên cùng màn hình thay vì bật hộp thoại che màn hình.',
       '⚔️ Khu thường của bãi luyện (cho phép PK) nhận thêm +20% kinh nghiệm so với Khu VIP an toàn. Boss bãi luyện giờ xuất hiện ở một khu ngẫu nhiên (thông báo ghi rõ khu), không bao giờ ra ở Khu VIP.',
       '⛰️ Hoa Sơn Luận Kiếm: tới lượt đấu sẽ hiện bảng xác nhận 10 giây. Không bấm "Xác nhận vào trận" (đang treo máy, rời máy…) sẽ bị xử thua; cả hai cùng không bấm thì cả hai bị loại.',
       '🔒 Chống nuôi tài khoản clone: phải đạt CẤP 30 mới được giao dịch với người chơi khác, mở sạp / mua đồ ở Chợ Phiên và nhận thưởng mời bạn. Quà mời bạn bắt đầu từ mốc bạn được mời đạt cấp 30 (gộp quà mốc cấp 10 cũ vào); quà nhập môn của người được mời phát khi đạt cấp 30.',

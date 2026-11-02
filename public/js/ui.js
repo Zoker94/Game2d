@@ -771,11 +771,11 @@
     if (!box || !d) { pinBusy = false; if (box) box.classList.remove('on'); return; }
     pinBusy = true;
     const el = document.createElement('div');
-    el.className = 'p'; el.textContent = '📌 ' + d.text;
+    el.className = 'p' + (d.kind ? ' ' + d.kind : ''); el.textContent = (d.kind === 'boss' ? '' : '📌 ') + d.text;
     box.innerHTML = ''; box.appendChild(el); box.classList.add('on');
     const W = box.clientWidth, w = el.offsetWidth, dur = (W + w) / 85 * 1000;   // ~85 px/giây
     const a = el.animate([{ transform: 'translateX(0)' }, { transform: `translateX(${-(W + w)}px)` }], { duration: dur, easing: 'linear', fill: 'forwards' });
-    let n = 2;   // mỗi lượt chạy 2 vòng cho dễ đọc
+    let n = d.loops || 2;   // mỗi lượt chạy 2 vòng cho dễ đọc (tin boss: 1 vòng)
     a.onfinish = () => { if (--n > 0 && box.contains(el)) a.play(); else { el.remove(); setTimeout(nextPin, 600); } };
   }
   const chatLog = [];

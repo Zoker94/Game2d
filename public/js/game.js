@@ -424,7 +424,8 @@
     });
     s.on('cd', d => { const sk = mySkills()[d.idx]; if (sk) { G.cds[sk.id] = G.cds[d.idx] = { until: performance.now() + d.until, total: d.until, id: sk.id }; } G.pending[d.idx] = 0; });
     s.on('toast', d => UI.toast(d.text, d.type));
-    s.on('notice', d => G.modal((d.type === 'admin' ? '📢 Thông báo từ quản trị viên:\n' : '') + d.text));
+    // boss Thần Binh (triệu hồi / rơi Thần Binh): chữ chạy ngang trên cùng màn hình, không bật hộp thoại chắn màn
+    s.on('notice', d => d.type === 'boss' ? UI.pin({ id: 'boss' + Date.now() + Math.random(), text: d.text, kind: 'boss', loops: 1 }) : G.modal((d.type === 'admin' ? '📢 Thông báo từ quản trị viên:\n' : '') + d.text));
     // chọn khu: mỗi bản đồ luyện công có 20 khu, mỗi khu tối đa 10 người
     s.on('channels', d => showChannels(d));
     function showChannels(d) {
