@@ -23,6 +23,7 @@ CFG = {
     # fy/fx: vùng lớp đè người cưỡi ở hướng trước (tỉ lệ cao/rộng); rùa: chỉ đầu + chân trước, bò: cả cặp sừng rộng
     'kim_quy': dict(h=82, front=6, back=6, side=5, seat_fx=0.52, seat_dy=6, down=0.04, cut=0.72, up=0.14, ftop=0.0, fy=(0.58, 1.0), fx=(0.15, 0.85), shadow=(159, 160, 139), hole=(20, 60)),
     'kim_nguu': dict(h=96, front=6, back=6, side=5, seat_fx=0.45, seat_dy=6, down=0.22, cut=0.42, ftop=0.0, fy=(0.38, 0.95), fx=(0.0, 1.0), shadow=(181, 154, 145), hole=(20, 60)),
+    'ngua_nau': dict(h=100, front=8, back=8, side=5, seat_fx=0.50, seat_dy=8, down=0.16, cut=0.45, ftop=0.0, shadow=None, hole=(20, 60)),
     'hoa_ky_lan': dict(h=104, b=3.6, front=6, back=6, side=7, seat_fx=0.47, seat_dy=8, down=0.17, cut=0.44, ftop=0.10, shadow=(147, 120, 112), hole=(26, 25)),
 }
 

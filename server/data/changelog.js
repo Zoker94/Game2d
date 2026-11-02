@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🐴 Ngựa Nâu có hình 4 hướng mới vẽ tay: mặt trước, sau lưng (đuôi bay theo nhịp), nhìn ngang phi nước kiệu với yên và túi hành lý.',
       '🔥 Phượng Hoàng nhìn ngang vẽ lại đúng dáng chim hai chân: bước chân luân phiên, cánh lửa vỗ theo nhịp, người cưỡi ngồi trên lưng.',
       '✨ Làm nét lại hình 7 thú cưỡi vẽ tay (Hắc Mã, Bạch Mã, Hỏa Kỳ Lân, Thanh Long, Phượng Hoàng, Kim Quy, Kim Ngưu): cắt sạch nền và chấm thừa, khôi phục từng điểm ảnh, viền rõ, màu tươi hơn – không còn bị mờ nhòe.',
       '🐢 Kim Quy và Kim Ngưu có hình 4 hướng mới vẽ tay: mặt trước, sau lưng, nhìn ngang với dáng bước chậm chắc.',

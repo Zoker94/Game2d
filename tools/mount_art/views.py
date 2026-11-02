@@ -482,6 +482,6 @@ def build(name):
 
 if __name__ == '__main__':
     import sys
-    names = sys.argv[1:] or [k for k in P if k not in ('hac_ma', 'bach_ma', 'hoa_ky_lan', 'thanh_long', 'phuong_hoang', 'kim_quy', 'kim_nguu')]   # có ảnh 4 hướng vẽ tay: hacma.py, fourdir.py
+    names = sys.argv[1:] or [k for k in P if k not in ('hac_ma', 'bach_ma', 'hoa_ky_lan', 'thanh_long', 'phuong_hoang', 'kim_quy', 'kim_nguu', 'ngua_nau')]   # có ảnh 4 hướng vẽ tay: hacma.py, fourdir.py
     for nm in names:
         build(nm); print('ok', nm)
