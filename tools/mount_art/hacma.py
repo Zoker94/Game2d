@@ -22,15 +22,17 @@ def crisp(im):
     if n > 1:   # bỏ chấm lẻ
         sz = nd.sum(al, lab, range(1, n + 1)); a[np.isin(lab, [i + 1 for i, z in enumerate(sz) if z < 40]), 3] = 0
     return Image.fromarray(a, 'RGBA')
-def load(name, flip=False):
-    im = Image.open(SRC + name + '.png').convert('RGBA')
-    if flip: im = im.transpose(Image.FLIP_LEFT_RIGHT)
-    w, h = round(im.width * K), round(im.height * K)
-    return crisp(im.resize((w, h), Image.LANCZOS)), round(off[name][0] * K)
-
-side = [load(f'side_{k}', flip=(k != 3)) for k in range(8)]   # ảnh gốc quay trái (riêng khung 4 quay phải) -> quay phải hết
-front = [load(f'front_{k}') for k in range(7)]
-back = [load(f'back_{k}') for k in range(7)]
+def raw(name, flip=False):
+    im = crisp(Image.open(SRC + name + '.png').convert('RGBA'))   # khử viền sáng ở độ phân giải gốc
+    return im.transpose(Image.FLIP_LEFT_RIGHT) if flip else im
+import pixfix
+RAW = {f'side_{k}': raw(f'side_{k}', flip=(k != 3)) for k in range(8)}   # ảnh gốc quay trái (riêng khung 4 quay phải) -> quay phải hết
+RAW.update({f'front_{k}': raw(f'front_{k}') for k in range(7)}); RAW.update({f'back_{k}': raw(f'back_{k}') for k in range(7)})
+# khôi phục pixel art: ô gốc ~5,72px (ảnh 2752px), bảng màu chung, viền rõ, phóng bội số nguyên
+FR, SCALE = pixfix.prepare(RAW, {k: off[k][0] for k in RAW}, 5.72, 104, [f'side_{k}' for k in range(8)])
+side = [FR[f'side_{k}'] for k in range(8)]
+front = [FR[f'front_{k}'] for k in range(7)]
+back = [FR[f'back_{k}'] for k in range(7)]
 NR = 8
 fb_idx = [round(k * 7 / NR) % 7 for k in range(NR)]          # 7 khung trước/sau trải đều cho 8 nhịp chạy
 cols = [(side[0], front[0], back[0])] + [(side[k], front[fb_idx[k]], back[fb_idx[k]]) for k in range(NR)]
@@ -86,7 +88,7 @@ sheet.quantize(colors=255, method=Image.FASTOCTREE, dither=Image.NONE).save(OUT 
 meta = json.load(open(OUT + 'mounts.json'))
 meta['per']['hac_ma'] = {'cell': [CW, CH], 'foot': [CW / 2, int(base) - 3], 'footFB': [CW / 2, int(base) - 3],
                          'frames': {'idle': [0, 1], 'run': [1, NR]}, 'rows': {'side': [0], 'down': [1, 2], 'up': [3, 4]},
-                         'scale': 0.5, 'runMs': 95, 'idleMs': 700}
+                         'scale': round(SCALE, 4), 'runMs': 95, 'idleMs': 700}
 meta['seats']['hac_ma'] = seats
 meta['seat']['hac_ma'] = seats['side']
 txt = json.dumps(meta, default=float)

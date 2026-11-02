@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '✨ Làm nét lại hình 7 thú cưỡi vẽ tay (Hắc Mã, Bạch Mã, Hỏa Kỳ Lân, Thanh Long, Phượng Hoàng, Kim Quy, Kim Ngưu): cắt sạch nền và chấm thừa, khôi phục từng điểm ảnh, viền rõ, màu tươi hơn – không còn bị mờ nhòe.',
       '🐢 Kim Quy và Kim Ngưu có hình 4 hướng mới vẽ tay: mặt trước, sau lưng, nhìn ngang với dáng bước chậm chắc.',
       '🐉 Thanh Long và Phượng Hoàng có hình 4 hướng mới vẽ tay: dang cánh vỗ theo nhịp ở mọi hướng (cả lúc đứng yên), đuôi uốn lượn khi bay.',
       '🦄 Bạch Mã và Hỏa Kỳ Lân có hình 4 hướng mới vẽ tay: mặt trước, sau lưng, nhìn ngang với dáng chạy; bờm và đuôi đung đưa theo nhịp.',
