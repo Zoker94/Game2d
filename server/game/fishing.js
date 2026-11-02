@@ -20,10 +20,10 @@ const BY_G = g => Object.keys(FISH).filter(id => FISH[id].g === g);
 // món ăn: nguyên liệu (nhóm cá 'c' = cá thường bất kỳ, 'r' = cá hiếm bất kỳ, hoặc id cụ thể), ngân lượng, hiệu quả
 const DISHES = {
   dish_nuong: { need: [['c', 3]], gold: 500, min: 30, buff: { exp: 0.10 } },
-  dish_canh: { need: [['c', 2], ['r', 1]], gold: 2000, min: 30, buff: { atk: 0.08, def: 0.08 } },
-  dish_lau: { need: [['c', 3], ['r', 3]], gold: 5000, min: 45, buff: { exp: 0.15, hp: 0.10 } },
-  dish_kimlong: { need: [['fish_kimlong', 1], ['r', 2]], gold: 20000, min: 60, buff: { exp: 0.25, atk: 0.12, def: 0.12, hp: 0.12 } },
-  dish_tam: { need: [['fish_tam', 1], ['c', 2]], gold: 8000, min: 45, buff: { exp: 0.18, atk: 0.06 } }
+  dish_canh: { need: [['c', 2], ['r', 1]], gold: 2000, min: 30, buff: { atk: 0.03, def: 0.03 } },
+  dish_lau: { need: [['c', 3], ['r', 3]], gold: 5000, min: 45, buff: { exp: 0.15, hp: 0.04 } },
+  dish_kimlong: { need: [['fish_kimlong', 1], ['r', 2]], gold: 20000, min: 60, buff: { exp: 0.25, atk: 0.05, def: 0.05, hp: 0.05 } },
+  dish_tam: { need: [['fish_tam', 1], ['c', 2]], gold: 8000, min: 45, buff: { exp: 0.18, atk: 0.02 } }
 };
 const NO_FISH = m => m.tongkim || m.siege || m.hoason || m.tourney || m.duelArena || m.id === 'dai_hoi';
 
