@@ -81,14 +81,14 @@
 
     async users(el) {
       el.innerHTML = `<div class="card"><div class="row"><label style="flex:1">Tìm kiếm (tài khoản, email, tên nhân vật, ID)<input id="u-q"></label>
-        <label>Lọc<select id="u-f"><option value="">Tất cả</option><option value="online">Đang online</option><option value="banned">Bị khóa</option></select></label><button class="btn primary" id="u-go">Tìm</button></div></div>
+        <label>Lọc<select id="u-f"><option value="">Tất cả</option><option value="online">Đang online</option><option value="banned">Bị khóa</option><option value="clone">🔗 Nghi clone (chung thiết bị)</option></select></label><button class="btn primary" id="u-go">Tìm</button></div></div>
         <div class="card" id="u-list"></div>`;
       const load = async () => {
         const r = await api(`/users?q=${encodeURIComponent($('u-q').value)}&filter=${$('u-f').value}`);
         $('u-list').innerHTML = `<p class="muted small">${r.total} kết quả${r.total > 200 ? ' (hiện 200)' : ''}</p><div style="overflow:auto"><table><tr><th>Nhân vật</th><th>Môn phái</th><th>Cấp</th><th>Ngân lượng</th><th>KNB</th><th>Tài khoản / Email</th><th>Đăng nhập cuối</th><th>Trạng thái</th><th></th></tr>
           ${r.users.map(u => `<tr><td><b>${esc(u.character ? u.character.name : '—')}</b></td><td>${esc(u.character ? u.character.clsName : '')}</td><td>${u.character ? u.character.level : ''}</td><td>${u.character ? fmt(u.character.gold) : ''}</td><td>${u.character ? fmt(u.character.knb) : ''}</td>
           <td class="small">${esc(u.email)}</td><td class="small">${dt(u.lastLogin)}</td>
-          <td>${u.online ? '<span class="tag on">Online</span>' : '<span class="tag off">Offline</span>'} ${u.banned ? '<span class="tag ban">Khóa</span>' : ''} ${u.muted ? '<span class="tag mute">Cấm chat</span>' : ''} ${u.isGM ? '<span class="tag gm">GM</span>' : ''} ${u.tester ? '<span class="tag tester">🧪 Tester</span>' : ''}</td>
+          <td>${u.online ? '<span class="tag on">Online</span>' : '<span class="tag off">Offline</span>'} ${u.clones ? `<span class="tag ban" title="Số tài khoản khác dùng chung thiết bị / vân tay máy">🔗 ${u.clones}</span>` : ''} ${u.banned ? '<span class="tag ban">Khóa</span>' : ''} ${u.muted ? '<span class="tag mute">Cấm chat</span>' : ''} ${u.isGM ? '<span class="tag gm">GM</span>' : ''} ${u.tester ? '<span class="tag tester">🧪 Tester</span>' : ''}</td>
           <td><button class="btn small" data-u="${u.id}">Chi tiết</button></td></tr>`).join('')}</table></div>`;
         $('u-list').querySelectorAll('[data-u]').forEach(b => b.onclick = () => userDetail(b.dataset.u, load));
       };
@@ -341,9 +341,10 @@
         <label style="margin-top:6px">Dự kiến xong<input id="c-meta" maxlength="80" placeholder="VD: 15:30 hôm nay" value="${esc(c.maintEta || '')}"></label>
         <p class="small muted">Người chơi thấy kèm nút 💬 Vào nhóm Zalo để theo dõi tin. Nhập lý do trước rồi mới tích Chế độ bảo trì và bấm Lưu.</p>
         <label style="margin-top:8px">Số tài khoản đăng nhập cùng lúc tối đa trên 1 địa chỉ IP (0 = không giới hạn)<input id="c-iplim" type="number" min="0" max="50" value="${c.ipLimit == null ? 3 : c.ipLimit}" style="width:90px"></label>
+        <label style="margin-top:8px">Số tài khoản tối đa được TẠO trên 1 thiết bị – nhận theo mã thiết bị + vân tay máy, đổi IP / xoá dữ liệu trình duyệt / ẩn danh vẫn tính (0 = không giới hạn)<input id="c-devlim" type="number" min="0" max="50" value="${c.devLimit == null ? 3 : c.devLimit}" style="width:90px"></label>
         <label style="margin-top:8px">Chế độ máy chủ<select id="c-mode"><option value="test" ${c.serverMode === 'test' ? 'selected' : ''}>🧪 Open Test – NPC bán thêm rương mở đồ (Rương Bí Ẩn, Rương Thủ Lĩnh)</option><option value="open" ${c.serverMode !== 'test' ? 'selected' : ''}>🚀 Open chính thức – NPC KHÔNG bán rương mở đồ</option></select></label></div>
         <button class="btn primary" id="c-save">💾 Lưu cấu hình</button>`;
-      $('c-save').onclick = () => run(() => api('/config', { expRate: +$('c-exp').value, dropRate: +$('c-drop').value, goldRate: +$('c-gold').value, vipDropBase: +$('c-vip').value, motd: $('c-motd').value, autoEvents: $('c-auto').checked, maintenance: $('c-maint').checked, maintMsg: $('c-mmsg').value, maintEta: $('c-meta').value, serverMode: $('c-mode').value, ipLimit: +$('c-iplim').value }), 'Đã lưu cấu hình');
+      $('c-save').onclick = () => run(() => api('/config', { expRate: +$('c-exp').value, dropRate: +$('c-drop').value, goldRate: +$('c-gold').value, vipDropBase: +$('c-vip').value, motd: $('c-motd').value, autoEvents: $('c-auto').checked, maintenance: $('c-maint').checked, maintMsg: $('c-mmsg').value, maintEta: $('c-meta').value, serverMode: $('c-mode').value, ipLimit: +$('c-iplim').value, devLimit: +$('c-devlim').value }), 'Đã lưu cấu hình');
     },
 
     async chat(el) {
@@ -486,7 +487,22 @@
         ${u.online ? '<button class="btn" id="e-kick">Kick</button>' : ''}
         <button class="btn" id="e-gm">${u.isGM ? 'Bỏ quyền GM' : 'Cấp quyền GM'}</button>
         <button class="btn" id="e-tester" title="Tester: vào game được cả khi máy chủ bảo trì, có danh hiệu 【Tester】 hiệu ứng riêng">${u.tester ? '🧪 Bỏ Tester' : '🧪 Cấp quyền Tester'}</button></div>
-        <div class="row" style="margin-top:10px">${c ? '<button class="btn danger" id="e-reset">Xóa nhân vật</button>' : ''}<button class="btn danger" id="e-del">Xóa tài khoản</button></div></div>`);
+        <div class="row" style="margin-top:10px">${c ? '<button class="btn danger" id="e-reset">Xóa nhân vật</button>' : ''}<button class="btn danger" id="e-del">Xóa tài khoản</button></div></div>
+      <div class="card"><h3>🔗 Tài khoản liên quan (chống clone)</h3><div id="e-linked" class="small muted">Đang tải…</div></div>`);
+    api('/users/' + id + '/linked').then(L => {
+      const box = $('e-linked'); if (!box) return;
+      const strong = L.list.filter(x => x.strong).length;
+      box.innerHTML = `<div class="small muted" style="margin-bottom:6px">Thiết bị đã ghi: ${L.devs} mã · ${L.fps} vân tay máy${L.devBanned ? ' · <span class="tag ban">Thiết bị đang bị khoá</span>' : ''}. <b>Cùng thiết bị / vân tay</b> gần như chắc chắn là cùng một người; <b>cùng IP</b> có thể chỉ là chung wifi / nhà mạng.</div>
+        ${L.list.length ? `<table><tr><th>Nhân vật</th><th>Cấp</th><th>Tài khoản</th><th>Liên quan</th><th>Đăng nhập</th><th>Trạng thái</th><th></th></tr>${L.list.map(x => `<tr><td><b>${esc(x.character ? x.character.name : '—')}</b></td><td>${x.character ? x.character.level : ''}</td><td class="small">${esc(x.email)}</td>
+          <td>${x.why.map(w => `<span class="tag ${w === 'cùng IP' ? 'off' : 'ban'}">${w}</span>`).join(' ')}</td><td class="small">${dt(x.lastLogin)}</td><td>${x.online ? '<span class="tag on">Online</span>' : ''} ${x.banned ? '<span class="tag ban">Khóa</span>' : ''}</td><td><button class="btn small" data-lu="${x.id}">Chi tiết</button></td></tr>`).join('')}</table>` : '<p class="muted">Không có tài khoản nào dùng chung thiết bị / IP.</p>'}
+        <div class="row" style="margin-top:8px">${L.devBanned ? '<button class="btn ok" id="e-devunban">Mở khoá thiết bị</button>' : `<button class="btn danger" id="e-devban">🚫 Khoá thiết bị này</button>${strong ? `<button class="btn danger" id="e-devbanall">🚫 Khoá thiết bị + ${strong} tài khoản cùng thiết bị</button>` : ''}`}</div>
+        <div class="small muted">Khoá thiết bị: khoá tài khoản này và chặn máy đó tạo / đăng nhập tài khoản (kể cả đổi IP, xoá dữ liệu trình duyệt). Lý do lấy ở ô "Lý do khóa" phía trên.</div>`;
+      box.querySelectorAll('[data-lu]').forEach(b => b.onclick = () => userDetail(b.dataset.lu, reload));
+      const on2 = (bid, fn) => { const b = $(bid); if (b) b.onclick = fn; };
+      on2('e-devban', async () => { if (confirm('Khoá thiết bị và tài khoản này?')) { await run(() => api(`/users/${id}/banDevice`, { reason: $('e-reason').value || 'Tạo nhiều tài khoản (clone)' }), 'Đã khoá thiết bị'); again(); } });
+      on2('e-devbanall', async () => { if (confirm(`Khoá thiết bị và ${strong + 1} tài khoản dùng chung thiết bị?`)) { await run(() => api(`/users/${id}/banDevice`, { all: true, reason: $('e-reason').value || 'Tạo nhiều tài khoản (clone)' }), 'Đã khoá thiết bị và các tài khoản clone'); again(); } });
+      on2('e-devunban', async () => { await run(() => api(`/users/${id}/banDevice`, { unban: true }), 'Đã mở khoá thiết bị'); again(); });
+    }).catch(() => { const box = $('e-linked'); if (box) box.textContent = 'Không tải được'; });
     const again = async () => { await userDetail(id, reload); reload && reload(); };
     const on = (bid, fn) => { const b = $(bid); if (b) b.onclick = fn; };
     on('e-save', async () => { await run(() => api(`/users/${id}/update`, { name: $('e-name').value, level: +$('e-level').value, gold: +$('e-gold').value, knb: +$('e-knb').value, addExp: +$('e-exp').value || 0, addAttr: +$('e-attr').value || 0, addSp: +$('e-sp').value || 0 }), 'Đã lưu'); again(); });

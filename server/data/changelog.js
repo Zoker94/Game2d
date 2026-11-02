@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🛡️ Chống tạo tài khoản clone: mỗi thiết bị chỉ được tạo tối đa 3 tài khoản (đổi IP, xoá dữ liệu trình duyệt hay mở ẩn danh vẫn tính). Thiết bị vi phạm có thể bị khoá toàn bộ.',
       '⚡ Giảm giật: ảnh thú cưỡi giờ chiếm ít bộ nhớ hơn ~13 lần (122MB → 9MB khi đã xem đủ 8 con), tải nhanh hơn – hình vẫn nét như cũ. Nhãn đồ sát và vòng hồi chiêu bình thuốc vẽ nhẹ hơn.',
       '☠️ Người bật PK giờ dễ nhận ra hơn: vòng đỏ nhấp nháy dưới chân, nhãn "☠ ĐỒ SÁT" / "🚩 CỜ PK" nổi trên cùng (không bị tên, danh hiệu, thú cưỡi che), tên đổi màu đỏ cam. Có người bật PK ở gần thì hiện dải cảnh báo đỏ trên màn hình – bấm vào để chọn ngay người đó làm mục tiêu.',
       '👑 KHU VIP ở mọi bản đồ luyện công: cấm đồ sát, tối đa 20 người, chỉ dành cho người đang dùng Vé Treo Máy. Vào từ Bia Chuyển Khu hoặc bấm tên khu cạnh tên bản đồ. Vé hết hạn sẽ tự về khu thường.',

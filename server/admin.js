@@ -96,8 +96,13 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     if (q) list = list.filter(u => (u.email || '').toLowerCase().includes(q) || (u.username || '').toLowerCase().includes(q) || (u.name || '').toLowerCase().includes(q) || (u.character && u.character.name.toLowerCase().includes(q)) || u.id === q);
     if (filter === 'online') list = list.filter(u => world.players.has(u.id));
     if (filter === 'banned') list = list.filter(u => u.banned);
-    list.sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0));
-    res.json({ total: list.length, users: list.slice(0, 200).map(userRow) });
+    // số tài khoản khác dùng chung thiết bị / vân tay máy (nghi clone)
+    const idx = new Map();
+    for (const x of Object.values(db.data.users)) for (const k of [...(x.devs || []).map(d => 'd' + d), ...(x.fps || []).map(f => 'f' + f)]) { let s = idx.get(k); if (!s) idx.set(k, s = new Set()); s.add(x.id); }
+    const clones = u => { const s = new Set(); for (const k of [...(u.devs || []).map(d => 'd' + d), ...(u.fps || []).map(f => 'f' + f)]) for (const id of idx.get(k) || []) if (id !== u.id) s.add(id); return s.size; };
+    if (filter === 'clone') list = list.filter(u => !isOwner(u) && clones(u) >= 1);
+    list.sort((a, b) => filter === 'clone' ? clones(b) - clones(a) : (b.lastLogin || 0) - (a.lastLogin || 0));
+    res.json({ total: list.length, users: list.slice(0, 200).map(u => Object.assign(userRow(u), { clones: clones(u) })) });
   });
   app.get('/api/admin/users/:id', auth, (req, res) => {
     const u = db.data.users[req.params.id];
@@ -143,6 +148,47 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     if (p) world.toast(p, 'Tài khoản của bạn vừa được quản trị viên cập nhật', 'info');
   }));
 
+  // ---- Chống clone: tài khoản liên quan (cùng thiết bị / vân tay máy / IP) và khoá thiết bị ----
+  const linkedOf = u => {
+    const dv = new Set(u.devs || []), fp = new Set(u.fps || []), ip = new Set(u.ips || []);
+    return Object.values(db.data.users).filter(x => x !== u).map(x => {
+      const why = [];
+      if ((x.devs || []).some(d => dv.has(d))) why.push('cùng thiết bị');
+      if ((x.fps || []).some(d => fp.has(d))) why.push('cùng vân tay máy');
+      if ((x.ips || []).some(d => ip.has(d))) why.push('cùng IP');
+      return why.length ? { ...userRow(x), why, strong: why.some(w => w !== 'cùng IP') } : null;
+    }).filter(Boolean).sort((a, b) => b.strong - a.strong || (b.lastLogin || 0) - (a.lastLogin || 0)).slice(0, 100);
+  };
+  const kickBan = (u, reason) => {
+    if (isOwner(u)) return false;
+    u.banned = true; u.banReason = String(reason || 'Tạo nhiều tài khoản (clone)').slice(0, 200);
+    for (const [t, s] of Object.entries(db.data.sessions)) if (s.userId === u.id) delete db.data.sessions[t];
+    const p = world.players.get(u.id);
+    if (p) { p.socket.emit('kicked', { reason: 'Tài khoản bị khóa: ' + u.banReason }); world.removePlayer(p); p.socket.disconnect(true); }
+    return true;
+  };
+  app.get('/api/admin/users/:id/linked', auth, (req, res) => {
+    const u = db.data.users[req.params.id];
+    if (!u) return res.status(404).json({ error: 'Không tìm thấy' });
+    const ban = new Set(db.data.config.bannedDevs || []);
+    res.json({ list: linkedOf(u), devs: (u.devs || []).length, fps: (u.fps || []).length, devBanned: [...(u.devs || []), ...(u.fps || [])].some(d => ban.has(d)) });
+  });
+  // khoá thiết bị: thêm mã thiết bị + vân tay máy của tài khoản này vào danh sách đen (không tạo / đăng nhập được từ máy đó),
+  // all = khoá luôn mọi tài khoản cùng thiết bị / vân tay
+  app.post('/api/admin/users/:id/banDevice', auth, (req, res) => {
+    const u = db.data.users[req.params.id];
+    if (!u) return res.status(404).json({ error: 'Không tìm thấy' });
+    if (isOwner(u)) return res.status(400).json({ error: 'Không thể khóa thiết bị của chủ server' });
+    const c = db.data.config, keys = [...(u.devs || []), ...(u.fps || [])];
+    if (req.body.unban) { c.bannedDevs = (c.bannedDevs || []).filter(d => !keys.includes(d)); act(req, `Mở khoá thiết bị của ${u.character ? u.character.name : u.email}`); db.markDirty(); return res.json({ ok: true }); }
+    c.bannedDevs = [...new Set([...(c.bannedDevs || []), ...keys])].slice(-5000);
+    let n = 0;
+    if (kickBan(u, req.body.reason)) n++;
+    if (req.body.all) for (const x of linkedOf(u)) if (x.strong && kickBan(db.data.users[x.id], req.body.reason)) n++;
+    act(req, `Khoá thiết bị của ${u.character ? u.character.name : u.email} (${keys.length} mã) – khoá ${n} tài khoản`);
+    db.markDirty();
+    res.json({ ok: true, banned: n });
+  });
   app.post('/api/admin/users/:id/ban', auth, (req, res) => withUser(req, res, (u, p) => {
     if (isOwner(u) && req.body.banned) return { error: 'Không thể khóa tài khoản chủ server' };
     u.banned = !!req.body.banned;
@@ -251,7 +297,8 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
       c.maintenance = !!b.maintenance;
       if (c.maintenance && !was) for (const p of [...world.players.values()]) if (!p.user.isAdmin && !p.user.tester) { p.socket.emit('kicked', { maint: 1, msg: c.maintMsg || '', eta: c.maintEta || '', reason: 'Máy chủ đang bảo trì' }); world.removePlayer(p); p.socket.disconnect(true); }
     }
-    if (b.ipLimit != null) c.ipLimit = U.clamp(+b.ipLimit | 0, 0, 50);   // số tài khoản tối đa cùng lúc / 1 IP (0 = không giới hạn)
+    if (b.ipLimit != null) c.ipLimit = U.clamp(+b.ipLimit | 0, 0, 50);
+    if (b.devLimit != null) c.devLimit = U.clamp(+b.devLimit | 0, 0, 50);   // số tài khoản tối đa được TẠO trên 1 thiết bị (0 = không giới hạn)   // số tài khoản tối đa cùng lúc / 1 IP (0 = không giới hạn)
     if (b.autoEvents != null) c.autoEvents = !!b.autoEvents;
     if (b.serverMode === 'test' || b.serverMode === 'open') c.serverMode = b.serverMode;   // Open Test: NPC bán thêm rương mở đồ; Open chính thức: không bán
     if (b.disablePasswordAdmin != null) {

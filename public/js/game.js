@@ -21,8 +21,40 @@
       const q = new URLSearchParams(location.search).get('ref');
       if (q && /^[A-Za-z0-9]{4,12}$/.test(q)) { ls('vl_ref', JSON.stringify({ c: q.toUpperCase(), t: Date.now() })); history.replaceState(null, '', location.pathname + location.hash); }
     } catch (e) { }
-    let dev = ls('vl_dev'); if (!dev) { dev = Math.random().toString(36).slice(2) + Date.now().toString(36); ls('vl_dev', dev); }
-    return () => { let r = null; try { r = JSON.parse(ls('vl_ref') || 'null'); } catch (e) { } return { dev, ref: r && Date.now() - r.t < 7 * 86400e3 ? r.c : '' }; };
+    // mã thiết bị lưu 3 nơi (localStorage, cookie, IndexedDB): xoá một chỗ vẫn khôi phục từ chỗ khác
+    const ck = (v) => { try { if (v === undefined) { const m = document.cookie.match(/(?:^|; )vl_dev=([a-z0-9]+)/); return m ? m[1] : null; } document.cookie = 'vl_dev=' + v + '; max-age=315360000; path=/; SameSite=Lax'; } catch (e) { return null; } };
+    let dev = ls('vl_dev') || ck(); if (!dev) dev = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    ls('vl_dev', dev); ck(dev);
+    try {
+      const rq = indexedDB.open('vl', 1);
+      rq.onupgradeneeded = () => rq.result.createObjectStore('kv');
+      rq.onsuccess = () => { try {
+        const tx = rq.result.transaction('kv', 'readwrite'), st = tx.objectStore('kv'), g = st.get('dev');
+        g.onsuccess = () => { if (g.result && g.result !== dev && !ls('vl_dev_set')) { dev = g.result; ls('vl_dev', dev); ck(dev); } else st.put(dev, 'dev'); ls('vl_dev_set', '1'); };
+      } catch (e) { } };
+    } catch (e) { }
+    // vân tay máy: card đồ hoạ, cách vẽ chữ, màn hình, múi giờ, số nhân CPU… – không đổi khi xoá dữ liệu trình duyệt, vào ẩn danh hay đổi IP
+    const fp = (() => {
+      try {
+        const parts = [];
+        const c = document.createElement('canvas'); c.width = 240; c.height = 44; const x = c.getContext('2d');
+        x.textBaseline = 'top'; x.font = '16px Arial'; x.fillStyle = '#f60'; x.fillRect(110, 1, 62, 20);
+        x.fillStyle = '#069'; x.fillText('Võ Lâm Pixel ⚔😀 12,3', 2, 15); x.fillStyle = 'rgba(102,204,0,.7)'; x.fillText('Võ Lâm Pixel ⚔😀 12,3', 4, 17);
+        x.beginPath(); x.arc(200, 22, 14, 0, Math.PI * 1.7); x.strokeStyle = '#c0f'; x.lineWidth = 3; x.stroke();
+        parts.push(c.toDataURL());
+        const g = document.createElement('canvas').getContext('webgl');
+        if (g) { const e = g.getExtension('WEBGL_debug_renderer_info'); parts.push(e ? g.getParameter(e.UNMASKED_RENDERER_WEBGL) + '|' + g.getParameter(e.UNMASKED_VENDOR_WEBGL) : g.getParameter(g.RENDERER)); }
+        const sc = screen; parts.push(Math.max(sc.width, sc.height) + 'x' + Math.min(sc.width, sc.height) + 'x' + sc.colorDepth);
+        try { parts.push(Intl.DateTimeFormat().resolvedOptions().timeZone); } catch (e) { }
+        parts.push(navigator.hardwareConcurrency || 0, navigator.deviceMemory || 0, navigator.platform || '', navigator.maxTouchPoints || 0);
+        const str = parts.join('##'); let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+        for (let i = 0; i < str.length; i++) { const ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+        h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+        h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+        return (h2 >>> 0).toString(36) + (h1 >>> 0).toString(36);
+      } catch (e) { return ''; }
+    })();
+    return () => { let r = null; try { r = JSON.parse(ls('vl_ref') || 'null'); } catch (e) { } return { dev, fp, ref: r && Date.now() - r.t < 7 * 86400e3 ? r.c : '' }; };
   })();
   // tự vào lại game sau khi tải lại vì máy chủ có bản mới (Cài đặt → Tự vào game khi có bản mới): { auto: đang bật Tự động }
   let reEnter = null;
@@ -271,7 +303,7 @@
     if (G.socket) return;
     loading(true, 'Đang kết nối...');
     GameAudio.init();
-    const s = G.socket = io({ auth: { token: G.token, dev: authExtra().dev }, transports: ['websocket', 'polling'] });
+    const s = G.socket = io({ auth: { token: G.token, dev: authExtra().dev, fp: authExtra().fp }, transports: ['websocket', 'polling'] });
     function showUpdateGate(news) {
       if (document.getElementById('update-gate')) return;
       s.close();   // ngắt khỏi máy chủ: bản cũ không được chơi tiếp

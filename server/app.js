@@ -113,13 +113,15 @@ app.post('/api/auth/google', async (req, res) => {
     if (pl.email && pl.email_verified === false) return res.status(403).json({ error: 'Email Google chưa xác minh' });
     let user = Object.values(db.data.users).find(u => u.googleId === pl.sub), created = false;
     if (!user) {
+      const bl = devCreateBlocked(req.body, req.ip); if (bl) return res.status(403).json({ error: bl });
       created = true;
       const id = db.newId();
       user = db.data.users[id] = { id, googleId: pl.sub, email: pl.email || '', name: pl.name || 'Hiệp khách', avatar: pl.picture || '', createdAt: Date.now(), banned: false, muted: false };
       db.log('user', `Tài khoản mới liên kết Google: ${user.email}`);
     }
     if (created) world.referral.apply(user, req.body.ref, req.ip, req.body.dev);   // tài khoản mới qua link mời
-    world.referral.touch(user, req.ip, req.body.dev);
+    if (!isOwner(user) && devBanned(req.body)) return res.status(403).json({ error: devBanned(req.body) });
+    world.referral.touch(user, req.ip, req.body.dev, req.body.fp);
     user.lastLogin = Date.now();
     if (pl.email) user.email = pl.email;
     if (isOwner(user)) { user.isAdmin = true; user.banned = false; } // chủ server luôn có quyền, không thể bị khóa
@@ -130,6 +132,31 @@ app.post('/api/auth/google', async (req, res) => {
     res.status(401).json({ error: 'Xác thực Google thất bại' });
   }
 });
+
+// ---------- Chống clone: mỗi thiết bị (mã thiết bị lưu bền + vân tay máy) chỉ được TẠO tối đa devLimit tài khoản (mặc định 3; 0 = tắt) ----------
+// đổi IP, xoá dữ liệu trình duyệt, mở ẩn danh vẫn bị nhận ra nhờ vân tay máy. Quản trị viên khoá được cả thiết bị (bannedDevs).
+const cleanDev = v => String(v || '').replace(/[^a-z0-9]/gi, '').slice(0, 40);
+const cleanFp = v => String(v || '').replace(/[^a-z0-9]/gi, '').slice(0, 24);
+// dải mạng: IPv4 lấy 3 số đầu (/24), IPv6 lấy 3 nhóm đầu (/48) – cùng nhà / cùng trạm phát
+const netOf = ip => { ip = String(ip || '').replace(/^::ffff:/, ''); return ip.includes(':') ? ip.split(':').slice(0, 3).join(':') : ip.split('.').slice(0, 3).join('.'); };
+// tài khoản cùng máy: cùng mã thiết bị (chắc chắn), hoặc cùng vân tay máy VÀ cùng dải mạng (vân tay giống nhau ở các máy cùng đời
+// nên không chặn chỉ vì trùng vân tay – trường hợp đó hiện ở trang quản trị để xem xét và khoá tay)
+function devAccounts(dev, fp, ip) {
+  dev = cleanDev(dev); fp = cleanFp(fp); const net = ip ? netOf(ip) : '';
+  return Object.values(db.data.users).filter(u => !isOwner(u) && !u.isAdmin && ((dev && (u.devs || []).includes(dev)) ||
+    (fp && net && (u.fps || []).includes(fp) && (u.ips || []).some(x => netOf(x) === net))));
+}
+function devBanned(b) {
+  const dev = cleanDev(b && b.dev), fp = cleanFp(b && b.fp), ban = db.data.config.bannedDevs || [];
+  return (dev && ban.includes(dev)) || (fp && ban.includes(fp)) ? 'Thiết bị này đã bị khoá do vi phạm. Liên hệ quản trị viên qua nhóm Zalo.' : null;
+}
+function devCreateBlocked(b, ip) {
+  const bn = devBanned(b); if (bn) return bn;
+  const lim = db.data.config.devLimit == null ? 3 : db.data.config.devLimit | 0;
+  if (lim <= 0 || !(b && (b.dev || b.fp))) return null;
+  const n = devAccounts(b.dev, b.fp, ip).length;
+  return n >= lim ? `Mỗi thiết bị chỉ được tạo tối đa ${lim} tài khoản – máy này đã có ${n} tài khoản. Hãy đăng nhập tài khoản cũ.` : null;
+}
 
 // Đăng nhập thử nghiệm (CHỈ bật khi ALLOW_DEV_LOGIN=1, dùng cho môi trường phát triển)
 // ---------- Đăng ký / đăng nhập bằng tài khoản & mật khẩu ----------
@@ -143,10 +170,11 @@ app.post('/api/auth/register', (req, res) => {
   if (!USERNAME_RE.test(username)) return res.status(400).json({ error: 'Tên tài khoản 4-20 ký tự, chỉ gồm chữ không dấu, số và dấu _' });
   if (password.length < 6 || password.length > 64) return res.status(400).json({ error: 'Mật khẩu từ 6 đến 64 ký tự' });
   if (findByUsername(username)) return res.status(409).json({ error: 'Tên tài khoản đã có người dùng' });
+  const bl = devCreateBlocked(req.body, req.ip); if (bl) return res.status(403).json({ error: bl });
   const id = db.newId();
   const user = db.data.users[id] = { id, username, pass: db.hashPassword(password), email: '', name: username, avatar: '', createdAt: Date.now(), lastLogin: Date.now(), banned: false, muted: false };
   world.referral.apply(user, req.body.ref, req.ip, req.body.dev);   // tạo qua link mời (trước khi ghi IP / thiết bị của chính mình)
-  world.referral.touch(user, req.ip, req.body.dev);
+  world.referral.touch(user, req.ip, req.body.dev, req.body.fp);
   db.log('user', `Đăng ký tài khoản mới: ${username}`);
   db.markDirty();
   res.json({ token: createSession(user.id), user: publicUser(user) });
@@ -157,7 +185,8 @@ app.post('/api/auth/login', (req, res) => {
   const user = findByUsername(req.body.username);
   if (!user || !user.pass || !db.verifyPassword(String(req.body.password || ''), user.pass)) return res.status(401).json({ error: 'Sai tên tài khoản hoặc mật khẩu' });
   if (user.banned) return res.status(403).json({ error: 'Tài khoản đã bị khóa' + (user.banReason ? ': ' + user.banReason : '') });
-  world.referral.touch(user, req.ip, req.body.dev);
+  if (!isOwner(user) && devBanned(req.body)) return res.status(403).json({ error: devBanned(req.body) });
+  world.referral.touch(user, req.ip, req.body.dev, req.body.fp);
   user.lastLogin = Date.now();
   db.markDirty();
   res.json({ token: createSession(user.id), user: publicUser(user) });
@@ -181,11 +210,12 @@ app.post('/api/auth/dev', (req, res) => {
   const gid = 'dev:' + key.toLowerCase();
   let user = Object.values(db.data.users).find(u => u.googleId === gid);
   if (!user) {
+    const bl = devCreateBlocked(req.body, req.ip); if (bl) return res.status(403).json({ error: bl });
     const id = db.newId();
     user = db.data.users[id] = { id, googleId: gid, email: key + '@dev.local', name: key, avatar: '', createdAt: Date.now(), banned: false, muted: false };
     world.referral.apply(user, req.body.ref, req.ip, req.body.dev);
   }
-  world.referral.touch(user, req.ip, req.body.dev);
+  world.referral.touch(user, req.ip, req.body.dev, req.body.fp);
   if (user.banned) return res.status(403).json({ error: 'Tài khoản đã bị khóa' });
   user.lastLogin = Date.now();
   db.markDirty();
@@ -335,6 +365,9 @@ io.use((socket, next) => {
     for (const s of io.sockets.sockets.values()) if (s.ip === socket.ip && s.user && s.user.id !== user.id && !s.user.isAdmin) ids.add(s.user.id);
     if (ids.size >= lim) return next(Object.assign(new Error('iplimit'), { data: { lim } }));
   }
+  const ha = socket.handshake.auth || {};
+  if (!isOwner(user) && !user.isAdmin && devBanned(ha)) return next(new Error('banned'));
+  world.referral.touch(user, socket.ip, ha.dev, ha.fp);   // ghi thiết bị / vân tay cả với phiên đăng nhập cũ (không qua màn đăng nhập)
   socket.user = user;
   next();
 });

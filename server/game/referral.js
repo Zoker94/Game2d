@@ -45,10 +45,11 @@ class Referral {
     return r.code;
   }
   // mỗi lần đăng nhập: nhớ vài IP / thiết bị gần nhất để chặn tự mời chính mình
-  touch(u, ip, dev) {
+  touch(u, ip, dev, fp) {
     ip = String(ip || '').replace(/^::ffff:/, '');
     const add = (k, v, n) => { if (!v) return; const a = (u[k] || []).filter(x => x !== v); a.unshift(v); u[k] = a.slice(0, n); };
     add('ips', String(ip || '').slice(0, 64), IP_KEEP); add('devs', String(dev || '').slice(0, 40), DEV_KEEP);
+    add('fps', String(fp || '').replace(/[^a-z0-9]/gi, '').slice(0, 24), DEV_KEEP);   // vân tay máy (không đổi khi xoá dữ liệu trình duyệt / đổi IP)
   }
   // tài khoản vừa tạo qua link mời. Trả về lý do không tính (hoặc null nếu đã tính)
   apply(u, code, ip, dev) {
