@@ -258,6 +258,11 @@ const CONSUMABLES = [
 ];
 CONSUMABLES.forEach(c => { ITEMS[c.id] = Object.assign({ type: 'use', lv: c.lv || 1, rarity: 'common', stack: true }, c); });
 for (const id of ['stone', 'stone2', 'insure', 'mount_food', 'mount_stone', 'moi_cau', 'fish_chep', 'fish_tram', 'fish_ro', 'fish_qua', 'fish_chinh', 'fish_tam', 'fish_kimlong', 'fish_junk']) ITEMS[id].type = 'material';
+// ---- Chọi gà (server/game/cockfight.js) ----
+ITEMS.trung_ga = { id: 'trung_ga', type: 'use', name: 'Trứng Gà Chọi', desc: 'Sử dụng để ấp nở 1 con gà chọi ngẫu nhiên: thường 72% · hiếm 22% · quý 5,5% · huyền thoại 0,5%, sao tư chất 1-5. Bán ở Chủ Trường Gà (Tương Dương).', effect: { egg: 'trung_ga' }, price: 30000, icon: 'egg', rarity: 'rare', stack: true };
+ITEMS.trung_ga_quy = { id: 'trung_ga_quy', type: 'use', name: 'Trứng Gà Quý', desc: 'Trứng gà nòi quý: hiếm 45% · quý 30% · huyền thoại 5%, sao tư chất cao hơn. Sử dụng để ấp nở.', effect: { egg: 'trung_ga_quy' }, price: 350000, icon: 'egg_q', rarity: 'epic', stack: true };
+ITEMS.thoc = { id: 'thoc', type: 'use', name: 'Thóc', desc: 'Cho gà chọi đang chọn ăn: +40 thể lực, +15 kinh nghiệm. Sử dụng hoặc bấm Cho ăn ở bảng Trường Gà.', effect: { thoc: 1 }, price: 300, icon: 'thoc', stack: true };
+
 // ---- Câu cá (server/data/fish.js): cá, cần câu, mồi, món ăn – ghi đè bản cũ ở danh sách trên ----
 {
   const F = require('./fish');

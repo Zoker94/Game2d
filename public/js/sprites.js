@@ -431,6 +431,23 @@
       if (icon === 'fish_l') { x.fillStyle = '#fff'; for (const [a, b] of [[6, 6], [26, 9], [22, 26]]) { x.fillRect(a, b - 2, 1, 5); x.fillRect(a - 2, b, 5, 1); } }
       return true;
     }
+    // trứng gà chọi (thường: trắng ngà lốm đốm; quý: vàng ánh kim) và bao thóc
+    if (icon === 'egg' || icon === 'egg_q') {
+      const q = icon === 'egg_q';
+      if (q) { const gl = x.createRadialGradient(16, 17, 2, 16, 17, 15); gl.addColorStop(0, 'rgba(255,220,90,.55)'); gl.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = gl; x.fillRect(0, 0, 32, 32); }
+      x.fillStyle = 'rgba(0,0,0,.25)'; x.beginPath(); x.ellipse(16, 28, 9, 2.5, 0, 0, Math.PI * 2); x.fill();
+      const g = x.createRadialGradient(13, 12, 1, 16, 17, 12); g.addColorStop(0, q ? '#fff8c0' : '#ffffff'); g.addColorStop(0.6, q ? '#f0c030' : '#f0e4cc'); g.addColorStop(1, q ? '#a86a08' : '#b8a888');
+      x.fillStyle = g; x.beginPath(); x.ellipse(16, 17, 9, 11.5, 0, 0, Math.PI * 2); x.fill();
+      x.fillStyle = q ? '#c83a1a' : '#a08868'; for (const [a, b] of [[12, 13], [19, 17], [14, 22], [20, 11]]) { x.beginPath(); x.arc(a, b, 1.2, 0, Math.PI * 2); x.fill(); }
+      if (q) { x.fillStyle = '#fff'; x.fillRect(24, 5, 1, 5); x.fillRect(22, 7, 5, 1); }
+      return true;
+    }
+    if (icon === 'thoc') {
+      x.fillStyle = '#b08850'; x.beginPath(); x.moveTo(7, 28); x.lineTo(9, 12); x.quadraticCurveTo(16, 8, 23, 12); x.lineTo(25, 28); x.closePath(); x.fill();
+      x.fillStyle = '#d8b070'; x.fillRect(9, 14, 14, 2); x.strokeStyle = '#7a5a28'; x.lineWidth = 1; x.strokeRect(8.5, 12.5, 15, 15);
+      x.fillStyle = '#f0c040'; for (let i = 0; i < 9; i++) { x.beginPath(); x.ellipse(11 + (i % 3) * 5, 8 + Math.floor(i / 3) * 2.5 - (i % 2), 1.6, 1, 0.5, 0, Math.PI * 2); x.fill(); }
+      return true;
+    }
     // cá sấu: thân dài vảy gồ, mõm dài răng trắng
     if (icon === 'croc') {
       x.save(); x.translate(16, 17); x.rotate(-0.3);

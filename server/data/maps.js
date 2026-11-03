@@ -52,6 +52,7 @@ const MAP_DEFS = {
       { id: 'tk_mo_binh', x: 13, y: 20 },
       { id: 'ct_thanh_quan', x: 24, y: 21 },
       { id: 'dau_bep', x: 29, y: 19 },
+      { id: 'chu_truong_ga', x: 31, y: 21 },
       { id: 'chi_dan', x: 17, y: 13 },
       { id: 'pho_ban',    x: 26, y: 15 }
     ],

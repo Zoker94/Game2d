@@ -1,0 +1,51 @@
+{
+ "cell": [
+  48,
+  64
+ ],
+ "foot": [
+  24,
+  60
+ ],
+ "rows": [
+  "idle",
+  "run",
+  "attack",
+  "hurt"
+ ],
+ "cols": 6,
+ "breeds": {
+  "ga_dieu": {
+   "name": "Gà Điều",
+   "rar": "common"
+  },
+  "ga_chuoi": {
+   "name": "Gà Chuối",
+   "rar": "common"
+  },
+  "ga_xam": {
+   "name": "Gà Xám",
+   "rar": "common"
+  },
+  "ga_o": {
+   "name": "Gà Ô",
+   "rar": "rare"
+  },
+  "ga_nhan": {
+   "name": "Gà Nhạn",
+   "rar": "rare"
+  },
+  "ga_tia": {
+   "name": "Gà Tía",
+   "rar": "epic"
+  },
+  "hac_phuong": {
+   "name": "Hắc Phượng",
+   "rar": "epic"
+  },
+  "kim_ke": {
+   "name": "Kim Kê",
+   "rar": "legendary"
+  }
+ }
+}

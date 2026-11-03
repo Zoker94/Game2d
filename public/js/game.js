@@ -378,6 +378,7 @@
     s.on('mystery', d => Mystery.onData(d));
     s.on('guildx', d => GuildX.onData(d));
     EvCheck.bind(s);
+    Cockfight.bind(s);
     Welcome.bind(s);
     TreasureUI.bind(s);
     s.on('cloakResult', d => Loom.onResult(d));
@@ -1688,6 +1689,7 @@
       if (ni) label(ni.x, ni.y - 34 + Math.sin(now / 200) * 2, '[F] Nhặt', '#ffe9a8', 11, true);
     }
     Fishing.draw(ctx, now);   // dây câu + phao
+    Cockfight.drawWorld(ctx, now);   // gà mổ thóc cạnh Chủ Trường Gà
     DayNight.draw(ctx, cam, vw, vh, zoom, now);   // ngày / đêm theo giờ thật (đè lên nhân vật, dưới bong bóng chat & hiệu ứng)
     const taken = [];
     Mining.drawBars(ctx, G.players, G.you);

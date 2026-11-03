@@ -1778,6 +1778,7 @@
     if (d.action === 'escort') { Escort.open(d); return; }
     if (d.action === 'daihoi') { DaiHoi.open(d); return; }
     if (d.action === 'hoason') { HoaSon.open(d); return; }
+    if (d.action === 'cockfight') { Cockfight.open(d); return; }
     if (d.action === 'tongkim') { TongKim.open(d); return; }
     if (d.action === 'siege') { Siege.open(d); return; }
     if (d.action === 'mystery') { Mystery.open(d); return; }

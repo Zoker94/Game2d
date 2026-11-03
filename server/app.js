@@ -56,7 +56,8 @@ new (require('./game/topup').Topup)(world, db);   // gắn world.topup (nạp Ng
 new (require('./game/guildx').GuildX)(world, features, db);   // gắn world.guildx (nhiệm vụ bang, boss bang)
 new (require('./game/presence').Presence)(world);
 new (require('./game/treasure').Treasure)(world);
-new (require('./game/weekrace').WeekRace)(world, features, db);   // gắn world.weekRace (đua top tuần, tự trao thưởng cuối tuần)
+new (require('./game/weekrace').WeekRace)(world, features, db);
+new (require('./game/cockfight').Cockfight)(world, features, db);   // gắn world.cockfight (chọi gà – Trường Gà ở Tương Dương)   // gắn world.weekRace (đua top tuần, tự trao thưởng cuối tuần)
 new (require('./game/welcome').Welcome)(world, db);   // gắn world.welcome (popup chào mừng, x2 nạp đầu, gift code tân thủ)   // gắn world.treasure (Tàng Bảo Đồ, đào Thần Khí)   // gắn world.presence (bảng xác nhận có mặt trong sự kiện, chống treo máy)
 world.cleanup = new (require('./game/cleanup').Cleanup)(world, features, db);
 require('./game/shops').apply(db);   // cửa hàng NPC do quản trị viên sửa
@@ -509,6 +510,7 @@ io.on('connection', socket => {
   on('guildx', inGame(d => world.guildx.action(player, d)));
   on('evCheck', inGame(d => world.presence.answer(player, d)));
   on('treasure', inGame(d => world.treasure.action(player, d)));
+  on('cockfight', inGame(d => world.cockfight.action(player, d)));
   on('sellMany', inGame(d => world.sellMany(player, d && d.uids)));
   on('enhance', inGame(d => world.enhance(player, d || {})));
   on('gem', inGame(d => world.gems.action(player, d)));
