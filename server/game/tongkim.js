@@ -358,7 +358,7 @@ class TongKim {
     const win = tot.song === tot.jin ? null : tot.song > tot.jin ? 'song' : 'jin';
     const lines = [];
     for (const side of ['song', 'jin']) {
-      const rank = Object.entries(ev.scores).filter(([, s]) => s.side === side).sort((a, b) => b[1].pts - a[1].pts);
+      const rank = Object.entries(ev.scores).filter(([uid, s]) => s.side === side && !this.w.isGmUid(uid)).sort((a, b) => b[1].pts - a[1].pts);
       rank.forEach(([uid, s], i) => {
         if (s.pts < MIN_PTS || s.afk) return;
         const mul = side === win ? 1.5 : win ? 1 : 1.2;
@@ -405,7 +405,7 @@ class TongKim {
     out.generalAt = ev.generalsUp ? 0 : ev.generalAt;
     const s = ev.scores[p.userId];
     out.me = s ? { pts: s.pts, kills: s.kills, deaths: s.deaths, streak: s.streak, rank: this.rankOf(s.pts) } : null;
-    const top = side => Object.values(ev.scores).filter(x => x.side === side).sort((a, b) => b.pts - a.pts).slice(0, 3).map(x => [x.name, x.pts]);
+    const top = side => Object.entries(ev.scores).filter(([uid, x]) => x.side === side && !this.w.isGmUid(uid)).map(([, x]) => x).sort((a, b) => b.pts - a.pts).slice(0, 3).map(x => [x.name, x.pts]);
     out.top = { song: top('song'), jin: top('jin') };
     out.n = this.sideStats();
     return out;

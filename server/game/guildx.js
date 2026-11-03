@@ -90,7 +90,7 @@ class GuildX {
     this.w.presence.reset(pk);
     if (!g) return;
     g.fund = (g.fund || 0) + BOSS_FUND;
-    const rank = [...mon.dmgBy.entries()].filter(([uid]) => g.members[uid] && okSet.has(uid)).sort((a, b) => b[1] - a[1]);
+    const rank = [...mon.dmgBy.entries()].filter(([uid]) => g.members[uid] && okSet.has(uid) && !this.w.isGmUid(uid)).sort((a, b) => b[1] - a[1]);
     rank.forEach(([uid, dmg], i) => {
       const r = { gold: 20000 + g.level * 8000, items: i === 0 ? [['boss_chest', 2], ['stone2', 2]] : i < 3 ? [['boss_chest', 1], ['stone2', 1]] : [['lucky_chest', 1], ['stone', 5]] };
       if (Math.random() < 0.15) r.items.push(['insure', 1]);

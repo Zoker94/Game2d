@@ -810,6 +810,8 @@ class World {
   }
   // quản trị viên: tàng hình (người chơi không thấy, quái không đánh) / miễn PK (người chơi không đánh được)
   isGm(p) { return !!(p && p.user && (p.user.isAdmin || isOwner(p.user))); }   // quản trị viên hoặc chủ server
+  // theo mã tài khoản (người chơi offline cũng được): admin / GM / chủ server không có tên trong mọi bảng xếp hạng
+  isGmUid(uid) { const u = this.db.data.users[uid]; return !!(u && (u.isAdmin || isOwner(u))); }
   gmOn(p, k) { return !!(this.isGm(p) && p.c.gm && p.c.gm[k]); }
   canHarm(a, b) {
     if (!b || a === b || !b.c || b.dead || a.dead || a.mapId !== b.mapId) return false;
@@ -1336,7 +1338,7 @@ class World {
     if (mon.boss) {
       // Tàn quyển Võ Mục chỉ rơi từ Boss phó bản.
       // Boss thế giới (500 triệu máu, 4 giờ / lần): hạng 1 chắc chắn, hạng 2-3 35%, hạng 4-10 10%, ai góp ≥0,5% sát thương 2%.
-      const ranking = [...mon.dmgBy.entries()].sort((a, b) => b[1] - a[1]);
+      const ranking = [...mon.dmgBy.entries()].filter(([uid]) => !this.isGmUid(uid)).sort((a, b) => b[1] - a[1]);   // admin / GM không xếp hạng sát thương
       const total = ranking.reduce((a, [, d]) => a + d, 0) || 1;
       const legend = p => {
         const id = equipId(rslot(), tier, 'legendary');

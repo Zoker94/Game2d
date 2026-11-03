@@ -109,7 +109,7 @@ class DaiHoi {
     this.w.io.to('map:' + MAP).emit('daihoi', { active: false, final: rank.slice(0, 10).map(([, s]) => [s.name, s.pts]), mc: this.minhChu() && this.minhChu().name });
   }
   ranking() {
-    return Object.entries((this.ev && this.ev.scores) || {}).filter(([, s]) => s.pts > 0 && !s.afk).sort((a, b) => b[1].pts - a[1].pts || a[1].t - b[1].t);
+    return Object.entries((this.ev && this.ev.scores) || {}).filter(([uid, s]) => s.pts > 0 && !s.afk && !this.w.isGmUid(uid)).sort((a, b) => b[1].pts - a[1].pts || a[1].t - b[1].t);
   }
   score(p) {
     const s = this.ev.scores;

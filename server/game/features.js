@@ -211,7 +211,7 @@ class Features {
       if (!mon || mon.dead || !mon.tpl.world) continue;
       const map = this.w.maps[mon.mapId];
       if (!map || !map.players.size) continue;
-      const users = this.db.data.users, ranking = [...mon.dmgBy.entries()].sort((a, b) => b[1] - a[1]);
+      const users = this.db.data.users, ranking = [...mon.dmgBy.entries()].filter(([uid]) => !this.w.isGmUid(uid)).sort((a, b) => b[1] - a[1]);   // admin / GM không xếp hạng
       const total = ranking.reduce((a, [, d]) => a + d, 0) || 1;
       const nameOf = uid => { const p = this.w.players.get(uid); return p ? p.c.name : users[uid] && users[uid].character ? users[uid].character.name : '?'; };
       const top = ranking.slice(0, 10).map(([uid, d]) => [nameOf(uid), Math.round(d), Math.round(d / total * 1000) / 10]);
@@ -329,7 +329,7 @@ class Features {
 
   onKill(p, mon) {
     const e = this.events.huntRace;
-    if (e && e.active) {
+    if (e && e.active && !this.w.isGm(p)) {   // admin / GM không đua top
       const s = e.scores[p.userId] || (e.scores[p.userId] = { name: p.c.name, n: 0 });
       s.n++;
     }
@@ -844,7 +844,7 @@ class Features {
       kills: top('kills', c => c.kills || 0),
       pvp: top('pvp', c => c.pvpKills || 0),
       boss: top('boss', c => c.bossKills || 0),
-      guild: Object.values(gs).map(g => this.guildView(g)).sort((a, b) => b.level - a.level || b.fund - a.fund).slice(0, 50)
+      guild: Object.values(gs).filter(g => !this.w.isGmUid(g.leader)).map(g => this.guildView(g)).sort((a, b) => b.level - a.level || b.fund - a.fund).slice(0, 50)
     };
   }
 }
