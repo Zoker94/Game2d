@@ -845,3 +845,20 @@ body.touch .lm-list { width: 86px; }
 #fish-focus.fight .ff-t, #fish-focus.fight .ff-b { animation: ffBeat 1.4s ease-in-out infinite; }
 #fish-focus .ff-v { display: none; }
 @keyframes ffBeat { 50% { opacity: .7; } }
+/* bảng "Câu được!" giữa màn hình */
+#fish-card { position: fixed; left: 50%; top: 30%; z-index: 35; transform: translate(-50%, -50%) scale(.6); opacity: 0; pointer-events: none; min-width: 210px; padding: 12px 22px 12px; border-radius: 16px; text-align: center;
+  background: radial-gradient(ellipse at 50% 30%, rgba(30,60,90,.96), rgba(8,18,30,.96)); border: 2px solid #7ac8ff; box-shadow: 0 0 26px rgba(120,200,255,.5), 0 8px 26px rgba(0,0,0,.6); color: #fff; }
+#fish-card.show { animation: fcIn .35s cubic-bezier(.2,1.5,.4,1) forwards; }
+#fish-card.hide { animation: fcOut .5s ease-in forwards; }
+@keyframes fcIn { to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+@keyframes fcOut { from { transform: translate(-50%, -50%) scale(1); opacity: 1; } to { transform: translate(-50%, -70%) scale(.9); opacity: 0; } }
+#fish-card .fc-h { font-weight: 900; font-size: 14px; letter-spacing: 1px; color: #ffe8a0; text-shadow: 0 1px 2px #000; }
+#fish-card img { display: block; margin: 4px auto 2px; image-rendering: pixelated; filter: drop-shadow(0 0 8px rgba(255,255,255,.35)); animation: fcBob 1s ease-in-out infinite alternate; }
+@keyframes fcBob { to { transform: translateY(-4px) rotate(-4deg); } }
+#fish-card .fc-n { font: 900 24px/1.2 Georgia, 'Times New Roman', serif; text-shadow: 0 2px 0 #000, 0 0 10px currentColor; }
+#fish-card .fc-s { display: flex; gap: 10px; justify-content: center; margin-top: 4px; font-size: 14px; }
+#fish-card .fc-s span { color: #c8d8e8; } #fish-card .fc-s b { color: #ffe070; }
+#fish-card .fc-rec { margin-top: 6px; font-weight: 900; color: #ffd040; text-shadow: 0 0 8px #ff9a20; animation: wcPulse .8s ease-in-out infinite; }
+#fish-card.r-rare { border-color: #7fbfff; }
+#fish-card.r-epic { border-color: #d08cff; box-shadow: 0 0 30px rgba(200,130,255,.6), 0 8px 26px rgba(0,0,0,.6); }
+#fish-card.r-legendary { border-color: #ffc040; box-shadow: 0 0 40px rgba(255,190,60,.8), 0 8px 26px rgba(0,0,0,.6); background: radial-gradient(ellipse at 50% 30%, rgba(90,60,10,.96), rgba(30,16,4,.96)); }

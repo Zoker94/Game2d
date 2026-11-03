@@ -121,6 +121,22 @@
     x.fillStyle = '#fff'; x.font = 'bold 10px sans-serif'; x.textAlign = 'center'; x.fillText(Math.round(S.prog * 100) + '%', 94, top + H + 12 > 250 ? 248 : top + H + 12);
   }
 
+  // ---------- bảng "Câu được!" giữa màn hình: hình cá to, tên theo màu độ hiếm, cân nặng, kỷ lục – đứng yên ~3,5 giây cho kịp đọc ----------
+  let cardEl = null, cardTimer = 0;
+  const RN = { common: 'Thường', rare: 'Hiếm', epic: 'Quý', legendary: 'Huyền thoại' };
+  function catchCard(d, it, col) {
+    if (!cardEl) { cardEl = document.createElement('div'); cardEl.id = 'fish-card'; ($('screen-game') || document.body).appendChild(cardEl); }
+    clearTimeout(cardTimer);
+    const junk = d.id === 'fish_junk', rar = it.rarity || 'common';
+    cardEl.className = 'show r-' + rar + (d.rec ? ' rec' : '');
+    cardEl.innerHTML = `<div class="fc-h">${d.treasure ? '💰 VỚT ĐƯỢC BẢO VẬT!' : junk ? '😅 CÂU PHẢI RÁC…' : '🎣 CÂU ĐƯỢC!'}</div>
+      <img src="${UI.iconUrl(d.id)}" width="72" height="72">
+      <div class="fc-n" style="color:${col}">${UI.esc(it.name || '')}</div>
+      <div class="fc-s">${!junk && !d.treasure ? `<span>${RN[rar] || ''}</span>` : ''}${d.kg ? `<b>⚖ ${d.kg} cân</b>` : ''}</div>
+      ${d.rec ? '<div class="fc-rec">🏆 KỶ LỤC MỚI!</div>' : ''}`;
+    void cardEl.offsetWidth;
+    cardTimer = setTimeout(() => { cardEl.className = cardEl.className.replace('show', 'hide'); }, 3500);
+  }
   // ---------- chế độ tập trung khi cá cắn câu / đang kéo cá ----------
   // rung máy liên tục, màn hình giật nhẹ theo nhịp, 2 dải đen trượt vào trên dưới + viền tối nhịp đập quanh mép màn hình
   let focusEl = null, focusTimer = 0, focusMode = null;
@@ -162,7 +178,7 @@
     if (d.st === 'got') {
       if (lastLine) reel(G.you, lastLine.wx, lastLine.wy, d.id);
       const it = G.data.items[d.id] || {}, col = { legendary: '#ffb347', epic: '#d08cff', rare: '#7fbfff' }[it.rarity] || '#e8f4ff';
-      if (G.self) Overhead.add(G.self.x, G.self.y - 96, `🎣 ${it.name}${d.kg ? ' ' + d.kg + ' cân' : ''}${d.rec ? ' · Kỷ lục!' : ''}`, 'status', col);
+      catchCard(d, it, col);
       GameAudio.sfx(it.rarity === 'legendary' || it.rarity === 'epic' || d.treasure ? 'enhOk' : 'coin');
       if (it.rarity === 'legendary' && G.shakeScreen) G.shakeScreen(6);
     }
