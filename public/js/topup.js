@@ -31,8 +31,9 @@
         <div class="small muted">${d.auto ? '⚡ Tự động cộng: chuyển đúng nội dung và đủ tiền thì Nguyên Bảo vào tài khoản sau khoảng 1 phút, không cần chờ duyệt.' : 'Chuyển xong, Nguyên Bảo sẽ được cộng khi quản trị viên xác nhận (thường trong vài phút – vài giờ).'} Bạn sẽ nhận thông báo trong game, kể cả khi đang offline vẫn được cộng.</div>
         <div class="row" style="gap:6px;margin-top:6px"><button class="btn" data-back="1">← Chọn số tiền khác</button><button class="btn red" data-cancel="${esc(o.code)}">Huỷ đơn này</button></div></div>`;
     } else {
+      if (d.x2) h += `<div class="tp-x2"><b>🎉 X2 NẠP LẦN ĐẦU</b> – lần nạp đầu tiên nhận gấp đôi Nguyên Bảo!</div>`;
       h += `<div class="card"><h4>Chọn số tiền nạp</h4><div class="small muted">Tỉ lệ: <b>1.000đ = ${d.rate} Nguyên Bảo</b> · chuyển khoản ${esc(b.bankName)} qua mã QR</div>
-        <div class="tp-grid">${d.presets.map(a => `<button class="tp-opt ${a === amt ? 'on' : ''}" data-a="${a}"><b>${fmt(a)}đ</b><span>💎 ${fmt(knb(a))}</span></button>`).join('')}</div>
+        <div class="tp-grid">${d.presets.map(a => `<button class="tp-opt ${a === amt ? 'on' : ''}" data-a="${a}"><b>${fmt(a)}đ</b><span>💎 ${d.x2 ? `<s>${fmt(knb(a))}</s> ${fmt(knb(a) * 2)}` : fmt(knb(a))}</span></button>`).join('')}</div>
         <div class="row" style="gap:6px;align-items:center"><label class="small">Số khác</label><input id="tp-amt" type="number" min="${d.min}" max="${d.max}" step="1000" value="${amt}" style="width:130px"> đ
           <span class="small" id="tp-knb">= 💎 ${fmt(knb(amt))}</span></div>
         <button class="btn primary big" id="tp-go" style="margin-top:8px">📱 Tạo mã QR nạp ${fmt(amt)}đ</button>

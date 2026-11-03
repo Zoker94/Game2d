@@ -286,7 +286,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   });
 
   // ----- Cấu hình -----
-  app.get('/api/admin/config', auth, (req, res) => res.json(db.data.config));
+  app.get('/api/admin/config', auth, (req, res) => res.json(Object.assign({}, db.data.config, { welcome: world.welcome.cfg })));
   app.post('/api/admin/config', auth, (req, res) => {
     const c = db.data.config, b = req.body || {};
     for (const k of ['expRate', 'dropRate', 'goldRate']) if (b[k] != null) c[k] = U.clamp(+b[k] || 1, 0.1, 100);
@@ -304,6 +304,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     if (b.pkExpBonus != null) c.pkExpBonus = U.clamp(+b.pkExpBonus | 0, 0, 300);   // % kinh nghiệm cộng thêm ở khu thường (có PK) so với khu VIP
     if (b.tradeLv != null) c.tradeLv = U.clamp(+b.tradeLv | 0, 0, 200);   // cấp tối thiểu để giao dịch / chợ / nhận thưởng mời bạn (0 = không giới hạn)   // số tài khoản tối đa được TẠO trên 1 thiết bị (0 = không giới hạn)   // số tài khoản tối đa cùng lúc / 1 IP (0 = không giới hạn)
     if (b.autoEvents != null) c.autoEvents = !!b.autoEvents;
+    if (b.welcome && typeof b.welcome === 'object') world.welcome.save(b.welcome);   // popup chào mừng
     if (b.serverMode === 'test' || b.serverMode === 'open') c.serverMode = b.serverMode;   // Open Test: NPC bán thêm rương mở đồ; Open chính thức: không bán
     if (b.disablePasswordAdmin != null) {
       if (!req.isOwner) return res.status(403).json({ error: 'Chỉ chủ server (tài khoản Google) mới được thay đổi mục này' });

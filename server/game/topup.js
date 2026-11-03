@@ -31,7 +31,7 @@ class Topup {
   view(p) {
     this.expire();
     const b = this.bank;
-    return { bank: { bin: b.bin, bankName: b.bankName, acc: b.acc, holder: b.holder }, auto: !!(this.hook.on && this.hook.key), rate: b.rate, min: b.min, max: b.max, presets: PRESETS,
+    return { bank: { bin: b.bin, bankName: b.bankName, acc: b.acc, holder: b.holder }, auto: !!(this.hook.on && this.hook.key), x2: !!(this.w.welcome && this.w.welcome.x2Ok(p.c)), rate: b.rate, min: b.min, max: b.max, presets: PRESETS,
       orders: this.mine(p.userId).slice(0, 15).map(o => ({ code: o.code, amount: o.amount, knb: o.knb, at: o.at, status: o.status, doneAt: o.doneAt || 0, note: o.note || '' })) };
   }
   action(p, d) {
@@ -106,13 +106,16 @@ class Topup {
     if (!u || !u.character) return { error: 'Tài khoản không còn nhân vật' };
     o.status = 'done'; o.doneAt = Date.now(); o.by = by;
     const p = this.w.players.get(o.uid);
+    // x2 lần nạp đầu (bật / tắt ở Cấu hình server › Popup chào mừng)
+    const bonus = this.w.welcome ? this.w.welcome.bonus(p ? p.c : u.character, o.knb) : 0;
+    if (bonus) o.bonus = bonus;
     if (p) {
-      p.c.knb = (p.c.knb || 0) + o.knb; p.c.topupTotal = (p.c.topupTotal || 0) + o.amount; p.dirtyMe = true;
-      this.w.toast(p, `💎 Nạp thành công đơn ${o.code}: +${o.knb} Nguyên Bảo. Cảm ơn bạn đã ủng hộ!`, 'reward');
+      p.c.knb = (p.c.knb || 0) + o.knb + bonus; p.c.topupTotal = (p.c.topupTotal || 0) + o.amount; p.dirtyMe = true;
+      this.w.toast(p, `💎 Nạp thành công đơn ${o.code}: +${o.knb} Nguyên Bảo${bonus ? ` + 🎉 ${bonus} thưởng x2 nạp lần đầu` : ''}. Cảm ơn bạn đã ủng hộ!`, 'reward');
       p.socket.emit('topup', this.view(p));
-    } else { u.character.knb = (u.character.knb || 0) + o.knb; u.character.topupTotal = (u.character.topupTotal || 0) + o.amount; }
+    } else { u.character.knb = (u.character.knb || 0) + o.knb + bonus; u.character.topupTotal = (u.character.topupTotal || 0) + o.amount; }
     this.db.markDirty();
-    this.db.log('topup', `Duyệt đơn ${o.code} của ${o.name}: ${o.amount.toLocaleString('vi-VN')}đ -> +${o.knb} Nguyên Bảo (bởi ${by})`);
+    this.db.log('topup', `Duyệt đơn ${o.code} của ${o.name}: ${o.amount.toLocaleString('vi-VN')}đ -> +${o.knb}${bonus ? ' (+' + bonus + ' x2 nạp đầu)' : ''} Nguyên Bảo (bởi ${by})`);
     return { ok: true };
   }
   reject(code, by, note) {

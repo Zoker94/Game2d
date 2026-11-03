@@ -55,7 +55,8 @@ new (require('./game/fishing').Fishing)(world, features, db);   // gắn world.f
 new (require('./game/topup').Topup)(world, db);   // gắn world.topup (nạp Nguyên Bảo qua chuyển khoản)
 new (require('./game/guildx').GuildX)(world, features, db);   // gắn world.guildx (nhiệm vụ bang, boss bang)
 new (require('./game/presence').Presence)(world);
-new (require('./game/treasure').Treasure)(world);   // gắn world.treasure (Tàng Bảo Đồ, đào Thần Khí)   // gắn world.presence (bảng xác nhận có mặt trong sự kiện, chống treo máy)
+new (require('./game/treasure').Treasure)(world);
+new (require('./game/welcome').Welcome)(world, db);   // gắn world.welcome (popup chào mừng, x2 nạp đầu, gift code tân thủ)   // gắn world.treasure (Tàng Bảo Đồ, đào Thần Khí)   // gắn world.presence (bảng xác nhận có mặt trong sự kiện, chống treo máy)
 world.cleanup = new (require('./game/cleanup').Cleanup)(world, features, db);
 require('./game/shops').apply(db);   // cửa hàng NPC do quản trị viên sửa
 require('./game/bosscfg').apply(db);   // chỉ số / giờ xuất hiện boss do quản trị viên sửa
@@ -442,6 +443,7 @@ io.on('connection', socket => {
       if (!db.usingDatabase) socket.emit('notice', { text: '⚠ CẢNH BÁO: Máy chủ chưa cấu hình DATABASE_URL. Dữ liệu đang lưu vào file tạm và SẼ MẤT mỗi lần cập nhật / khởi động lại trên Render. Hãy thêm DATABASE_URL (Neon) trong Render → Environment.', type: 'admin' });
     }
     world.story.onJoin(player);
+    setTimeout(() => socket.connected && player && world.welcome.send(player), 1800);   // popup chào mừng (tắt / sửa ở Cấu hình server)
     world.autoSrv.greet(player);
     world.referral.onEnter(player);
     if (!user.character.tutorial.done) socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', text: 'Mẹo: Làm theo khung Hướng Dẫn Tân Thủ ở góc trái để nhận quà!', t: Date.now() });

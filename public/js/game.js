@@ -378,6 +378,7 @@
     s.on('mystery', d => Mystery.onData(d));
     s.on('guildx', d => GuildX.onData(d));
     EvCheck.bind(s);
+    Welcome.bind(s);
     TreasureUI.bind(s);
     s.on('cloakResult', d => Loom.onResult(d));
     s.on('guildBoss', d => GuildX.onBoss(d));

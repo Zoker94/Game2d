@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🎉 Popup chào mừng khai mở máy chủ mới: 🎁 gift code tân thủ TANTHU2026 (100 Nguyên Bảo, 50.000 lượng, thuốc, Huyền Tinh Thạch, Song Bội Kinh Nghiệm, Rương Bí Ẩn…) bấm nhận ngay trong popup, và 💎 X2 NẠP LẦN ĐẦU – lần nạp đầu tiên nhận gấp đôi Nguyên Bảo.',
       '❓ Đố Vui Võ Lâm thêm bộ câu hỏi mới: 165 câu (Kim Dung & giang hồ, kiến thức trong game, văn hoá – lịch sử, đố mẹo, tính nhẩm). Gõ không dấu vẫn tính đúng, đáp án số phải đúng nguyên số, không lặp lại câu vừa hỏi.',
       '💥 PK hạ người: nổ một phát (cầu lửa, sóng xung kích, tia lửa, rung màn) rồi xác văng ra xa theo hướng đòn đánh, xoay người rơi xuống tung bụi. Không văng xuyên tường.',
       '📜 Tàng Bảo Đồ thêm nhiều câu đố: 35 nơi giấu kho báu (thêm hang động, mộ cổ, sơn môn 9 phái…), gần 190 câu đố khác nhau (câu về truyền thuyết, quái vật, cấp bãi luyện), 5 kiểu lời nhắn lối đi và hơn 15.000 điểm đào. Kho báu chỉ rơi vào nơi hợp cấp người ghép.',
