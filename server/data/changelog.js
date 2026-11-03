@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🎣 Vẽ lại khung kéo cá: cột nước có tia nắng, bọt khí, rong và cát đáy; vùng cá phát sáng, con cá quẫy đuôi theo màu độ hiếm; lưỡi câu treo dây có phao; ống tiến độ thuỷ tinh chất lỏng sóng sánh, viền đồng nháy đỏ khi cá giãy, ống sáng rực khi sắp kéo được.',
       '🏆 Bảng Thánh Câu Cá (chỉ xem ở Đầu Bếp Tửu Lâu – tab Thánh Câu): xếp hạng ai câu được con cá quý nhất (độ hiếm trước, cùng loại thì nặng hơn đứng trên) và kỷ lục cân nặng từng loại cá của cả máy chủ.',
       '🎣 Câu được cá giờ hiện bảng lớn giữa màn hình: hình con cá, tên chữ to theo màu độ hiếm, cân nặng, nhãn KỶ LỤC MỚI – đứng yên khoảng 3,5 giây cho kịp đọc.',
       '🐎 Thu nhỏ toàn bộ thú cưỡi (còn khoảng 62%) cho cân với dáng nhân vật: người cưỡi không còn bị rồng / phượng che khuất, hiệu ứng lửa, cánh, hào quang của thú cũng thu theo.',

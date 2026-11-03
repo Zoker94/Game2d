@@ -881,3 +881,8 @@ body.touch .lm-list { width: 86px; }
 .ft-rc { display: flex; gap: 6px; align-items: center; padding: 4px 6px; border-radius: 6px; background: rgba(255,255,255,.04); font-size: 12px; }
 .ft-rc.me { outline: 1px solid #ffd040; }
 @media (max-width: 520px) { .ft-row { grid-template-columns: 28px 1fr auto; } .ft-row .ft-fish { grid-column: 2 / 4; } .ft-row > .small { display: none; } }
+/* minigame kéo cá – khung mới */
+#fish-game { padding: 10px 12px 8px; border-radius: 16px; background: radial-gradient(ellipse at 50% 0%, rgba(40,70,100,.95), rgba(8,14,24,.95)); border: 2px solid #d8a850; box-shadow: 0 0 0 3px #3a2410, 0 0 24px rgba(120,200,255,.35), 0 8px 26px rgba(0,0,0,.7); }
+#fish-game canvas { display: block; }
+#fish-game .fg-t { font: 900 17px Georgia, 'Times New Roman', serif; letter-spacing: 1px; background: linear-gradient(90deg, #ffd040, #fff6c0, #ffd040); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; filter: drop-shadow(0 0 6px rgba(255,160,40,.7)); animation: lmShine 2s linear infinite; }
+#fish-game .fg-h { max-width: 170px; font-size: 10px; color: #b8d4e8; line-height: 1.35; }
