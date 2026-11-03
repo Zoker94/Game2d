@@ -100,13 +100,17 @@
   // ---------- màn xem trận ----------
   // Đấu trường: nền vẽ sẵn một lần ra canvas phụ (trời hoàng hôn, núi xa, mái đình, khán đài, rào tre, sân cát có quây chiếu),
   // mỗi khung chỉ vẽ phần động: khán giả nhún nhảy / hò reo, đèn lồng đung đưa, đuốc lửa, gà, bụi, tia va chạm, bảng máu.
-  const W = 760, H = 420, GY = 330, DPR = 2, HOME = [W / 2 - 170, W / 2 + 170];
+  const W = 760, H = 420, GY = 330, HOME = [W / 2 - 170, W / 2 + 170];
   function rng(s) { return () => { s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   const hx = c => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
   function shade(c, k, to = '#2a1420') { const a = hx(c), b = hx(to); return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * k)).join(',')})`; }
   function rr(x, X, Y, w, h, r) { x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); }
-  function layer(fn) { const c = document.createElement('canvas'); c.width = W * DPR; c.height = H * DPR; const x = c.getContext('2d'); x.scale(DPR, DPR); fn(x, rng(1234)); return c; }
-  let BG = null;
+  // Bộ nhớ canvas trên điện thoại (nhất là iPhone) có hạn: vượt hạn thì trình duyệt âm thầm bỏ canvas (nền đen, hình lem,
+  // mất cả nền bản đồ). Nên lớp nền vẽ ở cỡ 1x, màn đấu tối đa 1,5x, và trả hết bộ nhớ khi đóng trận.
+  const DPR = Math.min(1.5, window.devicePixelRatio || 1);
+  function layer(fn) { const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); fn(x, rng(1234)); return c; }
+  function freeBg() { if (!BG) return; for (const c of [BG.back, BG.front]) c.width = c.height = 0; BG = null; }
+  let BG = null, A = null;
   function buildBg() {
     // ---- lớp sau: trời, mặt trời, mây, núi, khán đài ----
     const back = layer((x, R) => {
@@ -200,13 +204,12 @@
       // cột đuốc
       for (const px of [52, W - 52]) { x.fillStyle = '#3a2010'; x.fillRect(px - 3, 168, 6, 160); x.fillStyle = '#6a4020'; x.fillRect(px - 3, 168, 2, 160); for (let yy = 180; yy < 210; yy += 4) { x.fillStyle = '#b08850'; x.fillRect(px - 4, yy, 8, 2); } x.fillStyle = '#4a4a50'; x.beginPath(); x.moveTo(px - 12, 160); x.lineTo(px + 12, 160); x.lineTo(px + 5, 172); x.lineTo(px - 5, 172); x.fill(); x.fillStyle = '#8a8a90'; x.fillRect(px - 12, 160, 24, 2); }
     });
-    const vig = layer(x => { const g = x.createRadialGradient(W / 2, H * 0.55, 180, W / 2, H * 0.55, 520); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(20,6,0,.6)'); x.fillStyle = g; x.fillRect(0, 0, W, H); });
     // khán giả: 3 hàng, mỗi người có màu áo, nón lá / khăn đóng / tóc, một số cầm cờ
     const R = rng(77), crowd = [], skins = ['#f2c494', '#dcaa78', '#be8a5a', '#a8744a'], shirts = ['#a83228', '#2a5a8a', '#3a7a3a', '#c89030', '#5a3a7a', '#e8e0c8', '#4a4a52', '#b85a20', '#1e6a6a', '#8a2a5a'];
     [[154, 25, 0.82, 0.5], [176, 23, 0.92, 0.3], [198, 21, 1.02, 0.12]].forEach(([y, n, s, dk]) => {
       for (let i = 0; i < n; i++) crowd.push({ x: 30 + (i + 0.2 + R() * 0.6) * (W - 60) / n, y, s, dk, skin: shade(skins[R() * 4 | 0], dk), shirt: shade(shirts[R() * shirts.length | 0], dk), hat: R() * 4 | 0, ph: R() * 6.28, sp: 0.8 + R() * 0.6, flag: R() < 0.12 ? shade(['#e83020', '#ffd040'][R() * 2 | 0], dk) : null, side: R() < 0.5 ? 0 : 1 });
     });
-    BG = { back: back, front: front, vig: vig, crowd: crowd };
+    BG = { back: back, front: front, crowd: crowd };
   }
   function drawCrowd(x, now, hype) {
     for (const c of BG.crowd) {
@@ -306,9 +309,10 @@
   }
   function fight(d) {
     if (UI.panelName() === 'cockfight') UI.closePanel();
+    if (A) { A.closed = true; A.cv.width = A.cv.height = 0; A.el.remove(); A = null; }   // trận cũ còn mở: trả bộ nhớ trước
     if (!BG) buildBg();
     const el = document.createElement('div'); el.id = 'cf-arena';
-    el.innerHTML = `<div class="cfa-box"><canvas width="${W * DPR}" height="${H * DPR}"></canvas><button class="btn small cfa-skip">Bỏ qua ⏭</button><div class="cfa-res"></div></div>`;
+    el.innerHTML = `<div class="cfa-box"><canvas width="${Math.round(W * DPR)}" height="${Math.round(H * DPR)}"></canvas><button class="btn small cfa-skip">Bỏ qua ⏭</button><div class="cfa-res"></div></div>`;
     document.body.appendChild(el);
     el.addEventListener('pointerdown', e => e.stopPropagation());
     const cv = el.querySelector('canvas');
@@ -332,6 +336,7 @@
     const sh = A.shake > now ? (Math.random() - 0.5) * A.shakeK : 0;
     x.setTransform(DPR, 0, 0, DPR, sh * DPR, sh * 0.5 * DPR);
     x.imageSmoothingEnabled = true;
+    x.fillStyle = '#2a1810'; x.fillRect(-10, -10, W + 20, H + 20);   // xoá khung cũ (lỡ lớp nền hỏng cũng không lem hình)
     // nền + khán giả + rào/sân
     x.drawImage(BG.back, -8, -6, W + 16, H + 12);
     drawCrowd(x, now, A.cheer > now ? A.cheerK : 0);
@@ -400,7 +405,7 @@
       x.font = `900 ${n.big ? 32 : 24}px "Be Vietnam Pro", sans-serif`; x.textAlign = 'center'; x.lineJoin = 'round'; x.lineWidth = 6; x.strokeStyle = '#1a0400'; x.strokeText(n.t, 0, 0);
       const g = x.createLinearGradient(0, -20, 0, 6); g.addColorStop(0, '#ffffff'); g.addColorStop(0.45, n.c); g.addColorStop(1, n.c); x.fillStyle = g; x.fillText(n.t, 0, 0); x.restore();
     }
-    x.drawImage(BG.vig, 0, 0, W, H);
+    { const g = x.createRadialGradient(W / 2, H * 0.55, 180, W / 2, H * 0.55, 520); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(20,6,0,.6)'); x.fillStyle = g; x.fillRect(0, 0, W, H); }
     // bảng máu, VS, lượt
     for (const i of [0, 1]) plate(x, i, i ? d.B : d.A, A.hp[i], A.max[i], A.lag[i], now, t);
     vsBadge(x, now, t, A.step, d.ev.length);
@@ -446,7 +451,7 @@
     box.querySelector('.cfa-close').onclick = close;
     try { GameAudio.sfx(won ? 'enhOk' : 'enhFail'); } catch (e) { }
   }
-  function close() { if (!A) return; A.closed = true; A.cv.width = A.cv.height = 1; A.el.remove(); A = null; if (G.npcPanelReopen) G.npcPanelReopen(); }
+  function close() { if (!A) return; A.closed = true; A.cv.width = A.cv.height = 0; A.el.remove(); freeBg(); A = null; if (G.npcPanelReopen) G.npcPanelReopen(); }
 
   // ---------- lời thách đấu, gà nở ----------
   function invite(d) {

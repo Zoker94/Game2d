@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '📱 Sửa lỗi điện thoại (nhất là iPhone): xem chọi gà xong màn đấu bị đen, gà lem vệt, nền bản đồ mất – đấu trường giờ dùng ít bộ nhớ hình hơn 4 lần và trả lại hết khi đóng trận',
       '📱 Sửa lỗi điện thoại: gõ chữ xong, bàn phím đóng nhưng màn hình bị lệch (giao diện lặp đôi, vùng đen, chạm không ăn) – game tự kéo màn về đúng chỗ',
       '🐓 Thách đấu chọi gà không cần gõ phím nữa: chạm chọn người chơi ở gần đang có gà, chạm chọn mức cược (tránh bàn phím điện thoại bật lên làm giật/đơ màn hình)',
       '🐓 Đấu trường chọi gà vẽ lại hoàn toàn: trời hoàng hôn, núi xa, mái đình sơn son, đèn lồng đung đưa, đuốc lửa bập bùng, khán đài đông người hò reo khi có đòn chí mạng, rào tre, sân cát quây chiếu; gà chạy vào sân, bụi tung, tia va chạm, lông bay đúng màu gà, chớp trắng khi trúng đòn; bảng máu mới có chân dung gà, khung theo độ hiếm, vệt máu tụt dần, đếm lượt; con thắng toả hào quang',
