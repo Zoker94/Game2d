@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🏆 Đua Top Tuần: 4 bảng Top Cấp Độ, Top Lực Chiến, Top Săn Boss, Top Nạp Tuần. 00:00 Thứ 2 tự trao thưởng top 10 mỗi bảng (hạng 1: 500 Nguyên Bảo + 2 Rương Thủ Lĩnh + 3 Thiên Tinh Thạch, hạng 2: 300, hạng 3: 200, hạng 4–10: 50 Nguyên Bảo + 2 Rương Bí Ẩn). Xem top 3, hạng của mình và đếm ngược ngay trong popup khi vào game.',
       '🎉 Popup chào mừng khai mở máy chủ mới: 🎁 gift code tân thủ TANTHU2026 (100 Nguyên Bảo, 50.000 lượng, thuốc, Huyền Tinh Thạch, Song Bội Kinh Nghiệm, Rương Bí Ẩn…) bấm nhận ngay trong popup, và 💎 X2 NẠP LẦN ĐẦU – lần nạp đầu tiên nhận gấp đôi Nguyên Bảo.',
       '❓ Đố Vui Võ Lâm thêm bộ câu hỏi mới: 165 câu (Kim Dung & giang hồ, kiến thức trong game, văn hoá – lịch sử, đố mẹo, tính nhẩm). Gõ không dấu vẫn tính đúng, đáp án số phải đúng nguyên số, không lặp lại câu vừa hỏi.',
       '💥 PK hạ người: nổ một phát (cầu lửa, sóng xung kích, tia lửa, rung màn) rồi xác văng ra xa theo hướng đòn đánh, xoay người rơi xuống tung bụi. Không văng xuyên tường.',

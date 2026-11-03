@@ -1306,6 +1306,7 @@ class World {
       p.socket.emit('gain', { exp: gained, gold: mon.boss ? gold : 0, x: mon.x, y: mon.y });
       if (mon.boss) {
         p.c.bossKills = (p.c.bossKills || 0) + 1;
+        if (this.weekRace) this.weekRace.add(p.c, 'boss', 1);
         this.achieve(p, 'bossKills', 1);
         this.features.questProgress(p, 'boss', 1);
       } else {

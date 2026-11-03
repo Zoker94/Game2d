@@ -153,6 +153,7 @@ class Features {
   }
 
   onMinute(mod) {
+    if (this.w.weekRace) this.w.weekRace.onMinute();   // hết tuần: trao thưởng đua top
     // Boss theo giờ
     for (const id in BOSSES) {
       const b = BOSSES[id];

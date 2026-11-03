@@ -56,6 +56,7 @@ new (require('./game/topup').Topup)(world, db);   // gắn world.topup (nạp Ng
 new (require('./game/guildx').GuildX)(world, features, db);   // gắn world.guildx (nhiệm vụ bang, boss bang)
 new (require('./game/presence').Presence)(world);
 new (require('./game/treasure').Treasure)(world);
+new (require('./game/weekrace').WeekRace)(world, features, db);   // gắn world.weekRace (đua top tuần, tự trao thưởng cuối tuần)
 new (require('./game/welcome').Welcome)(world, db);   // gắn world.welcome (popup chào mừng, x2 nạp đầu, gift code tân thủ)   // gắn world.treasure (Tàng Bảo Đồ, đào Thần Khí)   // gắn world.presence (bảng xác nhận có mặt trong sự kiện, chống treo máy)
 world.cleanup = new (require('./game/cleanup').Cleanup)(world, features, db);
 require('./game/shops').apply(db);   // cửa hàng NPC do quản trị viên sửa

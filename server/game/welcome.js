@@ -8,6 +8,7 @@ const DEF = {
   title: 'CHÀO MỪNG KHAI MỞ MÁY CHỦ MỚI',
   sub: 'Võ Lâm Pixel – giang hồ rộng mở, anh hùng tụ hội!',
   x2: true,
+  race: true,
   gift: GIFT,
   features: [
     '⚔️ 9 môn phái, mỗi phái 2 hệ Nội công / Ngoại công, đổi phái giữ nguyên cấp',
@@ -53,6 +54,7 @@ class Welcome {
     p.socket.emit('welcome', {
       title: c.title, sub: c.sub, features: (c.features || []).filter(Boolean).slice(0, 12),
       x2: this.x2Ok(p.c), x2On: !!c.x2,
+      race: c.race && this.w.weekRace ? this.w.weekRace.view(p) : null,
       gift: giftOk ? { code: c.gift, used: g.usedBy.includes(p.userId), reward: g.reward } : null
     });
   }
@@ -63,6 +65,7 @@ class Welcome {
     if (b.title != null) cur.title = String(b.title).slice(0, 80);
     if (b.sub != null) cur.sub = String(b.sub).slice(0, 160);
     if (b.x2 != null) cur.x2 = !!b.x2;
+    if (b.race != null) cur.race = !!b.race;
     if (b.gift != null) cur.gift = String(b.gift).trim().toUpperCase().slice(0, 24);
     if (b.features != null) cur.features = String(b.features).split('\n').map(s => s.trim().slice(0, 120)).filter(Boolean).slice(0, 12);
     this.db.data.config.welcome = cur;

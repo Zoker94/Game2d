@@ -109,6 +109,7 @@ class Topup {
     // x2 lần nạp đầu (bật / tắt ở Cấu hình server › Popup chào mừng)
     const bonus = this.w.welcome ? this.w.welcome.bonus(p ? p.c : u.character, o.knb) : 0;
     if (bonus) o.bonus = bonus;
+    if (this.w.weekRace) this.w.weekRace.add(p ? p.c : u.character, 'knb', o.knb);   // đua top nạp tuần
     if (p) {
       p.c.knb = (p.c.knb || 0) + o.knb + bonus; p.c.topupTotal = (p.c.topupTotal || 0) + o.amount; p.dirtyMe = true;
       this.w.toast(p, `💎 Nạp thành công đơn ${o.code}: +${o.knb} Nguyên Bảo${bonus ? ` + 🎉 ${bonus} thưởng x2 nạp lần đầu` : ''}. Cảm ơn bạn đã ủng hộ!`, 'reward');
