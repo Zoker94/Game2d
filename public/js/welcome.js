@@ -13,7 +13,7 @@
     const parts = [];
     if (r.knb) parts.push(`<b class="wc-knb">💎 ${fmt(r.knb)} Nguyên Bảo</b>`);
     if (r.gold) parts.push(`<b class="wc-gold">💰 ${fmt(r.gold)} ngân lượng</b>`);
-    for (const [id, n] of r.items || []) { const it = G.data.items[id]; if (it) parts.push(`<span class="wc-it"><img src="${UI.iconUrl(id)}" width="18" height="18">${esc(it.name)} x${n}</span>`); }
+    for (const [id, n] of r.items || []) { const it = G.data.items[id]; if (it) parts.push(`<span class="wc-it"><img src="${UI.iconUrl(id)}" width="18" height="18"><em>${esc(it.name)} </em>x${n}</span>`); }
     return parts.join('');
   }
   // Đua Top Tuần: đếm ngược tới 00:00 Thứ 2, phần thưởng, 4 bảng top 3 + hạng của mình
@@ -22,8 +22,8 @@
   function raceHtml(r) {
     const rw = r.reward, itemN = (x, id) => ((x.items || []).find(i => i[0] === id) || [0, 0])[1];
     return `<div class="wc-race"><div class="wc-rh">🏆 ĐUA TOP TUẦN 🏆</div>
-      <div class="wc-cd">Kết thúc sau <b id="wc-cd">…</b> · trao thưởng tự động 00:00 Thứ 2</div>
-      <div class="wc-rwd"><span>🥇 <b>${rw[0].knb}💎</b> + ${itemN(rw[0], 'boss_chest')} Rương Thủ Lĩnh + ${itemN(rw[0], 'stone2')} Thiên Tinh Thạch</span><span>🥈 <b>${rw[1].knb}💎</b></span><span>🥉 <b>${rw[2].knb}💎</b></span><span>Top 4–10: <b>${rw[3].knb}💎</b></span></div>
+      <div class="wc-cd">Kết thúc sau <b id="wc-cd">…</b><span class="wc-cd2"> · trao thưởng tự động 00:00 Thứ 2</span></div>
+      <div class="wc-rwd"><span>🥇 <b>${rw[0].knb}💎</b><em> + ${itemN(rw[0], 'boss_chest')} Rương Thủ Lĩnh + ${itemN(rw[0], 'stone2')} Thiên Tinh Thạch</em></span><span>🥈 <b>${rw[1].knb}💎</b></span><span>🥉 <b>${rw[2].knb}💎</b></span><span>Top 4–10: <b>${rw[3].knb}💎</b></span></div>
       <div class="wc-boards">${r.boards.map(b => `<div class="wc-bd"><div class="wc-bt">${b.icon} ${esc(b.name)}</div>${b.title && G.data.titles && G.data.titles[b.title] ? `<div class="wc-ttl" style="--c:${G.data.titles[b.title].color}">🏅 【${esc(G.data.titles[b.title].name)}】</div>` : ''}
         ${[0, 1, 2].map(i => b.top[i] ? `<div class="wc-row r${i}"><span>${MEDAL[i]} ${esc(b.top[i][0])}</span><b>${short(b.top[i][1])}</b></div>` : `<div class="wc-row empty"><span>${MEDAL[i]} Đang chờ anh hùng…</span></div>`).join('')}
         <div class="wc-me">${b.me ? `Bạn: hạng <b>${b.me}</b>` : 'Bạn chưa lọt bảng'} · ${short(b.mine)} ${esc(b.unit)}</div></div>`).join('')}</div>
@@ -49,17 +49,19 @@
       <button class="wc-x" title="Đóng">✕</button>
       <div class="wc-title">${esc(d.title)}</div>
       ${d.sub ? `<div class="wc-sub">${esc(d.sub)}</div>` : ''}
+      <div class="wc-cols"><div class="wc-c1">
       ${d.x2On ? `<div class="wc-x2 ${d.x2 ? '' : 'used'}"><div class="wc-rays"></div>
         <div class="wc-x2-big"><span>X</span><span>2</span></div>
         <div class="wc-x2-t">${d.x2 ? 'NẠP LẦN ĐẦU – NHẬN GẤP ĐÔI NGUYÊN BẢO' : 'Bạn đã nhận ưu đãi x2 nạp lần đầu'}</div>
         ${d.x2 ? `<div class="wc-x2-s">Nạp 20.000đ nhận <s>40</s> <b>80 💎</b> · nạp 100.000đ nhận <s>200</s> <b>400 💎</b><br>Chỉ áp dụng cho lần nạp đầu tiên của mỗi nhân vật!</div>
         <button class="wc-go">💎 NẠP NGAY – NHẬN X2</button>` : ''}</div>` : ''}
-      ${d.race ? raceHtml(d.race) : ''}
       ${d.gift ? `<div class="wc-gift"><div class="wc-gh">🎁 GIFT CODE TÂN THỦ</div>
         <div class="wc-code"><span>${esc(d.gift.code)}</span><button class="wc-copy">Chép</button></div>
         <div class="wc-rw">${rewardText(d.gift.reward)}</div>
         <button class="btn primary wc-claim" ${d.gift.used ? 'disabled' : ''}>${d.gift.used ? '✔ Đã nhận' : '🎁 Nhận quà ngay'}</button></div>` : ''}
+      </div>${d.race ? `<div class="wc-c2">${raceHtml(d.race)}</div>` : ''}<div class="wc-c3">
       ${d.features && d.features.length ? `<div class="wc-feat"><div class="wc-fh">✨ ĐIỂM NỔI BẬT CỦA MÁY CHỦ</div><ul>${d.features.map(f => `<li>${esc(f)}</li>`).join('')}</ul></div>` : ''}
+      </div></div>
       <label class="wc-hide"><input type="checkbox" id="wc-hide"> Không hiện lại hôm nay</label>
     </div>`;
     document.body.appendChild(el);
