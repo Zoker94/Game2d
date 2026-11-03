@@ -1,7 +1,14 @@
 // Câu cá & nấu ăn.
 // - Đứng sát mép nước (sông, hồ ở mọi bản đồ, kể cả thành và khu VIP), có Cần Câu + Mồi Câu: bấm 🎣 Câu cá (hoặc dùng Cần Câu).
-//   Chờ 5-12 giây phao chìm ("Cá cắn câu!") thì bấm Giật cần trong 1,6 giây. Giật sớm hay chậm đều mất mồi.
-//   Có Vé Treo Máy: tự giật cần (80% dính). Di chuyển hoặc bị đánh thì thu cần (không mất mồi).
+//   Chờ 5-12 giây phao chìm ("Cá cắn câu!") thì bấm Giật cần trong 1,6 giây, rồi chơi minigame KÉO CÁ (giữ để kéo vạch,
+//   nhả cho chìm, giữ vạch trong vùng cá tới khi đầy thanh). Giật sớm, chậm hay để cá sổng đều mất mồi.
+//   Di chuyển hoặc bị đánh thì thu cần (không mất mồi). Không có tự giật cần (kể cả có Vé Treo Máy).
+// - Chống câu tự động (4 lớp):
+//   1. Minigame kéo cá: máy khách gửi lên dãy thời điểm giữ / nhả, máy chủ chạy lại mô phỏng (public/js/fishsim.js)
+//      với seed của mình để xác nhận, đối chiếu thời gian thật.
+//   2. Phản xạ "không giống người": giật cần nhanh hơn 150ms, hoặc 12 lần gần nhất đều tăm tắp (độ lệch < 40ms) -> hỏi mã.
+//   3. Mã xác nhận ngẫu nhiên mỗi 20-50 lần câu (ảnh máy chủ vẽ, server/game/capimg.js). Sai 3 lần / quá 30 giây: cấm câu 30 phút.
+//   4. Thể lực câu: 300 lần thả câu / ngày; câu liền một mạch quá 60 lần thì tỉ lệ cá hiếm giảm dần (nghỉ 10 phút thì hồi).
 // - Cá theo cấp bãi: bãi cao, ban đêm dễ ra cá hiếm hơn. Có rác, có rương báu. Mỗi con có cân nặng – lưu kỷ lục.
 // - Nấu ăn ở Đầu Bếp Tửu Lâu (Tương Dương): món ăn cộng kinh nghiệm / công / thủ / máu trong 30-60 phút (mỗi lúc 1 món).
 const U = require('./util');
@@ -10,7 +17,9 @@ const { ITEMS } = require('../data/items');
 
 const WATER = 2, ROD = 'can_cau', BAIT = 'moi_cau';
 const FOOD_MAX = 8 * 3600e3;   // món ăn cộng dồn tối đa 8 giờ
-const WAIT = [5000, 12000], BITE_MS = 1600, AUTO_OK = 0.8;
+const WAIT = [5000, 12000], BITE_MS = 1600;
+const SIM = require('../../public/js/fishsim');
+const STA_MAX = 300, SESS_FREE = 60, CAP_TIME = 30000, BAN_MS = 30 * 60000, RT_MIN = 150;
 // cá: id, nhóm, cân nặng (kg)
 const FISH = {
   fish_chep: { g: 'c', kg: [0.4, 3] }, fish_tram: { g: 'c', kg: [0.8, 5] }, fish_ro: { g: 'c', kg: [0.2, 1.2] },
@@ -53,6 +62,7 @@ class Fishing {
     if (!d) return;
     if (d.op === 'cast') return this.cast(p);
     if (d.op === 'hook') return this.hook(p);
+    if (d.op === 'fight') return this.fightEnd(p, d);
     if (d.op === 'stop') return this.stop(p, true);
     if (d.op === 'cook') return this.cook(p, String(d.id || ''), d.n);
     if (d.op === 'cookView') return p.socket.emit('cook', this.cookView(p));
@@ -68,9 +78,19 @@ class Fishing {
     const wt = this.waterNear(p);
     if (!wt) return this.toast(p, 'Hãy đứng sát mép nước để câu', 'error');
     if (Date.now() - (p.lastCombat || 0) < 3000) return this.toast(p, 'Đang giao chiến, chưa câu được', 'error');
-    const now = Date.now(), wait = U.randInt(WAIT[0], WAIT[1]);
-    p.fishing = { st: 'wait', x: p.x, y: p.y, wx: wt.x, wy: wt.y, biteAt: now + wait, end: 0, auto: c.autoTicket > now };
-    p.socket.emit('fish', { st: 'wait', wx: wt.x, wy: wt.y, auto: p.fishing.auto });
+    const now = Date.now();
+    if ((c.fishBan || 0) > now) return this.toast(p, `🚫 Bị cấm câu cá do không qua kiểm tra chống tự động – còn ${Math.ceil((c.fishBan - now) / 60000)} phút`, 'error');
+    if (p.fishCap) return this.capAsk(p, true);   // còn mã xác nhận chưa trả lời
+    if (p.fishCapDue) return this.capAsk(p);
+    const sta = this.sta(c);
+    if (sta.n >= STA_MAX) return this.toast(p, `😮‍💨 Hết thể lực câu hôm nay (${STA_MAX} lần). Mai câu tiếp nhé!`, 'error');
+    sta.n++;
+    const ss = c.fishSess && now - c.fishSess.last < 10 * 60000 ? c.fishSess : (c.fishSess = { n: 0 });
+    ss.n++; ss.last = now;
+    const wait = U.randInt(WAIT[0], WAIT[1]);
+    p.fishing = { st: 'wait', x: p.x, y: p.y, wx: wt.x, wy: wt.y, biteAt: now + wait, end: 0 };
+    p.dirtyMe = true;
+    p.socket.emit('fish', { st: 'wait', wx: wt.x, wy: wt.y, sta: STA_MAX - sta.n, tired: ss.n > SESS_FREE });
     this.w.io.to('map:' + p.mapId).emit('fishLine', { id: p.id, wx: wt.x, wy: wt.y });
   }
   stop(p, quiet) {
@@ -84,33 +104,93 @@ class Fishing {
   onMove(p) { const f = p.fishing; if (f && Math.hypot(p.x - f.x, p.y - f.y) > 24) this.stop(p); }
   onHurt(p) { if (p.fishing) this.stop(p); }
   useBait(p) { U.removeItemById(p.c, BAIT, 1); p.dirtyMe = true; }
+  sta(c) { const s = c.fishSta && c.fishSta.day === U.vnDay() ? c.fishSta : (c.fishSta = { day: U.vnDay(), n: 0 }); return s; }
+  // giật cần: đo thời gian phản xạ rồi vào minigame kéo cá (nhóm cá đã chọn sẵn – cá càng hiếm càng khó kéo)
   hook(p) {
     const f = p.fishing; if (!f) return;
     const now = Date.now();
     if (f.st === 'wait') { this.useBait(p); this.stop(p, true); return p.socket.emit('fish', { st: 'miss', why: 'early' }); }
     if (f.st !== 'bite') return;
+    this.reaction(p, now - f.bitSent);
+    f.g = this.roll(p);
+    const dg = f.g === 'junk' || f.g === 'treasure' ? 'c' : f.g;
+    f.st = 'fight'; f.dg = dg; f.seed = (Math.random() * 4294967296) >>> 0; f.fightAt = now; f.end = now + (SIM.MAX_T + 6) * 1000;
+    p.socket.emit('fish', { st: 'fight', seed: f.seed, g: dg });
+  }
+  // kết thúc minigame: chạy lại mô phỏng bằng seed của máy chủ để xác nhận
+  fightEnd(p, d) {
+    const f = p.fishing; if (!f || f.st !== 'fight') return;
+    const now = Date.now(), inputs = Array.isArray(d.inputs) ? d.inputs.slice(0, 600).map(Number) : [];
+    let ok = inputs.every((t, i) => Number.isFinite(t) && t >= 0 && (i === 0 || t >= inputs[i - 1]));
+    const r = ok ? SIM.replay(f.seed, f.dg, inputs) : { ok: false, t: 0, steps: 0 };
+    const elapsed = (now - f.fightAt) / 1000;
+    // thời gian thật phải khớp thời gian mô phỏng (không thể "tua nhanh"); cho trễ mạng tối đa 4 giây
+    if (!(r.steps === (d.steps | 0)) || elapsed < r.t - 0.35 || elapsed > r.t + 4) ok = false;
+    if (ok && r.ok && !d.ok) ok = false;
     this.useBait(p);
     this.stop(p, true);
-    const got = this.land(p);
+    if (!ok || !r.ok) {
+      if (r.ok && !ok) this.db.log('fish', `${p.c.name}: kết quả kéo cá không khớp mô phỏng (bỏ qua)`);
+      return p.socket.emit('fish', { st: 'miss', why: 'escape' });
+    }
+    const got = this.land(p, f.g);
     if (got) this.w.io.to('map:' + p.mapId).emit('fishLine', { id: p.id, off: 1, got });
+    const c = p.c;   // mã xác nhận ngẫu nhiên mỗi 20-50 lần câu được
+    if (c.fishCapIn == null) c.fishCapIn = U.randInt(20, 50);
+    if (--c.fishCapIn <= 0) p.fishCapDue = 'random';
+  }
+  // ---------- phản xạ & mã xác nhận ----------
+  reaction(p, rt) {
+    if (!(rt >= 0)) return;
+    const a = p.fishRt || (p.fishRt = []);
+    a.push(rt); if (a.length > 12) a.shift();
+    if (rt < RT_MIN) p.fishFast = (p.fishFast || 0) + 1;
+    let sus = (p.fishFast || 0) >= 2;
+    if (a.length >= 12) { const m = a.reduce((x, y) => x + y, 0) / a.length, sd = Math.sqrt(a.reduce((x, y) => x + (y - m) * (y - m), 0) / a.length); if (sd < 40) sus = true; }
+    if (sus && !p.fishCapDue) { p.fishCapDue = 'reflex'; this.db.log('fish', `${p.c.name}: phản xạ câu cá bất thường (${a.slice(-5).join(', ')} ms)`); }
+  }
+  capAsk(p, again) {
+    const now = Date.now();
+    if (!p.fishCap || !again) {
+      const { code, img } = require('./capimg').make();
+      p.fishCap = { code, img, until: now + CAP_TIME, tries: p.fishCap ? p.fishCap.tries : 0, why: p.fishCapDue || 'random' };
+    }
+    p.socket.emit('captcha', { kind: 'fish', img: p.fishCap.img, left: Math.max(1000, p.fishCap.until - now) });
+  }
+  capAnswer(p, d) {
+    const cap = p.fishCap; if (!cap) return;
+    const now = Date.now();
+    if (now > cap.until) return this.capFail(p);
+    if (String(d && d.code || '') === cap.code) {
+      p.fishCap = null; p.fishCapDue = null; p.fishFast = 0; p.fishRt = []; p.c.fishCapIn = U.randInt(20, 50);
+      return p.socket.emit('captcha', { ok: 1, kind: 'fish' });
+    }
+    if (++cap.tries >= 3) return this.capFail(p);
+    p.fishCap = null; p.fishCapDue = cap.why; this.capAsk(p); p.fishCap.tries = cap.tries; p.fishCap.until = cap.until;
+    p.socket.emit('toast', { text: `Sai mã xác nhận (còn ${3 - cap.tries} lần)`, type: 'error' });
+  }
+  capFail(p) {
+    const why = p.fishCap && p.fishCap.why;
+    p.fishCap = null; p.fishCapDue = null; p.fishFast = 0; p.fishRt = [];
+    p.c.fishBan = Date.now() + BAN_MS; p.dirtyMe = true; this.db.markDirty();
+    this.stop(p, true);
+    p.socket.emit('captcha', { close: 1 });
+    this.toast(p, '🚫 Không qua kiểm tra chống câu tự động – bị cấm câu cá 30 phút', 'error');
+    this.db.log('fish', `${p.c.name} bị cấm câu cá 30 phút (không qua mã xác nhận, lý do hỏi: ${why})`);
   }
   tick(now) {
     for (const p of this.w.players.values()) {
       const f = p.fishing; if (!f) continue;
       if (p.dead || !this.w.players.has(p.userId)) { p.fishing = null; continue; }
       if (f.st === 'wait' && now >= f.biteAt) {
-        f.st = 'bite'; f.end = now + BITE_MS;
+        f.st = 'bite'; f.end = now + BITE_MS; f.bitSent = now;
         p.socket.emit('fish', { st: 'bite', ms: BITE_MS });
         this.w.io.to('map:' + p.mapId).emit('fishLine', { id: p.id, bite: 1 });   // người xung quanh thấy cần oằn
-        if (f.auto) f.autoAt = now + 450;
-      } else if (f.st === 'bite') {
-        if (f.autoAt && now >= f.autoAt) {   // Vé Treo Máy: tự giật cần
-          f.autoAt = 0;
-          if (Math.random() < AUTO_OK) { this.hook(p); continue; }
-        }
-        if (now > f.end) { this.useBait(p); this.stop(p, true); p.socket.emit('fish', { st: 'miss', why: 'late' }); }
+      } else if ((f.st === 'bite' || f.st === 'fight') && now > f.end) {   // không giật kịp / bỏ dở minigame
+        this.useBait(p); this.stop(p, true); p.socket.emit('fish', { st: 'miss', why: f.st === 'bite' ? 'late' : 'escape' });
       }
     }
+    for (const p of this.w.players.values()) if (p.fishCap && now > p.fishCap.until) this.capFail(p);   // mã xác nhận quá giờ
     // món ăn hết hạn: tính lại chỉ số
     if (now - (this._ft || 0) > 10000) {
       this._ft = now;
@@ -120,14 +200,15 @@ class Fishing {
   // kéo cá lên: bảng tỉ lệ theo cấp bãi (tier) và ban đêm
   roll(p) {
     const def = this.w.maps[p.mapId].def, tier = def.tier || 0, night = this.w.night && this.w.night.isNight();
-    const k = night ? 1.5 : 1;
+    const ss = p.c.fishSess, tired = ss && ss.n > SESS_FREE ? Math.max(0.35, 1 - (ss.n - SESS_FREE) / 200) : 1;   // câu liền quá lâu: cá hiếm giảm
+    const k = (night ? 1.5 : 1) * tired;
     const tbl = [['junk', 7], ['treasure', 2.5], ['c', 68], ['r', (14 + tier * 2) * k], ['e', (2 + tier * 0.6) * k], ['l', (0.25 + tier * 0.08) * k]];
     let r = Math.random() * tbl.reduce((a, x) => a + x[1], 0), g = 'c';
     for (const [kk, w] of tbl) if ((r -= w) < 0) { g = kk; break; }
     return g;
   }
-  land(p) {
-    const c = p.c, g = this.roll(p);
+  land(p, g) {
+    const c = p.c; g = g || this.roll(p);
     c.fishN = (c.fishN || 0) + 1;
     if (g === 'junk') { this.w.giveItem(p, 'fish_junk', 1); p.socket.emit('fish', { st: 'got', id: 'fish_junk' }); return 'fish_junk'; }
     if (g === 'treasure') {

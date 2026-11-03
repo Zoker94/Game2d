@@ -36,30 +36,97 @@
       $('btn-fish').onclick = onBtn;
       $('fish-loop').checked = loop;
       $('fish-loop').onchange = e => { loop = e.target.checked; try { localStorage.setItem('vl_fish_loop', loop ? '1' : '0'); } catch (x) { } };
-      window.addEventListener('keydown', e => { if (e.code === 'Space' && st && st.st === 'bite' && Input.inGame && !Input.typing()) { e.preventDefault(); e.stopImmediatePropagation(); emit({ op: 'hook' }); } }, true);
+      window.addEventListener('keydown', e => {
+        if (e.code !== 'Space' || !st || !Input.inGame || Input.typing()) return;
+        if (st.st === 'bite') { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) emit({ op: 'hook' }); }
+        else if (st.st === 'fight') { e.preventDefault(); e.stopImmediatePropagation(); game.hold = true; }
+      }, true);
+      window.addEventListener('keyup', e => { if (e.code === 'Space' && game.on) { e.preventDefault(); game.hold = false; } }, true);
     }
     const active = st && st.st !== 'off';
-    const show = !!(G.inGame !== false && G.me && !G.me.dead && !NO_FISH() && (active || (have('can_cau') && nearWater())));
+    const show = !!(G.inGame !== false && G.me && !G.me.dead && !NO_FISH() && !game.on && (active || (have('can_cau') && nearWater())));
     btn.classList.toggle('hidden', !show);
     if (!show) return;
     const b = $('btn-fish');
-    const lbl = !active ? `🎣 Câu cá${have('moi_cau') ? '' : ' (hết mồi)'}` : st.st === 'bite' ? '❗ GIẬT CẦN!' : st.auto ? '⏳ Chờ cá… (tự giật)' : '⏳ Chờ cá… (bấm để thu cần)';
+    const lbl = !active ? `🎣 Câu cá${have('moi_cau') ? '' : ' (hết mồi)'}${staLeft != null ? ` · thể lực ${staLeft}` : ''}` : st.st === 'bite' ? '❗ GIẬT CẦN!' : '⏳ Chờ cá… (bấm để thu cần)';
     if (b._l !== lbl) { b.textContent = lbl; b._l = lbl; }
     b.className = !active ? '' : st.st === 'bite' ? 'bite' : 'wait';
   }
   setInterval(() => { try { ui(); } catch (e) { } }, 150);
 
+  // ---------- minigame kéo cá (mô phỏng chung public/js/fishsim.js, máy chủ chạy lại để kiểm tra) ----------
+  let staLeft = null, tiredWarned = 0;
+  const game = { on: false, hold: false };
+  function gameStart(d) {
+    let el = $('fish-game');
+    if (!el) {
+      el = document.createElement('div'); el.id = 'fish-game';
+      el.innerHTML = '<div class="fg-t">🎣 KÉO CÁ!</div><canvas width="120" height="250"></canvas><div class="fg-h">Giữ chuột / chạm / Space để kéo vạch lên – nhả để chìm.<br>Giữ vạch trong vùng cá tới khi đầy thanh.</div>';
+      ($('screen-game') || document.body).appendChild(el);
+      const down = e => { e.preventDefault(); e.stopPropagation(); game.hold = true; }, up = e => { e.preventDefault(); game.hold = false; };
+      el.addEventListener('pointerdown', down); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+      el.addEventListener('contextmenu', e => e.preventDefault());
+    }
+    el.classList.remove('hidden');
+    Object.assign(game, { on: true, hold: false, sim: FishSim.init(d.seed, d.g), g: d.g, n: 0, inputs: [], last: false, acc: 0, t0: performance.now(), prev: performance.now(), el, cv: el.querySelector('canvas') });
+    requestAnimationFrame(gameLoop);
+  }
+  function gameLoop(now) {
+    if (!game.on) return;
+    game.acc += Math.min(0.25, (now - game.prev) / 1000); game.prev = now;
+    while (game.acc >= FishSim.DT && !game.sim.done) {
+      game.acc -= FishSim.DT;
+      if (game.hold !== game.last) { game.inputs.push((game.n + 1) * FishSim.DT * 1000); game.last = game.hold; }   // thời điểm đổi giữ / nhả theo bước mô phỏng
+      FishSim.step(game.sim, game.hold); game.n++;
+    }
+    gameDraw(now);
+    if (game.sim.done) return gameEnd();
+    requestAnimationFrame(gameLoop);
+  }
+  function gameEnd() {
+    game.on = false;
+    emit({ op: 'fight', inputs: game.inputs, steps: game.n, ok: game.sim.done === 1 });
+    setTimeout(() => { if (!game.on && game.el) game.el.classList.add('hidden'); }, game.sim.done === 1 ? 500 : 700);
+    if (game.sim.done === 1) GameAudio.sfx('coin');
+  }
+  function gameDraw(now) {
+    const x = game.cv.getContext('2d'), S = game.sim, H = 230, top = 10, bx = 30, bw = 40;
+    x.clearRect(0, 0, 120, 250);
+    // ống nước
+    const g = x.createLinearGradient(0, top, 0, top + H); g.addColorStop(0, '#2a6a9a'); g.addColorStop(1, '#0a2238');
+    x.fillStyle = '#05121e'; x.fillRect(bx - 3, top - 3, bw + 6, H + 6); x.fillStyle = g; x.fillRect(bx, top, bw, H);
+    for (let i = 0; i < 6; i++) { x.fillStyle = 'rgba(180,230,255,.25)'; const yy = top + ((now / 20 + i * 41) % H); x.fillRect(bx + 6 + (i * 7) % 28, top + H - (yy - top), 2, 2); }   // bọt
+    // vùng cá
+    const z = S.z != null ? S.z : 0.5, zw = S.S.d.w, zy = top + (1 - z - zw / 2) * H;
+    x.fillStyle = S.inZ ? 'rgba(90,240,130,.55)' : 'rgba(90,240,130,.32)'; x.fillRect(bx, zy, bw, zw * H);
+    x.strokeStyle = '#7dffa0'; x.lineWidth = 1.5; x.strokeRect(bx + 0.5, zy + 0.5, bw - 1, zw * H - 1);
+    // con cá trong vùng
+    const fy = top + (1 - z) * H, wig = Math.sin(now / 70) * 3;
+    x.save(); x.translate(bx + bw / 2 + wig, fy); x.fillStyle = { c: '#d8b060', r: '#8ab070', e: '#6ab8ff', l: '#ffc030' }[game.g] || '#d8b060';
+    x.beginPath(); x.ellipse(0, 0, 11, 5, 0, 0, Math.PI * 2); x.fill(); x.beginPath(); x.moveTo(9, 0); x.lineTo(16, -5); x.lineTo(16, 5); x.closePath(); x.fill();
+    x.fillStyle = '#000'; x.fillRect(-7, -2, 2, 2); x.restore();
+    // vạch của người chơi (lưỡi câu)
+    const my = top + (1 - S.m) * H;
+    x.fillStyle = '#fff'; x.fillRect(bx - 8, my - 2, bw + 16, 4); x.fillStyle = game.hold ? '#ffd040' : '#e83a2a'; x.fillRect(bx - 12, my - 5, 8, 10);
+    // thanh tiến độ
+    x.fillStyle = '#05121e'; x.fillRect(86, top - 3, 16, H + 6);
+    const pg = x.createLinearGradient(0, top + H, 0, top); pg.addColorStop(0, '#e8443a'); pg.addColorStop(0.5, '#ffd040'); pg.addColorStop(1, '#4ade80');
+    x.fillStyle = pg; x.fillRect(89, top + H * (1 - S.prog), 10, H * S.prog);
+    x.fillStyle = '#fff'; x.font = 'bold 10px sans-serif'; x.textAlign = 'center'; x.fillText(Math.round(S.prog * 100) + '%', 94, top + H + 12 > 250 ? 248 : top + H + 12);
+  }
+
   function onFish(d) {
-    if (d.st === 'wait') { st = d; return ui(); }
+    if (d.st === 'wait') { st = d; if (d.sta != null) staLeft = d.sta; if (d.tired && Date.now() - tiredWarned > 600000) { tiredWarned = Date.now(); UI.toast('😮‍💨 Câu liền quá lâu – cá hiếm ít dần. Nghỉ 10 phút để hồi sức.', 'info'); } return ui(); }
+    if (d.st === 'fight') { st = Object.assign({}, st, { st: 'fight' }); gameStart(d); return ui(); }
     if (d.st === 'bite') {
       st = Object.assign({}, st, { st: 'bite' }); biteAt = performance.now();
       if (G.self) Overhead.add(G.self.x, G.self.y - 96, '❗ Cá cắn câu!', 'status', '#ffe060');
       GameAudio.sfx('click'); if (navigator.vibrate) try { navigator.vibrate(120); } catch (e) { }
       return ui();
     }
-    if (d.st === 'off') { st = null; return ui(); }
+    if (d.st === 'off') { st = null; if (!game.on && game.el) game.el.classList.add('hidden'); return ui(); }
     st = null;
-    if (d.st === 'miss') { if (G.self) Overhead.add(G.self.x, G.self.y - 90, d.why === 'early' ? 'Giật sớm quá – cá bỏ đi' : 'Cá đã sổng mất…', 'status', '#a0b4c8'); }
+    if (d.st === 'miss') { game.on = false; if (game.el) game.el.classList.add('hidden'); if (G.self) Overhead.add(G.self.x, G.self.y - 90, d.why === 'early' ? 'Giật sớm quá – cá bỏ đi' : d.why === 'late' ? 'Giật chậm – cá đã nhả mồi' : 'Cá giãy thoát mất…', 'status', '#a0b4c8'); }
     if (d.st === 'got') {
       if (lastLine) reel(G.you, lastLine.wx, lastLine.wy, d.id);
       const it = G.data.items[d.id] || {}, col = { legendary: '#ffb347', epic: '#d08cff', rare: '#7fbfff' }[it.rarity] || '#e8f4ff';
@@ -139,7 +206,7 @@
     for (const [id, l] of lines) {
       const e = id === G.you ? G.self : G.players.get(id);
       if (!e) { lines.delete(id); continue; }
-      const bite = id === G.you ? !!(st && st.st === 'bite') : !!l.bite;
+      const bite = id === G.you ? !!(st && (st.st === 'bite' || st.st === 'fight')) : !!l.bite;
       const ph = l.ph || (l.ph = (String(id).split('').reduce((h, c) => h * 31 + c.charCodeAt(0), 7) % 1000) / 100);   // pha dao động riêng mỗi người
       const bob = bite ? 7 + Math.sin(now / 38) * 3.5 : Math.sin(now / 420 + ph) * 2;
       const fx = l.wx + (bite ? Math.sin(now / 90) * 6 : 0), fy = l.wy + bob;
@@ -206,7 +273,7 @@
         <button class="btn small ${can ? 'primary' : ''}" data-cook="${x.id}" ${can ? '' : 'disabled'}>Nấu</button>${max > 1 ? `<button class="btn small" data-cook="${x.id}" data-n="${max}">Nấu ${max}</button>` : ''}</div>`;
     }).join('') + '</div>';
     h += `<div class="card"><h4>🎣 Sổ câu cá · đã câu ${fmt(d.fishN)} lần</h4>${d.best.length ? '<div class="small">' + d.best.map(b => `${UI.esc(b.name)}: <b>${b.kg} cân</b>`).join(' · ') + '</div>' : '<div class="small muted">Chưa câu được con nào. Mua Cần Câu + Mồi Câu ở tab Mua, ra sông hồ đứng sát mép nước rồi bấm 🎣.</div>'}
-      <div class="small muted" style="margin-top:4px">Bãi luyện cấp cao và ban đêm dễ ra cá hiếm. Kim Long Ngư cực hiếm. Có Vé Treo Máy thì tự giật cần.</div></div>`;
+      <div class="small muted" style="margin-top:4px">Bãi luyện cấp cao và ban đêm dễ ra cá hiếm. Kim Long Ngư cực hiếm, giãy rất mạnh. Thể lực câu 300 lần / ngày.</div></div>`;
     return h;
   }
   function renderCook() {

@@ -1,7 +1,7 @@
 // Mã xác nhận treo máy (máy chủ: server/game/autosrv.js): bật Tự động mà không có Vé Treo Máy thì cứ 5–30 phút
 // máy chủ hỏi 1 lần. Mã 4 số vẽ méo trên canvas, bấm bàn phím số rồi Xác nhận trong 15 giây, không thì bị đưa ra khỏi game.
 (function () {
-  let box = null, timer = 0, until = 0, val = '';
+  let box = null, timer = 0, until = 0, val = '', total = 15000;
   function draw(cv, code) {
     const x = cv.getContext('2d'), W = cv.width, H = cv.height;
     x.fillStyle = '#1a1420'; x.fillRect(0, 0, W, H);
@@ -16,17 +16,20 @@
   }
   function close() { clearInterval(timer); if (box) box.remove(); box = null; }
   function open(d) {
-    close(); val = ''; until = Date.now() + d.left;
+    close(); val = ''; until = Date.now() + d.left; total = d.left;
     box = document.createElement('div'); box.id = 'captcha';
-    box.innerHTML = `<div class="cp-box"><div class="cp-l"><h3>🤖 Xác nhận treo máy</h3>
-      <p class="small">Bạn đang treo máy không có <b>Vé Treo Máy</b>. Bấm đúng mã rồi ✓ để tiếp tục.</p>
+    const fish = d.kind === 'fish';
+    box.innerHTML = `<div class="cp-box"><div class="cp-l"><h3>${fish ? '🎣 Xác nhận câu cá' : '🤖 Xác nhận treo máy'}</h3>
+      <p class="small">${fish ? 'Kiểm tra chống câu cá tự động. Bấm đúng mã rồi ✓ để câu tiếp.' : 'Bạn đang treo máy không có <b>Vé Treo Máy</b>. Bấm đúng mã rồi ✓ để tiếp tục.'}</p>
       <canvas width="200" height="64"></canvas>
       <div class="cp-val"></div>
       <div class="cp-time"><i></i><span></span></div>
-      <p class="small muted">Quá 15 giây sẽ bị đưa ra khỏi game. Mua Vé Treo Máy ở Kỳ Trân Các để không bị hỏi.</p></div>
+      <p class="small muted">${fish ? 'Sai 3 lần hoặc quá giờ sẽ bị cấm câu cá 30 phút.' : 'Quá 15 giây sẽ bị đưa ra khỏi game. Mua Vé Treo Máy ở Kỳ Trân Các để không bị hỏi.'}</p></div>
       <div class="cp-keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9, '⌫', 0, '✓'].map(k => `<button type="button" data-k="${k}">${k}</button>`).join('')}</div></div>`;
     document.body.appendChild(box);
-    draw(box.querySelector('canvas'), d.code);
+    const cv = box.querySelector('canvas');
+    if (d.img) { const im = new Image(); im.onload = () => cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height); im.src = d.img; }   // ảnh máy chủ vẽ
+    else if (d.code) draw(cv, d.code);
     const show = () => { box.querySelector('.cp-val').textContent = (val + '____').slice(0, 4).split('').join(' '); };
     show();
     box.addEventListener('pointerdown', e => e.stopPropagation());
@@ -40,7 +43,7 @@
     const tick = () => {
       if (!box) return;
       const left = Math.max(0, until - Date.now());
-      box.querySelector('.cp-time i').style.width = (left / 150) + '%';
+      box.querySelector('.cp-time i').style.width = (left / (total / 100)) + '%';
       box.querySelector('.cp-time span').textContent = Math.ceil(left / 1000) + ' giây';
     };
     tick(); timer = setInterval(tick, 200);
@@ -48,7 +51,7 @@
     if (window.GameAudio) try { GameAudio.sfx('error', 0); } catch (e) { }
   }
   function bind(s) {
-    s.on('captcha', d => { if (d.close) return close(); if (d.ok) { close(); UI.toast('✅ Đã xác nhận – tiếp tục treo máy', 'reward'); return; } open(d); });
+    s.on('captcha', d => { if (d.close) return close(); if (d.ok) { close(); UI.toast(d.kind === 'fish' ? '✅ Đã xác nhận – câu cá tiếp nhé' : '✅ Đã xác nhận – tiếp tục treo máy', 'reward'); return; } open(d); });
     s.on('kicked', close);
   }
   window.Captcha = { bind, close };

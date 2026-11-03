@@ -138,9 +138,9 @@ class AutoSrv {
     if (now >= (p.capAt || Infinity)) this.captchaAsk(p, now);
   }
   captchaAsk(p, now, keepUntil) {
-    const code = String(Math.floor(1000 + Math.random() * 9000));
+    const { code, img } = require('./capimg').make();   // máy chủ vẽ ảnh, không gửi mã dạng chữ xuống máy khách
     p.cap = { code, until: keepUntil || now + CAP_TIME, tries: p.cap ? p.cap.tries : 0 };
-    p.socket.emit('captcha', { code, left: p.cap.until - now });
+    p.socket.emit('captcha', { img, left: p.cap.until - now });
   }
   captchaAnswer(p, d) {
     const cap = p.cap;

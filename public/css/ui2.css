@@ -527,3 +527,8 @@ body.calm .checkin-row div.today { animation: none; }
 .fish-loop { font-size: 11px; color: #e8f4ff; text-shadow: 0 1px 2px #000; background: rgba(0,0,0,.45); padding: 1px 8px; border-radius: 10px; display: flex; gap: 4px; align-items: center; cursor: pointer; }
 body:has(#btn-dig:not(.hidden)) #fish-ui { bottom: 180px; }
 .ck-row { display: flex; align-items: center; gap: 8px; } .ck-cur { color: #ffd76a; }
+#fish-game { position: absolute; right: 22%; top: 50%; transform: translateY(-50%); z-index: 30; padding: 8px 10px; border-radius: 14px; background: rgba(8,16,26,.9); border: 2px solid #7ac8ff; box-shadow: 0 6px 22px rgba(0,0,0,.6); display: flex; flex-direction: column; align-items: center; gap: 4px; touch-action: none; user-select: none; cursor: pointer; }
+#fish-game.hidden { display: none; }
+#fish-game .fg-t { font: 900 15px "Be Vietnam Pro", sans-serif; color: #ffe060; text-shadow: 0 0 6px #ff9a20; }
+#fish-game .fg-h { max-width: 160px; text-align: center; font-size: 10px; color: #cfe6f5; }
+body.touch #fish-game { right: 12px; }
