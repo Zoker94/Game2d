@@ -258,6 +258,15 @@ const CONSUMABLES = [
 ];
 CONSUMABLES.forEach(c => { ITEMS[c.id] = Object.assign({ type: 'use', lv: c.lv || 1, rarity: 'common', stack: true }, c); });
 for (const id of ['stone', 'stone2', 'insure', 'mount_food', 'mount_stone', 'moi_cau', 'fish_chep', 'fish_tram', 'fish_ro', 'fish_qua', 'fish_chinh', 'fish_tam', 'fish_kimlong', 'fish_junk']) ITEMS[id].type = 'material';
+// ---- Câu cá (server/data/fish.js): cá, cần câu, mồi, món ăn – ghi đè bản cũ ở danh sách trên ----
+{
+  const F = require('./fish');
+  const fishDesc = f => `${{ c: 'Cá thường', r: 'Cá hiếm', e: 'Cá quý', l: 'Cá huyền thoại' }[f.g]} – sức ${'★'.repeat(f.lv)}.${f.pred ? ' Cá dữ: chỉ ăn mồi thịt / cá mồi sống.' : ''}${f.tier ? ` Chỉ có ở bãi luyện cấp cao.` : ''} Bán cho Đầu Bếp Tửu Lâu ${f.sell.toLocaleString('vi-VN')} lượng / con hoặc dùng nấu ăn.`;
+  for (const [id, f] of Object.entries(F.FISH)) ITEMS[id] = { id, type: 'material', name: f.name, desc: fishDesc(f), price: f.sell, icon: f.icon, material: true, rarity: F.GROUP_RARITY[f.g], fish: f.g };
+  for (const [id, r] of Object.entries(F.RODS)) ITEMS[id] = { id, type: 'use', name: r.name, desc: `Cần câu sức ${'★'.repeat(r.p)} · độ bền ${r.dur}. Cần càng tốt kéo cá to càng dễ; cá khoẻ hơn sức cần thì rất khó kéo và dễ gãy cần. Gần hết độ bền dễ gãy. Sử dụng: chọn cần này rồi thả câu.`, effect: { fish: 1, rod: id }, price: r.price, icon: id, rarity: ['common', 'common', 'rare', 'epic', 'legendary'][r.p - 1], stack: true };
+  for (const [id, b] of Object.entries(F.BAITS)) ITEMS[id] = { id, type: 'use', name: b.name, desc: `${b.desc} Mỗi lần thả câu tốn 1 mồi. Sử dụng: chọn làm mồi đang dùng.`, effect: { bait: id }, price: b.price, icon: id === 'moi_cau' ? 'bait' : id, rarity: b.price >= 3000 ? 'epic' : b.price >= 400 ? 'rare' : 'common', stack: true };
+  for (const [id, d] of Object.entries(F.DISHES)) ITEMS[id] = { id, type: 'use', name: d.name, desc: `Ăn: ${[d.buff.exp ? `+${Math.round(d.buff.exp * 100)}% kinh nghiệm` : '', d.buff.atk ? `+${Math.round(d.buff.atk * 100)}% công` : '', d.buff.def ? `+${Math.round(d.buff.def * 100)}% thủ` : '', d.buff.hp ? `+${Math.round(d.buff.hp * 100)}% sinh lực tối đa` : ''].filter(Boolean).join(', ')} trong ${d.min} phút. Ăn thêm cùng món thì cộng dồn thời gian (tối đa 8 giờ); ăn món khác thì thay món cũ.`, effect: { food: id }, price: Math.round(d.gold * 0.8), icon: d.icon, rarity: d.rarity || 'common' };
+}
 ITEMS.stone2.rarity = 'epic'; ITEMS.insure.rarity = 'rare'; ITEMS.mount_stone.rarity = 'rare';
 
 // Sách võ công môn phái

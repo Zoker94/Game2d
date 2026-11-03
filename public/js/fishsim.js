@@ -16,8 +16,19 @@
     let a = seed >>> 0;
     return function () { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   }
-  function make(seed, g) {
-    const d = DIFF[g] || DIFF.c, r = rng(seed);
+  // mod: { rod: sức cần − sức cá (âm = cần yếu hơn cá), grip: độ ngậm mồi } – cần yếu kéo cá khoẻ: vùng cá hẹp, cá vọt nhanh, tụt thanh nhanh
+  function adjust(base, mod) {
+    if (!mod) return base;
+    const k = Math.max(-4, Math.min(3, mod.rod || 0)), gp = mod.grip || 0;
+    return {
+      w: Math.max(0.09, Math.min(0.42, base.w * (k < 0 ? 1 + k * 0.14 : 1 + k * 0.08))),
+      spd: base.spd * (k < 0 ? 1 - k * 0.13 : 1 - k * 0.05),
+      gain: base.gain * (1 + gp) * (k < 0 ? 1 + k * 0.08 : 1 + k * 0.04),
+      loss: base.loss * (k < 0 ? 1 - k * 0.22 : 1 - k * 0.07)
+    };
+  }
+  function make(seed, g, mod) {
+    const d = adjust(DIFF[g] || DIFF.c, mod), r = rng(seed);
     // 3 sóng sin + các cú "vọt" ngẫu nhiên: cá lúc lững lờ, lúc giật mạnh
     const waves = [0, 1, 2].map(i => ({ f: (0.6 + r() * 0.9) * d.spd * (i + 1) * 0.8, p: r() * 6.283, a: [0.55, 0.3, 0.15][i] }));
     const darts = []; let t = 0.8 + r();
@@ -34,7 +45,7 @@
   }
   // một bước mô phỏng (dùng cho cả chạy thật lẫn chạy lại)
   const GRACE = 1.5;   // 1,5 giây đầu không bị tụt tiến độ (kịp kéo vạch tới chỗ cá)
-  function init(seed, g) { return { S: make(seed, g), t: 0, m: 0.3, v: 0, prog: 0.35, done: 0 }; }
+  function init(seed, g, mod) { return { S: make(seed, g, mod), t: 0, m: 0.3, v: 0, prog: 0.35, done: 0 }; }
   function step(st, hold) {
     if (st.done) return st;
     st.v += (hold ? PHY.up : -PHY.down) * DT; st.v *= PHY.damp;
@@ -50,8 +61,8 @@
     return st;
   }
   // chạy lại từ danh sách thời điểm đổi giữ / nhả -> { ok, t, steps }
-  function replay(seed, g, inputs) {
-    const st = init(seed, g); let i = 0, hold = false, n = 0;
+  function replay(seed, g, inputs, mod) {
+    const st = init(seed, g, mod); let i = 0, hold = false, n = 0;
     while (!st.done && n < MAX_T / DT + 5) {
       const ms = (n + 1) * DT * 1000;
       while (i < inputs.length && inputs[i] <= ms) { hold = !hold; i++; }
@@ -59,6 +70,6 @@
     }
     return { ok: st.done === 1, t: st.t, steps: n };
   }
-  const api = { DT, MAX_T, DIFF, PHY, init, step, replay, zoneAt };
+  const api = { DT, MAX_T, DIFF, PHY, init, step, replay, zoneAt, adjust };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.FishSim = api;
 })(typeof window !== 'undefined' ? window : this);

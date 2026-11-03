@@ -810,3 +810,17 @@ body.touch .lm-list { width: 86px; }
 }
 .wc-cols > div, .wc-bd { min-width: 0; }
 .wc-boards { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+/* câu cá: tab Đầu Bếp, sức cá trong minigame */
+.ck-tabs { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+.ck-row.ck-on { outline: 1px solid #4ade80; background: rgba(74,222,128,.07); }
+.ck-dur { height: 4px; border-radius: 2px; background: #0006; margin-top: 3px; overflow: hidden; max-width: 160px; }
+.ck-dur i { display: block; height: 100%; }
+.ck-need { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: center; }
+.ck-need span { display: inline-flex; align-items: center; gap: 2px; }
+.ck-need img { image-rendering: pixelated; }
+.ck-fishes { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 4px; }
+.ck-f { display: flex; gap: 6px; align-items: center; padding: 4px; border-radius: 6px; background: rgba(255,255,255,.04); font-size: 12px; }
+.ck-f img { image-rendering: pixelated; }
+.fg-pw { text-align: center; font-size: 11px; color: #e8f0ff; margin: -2px 0 4px; line-height: 1.35; }
+.fg-weak { color: #ff8a6a; font-weight: 800; animation: wcPulse 1s infinite; }
+.fg-big { color: #ff5a3a; font-weight: 900; letter-spacing: 1px; }

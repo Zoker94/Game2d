@@ -10,31 +10,23 @@
 //   3. Mã xác nhận ngẫu nhiên mỗi 20-50 lần câu (ảnh máy chủ vẽ, server/game/capimg.js). Sai 3 lần / quá 30 giây: cấm câu 30 phút.
 //   4. Thể lực câu: 300 lần thả câu / ngày; câu liền một mạch quá 60 lần thì tỉ lệ cá hiếm giảm dần (nghỉ 10 phút thì hồi).
 // - Cá theo cấp bãi: bãi cao, ban đêm dễ ra cá hiếm hơn. Có rác, có rương báu. Mỗi con có cân nặng – lưu kỷ lục.
-// - Nấu ăn ở Đầu Bếp Tửu Lâu (Tương Dương): món ăn cộng kinh nghiệm / công / thủ / máu trong 30-60 phút (mỗi lúc 1 món).
+// - Nấu ăn ở Đầu Bếp Tửu Lâu (Tương Dương): món ăn cộng kinh nghiệm / công / thủ / máu trong 30-90 phút (mỗi lúc 1 món).
+//   Mỗi món cần đủ từng loại cá cụ thể (phải phối nhiều loại cá). Cá bán lại cho Đầu Bếp (tab Bán cá).
+// - 5 loại cần câu (sức 1..5, có độ bền) và 5 loại mồi (server/data/fish.js):
+//   cần yếu hơn sức cá thì minigame rất khó (vùng cá hẹp, cá vọt nhanh) và dễ gãy cần; gần hết độ bền cũng dễ gãy.
+//   Mồi tốt tăng tỉ lệ cá hiếm, cắn nhanh hơn, ít rác; cá dữ (cá sấu, cá mập) chỉ mê mồi thịt / cá mồi sống.
 const U = require('./util');
 const { MAPS, TILE } = require('../data/maps');
 const { ITEMS } = require('../data/items');
 
-const WATER = 2, ROD = 'can_cau', BAIT = 'moi_cau';
+const WATER = 2;
+const { FISH, RODS, BAITS, DISHES } = require('../data/fish');
 const FOOD_MAX = 8 * 3600e3;   // món ăn cộng dồn tối đa 8 giờ
 const WAIT = [5000, 12000], BITE_MS = 1600;
 const SIM = require('../../public/js/fishsim');
 const STA_MAX = 300, SESS_FREE = 60, CAP_TIME = 30000, BAN_MS = 30 * 60000, RT_MIN = 150;
-// cá: id, nhóm, cân nặng (kg)
-const FISH = {
-  fish_chep: { g: 'c', kg: [0.4, 3] }, fish_tram: { g: 'c', kg: [0.8, 5] }, fish_ro: { g: 'c', kg: [0.2, 1.2] },
-  fish_qua: { g: 'r', kg: [1, 6] }, fish_chinh: { g: 'r', kg: [1.5, 8] },
-  fish_tam: { g: 'e', kg: [5, 25] }, fish_kimlong: { g: 'l', kg: [12, 60] }
-};
 const BY_G = g => Object.keys(FISH).filter(id => FISH[id].g === g);
-// món ăn: nguyên liệu (nhóm cá 'c' = cá thường bất kỳ, 'r' = cá hiếm bất kỳ, hoặc id cụ thể), ngân lượng, hiệu quả
-const DISHES = {
-  dish_nuong: { need: [['c', 3]], gold: 500, min: 30, buff: { exp: 0.10 } },
-  dish_canh: { need: [['c', 2], ['r', 1]], gold: 2000, min: 30, buff: { atk: 0.03, def: 0.03 } },
-  dish_lau: { need: [['c', 3], ['r', 3]], gold: 5000, min: 45, buff: { exp: 0.15, hp: 0.04 } },
-  dish_kimlong: { need: [['fish_kimlong', 1], ['r', 2]], gold: 20000, min: 60, buff: { exp: 0.25, atk: 0.05, def: 0.05, hp: 0.05 } },
-  dish_tam: { need: [['fish_tam', 1], ['c', 2]], gold: 8000, min: 45, buff: { exp: 0.18, atk: 0.02 } }
-};
+const ROD_IDS = Object.keys(RODS), BAIT_IDS = Object.keys(BAITS);
 const NO_FISH = m => m.tongkim || m.siege || m.hoason || m.tourney || m.duelArena || m.id === 'dai_hoi';
 
 class Fishing {
@@ -66,15 +58,36 @@ class Fishing {
     if (d.op === 'stop') return this.stop(p, true);
     if (d.op === 'cook') return this.cook(p, String(d.id || ''), d.n);
     if (d.op === 'cookView') return p.socket.emit('cook', this.cookView(p));
+    if (d.op === 'sell') return this.sell(p, String(d.id || ''), d.n);
+    if (d.op === 'rod') return this.selectRod(p, String(d.id || ''));
+    if (d.op === 'bait') return this.selectBait(p, String(d.id || ''));
   }
-  cast(p) {
+  // cần / mồi đang dùng: chọn sẵn (còn trong túi) hoặc cần tốt nhất / mồi rẻ nhất đang có
+  rodOf(c) { if (c.rodSel && RODS[c.rodSel] && U.countItem(c, c.rodSel)) return c.rodSel; for (let i = ROD_IDS.length - 1; i >= 0; i--) if (U.countItem(c, ROD_IDS[i])) return ROD_IDS[i]; return null; }
+  baitOf(c) { if (c.baitSel && BAITS[c.baitSel] && U.countItem(c, c.baitSel)) return c.baitSel; return BAIT_IDS.find(id => U.countItem(c, id)) || null; }
+  durOf(c, id) { const d = c.rodDur && c.rodDur[id]; return d == null ? RODS[id].dur : d; }
+  selectRod(p, id) {
+    if (!RODS[id] || !U.countItem(p.c, id)) return;
+    p.c.rodSel = id; p.dirtyMe = true;
+    this.toast(p, `🎣 Đang dùng ${RODS[id].name} (sức ${'★'.repeat(RODS[id].p)}, bền ${this.durOf(p.c, id)}/${RODS[id].dur})`, 'info');
+    p.socket.emit('cook', this.cookView(p));
+  }
+  selectBait(p, id) {
+    if (!BAITS[id] || !U.countItem(p.c, id)) return;
+    p.c.baitSel = id; p.dirtyMe = true;
+    this.toast(p, `🪱 Đang dùng mồi ${BAITS[id].name}`, 'info');
+    p.socket.emit('cook', this.cookView(p));
+  }
+  cast(p, rodId) {
     const c = p.c;
+    if (rodId && RODS[rodId] && U.countItem(c, rodId)) c.rodSel = rodId;   // dùng cần trong túi = chọn cần đó
     if (p.dead) return;
     if (p.fishing) return;
     const def = this.w.maps[p.mapId].def;
     if (NO_FISH(def)) return this.toast(p, 'Không câu cá được ở đây', 'error');
-    if (!U.countItem(c, ROD)) return this.toast(p, 'Cần có Cần Câu (Đầu Bếp Tửu Lâu ở Tương Dương bán)', 'error');
-    if (!U.countItem(c, BAIT)) return this.toast(p, 'Hết Mồi Câu (Đầu Bếp Tửu Lâu ở Tương Dương bán)', 'error');
+    const rod = this.rodOf(c), bait = this.baitOf(c);
+    if (!rod) return this.toast(p, 'Cần có cần câu (Đầu Bếp Tửu Lâu ở Tương Dương bán)', 'error');
+    if (!bait) return this.toast(p, 'Hết mồi câu (Đầu Bếp Tửu Lâu ở Tương Dương bán)', 'error');
     const wt = this.waterNear(p);
     if (!wt) return this.toast(p, 'Hãy đứng sát mép nước để câu', 'error');
     if (Date.now() - (p.lastCombat || 0) < 3000) return this.toast(p, 'Đang giao chiến, chưa câu được', 'error');
@@ -87,11 +100,11 @@ class Fishing {
     sta.n++;
     const ss = c.fishSess && now - c.fishSess.last < 10 * 60000 ? c.fishSess : (c.fishSess = { n: 0 });
     ss.n++; ss.last = now;
-    const wait = U.randInt(WAIT[0], WAIT[1]);
-    p.fishing = { st: 'wait', x: p.x, y: p.y, wx: wt.x, wy: wt.y, biteAt: now + wait, end: 0 };
+    const wait = Math.round(U.randInt(WAIT[0], WAIT[1]) * BAITS[bait].wait);
+    p.fishing = { st: 'wait', x: p.x, y: p.y, wx: wt.x, wy: wt.y, biteAt: now + wait, end: 0, rod, bait };
     p.dirtyMe = true;
-    p.socket.emit('fish', { st: 'wait', wx: wt.x, wy: wt.y, sta: STA_MAX - sta.n, tired: ss.n > SESS_FREE });
-    this.w.io.to('map:' + p.mapId).emit('fishLine', { id: p.id, wx: wt.x, wy: wt.y });
+    p.socket.emit('fish', { st: 'wait', wx: wt.x, wy: wt.y, sta: STA_MAX - sta.n, tired: ss.n > SESS_FREE, rod, bait, dur: this.durOf(c, rod), max: RODS[rod].dur });
+    this.w.io.to('map:' + p.mapId).emit('fishLine', { id: p.id, wx: wt.x, wy: wt.y, rod });
   }
   stop(p, quiet) {
     if (!p.fishing) return;
@@ -103,7 +116,7 @@ class Fishing {
   // di chuyển xa chỗ câu / bị đánh: thu cần, không mất mồi
   onMove(p) { const f = p.fishing; if (f && Math.hypot(p.x - f.x, p.y - f.y) > 24) this.stop(p); }
   onHurt(p) { if (p.fishing) this.stop(p); }
-  useBait(p) { U.removeItemById(p.c, BAIT, 1); p.dirtyMe = true; }
+  useBait(p) { const f = p.fishing, b = f && f.bait && U.countItem(p.c, f.bait) ? f.bait : this.baitOf(p.c); if (b) U.removeItemById(p.c, b, 1); p.dirtyMe = true; }
   sta(c) { const s = c.fishSta && c.fishSta.day === U.vnDay() ? c.fishSta : (c.fishSta = { day: U.vnDay(), n: 0 }); return s; }
   // giật cần: đo thời gian phản xạ rồi vào minigame kéo cá (nhóm cá đã chọn sẵn – cá càng hiếm càng khó kéo)
   hook(p) {
@@ -112,28 +125,43 @@ class Fishing {
     if (f.st === 'wait') { this.useBait(p); this.stop(p, true); return p.socket.emit('fish', { st: 'miss', why: 'early' }); }
     if (f.st !== 'bite') return;
     this.reaction(p, now - f.bitSent);
-    f.g = this.roll(p);
-    const dg = f.g === 'junk' || f.g === 'treasure' ? 'c' : f.g;
+    const B = BAITS[f.bait] || BAITS.moi_cau, R = RODS[f.rod] || RODS.can_cau;
+    f.g = this.roll(p, B);
+    f.fish = f.g === 'junk' || f.g === 'treasure' ? null : this.pick(p, f.g, B);
+    const dg = f.fish ? FISH[f.fish].g : 'c', lv = f.fish ? FISH[f.fish].lv : 1;
+    f.lv = lv; f.mod = { rod: R.p - lv, grip: B.grip };
     f.st = 'fight'; f.dg = dg; f.seed = (Math.random() * 4294967296) >>> 0; f.fightAt = now; f.end = now + (SIM.MAX_T + 6) * 1000;
-    p.socket.emit('fish', { st: 'fight', seed: f.seed, g: dg });
+    p.socket.emit('fish', { st: 'fight', seed: f.seed, g: dg, mod: f.mod, lv, rp: R.p, big: f.fish && FISH[f.fish].pred ? 1 : 0 });
   }
   // kết thúc minigame: chạy lại mô phỏng bằng seed của máy chủ để xác nhận
   fightEnd(p, d) {
     const f = p.fishing; if (!f || f.st !== 'fight') return;
     const now = Date.now(), inputs = Array.isArray(d.inputs) ? d.inputs.slice(0, 600).map(Number) : [];
     let ok = inputs.every((t, i) => Number.isFinite(t) && t >= 0 && (i === 0 || t >= inputs[i - 1]));
-    const r = ok ? SIM.replay(f.seed, f.dg, inputs) : { ok: false, t: 0, steps: 0 };
+    const r = ok ? SIM.replay(f.seed, f.dg, inputs, f.mod) : { ok: false, t: 0, steps: 0 };
     const elapsed = (now - f.fightAt) / 1000;
     // thời gian thật phải khớp thời gian mô phỏng (không thể "tua nhanh"); cho trễ mạng tối đa 4 giây
     if (!(r.steps === (d.steps | 0)) || elapsed < r.t - 0.35 || elapsed > r.t + 4) ok = false;
     if (ok && r.ok && !d.ok) ok = false;
     this.useBait(p);
     this.stop(p, true);
+    // cần câu: hao bền theo sức cá; cá khoẻ hơn cần / gần hết bền thì có thể gãy (cá thoát)
+    if (f.rod && RODS[f.rod] && U.countItem(p.c, f.rod) && ok) {
+      const R = RODS[f.rod], c = p.c; c.rodDur = c.rodDur || {};
+      const left = this.durOf(c, f.rod) - (f.lv || 1);
+      const brk = left <= 0 || Math.random() < Math.pow(1 - Math.max(0, left) / R.dur, 2) * 0.12 + Math.max(0, (f.lv || 1) - R.p) * 0.07;
+      if (brk) {
+        U.removeItemById(c, f.rod, 1); delete c.rodDur[f.rod]; p.dirtyMe = true; this.db.markDirty();
+        this.w.io.to('map:' + p.mapId).emit('fishLine', { id: p.id, off: 1, snap: 1 });
+        return p.socket.emit('fish', { st: 'broke', rod: f.rod, fish: f.fish, left: U.countItem(c, f.rod) });
+      }
+      c.rodDur[f.rod] = left;
+    }
     if (!ok || !r.ok) {
       if (r.ok && !ok) this.db.log('fish', `${p.c.name}: kết quả kéo cá không khớp mô phỏng (bỏ qua)`);
-      return p.socket.emit('fish', { st: 'miss', why: 'escape' });
+      return p.socket.emit('fish', { st: 'miss', why: 'escape', fish: f.fish, lv: f.lv });
     }
-    const got = this.land(p, f.g);
+    const got = this.land(p, f.g, f.fish);
     if (got && this.w.guildx && /^fish_/.test(got) && got !== 'fish_junk') this.w.guildx.progress(p, 'fish');
     if (got) this.w.io.to('map:' + p.mapId).emit('fishLine', { id: p.id, off: 1, got });
     const c = p.c;   // mã xác nhận ngẫu nhiên mỗi 20-50 lần câu được
@@ -199,16 +227,27 @@ class Fishing {
     }
   }
   // kéo cá lên: bảng tỉ lệ theo cấp bãi (tier) và ban đêm
-  roll(p) {
+  roll(p, B) {
+    B = B || BAITS.moi_cau;
     const def = this.w.maps[p.mapId].def, tier = def.tier || 0, night = this.w.night && this.w.night.isNight();
     const ss = p.c.fishSess, tired = ss && ss.n > SESS_FREE ? Math.max(0.35, 1 - (ss.n - SESS_FREE) / 200) : 1;   // câu liền quá lâu: cá hiếm giảm
     const k = (night ? 1.5 : 1) * tired;
-    const tbl = [['junk', 7], ['treasure', 2.5], ['c', 68], ['r', (14 + tier * 2) * k], ['e', (2 + tier * 0.6) * k], ['l', (0.25 + tier * 0.08) * k]];
+    const tbl = [['junk', 7 * B.junk], ['treasure', 2.5], ['c', 68], ['r', (14 + tier * 2) * k * B.boost.r], ['e', (2 + tier * 0.6) * k * B.boost.e], ['l', (0.25 + tier * 0.08) * k * B.boost.l]];
     let r = Math.random() * tbl.reduce((a, x) => a + x[1], 0), g = 'c';
     for (const [kk, w] of tbl) if ((r -= w) < 0) { g = kk; break; }
     return g;
   }
-  land(p, g) {
+  // chọn con cá cụ thể trong nhóm: theo cấp bãi (cá chỉ có ở bãi cao) và mồi (cá dữ mê mồi thịt / cá sống)
+  pick(p, g, B) {
+    const tier = this.w.maps[p.mapId].def.tier || 0;
+    let pool = BY_G(g).filter(id => !FISH[id].tier || tier >= FISH[id].tier);
+    if (!pool.length) pool = BY_G(g).filter(id => !FISH[id].tier);
+    const wt = id => FISH[id].pred ? B.pred : (B.pred >= 4 ? 0.5 : 1);   // mồi thịt: cá thường ít cắn
+    let r = Math.random() * pool.reduce((a, id) => a + wt(id), 0);
+    for (const id of pool) if ((r -= wt(id)) < 0) return id;
+    return pool[0];
+  }
+  land(p, g, fid) {
     const c = p.c; g = g || this.roll(p);
     c.fishN = (c.fishN || 0) + 1;
     if (g === 'junk') { this.w.giveItem(p, 'fish_junk', 1); p.socket.emit('fish', { st: 'got', id: 'fish_junk' }); return 'fish_junk'; }
@@ -220,7 +259,7 @@ class Fishing {
       if (id === 'boss_chest') this.f.brag(`🎣 ${c.name} câu được Rương Thủ Lĩnh dưới đáy ${MAPS[p.mapId].name}!`);
       return 'fish_junk';
     }
-    const pool = BY_G(g), id = pool[U.randInt(0, pool.length - 1)], fd = FISH[id];
+    const id = fid || this.pick(p, g, BAITS.moi_cau), fd = FISH[id];
     const kg = Math.round((fd.kg[0] + Math.pow(Math.random(), 2.2) * (fd.kg[1] - fd.kg[0])) * 10) / 10;
     this.w.giveItem(p, id, 1);
     const best = c.fishBest || (c.fishBest = {});
@@ -229,6 +268,7 @@ class Fishing {
     p.dirtyMe = true; this.db.markDirty();
     p.socket.emit('fish', { st: 'got', id, kg, rec });
     if (g === 'l') this.f.brag(`🐉 ${c.name} câu được ${ITEMS[id].name} nặng ${kg} cân tại ${MAPS[p.mapId].name}!`);
+    else if (fd.pred) this.f.brag(`🦈 ${c.name} kéo được ${ITEMS[id].name} nặng ${kg} cân tại ${MAPS[p.mapId].name}!`);
     else if (g === 'e' && kg >= 20) this.f.brag(`🎣 ${c.name} câu được ${ITEMS[id].name} ${kg} cân!`);
     return id;
   }
@@ -273,15 +313,34 @@ class Fishing {
   // buff món ăn đưa vào tính chỉ số (world.recalc) và kinh nghiệm (world.expMultiplier)
   foodBuff(c) { const f = c.food; if (!f || f.until <= Date.now() || !DISHES[f.id]) return null; const b = DISHES[f.id].buff; return { name: ITEMS[f.id].name, until: f.until, atk: b.atk || 0, def: b.def || 0, hp: b.hp || 0 }; }
   expMul(c) { const f = c.food; return f && f.until > Date.now() && DISHES[f.id] ? 1 + (DISHES[f.id].buff.exp || 0) : 1; }
+  // bán cá cho Đầu Bếp: id cụ thể hoặc 'all' (mọi loại cá, chừa lại cá đang thiếu cho món nào? – không, bán hết loại được chọn)
+  sell(p, id, n) {
+    if (!this.w.nearNpc(p, 'dau_bep')) return this.toast(p, 'Hãy đến gặp Đầu Bếp Tửu Lâu để bán cá', 'error');
+    const c = p.c, ids = id === 'all' ? Object.keys(FISH).filter(k => FISH[k].g === 'c') : FISH[id] || id === 'fish_junk' ? [id] : [];
+    let gold = 0, cnt = 0;
+    for (const k of ids) {
+      const have = U.countItem(c, k); if (!have) continue;
+      const q = id === 'all' ? have : U.clamp(n | 0 || have, 1, have), price = k === 'fish_junk' ? 5 : FISH[k].sell;
+      U.removeItemById(c, k, q); gold += price * q; cnt += q;
+    }
+    if (!cnt) return this.toast(p, 'Không có cá để bán', 'error');
+    c.gold += gold; p.dirtyMe = true; this.db.markDirty();
+    this.toast(p, `💰 Bán ${cnt} con cá được ${gold.toLocaleString('vi-VN')} lượng`, 'reward');
+    p.socket.emit('cook', this.cookView(p));
+  }
   cookView(p) {
     const c = p.c, fishName = k => k === 'c' ? 'Cá thường bất kỳ' : k === 'r' ? 'Cá hiếm bất kỳ' : (ITEMS[k] || {}).name || k;
+    const rod = this.rodOf(c), bait = this.baitOf(c);
     return {
       dishes: Object.entries(DISHES).map(([id, r]) => ({ id, name: ITEMS[id].name, gold: r.gold, min: r.min, buff: this.buffText(r.buff),
         need: r.need.map(([k, q]) => ({ k, name: fishName(k), q, have: this.have(c, k) })) })),
+      fish: Object.entries(FISH).map(([id, f]) => ({ id, name: f.name, g: f.g, lv: f.lv, sell: f.sell, have: U.countItem(c, id), pred: f.pred || 0, tier: f.tier || 0 })).concat([{ id: 'fish_junk', name: 'Giày Rách', g: 'j', lv: 0, sell: 5, have: U.countItem(c, 'fish_junk') }]),
+      rods: ROD_IDS.map(id => ({ id, name: RODS[id].name, p: RODS[id].p, max: RODS[id].dur, dur: this.durOf(c, id), have: U.countItem(c, id), price: RODS[id].price, on: id === rod })),
+      baits: BAIT_IDS.map(id => ({ id, name: BAITS[id].name, have: U.countItem(c, id), price: BAITS[id].price, desc: BAITS[id].desc, on: id === bait })),
       food: c.food && c.food.until > Date.now() ? { id: c.food.id, until: c.food.until, name: ITEMS[c.food.id].name } : null,
       fishN: c.fishN || 0, best: Object.entries(c.fishBest || {}).map(([id, kg]) => ({ id, name: ITEMS[id].name, kg })).sort((a, b) => b.kg - a.kg)
     };
   }
 }
 
-module.exports = { Fishing, FISH, DISHES };
+module.exports = { Fishing, FISH, DISHES, RODS, BAITS };

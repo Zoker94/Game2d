@@ -1551,7 +1551,7 @@ class World {
   }
   batchable(it) {
     const e = it.effect || {};
-    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.mine || e.title || e.dvFrag || e.dvSummon || e.tbFrag || e.tbMap || e.pardon || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr || e.fish || e.food);
+    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.mine || e.title || e.dvFrag || e.dvSummon || e.tbFrag || e.tbMap || e.pardon || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr || e.fish || e.bait || e.food);
   }
   useOne(p, uid) {
     const s = p.c.inv.find(x => x.uid === uid);
@@ -1588,7 +1588,8 @@ class World {
     }
     if (e.town) { this.startRecall(p); return; }   // niệm phép, xong mới trừ phù
     if (e.mine) return this.mining.useTicket(p, uid);   // Vé Vào Khoáng Động
-    if (e.fish) return this.fishing && this.fishing.cast(p);   // Cần Câu: thả câu (không mất cần)
+    if (e.fish) return this.fishing && this.fishing.cast(p, e.rod);   // Cần câu: chọn cần đó rồi thả câu (không mất cần)
+    if (e.bait) return this.fishing && this.fishing.selectBait(p, e.bait);   // Mồi: chọn làm mồi đang dùng
     if (e.food) { if (this.fishing && this.fishing.eat(p, e.food)) { U.removeByUid(c, uid, 1); p.dirtyMe = true; this.db.markDirty(); } return; }   // món ăn
     if (e.title) {   // Lệnh Bài Danh Hiệu: mở khoá vĩnh viễn danh hiệu quà tặng và đeo luôn
       const T = TITLES[e.title]; if (!T) return;
