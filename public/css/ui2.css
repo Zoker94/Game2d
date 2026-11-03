@@ -862,3 +862,22 @@ body.touch .lm-list { width: 86px; }
 #fish-card.r-rare { border-color: #7fbfff; }
 #fish-card.r-epic { border-color: #d08cff; box-shadow: 0 0 30px rgba(200,130,255,.6), 0 8px 26px rgba(0,0,0,.6); }
 #fish-card.r-legendary { border-color: #ffc040; box-shadow: 0 0 40px rgba(255,190,60,.8), 0 8px 26px rgba(0,0,0,.6); background: radial-gradient(ellipse at 50% 30%, rgba(90,60,10,.96), rgba(30,16,4,.96)); }
+/* bảng Thánh Câu (tab ở Đầu Bếp Tửu Lâu) */
+.ft-head { text-align: center; font: 900 18px Georgia, serif; color: #ffd76a; text-shadow: 0 0 10px rgba(255,190,60,.6); margin: 4px 0 6px; }
+.ft-head .small { font: 400 11.5px system-ui, sans-serif; color: #c8b890; text-shadow: none; }
+.ft-me { text-align: center; margin-bottom: 6px; }
+.ft-me img, .ft-fish img, .ft-rc img { image-rendering: pixelated; vertical-align: middle; }
+.ft-list { display: flex; flex-direction: column; gap: 3px; }
+.ft-row { display: grid; grid-template-columns: 34px 1fr 1.3fr auto auto; gap: 6px; align-items: center; padding: 5px 8px; border-radius: 8px; background: rgba(255,255,255,.04); font-size: 12.5px; }
+.ft-row.top1 { background: linear-gradient(90deg, rgba(255,200,60,.25), rgba(255,200,60,.05)); border: 1px solid rgba(255,210,90,.6); }
+.ft-row.top2 { background: linear-gradient(90deg, rgba(220,230,240,.18), rgba(220,230,240,.03)); }
+.ft-row.top3 { background: linear-gradient(90deg, rgba(220,140,70,.2), rgba(220,140,70,.03)); }
+.ft-row.me { outline: 1px solid #4ade80; }
+.ft-rk { font-weight: 900; text-align: center; font-size: 15px; }
+.ft-nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ft-fish { display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; }
+.ft-kg { color: #ffe070; }
+.ft-rec { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 4px; }
+.ft-rc { display: flex; gap: 6px; align-items: center; padding: 4px 6px; border-radius: 6px; background: rgba(255,255,255,.04); font-size: 12px; }
+.ft-rc.me { outline: 1px solid #ffd040; }
+@media (max-width: 520px) { .ft-row { grid-template-columns: 28px 1fr auto; } .ft-row .ft-fish { grid-column: 2 / 4; } .ft-row > .small { display: none; } }

@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🏆 Bảng Thánh Câu Cá (chỉ xem ở Đầu Bếp Tửu Lâu – tab Thánh Câu): xếp hạng ai câu được con cá quý nhất (độ hiếm trước, cùng loại thì nặng hơn đứng trên) và kỷ lục cân nặng từng loại cá của cả máy chủ.',
       '🎣 Câu được cá giờ hiện bảng lớn giữa màn hình: hình con cá, tên chữ to theo màu độ hiếm, cân nặng, nhãn KỶ LỤC MỚI – đứng yên khoảng 3,5 giây cho kịp đọc.',
       '🐎 Thu nhỏ toàn bộ thú cưỡi (còn khoảng 62%) cho cân với dáng nhân vật: người cưỡi không còn bị rồng / phượng che khuất, hiệu ứng lửa, cánh, hào quang của thú cũng thu theo.',
       '🎣 Cá cắn câu giờ có chế độ tập trung: điện thoại rung liên tục, màn hình giật nhẹ theo nhịp, mép trên và dưới màn hình mờ tối dần (càng sát mép càng tối) theo nhịp cho tới khi kéo cá xong.',

@@ -353,12 +353,25 @@
   }
 
   // ---------- 🍲 Nấu ăn (tab ở Đầu Bếp Tửu Lâu) ----------
-  let cookTab = 'cook';
+  let cookTab = 'cook', topData = null;
   const STARS = n => '★'.repeat(n);
   const GN = { c: 'Thường', r: 'Hiếm', e: 'Quý', l: 'Huyền thoại', j: 'Rác' };
   function cookHtml() {
     const d = cookData; if (!d) return '<p class="muted">Đang tải...</p>';
-    let h = `<div class="ck-tabs">${[['cook', '🍲 Nấu ăn'], ['sell', '💰 Bán cá'], ['gear', '🎣 Đồ câu']].map(([k, n]) => `<button class="btn small ${cookTab === k ? 'primary' : ''}" data-ckt="${k}">${n}</button>`).join('')}</div>`;
+    let h = `<div class="ck-tabs">${[['cook', '🍲 Nấu ăn'], ['sell', '💰 Bán cá'], ['gear', '🎣 Đồ câu'], ['top', '🏆 Thánh Câu']].map(([k, n]) => `<button class="btn small ${cookTab === k ? 'primary' : ''}" data-ckt="${k}">${n}</button>`).join('')}</div>`;
+    if (cookTab === 'top') {
+      const t = topData;
+      if (!t) return h + '<p class="muted">Đang tải bảng Thánh Câu…</p>';
+      const MED = ['🥇', '🥈', '🥉'], rc = id => (G.data.items[id] || {}).rarity || 'common';
+      h += `<div class="ft-head">🏆 THÁNH CÂU CÁ 🏆<div class="small">Xếp theo con cá quý nhất từng câu được (độ hiếm trước, cùng loại thì nặng hơn đứng trên)</div></div>
+        ${t.me ? `<div class="small ft-me">Bạn: hạng <b>${t.me.rank}</b> · <img src="${UI.iconUrl(t.me.id)}" width="16" height="16"> ${UI.esc((G.data.items[t.me.id] || {}).name || '')} <b>${t.me.kg} cân</b></div>` : '<div class="small muted ft-me">Bạn chưa có tên trên bảng – câu được con cá đầu tiên là có hạng.</div>'}
+        <div class="ft-list">${t.rows.length ? t.rows.map(r => `<div class="ft-row ${r.rank <= 3 ? 'top' + r.rank : ''} ${r.me ? 'me' : ''}"><span class="ft-rk">${MED[r.rank - 1] || r.rank}</span><b class="ft-nm">${UI.esc(r.name)}</b>
+          <span class="ft-fish"><img src="${UI.iconUrl(r.id)}" width="22" height="22"><span class="r-${rc(r.id)}-t">${UI.esc((G.data.items[r.id] || {}).name || '')}</span></span><b class="ft-kg">${r.kg} cân</b><span class="small muted">${fmt(r.n)} lần câu</span></div>`).join('') : '<p class="small muted">Chưa ai câu được cá.</p>'}</div>
+        <h5>📜 Kỷ lục từng loại cá (con nặng nhất máy chủ)</h5>
+        <div class="ft-rec">${t.rec.map(r => `<div class="ft-rc ${r.me ? 'me' : ''}"><img src="${UI.iconUrl(r.id)}" width="26" height="26"><div><b class="r-${rc(r.id)}-t">${UI.esc(r.name)}</b>
+          <div class="sub">${r.holder ? `👑 ${UI.esc(r.holder)} · <b>${r.kg} cân</b>` : '<span class="muted">Chưa ai câu được</span>'}${r.mine && !r.me ? ` · bạn: ${r.mine}` : ''}</div></div></div>`).join('')}</div>`;
+      return h;
+    }
     if (cookTab === 'sell') {
       const list = (d.fish || []).filter(f => f.have > 0), total = list.reduce((a, f) => a + f.have * f.sell, 0), common = list.filter(f => f.g === 'c').reduce((a, f) => a + f.have * f.sell, 0);
       h += `<div class="small muted">Đầu Bếp thu mua cá tươi. Giá theo loại cá (bán cho cửa hàng khác chỉ được ~15%).</div>
@@ -394,7 +407,7 @@
     if (!cookHost || !cookHost.isConnected) return;
     cookHost.innerHTML = cookHtml();
     cookHost.querySelectorAll('[data-cook]').forEach(b => b.onclick = () => emit({ op: 'cook', id: b.dataset.cook, n: +b.dataset.n || 1 }));
-    cookHost.querySelectorAll('[data-ckt]').forEach(b => b.onclick = () => { cookTab = b.dataset.ckt; renderCook(); });
+    cookHost.querySelectorAll('[data-ckt]').forEach(b => b.onclick = () => { cookTab = b.dataset.ckt; if (cookTab === 'top') emit({ op: 'top' }); renderCook(); });
     cookHost.querySelectorAll('[data-sell]').forEach(b => b.onclick = () => emit({ op: 'sell', id: b.dataset.sell, n: +b.dataset.n || 0 }));
     cookHost.querySelectorAll('[data-rod]').forEach(b => b.onclick = () => emit({ op: 'rod', id: b.dataset.rod }));
     cookHost.querySelectorAll('[data-bait]').forEach(b => b.onclick = () => emit({ op: 'bait', id: b.dataset.bait }));
@@ -406,6 +419,7 @@
     s.on('fish', onFish);
     s.on('fishLine', onLine);
     s.on('cook', onCook);
+    s.on('fishTop', d => { topData = d; if (cookTab === 'top') renderCook(); });
     s.on('init', () => { lines.clear(); st = null; });
   }
   const drawAll = (ctx, now) => { draw(ctx, now); drawSnaps(ctx, now); };

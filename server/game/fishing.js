@@ -58,6 +58,7 @@ class Fishing {
     if (d.op === 'stop') return this.stop(p, true);
     if (d.op === 'cook') return this.cook(p, String(d.id || ''), d.n);
     if (d.op === 'cookView') return p.socket.emit('cook', this.cookView(p));
+    if (d.op === 'top') return this.w.nearNpc(p, 'dau_bep') ? p.socket.emit('fishTop', this.top(p)) : this.toast(p, 'Bảng Thánh Câu chỉ xem được ở Đầu Bếp Tửu Lâu', 'error');
     if (d.op === 'sell') return this.sell(p, String(d.id || ''), d.n);
     if (d.op === 'rod') return this.selectRod(p, String(d.id || ''));
     if (d.op === 'bait') return this.selectBait(p, String(d.id || ''));
@@ -313,6 +314,34 @@ class Fishing {
   // buff món ăn đưa vào tính chỉ số (world.recalc) và kinh nghiệm (world.expMultiplier)
   foodBuff(c) { const f = c.food; if (!f || f.until <= Date.now() || !DISHES[f.id]) return null; const b = DISHES[f.id].buff; return { name: ITEMS[f.id].name, until: f.until, atk: b.atk || 0, def: b.def || 0, hp: b.hp || 0 }; }
   expMul(c) { const f = c.food; return f && f.until > Date.now() && DISHES[f.id] ? 1 + (DISHES[f.id].buff.exp || 0) : 1; }
+  // ---------- 🏆 Thánh Câu: xếp hạng theo con cá quý nhất (độ hiếm rồi cân nặng) + kỷ lục cân nặng từng loại cá ----------
+  // tính từ c.fishBest của mọi nhân vật (tài khoản quản trị không xếp hạng), nhớ 30 giây
+  top(p) {
+    const now = Date.now();
+    if (!this._top || now - this._top.at > 30000) {
+      const { isOwner } = require('../owner'), GR = { c: 1, r: 2, e: 3, l: 4 };
+      const users = Object.values(this.db.data.users).filter(u => u.character && !u.banned && !u.isAdmin && !isOwner(u) && u.character.fishBest);
+      const rec = {}, rows = [];
+      for (const u of users) {
+        const c = u.character; let best = null;
+        for (const [id, kg] of Object.entries(c.fishBest)) {
+          const f = FISH[id]; if (!f) continue;
+          if (!rec[id] || kg > rec[id].kg) rec[id] = { name: c.name, kg, uid: u.id };
+          const sc = GR[f.g] * 1e6 + f.lv * 1e4 + kg;   // cá hiếm hơn đứng trên, cùng hạng thì nặng hơn đứng trên
+          if (!best || sc > best.sc) best = { id, kg, sc };
+        }
+        if (best) rows.push({ uid: u.id, name: c.name, cls: c.cls, id: best.id, kg: best.kg, sc: best.sc, n: c.fishN || 0 });
+      }
+      rows.sort((a, b) => b.sc - a.sc);
+      this._top = { at: now, rows, rec };
+    }
+    const T = this._top, mine = T.rows.findIndex(r => r.uid === p.userId);
+    return {
+      rows: T.rows.slice(0, 30).map((r, i) => ({ rank: i + 1, name: r.name, cls: r.cls, id: r.id, kg: r.kg, n: r.n, me: r.uid === p.userId })),
+      me: mine >= 0 ? { rank: mine + 1, id: T.rows[mine].id, kg: T.rows[mine].kg } : null,
+      rec: Object.keys(FISH).map(id => ({ id, name: FISH[id].name, g: FISH[id].g, holder: T.rec[id] ? T.rec[id].name : null, kg: T.rec[id] ? T.rec[id].kg : 0, me: T.rec[id] && T.rec[id].uid === p.userId, mine: (p.c.fishBest || {})[id] || 0 }))
+    };
+  }
   // bán cá cho Đầu Bếp: id cụ thể hoặc 'all' (mọi loại cá, chừa lại cá đang thiếu cho món nào? – không, bán hết loại được chọn)
   sell(p, id, n) {
     if (!this.w.nearNpc(p, 'dau_bep')) return this.toast(p, 'Hãy đến gặp Đầu Bếp Tửu Lâu để bán cá', 'error');
