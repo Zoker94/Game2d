@@ -470,6 +470,7 @@
     Social.bind(s);
     Mentor.bind(s);
     Fishing.bind(s);
+    Topup.bind(s);
     Party.bind(s);
     Mining.bind(s);
     Captcha.bind(s);

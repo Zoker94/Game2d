@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '💳 Nạp Nguyên Bảo: bấm vào số 💎 trên góc màn hình (hoặc Kỳ Trân Các › Nạp Nguyên Bảo), chọn số tiền (1.000đ = 2 Nguyên Bảo, 20.000đ = 40) để tạo mã QR chuyển khoản MB Bank đúng số tiền và nội dung. Quét bằng app ngân hàng, chuyển xong Nguyên Bảo được cộng khi quản trị viên xác nhận (kể cả khi bạn offline)',
       '🎣 Câu cá chống auto: giật cần xong phải chơi minigame KÉO CÁ (giữ chuột / chạm / Space để kéo vạch, nhả cho chìm, giữ vạch trong vùng cá tới khi đầy thanh – cá càng hiếm càng giãy mạnh). Không còn tự giật cần kể cả có Vé Treo Máy. Thêm thể lực câu 300 lần / ngày, câu liền quá lâu thì cá hiếm ít dần (nghỉ 10 phút hồi sức), thỉnh thoảng hỏi mã xác nhận; phản xạ nhanh bất thường sẽ bị hỏi mã ngay, sai sẽ bị cấm câu 30 phút',
       '🔒 Mã xác nhận (treo máy và câu cá) giờ là ảnh do máy chủ vẽ – phần mềm tự động không đọc được mã',
       '🍲 Ăn thêm cùng một món thì cộng dồn thời gian (tối đa 8 giờ); ăn món khác thì thay món đang hưởng',

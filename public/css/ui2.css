@@ -532,3 +532,17 @@ body:has(#btn-dig:not(.hidden)) #fish-ui { bottom: 180px; }
 #fish-game .fg-t { font: 900 15px "Be Vietnam Pro", sans-serif; color: #ffe060; text-shadow: 0 0 6px #ff9a20; }
 #fish-game .fg-h { max-width: 160px; text-align: center; font-size: 10px; color: #cfe6f5; }
 body.touch #fish-game { right: 12px; }
+/* nạp Nguyên Bảo (topup.js) */
+.knb-plus { font-style: normal; margin-left: 3px; display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; border-radius: 50%; background: #3aa0e0; color: #fff; font-size: 11px; font-weight: 900; line-height: 1; vertical-align: middle; }
+.tp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0; }
+.tp-opt { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border-radius: 10px; background: rgba(40,60,90,.5); border: 1px solid #3a5a80; color: #e8f4ff; cursor: pointer; }
+.tp-opt b { font-size: 14px; } .tp-opt span { font-size: 11px; color: #7fd0ff; }
+.tp-opt.on { border-color: #ffd76a; background: rgba(120,90,20,.45); box-shadow: 0 0 10px rgba(255,215,106,.4); }
+.tp-qr { text-align: center; }
+.tp-qr img { display: block; margin: 6px auto; max-width: 100%; height: auto; border-radius: 10px; background: #fff; }
+.tp-info { text-align: left; margin: 6px 0; }
+.tp-info > div { display: flex; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px dashed rgba(255,255,255,.08); }
+.tp-info span { width: 92px; color: #9aa6ba; font-size: 11px; } .tp-info b { flex: 1; word-break: break-all; }
+.tp-amt { color: #ffd76a; font-size: 15px; } .tp-code { color: #ff9a6a; font-size: 15px; letter-spacing: 1px; }
+.tp-row { display: flex; align-items: center; gap: 8px; }
+.tp-cta { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 6px 0; padding: 6px 10px; border-radius: 10px; background: rgba(40,90,140,.25); border: 1px solid #3a6a9a; }

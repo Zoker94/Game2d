@@ -365,6 +365,24 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   });
 
   // ----- Gift code -----
+  // ----- Nạp tiền (chỉ chủ server được duyệt / sửa tài khoản nhận tiền) -----
+  app.get('/api/admin/topups', auth, (req, res) => res.json({ list: world.topup.adminList(String(req.query.status || 'pending')), bank: world.topup.bank, owner: req.isOwner }));
+  app.post('/api/admin/topups/:code/approve', auth, (req, res) => {
+    if (!req.isOwner) return res.status(403).json({ error: 'Chỉ chủ server được duyệt nạp tiền' });
+    const r = world.topup.approve(String(req.params.code), req.admin); res.status(r.error ? 400 : 200).json(r);
+  });
+  app.post('/api/admin/topups/:code/reject', auth, (req, res) => {
+    if (!req.isOwner) return res.status(403).json({ error: 'Chỉ chủ server được từ chối đơn' });
+    const r = world.topup.reject(String(req.params.code), req.admin, req.body && req.body.note); res.status(r.error ? 400 : 200).json(r);
+  });
+  app.post('/api/admin/bank', auth, (req, res) => {
+    if (!req.isOwner) return res.status(403).json({ error: 'Chỉ chủ server được sửa' });
+    const b = req.body || {}, cur = world.topup.bank;
+    db.data.config.bank = { bin: String(b.bin || cur.bin).replace(/\D/g, '').slice(0, 8), bankName: String(b.bankName || cur.bankName).slice(0, 40), acc: String(b.acc || cur.acc).replace(/\s/g, '').slice(0, 24),
+      holder: String(b.holder || cur.holder).toUpperCase().slice(0, 60), rate: Math.max(0.1, Math.min(100, +b.rate || cur.rate)), min: Math.max(1000, +b.min || cur.min), max: Math.max(10000, +b.max || cur.max) };
+    db.markDirty(); db.log('admin', `${req.admin} sửa tài khoản nhận nạp tiền`);
+    res.json({ ok: true, bank: world.topup.bank });
+  });
   app.get('/api/admin/giftcodes', auth, (req, res) => res.json(Object.entries(db.data.giftcodes).map(([code, g]) => ({ code, ...g, used: g.usedBy.length, usedBy: undefined }))));
   app.post('/api/admin/giftcodes', auth, (req, res) => {
     const b = req.body || {};

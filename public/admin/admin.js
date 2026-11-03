@@ -56,7 +56,7 @@
   function openModal(title, html) { $('m-title').textContent = title; $('m-body').innerHTML = html; $('modal').classList.remove('hidden'); }
   function closeModal() { $('modal').classList.add('hidden'); }
 
-  const TITLES = { dashboard: 'Tổng quan', users: 'Quản lý người chơi', events: 'Sự kiện & Boss', broadcast: 'Gửi thông báo', guilds: 'Bang hội', giftcodes: 'Gift code', shops: 'Cửa hàng NPC', enhance: 'Tỉ lệ cường hoá', bosscfg: 'Boss & đồ rơi', config: 'Cấu hình server', chat: 'Nhật ký chat', logs: 'Nhật ký hệ thống', cleanup: 'Dọn dẹp dữ liệu', account: 'Tài khoản quản trị' };
+  const TITLES = { dashboard: 'Tổng quan', users: 'Quản lý người chơi', events: 'Sự kiện & Boss', broadcast: 'Gửi thông báo', guilds: 'Bang hội', giftcodes: 'Gift code', topups: 'Nạp tiền (duyệt đơn)', shops: 'Cửa hàng NPC', enhance: 'Tỉ lệ cường hoá', bosscfg: 'Boss & đồ rơi', config: 'Cấu hình server', chat: 'Nhật ký chat', logs: 'Nhật ký hệ thống', cleanup: 'Dọn dẹp dữ liệu', account: 'Tài khoản quản trị' };
   async function show(v) {
     view = v;
     document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.dataset.v === v));
@@ -185,6 +185,28 @@
         };
       }
       render();
+    },
+    async topups(el, st) {
+      st = st || el._st || 'pending'; el._st = st;
+      const d = await api('/topups?status=' + st), b = d.bank;
+      const S = { pending: ['⏳ Chờ duyệt', '#ffd76a'], done: ['✅ Đã cộng', '#4ade80'], rejected: ['❌ Từ chối', '#ff7a7a'], cancelled: ['Huỷ', '#999'], expired: ['⌛ Quá hạn', '#c8a060'] };
+      const total = d.list.filter(o => o.status === 'done').reduce((a, o) => a + o.amount, 0);
+      el.innerHTML = `<div class="card"><h3>Tài khoản nhận tiền</h3>${d.owner ? `<div class="row">
+          <label>Mã BIN ngân hàng<input id="bk-bin" value="${esc(b.bin)}" style="width:90px"></label><label>Tên ngân hàng<input id="bk-name" value="${esc(b.bankName)}" style="width:120px"></label>
+          <label>Số tài khoản<input id="bk-acc" value="${esc(b.acc)}" style="width:160px"></label><label>Chủ tài khoản<input id="bk-holder" value="${esc(b.holder)}" style="width:180px"></label>
+          <label>NB / 1.000đ<input id="bk-rate" type="number" step="0.1" value="${b.rate}" style="width:70px"></label><label>Tối thiểu<input id="bk-min" type="number" value="${b.min}" style="width:100px"></label><label>Tối đa<input id="bk-max" type="number" value="${b.max}" style="width:110px"></label>
+          <button class="btn" id="bk-save">Lưu</button></div><p class="muted small">MB Bank BIN 970422 · Vietcombank 970436 · Techcombank 970407 · BIDV 970418 · VietinBank 970415 · ACB 970416</p>`
+        : `<p>${esc(b.bankName)} · ${esc(b.acc)} · ${esc(b.holder)} · 1.000đ = ${b.rate} NB</p><p class="muted">Chỉ chủ server được duyệt đơn và sửa tài khoản.</p>`}</div>
+        <div class="card"><h3>Đơn nạp</h3><div class="row">${Object.entries({ pending: 'Chờ duyệt', done: 'Đã cộng', rejected: 'Từ chối', expired: 'Quá hạn', all: 'Tất cả' }).map(([k, n]) => `<button class="btn ${k === st ? 'primary' : ''}" data-st="${k}">${n}</button>`).join('')}</div>
+        <p class="muted small">Đối chiếu sao kê ngân hàng: đúng <b>số tiền</b> và <b>nội dung</b> (mã đơn) thì bấm Duyệt – Nguyên Bảo cộng ngay cho người chơi (kể cả đang offline).${st === 'done' || st === 'all' ? ` Tổng đã cộng trong danh sách: <b>${fmt(total)}đ</b>.` : ''}</p>
+        <table><tr><th>Mã đơn / nội dung CK</th><th>Nhân vật</th><th>Số tiền</th><th>Nguyên Bảo</th><th>Tạo lúc</th><th>Trạng thái</th><th></th></tr>
+        ${d.list.map(o => `<tr><td><b>${esc(o.code)}</b></td><td>${esc(o.name)}${o.online ? ' 🟢' : ''}<div class="muted small">${esc(o.account)}</div></td><td><b>${fmt(o.amount)}đ</b></td><td>${fmt(o.knb)}</td><td>${dt(o.at)}</td>
+          <td style="color:${(S[o.status] || [])[1]}">${(S[o.status] || [o.status])[0]}${o.by ? `<div class="muted small">${esc(o.by)} · ${dt(o.doneAt)}</div>` : ''}${o.note ? `<div class="muted small">${esc(o.note)}</div>` : ''}</td>
+          <td>${d.owner && (o.status === 'pending' || o.status === 'expired') ? `<button class="btn primary" data-ok="${esc(o.code)}">Duyệt</button> <button class="btn" data-no="${esc(o.code)}">Từ chối</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">Không có đơn</td></tr>'}</table></div>`;
+      el.querySelectorAll('[data-st]').forEach(x => x.onclick = () => VIEWS.topups(el, x.dataset.st));
+      el.querySelectorAll('[data-ok]').forEach(x => x.onclick = async () => { const o = d.list.find(y => y.code === x.dataset.ok); if (!confirm(`Duyệt đơn ${o.code}: ${fmt(o.amount)}đ -> +${o.knb} Nguyên Bảo cho ${o.name}?\nChỉ duyệt khi đã thấy tiền về đúng số tiền và nội dung.`)) return; await run(() => api('/topups/' + o.code + '/approve', {}), 'Đã cộng Nguyên Bảo'); VIEWS.topups(el); });
+      el.querySelectorAll('[data-no]').forEach(x => x.onclick = async () => { const note = prompt('Lý do từ chối (người chơi sẽ thấy):', 'Chưa nhận được tiền'); if (note == null) return; await run(() => api('/topups/' + x.dataset.no + '/reject', { note }), 'Đã từ chối'); VIEWS.topups(el); });
+      const sv = $('bk-save'); if (sv) sv.onclick = async () => { await run(() => api('/bank', { bin: $('bk-bin').value, bankName: $('bk-name').value, acc: $('bk-acc').value, holder: $('bk-holder').value, rate: $('bk-rate').value, min: $('bk-min').value, max: $('bk-max').value }), 'Đã lưu'); VIEWS.topups(el); };
     },
     async giftcodes(el) {
       const [codes, items] = await Promise.all([api('/giftcodes'), getItems()]);
