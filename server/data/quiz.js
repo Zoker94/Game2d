@@ -172,4 +172,13 @@ const QUIZ = [
   ['Một năm nhuận có bao nhiêu ngày? (số)', ['366']]
 ];
 
+// thêm: bộ sinh từ bảng dữ liệu + hai bộ viết tay theo lĩnh vực (tổng ~2000 câu); bỏ câu trùng (so không dấu)
+{
+  const norm = t => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, ' ').trim();
+  const seen = new Set(QUIZ.map(([q]) => norm(q)));
+  for (const item of [...require('./quiz_gen').QUIZ_GEN, ...require('./quiz_more1'), ...require('./quiz_more2')]) {
+    const k = norm(item[0]); if (seen.has(k)) continue; seen.add(k); QUIZ.push(item);
+  }
+}
+
 module.exports = { QUIZ };

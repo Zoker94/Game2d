@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '❓ Đố Vui Võ Lâm tăng lên hơn 2000 câu: tục ngữ ca dao, lịch sử – địa lý Việt Nam và thế giới, thủ đô các nước, khoa học, thiên văn, cơ thể người, động thực vật, văn học, Tam Quốc – Tây Du – Thủy Hử, thể thao, công nghệ, âm nhạc, ẩm thực, tiếng Anh, Hán Việt, câu đố mẹo, tính nhẩm',
       '🐔 Gà thả rông trong các thành: lang thang, mổ thóc, người đi sát thì chạy dạt; hai con gặp nhau có lúc gườm nhau rồi đá nhau tung lông, con thua bỏ chạy, con thắng ưỡn ngực gáy "Ò ó o!"',
       '📱 Sửa lỗi điện thoại (nhất là iPhone): xem chọi gà xong màn đấu bị đen, gà lem vệt, nền bản đồ mất – đấu trường giờ dùng ít bộ nhớ hình hơn 4 lần và trả lại hết khi đóng trận',
       '📱 Sửa lỗi điện thoại: gõ chữ xong, bàn phím đóng nhưng màn hình bị lệch (giao diện lặp đôi, vùng đen, chạm không ăn) – game tự kéo màn về đúng chỗ',
