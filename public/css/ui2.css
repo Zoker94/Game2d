@@ -902,9 +902,9 @@ body.touch .lm-list { width: 86px; }
 .cf-sel { display: flex; gap: 10px; align-items: center; }
 /* màn xem trận */
 #cf-arena { position: fixed; inset: 0; z-index: 260; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.7); }
-.cfa-box { position: relative; width: min(96vw, 760px); }
-.cfa-box canvas { display: block; width: 100%; height: auto; border-radius: 14px; border: 3px solid #c89040; box-shadow: 0 0 30px rgba(255,170,60,.4); image-rendering: pixelated; }
-.cfa-skip { position: absolute; top: 80px; right: 10px; }
+.cfa-box { position: relative; width: min(96vw, 760px, calc(94vh * 760 / 420)); }
+.cfa-box canvas { display: block; width: 100%; height: auto; border-radius: 14px; border: 3px solid #c89040; box-shadow: 0 0 30px rgba(255,170,60,.4); }
+.cfa-skip { position: absolute; bottom: 10px; right: 12px; }
 .cfa-res { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%) scale(.6); opacity: 0; pointer-events: none; text-align: center; padding: 14px 24px; border-radius: 14px; background: rgba(20,10,4,.92); border: 2px solid #ffd040; color: #fff4d8; min-width: 260px; }
 .cfa-res.show { animation: fcIn .4s cubic-bezier(.2,1.5,.4,1) forwards; pointer-events: auto; }
 .cfa-res.lose { border-color: #8a8a9a; }

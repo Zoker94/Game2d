@@ -149,7 +149,7 @@ class Cockfight {
     const win = F[0].hp <= 0 ? 1 : F[1].hp <= 0 ? 0 : (F[0].hp / F[0].max >= F[1].hp / F[1].max ? 0 : 1);
     return { ev, win };
   }
-  side(r, owner, tac) { return { name: r.name, owner, breed: r.breed, lv: r.lv, stars: r.stars, st: this.stats(r, tac), tac }; }
+  side(r, owner, tac) { return { name: r.name, owner, breed: r.breed, rar: R.BREEDS[r.breed].rar, bname: R.BREEDS[r.breed].name, lv: r.lv, stars: r.stars, st: this.stats(r, tac), tac }; }
   pve(p, r, tier, tac) {
     const c = p.c, T = R.TIERS[tier]; if (!T || !r) return this.toast(p, 'Chưa có gà', 'error');
     const today = U.vnDay(); if (c.cfDay !== today) { c.cfDay = today; c.cfPve = 0; }

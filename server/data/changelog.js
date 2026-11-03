@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🐓 Đấu trường chọi gà vẽ lại hoàn toàn: trời hoàng hôn, núi xa, mái đình sơn son, đèn lồng đung đưa, đuốc lửa bập bùng, khán đài đông người hò reo khi có đòn chí mạng, rào tre, sân cát quây chiếu; gà chạy vào sân, bụi tung, tia va chạm, lông bay đúng màu gà, chớp trắng khi trúng đòn; bảng máu mới có chân dung gà, khung theo độ hiếm, vệt máu tụt dần, đếm lượt; con thắng toả hào quang',
       '🐓 CHỌI GÀ – Trường Gà ở Tương Dương (NPC Chủ Trường Gà): nhận 1 Gà Điều miễn phí, mua Trứng Gà Chọi / Trứng Gà Quý về ấp ra 8 giống gà (Điều, Chuối, Xám, Ô, Nhạn, Tía, Hắc Phượng, Kim Kê) có sao tư chất và tuyệt chiêu riêng; cho ăn Thóc, luyện gà lên cấp 30; đấu tập với gà NPC 5 hạng nhận ngân lượng, thách đấu người chơi có đặt cược, bảng xếp hạng Sư Kê. Trận đấu chiếu hoạt cảnh đầy đủ: lao tới, bật nhảy đá, chí mạng, né, choáng, gà thua văng ra bất tỉnh.',
       '🛡️ Admin / GM không còn có tên trong bất kỳ bảng xếp hạng nào: xếp hạng chung, Đua Top Tuần, Thánh Câu, Đua Top Săn Quái, top sát thương Boss thế giới, bảng điểm Đại Hội Võ Lâm và Tống Kim, hạng sát thương Boss bang; bang do admin làm bang chủ cũng không lên bảng bang hội.',
       '🎣 Vẽ lại khung kéo cá: cột nước có tia nắng, bọt khí, rong và cát đáy; vùng cá phát sáng, con cá quẫy đuôi theo màu độ hiếm; lưỡi câu treo dây có phao; ống tiến độ thuỷ tinh chất lỏng sóng sánh, viền đồng nháy đỏ khi cá giãy, ống sáng rực khi sắp kéo được.',
