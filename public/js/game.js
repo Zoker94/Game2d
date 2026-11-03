@@ -1187,6 +1187,7 @@
     if (tx < 0 || ty < 0 || tx >= m.w || ty >= m.h) return true;
     return G.solid.has(m.tiles[ty * m.w + tx]);
   }
+  G.blocked = (x, y) => blocked(x, y);
   function blocked(x, y) { return solidAt(x - 12, y - 6) || solidAt(x + 12, y - 6) || solidAt(x - 12, y + 6) || solidAt(x + 12, y + 6) || solidAt(x, y) || HoaSon.blocked(x, y); }
 
   // ---------- Tìm đường cho nhân vật (bấm đi tới, tự động đánh, tự nhặt đồ): vướng vật cản thì đi vòng ----------
@@ -1533,6 +1534,7 @@
     Market.collect(list);
     Mining.collect(list);
     Pet.collect(list, now);
+    Cockfight.collect(list, now);   // gà thả rông trong thành
     const nearPl = [s, ...G.players.values()];
     list.sort((a, b) => a.y - b.y);
 
@@ -1562,6 +1564,7 @@
     const frameOf = (moving, seed) => moving ? Math.floor(now / 140 + (seed || 0)) % 4 : 0;
     for (const it of list) {
       if (it.k === 'pet') { Pet.draw(ctx, it, now); continue; }
+      if (it.k === 'hen') { Cockfight.drawHen(ctx, it.h, now); continue; }
       const kn = it.k === 'pl' ? it.e : it.k === 'self' ? s : null, knOn = kn && kn._kLift != null;
       if (knOn) { const cy = kn.y - 26; ctx.save(); ctx.translate(kn.x, cy - kn._kLift); ctx.rotate(kn._kRot); ctx.translate(-kn.x, -cy); }   // đang văng: nhấc lên + xoay
       if (it.k === 'tall') {

@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🐔 Gà thả rông trong các thành: lang thang, mổ thóc, người đi sát thì chạy dạt; hai con gặp nhau có lúc gườm nhau rồi đá nhau tung lông, con thua bỏ chạy, con thắng ưỡn ngực gáy "Ò ó o!"',
       '📱 Sửa lỗi điện thoại (nhất là iPhone): xem chọi gà xong màn đấu bị đen, gà lem vệt, nền bản đồ mất – đấu trường giờ dùng ít bộ nhớ hình hơn 4 lần và trả lại hết khi đóng trận',
       '📱 Sửa lỗi điện thoại: gõ chữ xong, bàn phím đóng nhưng màn hình bị lệch (giao diện lặp đôi, vùng đen, chạm không ăn) – game tự kéo màn về đúng chỗ',
       '🐓 Thách đấu chọi gà không cần gõ phím nữa: chạm chọn người chơi ở gần đang có gà, chạm chọn mức cược (tránh bàn phím điện thoại bật lên làm giật/đơ màn hình)',

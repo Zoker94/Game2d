@@ -466,6 +466,111 @@
     const tick = () => { if (!el.isConnected) return; const x = cv.getContext('2d'); x.clearRect(0, 0, 192, 200); frame(x, r.breed, 0, Math.floor((performance.now() - t0) / 170) % 6, 96, 190, 2.9); requestAnimationFrame(tick); };
     tick(); el.querySelector('button').onclick = () => el.remove();
   }
+  // ---------- gà thả rông trong thành ----------
+  // Chỉ là cảnh (mỗi máy tự mô phỏng, không qua máy chủ): gà lang thang, mổ thóc, người đi sát thì chạy dạt,
+  // hai con trống gặp nhau thì có lúc xù lông đá nhau vài hiệp – con thua bỏ chạy, con thắng ưỡn ngực gáy.
+  const HEN_SC = 0.62, HEN_BREEDS = ['ga_dieu', 'ga_dieu', 'ga_chuoi', 'ga_chuoi', 'ga_xam', 'ga_xam', 'ga_o', 'ga_nhan', 'ga_tia', 'hac_phuong'];
+  let hens = [], henMap = '', henT = 0;
+  const free = (x, y) => !(G.blocked && G.blocked(x, y));
+  function spawnHens() {
+    hens = []; henMap = G.map.key || G.map.id;
+    if (!G.map.town || !G.blocked) return;
+    const n = Math.max(6, Math.min(12, Math.round(G.map.w * G.map.h / 110)));
+    for (let i = 0, tries = 0; i < n && tries < 400; tries++) {
+      const x = (2 + Math.random() * (G.map.w - 4)) * 64, y = (2 + Math.random() * (G.map.h - 4)) * 64;
+      if (!free(x, y)) continue;
+      hens.push({ x, y, b: HEN_BREEDS[Math.random() * HEN_BREEDS.length | 0], st: 'idle', until: performance.now() + Math.random() * 3000, dir: Math.random() < 0.5 ? 1 : -1, ph: Math.random() * 6, cd: 0, lift: 0, row: 0, col: 0, fx: [] });
+      i++;
+    }
+  }
+  function goWalk(h, now, far, spd) {
+    for (let k = 0; k < 8; k++) {
+      const a = Math.random() * Math.PI * 2, d = (far || 64) + Math.random() * (far ? 64 : 150), tx = h.x + Math.cos(a) * d, ty = h.y + Math.sin(a) * d * 0.7;
+      if (free(tx, ty)) { h.st = 'walk'; h.tx = tx; h.ty = ty; h.spd = spd || 32 + Math.random() * 14; h.until = now + 9000; return; }
+    }
+    h.st = 'idle'; h.until = now + 1500;
+  }
+  function stepHens(now) {
+    if (!G.map || !G.self) return;
+    if ((G.map.key || G.map.id) !== henMap) spawnHens();
+    const dt = Math.min(0.1, (now - (henT || now)) / 1000); henT = now;
+    const me = G.self, people = [me, ...G.players.values()];
+    for (const h of hens) {
+      if (h.st === 'fight') continue;   // cặp đá nhau do con "chủ trận" điều khiển bên dưới
+      // người đi sát: chạy dạt ra
+      if (h.st !== 'flee') for (const p of people) { if (p && Math.abs(p.x - h.x) < 46 && Math.abs(p.y - h.y) < 30) { const a = Math.atan2(h.y - p.y, h.x - p.x); const tx = h.x + Math.cos(a) * 110, ty = h.y + Math.sin(a) * 70; if (free(tx, ty)) { h.st = 'flee'; h.tx = tx; h.ty = ty; h.spd = 130; h.until = now + 1500; } break; } }
+      if (h.st === 'walk' || h.st === 'flee') {
+        const dx = h.tx - h.x, dy = h.ty - h.y, d = Math.hypot(dx, dy);
+        if (d < 4 || now > h.until) { h.st = 'idle'; h.until = now + 1500 + Math.random() * 4000; continue; }
+        const st = Math.min(d, h.spd * dt), nx = h.x + dx / d * st, ny = h.y + dy / d * st;
+        if (free(nx, ny)) { h.x = nx; h.y = ny; } else { h.st = 'idle'; h.until = now + 800; }
+        if (Math.abs(dx) > 1) h.dir = dx > 0 ? 1 : -1;
+      } else if (h.st === 'idle' || h.st === 'crow') {
+        if (now > h.until) { if (h.st === 'crow' || Math.random() < 0.7) goWalk(h, now); else { h.until = now + 2000 + Math.random() * 3000; h.dir = -h.dir; } h.st = h.st === 'crow' ? 'walk' : h.st; }
+      }
+    }
+    // hai con gặp nhau: có lúc gây sự
+    for (let i = 0; i < hens.length; i++) {
+      const a = hens[i]; if (a.st === 'fight' || a.st === 'flee' || now < a.cd) continue;
+      for (let j = i + 1; j < hens.length; j++) {
+        const b = hens[j]; if (b.st === 'fight' || b.st === 'flee' || now < b.cd) continue;
+        if (Math.abs(a.x - b.x) < 70 && Math.abs(a.y - b.y) < 26) {
+          a.cd = b.cd = now + 6000;
+          if (Math.random() < 0.55) {
+            const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, left = a.x <= b.x ? a : b, right = left === a ? b : a;
+            if (!free(mx - 24, my) || !free(mx + 24, my)) continue;
+            left.x = mx - 24; right.x = mx + 24; left.y = right.y = my; left.dir = 1; right.dir = -1;
+            left.st = right.st = 'fight'; left.foe = right; right.foe = left; left.lead = true; right.lead = false;
+            left.t0 = now; left.end = now + 3200 + Math.random() * 2600; left.beat = -1; left.fx = [];
+          }
+          break;
+        }
+      }
+    }
+    for (const h of hens) {
+      if (h.st !== 'fight' || !h.lead) continue;
+      const f = h.foe, k = now - h.t0;
+      if (k < 700) { for (const c of [h, f]) { c.row = 0; c.col = Math.floor(now / 90) % 6; c.lift = 0; c.ox = 0; } continue; }   // gườm nhau, xù lông
+      if (now > h.end) {
+        const win = Math.random() < 0.5 ? h : f, lose = win === h ? f : h;
+        for (const c of [h, f]) { c.ox = 0; c.lift = 0; c.lead = false; c.foe = null; c.cd = now + 20000; }
+        win.st = 'crow'; win.until = now + 2200; win.crowT = now;
+        lose.st = 'flee'; lose.hurtT = now; lose.until = now + 3000; lose.spd = 150;
+        const tx = lose.x + (lose === h ? -1 : 1) * 190; lose.tx = free(tx, lose.y) ? tx : lose.x; lose.ty = lose.y + (Math.random() - 0.5) * 80; lose.dir = lose === h ? -1 : 1;
+        win.fx = h.fx; continue;
+      }
+      const bt = Math.floor((k - 700) / 520), u = ((k - 700) % 520) / 520, att = bt % 2 ? f : h, def = att === h ? f : h, dir = att === h ? 1 : -1;
+      att.row = 2; att.col = Math.min(5, Math.floor(u * 6)); att.lift = Math.sin(u * Math.PI) * 14; att.ox = dir * Math.sin(u * Math.PI) * 12;
+      def.lift = 0; def.ox = u > 0.45 && u < 0.8 ? dir * Math.sin((u - 0.45) / 0.35 * Math.PI) * 6 : 0;
+      def.row = u > 0.45 && u < 0.75 ? 3 : 0; def.col = 0;
+      if (bt !== h.beat && u > 0.5) {
+        h.beat = bt;
+        for (let i = 0; i < 4; i++) h.fx.push({ x: def.x, y: def.y - 20, vx: (Math.random() - 0.5) * 70 + dir * 20, vy: -20 - Math.random() * 30, t0: now, c: ['#8a2a14', '#f0a030', '#e8e0d0', '#1a1a1a'][i] });
+      }
+    }
+  }
+  function collect(list, now) {
+    stepHens(now);
+    for (const h of hens) list.push({ y: h.y, k: 'hen', h });
+  }
+  function drawHen(ctx, h, now) {
+    let row = 0, col = Math.floor(now / 200 + h.ph) % 6, lift = 0, ox = 0;
+    if (h.st === 'walk') { row = 1; col = Math.floor(now / 140 + h.ph) % 6; }
+    else if (h.st === 'flee') { if (h.hurtT && now - h.hurtT < 450) { row = 3; col = 1 + Math.floor((now - h.hurtT) / 150); } else { row = 1; col = Math.floor(now / 70) % 6; } }
+    else if (h.st === 'fight') { row = h.row; col = h.col; lift = h.lift || 0; ox = h.ox || 0; }
+    else if (h.st === 'crow') { row = 0; col = 3; }
+    ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(h.x + ox, h.y, 12 - lift / 3, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+    frame(ctx, h.b, row, col, h.x + ox, h.y - lift, HEN_SC, h.dir < 0);
+    if (h.fx && h.fx.length) {
+      h.fx = h.fx.filter(p => now - p.t0 < 800);
+      for (const p of h.fx) { const u = (now - p.t0) / 800; ctx.save(); ctx.globalAlpha = 1 - u; ctx.translate(p.x + p.vx * u, p.y + p.vy * u + u * u * 40); ctx.rotate(u * 5); ctx.fillStyle = p.c; ctx.fillRect(-3, -1, 6, 2); ctx.restore(); }
+    }
+    if (h.st === 'crow' && now - h.crowT < 1600) {
+      const u = (now - h.crowT) / 1600; ctx.save(); ctx.globalAlpha = u < 0.8 ? 1 : (1 - u) * 5; ctx.font = '700 11px "Be Vietnam Pro", sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.fillStyle = '#ffe9a8';
+      ctx.strokeText('Ò ó o!', h.x, h.y - 44 - u * 8); ctx.fillText('Ò ó o!', h.x, h.y - 44 - u * 8); ctx.restore();
+    }
+    if (h.st === 'fight' && h.lead && now - h.t0 < 700) { ctx.save(); ctx.font = '900 13px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ff5030'; ctx.strokeStyle = '#000'; ctx.lineWidth = 3; const mx = (h.x + h.foe.x) / 2; ctx.strokeText('!!', mx, h.y - 42); ctx.fillText('!!', mx, h.y - 42); ctx.restore(); }
+  }
   // ---------- gà mổ thóc cạnh Chủ Trường Gà ----------
   function drawWorld(ctx, now) {
     if (!G.map || G.map.id !== 'tuong_duong') return;
@@ -483,5 +588,5 @@
     s.on('cfInvite', invite);
     s.on('cfHatch', hatch);
   }
-  window.Cockfight = { bind, drawWorld, open: () => { G._cfOpen = 1; emit({ op: 'view' }); }, frame };
+  window.Cockfight = { bind, drawWorld, collect, drawHen, hens: () => hens, open: () => { G._cfOpen = 1; emit({ op: 'view' }); }, frame };
 })();
