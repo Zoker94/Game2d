@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '❓ Đố Vui Võ Lâm thêm bộ câu hỏi mới: 165 câu (Kim Dung & giang hồ, kiến thức trong game, văn hoá – lịch sử, đố mẹo, tính nhẩm). Gõ không dấu vẫn tính đúng, đáp án số phải đúng nguyên số, không lặp lại câu vừa hỏi.',
       '💥 PK hạ người: nổ một phát (cầu lửa, sóng xung kích, tia lửa, rung màn) rồi xác văng ra xa theo hướng đòn đánh, xoay người rơi xuống tung bụi. Không văng xuyên tường.',
       '📜 Tàng Bảo Đồ thêm nhiều câu đố: 35 nơi giấu kho báu (thêm hang động, mộ cổ, sơn môn 9 phái…), gần 190 câu đố khác nhau (câu về truyền thuyết, quái vật, cấp bãi luyện), 5 kiểu lời nhắn lối đi và hơn 15.000 điểm đào. Kho báu chỉ rơi vào nơi hợp cấp người ghép.',
       '🎬 Ghép xong Tàng Bảo Đồ sẽ chiếu đoạn phim giới thiệu: 4 mảnh bay vào ghép lại, tấm bản đồ mở ra kèm lời dẫn truyền thuyết, rồi Thần Khí của môn phái bạn trồi lên giữa cột sáng (bấm Bỏ qua được).',

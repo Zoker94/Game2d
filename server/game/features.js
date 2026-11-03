@@ -22,26 +22,10 @@ const EVENT_INFO = {
   lantern:   { name: 'Lễ Hội Hoa Đăng', desc: 'Quái rơi Hoa Đăng, đổi quà tại Lễ Quan. Tự động cả ngày Thứ 7 & Chủ Nhật.', icon: '🏮' }
 };
 
-const QUIZ = [
-  ['Môn phái nào nổi tiếng với Hàng Long Thập Bát Chưởng?', ['cái bang', 'cai bang']],
-  ['Võ Đang phái do ai sáng lập? (họ tên)', ['trương tam phong', 'truong tam phong']],
-  ['Thiếu Lâm Tự nằm trên ngọn núi nào?', ['thiếu thất', 'thieu that', 'tung sơn', 'tung son']],
-  ['Thành nào là nơi Quách Tĩnh trấn thủ chống quân Mông Cổ?', ['tương dương', 'tuong duong']],
-  ['Nga My phái thuộc tỉnh nào? (Tứ ...)', ['tứ xuyên', 'tu xuyen']],
-  ['Cửu Âm Chân Kinh và ... Chân Kinh là hai bộ kỳ thư võ học?', ['cửu dương', 'cuu duong']],
-  ['5 + 7 x 2 = ?', ['19']],
-  ['Đường Môn nổi tiếng với loại vũ khí gì? (hai chữ)', ['ám khí', 'am khi']],
-  ['Dương Quá có biệt danh là "Thần Điêu ..."?', ['đại hiệp', 'dai hiep']],
-  ['Vũ khí của Thiếu Lâm trong game này là gì?', ['côn', 'con', 'gậy', 'gay']],
-  ['Kiếm nào "Võ lâm chí tôn, bảo đao Đồ Long" luôn đi cùng?', ['ỷ thiên', 'y thien', 'ỷ thiên kiếm', 'y thien kiem']],
-  ['Độc Cô Cầu Bại cả đời tìm kiếm điều gì? (hai chữ)', ['thất bại', 'that bai']],
-  ['Số môn phái người chơi có thể chọn trong game này?', ['9', 'chín', 'chin']],
-  ['Hoàng Dược Sư là đảo chủ đảo gì?', ['đào hoa', 'dao hoa']],
-  ['12 x 12 = ?', ['144']],
-  ['Tiểu Long Nữ sống trong mộ gì?', ['cổ mộ', 'co mo', 'hoạt tử nhân', 'hoat tu nhan']],
-  ['Lệnh Hồ Xung học kiếm pháp gì của Phong Thanh Dương?', ['độc cô cửu kiếm', 'doc co cuu kiem']],
-  ['Vật phẩm dùng để cường hóa trang bị tên là gì?', ['huyền tinh thạch', 'huyen tinh thach', 'huyền tinh', 'huyen tinh']]
-];
+const { QUIZ } = require('../data/quiz');
+// so đáp án Đố Vui: bỏ dấu, chữ thường, chỉ giữ chữ / số; đáp án phải khớp trọn từ (gõ "190" không ăn đáp án "19")
+const quizNorm = t => ' ' + String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
+const quizHit = (text, answers) => { const t = quizNorm(text); return answers.some(a => t.includes(quizNorm(a))); };
 
 const WHEEL = [
   { name: '500 lượng', w: 22, r: { gold: 500 } },
@@ -262,7 +246,11 @@ class Features {
     const info = EVENT_INFO[k];
     const e = this.events[k] = { active: true, start: Date.now(), until: Date.now() + minutes * 60000 };
     if (k === 'quiz') {
-      const [q, answers] = QUIZ[U.randInt(0, QUIZ.length - 1)];
+      // không hỏi lại các câu vừa hỏi gần đây (nhớ ~ 1/3 bộ câu hỏi)
+      this._quizRecent = this._quizRecent || [];
+      let qi; do { qi = U.randInt(0, QUIZ.length - 1); } while (this._quizRecent.includes(qi) && this._quizRecent.length < QUIZ.length - 1);
+      this._quizRecent.push(qi); if (this._quizRecent.length > Math.floor(QUIZ.length / 3)) this._quizRecent.shift();
+      const [q, answers] = QUIZ[qi];
       Object.assign(e, { q, answers, qUntil: Date.now() + 60000, until: Date.now() + 61000 });
       this.announce(`❓ [Đố Vui Võ Lâm] ${q} — Trả lời ở kênh Thế Giới trong 60 giây!`);
     } else if (k === 'huntRace') {
@@ -682,7 +670,7 @@ class Features {
       this.io.emit('chat', msg);
       this.questProgress(p, 'chat', 1);
       const q = this.events.quiz;
-      if (q && q.active && q.answers.some(a => text.toLowerCase().includes(a))) {
+      if (q && q.active && quizHit(text, q.answers)) {
         this.stopEvent('quiz');
         setTimeout(() => {
           this.announce(`🎉 ${p.c.name} đã trả lời đúng "${q.answers[0]}" và nhận 5 Nguyên Bảo + 500 lượng!`);
