@@ -130,7 +130,7 @@
     return (cartCache[key] = cv);
   }
   function drawHorse(ctx, x, y, view, flip, moving, now, layer) {
-    const f = Assets.mountFrame('ngua_nau', moving, now, view);
+    const f = Assets.mountFrame('ngua_nau', moving, now, view, true);
     if (!f) return;
     const [fx, fy] = f.foot;
     const sy = layer === 'front' ? f.fy : f.sy;

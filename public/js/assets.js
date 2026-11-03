@@ -311,10 +311,11 @@
   }
   // ----- thú cưỡi (ảnh tools/mounts2.py): ô 192 vẽ ra x2/3, nhìn ngang quay phải, kèm điểm yên (hông người cưỡi) từng khung -----
   let MOUNT_META = null;
+  const MOUNT_K = 0.62;   // thu nhỏ mọi thú cưỡi cho cân với dáng nhân vật (người cưỡi giữ nguyên cỡ)
   fetch(BASE + 'mounts.json' + VQ).then(r => r.ok ? r.json() : null).then(j => { MOUNT_META = j; }).catch(() => { });
   const mountImgs = {}, mountLoading = {};
   // view: 'side' | 'down' | 'up'. Nhìn trước/sau có 2 lớp: back vẽ trước người cưỡi, front vẽ đè lên.
-  function mountFrame(id, moving, t, view) {
+  function mountFrame(id, moving, t, view, full) {
     if (!MOUNT_META || !MOUNT_META.seat[id]) return null;
     if (!mountImgs[id]) {
       if (!mountLoading[id]) mountLoading[id] = load('mounts/' + id + '.png').then(im => { if (im) mountImgs[id] = im; });
@@ -328,7 +329,7 @@
     const k = Math.floor(t / (moving ? (M.runMs || 95) : (M.idleMs || 700))) % fn;
     const col = fs + k, [cw, ch] = M.cell;
     const rows = (M.rows && M.rows[view]) || [0];
-    const s = M.scale || 1;   // thú vẽ mới (tools/mounts2.py): ô 192 thu về x2/3
+    const s = (M.scale || 1) * (full ? 1 : MOUNT_K);   // thú vẽ mới (tools/mounts2.py): ô 192 thu về x2/3; MOUNT_K thu nhỏ cho vừa dáng nhân vật
     const foot = view === 'side' ? M.foot : (M.footFB || M.foot);
     const seat = seats ? seats[view][col] : MOUNT_META.seat[id][col];
     return {
@@ -455,5 +456,5 @@
     return `<i class="sk-img" style="background-image:url('${url}');--skc:${s.color || '#ffd76a'}"></i>`;
   }
 
-  window.Assets = { HD, K, ready, loadClass, loadMonster, retainMonsters, imgs, has, nature, charFrame, frameBudget, frameCount, frameMs, SRC, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, MONSTERS, skillIconUrl, skillIconHTML };
+  window.Assets = { MOUNT_K, HD, K, ready, loadClass, loadMonster, retainMonsters, imgs, has, nature, charFrame, frameBudget, frameCount, frameMs, SRC, riderFrame, mountFrame, monsterFrame, monsterReady, monsterTop, npcFrame, weaponGlow, avatar, lookOf, CELL, FOOT_X, FOOT_Y, CLASSES, MONSTERS, skillIconUrl, skillIconHTML };
 })();
