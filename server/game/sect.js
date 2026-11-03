@@ -87,6 +87,7 @@ class Sect {
     if (this.def) return false;
     this._defRan = U.vnDay();
     const now = Date.now();
+    this.w.presence.reset('thuho');
     this.def = { until: now + minutes * 60000, start: now, bossAt: now + Math.min(DEF_BOSS_AT, Math.max(1, minutes - 3)) * 60000, wave: 0, nextWave: now, pts: {}, boss: {}, won: {} };
     this.w.features.announce(`🏯 THỦ HỘ SƠN MÔN! Ma Giáo đang đánh vào các môn phái trong ${minutes} phút. Đệ tử về bảo vệ sơn môn, diệt địch lấy cống hiến!`);
     return true;
@@ -124,6 +125,7 @@ class Sect {
   onDefKill(mon, killer) {
     const ev = this.def; if (!ev || !killer || !killer.c) return;
     if (killer.c.cls !== mon.sectCls) return;
+    if (!this.w.presence.ok('thuho', killer.userId)) return;   // chưa bấm xác nhận có mặt: không tính (chống treo máy)
     ev.pts[killer.userId] = (ev.pts[killer.userId] || 0) + (mon.sectBoss ? 40 : 2);
     if (mon.sectBoss) {
       ev.won[mon.sectCls] = true;
@@ -133,6 +135,7 @@ class Sect {
   defEnd() {
     const ev = this.def; if (!ev) return;
     this.def = null;
+    this.w.presence.reset('thuho');
     for (const cls in SECT_MAP) { const m = this.w.maps[SECT_MAP[cls]]; for (const [id, x] of m.monsters) if (x.event === 'sectdef') m.monsters.delete(id); }
     for (const [uid, pts] of Object.entries(ev.pts)) {
       const p = this.w.players.get(uid); if (!p) continue;
@@ -149,6 +152,10 @@ class Sect {
     if (ev) {
       if (now >= ev.until) return this.w.features.stopEvent('thuHo');
       if (now >= ev.nextWave) { ev.nextWave = now + 60000; this.defWave(now); }
+      for (const cls in SECT_MAP) this.w.presence.gate('thuho', [...this.w.maps[SECT_MAP[cls]].players].filter(p => p.c.cls === cls), {
+        title: '🏯 THỦ HỘ SƠN MÔN', first: 'Ma Giáo đang tấn công sơn môn! Bấm xác nhận để diệt địch được tính cống hiến.',
+        text: 'Xác nhận vẫn đang thủ hộ sơn môn (không bấm thì diệt địch tạm không được tính).',
+        onFail: q => { if (q) this.toast(q, '💤 Chưa xác nhận có mặt – diệt Ma Giáo tạm thời không được tính cống hiến', 'error'); } });
     }
     // tọa thiền truyền công: mỗi phút +1 cống hiến khi ngồi thiền cạnh Truyền Công Trưởng Lão ở phái mình
     if (now - (this._medT || 0) < 60000) return;

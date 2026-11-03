@@ -160,7 +160,8 @@ class TongKim {
       ev.side[p.userId] = side;
     }
     p.tk = side;
-    this.score(p);
+    this.score(p).afk = false;   // tự bấm vào trận = có mặt (bị đuổi vì treo máy rồi tự vào lại vẫn được tính)
+    this.w.presence.trust('tk', p);
     const pos = this.basePos(side);
     if (p.mapId === MAP) { p.x = pos.x; p.y = pos.y; p.socket.emit('pos', { x: pos.x, y: pos.y, dash: 1 }); }
     else this.w.enterMap(p, MAP, pos.x, pos.y);
@@ -246,12 +247,17 @@ class TongKim {
     const ids = Object.keys(reg).filter(uid => { const p = this.w.players.get(uid); return p && p.c.level >= MIN_LV && !p.duel; });
     this.data.reg = {}; this.db.markDirty();
     const now = Date.now();
-    this.ev = { active: true, start: now, until: now + minutes * 60000, side: this.balance(ids), scores: {}, bonus: { song: 0, jin: 0 }, farm: {},
+    this.w.presence.reset('tk');
+    this.ev = { active: true, start: now, until: now + minutes * 60000, side: {}, expect: ids.length, scores: {}, bonus: { song: 0, jin: 0 }, farm: {},
       general: { song: null, jin: null }, generalAt: now + Math.max(1, minutes - GENERAL_AT) * 60000 };
     const d = this.def(); d.safe = false; d.pvp = true;
     this.w.io.to('map:' + MAP).emit('mapFlags', { id: MAP, safe: false, pvp: true });
     this.spawnArmies();
-    for (const uid of ids) this.join(this.w.players.get(uid));
+    // người đã báo danh phải bấm xác nhận mới được đưa vào trận (chống treo máy bị kéo vào làm bao cát / ăn thưởng);
+    // xác nhận lần lượt -> join() xếp vào phe đang ít người / yếu hơn
+    for (const uid of ids) this.w.presence.ask(this.w.players.get(uid), 'tk', '⚔️ CHIẾN TRƯỜNG TỐNG KIM', 'Khai chiến! Bấm xác nhận để vào trận (máy tự chia phe).',
+      p => { if (this.active) this.join(p); },
+      p => { if (p) this.toast(p, 'Bạn không xác nhận nên chưa được đưa vào Tống Kim. Vẫn vào trận được qua Mộ Binh Quan ở Tương Dương.', 'error'); }, 30000);
     this.f.announce(`⚔️ CHIẾN TRƯỜNG TỐNG KIM khai chiến! ${minutes} phút, ${ids.length} đại hiệp chia hai phe Tống – Kim. Gặp Mộ Binh Quan ở Tương Dương (cấp ${MIN_LV}+) để vào trận!`);
     this.syncAll();
     return true;
@@ -275,7 +281,7 @@ class TongKim {
     return mon;
   }
   spawnArmies() {
-    const n = Object.keys(this.ev.side).length;
+    const n = this.ev.expect || Object.keys(this.ev.side).length;
     // vắng người: thêm lính cho đông vui; phe ít người hơn được thêm lính
     const s = { song: 0, jin: 0 }; for (const v of Object.values(this.ev.side)) s[v]++;
     for (const side of ['song', 'jin']) {
@@ -307,6 +313,9 @@ class TongKim {
     if (!ev.generalsUp && now >= ev.generalAt) { ev.generalsUp = true; this.spawnGenerals(); }
     if (now - (ev._tw || 0) > 1000) {   // mỗi giây: tháp canh bắn kẻ địch trong hậu doanh, đuổi người treo máy
       ev._tw = now;
+      this.w.presence.gate('tk', [...this.w.maps[MAP].players].filter(p => p.tk), { title: '⚔️ TỐNG KIM', text: 'Xác nhận vẫn đang chiến đấu (không bấm sẽ bị đưa ra khỏi trận, mất thưởng trận này).',
+        first: 'Xác nhận tham chiến để được tính Công Trạng.',
+        onFail: (q, uid) => { const s = ev.scores[uid]; if (s) s.afk = true; if (q && q.mapId === MAP) { this.toast(q, '💤 Không xác nhận có mặt – bạn bị đưa ra khỏi chiến trường', 'error'); this.leave(q); } } });
       for (const p of this.w.maps[MAP].players) {
         if (p.dead || !p.tk) continue;
         const b = this.baseAt(p.x);
@@ -340,6 +349,7 @@ class TongKim {
     const ev = this.ev;
     if (!ev || !ev.active) return;
     ev.active = false;
+    this.w.presence.reset('tk');
     const d = this.def(); d.safe = true; d.pvp = false;
     this.w.io.to('map:' + MAP).emit('mapFlags', { id: MAP, safe: true, pvp: false });
     const m = this.w.maps[MAP];

@@ -53,6 +53,7 @@ class DaiHoi {
     const pos = this.spawnPos();
     this.w.enterMap(p, MAP, pos.x, pos.y);
     p.dodgeUntil = Date.now() + 3000;
+    if (this.active) { this.w.presence.trust('dh', p); const s = this.ev.scores[p.userId]; if (s) s.afk = false; }   // tự vào giữa trận = có mặt
     this.w.toast(p, this.active ? '⚔️ Đại Hội đang diễn ra! Hạ đối thủ để giành điểm.' : '🏯 Đã đến Đại Hội Võ Lâm. Chờ giờ khai mạc (20:30 Chủ Nhật hằng tuần).', 'info');
     this.sync(p);
   }
@@ -72,6 +73,7 @@ class DaiHoi {
 
   // ---------------- diễn biến ----------------
   start(minutes) {
+    this.w.presence.reset('dh');   // ai đứng chờ sẵn trên lôi đài sẽ được hỏi xác nhận ngay khi khai mạc
     this.ev = { active: true, start: Date.now(), until: Date.now() + minutes * 60000, scores: {}, bossAt: Date.now() + Math.min(15, minutes / 2) * 60000, boss: null, guards: new Set() };
     this.setCombat(true);
     this.spawnGuards();
@@ -82,6 +84,7 @@ class DaiHoi {
     const ev = this.ev;
     if (!ev || !ev.active) return;
     ev.active = false;
+    this.w.presence.reset('dh');
     this.setCombat(false);
     const m = this.w.maps[MAP];
     for (const [id, mon] of m.monsters) if (mon.event === 'daihoi') m.monsters.delete(id);
@@ -106,7 +109,7 @@ class DaiHoi {
     this.w.io.to('map:' + MAP).emit('daihoi', { active: false, final: rank.slice(0, 10).map(([, s]) => [s.name, s.pts]), mc: this.minhChu() && this.minhChu().name });
   }
   ranking() {
-    return Object.entries((this.ev && this.ev.scores) || {}).filter(([, s]) => s.pts > 0).sort((a, b) => b[1].pts - a[1].pts || a[1].t - b[1].t);
+    return Object.entries((this.ev && this.ev.scores) || {}).filter(([, s]) => s.pts > 0 && !s.afk).sort((a, b) => b[1].pts - a[1].pts || a[1].t - b[1].t);
   }
   score(p) {
     const s = this.ev.scores;
@@ -174,6 +177,12 @@ class DaiHoi {
     if (!this.active) return;
     if (now >= this.ev.until) return this.f.stopEvent('daiHoi');
     if (!this.ev.boss && now >= this.ev.bossAt) this.spawnBoss();
+    if (now - (this.ev._pc || 0) > 1000) {
+      this.ev._pc = now;
+      this.w.presence.gate('dh', this.w.maps[MAP].players, { title: '⚔️ ĐẠI HỘI VÕ LÂM', first: 'Đại Hội khai mạc! Bấm xác nhận tham chiến để được tính điểm.',
+        text: 'Xác nhận vẫn đang tham chiến (không bấm sẽ bị đưa ra khỏi lôi đài, mất thưởng).',
+        onFail: (q, uid) => { const s = this.ev.scores[uid]; if (s) s.afk = true; if (q && q.mapId === MAP) { this.w.toast(q, '💤 Không xác nhận có mặt – bạn bị đưa ra khỏi Đại Hội', 'error'); this.leave(q); } } });
+    }
     if (now - this.lastSync > 2000) { this.lastSync = now; this.syncAll(); }
   }
   view(p) {

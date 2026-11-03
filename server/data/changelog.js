@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '✋ Chống treo máy ăn thưởng sự kiện: Tống Kim (người báo danh phải bấm xác nhận mới được đưa vào trận), Đại Hội Võ Lâm, Công Thành Chiến, Thủ Hộ Sơn Môn và Boss bang hiện bảng xác nhận có mặt lúc vào và 6–10 phút một lần. Có 20 giây để bấm; không bấm thì bị đưa ra khỏi trận / mất thưởng (Thủ Hộ, Boss bang: tạm không tính điểm cho tới khi xác nhận lại).',
       '👹 Boss bang: Bang chủ / Trưởng lão triệu hồi Kim Luân Pháp Vương tại Bang Hội Lãnh Địa (bang cấp 2+, 100.000 quỹ bang, mỗi ngày 1 lần). Chỉ thành viên bang mình đánh được, 20 phút để hạ. Hạ được: quỹ bang +200.000, người góp sức nhận thưởng theo hạng sát thương (top 1-3 có Rương Thủ Lĩnh)',
       '📜 Nhiệm vụ bang: mỗi ngày 5 nhiệm vụ ngay trong bảng Bang hội (diệt quái, tinh anh, câu cá, nhiệm vụ môn phái, nộp ngân lượng) – thưởng cá nhân, tăng quỹ bang và cống hiến bang; nhiệm vụ thứ 5 thưởng gấp đôi',
       '🏮 Hoạt động môn phái mới: 🚩 Tuần tra sơn môn mỗi ngày (đi qua 4 cột mốc, +25 cống hiến), 🧘 Tọa thiền truyền công cạnh Truyền Công Trưởng Lão (+1 cống hiến / phút, tối đa 30), 🏯 Thủ Hộ Sơn Môn 19:30 mỗi tối – Ma Giáo đánh vào sơn môn, diệt địch lấy tới 150 cống hiến, hạ Ma Giáo Hộ Pháp cả phái thưởng thêm',

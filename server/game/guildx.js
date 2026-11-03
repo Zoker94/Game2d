@@ -80,14 +80,17 @@ class GuildX {
     const b = this.bosses[p.c.guildId], d = MAPS[BOSS_MAP];
     const pos = b && b.mon && !b.mon.dead ? this.w.randomSpotNear(d, b.mon.x / TILE, b.mon.y / TILE + 4, 2) : this.w.randomSpotNear(d, d.center.x + 0.5, d.center.y + 0.5, 3);
     this.w.enterMap(p, BOSS_MAP, pos.x, pos.y);
+    if (b && b.mon && !b.mon.dead) this.w.presence.trust('gb:' + p.c.guildId, p);   // tự bấm đi đánh = có mặt
   }
   onBossKilled(mon) {
     const gid = mon.onlyGid, g = this.db.data.guilds[gid];
     this.w.maps[BOSS_MAP].monsters.delete(mon.id);
     delete this.bosses[gid];
+    const pk = 'gb:' + gid, okSet = new Set([...mon.dmgBy.keys()].filter(uid => this.w.presence.ok(pk, uid)));
+    this.w.presence.reset(pk);
     if (!g) return;
     g.fund = (g.fund || 0) + BOSS_FUND;
-    const rank = [...mon.dmgBy.entries()].filter(([uid]) => g.members[uid]).sort((a, b) => b[1] - a[1]);
+    const rank = [...mon.dmgBy.entries()].filter(([uid]) => g.members[uid] && okSet.has(uid)).sort((a, b) => b[1] - a[1]);
     rank.forEach(([uid, dmg], i) => {
       const r = { gold: 20000 + g.level * 8000, items: i === 0 ? [['boss_chest', 2], ['stone2', 2]] : i < 3 ? [['boss_chest', 1], ['stone2', 1]] : [['lucky_chest', 1], ['stone', 5]] };
       if (Math.random() < 0.15) r.items.push(['insure', 1]);
@@ -101,11 +104,15 @@ class GuildX {
   }
   tick(now) {
     for (const [gid, b] of Object.entries(this.bosses)) {
-      if (!b.mon || b.mon.dead) { delete this.bosses[gid]; continue; }
+      if (!b.mon || b.mon.dead) { delete this.bosses[gid]; this.w.presence.reset('gb:' + gid); continue; }
       if (now - b.at > BOSS_TIME) {
-        this.w.maps[BOSS_MAP].monsters.delete(b.mon.id); delete this.bosses[gid];
+        this.w.maps[BOSS_MAP].monsters.delete(b.mon.id); delete this.bosses[gid]; this.w.presence.reset('gb:' + gid);
         this.w.io.to('guild:' + gid).emit('chat', { ch: 'guild', from: 'Bang Hội', text: '💨 Boss bang đã bỏ đi vì không bị hạ trong 20 phút.', t: now });
+        continue;
       }
+      this.w.presence.gate('gb:' + gid, [...this.w.maps[BOSS_MAP].players].filter(p => p.c.guildId === gid), {
+        title: '👹 BOSS BANG', first: 'Bấm xác nhận tham chiến để sát thương được tính thưởng.', text: 'Xác nhận vẫn đang đánh Boss bang (không bấm thì chưa được tính thưởng).',
+        onFail: q => { if (q) this.toast(q, '💤 Chưa xác nhận có mặt – sát thương lên Boss bang chưa được tính thưởng', 'error'); } });
     }
   }
 

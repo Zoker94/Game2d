@@ -105,7 +105,8 @@ class Siege {
     if (!gid || !this.ev.guilds[gid]) return this.toast(p, 'Bang của bạn không có tên trong trận Công Thành này', 'error');
     if (p.duel) return this.toast(p, 'Đang tỷ võ, chưa thể vào', 'error');
     if (this.w.maps[p.mapId].def.instance) return this.toast(p, 'Hãy rời phó bản trước', 'error');
-    this.score(p);
+    this.score(p).afk = false;
+    this.w.presence.trust('ct', p);
     const pos = this.spawnPos(p);
     if (p.mapId === MAP) { p.x = pos.x; p.y = pos.y; p.socket.emit('pos', { x: pos.x, y: pos.y, dash: 1 }); }
     else this.w.enterMap(p, MAP, pos.x, pos.y);
@@ -161,6 +162,7 @@ class Siege {
     const own = this.owner(), gids = new Set(Object.keys(this.data.reg).filter(g => this.db.data.guilds[g]));
     if (own) gids.add(own.gid);
     const now = Date.now();
+    this.w.presence.reset('ct');
     this.ev = { active: true, start: now, until: now + minutes * 60000, guilds: {}, scores: {}, holder: own ? own.gid : null, holdAt: now, seal: null };
     for (const g of gids) this.gs(g);
     this.data.reg = {}; this.db.markDirty();
@@ -191,6 +193,8 @@ class Siege {
       const dt = now - (ev._t || now); ev._t = now;
       if (ev.holder) this.gs(ev.holder).holdMs += dt;
       const seal = ev.seal, m = this.w.maps[MAP];
+      this.w.presence.gate('ct', m.players, { title: '🏯 CÔNG THÀNH CHIẾN', first: 'Bấm xác nhận tham chiến để được tính thưởng.', text: 'Xác nhận vẫn đang tham chiến (không bấm sẽ bị đưa ra khỏi trận, mất thưởng).',
+        onFail: (q, uid) => { const s = ev.scores[uid]; if (s) s.afk = true; if (q && q.mapId === MAP) { this.toast(q, '💤 Không xác nhận có mặt – bạn bị đưa ra khỏi trận', 'error'); this.leave(q); } } });
       for (const p of m.players) {
         if (p.dead) continue;
         if (now - Math.max(p.ctAct || 0, p.lastMove || 0, p.lastCombat || 0) > AFK_MS) { this.toast(p, '💤 Đứng yên quá lâu, bạn bị đưa ra khỏi trận', 'error'); this.leave(p); continue; }
@@ -231,7 +235,9 @@ class Siege {
       g.fund = (g.fund || 0) + WIN_FUND;
       this.w.io.emit('siegeOwner', { name: g.name });
     }
+    this.w.presence.reset('ct');
     for (const [uid, s] of Object.entries(ev.scores)) {
+      if (s.afk) continue;   // không xác nhận có mặt
       const here = (this.w.players.get(uid) || {}).mapId === MAP;
       if (!(s.kills || s.dmg || s.caps || here)) continue;   // vào trận rồi bỏ đi ngay: không thưởng
       const u = this.db.data.users[uid], gid = u && u.character && u.character.guildId;

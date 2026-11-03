@@ -377,6 +377,7 @@
     s.on('npcList', list => { if (G.map && G.map.id === 'tuong_duong') G.map.npcs = list; });
     s.on('mystery', d => Mystery.onData(d));
     s.on('guildx', d => GuildX.onData(d));
+    EvCheck.bind(s);
     s.on('cloakResult', d => Loom.onResult(d));
     s.on('guildBoss', d => GuildX.onBoss(d));
     s.on('siegeOwner', d => { if (G.me) G.me.ctOwner = d.name; });
