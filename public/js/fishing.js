@@ -121,7 +121,25 @@
     x.fillStyle = '#fff'; x.font = 'bold 10px sans-serif'; x.textAlign = 'center'; x.fillText(Math.round(S.prog * 100) + '%', 94, top + H + 12 > 250 ? 248 : top + H + 12);
   }
 
+  // ---------- chế độ tập trung khi cá cắn câu / đang kéo cá ----------
+  // rung máy liên tục, màn hình giật nhẹ theo nhịp, 2 dải đen trượt vào trên dưới + viền tối nhịp đập quanh mép màn hình
+  let focusEl = null, focusTimer = 0, focusMode = null;
+  function focus(mode) {
+    if (mode === focusMode) return;
+    focusMode = mode;
+    clearInterval(focusTimer); focusTimer = 0;
+    if (!focusEl) { focusEl = document.createElement('div'); focusEl.id = 'fish-focus'; focusEl.innerHTML = '<i class="ff-t"></i><i class="ff-b"></i><i class="ff-v"></i>'; ($('screen-game') || document.body).appendChild(focusEl); }
+    focusEl.className = mode ? 'on ' + mode : '';
+    if (!mode) { try { navigator.vibrate && navigator.vibrate(0); } catch (e) { } return; }
+    const beat = () => {
+      const bite = focusMode === 'bite';
+      try { navigator.vibrate && navigator.vibrate(bite ? [160, 70, 160] : 90); } catch (e) { }
+      if (G.rumble) G.rumble(bite ? 3.2 : 1.6, bite ? 260 : 180);
+    };
+    beat(); focusTimer = setInterval(beat, mode === 'bite' ? 480 : 700);
+  }
   function onFish(d) {
+    focus(d.st === 'bite' ? 'bite' : d.st === 'fight' ? 'fight' : null);
     if (d.st === 'wait') { st = d; if (d.sta != null) staLeft = d.sta; if (d.rod) rodInfo = { id: d.rod, dur: d.dur, max: d.max }; if (d.tired && Date.now() - tiredWarned > 600000) { tiredWarned = Date.now(); UI.toast('😮‍💨 Câu liền quá lâu – cá hiếm ít dần. Nghỉ 10 phút để hồi sức.', 'info'); } return ui(); }
     if (d.st === 'fight') { st = Object.assign({}, st, { st: 'fight' }); gameStart(d); return ui(); }
     if (d.st === 'bite') {

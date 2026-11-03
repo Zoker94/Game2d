@@ -824,3 +824,15 @@ body.touch .lm-list { width: 86px; }
 .fg-pw { text-align: center; font-size: 11px; color: #e8f0ff; margin: -2px 0 4px; line-height: 1.35; }
 .fg-weak { color: #ff8a6a; font-weight: 800; animation: wcPulse 1s infinite; }
 .fg-big { color: #ff5a3a; font-weight: 900; letter-spacing: 1px; }
+/* câu cá – chế độ tập trung (cá cắn câu / đang kéo): dải đen trên dưới + viền tối nhịp đập */
+#fish-focus { position: fixed; inset: 0; z-index: 11; pointer-events: none; }
+#fish-focus i { position: absolute; left: 0; right: 0; background: #000; transition: transform .35s cubic-bezier(.2,.9,.3,1), opacity .35s; }
+#fish-focus .ff-t { top: 0; height: 11vh; transform: translateY(-100%); box-shadow: 0 6px 18px rgba(0,0,0,.6); }
+#fish-focus .ff-b { bottom: 0; height: 11vh; transform: translateY(100%); box-shadow: 0 -6px 18px rgba(0,0,0,.6); }
+#fish-focus .ff-v { inset: 0; background: radial-gradient(ellipse at center, transparent 48%, rgba(0,0,0,.55) 78%, rgba(0,0,0,.85) 100%); opacity: 0; }
+#fish-focus.on .ff-t, #fish-focus.on .ff-b { transform: none; }
+#fish-focus.on .ff-v { opacity: 1; }
+#fish-focus.bite .ff-v { animation: ffBeat .48s ease-in-out infinite; background: radial-gradient(ellipse at center, transparent 44%, rgba(40,0,0,.55) 74%, rgba(0,0,0,.9) 100%); }
+#fish-focus.bite .ff-t, #fish-focus.bite .ff-b { height: 13vh; }
+#fish-focus.fight .ff-v { animation: ffBeat 1.4s ease-in-out infinite; }
+@keyframes ffBeat { 50% { opacity: .55; } }
