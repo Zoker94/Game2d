@@ -156,6 +156,26 @@ TIERS.forEach((lv, t) => ['common', 'rare', 'epic', 'legendary'].forEach(rk => {
   }
 }));
 
+// ---- THẦN KHÍ: vũ khí Thần Binh (đỏ) theo môn phái, chỉ đào được bằng Tàng Bảo Đồ (server/game/treasure.js).
+// Chỉ số như món Thần Binh (gấp 3.3 lần chỉ số gốc bậc cao nhất), đổi phái thì đổi theo phái mới như vũ khí môn phái.
+const DV_WEAPON = { thieulam: 'Kim Cang Phục Ma Thần Trượng', thienvuong: 'Bá Vương Phá Thiên Chùy', duongmon: 'Thiên La Bạo Vũ Thần Cơ', ngudoc: 'Vạn Cổ Thực Tâm Đao',
+  ngamy: 'Từ Hàng Phổ Độ Kiếm', thuyyen: 'Băng Phách Nguyệt Ảnh Song Đao', caibang: 'Hàng Long Thần Thủ', vodang: 'Chân Vũ Đãng Ma Kiếm', conlon: 'Ngũ Lôi Thiên Cương Phù' };
+for (const [cls, nm] of Object.entries(DV_WEAPON)) {
+  const t = TIER_MAX, base = slotStats('weapon', t), stats = {};
+  for (const k in base) stats[k] = Math.round(base[k] * RARITY.divine.mult * 10) / 10;
+  stats.atk = Math.round((stats.atk || 0) + 10 + t * 12);
+  stats.crit = 4 + t;
+  stats.hp = Math.round((stats.hp || 0) + 80 + t * 60);
+  for (const k in stats) if (k !== 'spd') stats[k] = Math.round(stats[k] * (k === 'hp' ? ITEM_HP_K : ITEM_K) * 10) / 10;
+  stats.crit = Math.min(CRIT_MAX, Math.round(stats.crit * 0.25 * 10) / 10);
+  const id = `dv_wp_${cls}`, w = CLASS_WEAPON[cls];
+  ITEMS[id] = { id, type: 'equip', slot: 'weapon', tier: t, rarity: 'divine', cls, wtype: w.type, name: `Thần Khí · ${nm}`, lv: 60, stats, price: 5000000, icon: w.icon, dvWeapon: true };
+}
+ITEMS.tb_frag = { id: 'tb_frag', type: 'use', name: 'Mảnh Tàng Bảo Đồ', desc: 'Một góc tấm bản đồ kho báu cũ nát. Rơi từ Boss bang (5%). Gom đủ 4 mảnh rồi Sử dụng để ghép thành Tàng Bảo Đồ hoàn chỉnh.',
+  effect: { tbFrag: 1 }, price: 2000, icon: 'tb_frag', rarity: 'epic', stack: true };
+ITEMS.tb_map = { id: 'tb_map', type: 'use', name: 'Tàng Bảo Đồ', desc: 'Tấm bản đồ kho báu hoàn chỉnh, ghi một câu đố về nơi chôn giấu. Sử dụng để đọc câu đố; tìm đúng chỗ thì hiện nút ⛏ Đào – đào lên được 1 món Thần Khí (vũ khí Thần Binh đúng môn phái). Phải mang Tàng Bảo Đồ trong túi mới đào được.',
+  effect: { tbMap: 1 }, price: 0, icon: 'tb_map', rarity: 'legendary', stack: true, noTrade: true, noSell: true };
+
 // Vật phẩm tiêu hao
 const CONSUMABLES = [
   { id: 'hp1', name: 'Kim Sang Dược', desc: 'Hồi 150 sinh lực', effect: { hp: 150 }, price: 15, icon: 'potion_r' },

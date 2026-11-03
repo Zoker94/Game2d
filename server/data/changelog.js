@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '📜 Tàng Bảo Đồ: Boss bang có 5% rơi Mảnh Tàng Bảo Đồ (mỗi người tham chiến được tính riêng). Gom 4 mảnh ghép thành Tàng Bảo Đồ hoàn chỉnh có câu đố về một nơi trong game và lối đi tính từ một NPC làm mốc. Đứng đúng chỗ mà có Tàng Bảo Đồ trong túi thì hiện nút ⛏ Đào – đào 3 giây được 1 món 🔴 Thần Khí (vũ khí Thần Binh đúng môn phái).',
       '❤️ Thanh máu trên đầu: của mình màu xanh, người chơi khác màu đỏ (đồng đội trong tổ đội vẫn xanh).',
       '✋ Chống treo máy ăn thưởng sự kiện: Tống Kim (người báo danh phải bấm xác nhận mới được đưa vào trận), Đại Hội Võ Lâm, Công Thành Chiến, Thủ Hộ Sơn Môn và Boss bang hiện bảng xác nhận có mặt lúc vào và 6–10 phút một lần. Có 20 giây để bấm; không bấm thì bị đưa ra khỏi trận / mất thưởng (Thủ Hộ, Boss bang: tạm không tính điểm cho tới khi xác nhận lại).',
       '👹 Boss bang: Bang chủ / Trưởng lão triệu hồi Kim Luân Pháp Vương tại Bang Hội Lãnh Địa (bang cấp 2+, 100.000 quỹ bang, mỗi ngày 1 lần). Chỉ thành viên bang mình đánh được, 20 phút để hạ. Hạ được: quỹ bang +200.000, người góp sức nhận thưởng theo hạng sát thương (top 1-3 có Rương Thủ Lĩnh)',

@@ -620,3 +620,18 @@ body.touch .lm-list { width: 86px; }
 .evc-go { min-width: 150px; }
 @keyframes evcIn { from { opacity: 0; transform: translateY(-14px) scale(.96); } }
 @keyframes evcPulse { to { box-shadow: 0 0 26px rgba(255,90,60,.8); border-color: #ff7050; } }
+/* Tàng Bảo Đồ (treasure.js) */
+.tb-paper { position: relative; margin-bottom: 10px; padding: 14px 16px; border-radius: 6px; color: #3a2410; background: radial-gradient(ellipse at 30% 20%, #f8e8c0, #e6c98a 70%, #c9a460); border: 2px solid #8a5a28; box-shadow: inset 0 0 22px rgba(120,70,20,.45); }
+.tb-paper.warm { box-shadow: inset 0 0 22px rgba(120,70,20,.45), 0 0 12px rgba(255,200,80,.5); }
+.tb-paper.hot { box-shadow: inset 0 0 22px rgba(120,70,20,.45), 0 0 22px rgba(255,215,90,.95); animation: tbGlow 1s infinite alternate; }
+.tb-h { font-weight: 900; color: #7a2a10; margin-bottom: 6px; letter-spacing: .5px; }
+.tb-clue { font-style: italic; font-size: 13px; line-height: 1.45; margin-bottom: 8px; }
+.tb-way { font-size: 12.5px; font-weight: 700; margin-bottom: 6px; }
+.tb-st { font-size: 12px; margin-bottom: 6px; }
+.tb-paper .muted { color: #6a5030 !important; }
+#tb-dig { position: fixed; left: 50%; bottom: 150px; transform: translateX(-50%); z-index: 60; font-size: 15px; padding: 10px 20px; box-shadow: 0 0 18px rgba(255,210,90,.9); animation: tbGlow .8s infinite alternate; }
+#tb-bar { position: fixed; left: 50%; bottom: 200px; transform: translateX(-50%); z-index: 61; width: 220px; text-align: center; color: #ffe8a8; font-weight: 800; text-shadow: 0 1px 2px #000; }
+#tb-bar div { height: 8px; margin-top: 4px; border-radius: 4px; background: #0008; overflow: hidden; border: 1px solid #ffd76a; }
+#tb-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #c08020, #ffe070); animation: tbFill linear forwards; }
+@keyframes tbFill { to { width: 100%; } }
+@keyframes tbGlow { to { filter: brightness(1.15); box-shadow: 0 0 28px rgba(255,220,100,1); } }

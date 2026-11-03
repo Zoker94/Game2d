@@ -94,6 +94,7 @@ class GuildX {
     rank.forEach(([uid, dmg], i) => {
       const r = { gold: 20000 + g.level * 8000, items: i === 0 ? [['boss_chest', 2], ['stone2', 2]] : i < 3 ? [['boss_chest', 1], ['stone2', 1]] : [['lucky_chest', 1], ['stone', 5]] };
       if (Math.random() < 0.15) r.items.push(['insure', 1]);
+      if (this.w.treasure && this.w.treasure.bossDrop()) r.items.push(['tb_frag', 1]);   // 5% Mảnh Tàng Bảo Đồ
       const o = this.w.players.get(uid);
       if (o) this.w.giveReward(o, r, `👹 Boss bang (hạng ${i + 1} sát thương)`); else { const u = this.db.data.users[uid]; if (u && u.character) this.f.giveOffline(u.character, r); }
       g.contrib = g.contrib || {}; g.contrib[uid] = (g.contrib[uid] || 0) + (i === 0 ? 60 : i < 3 ? 40 : 20);

@@ -156,6 +156,7 @@ class Features {
     this.tickPins(now);
     if (now - (this._wbAt || 0) > 1500) { this._wbAt = now; this.worldBossTop(); }
     if (this.w.presence) this.w.presence.tick(now);
+    if (this.w.treasure && now - (this._tbT || 0) > 500) { this._tbT = now; this.w.treasure.tick(now); }
     if (this.w.daihoi) this.w.daihoi.tick(now);
     if (this.w.hoason) this.w.hoason.tick(now);
     if (this.w.tongkim) this.w.tongkim.tick(now);

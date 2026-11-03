@@ -1539,7 +1539,7 @@ class World {
   }
   batchable(it) {
     const e = it.effect || {};
-    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.mine || e.title || e.dvFrag || e.dvSummon || e.pardon || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr || e.fish || e.food);
+    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.mine || e.title || e.dvFrag || e.dvSummon || e.tbFrag || e.tbMap || e.pardon || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr || e.fish || e.food);
   }
   useOne(p, uid) {
     const s = p.c.inv.find(x => x.uid === uid);
@@ -1593,6 +1593,8 @@ class World {
     if (e.autoTicket) return this.autoSrv.useTicket(p, uid);   // Vé Treo Máy
     if (e.dvFrag) return this.divine.useFrag(p, uid, e.dvFrag);       // ghép mảnh lệnh
     if (e.dvSummon) return this.divine.summon(p, uid, e.dvSummon);    // triệu hồi boss Thần Binh
+    if (e.tbFrag) return this.treasure.combine(p);   // ghép 4 Mảnh Tàng Bảo Đồ
+    if (e.tbMap) return this.treasure.view(p);       // đọc câu đố Tàng Bảo Đồ
     if (e.stall) return p.mapId === 'cho_phien' ? this.market.action(p, { op: 'mine' }) : this.toast(p, '🏪 Đến Chợ Phiên (đi Xa Phu, miễn phí) rồi dùng lệnh bài này hoặc bấm "🏪 Sạp hàng của tôi" để mở gian hàng ở bất kỳ chỗ trống nào.', 'info');
     if (e.pardon) {
       if (!(c.pk > 0)) return this.toast(p, 'Bạn không mang sát khí, không cần xoá tội', 'error');
