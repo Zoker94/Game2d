@@ -657,6 +657,7 @@
   function onFx(d) {
     const now = performance.now();
     if (d.t === 'dodge') { onDodge(d, now); return; }
+    if (d.t === 'pvpKill') { PkFx.kill(d, now); return; }
     const src = d.from && entityById(d.from);
     if (src && d.from !== G.you) { src.atkKind = BASIC_FX.has(d.t) ? 'atk' : 'skill'; src.atkStart = now; src.atkDur = src.atkKind === 'atk' ? 300 : 440; src.atkUntil = now + src.atkDur; }
     // chiêu của người chơi khác: bỏ hiệu ứng khi người đó ở xa, đang vẽ gọn (chỗ đông) hoặc bật "Ẩn hiệu ứng chiêu của người khác"
@@ -1333,6 +1334,7 @@
     for (const e of G.players.values()) { e.x += (e.tx - e.x) * k; e.y += (e.ty - e.y) * k; }
     for (const e of G.monsters.values()) { e.x += (e.tx - e.x) * k; e.y += (e.ty - e.y) * k; }
     for (const e of G.carts.values()) { e.x += (e.tx - e.x) * k; e.y += (e.ty - e.y) * k; }
+    PkFx.update(performance.now());   // xác bị đánh văng (PK)
   }
 
   // ===== Cài đặt tự động =====
@@ -1558,6 +1560,8 @@
     const frameOf = (moving, seed) => moving ? Math.floor(now / 140 + (seed || 0)) % 4 : 0;
     for (const it of list) {
       if (it.k === 'pet') { Pet.draw(ctx, it, now); continue; }
+      const kn = it.k === 'pl' ? it.e : it.k === 'self' ? s : null, knOn = kn && kn._kLift != null;
+      if (knOn) { const cy = kn.y - 26; ctx.save(); ctx.translate(kn.x, cy - kn._kLift); ctx.rotate(kn._kRot); ctx.translate(-kn.x, -cy); }   // đang văng: nhấc lên + xoay
       if (it.k === 'tall') {
         WorldArt.drawTall(ctx, it.t, it.tx, it.ty, now);
       } else if (it.k === 'deco') {
@@ -1623,6 +1627,7 @@
           const top = drawHero(e.x, e.y, e.cls, e.dir, e.lastH, e.moving, e.atkUntil > now, e.apLite, e.dead, e.x / 50, now, e);
           ctx.globalAlpha = 1;
           if (e.bubble) bubbles.push([e, top - 2]);
+          if (knOn) ctx.restore();
           continue;
         }
         const pm = e.dead ? 0 : Overhead.mask(e, now);
@@ -1673,7 +1678,9 @@
         if (me.robUntil > Date.now() && !me.dead) { stop -= 14; label(s.x, stop, '💰 Truy nã · Cướp Tiêu', '#ff5050', 11, true); }
         if (s.bubble) bubbles.push([s, stop + 4]);
       }
+      if (knOn) ctx.restore();
     }
+    PkFx.draw(ctx, now);   // vụ nổ PK, bụi khi xác rơi xuống
 
     if (!Input.isTouch && G.me && !G.me.dead) {
       const ni = nearItem(80);

@@ -5,6 +5,7 @@ const { ITEMS, RARITY, TIERS, equipId, tierOfLv, DROP_SLOTS } = require('../data
 const { MONSTERS, BOSSES } = require('../data/monsters');
 const BOSS_LINES = require('../data/bosslines');
 const VM_IDS = ['vm_tq1', 'vm_tq2', 'vm_tq3', 'vm_tq4', 'vm_tq5', 'vm_tq6', 'vm_tq7'];
+const KNOCK_DIST = 170;   // PK hạ người: xác văng xa tối đa (px)
 const { MAPS, TILE, isSolidAt, SOLID, CHANNELS, CH_CAP, VIP_CH, VIP_CAP, baseOf, chOf, chId } = require('../data/maps');
 const vipOk = c => (c.autoTicket || 0) > Date.now();   // khu VIP: còn hạn Vé Treo Máy
 const { NPCS, TELEPORTS } = require('../data/npcs');
@@ -1180,7 +1181,15 @@ class World {
       t.c.exp -= lost;
     }
     t.socket.emit('dead', { by: src ? (src.c ? src.c.name : src.tpl.name) : '?', lost, cost: t.mapId === 'tong_kim' || t.mapId === 'cong_thanh' ? { gold: 0, knb: TK_REVIVE_KNB } : this.reviveCost(t), tk: t.mapId === 'tong_kim' || t.mapId === 'cong_thanh' ? 1 : 0 });
-    this.fx(t.mapId, { t: 'death', id: t.id, x: t.x, y: t.y });
+    if (src && src.c && src !== t && !t.duel) {
+      // PK hạ người: nổ 1 phát rồi xác văng ra xa theo hướng đòn đánh (dừng trước tường / vật cản)
+      const x0 = t.x, y0 = t.y, d = Math.hypot(t.x - src.x, t.y - src.y) || 1;
+      const ux = d > 1 ? (t.x - src.x) / d : (Math.random() < 0.5 ? -1 : 1), uy = d > 1 ? (t.y - src.y) / d : 0;
+      let x1 = x0, y1 = y0;
+      for (let k = 8; k <= KNOCK_DIST; k += 8) { const nx = x0 + ux * k, ny = y0 + uy * k; if (isSolidAt(map.def, nx, ny)) break; x1 = nx; y1 = ny; }
+      t.x = x1; t.y = y1;
+      this.fx(t.mapId, { t: 'pvpKill', id: t.id, x: x0, y: y0, tx: Math.round(x1), ty: Math.round(y1), by: src.id });
+    } else this.fx(t.mapId, { t: 'death', id: t.id, x: t.x, y: t.y });
     if (src && src.c) {
       src.c.pvpKills = (src.c.pvpKills || 0) + 1;
       // giết người lương thiện (đang luyện công, không mang sát khí) ngoài lôi đài mới tăng sát khí
