@@ -42,9 +42,16 @@ const TITLES = {
   g_rich: { name: 'Phú Khả Địch Quốc', color: '#ffcc33', tier: 5, fx: 'rich', src: 'Quà tặng', gift: true, desc: 'Danh hiệu quà tặng – nhận bằng Lệnh Bài Danh Hiệu' },
   g_yinyang: { name: 'Thái Cực Chân Nhân', color: '#f0f0f0', tier: 4, fx: 'yinyang', src: 'Quà tặng', gift: true, desc: 'Danh hiệu quà tặng – nhận bằng Lệnh Bài Danh Hiệu' },
   g_rainbow: { name: 'Thất Thải Lưu Ly', color: '#e0b0ff', tier: 5, fx: 'rainbow', src: 'Quà tặng', gift: true, desc: 'Danh hiệu quà tặng – nhận bằng Lệnh Bài Danh Hiệu' },
+  // ---- Đua Top Tuần (server/game/weekrace.js): hạng 1 mỗi bảng được đeo 7 ngày (tới hết tuần sau), hiệu ứng riêng ----
+  wk_level: { name: 'Vạn Cổ Đăng Phong', color: '#8ad8ff', tier: 5, fx: 'wk_level', src: 'Đua Top Tuần', gift: true, week: 'level', desc: 'Hạng 1 Top Cấp Độ tuần – giữ 7 ngày' },
+  wk_power: { name: 'Chiến Lực Vô Song', color: '#ff5a3a', tier: 5, fx: 'wk_power', src: 'Đua Top Tuần', gift: true, week: 'power', desc: 'Hạng 1 Top Lực Chiến tuần – giữ 7 ngày' },
+  wk_boss:  { name: 'Đồ Long Diệt Ma', color: '#c87aff', tier: 5, fx: 'wk_boss', src: 'Đua Top Tuần', gift: true, week: 'boss', desc: 'Hạng 1 Top Săn Boss tuần – giữ 7 ngày' },
+  wk_topup: { name: 'Phú Quý Vô Biên', color: '#ffd040', tier: 5, fx: 'wk_topup', src: 'Đua Top Tuần', gift: true, week: 'topup', desc: 'Hạng 1 Top Nạp Tuần – giữ 7 ngày' },
   dh_top3:  { name: 'Võ Lâm Hào Kiệt',     color: '#ffe060', tier: 3, fx: 'lotus', src: 'Đại Hội Võ Lâm', stat: 'dhTop3', need: 1, desc: 'Vào top 3 Đại Hội Võ Lâm' }
 };
 const statOf = (c, k) => k === 'bossKills' ? (c.bossKills | 0) : ((c.ach && c.ach[k]) | 0);
 // admin: danh hiệu Quản trị viên chỉ mở cho tài khoản Admin (không qua thành tích)
-const unlocked = (c, id, admin) => { const t = TITLES[id]; return !!t && (t.admin ? !!admin : t.gift ? (c.giftTitles || []).includes(id) : statOf(c, t.stat) >= t.need); };
-module.exports = { TITLES, statOf, unlocked };
+const unlocked = (c, id, admin) => { const t = TITLES[id]; return !!t && (t.admin ? !!admin : t.week ? ((c.weekTitles || {})[id] || 0) > Date.now() : t.gift ? (c.giftTitles || []).includes(id) : statOf(c, t.stat) >= t.need); };
+// danh hiệu đua top tuần còn hạn của nhân vật
+const weekTitlesOf = c => Object.entries(c.weekTitles || {}).filter(([id, until]) => TITLES[id] && until > Date.now()).map(([id]) => id);
+module.exports = { TITLES, statOf, unlocked, weekTitlesOf };

@@ -7,11 +7,12 @@ const U = require('./util');
 const { isOwner } = require('../owner');
 
 const BOARDS = [
-  { k: 'level', name: 'Top Cấp Độ', icon: '📈', unit: 'cấp' },
-  { k: 'power', name: 'Top Lực Chiến', icon: '⚔️', unit: 'lực chiến' },
-  { k: 'boss', name: 'Top Săn Boss', icon: '👹', unit: 'boss' },
-  { k: 'topup', name: 'Top Nạp Tuần', icon: '💎', unit: 'Nguyên Bảo' }
+  { k: 'level', name: 'Top Cấp Độ', icon: '📈', unit: 'cấp', title: 'wk_level' },
+  { k: 'power', name: 'Top Lực Chiến', icon: '⚔️', unit: 'lực chiến', title: 'wk_power' },
+  { k: 'boss', name: 'Top Săn Boss', icon: '👹', unit: 'boss', title: 'wk_boss' },
+  { k: 'topup', name: 'Top Nạp Tuần', icon: '💎', unit: 'Nguyên Bảo', title: 'wk_topup' }
 ];
+const { TITLES } = require('../data/titles');
 const REWARD = [
   { knb: 500, items: [['boss_chest', 2], ['stone2', 3]] },
   { knb: 300, items: [['boss_chest', 1], ['stone2', 2]] },
@@ -56,6 +57,7 @@ class WeekRace {
       r.forEach((x, i) => {
         const rw = this.rewardOf(i), p = this.w.players.get(x.u.id);
         if (p) this.w.giveReward(p, rw, `🏆 ${b.name} – hạng ${i + 1}`); else this.f.giveOffline(x.u.character, rw);
+        if (i === 0) this.giveTitle(x.u.character, p, b.title, weekEnd(w + 1));   // hạng 1: danh hiệu riêng tới hết tuần sau
       });
       if (r[0]) lines.push(`${b.icon} ${b.name}: ${r[0].u.character.name}`);
     }
@@ -63,13 +65,24 @@ class WeekRace {
     this.f.announce(`🏆 ĐUA TOP TUẦN đã kết thúc! ${lines.join(' · ') || 'Chưa có ai lọt bảng.'} Top 10 mỗi bảng đã nhận thưởng – tuần mới bắt đầu!`);
     this.db.log('event', `Đua top tuần ${w}: ${lines.join(' | ')}`);
   }
+  // trao danh hiệu đua top: tự đeo luôn, nhớ danh hiệu cũ để trả lại khi hết hạn
+  giveTitle(c, p, id, until) {
+    const T = TITLES[id]; if (!T) return;
+    c.weekTitles = c.weekTitles || {};
+    for (const k of Object.keys(c.weekTitles)) if (c.weekTitles[k] < Date.now()) delete c.weekTitles[k];
+    c.weekTitles[id] = until;
+    if (!(c.title && TITLES[c.title] && TITLES[c.title].week)) c.titlePrev = c.title || '';
+    c.title = id;
+    if (p) { p.dirtyMe = true; this.w.toast(p, `🏅 Bạn nhận danh hiệu 【${T.name}】 trong 7 ngày – đã tự đeo!`, 'reward'); }
+    this.f.announce(`🏅 ${c.name} đoạt danh hiệu 【${T.name}】 (${T.desc.split(' – ')[0]})!`);
+  }
   view(p) {
     const w = weekId();
     return {
       endsAt: weekEnd(w),
       boards: BOARDS.map(b => {
         const r = this.rank(b.k, w, 1000), i = r.findIndex(x => x.u.id === p.userId);
-        return { k: b.k, name: b.name, icon: b.icon, unit: b.unit, top: r.slice(0, 3).map(x => [x.u.character.name, this.shown(x.u.character, b.k, w)]), me: i >= 0 ? i + 1 : 0, mine: this.shown(p.c, b.k, w) };
+        return { k: b.k, name: b.name, icon: b.icon, unit: b.unit, title: b.title, top: r.slice(0, 3).map(x => [x.u.character.name, this.shown(x.u.character, b.k, w)]), me: i >= 0 ? i + 1 : 0, mine: this.shown(p.c, b.k, w) };
       }),
       reward: [...REWARD, REWARD_TOP10]
     };

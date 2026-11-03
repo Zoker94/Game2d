@@ -15,7 +15,7 @@ const { MOUNTS, MOUNT_MAX, mountExpNext, isBreakLevel } = require('../data/mount
 const NO_MOUNT_MAPS = { tong_kim: 'Chiến trường Tống Kim', hoa_son_ld: 'Hoa Sơn Luận Kiếm', dai_hoi: 'Đại Hội Võ Lâm', cong_thanh: 'Công Thành Chiến' };
 const { DRAGONS, DRAGON_SLOT } = require('../data/dragons');
 const { JIANGHU, JH_SLOT, JH_DROP } = require('../data/jianghu');
-const { TITLES, statOf, unlocked: titleUnlocked } = require('../data/titles');
+const { TITLES, statOf, unlocked: titleUnlocked, weekTitlesOf } = require('../data/titles');
 const jhOf = c => (c.jh && c.jhs && c.jhs[c.jh] ? JIANGHU[c.jh] : null);   // tuyệt kỹ giang hồ đang chọn
 const { SKILL_MAX, scaleSkill, upgradeCost, skillPointsTotal, BOOKS } = require('../data/skillbooks');
 const SHOPS = require('./shops');
@@ -329,6 +329,8 @@ class World {
   // danh hiệu đang đeo; Admin chưa từng chọn thì mặc định đeo danh hiệu Quản trị viên (tháo ra = null thì thôi)
   titleOf(c, admin) {
     if (c.title === undefined && admin) return 'admin';
+    // danh hiệu đua top tuần hết hạn: trả lại danh hiệu đeo trước đó
+    if (c.title && TITLES[c.title] && TITLES[c.title].week && !titleUnlocked(c, c.title, admin)) c.title = c.titlePrev && titleUnlocked(c, c.titlePrev, admin) ? c.titlePrev : '';
     return c.title && titleUnlocked(c, c.title, admin) ? c.title : '';
   }
 
@@ -410,7 +412,7 @@ class World {
       attr: c.attr || {}, attrFree: attrTotalOf(c) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
       branch: branchOf(c), skills: c.skills || {}, hotbar: c.hotbar, sp: spTotalOf(c) - (c.spSpent || 0),
       blockInv: c.blockInv || {}, mailbox: (c.mailbox || []).slice(0, 60).map(e => [e.id, e.qty, e.plus || 0]), mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, autoTicket: c.autoTicket > Date.now() ? c.autoTicket : 0, pkMode: c.pkMode | 0, pkLock: !!((c.pkLock || c.pk >= PK_OUTLAW) && c.pk > 0), escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
-      sect: this.sect ? this.sect.meView(p) : null, giftTitles: c.giftTitles || [], mine: this.mining ? this.mining.view(p) : null,
+      sect: this.sect ? this.sect.meView(p) : null, giftTitles: [...(c.giftTitles || []), ...weekTitlesOf(c)], weekTitles: c.weekTitles || {}, mine: this.mining ? this.mining.view(p) : null,
       med: !!p.med, pvp: this.inPvp(p) ? 1 : 0, st: this.statusView(p), friends: Object.keys(c.friends || {}).length, friendIds: this.friendIds(c), pk: c.pk || 0,
       rank: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0
     };

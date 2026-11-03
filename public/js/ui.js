@@ -1221,7 +1221,7 @@
     const ach = me.ach || {}, list = Object.entries(T).filter(([, t]) => (!t.admin || me.admin) && !t.gift);
     const isOk = t => t.admin ? !!me.admin : (ach[t.stat] | 0) >= t.need;
     const giftRows = gifts.filter(id => T[id]).map(id => { const t = T[id], on = me.title === id;
-      return `<div class="ttl-row ok ${on ? 'on' : ''}"><div class="grow"><b style="color:${t.color}">【${esc(t.name)}】</b> <span class="ttl-src">Quà tặng</span><div class="sub">Có hiệu ứng riêng</div></div>
+      return `<div class="ttl-row ok ${on ? 'on' : ''}"><div class="grow"><b style="color:${t.color}">【${esc(t.name)}】</b> <span class="ttl-src">${esc(t.src || 'Quà tặng')}</span><div class="sub">${t.week && me.weekTitles && me.weekTitles[id] ? `Còn hạn tới ${new Date(me.weekTitles[id]).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}` : 'Có hiệu ứng riêng'}</div></div>
         ${on ? '<button class="btn small" data-title="">Tháo</button>' : '<button class="btn small green" data-title="' + id + '">Đeo</button>'}</div>`; }).join('');
     const got = list.filter(([, t]) => isOk(t)).length;
     const cur = me.title && T[me.title];

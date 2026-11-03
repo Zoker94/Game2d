@@ -756,3 +756,6 @@ body.touch .lm-list { width: 86px; }
 .wc-me b { color: #fff36a; }
 .wc-note { margin-top: 6px; color: #b8a8d0 !important; }
 @media (max-width: 360px) { .wc-boards { grid-template-columns: 1fr; } }
+.wc-ttl { text-align: center; font-size: 11.5px; font-weight: 900; margin: -1px 0 3px; color: var(--c); text-shadow: 0 0 6px var(--c), 0 0 2px #000; animation: wcTtl 1.4s ease-in-out infinite alternate; }
+@keyframes wcTtl { to { filter: brightness(1.45); text-shadow: 0 0 10px var(--c), 0 0 2px #000; } }
+.wc-note b { color: #ffd76a; }
