@@ -7,42 +7,230 @@ const U = require('./util');
 const { MAPS, TILE, baseOf } = require('../data/maps');
 const { NPCS } = require('../data/npcs');
 const { ITEMS } = require('../data/items');
+const { MONSTERS } = require('../data/monsters');
 
 const FRAG = 'tb_frag', MAP_ID = 'tb_map', NEED = 4, DIG_MS = 3000;
 const FRAG_CHANCE = 0.05;
 const NEAR_R = 1.25 * TILE, WARM_R = 4 * TILE;
 
-// câu đố theo bản đồ (đáp án là tên bản đồ – người chơi phải tự đoán ra nơi đó)
+// câu đố theo bản đồ (đáp án là tên bản đồ – người chơi phải tự đoán ra nơi đó). Mỗi nơi nhiều câu viết tay,
+// cộng thêm câu tự sinh từ quái của bản đồ (xem clueFor) -> mỗi tấm bản đồ bốc ngẫu nhiên 1 câu.
 const CLUES = {
-  tuong_duong: 'Thành trì mà Quách Tĩnh – Hoàng Dung tử thủ mấy chục năm chống vó ngựa Mông Cổ; tân thủ nào cũng bước ra giang hồ từ đây.',
-  cho_phien: 'Nơi người người bày sạp mua bán, chủ sạp đi vắng hàng vẫn bày – cửa hàng không bao giờ đóng.',
-  ngoai_o: 'Bãi luyện ngay ngoài cổng thành, nơi kẻ mới cầm vũ khí lần đầu đánh quái.',
-  ben_do: 'Bến sông Hán Thủy, nơi người qua sông phải chờ con đò.',
-  truc_lam: 'Rừng trúc xanh ngắt dưới chân núi Thanh Thành, gió thổi lá trúc xào xạc.',
-  hoa_son: 'Ngọn núi hiểm nhất thiên hạ, Ngũ Tuyệt từng luận kiếm – hãy lên tới tận đỉnh cao nhất của nó.',
-  thanh_do: 'Phủ thành đất Thục, quê của gấm vóc và vị cay nồng.',
-  sa_mac: 'Biển cát vàng phía Tây, gió cuốn cát che lấp cả lối về.',
-  lan_chau: 'Thành trì bên bờ Hoàng Hà, cửa ngõ của con đường đi Tây Vực.',
-  bang_cung: 'Cung điện băng giá trên dãy Thiên Sơn, tuyết phủ quanh năm.',
-  ma_giao: 'Cấm địa của tà giáo – người chính phái chớ bén mảng.',
-  long_mon: 'Trấn nhỏ giữa sa mạc, khách điếm đầy giang hồ hiểm ác, cửa ải cuối cùng trước khi vào vùng đất cấp cao.',
-  con_lon: 'Tiên cảnh trên dãy núi tổ của vạn sơn – không phải sơn môn của phái mang cùng tên.',
-  vo_luong: 'Sơn cốc nơi chàng thư sinh họ Đoàn rơi xuống vách đá, gặp pho tượng ngọc "thần tiên tỷ tỷ".',
-  nhac_mieu: 'Ngôi miếu thờ vị anh hùng có bốn chữ "Tận Trung Báo Quốc" xăm trên lưng.',
-  huyet_ma: 'Vực sâu nhuộm máu, nơi ma đầu luyện tà công.',
-  thien_ngoai: '"Ngoài trời còn có trời" – vùng đất ở trên cả mây xanh.',
-  cuu_u: 'Chín tầng âm u tận cùng, ma vực không thấy ánh mặt trời.'
+  // ---- thành thị ----
+  tuong_duong: [
+    'Thành trì mà Quách Tĩnh – Hoàng Dung tử thủ mấy chục năm chống vó ngựa Mông Cổ.',
+    'Nơi mọi tân thủ bước ra giang hồ, có Trưởng Lão Tân Thủ đứng chờ chỉ dạy.',
+    'Thành lớn nhất trung nguyên trong game, nơi có Kỳ Trân Các và Lễ Quan.',
+    'Từ đây Sứ Giả Hoa Sơn, Mộ Binh Quan và Thành Quan đưa người đi tham gia đại sự võ lâm.'
+  ],
+  cho_phien: [
+    'Nơi người người bày sạp mua bán, chủ sạp đi vắng hàng vẫn bày – cửa hàng không bao giờ đóng.',
+    'Muốn mở gian hàng ở đây phải có Lệnh Bài Bán Hàng.',
+    'Nơi Quản Lý Chợ trông coi trăm gian hàng của người chơi.'
+  ],
+  thanh_do: [
+    'Phủ thành đất Thục, quê của gấm vóc và vị cay nồng.',
+    'Thành trì thứ hai trên đường đi, mở cửa cho đại hiệp từ cấp 20.',
+    'Kinh đô xưa của nước Thục thời Tam Quốc, nay là phủ thành sầm uất.'
+  ],
+  lan_chau: [
+    'Thành trì bên bờ Hoàng Hà, cửa ngõ của con đường đi Tây Vực.',
+    'Thành mở cửa cho đại hiệp từ cấp 30, nằm giữa trung nguyên và sa mạc.',
+    'Nơi dòng sông Mẹ chảy qua giữa lòng thành, thương đoàn nghỉ chân trước khi vào Tây Vực.'
+  ],
+  long_mon: [
+    'Trấn nhỏ giữa sa mạc, khách điếm đầy giang hồ hiểm ác.',
+    'Cửa ải cuối cùng trước khi vào những vùng đất cấp cao, mở cho đại hiệp từ cấp 55.',
+    'Cá chép vượt "cửa rồng" thì hoá rồng – tên trấn này cũng mang ý ấy.'
+  ],
+  // ---- bãi luyện ----
+  ngoai_o: [
+    'Bãi luyện ngay ngoài cổng thành, nơi kẻ mới cầm vũ khí lần đầu đánh quái.',
+    'Thỏ rừng nhảy nhót, sói xám rình mồi – vùng ven thành dành cho người mới.',
+    'Chặng đầu tiên của mọi cuộc hành trình, cấp 1 đến 10.'
+  ],
+  ben_do: [
+    'Bến sông gần Tương Dương, nơi người qua sông phải chờ con thuyền nhỏ.',
+    'Thủy xà dưới nước, thủy tặc trên bờ – bến sông chẳng mấy yên bình.',
+    'Nơi thuyền neo đậu bên dòng sông lớn chảy qua đất Kinh Tương, cấp 3 đến 12.'
+  ],
+  thuy_trai: [
+    'Sào huyệt của bọn cướp sông mang tên một cơn gió đen, dựng ngay trên mặt nước.',
+    'Một gã đầu mục cầm đầu lũ giặc nước, đóng quân bằng cọc gỗ giữa dòng.',
+    'Trại giặc trên sông, nơi Phân Đà Tiêu Cục đóng gần để dẹp loạn.'
+  ],
+  co_mo: [
+    'Nơi người xưa yên nghỉ giữa núi không người, nay cương thi và u hồn không yên giấc.',
+    'Quỷ giữ mộ canh những nấm mồ lạnh lẽo nơi vùng tân thủ.',
+    'Chốn âm u nhất của vùng tân thủ – mộ cổ chôn ở núi hoang.'
+  ],
+  lang_hoang: [
+    'Ngôi làng bỏ hoang, xác sống lang thang giữa những mái nhà đổ nát.',
+    'Dân làng đã bỏ đi hết, chỉ còn sói đói và thổ phỉ.',
+    'Làng xưa phế tích, nơi người chết chẳng chịu nằm yên.'
+  ],
+  truc_lam: [
+    'Gió thổi lá xào xạc trong rừng cây thân đốt, dưới chân ngọn núi Đạo giáo đất Thục.',
+    'Rắn lục ẩn mình giữa những thân cây rỗng ruột, gấu đen rình bên suối.',
+    'Rừng tre bạt ngàn nơi Hắc Hùng và sơn tặc trú ngụ, cấp 10 đến 20.'
+  ],
+  dong_gau: [
+    'Hang đá tối tăm, chúa của loài gấu ngự trị nơi sâu nhất.',
+    'Tiếng gấu gầm vang trong hang đá, rắn hang bò dưới chân.',
+    'Hang gấu cấp 15 đến 22 – đừng đánh thức chúa gấu.'
+  ],
+  hoa_son: [
+    'Ngọn núi hiểm nhất thiên hạ, Ngũ Tuyệt từng luận kiếm – hãy lên tới tận đỉnh cao nhất của nó.',
+    'Hổ trắng và vua khỉ tranh nhau ngọn núi đá dựng đứng, một trong Ngũ Nhạc.',
+    'Đỉnh cao nhất của Tây Nhạc, nơi kiếm khách áo đen lảng vảng trên vách đá.'
+  ],
+  kiem_trung: [
+    'Mộ chôn kiếm của bậc kiếm khách cô độc tìm thất bại cả đời.',
+    'Kiếm Hồn, Kiếm Nô, Kiếm Ma – nơi những thanh kiếm cũng có linh hồn.',
+    'Nghĩa địa của binh khí, "trủng" nghĩa là mộ.'
+  ],
+  sa_mac: [
+    'Biển cát vàng phía Tây, gió cuốn cát che lấp cả lối về.',
+    'Vua bọ cạp bò dưới cát nóng, cương thi phơi xương dưới nắng cháy.',
+    'Vùng cát cháy Tây Vực, cấp 30 đến 40, nơi Tây Vực Đao Khách rong ruổi.'
+  ],
+  lau_lan: [
+    'Cổ quốc bị cát vùi lấp trên con đường tơ lụa, chỉ còn vong binh canh gác.',
+    'Thành cổ đã chết, vong binh vẫn tuần tra quanh tường đổ.',
+    'Vương quốc biến mất giữa sa mạc – tên của nó gắn với một mỹ nhân ướp xác ngàn năm.'
+  ],
+  bang_cung: [
+    'Cung điện băng giá trên dãy Thiên Sơn, tuyết phủ quanh năm.',
+    'Nữ đệ tử cung băng múa kiếm giữa trời tuyết trắng.',
+    'Tuyết quái và sói trắng quanh một cung điện trong suốt như pha lê, cấp 40 đến 50.'
+  ],
+  bang_dong: [
+    'Hang sâu dưới lòng núi tuyết, yêu quái băng giá ẩn trong vách đá lạnh.',
+    'Động ngầm buốt giá, nơi tuyết yêu và băng xà trú ngụ.',
+    'Ở cạnh cung băng nhưng nằm dưới lòng đất – hang của hàn khí.'
+  ],
+  ma_giao: [
+    'Cấm địa của tà giáo – người chính phái chớ bén mảng.',
+    'Hỏa Quỷ và U Linh lang thang trong vùng đất mà chính phái cấm bước vào.',
+    'Đất cấm cấp 50, nơi giáo chủ tà phái từng xưng bá.'
+  ],
+  con_lon: [
+    'Tiên cảnh trên dãy núi tổ của vạn sơn – không phải sơn môn của phái mang cùng tên.',
+    'Hồ ly tiên, kiếm tiên và vượn tay dài sống giữa mây núi tổ phương Tây.',
+    'Bãi luyện cấp 60, nơi tiên khí lượn lờ quanh núi cao nhất phương Tây.'
+  ],
+  thien_tri: [
+    'Hồ trên đỉnh núi tuyết, Băng Giao ẩn dưới mặt nước đóng băng.',
+    'Người khổng lồ băng giá canh hồ thiêng, thánh nữ núi tuyết ngự trên bờ.',
+    'Mặt hồ phẳng như gương nằm sát trời, giữa băng tuyết vạn năm, cấp 66 đến 74.'
+  ],
+  vo_luong: [
+    'Sơn cốc nơi chàng thư sinh họ Đoàn rơi xuống vách đá, gặp pho tượng ngọc "thần tiên tỷ tỷ".',
+    'Độc mãng và Xích Diễm Hổ ẩn trong cốc núi mang tên "không thể đo lường".',
+    'Thung lũng có ngọc bích khắc kiếm pháp trên vách, cấp 72 đến 80.'
+  ],
+  nhac_mieu: [
+    'Ngôi miếu thờ vị anh hùng có bốn chữ "Tận Trung Báo Quốc" xăm trên lưng.',
+    'Hồn những người lính trung nghĩa vẫn đứng gác quanh nơi thờ chủ tướng của họ.',
+    'Nơi anh linh vị đại tướng bị gian thần hại chết hiện về – đánh bại anh linh nhận được Tâm Pháp.'
+  ],
+  huyet_ma: [
+    'Vực sâu nhuộm máu, nơi ma đầu luyện tà công.',
+    'Sói, vệ binh, sát thần – mọi thứ nơi đây đều đỏ một màu máu.',
+    'Vực thẳm cấp 80 đến 90, mùi tanh nồng bốc lên từ đáy.'
+  ],
+  thien_ngoai: [
+    '"Ngoài trời còn có trời" – vùng đất ở trên cả mây xanh.',
+    'Thần binh của triều đình trên trời tuần tra, tiên nữ bay lượn – chốn tiên giới cấp 100.',
+    'Thần Lang và Thánh Thú tuyết vực canh giữ cõi trời ngoài trời.'
+  ],
+  cuu_u: [
+    'Chín tầng âm u tận cùng, ma vực không thấy ánh mặt trời.',
+    'Bãi luyện cao nhất, cấp 110 đến 120, nơi Thiên Ma Đại Tướng cầm quân.',
+    'Ma lang, quỷ tướng và ma hồn của tầng địa ngục sâu nhất.'
+  ],
+  // ---- sơn môn 9 phái ----
+  thieu_lam_tu: [
+    'Ngôi chùa trên núi Thiếu Thất, nơi Đạt Ma tổ sư diện bích chín năm.',
+    'Thiên hạ võ công xuất từ đây – 72 tuyệt kỹ, đệ tử dùng côn.',
+    'Sơn môn của các nhà sư đầu trọc luyện Dịch Cân Kinh.'
+  ],
+  thien_vuong_dao: [
+    'Hòn đảo giữa hồ Động Đình, sào huyệt của bang phái dùng chùy.',
+    'Sơn môn nằm giữa sóng nước, đệ tử khoẻ như vâm, dũng mãnh vô song.',
+    'Phái có tên là vua của trời, đóng trên một hòn đảo.'
+  ],
+  duong_gia_bao: [
+    'Thành lũy của gia tộc ám khí đất Thục, cơ quan cạm bẫy khắp nơi.',
+    'Nơi chế tạo Bạo Vũ Lê Hoa Châm và vạn loại ám khí.',
+    'Môn phái là một gia tộc, sơn môn là một tòa "bảo".'
+  ],
+  van_doc_coc: [
+    'Thung lũng của vạn loài độc vật nơi Miêu Cương, đệ tử nuôi cổ trùng.',
+    'Năm loài độc là rắn, rết, bọ cạp, nhện, cóc – thờ ở sơn cốc này.',
+    'Phái dùng đao tẩm độc, sơn môn là một cái cốc.'
+  ],
+  nga_my_son: [
+    'Ngọn núi Phật giáo đất Thục, nữ ni múa kiếm trên Kim Đỉnh.',
+    'Phái của Diệt Tuyệt sư thái và Chu Chỉ Nhược, toàn đệ tử nữ.',
+    'Nơi đệ tử nữ vừa tụng kinh vừa luyện kiếm, chữa thương giỏi nhất giang hồ.'
+  ],
+  thuy_yen_mon: [
+    'Môn phái nữ nhân ở Vân Nam, sử song đao như liễu rủ khói biếc.',
+    'Sơn môn mang tên "khói biếc", đệ tử múa song đao uyển chuyển.',
+    'Phái của những nữ hiệp đất Đại Lý dùng song đao và băng công.'
+  ],
+  cai_bang_da: [
+    'Tổng đà của bang hội ăn mày đông nhất thiên hạ.',
+    'Nơi truyền Hàng Long Thập Bát Chưởng và Đả Cẩu Bổng Pháp.',
+    'Bang chủ mang gậy trúc xanh, đệ tử đeo túi vải – nơi đây là tổng đà.'
+  ],
+  vo_dang_son: [
+    'Ngọn núi Đạo giáo do Trương Tam Phong khai sơn lập phái.',
+    'Nơi truyền Thái Cực Quyền, Thái Cực Kiếm – lấy nhu khắc cương.',
+    'Đạo sĩ áo xanh luyện kiếm trên núi, đối trọng của Thiếu Lâm.'
+  ],
+  con_lon_phai: [
+    'Sơn môn của phái đạo sĩ Tây Vực dùng phù chú gọi sấm sét.',
+    'Phái mang tên ngọn núi tổ phương Tây, đệ tử vẽ bùa triệu lôi.',
+    'Không phải tiên cảnh – đây là sơn môn của chính phái ấy.'
+  ]
 };
-// NPC làm mốc (chỉ dùng NPC có 1 người trên bản đồ)
-// (không dùng NPC mang tên thành / bản đồ – lộ đáp án)
-const LANDMARK = ['xa_phu', 'thuong_nhan', 'truong_lao', 'quan_cho', 'tieu_cuc_pd', 'tho_ren', 'duoc_diem', 'tap_hoa', 'kim_hoan'];
+// NPC làm mốc (chỉ dùng NPC có 1 người trên bản đồ; không dùng NPC mang tên thành / bản đồ – lộ đáp án)
+const LANDMARK = ['xa_phu', 'thuong_nhan', 'truong_lao', 'quan_cho', 'tieu_cuc_pd', 'tho_ren', 'duoc_diem', 'tap_hoa', 'kim_hoan', 'khu_bia', 'phi_phong', 'truyen_cong', 'sect_ho_phap'];
+const COMMON = new Set(['thành', 'động', 'cốc', 'sơn', 'phái', 'môn', 'trấn', 'phủ', 'điện', 'đảo', 'tự', 'đà', 'cổ', 'thiên']);
+// cách nói lối đi (bốc ngẫu nhiên)
+const WAYS = [
+  (n, w) => `Từ chỗ ${n} đứng, đi ${w}. Đào ở đó.`,
+  (n, w) => `Bắt đầu bên cạnh ${n}, bước ${w} – kho báu nằm dưới chân.`,
+  (n, w) => `Tìm ${n}, rồi từ đó đi ${w}. Đất ở đó còn mới xới.`,
+  (n, w) => `Đứng sát ${n}, đếm ${w}, rồi cắm cuốc xuống.`,
+  (n, w) => `Vị tông sư để lại lời nhắn: "Gặp ${n}, đi ${w}, đào sâu ba thước."`
+];
 
 class Treasure {
   constructor(world) { this.w = world; world.treasure = this; }
   toast(p, t, k) { this.w.toast(p, t, k || 'info'); }
 
   // ---------- tạo kho báu ----------
-  spotsFor(lv) { return Object.keys(CLUES).filter(id => MAPS[id] && (MAPS[id].minLv || 1) <= lv); }
+  // bản đồ hợp cấp: cấp thấp nhất của bản đồ không quá cấp người ghép + 5 (người mới không bị gửi tới Cửu U)
+  spotsFor(lv) { return Object.keys(CLUES).filter(id => MAPS[id] && Math.max(MAPS[id].minLv || 1, parseInt(MAPS[id].lv, 10) || 1) <= lv + 5); }
+  // câu đố: câu viết tay hoặc câu tự sinh theo quái của bản đồ
+  clueFor(mid) {
+    const pool = (CLUES[mid] || []).slice(), d = MAPS[mid];
+    const mons = [...new Set((d.spawns || []).map(s => s.mon))].map(id => MONSTERS[id] && MONSTERS[id].name).filter(Boolean);
+    if (mons.length >= 2) {
+      // bỏ quái có tên trùng chữ với tên bản đồ (lộ đáp án), vd. "Vô Lượng Kiếm Khách" ở Vô Lượng Sơn Cốc
+      const words = d.name.toLowerCase().split(/\s+/).filter(w => w.length > 1 && !COMMON.has(w));
+      mons.splice(0, mons.length, ...mons.filter(n => !words.some(w => n.toLowerCase().split(/\s+/).includes(w))));
+    }
+    if (mons.length >= 2) {
+      const a = mons.slice().sort(() => Math.random() - 0.5).slice(0, Math.min(3, mons.length));
+      pool.push(`Nơi ${a.slice(0, -1).join(', ')} và ${a[a.length - 1]} lui tới.`, `Kẻ nào hạ được ${a[0]} và ${a[1]} hẳn đã từng đặt chân tới đây.`);
+      if (/^\d+-\d+$/.test(d.lv || '')) pool.push(`Bãi luyện cấp ${d.lv.replace('-', ' đến ')}, nơi ${a[0]} sinh sống.`);
+    }
+    return pool[U.randInt(0, pool.length - 1)];
+  }
   makeTarget(lv) {
     const ids = this.spotsFor(lv);
     for (let tries = 0; tries < 60; tries++) {
@@ -57,7 +245,7 @@ class Treasure {
       if (tx < 1 || ty < 1 || tx >= d.w - 1 || ty >= d.h - 1) continue;
       if (!d.walkable.includes(ty * d.w + tx)) continue;
       if ((d.npcs || []).some(o => o.x === tx && o.y === ty)) continue;
-      return { m: mid, x: tx, y: ty, npc: n.id, dx, dy };
+      return { m: mid, x: tx, y: ty, npc: n.id, dx, dy, q: this.clueFor(mid), wv: U.randInt(0, WAYS.length - 1) };
     }
     return { m: 'tuong_duong', x: MAPS.tuong_duong.center.x + 3, y: MAPS.tuong_duong.center.y + 2, npc: null, dx: 3, dy: 2 };
   }
@@ -72,7 +260,8 @@ class Treasure {
   riddle(t) {
     const step = (n, a, b) => n ? `${Math.abs(n)} bước về phía ${n > 0 ? a : b}` : '';
     const way = [step(t.dx, 'Đông', 'Tây'), step(t.dy, 'Nam', 'Bắc')].filter(Boolean).join(', rồi ');
-    return { clue: CLUES[t.m] || '', way: t.npc ? `Từ chỗ ${NPCS[t.npc].name} đứng, đi ${way}. Đào ở đó.` : `Từ giữa thành đi ${way}.` };
+    const c = CLUES[t.m];
+    return { clue: t.q || (Array.isArray(c) ? c[0] : c) || '', way: t.npc ? WAYS[t.wv | 0](NPCS[t.npc].name, way) : `Từ giữa thành đi ${way}.` };
   }
 
   // ---------- dùng vật phẩm ----------

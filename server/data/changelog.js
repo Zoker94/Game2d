@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '📜 Tàng Bảo Đồ thêm nhiều câu đố: 35 nơi giấu kho báu (thêm hang động, mộ cổ, sơn môn 9 phái…), gần 190 câu đố khác nhau (câu về truyền thuyết, quái vật, cấp bãi luyện), 5 kiểu lời nhắn lối đi và hơn 15.000 điểm đào. Kho báu chỉ rơi vào nơi hợp cấp người ghép.',
       '🎬 Ghép xong Tàng Bảo Đồ sẽ chiếu đoạn phim giới thiệu: 4 mảnh bay vào ghép lại, tấm bản đồ mở ra kèm lời dẫn truyền thuyết, rồi Thần Khí của môn phái bạn trồi lên giữa cột sáng (bấm Bỏ qua được).',
       '📜 Tàng Bảo Đồ: Boss bang có 5% rơi Mảnh Tàng Bảo Đồ (mỗi người tham chiến được tính riêng). Gom 4 mảnh ghép thành Tàng Bảo Đồ hoàn chỉnh có câu đố về một nơi trong game và lối đi tính từ một NPC làm mốc. Đứng đúng chỗ mà có Tàng Bảo Đồ trong túi thì hiện nút ⛏ Đào – đào 3 giây được 1 món 🔴 Thần Khí (vũ khí Thần Binh đúng môn phái).',
       '❤️ Thanh máu trên đầu: của mình màu xanh, người chơi khác màu đỏ (đồng đội trong tổ đội vẫn xanh).',
