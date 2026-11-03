@@ -134,6 +134,7 @@ class Fishing {
       return p.socket.emit('fish', { st: 'miss', why: 'escape' });
     }
     const got = this.land(p, f.g);
+    if (got && this.w.guildx && /^fish_/.test(got) && got !== 'fish_junk') this.w.guildx.progress(p, 'fish');
     if (got) this.w.io.to('map:' + p.mapId).emit('fishLine', { id: p.id, off: 1, got });
     const c = p.c;   // mã xác nhận ngẫu nhiên mỗi 20-50 lần câu được
     if (c.fishCapIn == null) c.fishCapIn = U.randInt(20, 50);

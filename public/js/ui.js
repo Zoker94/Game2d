@@ -1351,7 +1351,7 @@
     }
     const g = d.mine, role = d.myRole, mgr = role === 'leader' || role === 'elder';
     const tab = panelState.tab || 'info';
-    let html = tabs([['info', 'Thông tin'], ['members', `Thành viên (${g.count})`], ...(mgr ? [['requests', `Đơn xin (${g.requests.length})`]] : [])], tab);
+    let html = tabs([['info', 'Thông tin'], ['members', `Thành viên (${g.count})`], ['gquest', '📜 Nhiệm vụ'], ['gboss', '👹 Boss bang'], ...(mgr ? [['requests', `Đơn xin (${g.requests.length})`]] : [])], tab);
     if (tab === 'info') {
       html += `<div class="card"><h4>🏯 ${esc(g.name)} — Cấp ${g.level}</h4>
         <div class="small">Bang chủ: ${esc(g.leader)} · Thành viên: ${g.count}/${g.max}</div>
@@ -1361,6 +1361,8 @@
         <div class="card"><h4>📢 Thông báo bang</h4><p>${esc(g.notice)}</p>${mgr ? `<div class="row" style="justify-content:flex-start"><input id="g-notice" maxlength="200" placeholder="Thông báo mới" style="flex:1"><button class="btn small" id="g-notice-btn">Cập nhật</button></div>` : ''}</div>
         <div class="card"><h4>💰 Cống hiến</h4><div class="row" style="justify-content:flex-start"><input id="g-donate" type="number" min="100" step="100" value="1000" style="width:120px"><button class="btn small green" id="g-donate-btn">Cống hiến lượng</button></div></div>
         <div class="row">${role === 'leader' ? '<button class="btn small primary" id="g-disband">Giải tán bang</button>' : ''}<button class="btn small" id="g-leave">Rời bang</button><button class="btn small" id="g-chat">Chat bang</button></div>`;
+    } else if (tab === 'gquest' || tab === 'gboss') {
+      html += GuildX.html(tab);
     } else if (tab === 'members') {
       html += `<table class="tbl"><tr><th>Tên</th><th>Môn phái</th><th>Cấp</th><th>Chức vụ</th><th>Cống hiến</th><th></th></tr>${g.members.map(m => `<tr><td>${m.online ? '🟢' : '⚫'} ${esc(m.name)}</td><td>${G.data.classes[m.cls].name}</td><td>${m.level}</td><td>${ROLE_NAME[m.role]}</td><td>${fmt(m.contrib)}</td><td>
         ${m.uid !== d.myId && role === 'leader' ? `${m.role === 'member' ? `<button class="btn small" data-op="promote" data-uid="${m.uid}">↑</button>` : `<button class="btn small" data-op="demote" data-uid="${m.uid}">↓</button>`}<button class="btn small" data-op="transfer" data-uid="${m.uid}" title="Nhường chức">👑</button>` : ''}
@@ -1370,6 +1372,7 @@
     }
     body.innerHTML = html;
     bindTabs(body);
+    if (tab === 'gquest' || tab === 'gboss') GuildX.bind(body);
     const on = (id, fn) => { const el = $(id); if (el) el.onclick = fn; };
     on('g-notice-btn', () => emit('guild', { op: 'notice', text: $('g-notice').value }));
     on('g-donate-btn', () => emit('guild', { op: 'donate', amount: +$('g-donate').value }));
@@ -1881,7 +1884,7 @@
     } else if (tab === 'inherit') {
       html += inheritHtml();
     } else if (d.cloak) {
-      html += cloakHtml(d.cloak);
+      html += '<div id="loom-host"></div>';
     } else if (d.teleports) {
       // nhóm: thành trấn rồi bãi luyện công; chưa đủ cấp thì mờ đi
       const row = t => { const lock = G.me.level < (t.minLv || 1); return `<div class="li ${lock ? 'locked' : ''}"><div class="grow"><b>${t.town ? '🏯 ' : ''}${esc(t.name)}</b><div class="sub">${t.sect ? esc(t.lv) + (t.mine ? ' · Bổn phái' : '') : 'Cấp ' + t.lv}${t.minLv > 1 ? ` · <span class="${lock ? 'warn' : ''}">Yêu cầu cấp ${t.minLv}</span>` : ''}</div></div><button class="btn small green" data-tp="${t.map}" ${G.map.id === t.map || lock ? 'disabled' : ''}>${t.price ? fmt(t.price) + ' 💰' : 'Miễn phí'}</button></div>`; };
@@ -1891,6 +1894,7 @@
     }
     body.innerHTML = html;
     if (tab === 'cook' && window.Fishing && $('cook-host')) Fishing.mountCook($('cook-host'), d);
+    if (d.cloak && window.Loom && $('loom-host')) Loom.mount($('loom-host'), d.cloak);
     if ((tab === 'gemup' || tab === 'enhance') && window.Forge && $('forge-host')) Forge.mount($('forge-host'), tab === 'gemup' ? 'gem' : 'enh', d.id);
     const c = $('npc-cv').getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(Sprites.npcSprite(d.sprite, d.color, 0), 0, 0);
     bindTabs(body);

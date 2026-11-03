@@ -89,6 +89,8 @@ function build() {
       'Về bản đồ môn phái của mình (Xa Phu, miễn phí): nhận <b>nhiệm vụ môn phái</b> lấy cống hiến, lên cấp bậc (+công / thủ / máu).',
       'Bản đồ môn phái cấm PK (chỉ thách đấu).',
       '<b>Bang hội</b>: gặp Bang Hội Sứ Giả ở Tương Dương để lập / vào bang; bang càng cao cấp càng tăng chỉ số cho thành viên.',
+      '👹 <b>Boss bang</b> (bảng Bang hội › Boss bang): Bang chủ / Trưởng lão triệu hồi tại Bang Hội Lãnh Địa (bang cấp 2+), chỉ bang mình đánh được. <b>Nhiệm vụ bang</b>: 5 nhiệm vụ / ngày trong bảng Bang hội, tăng quỹ và cống hiến bang.',
+      '🏮 Hoạt động môn phái: Tuần tra sơn môn (4 cột mốc 🚩), Tọa thiền cạnh Truyền Công Trưởng Lão, Thủ Hộ Sơn Môn 19:30 mỗi tối. Áo choàng dệt ở Chưởng Phi Phong – cần cấp bậc môn phái, có tỉ lệ thất bại.',
       '🎣 <b>Câu cá</b>: mua Cần Câu + Mồi Câu ở <b>Đầu Bếp Tửu Lâu</b> (Tương Dương), đứng sát mép nước bấm 🎣, phao chìm thì GIẬT CẦN rồi chơi minigame kéo cá (giữ để kéo vạch, giữ vạch trong vùng cá tới khi đầy thanh). Thể lực câu 300 lần / ngày. Mang cá về Đầu Bếp nấu món ăn tăng kinh nghiệm / công / thủ / máu.',
       '🎓 <b>Sư đồ</b> (Bạn bè → Sư đồ): người cấp 5-29 bái sư người cấp 60+. Đồ đệ luyện công cùng bản đồ với sư phụ +20% kinh nghiệm (+30% chung tổ đội); đồ đệ lên cấp sư phụ nhận Sư Đức; cấp 30 xuất sư, cả hai nhận quà lớn.']) },
     { k: 'pk', icon: '⚔️', title: 'PK – chế độ chiến đấu', html: li([

@@ -782,7 +782,7 @@ class World {
   enemiesOf(p) {
     const m = this.maps[p.mapId];
     const list = [];
-    for (const mon of m.monsters.values()) if (!mon.dead && !(mon.tkSide && p.tk === mon.tkSide) && !(mon.ctSeal && this.siege.sealFriendly(p, mon))) list.push(mon);   // lính cùng phe Tống Kim
+    for (const mon of m.monsters.values()) if (!mon.dead && !(mon.tkSide && p.tk === mon.tkSide) && !(mon.ctSeal && this.siege.sealFriendly(p, mon)) && !(mon.onlyGid && p.c.guildId !== mon.onlyGid)) list.push(mon);   // lính cùng phe Tống Kim
     for (const o of m.players) if (this.canHarm(p, o)) list.push(o);
     for (const c of this.escort.targetsFor(p)) list.push(c);
     return list;
@@ -1098,6 +1098,7 @@ class World {
   applyDamage(t, dmg, src, kind, ek = 0, preScaled = false) {
     if (src && src.c && t && !t.c && !t.cart) src.lastHitMon = Date.now();   // thú cưng biết chủ đang giao chiến
     if (t.dead) return 0;
+    if (t.onlyGid && !(src && src.c && src.c.guildId === t.onlyGid)) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return 0; }   // Boss bang: chỉ thành viên bang đó đánh được
     if (t.ctSeal && this.siege) {   // Long Ấn Công Thành: bang đang giữ không đánh được, mỗi đòn tối đa 0,6% máu, khiên 8 giây sau khi đổi chủ
       dmg = src && src.c && this.siege.sealFriendly(src, t) ? 0 : this.siege.capDamage(t, dmg);
       if (!dmg) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return 0; }
@@ -1274,6 +1275,8 @@ class World {
     if (mon.event === 'daihoi') { this.daihoi.onMonsterKilled(mon, killer); map.monsters.delete(mon.id); return; }
     if (mon.event === 'tongkim') { this.tongkim.onMonsterKilled(mon, killer); map.monsters.delete(mon.id); return; }
     if (mon.event === 'siege') { this.siege.onMonsterKilled(mon, killer); return; }
+    if (mon.event === 'guildboss') { this.guildx.onBossKilled(mon); return; }
+    if (mon.event === 'sectdef') { this.sect.onDefKill(mon, killer); map.monsters.delete(mon.id); return; }
     if (mon.event) { this.features.onEventMonsterKilled(mon, killer); map.monsters.delete(mon.id); return; }
     if (mon.story) { this.rewardStoryElite(mon, killer); this.story.onEliteKilled(mon, killer); map.monsters.delete(mon.id); return; }
 
@@ -1303,6 +1306,7 @@ class World {
         this.story.on(p, 'kill', { mon: tpl.id });
         this.features.onKill(p, mon);
         if (this.sect) this.sect.onKill(p, mon);
+        if (this.guildx) this.guildx.onKill(p, mon);
       }
       p.dirtyMe = true;
     }
@@ -1850,10 +1854,16 @@ class World {
   }
 
   // ---------- Áo choàng: chỉ chế tạo ở bản đồ môn phái của mình (NPC Chưởng Phi Phong) ----------
-  cloakRecipe(t) { return { t, lv: TIERS[t], gold: 3000 * (t + 1) * (t + 1), silk: 3 + t * 2, stone: 2 + t, pts: 20 + t * 15 }; }
+  // công thức khó dần theo bậc: thêm Thiên Tinh Thạch từ bậc 4, yêu cầu cấp bậc môn phái; có tỉ lệ thất bại (mất 1 phần nguyên liệu)
+  cloakRecipe(t) {
+    return { t, lv: TIERS[t], gold: 5000 * (t + 1) * (t + 1), silk: 5 + t * 3, stone: 3 + t * 2, stone2: t >= 3 ? t - 2 : 0, pts: 40 + t * 25,
+      rank: Math.min(5, Math.floor(t / 2)), rate: Math.max(0.4, 0.9 - t * 0.055) };
+  }
   cloakView(p) {
     const c = p.c, sd = this.sect ? this.sect.data(p) : { pts: 0 };
-    return { mine: SECT_MAP[c.cls] === p.mapId, home: MAPS[SECT_MAP[c.cls]].name, pts: sd.pts | 0, gold: c.gold, silk: U.countItem(c, 'thien_tam_ti'), stone: U.countItem(c, 'stone'),
+    const { SECT_RANKS, sectRank } = require('../data/sect');
+    return { mine: SECT_MAP[c.cls] === p.mapId, home: MAPS[SECT_MAP[c.cls]].name, pts: sd.pts | 0, gold: c.gold, silk: U.countItem(c, 'thien_tam_ti'), stone: U.countItem(c, 'stone'), stone2: U.countItem(c, 'stone2'),
+      rank: sectRank(c), ranks: SECT_RANKS.map(r => r[1]),
       odds: CLOAK_ODDS, list: TIERS.map((_, t) => Object.assign(this.cloakRecipe(t), { id: equipId('cloak', t, 'common') })) };
   }
   craftCloak(p, d) {
@@ -1861,23 +1871,34 @@ class World {
     if (!npc) return this.toast(p, 'Hãy đến gặp Chưởng Phi Phong ở bản đồ môn phái', 'error');
     if (SECT_MAP[c.cls] !== p.mapId) return this.toast(p, `Chỉ được chế tạo áo choàng ở môn phái của mình (${MAPS[SECT_MAP[c.cls]].name})`, 'error');
     if (t < 0 || t >= TIERS.length) return;
-    const r = this.cloakRecipe(t), sd = this.sect.data(p);
-    if (c.level < r.lv) return this.toast(p, `Cần đạt cấp ${r.lv}`, 'error');
-    if (c.gold < r.gold) return this.toast(p, `Cần ${r.gold.toLocaleString('vi-VN')} lượng`, 'error');
-    if (U.countItem(c, 'thien_tam_ti') < r.silk) return this.toast(p, `Cần ${r.silk} Thiên Tàm Ti`, 'error');
-    if (U.countItem(c, 'stone') < r.stone) return this.toast(p, `Cần ${r.stone} Huyền Tinh Thạch`, 'error');
-    if ((sd.pts | 0) < r.pts) return this.toast(p, `Cần ${r.pts} điểm cống hiến môn phái (làm nhiệm vụ Trưởng Môn)`, 'error');
-    if (U.freeSlots(c) < 1) return this.toast(p, 'Túi đồ đầy', 'error');
-    c.gold -= r.gold; sd.pts -= r.pts;
-    const bd = U.removeItemById(c, 'thien_tam_ti', r.silk).bound | U.removeItemById(c, 'stone', r.stone).bound;   // dùng nguyên liệu khoá thì áo choàng cũng khoá
-    const x = Math.random(), rar = x < CLOAK_ODDS.legendary ? 'legendary' : x < CLOAK_ODDS.legendary + CLOAK_ODDS.epic ? 'epic' : x < CLOAK_ODDS.legendary + CLOAK_ODDS.epic + CLOAK_ODDS.rare ? 'rare' : 'common';
-    const id = equipId('cloak', t, rar);
-    c._brPick = d && (d.br === 'noi' || d.br === 'ngoai') ? d.br : branchOf(c);
-    try { this.giveItem(p, id, 1, 0, !!bd); } finally { delete c._brPick; }
-    this.toast(p, `🧥 Chế tạo thành công: ${ITEMS[id].name} (${RARITY[rar].name})`, rar === 'common' ? 'info' : 'item:' + rar);
-    if (rar === 'legendary') this.features.brag(`🧥 ${c.name} dệt được [${ITEMS[id].name}] tại ${MAPS[p.mapId].name}!`);
+    const r = this.cloakRecipe(t), sd = this.sect.data(p), { SECT_RANKS, sectRank } = require('../data/sect');
+    const fail = m => { this.toast(p, m, 'error'); p.socket.emit('cloakResult', { err: 1 }); };
+    if (c.level < r.lv) return fail(`Cần đạt cấp ${r.lv}`);
+    if (sectRank(c) < r.rank) return fail(`Cần cấp bậc môn phái ${SECT_RANKS[r.rank][1]}`);
+    if (c.gold < r.gold) return fail(`Cần ${r.gold.toLocaleString('vi-VN')} lượng`);
+    if (U.countItem(c, 'thien_tam_ti') < r.silk) return fail(`Cần ${r.silk} Thiên Tàm Ti`);
+    if (U.countItem(c, 'stone') < r.stone) return fail(`Cần ${r.stone} Huyền Tinh Thạch`);
+    if (r.stone2 && U.countItem(c, 'stone2') < r.stone2) return fail(`Cần ${r.stone2} Thiên Tinh Thạch`);
+    if ((sd.pts | 0) < r.pts) return fail(`Cần ${r.pts} điểm cống hiến môn phái (làm nhiệm vụ Trưởng Môn)`);
+    if (U.freeSlots(c) < 1) return fail('Túi đồ đầy');
+    const ok = Math.random() < r.rate;
+    // thất bại: mất toàn bộ ngân lượng, một nửa tơ / đá / cống hiến (Thiên Tinh Thạch mất hết)
+    const take = ok ? 1 : 0.5;
+    c.gold -= r.gold; sd.pts -= Math.ceil(r.pts * take);
+    const bd = U.removeItemById(c, 'thien_tam_ti', Math.ceil(r.silk * take)).bound | U.removeItemById(c, 'stone', Math.ceil(r.stone * take)).bound | (r.stone2 ? U.removeItemById(c, 'stone2', r.stone2).bound : 0);
+    p.dirtyMe = true; this.db.markDirty();
+    if (!ok) {
+      p.socket.emit('cloakResult', { ok: false, t });
+      this.toast(p, '💔 Dệt áo choàng thất bại – sợi tơ đứt, mất một phần nguyên liệu', 'error');
+    } else {
+      const x = Math.random(), rar = x < CLOAK_ODDS.legendary ? 'legendary' : x < CLOAK_ODDS.legendary + CLOAK_ODDS.epic ? 'epic' : x < CLOAK_ODDS.legendary + CLOAK_ODDS.epic + CLOAK_ODDS.rare ? 'rare' : 'common';
+      const id = equipId('cloak', t, rar);
+      c._brPick = d && (d.br === 'noi' || d.br === 'ngoai') ? d.br : branchOf(c);
+      try { this.giveItem(p, id, 1, 0, !!bd); } finally { delete c._brPick; }
+      p.socket.emit('cloakResult', { ok: true, t, id, rar });
+      if (rar === 'legendary') this.features.brag(`🧥 ${c.name} dệt được [${ITEMS[id].name}] tại ${MAPS[p.mapId].name}!`);
+    }
     p.socket.emit('npc', Object.assign({ id: npc.id, name: npc.name, talk: npc.talk, action: 'cloak', sprite: npc.sprite, color: npc.color }, { cloak: this.cloakView(p) }));
-    this.db.markDirty();
   }
 
   // Tiền trang: cất / rút vật phẩm và ngân lượng
@@ -2491,7 +2512,7 @@ class World {
     const slowed = mon.st && (mon.st.slow || 0) > now;
     const tpl = mon.tpl;
     let target = mon.target ? this.players.get(mon.target) : null;
-    if (target && (target.dead || target.mapId !== mon.mapId || this.gmOn(target, 'hide') || Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > LEASH_R || (mon.tkSide && !this.tongkim.monCanTarget(mon, target)))) {
+    if (target && (target.dead || target.mapId !== mon.mapId || this.gmOn(target, 'hide') || Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > LEASH_R || (mon.tkSide && !this.tongkim.monCanTarget(mon, target)) || (mon.onlyGid && target.c.guildId !== mon.onlyGid))) {
       target = null; mon.target = null;
       if (Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > LEASH_R) {
         mon.wander = { x: mon.hx, y: mon.hy };
@@ -2502,7 +2523,8 @@ class World {
       let best = null, bd = AGGRO_R;
       for (const p of m.players) {
         if (p.dead || this.gmOn(p, 'hide')) continue;   // quản trị viên tàng hình: quái không thấy
-        if (mon.tkSide && !this.tongkim.monCanTarget(mon, p)) continue;   // lính Tống Kim: chỉ đánh phe địch ngoài hậu doanh
+        if (mon.tkSide && !this.tongkim.monCanTarget(mon, p)) continue;
+        if (mon.onlyGid && p.c.guildId !== mon.onlyGid) continue;   // Boss bang chỉ đánh thành viên bang đó   // lính Tống Kim: chỉ đánh phe địch ngoài hậu doanh
         const d = U.dist(p, mon);
         if (d < bd) { bd = d; best = p; }
       }

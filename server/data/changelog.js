@@ -4,6 +4,10 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '👹 Boss bang: Bang chủ / Trưởng lão triệu hồi Kim Luân Pháp Vương tại Bang Hội Lãnh Địa (bang cấp 2+, 100.000 quỹ bang, mỗi ngày 1 lần). Chỉ thành viên bang mình đánh được, 20 phút để hạ. Hạ được: quỹ bang +200.000, người góp sức nhận thưởng theo hạng sát thương (top 1-3 có Rương Thủ Lĩnh)',
+      '📜 Nhiệm vụ bang: mỗi ngày 5 nhiệm vụ ngay trong bảng Bang hội (diệt quái, tinh anh, câu cá, nhiệm vụ môn phái, nộp ngân lượng) – thưởng cá nhân, tăng quỹ bang và cống hiến bang; nhiệm vụ thứ 5 thưởng gấp đôi',
+      '🏮 Hoạt động môn phái mới: 🚩 Tuần tra sơn môn mỗi ngày (đi qua 4 cột mốc, +25 cống hiến), 🧘 Tọa thiền truyền công cạnh Truyền Công Trưởng Lão (+1 cống hiến / phút, tối đa 30), 🏯 Thủ Hộ Sơn Môn 19:30 mỗi tối – Ma Giáo đánh vào sơn môn, diệt địch lấy tới 150 cống hiến, hạ Ma Giáo Hộ Pháp cả phái thưởng thêm',
+      '🧥 Dệt phi phong khó hơn: cần nhiều tơ / đá / cống hiến hơn, từ bậc 4 cần Thiên Tinh Thạch, yêu cầu cấp bậc môn phái, có tỉ lệ thất bại (90% bậc 1 → 40% bậc cao; thất bại mất ngân lượng và một nửa nguyên liệu). Khung dệt mới có hiệu ứng: thành công chữ vàng lấp lánh bay lên, thất bại khung cửi xám xịt, chữ xám bay lên',
       '💳 Nạp Nguyên Bảo: bấm vào số 💎 trên góc màn hình (hoặc Kỳ Trân Các › Nạp Nguyên Bảo), chọn số tiền (1.000đ = 2 Nguyên Bảo, 20.000đ = 40) để tạo mã QR chuyển khoản MB Bank đúng số tiền và nội dung. Quét bằng app ngân hàng, chuyển xong Nguyên Bảo được cộng khi quản trị viên xác nhận (kể cả khi bạn offline)',
       '🎣 Câu cá chống auto: giật cần xong phải chơi minigame KÉO CÁ (giữ chuột / chạm / Space để kéo vạch, nhả cho chìm, giữ vạch trong vùng cá tới khi đầy thanh – cá càng hiếm càng giãy mạnh). Không còn tự giật cần kể cả có Vé Treo Máy. Thêm thể lực câu 300 lần / ngày, câu liền quá lâu thì cá hiếm ít dần (nghỉ 10 phút hồi sức), thỉnh thoảng hỏi mã xác nhận; phản xạ nhanh bất thường sẽ bị hỏi mã ngay, sai sẽ bị cấm câu 30 phút',
       '🔒 Mã xác nhận (treo máy và câu cá) giờ là ảnh do máy chủ vẽ – phần mềm tự động không đọc được mã',

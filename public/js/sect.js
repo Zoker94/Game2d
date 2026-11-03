@@ -36,7 +36,15 @@
       html += `<p class="small">Mỗi ngày nhận tối đa ${v.max} nhiệm vụ: diệt quái, hạ quái tinh anh, đưa thư, vượt phó bản. Nhiệm vụ thứ ${v.max} thưởng gấp ba.</p>
         <button class="btn primary" data-sq="accept">📜 Nhận nhiệm vụ</button>`;
     }
-    html += `</div><div class="card small muted">Điểm cống hiến đổi bảo vật ở <b>Hộ Pháp Môn Phái</b>. Học võ công ở <b>Truyền Công Trưởng Lão</b>.</div>`;
+    html += `</div>`;
+    // hoạt động môn phái khác
+    const pt = v.patrol, nHit = pt ? pt.hit.filter(Boolean).length : 0;
+    html += `<div class="card sect-acts"><h4>🏮 Hoạt động môn phái</h4>
+      <div class="li"><div class="grow"><b>🚩 Tuần tra sơn môn</b> <span class="small muted">(1 lần / ngày)</span><div class="sub">Đi qua 4 cột mốc canh gác 🚩 trong bản đồ môn phái · thưởng KN, ngân lượng, <b>+25 cống hiến</b></div></div>
+        ${!pt ? '<button class="btn small primary" data-sq="patrol">Nhận</button>' : pt.done ? '<span class="ok-t small">✔ Đã xong</span>' : `<span class="small">${nHit}/4 cột mốc</span>`}</div>
+      <div class="li"><div class="grow"><b>🧘 Tọa thiền truyền công</b><div class="sub">Ngồi thiền cạnh <b>Truyền Công Trưởng Lão</b> ở phái mình: mỗi phút +1 cống hiến + KN (hôm nay ${v.med}/${v.medMax} phút)</div></div>${v.med >= v.medMax ? '<span class="ok-t small">✔ Đủ</span>' : ''}</div>
+      <div class="li"><div class="grow"><b>🏯 Thủ Hộ Sơn Môn</b> <span class="small ${v.def.on ? 'warn' : 'muted'}">${v.def.on ? 'ĐANG DIỄN RA!' : v.def.at + ' mỗi tối'}</span><div class="sub">Ma Giáo đánh vào sơn môn theo từng đợt, phút 8 Ma Giáo Hộ Pháp xuất hiện. Diệt địch lấy tới 150 cống hiến; hạ Hộ Pháp cả phái thưởng thêm.</div></div></div></div>
+      <div class="card small muted">Điểm cống hiến đổi bảo vật ở <b>Hộ Pháp Môn Phái</b>, dệt áo choàng ở <b>Chưởng Phi Phong</b>. Học võ công ở <b>Truyền Công Trưởng Lão</b>.</div>`;
     body.innerHTML = html;
     body.querySelectorAll('[data-sq]').forEach(b => b.onclick = () => {
       const op = b.dataset.sq;
@@ -84,5 +92,25 @@
     s.on('sect', d => { view = d; if (UI.panelName() === 'sect') UI.refreshPanel(); });
     s.on('sectShop', d => { shop = d; if (UI.panelName() === 'sectshop') UI.refreshPanel(); });
   }
-  window.SectUI = { open, openShop, bind };
+  // cột mốc tuần tra 🚩 trên bản đồ môn phái (khi đang tuần tra): đi tới gần là tự kiểm tra
+  function drawPatrol(ctx, now) {
+    const m = G.me && G.me.sect, pt = m && m.patrol;
+    if (!pt || !G.map || G.map.id !== m.map) return;
+    pt.pts.forEach(([x, y], i) => {
+      const done = pt.hit[i];
+      ctx.save(); ctx.translate(x, y);
+      ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(0, 2, 16, 5, 0, 0, Math.PI * 2); ctx.fill();
+      if (!done) { ctx.strokeStyle = `rgba(255,210,80,${0.5 + Math.sin(now / 250 + i) * 0.3})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(0, 0, 26, 9, 0, 0, Math.PI * 2); ctx.stroke(); }
+      ctx.fillStyle = '#5a3a1a'; ctx.fillRect(-2, -56, 4, 56);
+      const wv = Math.sin(now / 220 + i) * 3;
+      ctx.fillStyle = done ? '#4ade80' : '#e8443a';
+      ctx.beginPath(); ctx.moveTo(2, -55); ctx.quadraticCurveTo(14, -53 + wv, 26, -50 + wv); ctx.lineTo(26, -36 + wv); ctx.quadraticCurveTo(14, -38 + wv, 2, -40); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(done ? '✔' : String(i + 1), 13, -43 + wv);
+      ctx.restore();
+      if (!done && G.self && Math.hypot(G.self.x - x, G.self.y - y) < 90 && !(drawPatrol._t && drawPatrol._t[i] > now - 1500)) {
+        (drawPatrol._t = drawPatrol._t || [])[i] = now; emit('sect', { op: 'patrolHit', i });
+      }
+    });
+  }
+  window.SectUI = { open, openShop, bind, drawPatrol };
 })();

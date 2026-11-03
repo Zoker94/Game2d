@@ -376,6 +376,9 @@
     s.on('siegeCall', d => Siege.onCall(d));
     s.on('npcList', list => { if (G.map && G.map.id === 'tuong_duong') G.map.npcs = list; });
     s.on('mystery', d => Mystery.onData(d));
+    s.on('guildx', d => GuildX.onData(d));
+    s.on('cloakResult', d => Loom.onResult(d));
+    s.on('guildBoss', d => GuildX.onBoss(d));
     s.on('siegeOwner', d => { if (G.me) G.me.ctOwner = d.name; });
     s.on('gmList', d => GM.onList(d));
     s.on('pin', d => UI.pin(d));
@@ -1546,6 +1549,7 @@
     HoaSon.drawGround(ctx, now);
     TongKim.drawGround(ctx, now);
     Siege.drawGround(ctx, now);
+    SectUI.drawPatrol(ctx, now);
     BossFX.drawGround(ctx, now);
     Duel.draw(ctx, now);
     drawGhosts(now);

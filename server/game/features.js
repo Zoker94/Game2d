@@ -17,6 +17,7 @@ const EVENT_INFO = {
   daiHoi:    { name: 'Đại Hội Võ Lâm', desc: 'Hỗn chiến tranh ngôi Võ Lâm Minh Chủ tại lôi đài Đại Hội (cấp 20+, gặp Sứ Giả Đại Hội ở Tương Dương). Hạ người chơi, Hộ Pháp và Thiên Hạ Đệ Nhất Cao Thủ để ghi điểm. 20:30 Chủ Nhật hằng tuần (1 tuần 1 lần). Minh Chủ giữ danh hiệu 7 ngày.', icon: '⚔️' },
   hoaSon:    { name: 'Hoa Sơn Luận Kiếm', desc: 'Giải đấu loại trực tiếp 1 chọi 1 trên đỉnh Hoa Sơn (cấp 30+, ghi danh với Sứ Giả Hoa Sơn ở Tương Dương). Vô địch nhận danh hiệu Hoa Sơn Kiếm Thánh 7 ngày, Á quân và hạng Ba có thưởng. Ai cũng lên núi xem được. 20:00 Thứ 7 hằng tuần.', icon: '⛰️' },
   tongKim:   { name: 'Chiến Trường Tống Kim', desc: 'Phe Tống đối đầu phe Kim (cấp 30+, báo danh với Mộ Binh Quan ở Tương Dương từ 21:30). Máy chia phe cân bằng theo lực chiến. Hạ người phe địch, lính và Đại Tướng để ghi điểm; phe nhiều điểm hơn thắng. Thưởng kinh nghiệm + Công Trạng đổi rương, ngân lượng, đá cường hoá, đá khảm cấp 4-5. 22:00 mỗi tối.', icon: '🏯' },
+  thuHo:     { name: 'Thủ Hộ Sơn Môn', desc: 'Ma Giáo đánh vào mọi môn phái theo từng đợt; phút thứ 8 Ma Giáo Hộ Pháp xuất hiện. Đệ tử về sơn môn của phái mình (Xa Phu đưa về miễn phí) diệt địch lấy cống hiến; hạ được Hộ Pháp là giữ vững sơn môn, cả phái thưởng thêm. 19:30 mỗi tối, 12 phút.', icon: '🏯' },
   congThanh: { name: 'Công Thành Chiến', desc: 'Các bang hội tranh đoạt Lâm An Thành (Bang chủ / Trưởng lão báo danh với Thành Quan ở Tương Dương, 50.000 quỹ bang; thành viên cấp 40+). Phá Long Ấn giữa nội thành để chiếm; hết giờ bang giữ Long Ấn làm chủ thành 7 ngày: +10% kinh nghiệm cả bang, nhận 30% thuế chợ & giao dịch toàn máy chủ. 20:30 Thứ 6 hằng tuần.', icon: '🏯' },
   lantern:   { name: 'Lễ Hội Hoa Đăng', desc: 'Quái rơi Hoa Đăng, đổi quà tại Lễ Quan. Tự động cả ngày Thứ 7 & Chủ Nhật.', icon: '🏮' }
 };
@@ -160,6 +161,8 @@ class Features {
     if (this.w.siege) this.w.siege.tick(now);
     if (this.w.night) this.w.night.tick(now);
     if (this.w.fishing) this.w.fishing.tick(now);
+    if (this.w.guildx && now - (this._gxT || 0) > 2000) { this._gxT = now; this.w.guildx.tick(now); }
+    if (this.w.sect && this.w.sect.tick && now - (this._sxT || 0) > 1000) { this._sxT = now; this.w.sect.tick(now); }
     if (now - this.lastLb > 30000) { this.lastLb = now; this.computeLeaderboard(); }
   }
 
@@ -191,6 +194,7 @@ class Features {
     if (this.w.hoason) this.w.hoason.onMinute(mod);   // Hoa Sơn Luận Kiếm 20:00 Thứ 7
     if (this.w.tongkim) this.w.tongkim.onMinute(mod);   // Chiến Trường Tống Kim 22:00 mỗi tối
     if (this.w.siege) this.w.siege.onMinute(mod);   // Công Thành Chiến 20:30 Thứ 6
+    if (this.w.sect && this.w.sect.onMinute) this.w.sect.onMinute(mod);   // Thủ Hộ Sơn Môn 19:30
     if (mod === 4 * 60 + 7 && this.w.cleanup) this.w.cleanup.auto();   // 04:07 mỗi ngày: tự dọn tài khoản bỏ lâu, chat cũ
     if ((dow === 0 || dow === 6) && !this.isActive('lantern')) this.startEvent('lantern', (24 * 60 - mod));
     if (this.lastMinute % 5 === 0) this.broadcastEvents();
@@ -266,6 +270,8 @@ class Features {
       this.w.daihoi.start(minutes);
     } else if (k === 'tongKim') {
       if (this.w.tongkim && !this.w.tongkim.start(minutes)) e.active = false;
+    } else if (k === 'thuHo') {
+      if (this.w.sect && !this.w.sect.defStart(minutes)) e.active = false;
     } else if (k === 'congThanh') {
       if (this.w.siege && !this.w.siege.start(minutes)) e.active = false;
     } else if (k === 'hoaSon') {   // giải tự báo tin; không đủ người thì tắt luôn
@@ -298,6 +304,7 @@ class Features {
     if (k === 'hoaSon' && this.w.hoason && this.w.hoason.running) this.w.hoason.abort();
     if (k === 'tongKim' && this.w.tongkim) this.w.tongkim.end();
     if (k === 'congThanh' && this.w.siege) this.w.siege.end();
+    if (k === 'thuHo' && this.w.sect) this.w.sect.defEnd();
     const info = EVENT_INFO[k];
     if (k === 'huntRace') {
       const top = Object.entries(e.scores || {}).sort((a, b) => b[1].n - a[1].n).slice(0, 10);

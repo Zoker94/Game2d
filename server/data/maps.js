@@ -384,6 +384,13 @@ const MAP_DEFS = {
     npcs: [{ id: 'tk_quan_nhu', x: 3, y: 17 }, { id: 'tk_quan_nhu', x: 68, y: 17 }],
     spawns: []
   },
+  // Bang Hội Lãnh Địa: nơi các bang triệu hồi Boss bang (server/game/guildx.js); cấm PK, không có quái thường
+  lanh_dia: {
+    name: 'Bang Hội Lãnh Địa', theme: 'mountain', w: 52, h: 40, seed: 163, lv: '10+', noPk: true, minLv: 10,
+    portals: [],
+    npcs: [{ id: 'xa_phu', x: 26, y: 34 }],
+    spawns: []
+  },
   // Công Thành Chiến: Lâm An Thành – nội thành tường đá vây quanh Long Ấn, cổng Nam / Tây / Đông; ngoài là đồng cỏ
   cong_thanh: {
     name: 'Lâm An Thành (Công Thành)', theme: 'plains', w: 56, h: 44, seed: 151, lv: '40+', safe: true, siege: true, minLv: 1,

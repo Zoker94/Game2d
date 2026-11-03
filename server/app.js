@@ -53,6 +53,7 @@ new (require('./game/mentor').Mentor)(world, db);   // gắn world.mentor (sư �
 new (require('./game/night').Night)(world, features, db);   // gắn world.night (quái đêm, rương ẩn, Thương Nhân Bí Ẩn)
 new (require('./game/fishing').Fishing)(world, features, db);   // gắn world.fishing (câu cá, nấu ăn)
 new (require('./game/topup').Topup)(world, db);   // gắn world.topup (nạp Nguyên Bảo qua chuyển khoản)
+new (require('./game/guildx').GuildX)(world, features, db);   // gắn world.guildx (nhiệm vụ bang, boss bang)
 world.cleanup = new (require('./game/cleanup').Cleanup)(world, features, db);
 require('./game/shops').apply(db);   // cửa hàng NPC do quản trị viên sửa
 require('./game/bosscfg').apply(db);   // chỉ số / giờ xuất hiện boss do quản trị viên sửa
@@ -500,6 +501,7 @@ io.on('connection', socket => {
   on('mystery', inGame(d => world.night.action(player, d)));
   on('fish', inGame(d => world.fishing.action(player, d)));
   on('topup', inGame(d => world.topup.action(player, d)));
+  on('guildx', inGame(d => world.guildx.action(player, d)));
   on('sellMany', inGame(d => world.sellMany(player, d && d.uids)));
   on('enhance', inGame(d => world.enhance(player, d || {})));
   on('gem', inGame(d => world.gems.action(player, d)));

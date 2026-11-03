@@ -546,3 +546,63 @@ body.touch #fish-game { right: 12px; }
 .tp-amt { color: #ffd76a; font-size: 15px; } .tp-code { color: #ff9a6a; font-size: 15px; letter-spacing: 1px; }
 .tp-row { display: flex; align-items: center; gap: 8px; }
 .tp-cta { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 6px 0; padding: 6px 10px; border-radius: 10px; background: rgba(40,90,140,.25); border: 1px solid #3a6a9a; }
+/* boss bang (guildx.js) */
+.gx-hp { position: relative; height: 16px; margin: 6px 0; border-radius: 8px; background: #2a0a0a; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(0,0,0,.6); }
+.gx-hp i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, #8a1010, #ff4a3a); }
+.gx-hp span { position: absolute; inset: 0; text-align: center; line-height: 16px; font-size: 10px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px #000; }
+.sect-acts .li { display: flex; align-items: center; gap: 8px; }
+/* khung dệt phi phong (loom.js) */
+.loom { margin-top: 4px; }
+.lm-body { display: flex; gap: 8px; }
+.lm-list { display: flex; flex-direction: column; gap: 4px; width: 104px; flex-shrink: 0; max-height: 420px; overflow-y: auto; }
+.lm-tier { display: flex; align-items: center; gap: 5px; padding: 3px 5px; border-radius: 8px; background: #1b2232; border: 1px solid #3a4a66; color: #e8edf5; cursor: pointer; text-align: left; }
+.lm-tier img { image-rendering: pixelated; } .lm-tier span { display: flex; flex-direction: column; font-size: 11px; font-weight: 700; } .lm-tier small { font-weight: 400; color: #9aa6ba; font-size: 9.5px; }
+.lm-tier.on { border-color: #ffd76a; background: rgba(120,90,20,.45); } .lm-tier.lock { opacity: .45; }
+.lm-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.lm-stage { position: relative; height: 190px; border-radius: 10px; overflow: hidden; background: radial-gradient(circle at 50% 55%, #3a2a4a 0%, #1a1222 60%, #0c0810 100%); border: 1px solid #5a4a6a; }
+.lm-frame { position: absolute; left: 50%; top: 50%; width: 200px; height: 150px; transform: translate(-50%, -50%); }
+.lm-post { position: absolute; top: 0; bottom: 0; width: 10px; background: linear-gradient(90deg, #5a3a1a, #a0703a, #5a3a1a); border-radius: 3px; } .lm-post.l { left: 0; } .lm-post.r { right: 0; }
+.lm-beam { position: absolute; left: 0; right: 0; height: 10px; background: linear-gradient(#a0703a, #5a3a1a); border-radius: 3px; } .lm-beam.t { top: 6px; } .lm-beam.b { bottom: 6px; }
+.lm-warp i { position: absolute; top: 14px; bottom: 14px; width: 1.5px; background: linear-gradient(#f0e0ff, #c8a0ff); opacity: .55; }
+.lm-shuttle { position: absolute; top: 50%; left: 12px; font-size: 18px; transform: translateY(-50%); opacity: 0; filter: drop-shadow(0 0 4px #ffd76a); }
+.lm-cloak { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(255,255,255,.06); }
+.lm-cloak img { width: 52px; height: 52px; image-rendering: pixelated; opacity: .55; filter: grayscale(.5); transition: all .4s; }
+.lm-sparks i { position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px; border-radius: 50%; background: #ffe680; box-shadow: 0 0 6px #ffd040; opacity: 0; }
+.lm-cut { position: absolute; inset: 0; pointer-events: none; } .lm-cut i { position: absolute; left: 30%; right: 30%; height: 2px; background: #999; opacity: 0; }
+.lm-cut i:nth-child(1) { top: 35%; transform: rotate(20deg); } .lm-cut i:nth-child(2) { top: 50%; transform: rotate(-15deg); } .lm-cut i:nth-child(3) { top: 65%; transform: rotate(8deg); }
+/* đang dệt: thoi chạy qua lại, sợi dọc rung, áo choàng hiện dần */
+.loom.weave .lm-shuttle { opacity: 1; animation: lmShuttle .43s ease-in-out infinite alternate; }
+@keyframes lmShuttle { to { left: calc(100% - 32px); } }
+.loom.weave .lm-warp i { animation: lmWarp .2s ease-in-out infinite alternate; }
+@keyframes lmWarp { to { opacity: 1; transform: scaleX(2); } }
+.loom.weave .lm-cloak img { opacity: .9; filter: grayscale(0) drop-shadow(0 0 6px #c8a0ff); animation: lmPulse .5s ease-in-out infinite alternate; }
+@keyframes lmPulse { to { transform: scale(1.08); } }
+/* thành công: bừng sáng vàng, tia lấp lánh bung ra */
+.loom.win .lm-stage { background: radial-gradient(circle at 50% 50%, #8a6a20 0%, #3a2a10 55%, #120c06 100%); }
+.loom.win .lm-cloak img { opacity: 1; filter: drop-shadow(0 0 8px #fff) drop-shadow(0 0 16px #ffd040); animation: lmPop .7s cubic-bezier(.2,1.8,.4,1); }
+@keyframes lmPop { 0% { transform: scale(.2) rotate(-25deg); } 100% { transform: scale(1.15); } }
+.loom.win .lm-sparks i { animation: lmSpark 1.1s ease-out forwards; }
+@keyframes lmSpark { 0% { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(1.2); } 100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--d) * -1)) scale(.3); } }
+/* thất bại: xám xịt, sợi tơ đứt, rung */
+.loom.lose .lm-stage { background: radial-gradient(circle at 50% 55%, #3a3a3a 0%, #1c1c1c 60%, #0c0c0c 100%); animation: fgShake .45s; }
+.loom.lose .lm-frame { filter: grayscale(1) brightness(.6); }
+.loom.lose .lm-cut i { opacity: .9; animation: lmCut .5s ease-out; }
+@keyframes lmCut { from { opacity: 0; transform: scaleX(.1); } }
+.loom.lose .lm-cloak img { opacity: .3; filter: grayscale(1); }
+/* chữ kết quả bay lên dần rồi mờ */
+.lm-float { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font: 900 17px "Be Vietnam Pro", sans-serif; pointer-events: none; animation: lmRise 3s ease-out forwards; line-height: 1.35; }
+.lm-float small { font-size: 11px; font-weight: 600; }
+@keyframes lmRise { 0% { transform: translateY(20px); opacity: 0; } 12% { opacity: 1; } 75% { opacity: 1; } 100% { transform: translateY(-110px); opacity: 0; } }
+.lm-float.win { color: #ffe680; background: linear-gradient(90deg, #ffd040, #fff8d0, #ffb020, #fff8d0, #ffd040); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 6px rgba(255,200,60,.9)) drop-shadow(0 2px 0 #7a4a00); animation: lmRise 3s ease-out forwards, lmShine 1s linear infinite; }
+.lm-float.win b { -webkit-text-fill-color: initial; filter: none; text-shadow: 0 0 8px rgba(255,255,255,.8); }
+@keyframes lmShine { to { background-position: 300% 0; } }
+.lm-float.lose { color: #b4b4b4; text-shadow: 0 0 4px #000, 0 2px 0 #000; }
+.lm-name { text-align: center; }
+.lm-mats { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.lm-mats > div { display: flex; flex-direction: column; align-items: center; min-width: 62px; padding: 3px 5px; border-radius: 8px; background: #161c28; border: 1px solid #3a4a66; font-size: 11px; }
+.lm-mats > div span { font-size: 15px; } .lm-mats small { font-size: 9px; color: #9aa6ba; }
+.lm-mats .ok { border-color: #2f8a4a; } .lm-mats .ok b { color: #6ef08a; } .lm-mats .no { border-color: #8a2f2f; } .lm-mats .no b { color: #ff8080; }
+.lm-go { align-self: center; }
+.loom.busy .lm-tier, .loom.busy .buy-br button { pointer-events: none; opacity: .6; }
+body.touch .lm-list { width: 86px; }

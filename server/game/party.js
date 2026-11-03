@@ -121,6 +121,7 @@ class Party {
       this.w.features.questProgress(q, 'killAny', 1);
       this.w.story.on(q, 'kill', { mon: mon.tpl.id });
       if (this.w.sect) this.w.sect.onKill(q, mon);
+      if (this.w.guildx) this.w.guildx.onKill(q, mon);
       q.dirtyMe = true;
     }
   }
