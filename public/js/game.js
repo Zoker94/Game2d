@@ -1641,7 +1641,7 @@
         let ptop = top - 6;
         if (G.settings.names) ptop = Overhead.drawNameplate(ctx, e.x, top, { name: e.name, level: e.level, gm: e.gm, guild: e.guild, power: e.pw, myPower: G.me.stats.power, title: e.ttl, lite: !!e.lod, rank: e.rk, pk: e.k, pm: epk, mc: e.mc, tk: e.tk, party: Party.has(e.id) });
         if (epk) { ptop -= 10; Escort.drawPkBadge(ctx, e.x, ptop, epk, now); ptop -= 8; }   // nhãn ĐỒ SÁT trên cùng, không bị che
-        hpBar(e.x, top - 4, 40, e.hp / e.maxHp, '#4ade80');
+        hpBar(e.x, top - 4, 40, e.hp / e.maxHp, Party.has(e.id) ? '#4ade80' : '#ff5050');   // người khác đỏ, đồng đội tổ đội xanh
         if (e.rb && !e.dead) { ptop -= 14; label(e.x, ptop, '💰 Truy nã · Cướp Tiêu', '#ff5050', 11, true); }
         if (e.bubble) bubbles.push([e, ptop + 4]);
       } else if (it.k === 'self') {
@@ -1668,7 +1668,7 @@
         let stop = top - 6;
         if (G.settings.names) stop = Overhead.drawNameplate(ctx, s.x, top, { self: true, name: me.name, gm: me.admin, guild: me.guild && me.guild.name, power: me.stats.power, title: me.title, rank: me.rank, pk: me.pk, pm: spk, mc: me.minhChu, tk: me.tk });
         if (spk) { stop -= 10; Escort.drawPkBadge(ctx, s.x, stop, spk, now); stop -= 8; }
-        hpBar(s.x, top - 4, 40, me.hp / me.stats.maxHp, '#ff5050');
+        hpBar(s.x, top - 4, 40, me.hp / me.stats.maxHp, '#4ade80');   // máu của mình: xanh
         if (me.robUntil > Date.now() && !me.dead) { stop -= 14; label(s.x, stop, '💰 Truy nã · Cướp Tiêu', '#ff5050', 11, true); }
         if (s.bubble) bubbles.push([s, stop + 4]);
       }
