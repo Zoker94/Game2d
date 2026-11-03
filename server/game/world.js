@@ -1736,6 +1736,15 @@ class World {
       this.db.markDirty();
       return;
     }
+    if (e.addGold || e.addKnb) {   // tiền dạng vật phẩm
+      U.removeByUid(c, uid, 1);
+      if (e.addGold) c.gold = (c.gold || 0) + e.addGold;
+      if (e.addKnb) c.knb = (c.knb | 0) + e.addKnb;
+      if (p._batch) { p._batch.gold += e.addGold || 0; p._batch.knb += e.addKnb || 0; }
+      else this.toast(p, e.addGold ? `💰 +${e.addGold.toLocaleString('vi-VN')} ngân lượng` : `💎 +${e.addKnb.toLocaleString('vi-VN')} Nguyên Bảo`, 'reward');
+      p.dirtyMe = true; this.db.markDirty();
+      return;
+    }
     if (e.tieuChest) {
       if (U.freeSlots(c) < 2) return this.toast(p, 'Cần ít nhất 2 ô trống trong túi', 'error');
       U.removeByUid(c, uid, 1);

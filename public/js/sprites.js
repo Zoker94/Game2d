@@ -432,6 +432,45 @@
       return true;
     }
     // trứng gà chọi (thường: trắng ngà lốm đốm; quý: vàng ánh kim) và bao thóc
+    // tiền dạng vật phẩm: túi bạc / thỏi bạc / ngân phiếu · Nguyên Bảo (kim cương xanh, càng lớn càng nhiều viên)
+    if (icon === 'luong_s') {
+      x.fillStyle = 'rgba(0,0,0,.25)'; x.beginPath(); x.ellipse(16, 28, 10, 2.5, 0, 0, Math.PI * 2); x.fill();
+      const g = x.createRadialGradient(13, 16, 2, 16, 19, 12); g.addColorStop(0, '#e8c070'); g.addColorStop(1, '#8a5a20');
+      x.fillStyle = g; x.beginPath(); x.moveTo(9, 12); x.quadraticCurveTo(3, 27, 16, 28); x.quadraticCurveTo(29, 27, 23, 12); x.closePath(); x.fill();
+      x.fillStyle = '#6a3a10'; x.fillRect(10, 10, 12, 3); x.fillStyle = '#c83a2a'; x.fillRect(14, 9, 4, 5);
+      x.fillStyle = '#ffe080'; x.font = 'bold 10px sans-serif'; x.textAlign = 'center'; x.fillText('$', 16, 24); x.textAlign = 'start';
+      return true;
+    }
+    if (icon === 'luong_m') {
+      x.fillStyle = 'rgba(0,0,0,.25)'; x.beginPath(); x.ellipse(16, 26, 12, 3, 0, 0, Math.PI * 2); x.fill();
+      const g = x.createLinearGradient(0, 10, 0, 26); g.addColorStop(0, '#ffffff'); g.addColorStop(0.5, '#c8d0dc'); g.addColorStop(1, '#6a7484');
+      x.fillStyle = g; x.beginPath(); x.moveTo(3, 13); x.quadraticCurveTo(16, 20, 29, 13); x.lineTo(25, 25); x.quadraticCurveTo(16, 28, 7, 25); x.closePath(); x.fill();   // thỏi bạc hình thuyền
+      x.fillStyle = '#e8eef6'; x.beginPath(); x.ellipse(16, 14, 6, 4, 0, 0, Math.PI * 2); x.fill(); x.fillStyle = '#9aa4b4'; x.beginPath(); x.ellipse(16, 15, 4, 2, 0, 0, Math.PI * 2); x.fill();
+      x.fillStyle = '#fff'; x.fillRect(8, 17, 3, 1); x.fillRect(24, 6, 1, 4); x.fillRect(22.5, 7.5, 4, 1);
+      return true;
+    }
+    if (icon === 'luong_l') {
+      x.save(); x.translate(16, 16); x.rotate(-0.12);
+      x.fillStyle = '#f2e6c4'; x.fillRect(-13, -8, 26, 17); x.strokeStyle = '#8a2a1a'; x.lineWidth = 1.5; x.strokeRect(-11.5, -6.5, 23, 14);
+      x.fillStyle = '#c8301a'; x.fillRect(-9, -4, 6, 9); x.fillStyle = '#f2e6c4'; x.fillRect(-8, -3, 4, 1); x.fillRect(-8, 0, 4, 1); x.fillRect(-8, 3, 4, 1);
+      x.fillStyle = '#5a3a1a'; for (let i = 0; i < 3; i++) x.fillRect(0, -3 + i * 3.5, 9, 1.4);
+      x.restore(); x.fillStyle = '#ffd040'; x.fillRect(25, 4, 1, 4); x.fillRect(23.5, 5.5, 4, 1);
+      return true;
+    }
+    if (icon === 'nb_s' || icon === 'nb_m' || icon === 'nb_l') {
+      const gem = (cx, cy, r) => {
+        x.fillStyle = '#1a6ad8'; x.beginPath(); x.moveTo(cx - r, cy - r * 0.35); x.lineTo(cx - r * 0.55, cy - r * 0.85); x.lineTo(cx + r * 0.55, cy - r * 0.85); x.lineTo(cx + r, cy - r * 0.35); x.lineTo(cx, cy + r); x.closePath(); x.fill();
+        x.fillStyle = '#7ad0ff'; x.beginPath(); x.moveTo(cx - r * 0.55, cy - r * 0.85); x.lineTo(cx + r * 0.55, cy - r * 0.85); x.lineTo(cx + r * 0.3, cy - r * 0.35); x.lineTo(cx - r * 0.3, cy - r * 0.35); x.closePath(); x.fill();
+        x.fillStyle = '#3a9aff'; x.beginPath(); x.moveTo(cx - r * 0.3, cy - r * 0.35); x.lineTo(cx + r * 0.3, cy - r * 0.35); x.lineTo(cx, cy + r); x.closePath(); x.fill();
+        x.fillStyle = '#e8f8ff'; x.fillRect(cx - r * 0.45, cy - r * 0.7, r * 0.25, r * 0.2);
+      };
+      const gl = x.createRadialGradient(16, 16, 2, 16, 16, 16); gl.addColorStop(0, 'rgba(120,200,255,.45)'); gl.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = gl; x.fillRect(0, 0, 32, 32);
+      if (icon === 'nb_s') gem(16, 16, 10);
+      else if (icon === 'nb_m') { gem(10, 19, 7); gem(22, 19, 7); gem(16, 12, 8); }
+      else { x.fillStyle = '#7a4a1a'; x.fillRect(4, 18, 24, 10); x.fillStyle = '#c89040'; x.fillRect(4, 18, 24, 2); x.fillRect(15, 18, 2, 10); gem(10, 13, 6); gem(22, 13, 6); gem(16, 9, 7); }
+      x.fillStyle = '#fff'; x.fillRect(26, 3, 1, 5); x.fillRect(24, 5, 5, 1);
+      return true;
+    }
     if (icon === 'egg' || icon === 'egg_q') {
       const q = icon === 'egg_q';
       if (q) { const gl = x.createRadialGradient(16, 17, 2, 16, 17, 15); gl.addColorStop(0, 'rgba(255,220,90,.55)'); gl.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = gl; x.fillRect(0, 0, 32, 32); }
