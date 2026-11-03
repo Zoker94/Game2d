@@ -4,7 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
-      '🎣 Cá cắn câu giờ có chế độ tập trung: điện thoại rung liên tục, màn hình giật nhẹ theo nhịp, hai dải đen trượt vào trên dưới và viền tối nhịp đập quanh mép màn hình cho tới khi kéo cá xong.',
+      '🎣 Cá cắn câu giờ có chế độ tập trung: điện thoại rung liên tục, màn hình giật nhẹ theo nhịp, mép trên và dưới màn hình mờ tối dần (càng sát mép càng tối) theo nhịp cho tới khi kéo cá xong.',
       '🎣 Câu cá nâng cấp lớn: 16 loại cá (thêm Cá Mè, Rô Phi, Trê, Lăng, Chẽm, Cá Hồi, 🐊 Ngạc Ngư – cá sấu, 🦈 Bạch Sa – cá mập, Cự Sa Vương huyền thoại); bán cá cho Đầu Bếp Tửu Lâu (tab Bán cá); 5 loại cần câu có hình riêng (Trúc, Thiết Mộc, Tử Trúc Ngọc, Hàn Thiết Tinh, Long Cốt Kim Ty) với sức cần + độ bền – cần yếu kéo cá khoẻ rất khó và dễ GÃY CẦN; 5 loại mồi (Giun, Tôm, Cá Sống, Thịt Tươi, Linh Ngư Đan) ảnh hưởng cá hiếm, tốc độ cắn, cá dữ chỉ ăn mồi thịt / cá sống; 10 món ăn phải phối nhiều loại cá.',
       '🏅 Danh hiệu Đua Top Tuần: hạng 1 mỗi bảng nhận danh hiệu riêng đeo 7 ngày, tự đeo luôn – 【Vạn Cổ Đăng Phong】 (Top Cấp Độ: cột sáng băng, mũi tên bay lên), 【Chiến Lực Vô Song】 (Top Lực Chiến: lửa bốc, sét đỏ, đao chéo), 【Đồ Long Diệt Ma】 (Top Săn Boss: sừng quỷ, lửa tím, vết vuốt), 【Phú Quý Vô Biên】 (Top Nạp: mưa đồng vàng, kim cương, thỏi nguyên bảo). Hết hạn tự trả lại danh hiệu cũ.',
       '🏆 Đua Top Tuần: 4 bảng Top Cấp Độ, Top Lực Chiến, Top Săn Boss, Top Nạp Tuần. 00:00 Thứ 2 tự trao thưởng top 10 mỗi bảng (hạng 1: 500 Nguyên Bảo + 2 Rương Thủ Lĩnh + 3 Thiên Tinh Thạch, hạng 2: 300, hạng 3: 200, hạng 4–10: 50 Nguyên Bảo + 2 Rương Bí Ẩn). Xem top 3, hạng của mình và đếm ngược ngay trong popup khi vào game.',

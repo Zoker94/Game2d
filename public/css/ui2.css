@@ -836,3 +836,12 @@ body.touch .lm-list { width: 86px; }
 #fish-focus.bite .ff-t, #fish-focus.bite .ff-b { height: 13vh; }
 #fish-focus.fight .ff-v { animation: ffBeat 1.4s ease-in-out infinite; }
 @keyframes ffBeat { 50% { opacity: .55; } }
+/* chế độ tập trung câu cá: chỉ mờ dần ở mép trên / dưới (càng sát mép càng tối), không còn dải đen cứng */
+#fish-focus .ff-t, #fish-focus .ff-b { height: 22vh; transform: none; opacity: 0; box-shadow: none; transition: opacity .4s ease; }
+#fish-focus .ff-t { background: linear-gradient(to bottom, rgba(0,0,0,.82), rgba(0,0,0,.45) 40%, rgba(0,0,0,0)); }
+#fish-focus .ff-b { background: linear-gradient(to top, rgba(0,0,0,.82), rgba(0,0,0,.45) 40%, rgba(0,0,0,0)); }
+#fish-focus.on .ff-t, #fish-focus.on .ff-b { opacity: 1; }
+#fish-focus.bite .ff-t, #fish-focus.bite .ff-b { height: 26vh; animation: ffBeat .48s ease-in-out infinite; }
+#fish-focus.fight .ff-t, #fish-focus.fight .ff-b { animation: ffBeat 1.4s ease-in-out infinite; }
+#fish-focus .ff-v { display: none; }
+@keyframes ffBeat { 50% { opacity: .7; } }
