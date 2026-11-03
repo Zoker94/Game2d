@@ -28,7 +28,7 @@
           <div><span>Nhận được</span><b style="color:#7fd0ff">💎 ${fmt(o.knb)} Nguyên Bảo</b></div>
         </div>
         <div class="warn small">⚠ Ghi ĐÚNG nội dung <b>${esc(o.code)}</b> và ĐÚNG số tiền. Sai nội dung sẽ không đối chiếu được đơn.</div>
-        <div class="small muted">Chuyển xong, Nguyên Bảo sẽ được cộng khi quản trị viên xác nhận (thường trong vài phút – vài giờ). Bạn sẽ nhận thông báo trong game, kể cả khi đang offline vẫn được cộng.</div>
+        <div class="small muted">${d.auto ? '⚡ Tự động cộng: chuyển đúng nội dung và đủ tiền thì Nguyên Bảo vào tài khoản sau khoảng 1 phút, không cần chờ duyệt.' : 'Chuyển xong, Nguyên Bảo sẽ được cộng khi quản trị viên xác nhận (thường trong vài phút – vài giờ).'} Bạn sẽ nhận thông báo trong game, kể cả khi đang offline vẫn được cộng.</div>
         <div class="row" style="gap:6px;margin-top:6px"><button class="btn" data-back="1">← Chọn số tiền khác</button><button class="btn red" data-cancel="${esc(o.code)}">Huỷ đơn này</button></div></div>`;
     } else {
       h += `<div class="card"><h4>Chọn số tiền nạp</h4><div class="small muted">Tỉ lệ: <b>1.000đ = ${d.rate} Nguyên Bảo</b> · chuyển khoản ${esc(b.bankName)} qua mã QR</div>

@@ -383,6 +383,44 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     db.markDirty(); db.log('admin', `${req.admin} sửa tài khoản nhận nạp tiền`);
     res.json({ ok: true, bank: world.topup.bank });
   });
+  // ----- Tự động duyệt nạp tiền: webhook từ SePay / Casso (không cần đăng nhập quản trị, xác thực bằng khoá bí mật) -----
+  const hookOk = (got) => {
+    const h = world.topup.hook, key = String(h.key || process.env.TOPUP_HOOK_KEY || '');
+    if (!h.on || key.length < 16) return false;
+    const a = Buffer.from(String(got || '')), b = Buffer.from(key);
+    return a.length === b.length && require('crypto').timingSafeEqual(a, b);
+  };
+  // SePay: Cấu hình webhook, chứng thực "API Key" -> header  Authorization: Apikey <khoá>
+  app.post('/api/topup/sepay', (req, res) => {
+    const m = /^Apikey\s+(.+)$/i.exec(String(req.headers.authorization || ''));
+    if (!hookOk(m && m[1].trim())) return res.status(401).json({ success: false });
+    const b = req.body || {};
+    if (b.transferType && b.transferType !== 'in') return res.json({ success: true });   // tiền ra: bỏ qua
+    world.topup.autoMatch({ tx: 'sepay:' + b.id, amount: b.transferAmount, content: [b.content, b.description, b.code].filter(Boolean).join(' '), src: 'SePay' });
+    res.json({ success: true });
+  });
+  // Casso: webhook có "Secure Token" -> header  secure-token: <khoá>
+  app.post('/api/topup/casso', (req, res) => {
+    if (!hookOk(req.headers['secure-token'])) return res.status(401).json({ error: 1 });
+    const list = Array.isArray(req.body && req.body.data) ? req.body.data : [];
+    for (const t of list) if (+t.amount > 0) world.topup.autoMatch({ tx: 'casso:' + (t.id || t.tid), amount: t.amount, content: t.description, src: 'Casso' });
+    res.json({ error: 0 });
+  });
+  app.get('/api/admin/topuphook', auth, (req, res) => {
+    if (!req.isOwner) return res.status(403).json({ error: 'Chỉ chủ server' });
+    const h = world.topup.hook;
+    res.json({ on: !!h.on, key: h.key || '', miss: (db.data.topupMiss || []).slice(0, 30) });
+  });
+  app.post('/api/admin/topuphook', auth, (req, res) => {
+    if (!req.isOwner) return res.status(403).json({ error: 'Chỉ chủ server' });
+    const b = req.body || {}, h = Object.assign({}, world.topup.hook);
+    if (b.newKey) h.key = require('crypto').randomBytes(18).toString('hex');
+    if (b.on != null) h.on = !!b.on;
+    if (h.on && !(h.key && h.key.length >= 16)) h.key = require('crypto').randomBytes(18).toString('hex');
+    db.data.config.topupHook = h; db.markDirty();
+    db.log('admin', `${req.admin} ${b.newKey ? 'đổi khoá' : h.on ? 'bật' : 'tắt'} tự động duyệt nạp tiền`);
+    res.json({ ok: true, on: !!h.on, key: h.key || '' });
+  });
   app.get('/api/admin/giftcodes', auth, (req, res) => res.json(Object.entries(db.data.giftcodes).map(([code, g]) => ({ code, ...g, used: g.usedBy.length, usedBy: undefined }))));
   app.post('/api/admin/giftcodes', auth, (req, res) => {
     const b = req.body || {};

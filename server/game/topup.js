@@ -31,7 +31,7 @@ class Topup {
   view(p) {
     this.expire();
     const b = this.bank;
-    return { bank: { bin: b.bin, bankName: b.bankName, acc: b.acc, holder: b.holder }, rate: b.rate, min: b.min, max: b.max, presets: PRESETS,
+    return { bank: { bin: b.bin, bankName: b.bankName, acc: b.acc, holder: b.holder }, auto: !!(this.hook.on && this.hook.key), rate: b.rate, min: b.min, max: b.max, presets: PRESETS,
       orders: this.mine(p.userId).slice(0, 15).map(o => ({ code: o.code, amount: o.amount, knb: o.knb, at: o.at, status: o.status, doneAt: o.doneAt || 0, note: o.note || '' })) };
   }
   action(p, d) {
@@ -57,6 +57,38 @@ class Topup {
     this.db.markDirty();
     this.db.log('topup', `${p.c.name} tạo đơn nạp ${code}: ${amount.toLocaleString('vi-VN')}đ -> ${o.knb} Nguyên Bảo`);
     p.socket.emit('topup', Object.assign(this.view(p), { open: code }));
+  }
+
+  // ---------- tự động duyệt (webhook SePay / Casso báo tiền về) ----------
+  // Nội dung chuyển khoản có mã đơn (VLxxxxxx) -> tìm đơn -> đủ tiền thì cộng ngay. Thiếu tiền: giữ đơn chờ, ghi chú cho chủ server.
+  // Giao dịch không khớp đơn nào được lưu lại (trang quản trị › Nạp tiền) để đối chiếu tay.
+  get hook() { return this.db.data.config.topupHook || {}; }
+  autoMatch({ tx, amount, content, src }) {
+    const D = this.db.data;
+    D.topupTx = D.topupTx || {};
+    tx = String(tx || ''); amount = Math.round(+amount || 0);
+    if (!tx || !(amount > 0)) return { ok: false, why: 'bad' };
+    if (D.topupTx[tx]) return { ok: true, dup: true };   // ngân hàng / dịch vụ gửi lại cùng giao dịch
+    D.topupTx[tx] = Date.now();
+    const keys = Object.keys(D.topupTx); if (keys.length > 5000) for (const k of keys.slice(0, keys.length - 4000)) delete D.topupTx[k];
+    const raw = String(content || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const codes = raw.match(/VL[A-HJ-NP-Z2-9]{6}/g) || [];
+    const o = codes.map(c => this.orders[c]).find(Boolean);
+    const note = (why) => {
+      D.topupMiss = D.topupMiss || [];
+      D.topupMiss.unshift({ at: Date.now(), tx, amount, content: String(content || '').slice(0, 160), src, why });
+      D.topupMiss.length = Math.min(D.topupMiss.length, 100);
+      this.db.markDirty();
+      this.db.log('topup', `Tiền về không tự duyệt được (${why}): ${amount.toLocaleString('vi-VN')}đ – "${String(content || '').slice(0, 80)}" [${src}]`);
+      return { ok: true, matched: false, why };
+    };
+    if (!o) return note('không có mã đơn');
+    if (o.status === 'done') return note(`đơn ${o.code} đã cộng trước đó`);
+    if (amount < o.amount) { o.note = `Chuyển thiếu: nhận ${amount.toLocaleString('vi-VN')}đ`; return note(`đơn ${o.code} chuyển thiếu`); }
+    if (amount > o.amount) { o.note = `Chuyển dư: nhận ${amount.toLocaleString('vi-VN')}đ`; o.amount = amount; o.knb = this.knbOf(amount); }   // chuyển dư: cộng theo số tiền thật
+    if (o.status !== 'pending') o.status = 'pending';   // đã huỷ / quá hạn / từ chối nhưng tiền vẫn về: vẫn cộng
+    const r = this.approve(o.code, 'tự động (' + src + ')');
+    return r.ok ? { ok: true, matched: true, code: o.code } : note(r.error);
   }
 
   // ---------- trang quản trị ----------

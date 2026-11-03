@@ -186,6 +186,23 @@
       }
       render();
     },
+    // tự động duyệt: webhook SePay / Casso báo tiền về -> khớp mã đơn trong nội dung -> cộng Nguyên Bảo
+    async topupHook(card, el) {
+      if (!card) return;
+      const h = await api('/topuphook'), base = location.origin;
+      card.innerHTML = `<h3>⚡ Tự động duyệt <span style="color:${h.on ? '#4ade80' : '#ff9a7a'}">${h.on ? '● ĐANG BẬT' : '○ ĐANG TẮT'}</span></h3>
+        <p class="muted small">Dịch vụ SePay (sepay.vn) hoặc Casso (casso.vn) đọc giao dịch tài khoản ngân hàng, tiền về là gọi sang máy chủ game. Nội dung có mã đơn (VLxxxxxx) và đủ tiền thì Nguyên Bảo được cộng ngay, không cần bấm Duyệt. Chuyển thiếu / sai nội dung thì vẫn chờ bạn duyệt tay.</p>
+        <div class="row"><button class="btn ${h.on ? '' : 'primary'}" id="hk-on">${h.on ? 'Tắt tự động duyệt' : 'Bật tự động duyệt'}</button><button class="btn" id="hk-key">Tạo khoá mới</button></div>
+        ${h.key ? `<table>
+          <tr><td>Khoá bí mật</td><td><code>${esc(h.key)}</code> <button class="btn" data-cp="${esc(h.key)}">Chép</button></td></tr>
+          <tr><td>SePay – URL webhook</td><td><code>${esc(base)}/api/topup/sepay</code> <button class="btn" data-cp="${esc(base)}/api/topup/sepay">Chép</button><div class="muted small">Kiểu chứng thực: <b>API Key</b> – dán khoá bí mật ở trên. Sự kiện: <b>Có tiền vào</b>.</div></td></tr>
+          <tr><td>Casso – URL webhook</td><td><code>${esc(base)}/api/topup/casso</code> <button class="btn" data-cp="${esc(base)}/api/topup/casso">Chép</button><div class="muted small">Ô <b>Secure Token</b>: dán khoá bí mật ở trên.</div></td></tr></table>` : ''}
+        <h4>Tiền về nhưng không tự duyệt được (${h.miss.length})</h4>
+        <table><tr><th>Lúc</th><th>Số tiền</th><th>Nội dung chuyển khoản</th><th>Lý do</th></tr>${h.miss.map(m => `<tr><td>${dt(m.at)}</td><td><b>${fmt(m.amount)}đ</b></td><td>${esc(m.content)}<div class="muted small">${esc(m.src)}</div></td><td>${esc(m.why)}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">Không có</td></tr>'}</table>`;
+      card.querySelector('#hk-on').onclick = async () => { await run(() => api('/topuphook', { on: !h.on }), h.on ? 'Đã tắt' : 'Đã bật'); VIEWS.topupHook(card, el); };
+      card.querySelector('#hk-key').onclick = async () => { if (h.key && !confirm('Tạo khoá mới? Khoá cũ hết hiệu lực – phải dán khoá mới vào SePay / Casso.')) return; await run(() => api('/topuphook', { newKey: 1 }), 'Đã tạo khoá mới'); VIEWS.topupHook(card, el); };
+      card.querySelectorAll('[data-cp]').forEach(b => b.onclick = () => { try { navigator.clipboard.writeText(b.dataset.cp); b.textContent = 'Đã chép'; } catch (e) { prompt('Chép:', b.dataset.cp); } });
+    },
     async topups(el, st) {
       st = st || el._st || 'pending'; el._st = st;
       const d = await api('/topups?status=' + st), b = d.bank;
@@ -197,6 +214,7 @@
           <label>NB / 1.000đ<input id="bk-rate" type="number" step="0.1" value="${b.rate}" style="width:70px"></label><label>Tối thiểu<input id="bk-min" type="number" value="${b.min}" style="width:100px"></label><label>Tối đa<input id="bk-max" type="number" value="${b.max}" style="width:110px"></label>
           <button class="btn" id="bk-save">Lưu</button></div><p class="muted small">MB Bank BIN 970422 · Vietcombank 970436 · Techcombank 970407 · BIDV 970418 · VietinBank 970415 · ACB 970416</p>`
         : `<p>${esc(b.bankName)} · ${esc(b.acc)} · ${esc(b.holder)} · 1.000đ = ${b.rate} NB</p><p class="muted">Chỉ chủ server được duyệt đơn và sửa tài khoản.</p>`}</div>
+        ${d.owner ? '<div class="card" id="hook-card"><h3>⚡ Tự động duyệt</h3><p class="muted">Đang tải…</p></div>' : ''}
         <div class="card"><h3>Đơn nạp</h3><div class="row">${Object.entries({ pending: 'Chờ duyệt', done: 'Đã cộng', rejected: 'Từ chối', expired: 'Quá hạn', all: 'Tất cả' }).map(([k, n]) => `<button class="btn ${k === st ? 'primary' : ''}" data-st="${k}">${n}</button>`).join('')}</div>
         <p class="muted small">Đối chiếu sao kê ngân hàng: đúng <b>số tiền</b> và <b>nội dung</b> (mã đơn) thì bấm Duyệt – Nguyên Bảo cộng ngay cho người chơi (kể cả đang offline).${st === 'done' || st === 'all' ? ` Tổng đã cộng trong danh sách: <b>${fmt(total)}đ</b>.` : ''}</p>
         <table><tr><th>Mã đơn / nội dung CK</th><th>Nhân vật</th><th>Số tiền</th><th>Nguyên Bảo</th><th>Tạo lúc</th><th>Trạng thái</th><th></th></tr>
@@ -206,6 +224,7 @@
       el.querySelectorAll('[data-st]').forEach(x => x.onclick = () => VIEWS.topups(el, x.dataset.st));
       el.querySelectorAll('[data-ok]').forEach(x => x.onclick = async () => { const o = d.list.find(y => y.code === x.dataset.ok); if (!confirm(`Duyệt đơn ${o.code}: ${fmt(o.amount)}đ -> +${o.knb} Nguyên Bảo cho ${o.name}?\nChỉ duyệt khi đã thấy tiền về đúng số tiền và nội dung.`)) return; await run(() => api('/topups/' + o.code + '/approve', {}), 'Đã cộng Nguyên Bảo'); VIEWS.topups(el); });
       el.querySelectorAll('[data-no]').forEach(x => x.onclick = async () => { const note = prompt('Lý do từ chối (người chơi sẽ thấy):', 'Chưa nhận được tiền'); if (note == null) return; await run(() => api('/topups/' + x.dataset.no + '/reject', { note }), 'Đã từ chối'); VIEWS.topups(el); });
+      if (d.owner) VIEWS.topupHook($('hook-card'), el);
       const sv = $('bk-save'); if (sv) sv.onclick = async () => { await run(() => api('/bank', { bin: $('bk-bin').value, bankName: $('bk-name').value, acc: $('bk-acc').value, holder: $('bk-holder').value, rate: $('bk-rate').value, min: $('bk-min').value, max: $('bk-max').value }), 'Đã lưu'); VIEWS.topups(el); };
     },
     async giftcodes(el) {
