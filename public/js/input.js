@@ -378,6 +378,19 @@
     openTypeOv(t);
   });
   Input.closeTypeOv = closeTypeOv;
+  // Điện thoại: gõ chữ xong, bàn phím đóng nhưng trình duyệt để nguyên trang bị cuộn lệch (giao diện lặp đôi,
+  // vùng đen, chạm lệch chỗ – trông như đơ máy). Trong game trang không bao giờ được cuộn: kéo về 0 khi không còn gõ.
+  const unpan = () => {
+    if (!Input.inGame) return;
+    const a = document.activeElement; if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) return;
+    if (window.scrollX || window.scrollY) window.scrollTo(0, 0);
+    for (const el of [document.documentElement, document.body]) if (el && (el.scrollTop || el.scrollLeft)) { el.scrollTop = 0; el.scrollLeft = 0; }
+  };
+  const unpanSoon = () => { setTimeout(unpan, 120); setTimeout(unpan, 450); };
+  document.addEventListener('focusout', unpanSoon);
+  window.addEventListener('scroll', unpanSoon, { passive: true });
+  if (window.visualViewport) { visualViewport.addEventListener('resize', unpanSoon); visualViewport.addEventListener('scroll', unpanSoon); }
+  setInterval(unpan, 1500);
   const relayout = () => setTimeout(() => Input.applyLayout(), 60);
   window.addEventListener('resize', relayout);
   window.addEventListener('orientationchange', relayout);
