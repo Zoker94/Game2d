@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🍲 Ăn thêm cùng một món thì cộng dồn thời gian (tối đa 8 giờ); ăn món khác thì thay món đang hưởng',
       '🎣 Vẽ lại cần câu: cần trúc thuôn nhỏ dần có đốt, cán quấn dây đỏ, ống cuộn dây có tay quay, khoen dẫn dây; cần cong tự nhiên khi chờ cá, oằn mạnh và rung khi cá cắn câu (dây căng), thêm cảnh kéo cá vọt khỏi mặt nước. Người xung quanh cũng thấy cần oằn',
       '🎨 Vẽ hình riêng cho 3 NPC mới: Đầu Bếp Tửu Lâu (áo chàm, mũ trắng, tạp dề, muôi), Thương Nhân Bí Ẩn (áo choàng tím, mũ trùm, mạng che mặt, đèn lồng tím) và Thành Quan Lâm An (quan phục đỏ, mũ cánh chuồn, hốt ngọc)',
       '🎣 Câu cá & nấu ăn: mua Cần Câu + Mồi Câu ở Đầu Bếp Tửu Lâu (Tương Dương), đứng sát mép sông hồ ở bất kỳ bản đồ nào (kể cả thành, khu VIP) rồi bấm 🎣. Phao chìm "Cá cắn câu!" thì bấm GIẬT CẦN (hoặc phím Space) – có chế độ Câu liên tục, có Vé Treo Máy thì tự giật. 7 loại cá (Kim Long Ngư cực hiếm), có cả rác và rương báu; bãi cấp cao và ban đêm dễ ra cá hiếm; lưu kỷ lục cân nặng. Mang cá về Đầu Bếp nấu 5 món ăn: +10% đến +25% kinh nghiệm, thêm chút công / thủ / máu (tối đa +5%) trong 30-60 phút',

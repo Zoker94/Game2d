@@ -187,7 +187,7 @@ const CONSUMABLES = [
   { id: 'fish_tam', name: 'Tầm Long Ngư', desc: 'Cá quý cực hiếm. Nấu Tầm Long Ngư Thang hoặc bán được giá cao.', price: 4000, icon: 'fish_e', material: true, rarity: 'epic' },
   { id: 'fish_kimlong', name: 'Kim Long Ngư', desc: 'Cá thần vảy vàng trong truyền thuyết – vạn lần câu mới gặp. Nấu Kim Long Yến (món mạnh nhất) hoặc bán giá rất cao.', price: 30000, icon: 'fish_l', material: true, rarity: 'legendary' },
   { id: 'fish_junk', name: 'Giày Rách', desc: 'Câu phải rác… bán cho NPC được vài đồng.', price: 5, icon: 'junk', material: true },
-  { id: 'dish_nuong', name: 'Cá Nướng Than Hồng', desc: 'Ăn: +10% kinh nghiệm trong 30 phút (mỗi lúc chỉ 1 món ăn, ăn món mới thay món cũ).', effect: { food: 'dish_nuong' }, price: 400, icon: 'dish1' },
+  { id: 'dish_nuong', name: 'Cá Nướng Than Hồng', desc: 'Ăn: +10% kinh nghiệm trong 30 phút. Ăn thêm cùng món thì cộng dồn thời gian (tối đa 8 giờ); ăn món khác thì thay món cũ.', effect: { food: 'dish_nuong' }, price: 400, icon: 'dish1' },
   { id: 'dish_canh', name: 'Canh Cá Chua', desc: 'Ăn: +3% công, +3% thủ trong 30 phút.', effect: { food: 'dish_canh' }, price: 1500, icon: 'dish2', rarity: 'rare' },
   { id: 'dish_lau', name: 'Lẩu Cá Thập Cẩm', desc: 'Ăn: +15% kinh nghiệm, +4% sinh lực tối đa trong 45 phút.', effect: { food: 'dish_lau' }, price: 4000, icon: 'dish3', rarity: 'rare' },
   { id: 'dish_tam', name: 'Tầm Long Ngư Thang', desc: 'Ăn: +18% kinh nghiệm, +2% công trong 45 phút.', effect: { food: 'dish_tam' }, price: 9000, icon: 'dish4', rarity: 'epic' },

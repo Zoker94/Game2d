@@ -9,6 +9,7 @@ const { MAPS, TILE } = require('../data/maps');
 const { ITEMS } = require('../data/items');
 
 const WATER = 2, ROD = 'can_cau', BAIT = 'moi_cau';
+const FOOD_MAX = 8 * 3600e3;   // món ăn cộng dồn tối đa 8 giờ
 const WAIT = [5000, 12000], BITE_MS = 1600, AUTO_OK = 0.8;
 // cá: id, nhóm, cân nặng (kg)
 const FISH = {
@@ -176,9 +177,14 @@ class Fishing {
   // ăn (dùng vật phẩm món ăn): thay món đang có
   eat(p, id) {
     const r = DISHES[id]; if (!r) return false;
-    p.c.food = { id, until: Date.now() + r.min * 60000 };
-    p._foodOn = true; this.w.recalc(p);
-    this.toast(p, `🍲 Đã ăn ${ITEMS[id].name}: ${this.buffText(r.buff)} trong ${r.min} phút`, 'reward');
+    const now = Date.now(), cur = p.c.food && p.c.food.until > now ? p.c.food : null;
+    if (cur && cur.id === id) {   // cùng món: cộng dồn thời gian (tối đa 8 giờ)
+      if (cur.until - now >= FOOD_MAX - 60000) { this.toast(p, `🍲 ${ITEMS[id].name} đã cộng dồn tối đa 8 giờ`, 'error'); return false; }
+      cur.until = Math.min(now + FOOD_MAX, cur.until + r.min * 60000);
+    } else p.c.food = { id, until: now + r.min * 60000 };   // món khác: thay món cũ
+    const left = Math.round((p.c.food.until - now) / 60000);
+    p._foodOn = true; this.w.recalc(p); p.dirtyMe = true;
+    this.toast(p, `🍲 Đã ăn ${ITEMS[id].name}: ${this.buffText(r.buff)} – còn ${left >= 60 ? Math.floor(left / 60) + ' giờ ' + (left % 60) + ' phút' : left + ' phút'}${cur && cur.id !== id ? ` (thay ${ITEMS[cur.id].name})` : ''}`, 'reward');
     return true;
   }
   buffText(b) { return [b.exp ? `+${Math.round(b.exp * 100)}% kinh nghiệm` : '', b.atk ? `+${Math.round(b.atk * 100)}% công` : '', b.def ? `+${Math.round(b.def * 100)}% thủ` : '', b.hp ? `+${Math.round(b.hp * 100)}% máu tối đa` : ''].filter(Boolean).join(', '); }

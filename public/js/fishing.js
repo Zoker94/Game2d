@@ -196,7 +196,7 @@
   // ---------- 🍲 Nấu ăn (tab ở Đầu Bếp Tửu Lâu) ----------
   function cookHtml() {
     const d = cookData; if (!d) return '<p class="muted">Đang tải...</p>';
-    let h = `<div class="small muted">Mang cá câu được tới đây nấu thành món ăn. Ăn (Sử dụng trong túi đồ) để nhận hiệu quả; mỗi lúc chỉ 1 món – ăn món mới thay món cũ.</div>`;
+    let h = `<div class="small muted">Mang cá câu được tới đây nấu thành món ăn. Ăn (Sử dụng trong túi đồ) để nhận hiệu quả. Ăn thêm cùng món thì cộng dồn thời gian (tối đa 8 giờ); ăn món khác thì thay món cũ.</div>`;
     if (d.food) h += `<div class="card ck-cur">🍲 Đang hưởng: <b>${UI.esc(d.food.name)}</b> · còn ${Math.ceil((d.food.until - Date.now()) / 60000)} phút</div>`;
     h += '<div class="list">' + d.dishes.map(x => {
       const can = x.need.every(n => n.have >= n.q) && G.me.gold >= x.gold;
