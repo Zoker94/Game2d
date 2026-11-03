@@ -87,11 +87,11 @@ class Treasure {
     p.dirtyMe = true; this.w.db.markDirty();
     this.toast(p, '📜 Ghép thành công Tàng Bảo Đồ! Sử dụng để xem câu đố và tìm nơi chôn kho báu.', 'reward');
     this.w.db.log('item', `${c.name} ghép Tàng Bảo Đồ`);
-    this.view(p);
+    this.view(p, { wid: `dv_wp_${c.cls}` });   // máy khách chiếu đoạn phim giới thiệu bản đồ & Thần Khí rồi mở câu đố
   }
-  view(p) {
+  view(p, cut) {
     const list = this.sync(p.c);
-    p.socket.emit('treasure', { list: list.map((t, i) => Object.assign({ i }, this.riddle(t))), near: p._tbNear || null });
+    p.socket.emit('treasure', { list: list.map((t, i) => Object.assign({ i }, this.riddle(t))), near: p._tbNear || null, cut: cut || null });
   }
 
   // ---------- tìm & đào ----------

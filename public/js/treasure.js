@@ -38,7 +38,11 @@
     digTimer = setTimeout(stop, (d.ms || 3000) + 1500);
   }
   function bind(s) {
-    s.on('treasure', d => { data = d; if (d.near !== undefined) near = d.near; if (UI.panelName() === 'treasure') UI.refreshPanel(); else UI.openPanel('treasure'); });
+    s.on('treasure', d => {
+      data = d; if (d.near !== undefined) near = d.near;
+      const show = () => { if (UI.panelName() === 'treasure') UI.refreshPanel(); else UI.openPanel('treasure'); };
+      if (d.cut && window.TbCut) { if (UI.panelName()) UI.closePanel(); TbCut.play(d.cut, show); } else show();   // vừa ghép xong: chiếu phim trước
+    });
     s.on('tbNear', d => {
       const was = near && near.lv; near = d; digBtn();
       if (d && d.lv !== was) UI.toast(d.lv >= 2 ? '✨ Tàng Bảo Đồ phát sáng – kho báu ngay dưới chân bạn! Bấm ⛏ Đào.' : '🔍 Tàng Bảo Đồ rung lên – kho báu ở rất gần…', 'reward');
