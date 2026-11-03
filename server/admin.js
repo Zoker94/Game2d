@@ -420,6 +420,27 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   });
 
   // ----- Dọn dẹp dữ liệu -----
+  // ----- Reset trước khi mở máy chủ (chỉ chủ server) -----
+  app.get('/api/admin/launch-reset', auth, (req, res) => res.json(Object.assign(world.cleanup.launchPreview(), { owner: req.isOwner })));
+  app.get('/api/admin/backup', auth, (req, res) => {   // tải bản sao lưu toàn bộ dữ liệu
+    if (!req.isOwner) return res.status(403).json({ error: 'Chỉ chủ server' });
+    res.setHeader('Content-Disposition', `attachment; filename="volam-backup-${new Date().toISOString().slice(0, 10)}.json"`);
+    res.json(db.data);
+  });
+  app.post('/api/admin/launch-reset', auth, async (req, res) => {
+    if (!req.isOwner) return res.status(403).json({ error: 'Chỉ chủ server được reset máy chủ' });
+    if ((req.body && req.body.confirm) !== 'XOA HET') return res.status(400).json({ error: 'Gõ đúng XOA HET để xác nhận' });
+    // đá mọi người chơi đang online (trừ quản trị viên) rồi mới xoá
+    for (const p of [...world.players.values()]) {
+      if (world.cleanup.launchKeep(p.user)) continue;
+      try { p.socket.emit('kicked', { reason: 'Máy chủ đang được làm mới để chuẩn bị mở chính thức. Hẹn gặp lại các đại hiệp!' }); world.removePlayer(p); p.socket.disconnect(true); } catch (e) { }
+    }
+    const r = world.cleanup.launchReset(req.admin);
+    try { await db.flush(); } catch (e) { return res.status(500).json({ error: 'Lưu dữ liệu thất bại: ' + e.message }); }
+    res.json(Object.assign(r, { restart: true }));
+    // khởi động lại tiến trình (pm2 tự chạy lại) để mọi dữ liệu trong bộ nhớ (chợ, tổ đội, bang, người online) sạch hẳn
+    setTimeout(() => { for (const p of [...world.players.values()]) try { world.removePlayer(p); } catch (e) { } db.flush().finally(() => process.exit(0)); }, 1500);
+  });
   app.get('/api/admin/cleanup', auth, (req, res) => res.json(world.cleanup.preview(Math.max(1, +req.query.days || 180))));
   app.post('/api/admin/cleanup', auth, (req, res) => {
     const C = world.cleanup, b = req.body || {}, days = Math.max(0, +b.days || 0);

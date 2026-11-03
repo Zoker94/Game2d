@@ -68,4 +68,49 @@ class Cleanup {
   }
 }
 
+// ---------- Reset trước khi mở máy chủ chính thức ----------
+// Xoá TOÀN BỘ tài khoản người chơi và mọi thứ liên quan (bang hội, bạn bè, sư đồ, chợ, đơn nạp, nhật ký chat, báo danh sự kiện,
+// chủ thành, Minh Chủ, thống kê thuế...). Chỉ giữ tài khoản chủ server + quản trị viên (GM) cùng nhân vật của họ, tài khoản
+// đăng nhập trang quản trị, cấu hình máy chủ và gift code (xoá danh sách người đã nhận). Trước khi xoá ghi bản sao lưu ra file.
+Cleanup.prototype.launchKeep = function (u) { return isOwner(u) || !!u.isAdmin; };
+Cleanup.prototype.launchPreview = function () {
+  const users = Object.values(this.db.data.users), keep = users.filter(u => this.launchKeep(u));
+  return { total: users.length, remove: users.length - keep.length, keep: keep.map(u => ({ id: u.id, email: u.email || u.username || '', name: u.character ? u.character.name : '(chưa có nhân vật)', owner: isOwner(u) })),
+    guilds: Object.keys(this.db.data.guilds || {}).length, topups: Object.keys(this.db.data.topups || {}).length, chat: (this.db.data.chatLogs || []).length };
+};
+Cleanup.prototype.backupFile = function (tag) {
+  const fs = require('fs'), path = require('path');
+  const dir = path.join(process.env.DATA_DIR || path.join(__dirname, '..', '..', 'data'), 'backups');
+  fs.mkdirSync(dir, { recursive: true });
+  const f = path.join(dir, `${tag}-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+  fs.writeFileSync(f, JSON.stringify(this.db.data));
+  return f;
+};
+Cleanup.prototype.launchReset = function (by) {
+  const d = this.db.data;
+  const file = this.backupFile('truoc-khi-mo-may-chu');
+  const keep = {};
+  for (const [id, u] of Object.entries(d.users)) if (this.launchKeep(u)) keep[id] = u;
+  const removed = Object.keys(d.users).length - Object.keys(keep).length;
+  // nhân vật giữ lại: cắt mọi liên kết tới người / bang đã xoá
+  for (const u of Object.values(keep)) {
+    delete u.ref;
+    const c = u.character; if (!c) continue;
+    c.guildId = null; c.friends = {}; c.master = null; c.disciples = {}; c.mentorCd = 0;
+    c.mailbox = (c.mailbox || []);
+  }
+  // dữ liệu chung: giữ cấu hình, tài khoản quản trị, gift code; còn lại làm mới hết
+  const KEEP_KEYS = new Set(['users', 'admins', 'adminSessions', 'config', 'giftcodes', 'logs', 'stats', 'sessions']);
+  for (const k of Object.keys(d)) if (!KEEP_KEYS.has(k)) delete d[k];
+  for (const id of Object.keys(d.users)) if (!keep[id]) delete d.users[id];
+  for (const [t, s] of Object.entries(d.sessions || {})) if (!keep[s.userId]) delete d.sessions[t];
+  d.guilds = {}; d.chatLogs = [];
+  for (const g of Object.values(d.giftcodes || {})) g.usedBy = [];
+  d.stats = { created: Date.now(), peakOnline: 0 };
+  d.logs = [];
+  this.db.log('admin', `[MỞ MÁY CHỦ] ${by} đã xoá ${removed} tài khoản người chơi và toàn bộ dữ liệu liên quan; giữ ${Object.keys(keep).length} tài khoản quản trị. Sao lưu: ${file}`);
+  this.db.markDirty();
+  return { removed, kept: Object.keys(keep).length, backup: file };
+};
+
 module.exports = { Cleanup };

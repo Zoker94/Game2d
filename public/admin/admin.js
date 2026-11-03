@@ -56,7 +56,7 @@
   function openModal(title, html) { $('m-title').textContent = title; $('m-body').innerHTML = html; $('modal').classList.remove('hidden'); }
   function closeModal() { $('modal').classList.add('hidden'); }
 
-  const TITLES = { dashboard: 'Tổng quan', users: 'Quản lý người chơi', events: 'Sự kiện & Boss', broadcast: 'Gửi thông báo', guilds: 'Bang hội', giftcodes: 'Gift code', topups: 'Nạp tiền (duyệt đơn)', shops: 'Cửa hàng NPC', enhance: 'Tỉ lệ cường hoá', bosscfg: 'Boss & đồ rơi', config: 'Cấu hình server', chat: 'Nhật ký chat', logs: 'Nhật ký hệ thống', cleanup: 'Dọn dẹp dữ liệu', account: 'Tài khoản quản trị' };
+  const TITLES = { dashboard: 'Tổng quan', users: 'Quản lý người chơi', events: 'Sự kiện & Boss', broadcast: 'Gửi thông báo', guilds: 'Bang hội', giftcodes: 'Gift code', topups: 'Nạp tiền (duyệt đơn)', shops: 'Cửa hàng NPC', enhance: 'Tỉ lệ cường hoá', bosscfg: 'Boss & đồ rơi', config: 'Cấu hình server', chat: 'Nhật ký chat', logs: 'Nhật ký hệ thống', cleanup: 'Dọn dẹp dữ liệu', launch: 'Reset dữ liệu trước khi mở máy chủ', account: 'Tài khoản quản trị' };
   async function show(v) {
     view = v;
     document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.dataset.v === v));
@@ -382,6 +382,35 @@
       await load();
     },
 
+    async launch(el) {
+      const d = await api('/launch-reset');
+      el.innerHTML = `<div class="card" style="border-color:#c0392b"><h3>🚀 Xoá toàn bộ dữ liệu người chơi để mở máy chủ chính thức</h3>
+        <p>Sẽ <b style="color:#ff6b6b">XOÁ ${fmt(d.remove)} / ${fmt(d.total)} tài khoản</b> cùng mọi thứ liên quan: nhân vật, đồ đạc, bang hội (${fmt(d.guilds)}), bạn bè, sư đồ, gian hàng chợ,
+          đơn nạp (${fmt(d.topups)}), nhật ký chat (${fmt(d.chat)} dòng), báo danh sự kiện, chủ thành, Minh Chủ, bảng xếp hạng, thống kê thuế, nhật ký hệ thống.</p>
+        <p><b>Giữ lại ${d.keep.length} tài khoản quản trị</b> (nhân vật của họ được giữ nguyên, chỉ bỏ bang / bạn bè / sư đồ):</p>
+        <table><tr><th>Tài khoản</th><th>Nhân vật</th><th></th></tr>${d.keep.map(k => `<tr><td>${esc(k.email)}</td><td>${esc(k.name)}</td><td>${k.owner ? '👑 Chủ server' : 'GM'}</td></tr>`).join('')}</table>
+        <p class="muted small">Cũng giữ: tài khoản đăng nhập trang quản trị, cấu hình máy chủ, cửa hàng NPC, tỉ lệ cường hoá, tài khoản nhận nạp tiền, gift code (đặt lại danh sách người đã nhận).
+          Máy chủ tự ghi một bản sao lưu ra file trên VPS trước khi xoá, sau đó tự khởi động lại (mất khoảng 10–20 giây).</p>
+        ${d.owner ? `<div class="row" style="margin:10px 0"><a class="btn" href="/api/admin/backup" id="lr-dl">⬇️ Tải bản sao lưu về máy trước (khuyên dùng)</a></div>
+        <div class="row"><label>Gõ <b>XOA HET</b> để xác nhận<input id="lr-confirm" placeholder="XOA HET" autocomplete="off"></label><button class="btn danger" id="lr-go">🗑️ Xoá toàn bộ & khởi động lại</button></div>`
+        : '<p class="err">Chỉ chủ server (tài khoản Google) mới được thực hiện.</p>'}</div>`;
+      const dl = $('lr-dl');
+      if (dl) dl.onclick = async e => {   // tải kèm mã đăng nhập quản trị
+        e.preventDefault();
+        const r = await fetch('/api/admin/backup', { headers: { Authorization: 'Bearer ' + token } });
+        if (!r.ok) return toast('Không tải được bản sao lưu', true);
+        const blob = await r.blob(), a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = 'volam-backup-' + new Date().toISOString().slice(0, 10) + '.json'; a.click();
+        toast('Đã tải bản sao lưu');
+      };
+      const go = $('lr-go');
+      if (go) go.onclick = async () => {
+        if ($('lr-confirm').value.trim() !== 'XOA HET') return toast('Gõ đúng XOA HET để xác nhận', true);
+        if (!confirm(`XOÁ VĨNH VIỄN ${d.remove} tài khoản người chơi và mọi dữ liệu liên quan?\nKhông thể hoàn tác (chỉ khôi phục được từ bản sao lưu).`)) return;
+        const r = await run(() => api('/launch-reset', { confirm: 'XOA HET' }));
+        if (r) { el.innerHTML = `<div class="card"><h3>✅ Đã xoá ${fmt(r.removed)} tài khoản, giữ ${fmt(r.kept)} tài khoản quản trị</h3><p>Bản sao lưu trên VPS: <code>${esc(r.backup)}</code></p><p>Máy chủ đang khởi động lại, đợi khoảng 20 giây rồi bấm Làm mới.</p></div>`; }
+      };
+    },
     async cleanup(el) {
       const days = +($('cl-days') && $('cl-days').value) || 180;
       const d = await api('/cleanup?days=' + days);
