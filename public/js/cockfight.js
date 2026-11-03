@@ -21,7 +21,7 @@
     ctx.drawImage(im, col * CW, row * CH, CW, CH, -FX * sc, -FY * sc, CW * sc, CH * sc);
     ctx.restore();
   }
-  let data = null, tab = 'coop', tac = 'can', topData = null;
+  let data = null, tab = 'coop', tac = 'can', topData = null, pvpTo = '', pvpStake = 0;
 
   // ---------- bảng Trường Gà ----------
   UI.registerPanel('cockfight', '🐓 Trường Gà', body => {
@@ -53,8 +53,11 @@
         <div class="small muted">Tấn công: +15% công −10% thủ · Phòng thủ: +18% thủ −10% công · Tốc chiến: +15% tốc −5% công thủ.</div>`;
       if (tab === 'pve') h += `<div class="small">Còn <b>${d.pve}</b> trận đấu tập hôm nay.</div><div class="list">${d.tiers.map((t, i) => `<div class="li"><div class="grow"><b>${esc(t.name)}</b> <span class="small muted">gà cấp ${t.lv}</span><div class="sub">Thắng: +${fmt(t.gold)} lượng, +${t.exp} kinh nghiệm cho gà</div></div><button class="btn small primary" data-pve="${i}" ${sel && d.pve > 0 ? '' : 'disabled'}>Đấu</button></div>`).join('')}</div>`;
       else h += `<div class="card"><h4>🤝 Thách đấu người chơi đang online</h4>
-          <div class="row" style="gap:6px;flex-wrap:wrap;align-items:center"><input id="cf-name" placeholder="Tên nhân vật" style="width:150px"><input id="cf-stake" type="number" min="0" step="1000" placeholder="Cược (lượng)" style="width:130px">
-          <button class="btn primary" id="cf-go" ${sel ? '' : 'disabled'}>Gửi lời thách đấu</button></div>
+          <div class="small">1. Chọn đối thủ ở gần (có gà chọi):</div>
+          <div class="cf-near">${(d.near || []).length ? d.near.map(n => `<button class="cf-nb ${pvpTo === n.name ? 'on' : ''}" data-to="${esc(n.name)}"><b>${esc(n.name)}</b><span>${esc(n.rn)} ${'★'.repeat(n.stars)} · cấp ${n.rlv}</span></button>`).join('') : '<span class="small muted">Không có ai có gà ở gần. Rủ bạn tới Trường Gà nhé! <button class="btn small" data-cfo="view">🔄 Tải lại</button></span>'}</div>
+          <div class="small">2. Tiền cược mỗi bên:</div>
+          <div class="cf-near">${[0, 5000, 10000, 50000, 100000, 500000, 1000000].map(v => `<button class="btn small ${pvpStake === v ? 'primary' : ''}" data-stk="${v}">${v ? fmt(v) : 'Không cược'}</button>`).join('')}</div>
+          <button class="btn primary" id="cf-go" ${sel && pvpTo ? '' : 'disabled'}>⚔️ Gửi lời thách đấu${pvpTo ? ' tới ' + esc(pvpTo) : ''}</button>
           <div class="small muted">Hai bên cùng đặt số tiền cược, người thắng nhận 90% tổng cược (10% phí trường gà). Thắng / thua đổi điểm Sư Kê. Người được mời có 30 giây để nhận lời.</div></div>`;
     } else if (tab === 'shop') {
       h += `<div class="small">Ngân lượng: <b>${fmt(d.gold)}</b></div><div class="list">${d.shop.map(s => `<div class="li"><img src="${UI.iconUrl(s.id)}" class="ic" width="32" height="32"><div class="grow"><b>${esc(s.name)}</b> <span class="small">${fmt(s.price)} 💰</span><div class="sub">${esc(s.desc)}</div></div>
@@ -66,7 +69,7 @@
       h += !t ? '<p class="muted">Đang tải…</p>' : t.length ? '<div class="ft-list">' + t.map((r, i) => `<div class="ft-row ${i < 3 ? 'top' + (i + 1) : ''}"><span class="ft-rk">${['🥇', '🥈', '🥉'][i] || i + 1}</span><b class="ft-nm">${esc(r.name)}</b><span class="small">${esc(r.owner)} · ${'★'.repeat(r.stars)} cấp ${r.lv}</span><b class="ft-kg">${r.elo}</b><span class="small muted">${r.win}T ${r.loss}B</span></div>`).join('') + '</div>' : '<p class="small muted">Chưa có trận thách đấu nào.</p>';
     }
     body.innerHTML = h;
-    body.querySelectorAll('[data-cft]').forEach(b => b.onclick = () => { tab = b.dataset.cft; if (tab === 'top') emit({ op: 'top' }); UI.refreshPanel(); });
+    body.querySelectorAll('[data-cft]').forEach(b => b.onclick = () => { tab = b.dataset.cft; if (tab === 'top') emit({ op: 'top' }); if (tab === 'pvp') emit({ op: 'view' }); UI.refreshPanel(); });
     body.querySelectorAll('[data-tac]').forEach(b => b.onclick = () => { tac = b.dataset.tac; UI.refreshPanel(); });
     body.querySelectorAll('[data-cfo]').forEach(b => b.onclick = () => {
       const op = b.dataset.cfo, id = b.dataset.id;
@@ -76,7 +79,9 @@
     });
     body.querySelectorAll('[data-pve]').forEach(b => b.onclick = () => emit({ op: 'pve', tier: +b.dataset.pve, tac }));
     body.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => emit({ op: 'buy', item: b.dataset.buy, n: +b.dataset.n }));
-    const go = body.querySelector('#cf-go'); if (go) go.onclick = () => emit({ op: 'challenge', name: body.querySelector('#cf-name').value.trim(), stake: +body.querySelector('#cf-stake').value || 0, tac });
+    body.querySelectorAll('[data-to]').forEach(b => b.onclick = () => { pvpTo = b.dataset.to; UI.refreshPanel(); });
+    body.querySelectorAll('[data-stk]').forEach(b => b.onclick = () => { pvpStake = +b.dataset.stk; UI.refreshPanel(); });
+    const go = body.querySelector('#cf-go'); if (go) go.onclick = () => emit({ op: 'challenge', name: pvpTo, stake: pvpStake, tac });
     animCards(body);
   }, () => emit({ op: 'view' }));
 
@@ -441,7 +446,7 @@
     box.querySelector('.cfa-close').onclick = close;
     try { GameAudio.sfx(won ? 'enhOk' : 'enhFail'); } catch (e) { }
   }
-  function close() { if (!A) return; A.closed = true; A.el.remove(); A = null; if (G.npcPanelReopen) G.npcPanelReopen(); }
+  function close() { if (!A) return; A.closed = true; A.cv.width = A.cv.height = 1; A.el.remove(); A = null; if (G.npcPanelReopen) G.npcPanelReopen(); }
 
   // ---------- lời thách đấu, gà nở ----------
   function invite(d) {

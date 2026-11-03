@@ -116,8 +116,19 @@ class Cockfight {
       thoc: U.countItem(c, 'thoc'), eggs: Object.fromEntries(Object.keys(R.EGGS).map(k => [k, U.countItem(c, k)])),
       shop: [{ id: 'thoc', name: 'Thóc', price: 300, desc: '+40 thể lực, +15 kinh nghiệm cho gà' }, ...Object.entries(R.EGGS).map(([id, e]) => ({ id, name: e.name, price: e.price, desc: `Nở ngẫu nhiên: thường ${e.rar.common}% · hiếm ${e.rar.rare}% · quý ${e.rar.epic}% · huyền thoại ${e.rar.legendary}%` }))],
       tiers: R.TIERS.map(t => ({ name: t.name, lv: t.lv, gold: t.gold, exp: t.exp })), tactics: Object.entries(R.TACTICS).map(([k, t]) => ({ k, name: t.name })),
-      pve: PVE_DAILY - pv, cost: FIGHT_COST, gold: c.gold
+      pve: PVE_DAILY - pv, cost: FIGHT_COST, gold: c.gold, near: this.near(p)
     });
+  }
+  // người chơi quanh đây có gà chọi (chạm để thách đấu, khỏi gõ tên – bàn phím điện thoại bật lên làm giật màn)
+  near(p) {
+    const out = [];
+    for (const o of this.w.players.values()) {
+      if (o === p || o.offline || o.mapId !== p.mapId) continue;
+      const r = this.sel(o.c); if (!r) continue;
+      const dist = Math.hypot(o.x - p.x, o.y - p.y); if (dist > 64 * 25) continue;
+      out.push({ name: o.c.name, lv: o.c.level, rn: r.name, breed: r.breed, rlv: r.lv, stars: r.stars, d: dist });
+    }
+    return out.sort((a, b) => a.d - b.d).slice(0, 12).map(({ d, ...x }) => x);
   }
 
   // ---------- trận đấu (máy chủ tính, trả nhật ký từng đòn) ----------
