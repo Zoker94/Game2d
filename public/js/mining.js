@@ -78,6 +78,7 @@
       const e = pid === selfId ? G.self : players.get(pid);
       if (!e) continue;
       const f = Math.min(1, 1 - (d.until - t) / d.dur);
+      if (G.iso) G.iso.at(ctx, e.x, e.y);
       const x = e.x - 22, y = e.y + 16;   // dưới chân: không đè tên / danh hiệu
       ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillRect(x - 1, y - 1, 46, 7);
       ctx.fillStyle = '#ffd76a'; ctx.fillRect(x, y, Math.round(44 * f), 5);

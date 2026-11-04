@@ -222,6 +222,7 @@
       const lt = age - q.d; if (lt < 0) continue;
       const t = lt / a.dur; if (t >= 1) continue;
       const R = q.main ? s.r : q.sz * 1.2;
+      if (window.G && G.iso) G.iso.at(ctx, q.x, q.y);   // 2.5D chéo: chiêu bùng nổ đứng thẳng tại từng điểm
       if (a.vfx === 'fire') {
         const big = q.main ? 1 : 0.6;
         // khói đen (thường), quả cầu lửa, lưỡi lửa (sáng cộng)

@@ -49,6 +49,7 @@
       const b = booms[i], t = now - b.t0, p = t / b.life;
       if (p >= 1) { booms.splice(i, 1); continue; }
       const s = t / 1000;
+      if (G.iso) G.iso.at(ctx, b.x, b.y);   // 2.5D chéo: đứng thẳng tại chỗ nổ
       ctx.save();
       if (b.kind === 'boom') {
         // chớp sáng + cầu lửa

@@ -525,7 +525,8 @@
   const FALLBACK = { town: '#6a645e', plains: '#3e7b2b', bamboo: '#3e7b2b', mountain: '#7c5833', desert: '#d8b574', snow: '#e3ecf6', demon: '#3c2a37', arena: '#7c5833', cave: '#2c2938' };
   const CHUNK_MAX = 48;
   let jobs = new Map();
-  function putChunk(key, c) { chunks.set(key, c); while (chunks.size > CHUNK_MAX) chunks.delete(chunks.keys().next().value); }
+  let chunkVer = 0;   // tăng mỗi khi có mảng nền mới vẽ xong (2.5D chéo dùng để biết lúc cần vẽ lại bộ đệm nền)
+  function putChunk(key, c) { chunkVer++; chunks.set(key, c); while (chunks.size > CHUNK_MAX) chunks.delete(chunks.keys().next().value); }
   // làm tiếp các job trong ngân sách thời gian: mảng đang thấy mà chưa có trước, rồi tới vòng quanh màn hình (dựng trước khi đi tới)
   function pump(order, deadline) {
     for (const [cx, cy] of order) {
@@ -699,7 +700,7 @@
     for (const it of tmp) if (it.d.glow) out.push(it.d);
     return out;
   }
-  window.WorldArt = { setMap, prebuild, drawGround, visibleDecos, lights, drawDeco, drawTall, ambient, drawAmbient, overlay, get theme() { return theme; } };
+  window.WorldArt = { get chunkVer() { return chunkVer; }, buildingAt: (tx, ty) => map && bIndex.get(ty * map.w + tx) || null, HOUSE: T.HOUSE, setMap, prebuild, drawGround, visibleDecos, lights, drawDeco, drawTall, ambient, drawAmbient, overlay, get theme() { return theme; } };
 })();
 // giữ hàm vẽ vật thể cao cũ cho nhà, đá, trúc, xương rồng...
 Sprites.tallTileOld = Sprites.tallTile;

@@ -98,6 +98,7 @@
     if (!pt || !G.map || G.map.id !== m.map) return;
     pt.pts.forEach(([x, y], i) => {
       const done = pt.hit[i];
+      if (G.iso) G.iso.at(ctx, x, y);
       ctx.save(); ctx.translate(x, y);
       ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(0, 2, 16, 5, 0, 0, Math.PI * 2); ctx.fill();
       if (!done) { ctx.strokeStyle = `rgba(255,210,80,${0.5 + Math.sin(now / 250 + i) * 0.3})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(0, 0, 26, 9, 0, 0, Math.PI * 2); ctx.stroke(); }

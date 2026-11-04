@@ -4,7 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
-      '🧊 Chế độ đồ hoạ 2.5D (Cài đặt → Đồ họa → Góc nhìn): góc nhìn nghiêng có chiều sâu – cảnh xa nhỏ dần, cảnh gần to ra, sương mờ phía xa. Mặc định vẫn là bản 2D; 2.5D vẽ bằng GPU (WebGL) nên vẫn nhẹ, máy không hỗ trợ tự chuyển cách vẽ khác',
+      '🏯 Chế độ đồ hoạ 2.5D kiểu Võ Lâm (Cài đặt → Đồ họa → Góc nhìn): góc nhìn chéo, mặt đất thành ô thoi; người, quái, NPC, cây, nhà đứng thẳng và che nhau đúng trước sau; kéo cần / bấm phím lên là đi lên trên màn hình, nhân vật quay 8 hướng theo màn hình; chiêu thức, số sát thương, mũi tên chỉ đường đều đúng chỗ. Nền chéo vẽ sẵn vào bộ đệm nên vẫn nhẹ như bản 2D. Mặc định vẫn là 2D',
       '🛒 Cướp tiêu giới hạn 3 lần mỗi ngày cho mỗi nhân vật (tính theo giờ Việt Nam) – đủ lượt thì đánh xe tiêu không còn mất máu',
       '💰 Thêm vật phẩm tiền: Túi Ngân Lượng 10.000, Thỏi Bạc 100.000, Ngân Phiếu 1 triệu, Đại Ngân Phiếu 10 triệu (giao dịch được) và Nguyên Bảo 10 / 100 / 1.000 (không giao dịch) – Sử dụng để cộng vào túi tiền, quản trị có thể bày bán ở Kỳ Trân Các hoặc làm quà',
       '❓ Đố Vui Võ Lâm tăng lên hơn 2000 câu: tục ngữ ca dao, lịch sử – địa lý Việt Nam và thế giới, thủ đô các nước, khoa học, thiên văn, cơ thể người, động thực vật, văn học, Tam Quốc – Tây Du – Thủy Hử, thể thao, công nghệ, âm nhạc, ẩm thực, tiếng Anh, Hán Việt, câu đố mẹo, tính nhẩm',

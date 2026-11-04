@@ -16,7 +16,7 @@
       const sp = (o.speed == null ? 60 : o.speed) * (0.4 + R() * 0.8);
       const jx = o.jitter || 0, jy = o.jitterY == null ? jx : o.jitterY;
       parts.push({
-        x: x + (R() - 0.5) * jx * 2, y: y + (R() - 0.5) * jy * 2,
+        x: x + (R() - 0.5) * jx * 2, y: y + (R() - 0.5) * jy * 2, ox: x, oy: y,   // ox, oy: gốc phát (2.5D chéo đổi toạ độ gốc)
         vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * (o.flat || 1) + (o.vy || 0), ay: o.grav || 0,
         life: (o.life || 600) * (0.6 + R() * 0.6), t0: now + (o.delay || 0) + (o.delayRand || 0) * R(),
         size: (o.size || 4) * (0.6 + R() * 0.8), color: o.color || '#fff', drag: o.drag || 0
@@ -42,11 +42,13 @@
     ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.45); ctx.drawImage(g, -g.width / 2, -g.height / 2); ctx.restore();
   }
   function pos(f) {
+    const P = f._isoRaw ? window.G.iso.xy : null; f = f._isoRaw || f;   // 2.5D chéo: tính trên toạ độ thế giới rồi chiếu
     const src = f.from ? entityById(f.from) : null;
     const tgt = f.to ? entityById(f.to) : null;
     const d = DASHES.has(f.t);   // chiêu lướt: điểm xuất phát là chỗ đứng cũ
     const sx = d ? f.x : (src ? src.x : f.x), sy = d ? f.y : (src ? src.y : f.y);
     const tx = tgt ? tgt.x : (f.tx != null ? f.tx : f.x), ty = tgt ? tgt.y : (f.ty != null ? f.ty : f.y);
+    if (P) { const a = P(sx, sy), b = P(tx, ty); return { sx: a.x, sy: a.y, tx: b.x, ty: b.y, src }; }
     return { sx, sy, tx, ty, src };
   }
   const DASHES = new Set(['dash', 'staffleap', 'shadowdash', 'petaldash', 'swordrider', 'lightningdash', 'drunkdash']);
@@ -1713,7 +1715,15 @@
     const FULL_OTHERS = veryHeavy ? 0 : (heavy || (G.gfx && G.gfx.lowFx)) ? 2 : 5;
     lean = heavy || !!(G.gfx && G.gfx.lowFx);
     for (let i = G.fx.length - 1; i >= 0; i--) { const f = G.fx[i]; f._lite = false; if (f.from !== G.you && f.to !== G.you && (SIG[f.t] || f.t !== 'levelup') && ++others > FULL_OTHERS) f._lite = true; }
-    for (const f of G.fx) {
+    const iso = G.iso && G.iso.on();
+    for (const f0 of G.fx) {
+      // 2.5D chéo: bản sao nhẹ (giữ trạng thái riêng qua các khung) có toạ độ đã chiếu, chiêu vẽ đứng thẳng đúng chỗ
+      let f = f0;
+      if (iso) {
+        f = f0._isoP || (f0._isoP = Object.create(f0, { _isoRaw: { value: f0 } }));
+        if (f0.x != null) { const q = G.iso.xy(f0.x, f0.y); f.x = q.x; f.y = q.y; }
+        if (f0.tx != null) { const q = G.iso.xy(f0.tx, f0.ty); f.tx = q.x; f.ty = q.y; }
+      }
       const p = Math.max(0, (now - f.t0) / f.dur);
       if (f._lite) { const q = pos(f); glowDot(ctx, q.tx, q.ty - 28, 26, f.color || '#fff', (1 - p) * 0.55); continue; }
       const { sx, sy, tx, ty, src } = pos(f);
@@ -1977,8 +1987,10 @@
       if (q.drag) { const k = Math.max(0, 1 - q.drag * dt); q.vx *= k; q.vy *= k; }
       q.vy += q.ay * dt; q.x += q.vx * dt; q.y += q.vy * dt;
       const a = 1 - age / q.life;
-      if (q.size < 2.6) { ctx.globalAlpha = a; ctx.fillStyle = q.color; ctx.fillRect(q.x - 1, q.y - 1, 2, 2); }   // hạt nhỏ: chấm vuông, khỏi vẽ quầng
-      else glowDot(ctx, q.x, q.y, q.size * 3, q.color, a);
+      let qx = q.x, qy = q.y;
+      if (iso) { const o = G.iso.xy(q.ox, q.oy); qx = o.x + (q.x - q.ox); qy = o.y + (q.y - q.oy); }   // bay lệch khỏi gốc theo màn hình
+      if (q.size < 2.6) { ctx.globalAlpha = a; ctx.fillStyle = q.color; ctx.fillRect(qx - 1, qy - 1, 2, 2); }   // hạt nhỏ: chấm vuông, khỏi vẽ quầng
+      else glowDot(ctx, qx, qy, q.size * 3, q.color, a);
     }
     ctx.restore();
     fxCost = fxCost * 0.9 + (performance.now() - tStart) * 0.1;

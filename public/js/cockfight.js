@@ -577,6 +577,7 @@
     const n = G.map.npcs.find(x => x.id === 'chu_truong_ga'); if (!n) return;
     const bx = (n.x + 0.5) * 64, by = (n.y + 0.5) * 64;
     [['ga_dieu', -46, 20, false, 0], ['ga_o', 50, 26, true, 2]].forEach(([b, dx, dy, flip, ph]) => {
+      if (G.iso) G.iso.at(ctx, bx + dx, by + dy);
       ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(bx + dx, by + dy, 13, 3.5, 0, 0, Math.PI * 2); ctx.fill();
       frame(ctx, b, 0, Math.floor(now / 220 + ph) % 6, bx + dx, by + dy, 0.62, flip);
     });

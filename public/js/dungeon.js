@@ -49,9 +49,10 @@
     if (!st || !st.goal || st.done || st.fail || !G.map || !G.map.id.startsWith('pb_')) return;
     const g = st.goal, s = G.self, d = Math.hypot(g.x - s.x, g.y - s.y);
     if (d < 200) return;
-    const a = Math.atan2(g.y - s.y, g.x - s.x), r = 64 + Math.sin(now / 200) * 5;
+    const S = G.iso ? G.iso.xy(s.x, s.y) : s, Q = G.iso ? G.iso.xy(g.x, g.y) : g;   // 2.5D chéo: hướng theo màn hình
+    const a = Math.atan2(Q.y - S.y, Q.x - S.x), r = 64 + Math.sin(now / 200) * 5;
     ctx.save();
-    ctx.translate(s.x + Math.cos(a) * r, s.y - 26 + Math.sin(a) * r); ctx.rotate(a);
+    ctx.translate(S.x + Math.cos(a) * r, S.y - 26 + Math.sin(a) * r); ctx.rotate(a);
     ctx.fillStyle = st.boss ? '#ff4030' : '#c890ff'; ctx.strokeStyle = '#1a0a20'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(-8, -10); ctx.lineTo(-3, 0); ctx.lineTo(-8, 10); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.restore();

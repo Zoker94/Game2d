@@ -331,9 +331,12 @@
   }
   const snaps = [];   // cảnh gãy cần (vài giây)
   function draw(ctx, now) {
-    for (const [id, l] of lines) {
-      const e = id === G.you ? G.self : G.players.get(id);
-      if (!e) { lines.delete(id); continue; }
+    for (const [id, l0] of lines) {
+      const e0 = id === G.you ? G.self : G.players.get(id);
+      if (!e0) { lines.delete(id); continue; }
+      // 2.5D chéo: đổi người câu và phao sang toạ độ chiếu (cần, dây, phao vẽ đứng thẳng đúng chỗ)
+      let e = e0, l = l0;
+      if (G.iso && G.iso.on()) { const a = G.iso.xy(e0.x, e0.y), w = G.iso.xy(l0.wx, l0.wy); e = Object.create(e0); e.x = a.x; e.y = a.y; l = Object.create(l0); l.wx = w.x; l.wy = w.y; }
       const bite = id === G.you ? !!(st && (st.st === 'bite' || st.st === 'fight')) : !!l.bite;
       const ph = l.ph || (l.ph = (String(id).split('').reduce((h, c) => h * 31 + c.charCodeAt(0), 7) % 1000) / 100);   // pha dao động riêng mỗi người
       const bob = bite ? 7 + Math.sin(now / 38) * 3.5 : Math.sin(now / 420 + ph) * 2;

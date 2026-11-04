@@ -743,7 +743,7 @@
     UltFX.banner(d.name || 'Tuyệt kỹ', d.color, true);
   }
   // toạ độ thế giới -> toạ độ màn hình (px CSS)
-  function toScreen(wx, wy) { if (P25) { const q = p25FromSrc((wx - cam.x) * zoom, (wy - cam.y) * zoom); return [q.x, q.y]; } return [(wx - cam.x) * zoom, (wy - cam.y) * zoom]; }
+  function toScreen(wx, wy) { if (ISO) return [isoPx(wx, wy) * zoom, isoPy(wx, wy) * zoom]; return [(wx - cam.x) * zoom, (wy - cam.y) * zoom]; }
   function rumbleAmp(now) {
     let a = 0;
     for (let i = rumbles.length - 1; i >= 0; i--) {
@@ -1034,7 +1034,7 @@
     const now = performance.now();
     if (!G.socket || !G.me || G.me.dead || G.dash || G.dodgeCh(now) <= 0 || now - G.dodge.at < 380) return;
     if (Overhead.mask(G.self, now) & 3) return;
-    let v = Input.vector();
+    let v = G.iso.input(Input.vector());
     if (Math.hypot(v.x, v.y) < 0.1 && G.moveTo) { const dx = G.moveTo.x - G.self.x, dy = G.moveTo.y - G.self.y, d = Math.hypot(dx, dy) || 1; v = { x: dx / d, y: dy / d }; }
     if (Math.hypot(v.x, v.y) < 0.1) v = [{ x: 0, y: 1 }, { x: -1, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }][G.self.dir || 0];
     G.socket.emit('dodge', { x: v.x, y: v.y });
@@ -1120,8 +1120,8 @@
   // toạ độ thế giới -> toạ độ màn hình (màn ngang, không xoay) – dùng cho kiểm thử / gợi ý
   G.toScreen = (x, y) => { const r = canvas.getBoundingClientRect(), q = toScreen(x, y); return { x: r.left + q[0], y: r.top + q[1] }; };
   function screenToWorld(cx, cy) {
-    let p = Input.toLocal(cx, cy);
-    if (P25) p = p25ToSrc(p.x, p.y);
+    const p = Input.toLocal(cx, cy);
+    if (ISO) return isoWorld(p.x / zoom, p.y / zoom);
     return { x: p.x / zoom + cam.x, y: p.y / zoom + cam.y };
   }
   // người chơi dưới con trỏ / ngón tay
@@ -1257,7 +1257,7 @@
       if (p >= 1) { G.dash = null; lastSent = { x: s.x, y: s.y, m: false }; lastSend = now; }
       return;
     }
-    let v = dead || cc ? { x: 0, y: 0 } : Input.vector();
+    let v = dead || cc ? { x: 0, y: 0 } : G.iso.input(Input.vector());   // 2.5D chéo: kéo lên là đi lên trên màn hình
     const manual = Math.hypot(v.x, v.y) > 0.01;
     if (manual) { G.moveTo = null; G.npcGoal = null; G.chase = null; QuestNav.cancel(); }
 
@@ -1464,111 +1464,104 @@
   }
 
   // ================== Vẽ ==================
-  // ---------- Chế độ 2.5D (Cài đặt → Đồ họa) ----------
-  // Cảnh vẫn vẽ y như bản 2D nhưng vào một lớp phụ rộng hơn màn hình, rồi "nghiêng" lớp đó lên màn hình theo phối cảnh:
-  // mỗi dải ngang được co giãn theo độ xa (hàng trên xa – nhỏ, hàng dưới gần – to), hàng chứa nhân vật giữ đúng tỉ lệ 1:1.
-  // Không phải viết lại phần vẽ, chỉ tốn thêm một lượt chép ~200 dải ảnh trên GPU. Tắt 2.5D là trả lại bộ nhớ lớp phụ.
-  let P25 = null;
-  const cam2 = { x: 0, y: 0 };   // camera 2D bám nhân vật (mượt); cam = camera thật dùng để vẽ (2.5D thì dời theo lớp phụ)
-  const P25_TP = 0.56, P25_G = 0.56, P25_E = 1.3;   // hàng nhân vật (tỉ lệ chiều cao) · độ dốc phối cảnh · độ nén chiều sâu
-  // phép chiếu: hệ số co giãn ngang k tăng tuyến tính theo hàng màn hình; độ nén dọc = k^-E. Có công thức đóng (cả chiều ngược)
-  // nên vừa dùng trong JS (đổi toạ độ chuột) vừa dùng trong shader WebGL.
-  function p25Setup() {
-    const rw = W, rh = H, od = Math.min(DPR, 1.25) * (gfx.lowFx ? 0.8 : 1);   // lớp phụ vẽ tối đa 1,25x (đằng nào cũng co giãn mịn khi nghiêng), máy yếu thấp hơn nữa
-    if (P25 && P25.rw === rw && P25.rh === rh && P25.dpr === DPR && P25.od === od) return P25;
-    const k0 = 1 - P25_G * P25_TP, E1 = 1 - P25_E, C = rh / (P25_G * E1);
-    const vOf = ys => C * (Math.pow(k0 + P25_G * ys / rh, E1) - Math.pow(k0, E1));
-    const ws = Math.ceil(rw / k0) + 4, hs = Math.ceil(vOf(rh)) + 2;
-    const cv = (P25 && P25.cv) || document.createElement('canvas');
-    cv.width = Math.round(ws * od); cv.height = Math.round(hs * od);
-    P25 = { rw, rh, dpr: DPR, od, k0, E1, C, ws, hs, vp: vOf(P25_TP * rh), tp: P25_TP, cv, cx: cv.getContext('2d', { alpha: false }), fog: null };
-    return P25;
+  // ---------- Chế độ 2.5D kiểu Võ Lâm (góc nhìn chéo isometric) – Cài đặt → Đồ họa ----------
+  // Mặt đất xoay 45° rồi ép dẹt (ô vuông thành ô thoi). Người, quái, NPC, cây, nhà vẫn đứng thẳng: mỗi vật được dời tới
+  // đúng điểm của chân nó trên nền chéo (chỉ dịch, không xoay) và sắp xếp trước sau theo chiều chéo (x + y).
+  // Hiệu ứng / chữ nổi / mũi tên đổi toạ độ sang "không gian chiếu" (đứng thẳng, đúng chỗ). GPU chỉ xoay một lần lớp nền.
+  const ISO_A = 0.9, ISO_Q = 0.5, ISO_AQ = ISO_A * ISO_Q;   // co theo trục chéo · độ dẹt
+  let ISO = null;                                           // mỗi khung: { fx, fy (tâm nhìn, toạ độ thế giới), cx, cy (px CSS), sc, ox, oy (rung) }
+  const camF = { x: 0, y: 0, ok: false };
+  // thế giới -> không gian chiếu (đơn vị ≈ px thế giới, đứng thẳng); px CSS = điểm chiếu × zoom
+  function isoPx(wx, wy) { const dx = wx - ISO.fx, dy = wy - ISO.fy; return ISO.cx / zoom + ISO_A * (dx - dy); }
+  function isoPy(wx, wy) { const dx = wx - ISO.fx, dy = wy - ISO.fy; return ISO.cy / zoom + ISO_AQ * (dx + dy); }
+  function isoWorld(px, py) {   // ngược lại: điểm chiếu -> thế giới
+    const u = (px - ISO.cx / zoom) / ISO_A, v = (py - ISO.cy / zoom) / ISO_AQ;
+    return { x: ISO.fx + (u + v) / 2, y: ISO.fy + (v - u) / 2 };
   }
-  function p25Free() { if (P25) { P25.cv.width = P25.cv.height = 0; P25 = null; } if (GL) { GL.cv.style.display = 'none'; GL.on = false; } }
-  const p25k = ys => P25.k0 + P25_G * ys / P25.rh;
-  const p25v = ys => P25.C * (Math.pow(p25k(ys), P25.E1) - Math.pow(P25.k0, P25.E1));
-  const p25ys = v => (Math.pow(Math.max(1e-6, v / P25.C + Math.pow(P25.k0, P25.E1)), 1 / P25.E1) - P25.k0) * P25.rh / P25_G;
-  // màn hình (px CSS) <-> lớp phụ (px CSS)
-  function p25ToSrc(xs, ys) { const k = p25k(ys); return { x: P25.ws / 2 + (xs - P25.rw / 2) / k, y: p25v(ys) }; }
-  function p25FromSrc(sx, sy) { const ys = p25ys(sy); return { x: P25.rw / 2 + (sx - P25.ws / 2) * p25k(ys), y: ys }; }
-  // nghiêng bằng WebGL: một hình chữ nhật phủ màn, shader tự tính điểm lấy mẫu cho từng điểm ảnh (GPU, rất nhẹ)
-  let GL = null;
-  function glInit() {
-    if (GL !== null) return GL;
-    try {
-      const cv = document.createElement('canvas'); cv.id = 'game25';
-      cv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:none;pointer-events:none';
-      const gl = cv.getContext('webgl', { alpha: false, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: false, powerPreference: 'high-performance' });
-      if (!gl) return (GL = false);
-      const sh = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
-      const pr = gl.createProgram();
-      gl.attachShader(pr, sh(gl.VERTEX_SHADER, 'attribute vec2 p;varying vec2 q;void main(){q=p*0.5+0.5;gl_Position=vec4(p,0.0,1.0);}'));
-      gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, `precision highp float;varying vec2 q;uniform sampler2D t;uniform vec4 a;uniform vec4 b;uniform float g;
-        void main(){float ys=(1.0-q.y)*a.y;float xs=q.x*a.x;float k=b.x+g*ys/a.y;
-        float v=b.w*(pow(k,b.z)-pow(b.x,b.z));float sx=a.z*0.5+(xs-a.x*0.5)/k;
-        vec3 c=texture2D(t,vec2(sx/a.z,v/a.w)).rgb;
-        float f=clamp(1.0-ys/(a.y*0.42),0.0,1.0)*0.32;gl_FragColor=vec4(mix(c,vec3(0.59,0.67,0.84),f),1.0);}`));
-      gl.linkProgram(pr); if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error('link');
-      gl.useProgram(pr);
-      const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-      const lp = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(lp); gl.vertexAttribPointer(lp, 2, gl.FLOAT, false, 0, 0);
-      const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
-      for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
-      canvas.parentNode.insertBefore(cv, canvas.nextSibling);
-      GL = { cv, gl, ua: gl.getUniformLocation(pr, 'a'), ub: gl.getUniformLocation(pr, 'b'), ug: gl.getUniformLocation(pr, 'g'), on: false };
-      cv.addEventListener('webglcontextlost', e => { e.preventDefault(); cv.remove(); GL = false; });   // mất ngữ cảnh: chuyển sang cách vẽ dải
-    } catch (e) { console.warn('2.5D WebGL', e); GL = false; }
-    return GL;
+  function isoNear(x, y, m) { const px = isoPx(x, y) * zoom, py = isoPy(x, y) * zoom; return px > -m && px < W + m && py > -120 && py < H + m; }
+  function isoGround(c) { const k = ISO.sc; c.setTransform(k * ISO_A, k * ISO_AQ, -k * ISO_A, k * ISO_AQ, k * (ISO.cx / zoom + ISO.ox - ISO_A * (ISO.fx - ISO.fy)), k * (ISO.cy / zoom + ISO.oy - ISO_AQ * (ISO.fx + ISO.fy))); }
+  function isoProj(c) { c.setTransform(ISO.sc, 0, 0, ISO.sc, ISO.sc * ISO.ox, ISO.sc * ISO.oy); }
+  function isoAt(c, ax, ay, k = 1) {   // vẽ đứng thẳng: điểm (ax, ay) của thế giới nằm đúng chỗ trên nền chéo; k: phóng thêm
+    const S = ISO.sc * k;
+    c.setTransform(S, 0, 0, S, ISO.sc * (isoPx(ax, ay) + ISO.ox) - ax * S, ISO.sc * (isoPy(ax, ay) + ISO.oy) - ay * S);
   }
-  // tự chọn cách nhanh hơn trên máy này: thử WebGL 45 khung rồi chép dải 45 khung, đo thời gian, giữ cách nhẹ hơn
-  const P25B = { mode: '', n: 0, tg: 0, ts: 0 };
-  function p25Warp() {
-    const t0 = performance.now();
-    let mode = P25B.mode || (P25B.n < 45 ? 'gl' : 'strip');
-    if (mode === 'gl' && !glInit()) mode = P25B.mode = 'strip';
-    p25WarpWith(mode);
-    if (!P25B.mode) {
-      const dt = performance.now() - t0;
-      if (P25B.n++ >= 8) { if (mode === 'gl') P25B.tg += dt; else P25B.ts += dt; }   // bỏ vài khung đầu (khởi tạo)
-      if (P25B.n >= 90) P25B.mode = P25B.tg <= P25B.ts * 1.15 ? 'gl' : 'strip';
+  function isoAtTo(c, ax, ay, bx, by, k = 1) {   // điểm (ax, ay) của ảnh đặt vào chỗ của điểm (bx, by) trên nền chéo
+    const S = ISO.sc * k;
+    c.setTransform(S, 0, 0, S, ISO.sc * (isoPx(bx, by) + ISO.ox) - ax * S, ISO.sc * (isoPy(bx, by) + ISO.oy) - ay * S);
+  }
+  // Nền chéo vẽ sẵn vào bộ đệm rộng hơn màn hình một khoảng lề: mỗi khung chỉ chép thẳng (không xoay) cho nhẹ máy.
+  // Vẽ lại khi đi gần hết lề, đổi cỡ màn hình / bản đồ, khi có mảng nền mới tải xong, hoặc 2 giây một lần (gợn nước).
+  const GB = { cv: null, cx: null, fx: 0, fy: 0, t: 0, w: 0, h: 0, dpr: 0, map: '', z: 0 };
+  const GB_M = 170;   // lề (px CSS) mỗi bên
+  function gbFree() { if (GB.cv) { GB.cv.width = GB.cv.height = 0; GB.cv = null; } }
+  function isoGroundDraw(now) {
+    const sx = ISO_A * ((GB.fx - ISO.fx) - (GB.fy - ISO.fy)) * zoom, sy = ISO_AQ * ((GB.fx - ISO.fx) + (GB.fy - ISO.fy)) * zoom;   // độ lệch so với lúc vẽ đệm
+    const mk = G.map.key || G.map.id;
+    if (!GB.cv || GB.w !== W || GB.h !== H || GB.dpr !== DPR || GB.z !== zoom || GB.map !== mk || GB.ver !== WorldArt.chunkVer || now - GB.t > 2000 || Math.abs(sx) > GB_M * 0.8 || Math.abs(sy) > GB_M * 0.8) {
+      if (!GB.cv) { GB.cv = document.createElement('canvas'); GB.cx = GB.cv.getContext('2d', { alpha: false }); }
+      const bw = Math.round((W + GB_M * 2) * DPR), bh = Math.round((H + GB_M * 2) * DPR);
+      if (GB.cv.width !== bw || GB.cv.height !== bh) { GB.cv.width = bw; GB.cv.height = bh; }
+      Object.assign(GB, { fx: ISO.fx, fy: ISO.fy, t: now, w: W, h: H, dpr: DPR, map: mk, z: zoom, ver: WorldArt.chunkVer });
+      const c = GB.cx, k = ISO.sc, ccx = ISO.cx + GB_M, ccy = ISO.cy + GB_M;
+      c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#0b0810'; c.fillRect(0, 0, bw, bh);
+      c.setTransform(k * ISO_A, k * ISO_AQ, -k * ISO_A, k * ISO_AQ, k * (ccx / zoom - ISO_A * (ISO.fx - ISO.fy)), k * (ccy / zoom - ISO_AQ * (ISO.fx + ISO.fy)));
+      c.imageSmoothingEnabled = true;
+      // hộp bao trên thế giới của cả bộ đệm
+      let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+      for (const [px, py] of [[0, 0], [W + GB_M * 2, 0], [0, H + GB_M * 2], [W + GB_M * 2, H + GB_M * 2]]) {
+        const u = (px - ccx) / zoom / ISO_A, v = (py - ccy) / zoom / ISO_AQ, wx = ISO.fx + (u + v) / 2, wy = ISO.fy + (v - u) / 2;
+        x0 = Math.min(x0, wx); y0 = Math.min(y0, wy); x1 = Math.max(x1, wx); y1 = Math.max(y1, wy);
+      }
+      WorldArt.drawGround(c, { x: x0, y: y0 }, x1 - x0, y1 - y0, now);
     }
-    if (mode !== 'gl' && GL && GL.on) { GL.cv.style.display = 'none'; GL.on = false; }
+    const nx = ISO_A * ((GB.fx - ISO.fx) - (GB.fy - ISO.fy)) * zoom, ny = ISO_AQ * ((GB.fx - ISO.fx) + (GB.fy - ISO.fy)) * zoom;
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(GB.cv, Math.round((nx - GB_M + ISO.ox) * DPR), Math.round((ny - GB_M + ISO.oy) * DPR));
   }
-  function p25WarpWith(mode) {
-    const p = P25, g = mode === 'gl' && GL;
-    if (g) {
-      const gl = g.gl;
-      if (!g.on) { g.cv.style.display = 'block'; g.on = true; }
-      if (g.cv.width !== canvas.width || g.cv.height !== canvas.height) { g.cv.width = canvas.width; g.cv.height = canvas.height; }
-      gl.viewport(0, 0, g.cv.width, g.cv.height);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, p.cv);
-      gl.uniform4f(g.ua, p.rw, p.rh, p.cv.width / p.od, p.cv.height / p.od);
-      gl.uniform4f(g.ub, p.k0, 0, p.E1, p.C);
-      gl.uniform1f(g.ug, P25_G);
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      return;
+  // dùng chung cho các module (2D: không làm gì / trả nguyên toạ độ)
+  G.iso = {
+    on: () => !!ISO,
+    at: (c, x, y, k) => { if (ISO) isoAt(c, x, y, k); return !!ISO; },
+    xy: (x, y) => ISO ? { x: isoPx(x, y), y: isoPy(x, y) } : { x, y },
+    proj: c => { if (ISO) isoProj(c); return !!ISO; },
+    ground: c => { if (ISO) isoGround(c); return !!ISO; },
+    // vận tốc thế giới -> hướng trên màn hình (để chọn hướng nhìn của nhân vật)
+    vel: (vx, vy) => ISO ? { x: ISO_A * (vx - vy), y: ISO_AQ * (vx + vy) } : { x: vx, y: vy },
+    // hướng màn hình (cần điều khiển, phím) -> hướng thế giới, giữ nguyên độ dài
+    input: v => { if (!G.settings.view25) return v; const L = Math.hypot(v.x, v.y); if (L < 1e-6) return v; const u = v.x / ISO_A, w = v.y / ISO_AQ; const x = (u + w) / 2, y = (w - u) / 2, l = Math.hypot(x, y); return { x: x / l * L, y: y / l * L }; }
+  };
+  G.set25 = on => { G.settings.view25 = !!on; G.saveSettings(); camF.ok = false; G._camSnap = true; if (G.onView25) G.onView25(); };
+  // điểm neo (chân) của từng thứ trong danh sách vẽ + độ sâu chéo
+  function isoAnchor(it, now) {
+    let ax, ay, d;
+    switch (it.k) {
+      case 'tall': {
+        const b = it.t === WorldArt.HOUSE && WorldArt.buildingAt ? WorldArt.buildingAt(it.tx, it.ty) : null;
+        if (b) {   // công trình: mặt tiền đứng thẳng, chân ảnh (giữa cạnh dưới) đặt đúng giữa cạnh trước của nền nhà
+          ax = (b.x + b.w / 2) * TILE; ay = (b.y + b.h) * TILE;
+          d = (b.x + b.w / 2 + b.y + b.h) * TILE - TILE * 0.6; break;
+        }
+        ax = (it.tx + 0.5) * TILE; ay = (it.ty + 1) * TILE - 2; d = ax + ay; break;
+      }
+      case 'deco': ax = it.d.x; ay = it.d.y; d = it.d.flat ? -1e9 : ax + ay; break;
+      case 'npc': ax = (it.n.x + 0.5) * TILE; ay = (it.n.y + 0.5) * TILE + 20; d = ax + ay; break;
+      case 'self': case 'pl': {
+        const e = it.k === 'self' ? G.self : it.e, J = e.jump;
+        if (J) { const p = Math.min(1, (now - J.t0) / J.dur); ax = J.x0 + (J.x1 - J.x0) * p; ay = J.y0 + (J.y1 - J.y0) * p; }
+        else { ax = e.x; ay = e.y; }
+        d = ax + ay; break;
+      }
+      case 'mon': case 'cart': ax = it.e.x; ay = it.e.y; d = ax + ay; break;
+      case 'corpse': ax = it.c.x; ay = it.c.y; d = ax + ay - 1; break;
+      case 'stall': ax = it.s.x; ay = it.s.y; d = ax + ay; break;
+      case 'ore': ax = it.o.x; ay = it.o.y; d = ax + ay; break;
+      case 'pet': ax = it.s.x; ay = it.s.y; d = ax + ay; break;
+      case 'hen': ax = it.h.x; ay = it.h.y; d = ax + ay; break;
+      default: ax = 0; ay = it.y; d = it.y;
     }
-    // không có WebGL: chép từng dải ngang bằng canvas 2D
-    const d = DPR, o = p.od, step = gfx.lowFx ? 4 : 3;
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.imageSmoothingEnabled = true;
-    ctx.fillStyle = '#0b0810'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    for (let y = 0; y < p.rh; y += step) {
-      const y1 = Math.min(p.rh, y + step), k = p25k((y + y1) / 2), v0 = p25v(y), v1 = p25v(y1), hw = p.rw / 2 / k;
-      ctx.drawImage(p.cv, (p.ws / 2 - hw) * o, v0 * o, hw * 2 * o, Math.max(0.5, (v1 - v0) * o), 0, Math.floor(y * d), canvas.width, Math.ceil((y1 - y) * d) + 1);
-    }
-    if (!p.fog || p.fog.h !== canvas.height) { const gr = ctx.createLinearGradient(0, 0, 0, canvas.height * 0.42); gr.addColorStop(0, 'rgba(150,170,215,.32)'); gr.addColorStop(1, 'rgba(150,170,215,0)'); p.fog = { g: gr, h: canvas.height }; }
-    ctx.fillStyle = p.fog.g; ctx.fillRect(0, 0, canvas.width, canvas.height * 0.42);   // sương mờ phía xa cho có chiều sâu
+    it.ax = ax; it.ay = ay; it.d = d;
   }
-  G.p25Mode = () => P25B.mode;
-  G.set25 = on => { G.settings.view25 = !!on; G.saveSettings(); if (!on) p25Free(); G._camSnap = true; };
-  function draw(now) {
-    if (!G.settings.view25 || !G.map || !G.me) { if (P25) p25Free(); return drawScene(now); }
-    const p = p25Setup(), mc = canvas, mx = ctx, rw = W, rh = H, rd = DPR;
-    canvas = p.cv; ctx = p.cx; W = p.ws; H = p.hs; DPR = p.od;
-    try { drawScene(now); } finally { canvas = mc; ctx = mx; W = rw; H = rh; DPR = rd; }
-    p25Warp();
-  }
+  function draw(now) { drawScene(now); }
   function drawScene(now) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = '#0b0810';
@@ -1576,39 +1569,58 @@
     if (!G.map || !G.me) return;
     Assets.frameBudget(Input.isTouch || gfx.weak ? 3 : 8);   // mỗi khung chỉ ghép mới vài hình nhân vật (chỗ đông khỏi khựng)
     const m = G.map, s = G.self;
-    const vw = W / zoom, vh = H / zoom;
+    let vw = W / zoom, vh = H / zoom;
     const fdt = Math.min(0.05, (now - (G._lastDraw || now)) / 1000); G._lastDraw = now;
     // camera đi theo mượt
     const foc = HoaSon.camFocus() || s;   // Hoa Sơn Luận Kiếm, chế độ Xem thi đấu: camera theo trận đang đấu
-    const rvw = (P25 ? P25.rw : W) / zoom, rvh = (P25 ? P25.rh : H) / zoom;   // khung nhìn màn hình thật (2.5D: lớp phụ rộng hơn)
-    let tx = Math.max(0, Math.min(m.w * TILE - rvw, foc.x - rvw / 2)), ty = Math.max(0, Math.min(m.h * TILE - rvh, foc.y - rvh / 2 - 20));
-    if (m.w * TILE < rvw) tx = (m.w * TILE - rvw) / 2;
-    if (m.h * TILE < rvh) ty = (m.h * TILE - rvh) / 2;
-    if (G._camSnap) { cam2.x = tx; cam2.y = ty; G._camSnap = false; }
-    else { const k = Math.min(1, fdt * 9); cam2.x += (tx - cam2.x) * k; cam2.y += (ty - cam2.y) * k; }
-    if (P25) { cam.x = cam2.x + rvw / 2 - P25.ws / 2 / zoom; cam.y = cam2.y + P25.tp * rvh - P25.vp / zoom; }
-    else { cam.x = cam2.x; cam.y = cam2.y; }
+    const iso = !!G.settings.view25;
+    if (iso) {   // 2.5D chéo: camera bám thẳng nhân vật (không kẹp mép bản đồ – ngoài bản đồ là nền tối như Võ Lâm xưa)
+      if (G._camSnap || !camF.ok) { camF.x = foc.x; camF.y = foc.y; camF.ok = true; G._camSnap = false; }
+      else { const k = Math.min(1, fdt * 9); camF.x += (foc.x - camF.x) * k; camF.y += (foc.y - camF.y) * k; }
+    } else {
+      camF.ok = false;
+      let tx = Math.max(0, Math.min(m.w * TILE - vw, foc.x - vw / 2)), ty = Math.max(0, Math.min(m.h * TILE - vh, foc.y - vh / 2 - 20));
+      if (m.w * TILE < vw) tx = (m.w * TILE - vw) / 2;
+      if (m.h * TILE < vh) ty = (m.h * TILE - vh) / 2;
+      if (G._camSnap) { cam.x = tx; cam.y = ty; G._camSnap = false; }
+      else { const k = Math.min(1, fdt * 9); cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k; }
+    }
     let sx = 0, sy = 0;
     if (rumbles.length) shake = Math.max(shake, rumbleAmp(performance.now()));
     if (shake > 0) { sx = (Math.random() - 0.5) * shake; sy = (Math.random() - 0.5) * shake; shake *= 0.85; if (shake < 0.5) shake = 0; }
     const sc = zoom * DPR;
-    ctx.setTransform(sc, 0, 0, sc, Math.round((-cam.x + sx) * sc), Math.round((-cam.y + sy) * sc));
-    ctx.imageSmoothingEnabled = false;
+    if (iso) {
+      ISO = { fx: camF.x, fy: camF.y, cx: W / 2, cy: H * 0.54, sc, ox: sx, oy: sy };
+      // khung nhìn trên thế giới = hộp bao 4 góc màn hình (nới rộng cho cây / nhà cao): dùng để lọc những gì cần vẽ
+      let bx0 = 1e9, by0 = 1e9, bx1 = -1e9, by1 = -1e9;
+      for (const [px, py] of [[-220, -320], [W + 220, -320], [-220, H + 260], [W + 220, H + 260]]) {
+        const w = isoWorld(px / zoom, py / zoom);
+        bx0 = Math.min(bx0, w.x); by0 = Math.min(by0, w.y); bx1 = Math.max(bx1, w.x); by1 = Math.max(by1, w.y);
+      }
+      cam.x = bx0; cam.y = by0; vw = bx1 - bx0; vh = by1 - by0;
+    } else {
+      ISO = null;
+      ctx.setTransform(sc, 0, 0, sc, Math.round((-cam.x + sx) * sc), Math.round((-cam.y + sy) * sc));
+      ctx.imageSmoothingEnabled = false;
+    }
 
     const x0 = Math.max(0, Math.floor(cam.x / TILE)), y0 = Math.max(0, Math.floor(cam.y / TILE));
     const x1 = Math.min(m.w - 1, Math.ceil((cam.x + vw) / TILE)), y1 = Math.min(m.h - 1, Math.ceil((cam.y + vh) / TILE));
-    WorldArt.drawGround(ctx, cam, vw, vh, now);
+    if (ISO) { isoGroundDraw(now); isoGround(ctx); } else { if (GB.cv) gbFree(); WorldArt.drawGround(ctx, cam, vw, vh, now); }
     WorldArt.drawPuffs(ctx, now);
+    if (ISO) ctx.imageSmoothingEnabled = false;
     // Cổng
     for (const p of m.portals) {
       const px = (p.x + 0.5) * TILE, py = (p.y + 0.5) * TILE;
       if (!inViewXY(px, py)) continue;   // ngoài màn hình: bỏ
+      if (ISO) isoAt(ctx, px, py);
       ctx.drawImage(Sprites.portalSprite(Math.floor(now / 120)), px - 32, py - 72);
       label(px, py - 78, '➜ ' + p.toName, '#9fe3ff', 11);
     }
     // Vật phẩm rơi
     for (const d of G.drops.values()) {
       if (!inViewXY(d.x, d.y)) continue;
+      if (ISO) isoAt(ctx, d.x, d.y);
       const bob = Math.sin(now / 300 + d.x) * 3;
       const col = { common: '#ffffff', rare: '#4fa3ff', epic: '#c060ff', legendary: '#ff9b2f', divine: '#ff3a3a' }[d.rarity] || '#ffffff';
       if (d.rarity !== 'common' || d.gold) {
@@ -1622,6 +1634,7 @@
       ctx.imageSmoothingEnabled = true; ctx.drawImage(Sprites.itemIcon(di ? di.icon : d.icon, d.rarity, null, di && di.tier), d.x - 17, d.y - 22 + bob, 34, 34); ctx.imageSmoothingEnabled = false;
     }
     // Dấu nhấp chuột
+    if (ISO) isoGround(ctx);
     if (G.clickMark && now - G.clickMark.t0 < 500) { const a = 1 - (now - G.clickMark.t0) / 500; ctx.strokeStyle = `rgba(255,215,106,${a})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(G.clickMark.x, G.clickMark.y, 14 * (1.5 - a), 6 * (1.5 - a), 0, 0, Math.PI * 2); ctx.stroke(); }
 
     // Thực thể sắp xếp theo y
@@ -1645,7 +1658,17 @@
     Pet.collect(list, now);
     Cockfight.collect(list, now);   // gà thả rông trong thành
     const nearPl = [s, ...G.players.values()];
-    list.sort((a, b) => a.y - b.y);
+    if (ISO) {   // chéo: bỏ thứ nằm ngoài màn hình (hộp lọc thế giới rộng hơn màn hình xoay), rồi xếp trước sau theo x + y
+      let n = 0;
+      for (const it of list) {
+        isoAnchor(it, now);
+        const big = it.k === 'tall' && it.t === WorldArt.HOUSE;
+        if (it.k === 'self' || (it.k === 'deco' && it.d.flat) || (big ? isoNear(it.ax, it.ay, 700) : inViewXY(it.ax, it.ay))) list[n++] = it;
+      }
+      list.length = n;
+      list.sort((a, b) => a.d - b.d);
+    }
+    else list.sort((a, b) => a.y - b.y);
 
     // vòng chọn mục tiêu
     const tgt = G.target && (G.monsters.get(G.target) || G.players.get(G.target) || G.carts.get(G.target) || npcEnt(G.target));
@@ -1657,11 +1680,13 @@
     if (G.holdRing) {   // bấm giữ vào người chơi: vòng chạy đủ 0,5 giây thì mở bảng tương tác
       const hp = G.players.get(G.holdRing.id), k = Math.min(1, (now - G.holdRing.t0) / G.holdRing.dur);
       if (hp) {
+        if (ISO) isoAt(ctx, hp.x, hp.y);
         ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.beginPath(); ctx.arc(hp.x, hp.y - 30, 26, 0, Math.PI * 2); ctx.stroke();
         ctx.strokeStyle = '#ffd76a'; ctx.beginPath(); ctx.arc(hp.x, hp.y - 30, 26, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2); ctx.stroke();
       }
     }
 
+    if (ISO) isoGround(ctx);
     DaiHoi.drawGround(ctx, now);
     HoaSon.drawGround(ctx, now);
     TongKim.drawGround(ctx, now);
@@ -1672,6 +1697,9 @@
     drawGhosts(now);
     const frameOf = (moving, seed) => moving ? Math.floor(now / 140 + (seed || 0)) % 4 : 0;
     for (const it of list) {
+      if (ISO) {   // đứng thẳng tại điểm chân trên nền chéo (đồ khắc trên nền: nằm theo mặt đất)
+        if (it.k === 'deco' && it.d.flat) isoGround(ctx); else isoAt(ctx, it.ax, it.ay);
+      }
       if (it.k === 'pet') { Pet.draw(ctx, it, now); continue; }
       if (it.k === 'hen') { Cockfight.drawHen(ctx, it.h, now); continue; }
       const kn = it.k === 'pl' ? it.e : it.k === 'self' ? s : null, knOn = kn && kn._kLift != null;
@@ -1798,29 +1826,36 @@
 
     if (!Input.isTouch && G.me && !G.me.dead) {
       const ni = nearItem(80);
+      if (ni && ISO) isoAt(ctx, ni.x, ni.y);
       if (ni) label(ni.x, ni.y - 34 + Math.sin(now / 200) * 2, '[F] Nhặt', '#ffe9a8', 11, true);
     }
+    if (ISO) isoProj(ctx);
     Fishing.draw(ctx, now);   // dây câu + phao
     Cockfight.drawWorld(ctx, now);   // gà mổ thóc cạnh Chủ Trường Gà
+    if (ISO) isoGround(ctx);
     DayNight.draw(ctx, cam, vw, vh, zoom, now);   // ngày / đêm theo giờ thật (đè lên nhân vật, dưới bong bóng chat & hiệu ứng)
     const taken = [];
     Mining.drawBars(ctx, G.players, G.you);
-    for (const [e, top] of bubbles) if (!Overhead.drawBubble(ctx, e.x, top, e.bubble, now, taken)) e.bubble = null;
+    for (const [e, top] of bubbles) { if (ISO) isoAt(ctx, e.x, e.y); if (!Overhead.drawBubble(ctx, e.x, top, e.bubble, now, taken)) e.bubble = null; }
 
     BossArt.drawOver(ctx, now);   // chiêu boss: nổ, gai đá / băng, sét, lốc xoáy đè lên nhân vật
+    if (ISO) isoGround(ctx);
     if (!gfx.lowFx) { WorldArt.ambient(now, cam, vw, vh, fdt); WorldArt.drawAmbient(ctx, now); }   // máy yếu: bỏ hạt bay lơ lửng
+    if (ISO) isoProj(ctx);   // hiệu ứng chiêu: vẽ trong không gian chiếu (FX tự đổi toạ độ)
     drawFx(now);
     // chữ nổi
     if (G.floats.length) G.floats = G.floats.filter(f => now - f.t0 < 1100);
     for (const f of G.floats) {
       const p = (now - f.t0) / 1100;
       ctx.globalAlpha = 1 - p * p;
+      if (ISO) isoAt(ctx, f.x, f.y);
       label(f.x, f.y - p * 40, f.text, f.color, f.size * (f.bold ? (1 + Math.max(0, 0.3 - p)) : 1), true);
     }
     ctx.globalAlpha = 1;
     Overhead.drawFloats(ctx, now);
 
     // Mũi tên hướng dẫn tân thủ
+    if (ISO) isoProj(ctx);   // mũi tên tính trong không gian chiếu (G.iso.xy)
     drawGuideArrow(now);
     Escort.drawArrow(ctx, now);
     Story.drawArrow(ctx, now);
@@ -1906,7 +1941,7 @@
     P('rgba(255,255,255,.7)', () => x.arc(64, 10, 2, 0, Math.PI * 2));
     return (guideCv = c);
   }
-  function inViewXY(x, y) { return x > cam.x - 150 && x < cam.x + W / zoom + 150 && y > cam.y - 150 && y < cam.y + H / zoom + 200; }
+  function inViewXY(x, y) { if (ISO) { const px = isoPx(x, y) * zoom, py = isoPy(x, y) * zoom; return px > -170 && px < W + 170 && py > -110 && py < H + 280; } return x > cam.x - 150 && x < cam.x + W / zoom + 150 && y > cam.y - 150 && y < cam.y + H / zoom + 200; }
   function inView(e) { return inViewXY(e.x, e.y); }
   const drawList = [];
 
@@ -1930,9 +1965,11 @@
     }
     const hit = e.hitAt && now - e.hitAt < 120;
     const [state, fi] = monsterAnim(e, now, info);
-    const mf = Assets.monsterFrame(e.type, state, fi, e.dir);
+    let mdir = e.dir, face = e.face || 2;
+    if (ISO) { const d8 = isoDir(e.dir); mdir = d8 === 1 || d8 === 5 || d8 === 7 ? 1 : d8 === 2 || d8 === 4 || d8 === 6 ? 2 : d8; if (mdir === 1 || mdir === 2) face = mdir; }   // 2.5D chéo: hướng theo màn hình
+    const mf = Assets.monsterFrame(e.type, state, fi, mdir);
     if (mf) {
-      const face = e.face || 2, flip = mf.rig ? e.dir === 1 : face === 1;
+      const flip = mf.rig ? mdir === 1 : face === 1;
       const SZ = e.boss ? (info.size || 1.25) : 1;   // boss thế giới vẽ to hơn
       const half = Math.max(12, mf.half * 0.8) * SZ, top = mf.top * SZ;
       ctx.save();
@@ -1968,9 +2005,9 @@
       return;
     }
     const frame = e.moving ? Math.floor(now / 160 + e.x / 70) % 4 : Math.floor(now / 500) % 2;
-    const img = Sprites.monsterSprite(e.type, info, frame, e.dir);
+    const img = Sprites.monsterSprite(e.type, info, frame, mdir);
     const scale = e.boss ? 2 : 1;
-    const flip = info.sprite !== 'bandit' && (e.face || 2) === 1;
+    const flip = info.sprite !== 'bandit' && face === 1;
     ctx.save();
     ctx.translate(Math.round(e.x), Math.round(e.y));
     if (e.boss) {
@@ -2068,7 +2105,10 @@
   // Chuyển động để vẽ 8 hướng: vận tốc làm mượt từ vị trí từng khung hình -> hướng chéo khi đi xiên, tốc độ để chọn đi / chạy,
   // quãng đường tích luỹ để chọn khung bước. Hướng từ máy chủ (4 hướng) đổi thì theo hướng đó (quay mặt đánh, đổi hướng khi đứng).
   const RUN_SPEED = 115, RUN_STRIDE = 100, WALK_STRIDE = 54;   // px/giây; px mỗi chu kỳ bước (khớp sải chân trong tools/rig2.py)
-  const OCT_DIR = [2, 4, 0, 5, 1, 7, 3, 6];   // cung 45° (0 = phải, theo chiều kim đồng hồ) -> mã hướng vẽ
+  const OCT_DIR = [2, 4, 0, 5, 1, 7, 3, 6];
+  const DIR_V = [[0, 1], [-1, 0], [1, 0], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]];   // mã hướng -> vectơ thế giới
+  // 2.5D chéo: hướng trên thế giới -> hướng nhìn thấy trên màn hình (8 hướng)
+  function isoDir(d) { const v = DIR_V[d] || DIR_V[0], x = ISO_A * (v[0] - v[1]), y = ISO_AQ * (v[0] + v[1]); return OCT_DIR[((Math.round(Math.atan2(y, x) / (Math.PI / 4)) % 8) + 8) % 8]; }   // cung 45° (0 = phải, theo chiều kim đồng hồ) -> mã hướng vẽ
   function motion(e, x, y, dir, moving, now) {
     const m = e._mo || (e._mo = { x, y, t: now, vx: 0, vy: 0, odo: 0, speed: 0, vdir: dir, sdir: dir });
     const dt = Math.min(0.1, Math.max(0, (now - m.t) / 1000));
@@ -2083,10 +2123,11 @@
       m.x = x; m.y = y; m.t = now;
       m.speed = Math.hypot(m.vx, m.vy);
     }
-    if (dir !== m.sdir) { m.sdir = dir; m.vdir = dir; }
+    if (dir !== m.sdir || !!ISO !== m.iso) { m.sdir = dir; m.iso = !!ISO; m.vdir = ISO ? isoDir(dir) : dir; }
     if (moving && m.speed > 20) {
       // 8 cung 45°: 0 phải, 1 chéo xuống-phải, 2 xuống ... (trục y màn hình hướng xuống)
-      const oct = ((Math.round(Math.atan2(m.vy, m.vx) / (Math.PI / 4)) % 8) + 8) % 8;
+      const vx = ISO ? ISO_A * (m.vx - m.vy) : m.vx, vy = ISO ? ISO_AQ * (m.vx + m.vy) : m.vy;   // 2.5D: hướng theo màn hình
+      const oct = ((Math.round(Math.atan2(vy, vx) / (Math.PI / 4)) % 8) + 8) % 8;
       m.vdir = OCT_DIR[oct];
     }
     return m;
@@ -2107,6 +2148,10 @@
   // Vẽ nhân vật (có thú cưỡi, hào quang cường hóa). Trả về tọa độ y đỉnh đầu để vẽ tên.
   function drawHero(x, y, cls, dir, lastH, moving, atk, ap, dead, seed, now, ent) {
     ap = ap || [];
+    if (ISO && (ap[7] || !Assets.has(cls))) {   // 2.5D chéo, đang cưỡi / hình cũ 4 hướng: quy về hướng nhìn trên màn hình
+      const d8 = isoDir(dir); dir = d8 === 1 || d8 === 5 || d8 === 7 ? 1 : d8 === 2 || d8 === 4 || d8 === 6 ? 2 : d8;
+      if (dir === 1 || dir === 2) lastH = dir;
+    }
     const art = Assets.has(cls);
     let state = 'idle', fi = 0, lift = 0;
     const J = ent && ent.jump;
@@ -2253,10 +2298,11 @@
     const s = G.self;
     const d = Math.hypot(goal.x - s.x, goal.y - s.y);
     if (d < 120) return;
-    const a = Math.atan2(goal.y - s.y, goal.x - s.x);
+    const S = G.iso.xy(s.x, s.y), Q = G.iso.xy(goal.x, goal.y);   // 2.5D chéo: hướng theo màn hình
+    const a = Math.atan2(Q.y - S.y, Q.x - S.x);
     const r = 70 + Math.sin(now / 200) * 6;
     ctx.save();
-    ctx.translate(s.x + Math.cos(a) * r, s.y - 26 + Math.sin(a) * r);
+    ctx.translate(S.x + Math.cos(a) * r, S.y - 26 + Math.sin(a) * r);
     ctx.rotate(a);
     ctx.fillStyle = '#ffd700'; ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(16, 0); ctx.lineTo(-8, -11); ctx.lineTo(-3, 0); ctx.lineTo(-8, 11); ctx.closePath(); ctx.fill(); ctx.stroke();

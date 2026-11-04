@@ -147,12 +147,13 @@
     if (!nav.to) return;
     const p = nextPortal(); if (!p) return;
     const s = G.self, gx = (p.x + 0.5) * 64, gy = (p.y + 0.5) * 64, d = Math.hypot(gx - s.x, gy - s.y);
+    const S = G.iso ? G.iso.xy(s.x, s.y) : s, Q = G.iso ? G.iso.xy(gx, gy) : { x: gx, y: gy };   // 2.5D chéo: tính trên màn hình
     ctx.save();
     ctx.strokeStyle = `rgba(80,255,160,${0.5 + Math.sin(now / 200) * 0.3})`; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.ellipse(gx, gy, 36 + Math.sin(now / 180) * 4, 16, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(Q.x, Q.y, 36 + Math.sin(now / 180) * 4, 16, 0, 0, Math.PI * 2); ctx.stroke();
     if (d > 110) {
-      const a = Math.atan2(gy - s.y, gx - s.x), r = 74 + Math.sin(now / 200) * 5;
-      ctx.translate(s.x + Math.cos(a) * r, s.y - 26 + Math.sin(a) * r); ctx.rotate(a);
+      const a = Math.atan2(Q.y - S.y, Q.x - S.x), r = 74 + Math.sin(now / 200) * 5;
+      ctx.translate(S.x + Math.cos(a) * r, S.y - 26 + Math.sin(a) * r); ctx.rotate(a);
       ctx.fillStyle = '#4affa0'; ctx.strokeStyle = '#003a1a'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(16, 0); ctx.lineTo(-8, -11); ctx.lineTo(-3, 0); ctx.lineTo(-8, 11); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.rotate(-a); ctx.font = '12px Be Vietnam Pro, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🧭', 0, -16);

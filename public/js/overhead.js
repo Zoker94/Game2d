@@ -200,6 +200,7 @@
       const p = (now - f.t0) / life;
       if (p >= 1) { floats.splice(i, 1); continue; }
       const a = p < 0.7 ? 1 : 1 - (p - 0.7) / 0.3;
+      if (G.iso) G.iso.at(ctx, f.x, f.y);   // 2.5D chéo: số nổi đứng thẳng trên đầu
       ctx.globalAlpha = a;
       if (f.kind === 'crit') {
         // bạo kích: số to, nảy lên rồi thu lại, viền đỏ, tia sáng phía sau
