@@ -37,7 +37,7 @@ function build() {
       'Đồ rác: bấm <b>💰 Bán đồ rác</b> trong Túi đồ để bán nhanh ở bất kỳ đâu.']) },
     { k: 'enhance', icon: '🔨', title: 'Cường hoá (+1 → +15)', html: li([
       'Gặp <b>Thợ Rèn</b> ở bất kỳ thành nào → Cường hoá.',
-      '+1 → +10 cần <b>Huyền Tinh Thạch</b>; +11 → +15 cần thêm <b>Thiên Tinh Thạch</b> + nhiều ngân lượng.',
+      '+1 → +10 cần <b>Huyền Tinh Thạch</b> (1–5 viên); +11 → +15 cần cả <b>Huyền Tinh Thạch</b> (7 / 9 / 11 / 13 / 15 viên) lẫn <b>Thiên Tinh Thạch</b> (1–5 viên) + nhiều ngân lượng.',
       'Từ <b>+10</b> trở lên thất bại sẽ <b>rớt về +1</b> – dùng <b>Bảo Hiểm Phù</b> (Kỳ Trân Các) để giữ cấp.',
       'Đá cường hoá kiếm ở: <b>Khoáng Động</b>, boss dã ngoại, phó bản, quái tinh anh, Kỳ Trân Các (Nguyên Bảo). Quái thường rơi rất hiếm.']) },
     { k: 'gem', icon: '💎', title: 'Đá khảm – kiếm ở đâu, khảm thế nào', html: li([

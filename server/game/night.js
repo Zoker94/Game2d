@@ -90,7 +90,7 @@ class Night {
   // đồ rơi thêm của quái đêm (gọi từ world.killMonster)
   extraDrops(drops, dr) {
     const r = Math.random;
-    if (r() < 0.25 * dr) drops.push('stone');
+    if (r() < 0.12 * dr) drops.push('stone');
     if (r() < 0.06 * dr) drops.push(`gem_${GEMS[U.randInt(0, 4)]}_${r() < 0.8 ? 1 : 2}`);
     if (r() < 0.03 * dr) drops.push('lucky_chest');
     if (r() < 0.004 * dr) drops.push('boss_chest');

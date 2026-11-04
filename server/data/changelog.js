@@ -4,6 +4,8 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '💠 Đá cường hoá rơi ít lại khoảng một nửa: quái thường (Huyền Tinh ~1/400 con, Thiên Tinh ít hơn), quái tinh anh, quái đêm, boss (còn 2-4 Huyền Tinh)',
+      '🔨 Cường hoá từ +11 trở lên cần nhiều Huyền Tinh Thạch hơn (7 / 9 / 11 / 13 / 15 viên) cùng với Thiên Tinh Thạch (1-5 viên)',
       '🐺 Quái thường chỉ đuổi một đoạn gần (khoảng 5 ô quanh chỗ của nó, người chạy xa hơn ~6,5 ô thì thôi) rồi quay về; boss vẫn đuổi xa như cũ',
       '🤖 Tự động đánh thông minh hơn: đang bật tự động mà tự đi (cần điều khiển, phím, bấm chuột) tới đâu dừng lại thì luyện công tiếp ngay tại đó, không chạy về chỗ cũ (máy chủ treo hộ cũng dùng chỗ mới)',
       '🎬 Đoạn phim mở đầu: chỉ phát một bản nhạc êm riêng cho cả đoạn (không đổi bài theo từng cảnh, không lẫn nhạc bản đồ), nhạc tự vặn nhỏ khi có giọng đọc để nghe rõ lời; tắt giọng đọc thì nhạc to lại',

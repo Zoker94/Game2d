@@ -192,9 +192,9 @@ const CONSUMABLES = [
   { id: 'mp6', name: 'Tẩy Tủy Linh Đan', desc: 'Hồi 25% nội lực tối đa (hợp người nhiều nội lực)', effect: { mpPct: 25 }, price: 900, lv: 40, icon: 'potion_b6' },
   { id: 'scroll_town', name: 'Hồi Thành Phù', desc: 'Niệm phép 3 giây rồi về thành gần nhất (bị đánh hoặc di chuyển sẽ hủy). Nút 🏠 cạnh bản đồ mini.', effect: { town: 1 }, price: 50, icon: 'scroll' },
   { id: 'exp_x2', name: 'Song Bội Kinh Nghiệm', desc: 'Nhân đôi kinh nghiệm trong 30 phút', effect: { expBuff: 30 * 60000 }, price: 2000, icon: 'book' },
-  { id: 'stone', name: 'Huyền Tinh Thạch', desc: 'Nguyên liệu cường hóa trang bị +1 đến +10', price: 300, icon: 'stone', material: true },
+  { id: 'stone', name: 'Huyền Tinh Thạch', desc: 'Nguyên liệu cường hóa trang bị +1 đến +15. Từ +11 trở lên cần thêm Thiên Tinh Thạch (và nhiều Huyền Tinh Thạch hơn).', price: 300, icon: 'stone', material: true },
   { id: 'thien_tam_ti', name: 'Thiên Tàm Ti', desc: 'Tơ tằm trời quý hiếm. Nguyên liệu chế tạo Áo choàng ở bản đồ môn phái (NPC Chưởng Phi Phong). Rơi ít từ quái, nhiều hơn ở tinh anh và Boss; đổi được bằng điểm cống hiến môn phái.', price: 600, icon: 'silk', material: true, rarity: 'rare' },
-  { id: 'stone2', name: 'Thiên Tinh Thạch', desc: 'Nguyên liệu quý để cường hóa +11 đến +15. Rơi từ Boss, quái cấp cao, sự kiện.', price: 8000, icon: 'stone2', material: true },
+  { id: 'stone2', name: 'Thiên Tinh Thạch', desc: 'Nguyên liệu quý để cường hóa +11 đến +15 (dùng cùng Huyền Tinh Thạch). Rơi từ Boss, quái cấp cao, sự kiện.', price: 8000, icon: 'stone2', material: true },
   { id: 'insure', name: 'Bảo Hiểm Phù', desc: 'Khi cường hóa từ +10 trở lên mà thất bại, giữ nguyên cấp thay vì rớt về +1.', price: 15000, icon: 'insure', material: true },
   // ---- câu cá & nấu ăn (server/game/fishing.js) ----
   { id: 'can_cau', name: 'Cần Câu Trúc', desc: 'Đứng sát mép nước (sông, hồ – kể cả trong thành) rồi Sử dụng hoặc bấm nút 🎣 để câu cá. Mỗi lần câu tốn 1 Mồi Câu. Không mất khi dùng.', effect: { fish: 1 }, price: 3000, icon: 'rod' },
