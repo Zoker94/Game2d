@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🎁 Rương Thủ Lĩnh: tỉ lệ ra trang bị Truyền Kỳ tăng lại 8% (trước 1,5%), Sử Thi 32%, Hiếm 60%.',
       '🐯 Sửa lỗi quái đang bị đánh lại bỏ chạy về chỗ cũ và hồi đầy máu (đánh mãi không chết): quái bị đánh trong 6 giây gần nhất sẽ đánh trả tới cùng, không hồi máu, không đặt lại máu.',
       '🧪 Bình máu / bình nội lực: hồi chiêu giảm từ 3 giây xuống 1 giây (đánh người PK vẫn giữ 10 giây).',
       '🤖 Mã xác nhận treo máy (tài khoản quản trị / GM không bị hỏi): đang ẩn tab mà bị hỏi mã thì có 60 giây để quay lại (tiêu đề tab nháy, chuông kêu, có thông báo nếu cho phép); quay lại sau khi ẩn tab lâu sẽ nhắc: không có vé thì ẩn tab nhân vật đứng yên.',
