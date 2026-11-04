@@ -69,7 +69,7 @@ function build() {
     { k: 'escort', icon: '🐂', title: 'Áp tiêu', html: li([
       'Gặp <b>Tổng Tiêu Đầu</b> ở Tương Dương, đặt cọc rồi hộ tống xe tiêu tới đích để nhận ngân lượng.',
       'Mỗi ngày <b>3 lần</b>. Tiêu Đồng (cấp 15+), Tiêu Bạc (cấp 30+), Tiêu Vàng (cấp 45+, thưởng thêm Nguyên Bảo).',
-      'Xe có thể bị người chơi khác (đeo cờ PK) cướp – mất cọc. Đi tổ đội cho an toàn.']) },
+      'Xe có thể bị người chơi khác (đeo cờ PK) cướp – mất cọc (mỗi người chỉ cướp được 3 lần mỗi ngày). Đi tổ đội cho an toàn.']) },
     { k: 'events', icon: '🎉', title: 'Sự kiện theo giờ', html: li([
       '<b>Chiến Trường Tống Kim</b>: 22:00 mỗi tối (35 phút), cấp 30+. Báo danh với <b>Mộ Binh Quan</b> ở Tương Dương từ 21:30 (đang đánh vẫn vào thẳng được). Kiếm Công Trạng đổi rương, đá khảm, ngân lượng.',
       '<b>Hoa Sơn Luận Kiếm</b>: 20:00 thứ Bảy, cấp 30+ – đăng ký với Sứ Giả Hoa Sơn ở Tương Dương, đấu loại 1-1, vô địch nhận danh hiệu Kiếm Thánh 7 ngày.',
