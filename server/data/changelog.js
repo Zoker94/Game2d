@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🧪 Bình máu / bình nội lực: hồi chiêu giảm từ 3 giây xuống 1 giây (đánh người PK vẫn giữ 10 giây).',
       '🤖 Mã xác nhận treo máy (tài khoản quản trị / GM không bị hỏi): đang ẩn tab mà bị hỏi mã thì có 60 giây để quay lại (tiêu đề tab nháy, chuông kêu, có thông báo nếu cho phép); quay lại sau khi ẩn tab lâu sẽ nhắc: không có vé thì ẩn tab nhân vật đứng yên.',
       '💠 Đá cường hoá rơi ít lại khoảng một nửa: quái thường (Huyền Tinh ~1/400 con, Thiên Tinh ít hơn), quái tinh anh, quái đêm, boss (còn 2-4 Huyền Tinh)',
       '🔨 Cường hoá từ +11 trở lên cần nhiều Huyền Tinh Thạch hơn (7 / 9 / 11 / 13 / 15 viên) cùng với Thiên Tinh Thạch (1-5 viên)',

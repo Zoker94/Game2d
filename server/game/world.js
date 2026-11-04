@@ -2805,7 +2805,7 @@ const STUN_IMMUNE = 3000;
 // PvP: sát thương người chơi lên người chơi, hồi máu khi đang giao tranh, bình máu (hồi chiêu, tối đa % máu mỗi bình)
 const PARDON_PTS = 5;   // mỗi Lệnh Bài Xoá Tội trừ 5 điểm sát khí
 const PK_OUTLAW = 3;   // sát khí từ 3 (tên đỏ) là kẻ đồ sát
-const POT_CD = 3000;   // hồi chiêu bình máu / bình nội lực (mỗi loại riêng)
+const POT_CD = 1000;   // hồi chiêu bình máu / bình nội lực (mỗi loại riêng)
 const PVP_DMG = 0.0285, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;
 const MED_AFTER = 30000;                        // đứng yên trong thành bao lâu thì ngồi thiền (ms)
 const MED_EXP = 0.00001;                        // mỗi 5 giây ngồi thiền: 0,001% kinh nghiệm cấp hiện tại (≈0,7%/giờ)                       // kháng choáng sau khi hết choáng (ms)
