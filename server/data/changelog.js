@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🐯 Sửa lỗi quái đang bị đánh lại bỏ chạy về chỗ cũ và hồi đầy máu (đánh mãi không chết): quái bị đánh trong 6 giây gần nhất sẽ đánh trả tới cùng, không hồi máu, không đặt lại máu.',
       '🧪 Bình máu / bình nội lực: hồi chiêu giảm từ 3 giây xuống 1 giây (đánh người PK vẫn giữ 10 giây).',
       '🤖 Mã xác nhận treo máy (tài khoản quản trị / GM không bị hỏi): đang ẩn tab mà bị hỏi mã thì có 60 giây để quay lại (tiêu đề tab nháy, chuông kêu, có thông báo nếu cho phép); quay lại sau khi ẩn tab lâu sẽ nhắc: không có vé thì ẩn tab nhân vật đứng yên.',
       '💠 Đá cường hoá rơi ít lại khoảng một nửa: quái thường (Huyền Tinh ~1/400 con, Thiên Tinh ít hơn), quái tinh anh, quái đêm, boss (còn 2-4 Huyền Tinh)',

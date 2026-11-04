@@ -58,6 +58,7 @@ const PVE_SKILL_K = 0.85;   // hệ số sát thương võ công lên quái / bo
 const AGGRO_R = 200;
 const LEASH_R = 650;
 const CHASE_R = 340;    // quái thường chỉ đuổi trong bán kính này quanh chỗ của nó (boss vẫn theo LEASH_R)
+const MON_COMBAT = 6000;   // quái thường bị đánh trong 6 giây gần nhất: vẫn đuổi (tới LEASH_R), không hồi / đặt lại máu
 const GIVEUP_R = 420;   // mục tiêu chạy xa hơn chừng này thì thôi đuổi
 const MERGED_TUTORIAL = true;   // hướng dẫn tân thủ nằm trong chương 1 cốt truyện
 const BOSS_REGEN_DELAY = 30000;   // boss hồi máu sau 30 giây không bị người chơi gây sát thương
@@ -2544,13 +2545,14 @@ class World {
     const slowed = mon.st && (mon.st.slow || 0) > now;
     const tpl = mon.tpl;
     let target = mon.target ? this.players.get(mon.target) : null;
-    const chaseR = mon.boss || tpl.pbBoss || mon.tkSide ? LEASH_R : CHASE_R;   // quái thường: đuổi một đoạn gần rồi quay về
-    if (target && !target.dead && !mon.boss && !tpl.pbBoss && !mon.tkSide && U.dist(target, mon) > GIVEUP_R) { target = null; mon.target = null; mon.wander = { x: mon.hx, y: mon.hy }; }
+    const fight = now - (mon.lastPlayerHit || 0) < MON_COMBAT;   // vừa bị người chơi đánh: đang giao chiến, không bỏ chạy về / không hồi máu
+    const chaseR = mon.boss || tpl.pbBoss || mon.tkSide || fight ? LEASH_R : CHASE_R;   // quái thường: đuổi một đoạn gần rồi quay về
+    if (target && !target.dead && !fight && !mon.boss && !tpl.pbBoss && !mon.tkSide && U.dist(target, mon) > GIVEUP_R) { target = null; mon.target = null; mon.wander = { x: mon.hx, y: mon.hy }; }
     if (target && (target.dead || target.mapId !== mon.mapId || this.gmOn(target, 'hide') || Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > chaseR || (mon.tkSide && !this.tongkim.monCanTarget(mon, target)) || (mon.onlyGid && target.c.guildId !== mon.onlyGid))) {
       target = null; mon.target = null;
       if (Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > chaseR) {
         mon.wander = { x: mon.hx, y: mon.hy };
-        if (!mon.boss) { mon.hp = mon.maxHp; mon.dmgBy.clear(); }   // boss: quay về chỗ cũ nhưng giữ nguyên máu
+        if (!mon.boss && !fight) { mon.hp = mon.maxHp; mon.dmgBy.clear(); }   // boss / đang bị đánh: quay về chỗ cũ nhưng giữ nguyên máu
       }
     }
     if (!target && tpl.aggro && !m.def.safe && this.tickN % 5 === 0) {
@@ -2615,7 +2617,7 @@ class World {
         if (arrived) mon.wander = null;
       }
       // hồi máu khi không giao chiến; boss phải 30 giây không ai đánh mới hồi
-      if (mon.hp < mon.maxHp && this.tickN % 20 === 0 && (!mon.boss || now - (mon.lastPlayerHit || 0) >= BOSS_REGEN_DELAY)) {
+      if (mon.hp < mon.maxHp && this.tickN % 20 === 0 && !fight && (!mon.boss || now - (mon.lastPlayerHit || 0) >= BOSS_REGEN_DELAY)) {
         mon.hp = Math.min(mon.maxHp, mon.hp + Math.ceil(mon.maxHp * 0.03));
         if (mon.boss && mon.hp >= mon.maxHp) mon.dmgBy.clear();   // hồi đầy: bảng sát thương làm lại từ đầu
       }
