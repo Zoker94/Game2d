@@ -63,7 +63,7 @@ const QUIZ = [
   ['Hai phe trong chiến trường Tống Kim lịch sử: nhà Tống và nhà ... ?', ['Kim']],
   ['Thành Lâm An (Hàng Châu) là kinh đô của triều đại nào?', ['Nam Tống']],
   ['Lâu Lan là cổ quốc nằm trên con đường gì? (con đường ...)', ['Tơ Lụa']],
-  // ---------- Trong game Võ Lâm Pixel ----------
+  // ---------- Trong game Võ Lâm 2D ----------
   ['Số môn phái người chơi có thể chọn trong game này?', ['9', 'chín']],
   ['Vũ khí của Thiếu Lâm trong game này là gì?', ['Côn', 'gậy']],
   ['Vũ khí của Thiên Vương trong game này là gì?', ['Chùy']],

@@ -111,7 +111,7 @@
         ridge(c, LH * 0.78, 22, '#120d22', 1.3, t * 2); ridge(c, LH * 0.9, 16, '#0a0714', 4.1, t * 4);
         embers(c, t, 18, '#ffcf7a', 9, true);
         const a = clamp01(t / 1.6);
-        L.push(['VÕ LÂM PIXEL', LW / 2, LH * 0.42, `rgba(255,215,120,${a})`, 20, 'c', 900]);
+        L.push(['VÕ LÂM 2D', LW / 2, LH * 0.42, `rgba(255,215,120,${a})`, 20, 'c', 900]);
         L.push(['Cuối đời Nam Tống – Hàm Thuần năm thứ tư', LW / 2, LH * 0.53, `rgba(230,220,200,${clamp01((t - 1) / 1.5) * 0.85})`, 7, 'c']);
       } },
     { mood: 'field', min: 7000,
@@ -297,7 +297,7 @@
         ridge(c, LH * 0.82, 20, '#0e0a18', 2.2, t * 1.5);
         embers(c, t, 30, '#ffd88a', 81, true);
         const a = clamp01(t / 1.5), b = clamp01((t - 1.2) / 1.5);
-        L.push(['VÕ LÂM PIXEL', LW / 2, LH * 0.4, `rgba(255,215,120,${a})`, 22, 'c', 900]);
+        L.push(['VÕ LÂM 2D', LW / 2, LH * 0.4, `rgba(255,215,120,${a})`, 22, 'c', 900]);
         L.push(['— Võ Mục Di Thư —', LW / 2, LH * 0.52, `rgba(255,235,190,${b})`, 9, 'c', 700]);
         if (t > 3) L.push(['Chạm để bắt đầu hành trình', LW / 2, LH * 0.7, `rgba(230,220,200,${0.5 + 0.4 * Math.sin(t * 3)})`, 6, 'c']);
       } }

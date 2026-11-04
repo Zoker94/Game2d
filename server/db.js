@@ -15,7 +15,7 @@ const defaults = () => ({
   giftcodes: {},      // code -> { reward, uses, maxUses, usedBy: [], exp }
   config: {
     expRate: 1, dropRate: 1, goldRate: 1,
-    motd: 'Chào mừng đến với Võ Lâm Pixel! Chúc các đại hiệp hành tẩu giang hồ vui vẻ.',
+    motd: 'Chào mừng đến với Võ Lâm 2D! Chúc các đại hiệp hành tẩu giang hồ vui vẻ.',
     maintenance: false,
     vipDropBase: 0.004,
     autoEvents: true

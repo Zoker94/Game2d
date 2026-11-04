@@ -1,4 +1,4 @@
-// Võ Lâm Pixel cho máy tính: cửa sổ riêng mở thẳng game (volam2d.com/play), F11 toàn màn hình, link ngoài mở bằng trình duyệt.
+// Võ Lâm 2D cho máy tính: cửa sổ riêng mở thẳng game (volam2d.com/play), F11 toàn màn hình, link ngoài mở bằng trình duyệt.
 const { app, BrowserWindow, shell, Menu } = require('electron');
 const path = require('path');
 const HOST = 'volam2d.com', URL = `https://${HOST}/play?app=pc`;
@@ -6,7 +6,7 @@ app.commandLine.appendSwitch('disable-renderer-backgrounding');     // thu nhỏ
 app.commandLine.appendSwitch('disable-background-timer-throttling');
 function create() {
   const win = new BrowserWindow({
-    width: 1280, height: 760, minWidth: 900, minHeight: 540, backgroundColor: '#0b0810', title: 'Võ Lâm Pixel',
+    width: 1280, height: 760, minWidth: 900, minHeight: 540, backgroundColor: '#0b0810', title: 'Võ Lâm 2D',
     icon: path.join(__dirname, 'build', 'icon.png'), autoHideMenuBar: true,
     webPreferences: { contextIsolation: true, backgroundThrottling: false, spellcheck: false }
   });

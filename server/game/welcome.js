@@ -6,7 +6,7 @@ const GIFT = 'TANTHU2026';
 const DEF = {
   on: true,
   title: 'CHÀO MỪNG KHAI MỞ MÁY CHỦ MỚI',
-  sub: 'Võ Lâm Pixel – giang hồ rộng mở, anh hùng tụ hội!',
+  sub: 'Võ Lâm 2D – giang hồ rộng mở, anh hùng tụ hội!',
   x2: true,
   race: true,
   gift: GIFT,

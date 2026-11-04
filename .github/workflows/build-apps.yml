@@ -31,7 +31,7 @@ jobs:
             echo "::warning::Chưa cấu hình ANDROID_KEYSTORE_B64 / ANDROID_KEYSTORE_PASS – dùng khoá tạm"
             P=$(openssl rand -hex 16)
             echo "::add-mask::$P"
-            keytool -genkeypair -keystore "$RUNNER_TEMP/release.jks" -storepass "$P" -keypass "$P" -alias volam -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Vo Lam Pixel, O=volam2d.com, C=VN"
+            keytool -genkeypair -keystore "$RUNNER_TEMP/release.jks" -storepass "$P" -keypass "$P" -alias volam -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Vo Lam 2D, O=volam2d.com, C=VN"
             echo "APK_KEYSTORE_PASS=$P" >> "$GITHUB_ENV"
           fi
           echo "APK_KEYSTORE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
@@ -39,9 +39,9 @@ jobs:
       - name: Build APK
         working-directory: apps/android
         run: gradle assembleRelease --no-daemon --stacktrace
-      - run: cp apps/android/app/build/outputs/apk/release/app-release.apk VoLamPixel.apk
+      - run: cp apps/android/app/build/outputs/apk/release/app-release.apk VoLam2D.apk
       - uses: actions/upload-artifact@v4
-        with: { name: apk, path: VoLamPixel.apk }
+        with: { name: apk, path: VoLam2D.apk }
 
   pc:
     runs-on: windows-latest
@@ -55,7 +55,7 @@ jobs:
           npm install --no-audit --no-fund
           npx electron-builder --win portable --x64 --publish never
       - uses: actions/upload-artifact@v4
-        with: { name: pc, path: apps/pc/dist/VoLamPixel-PC.exe }
+        with: { name: pc, path: apps/pc/dist/VoLam2D-PC.exe }
 
   upload:
     needs: [android, pc]
@@ -77,6 +77,6 @@ jobs:
           host: 222.255.181.102
           username: root
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: "out/VoLamPixel.apk,out/VoLamPixel-PC.exe"
+          source: "out/VoLam2D.apk,out/VoLam2D-PC.exe"
           target: /var/www/Game2d/public/downloads
           strip_components: 1

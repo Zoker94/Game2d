@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Võ Lâm Pixel: 1 app, 3 tài khoản. Mỗi tài khoản là một Activity chạy trong tiến trình riêng với thư mục dữ liệu
+<!-- Võ Lâm 2D: 1 app, 3 tài khoản. Mỗi tài khoản là một Activity chạy trong tiến trình riêng với thư mục dữ liệu
      WebView riêng (cookie, localStorage tách biệt) và một task riêng trong danh sách đa nhiệm -> chạy song song. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
-        android:label="Võ Lâm Pixel"
+        android:label="Võ Lâm 2D"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:theme="@style/AppTheme"

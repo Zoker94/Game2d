@@ -594,7 +594,7 @@ process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
 server.listen(PORT, () => {
-  console.log(`Võ Lâm Pixel đang chạy tại http://localhost:${PORT}`);
+  console.log(`Võ Lâm 2D đang chạy tại http://localhost:${PORT}`);
   console.log(`Trang quản trị: http://localhost:${PORT}/admin/`);
   console.log('Chủ server (Google):', ADMIN_EMAILS.join(', '));
   console.log(db.usingDatabase ? 'Lưu dữ liệu: Postgres (DATABASE_URL)' : 'Lưu dữ liệu: file ' + (process.env.DATA_DIR || 'data/') + 'db.json');

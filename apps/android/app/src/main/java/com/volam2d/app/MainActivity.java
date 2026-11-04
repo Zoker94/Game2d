@@ -52,7 +52,7 @@ public class MainActivity extends Activity {
         root.addView(ic, new LinearLayout.LayoutParams(dp(84), dp(84)));
 
         TextView t = new TextView(this);
-        t.setText("VÕ LÂM PIXEL");
+        t.setText("VÕ LÂM 2D");
         t.setTextColor(0xffffd36a); t.setTextSize(30); t.setTypeface(Typeface.SERIF, Typeface.BOLD); t.setLetterSpacing(0.12f);
         t.setGravity(Gravity.CENTER); t.setPadding(0, dp(10), 0, 0);
         root.addView(t);

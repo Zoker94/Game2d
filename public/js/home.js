@@ -134,7 +134,7 @@
   setInterval(() => { if (document.hidden) return; const i = (ORDER.indexOf(cur) + 1) % ORDER.length; if (!document.querySelector('.phai-show:hover')) pick(ORDER[i]); }, 6000);   // tự đổi phái
 
   // ---------- tải về: chưa có file thì ghi "sắp có" ----------
-  [['dl-apk', 'dl-apk2', '/downloads/VoLamPixel.apk'], ['dl-pc', 'dl-pc2', '/downloads/VoLamPixel-PC.exe']].forEach(([a, b, url]) => {
+  [['dl-apk', 'dl-apk2', '/downloads/VoLam2D.apk'], ['dl-pc', 'dl-pc2', '/downloads/VoLam2D-PC.exe']].forEach(([a, b, url]) => {
     fetch(url, { method: 'HEAD', cache: 'no-store' }).then(r => {
       if (r.ok) return;
       for (const id of [a, b]) { const el = document.getElementById(id); if (!el) continue; el.classList.add('off'); const sm = el.querySelector('small'); if (sm) sm.textContent = 'Sắp có'; else el.textContent = 'Sắp có'; }

@@ -1,8 +1,8 @@
 {
-  "name": "volampixel-pc",
-  "productName": "Vo Lam Pixel",
+  "name": "volam2d-pc",
+  "productName": "Vo Lam 2D",
   "version": "1.0.0",
-  "description": "Võ Lâm Pixel – app cho máy tính",
+  "description": "Võ Lâm 2D – app cho máy tính",
   "main": "main.js",
   "author": "volam2d.com",
   "license": "UNLICENSED",
@@ -10,9 +10,9 @@
   "devDependencies": { "electron": "31.7.7", "electron-builder": "24.13.3" },
   "build": {
     "appId": "com.volam2d.pc",
-    "productName": "Vo Lam Pixel",
+    "productName": "Vo Lam 2D",
     "files": ["main.js", "build/icon.png"],
     "win": { "target": "portable", "icon": "build/icon.ico" },
-    "portable": { "artifactName": "VoLamPixel-PC.exe" }
+    "portable": { "artifactName": "VoLam2D-PC.exe" }
   }
 }

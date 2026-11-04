@@ -1,4 +1,4 @@
-# ⚔️ Võ Lâm Pixel
+# ⚔️ Võ Lâm 2D
 
 Webgame 2D pixel art 64px thể loại **giang hồ võ lâm – cày cấp đánh quái**, nhiều người chơi thời gian thực, chơi được trên **PC và điện thoại** (tự chuyển màn hình ngang).
 

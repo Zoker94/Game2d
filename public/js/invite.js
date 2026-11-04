@@ -5,7 +5,7 @@
   const esc = s => UI.esc(s);
   let data = null, bound = null;
   const link = () => data ? `${location.origin}/?ref=${data.code}` : '';
-  const shareText = () => `Cùng mình chơi Võ Lâm Pixel – MMO kiếm hiệp pixel chơi ngay trên trình duyệt, không cần cài! Vào qua link này để nhận quà nhập môn:`;
+  const shareText = () => `Cùng mình chơi Võ Lâm 2D – MMO kiếm hiệp 2D chơi ngay trên trình duyệt, không cần cài! Vào qua link này để nhận quà nhập môn:`;
   function bind() {
     if (!G.socket || bound === G.socket) return;
     bound = G.socket;
@@ -48,7 +48,7 @@
     const done = t => UI.toast(t, 'reward');
     $('rf-copy').onclick = async () => { if (await copy(link())) done('Đã chép link mời'); else $('rf-url').select(); };
     $('rf-msg').onclick = async () => { if (await copy(shareText() + ' ' + link())) done('Đã chép lời mời kèm link – dán vào Zalo, Facebook, TikTok…'); };
-    const sh = $('rf-share'); if (sh) sh.onclick = () => navigator.share({ title: 'Võ Lâm Pixel', text: shareText(), url: link() }).catch(() => { });
+    const sh = $('rf-share'); if (sh) sh.onclick = () => navigator.share({ title: 'Võ Lâm 2D', text: shareText(), url: link() }).catch(() => { });
     $('rf-fb').onclick = () => window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(link()), '_blank', 'noopener');
     $('rf-zalo').onclick = async () => { await copy(shareText() + ' ' + link()); done('Đã chép lời mời – mở Zalo và dán vào cuộc trò chuyện hoặc nhóm'); window.open('https://zalo.me/', '_blank', 'noopener'); };
     body.querySelectorAll('[data-claim]').forEach(b => b.onclick = () => emit('ref', { op: 'claim', uid: b.dataset.claim, lv: +b.dataset.lv }));

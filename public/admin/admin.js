@@ -1,4 +1,4 @@
-// Trang quản trị Võ Lâm Pixel
+// Trang quản trị Võ Lâm 2D
 (function () {
   const $ = id => document.getElementById(id);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

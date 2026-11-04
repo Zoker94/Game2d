@@ -41,7 +41,7 @@
         const parts = [];
         const c = document.createElement('canvas'); c.width = 240; c.height = 44; const x = c.getContext('2d');
         x.textBaseline = 'top'; x.font = '16px Arial'; x.fillStyle = '#f60'; x.fillRect(110, 1, 62, 20);
-        x.fillStyle = '#069'; x.fillText('Võ Lâm Pixel ⚔😀 12,3', 2, 15); x.fillStyle = 'rgba(102,204,0,.7)'; x.fillText('Võ Lâm Pixel ⚔😀 12,3', 4, 17);
+        x.fillStyle = '#069'; x.fillText('Võ Lâm 2D ⚔😀 12,3', 2, 15); x.fillStyle = 'rgba(102,204,0,.7)'; x.fillText('Võ Lâm 2D ⚔😀 12,3', 4, 17);
         x.beginPath(); x.arc(200, 22, 14, 0, Math.PI * 1.7); x.strokeStyle = '#c0f'; x.lineWidth = 3; x.stroke();
         parts.push(c.toDataURL());
         const g = document.createElement('canvas').getContext('webgl');
@@ -314,7 +314,7 @@
       const items = news && news.items && news.items.length
         ? `<div class="ug-news"><div class="ug-sub">Nội dung cập nhật${news.date ? ' ' + UI.esc(news.date) : ''}:</div><ul>${news.items.map(t => `<li>${UI.esc(t)}</li>`).join('')}</ul></div>` : '';
       const g = document.createElement('div'); g.id = 'update-gate';
-      g.innerHTML = `<div class="ug-box"><div class="ug-icon">🎉</div><h2>Võ Lâm Pixel đã có phiên bản mới!</h2>
+      g.innerHTML = `<div class="ug-box"><div class="ug-icon">🎉</div><h2>Võ Lâm 2D đã có phiên bản mới!</h2>
         <p>Máy chủ vừa cập nhật. Vui lòng tải lại trang để tiếp tục chơi.</p>${items}
         <button class="btn primary ug-btn">🔄 Tải lại để chơi tiếp</button></div>`;
       const wasAuto = !!G.auto;

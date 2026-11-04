@@ -492,7 +492,7 @@ const CHANGELOG = [
   {
     date: '17/10/2026',
     items: [
-      '🎉 Võ Lâm Pixel ra mắt: webgame 2D pixel giang hồ – 9 môn phái, cày cấp đánh quái, mỗi phái 6 võ công có hiệu ứng riêng.',
+      '🎉 Võ Lâm 2D ra mắt: webgame 2D giang hồ – 9 môn phái, cày cấp đánh quái, mỗi phái 6 võ công có hiệu ứng riêng.',
       'Cường hoá trang bị tới +15 có Bảo Hiểm Phù, thú cưỡi, Long Ấn ngũ hành (Hỏa / Thủy / Băng) cho mọi phái.',
       'Tài khoản tên đăng nhập / mật khẩu, sách võ công và nâng cấp võ công, gán phím; nhạc nền và âm thanh võ hiệp; cảnh vật chi tiết liền mạch.'
     ]
