@@ -16,6 +16,7 @@ const START = 'tuong_duong';
 const DEST_NPC = 'tieu_cuc_pd';
 const FOLLOW_SPEED = 165;        // px / giây (chậm hơn người đi bộ một chút)
 const CHESTS = { dong: 3, bac: 4, vang: 6 };   // số rương tiêu văng ra khi xe bị phá
+const ROB_DAILY = 3;                          // mỗi nhân vật cướp tiêu tối đa 3 lần mỗi ngày (giờ Việt Nam)
 const WANTED_MS = 5 * 60000;                  // kẻ cướp bị truy nã 5 phút
 
 let seq = 1;
@@ -183,8 +184,9 @@ class Escort {
     const where = MAPS[mapId].name;
     if (killer) {
       killer.c.robUntil = now + WANTED_MS; killer.c.robTier = cart.tier;
+      { const d = U.vnDay(); if (killer.c.robDay !== d) { killer.c.robDay = d; killer.c.robN = 0; } killer.c.robN = (killer.c.robN | 0) + 1; }
       killer.dirtyMe = true;
-      w.toast(killer, `Cướp được ${r.name}! Nhanh nhặt rương tiêu. Bạn bị truy nã 5 phút – ai cũng có thể đánh bạn!`, 'reward');
+      w.toast(killer, `Cướp được ${r.name}! Nhanh nhặt rương tiêu. Bạn bị truy nã 5 phút – ai cũng có thể đánh bạn! (Lượt cướp hôm nay: ${killer.c.robN}/${ROB_DAILY})`, 'reward');
       w.features.announce(`💰 ${killer.c.name} đã cướp ${r.name} của ${cart.ownerName} tại ${where}! Rương tiêu văng khắp nơi – ai nhanh tay thì được. ${killer.c.name} bị truy nã 5 phút!`);
     } else {
       w.features.announce(`💥 ${r.name} của ${cart.ownerName} bị Cướp Tiêu Tặc phá tại ${where}!`, 'map:' + mapId);
@@ -193,6 +195,13 @@ class Escort {
       w.toast(owner, `Xe tiêu đã bị ${killer ? killer.c.name + ' cướp' : 'phá huỷ'}! Mất tiền cọc.` + (killer ? ' Hạ kẻ cướp để nhận tiền thưởng truy nã!' : ' Nhanh nhặt lại rương tiêu!'), 'error');
       owner.dirtyMe = true;
     }
+  }
+  robsToday(p) { return p.c.robDay === U.vnDay() ? p.c.robN | 0 : 0; }
+  // còn lượt cướp không (hết lượt thì đánh xe không mất máu, nhắc giãn cách)
+  canRob(p) {
+    if (this.robsToday(p) < ROB_DAILY) return true;
+    if (!(p._robMsg > Date.now())) { p._robMsg = Date.now() + 5000; this.w.toast(p, `Hôm nay bạn đã cướp tiêu đủ ${ROB_DAILY} lần – mai quay lại nhé!`, 'error'); }
+    return false;
   }
   // xe bị đánh: báo chủ xe và bang hội (giãn cách để không dồn dập)
   onHit(cart, src) {

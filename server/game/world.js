@@ -1153,6 +1153,7 @@ class World {
       if (t.recall) this.cancelRecall(t, 'Bị tấn công');
       if (t.c.hp <= 0) this.killPlayer(t, src);
     } else if (t.cart) {   // xe tiêu
+      if (src && src.c && src.userId !== t.owner && !this.escort.canRob(src)) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return 0; }   // hết lượt cướp tiêu hôm nay
       t.hp -= dmg;
       if (src && src.c) t.dmgBy.set(src.userId, (t.dmgBy.get(src.userId) || 0) + dmg);
       this.escort.onHit(t, src);

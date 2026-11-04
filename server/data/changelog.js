@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🛒 Cướp tiêu giới hạn 3 lần mỗi ngày cho mỗi nhân vật (tính theo giờ Việt Nam) – đủ lượt thì đánh xe tiêu không còn mất máu',
       '💰 Thêm vật phẩm tiền: Túi Ngân Lượng 10.000, Thỏi Bạc 100.000, Ngân Phiếu 1 triệu, Đại Ngân Phiếu 10 triệu (giao dịch được) và Nguyên Bảo 10 / 100 / 1.000 (không giao dịch) – Sử dụng để cộng vào túi tiền, quản trị có thể bày bán ở Kỳ Trân Các hoặc làm quà',
       '❓ Đố Vui Võ Lâm tăng lên hơn 2000 câu: tục ngữ ca dao, lịch sử – địa lý Việt Nam và thế giới, thủ đô các nước, khoa học, thiên văn, cơ thể người, động thực vật, văn học, Tam Quốc – Tây Du – Thủy Hử, thể thao, công nghệ, âm nhạc, ẩm thực, tiếng Anh, Hán Việt, câu đố mẹo, tính nhẩm',
       '🐔 Gà thả rông trong các thành: lang thang, mổ thóc, người đi sát thì chạy dạt; hai con gặp nhau có lúc gườm nhau rồi đá nhau tung lông, con thua bỏ chạy, con thắng ưỡn ngực gáy "Ò ó o!"',
