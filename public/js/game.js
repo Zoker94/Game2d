@@ -743,7 +743,7 @@
     UltFX.banner(d.name || 'Tuyệt kỹ', d.color, true);
   }
   // toạ độ thế giới -> toạ độ màn hình (px CSS)
-  function toScreen(wx, wy) { return [(wx - cam.x) * zoom, (wy - cam.y) * zoom]; }
+  function toScreen(wx, wy) { if (P25) { const q = p25FromSrc((wx - cam.x) * zoom, (wy - cam.y) * zoom); return [q.x, q.y]; } return [(wx - cam.x) * zoom, (wy - cam.y) * zoom]; }
   function rumbleAmp(now) {
     let a = 0;
     for (let i = rumbles.length - 1; i >= 0; i--) {
@@ -1050,8 +1050,8 @@
   Input.on('resize', resize);
 
   // ================== Nhấp/chạm vào màn hình ==================
-  const canvas = $('game');
-  const ctx = canvas.getContext('2d', { alpha: false });   // nền luôn được tô kín: bỏ kênh trong suốt cho trình duyệt ghép hình nhanh hơn
+  let canvas = $('game');
+  let ctx = canvas.getContext('2d', { alpha: false });   // nền luôn được tô kín: bỏ kênh trong suốt cho trình duyệt ghép hình nhanh hơn
   let W = 0, H = 0, DPR = 1, zoom = 1, cam = { x: 0, y: 0 }, shake = 0;
   // ---------- chất lượng đồ họa ----------
   // Số điểm ảnh phải vẽ là chi phí lớn nhất trên điện thoại. 'auto': bắt đầu ở mức vừa (điện thoại) / cao (PC),
@@ -1118,9 +1118,10 @@
   gfxApply(GFX_START());
 
   // toạ độ thế giới -> toạ độ màn hình (màn ngang, không xoay) – dùng cho kiểm thử / gợi ý
-  G.toScreen = (x, y) => { const r = canvas.getBoundingClientRect(); return { x: r.left + (x - cam.x) * zoom, y: r.top + (y - cam.y) * zoom }; };
+  G.toScreen = (x, y) => { const r = canvas.getBoundingClientRect(), q = toScreen(x, y); return { x: r.left + q[0], y: r.top + q[1] }; };
   function screenToWorld(cx, cy) {
-    const p = Input.toLocal(cx, cy);
+    let p = Input.toLocal(cx, cy);
+    if (P25) p = p25ToSrc(p.x, p.y);
     return { x: p.x / zoom + cam.x, y: p.y / zoom + cam.y };
   }
   // người chơi dưới con trỏ / ngón tay
@@ -1463,7 +1464,112 @@
   }
 
   // ================== Vẽ ==================
+  // ---------- Chế độ 2.5D (Cài đặt → Đồ họa) ----------
+  // Cảnh vẫn vẽ y như bản 2D nhưng vào một lớp phụ rộng hơn màn hình, rồi "nghiêng" lớp đó lên màn hình theo phối cảnh:
+  // mỗi dải ngang được co giãn theo độ xa (hàng trên xa – nhỏ, hàng dưới gần – to), hàng chứa nhân vật giữ đúng tỉ lệ 1:1.
+  // Không phải viết lại phần vẽ, chỉ tốn thêm một lượt chép ~200 dải ảnh trên GPU. Tắt 2.5D là trả lại bộ nhớ lớp phụ.
+  let P25 = null;
+  const cam2 = { x: 0, y: 0 };   // camera 2D bám nhân vật (mượt); cam = camera thật dùng để vẽ (2.5D thì dời theo lớp phụ)
+  const P25_TP = 0.56, P25_G = 0.56, P25_E = 1.3;   // hàng nhân vật (tỉ lệ chiều cao) · độ dốc phối cảnh · độ nén chiều sâu
+  // phép chiếu: hệ số co giãn ngang k tăng tuyến tính theo hàng màn hình; độ nén dọc = k^-E. Có công thức đóng (cả chiều ngược)
+  // nên vừa dùng trong JS (đổi toạ độ chuột) vừa dùng trong shader WebGL.
+  function p25Setup() {
+    const rw = W, rh = H, od = Math.min(DPR, 1.25) * (gfx.lowFx ? 0.8 : 1);   // lớp phụ vẽ tối đa 1,25x (đằng nào cũng co giãn mịn khi nghiêng), máy yếu thấp hơn nữa
+    if (P25 && P25.rw === rw && P25.rh === rh && P25.dpr === DPR && P25.od === od) return P25;
+    const k0 = 1 - P25_G * P25_TP, E1 = 1 - P25_E, C = rh / (P25_G * E1);
+    const vOf = ys => C * (Math.pow(k0 + P25_G * ys / rh, E1) - Math.pow(k0, E1));
+    const ws = Math.ceil(rw / k0) + 4, hs = Math.ceil(vOf(rh)) + 2;
+    const cv = (P25 && P25.cv) || document.createElement('canvas');
+    cv.width = Math.round(ws * od); cv.height = Math.round(hs * od);
+    P25 = { rw, rh, dpr: DPR, od, k0, E1, C, ws, hs, vp: vOf(P25_TP * rh), tp: P25_TP, cv, cx: cv.getContext('2d', { alpha: false }), fog: null };
+    return P25;
+  }
+  function p25Free() { if (P25) { P25.cv.width = P25.cv.height = 0; P25 = null; } if (GL) { GL.cv.style.display = 'none'; GL.on = false; } }
+  const p25k = ys => P25.k0 + P25_G * ys / P25.rh;
+  const p25v = ys => P25.C * (Math.pow(p25k(ys), P25.E1) - Math.pow(P25.k0, P25.E1));
+  const p25ys = v => (Math.pow(Math.max(1e-6, v / P25.C + Math.pow(P25.k0, P25.E1)), 1 / P25.E1) - P25.k0) * P25.rh / P25_G;
+  // màn hình (px CSS) <-> lớp phụ (px CSS)
+  function p25ToSrc(xs, ys) { const k = p25k(ys); return { x: P25.ws / 2 + (xs - P25.rw / 2) / k, y: p25v(ys) }; }
+  function p25FromSrc(sx, sy) { const ys = p25ys(sy); return { x: P25.rw / 2 + (sx - P25.ws / 2) * p25k(ys), y: ys }; }
+  // nghiêng bằng WebGL: một hình chữ nhật phủ màn, shader tự tính điểm lấy mẫu cho từng điểm ảnh (GPU, rất nhẹ)
+  let GL = null;
+  function glInit() {
+    if (GL !== null) return GL;
+    try {
+      const cv = document.createElement('canvas'); cv.id = 'game25';
+      cv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:none;pointer-events:none';
+      const gl = cv.getContext('webgl', { alpha: false, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: false, powerPreference: 'high-performance' });
+      if (!gl) return (GL = false);
+      const sh = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
+      const pr = gl.createProgram();
+      gl.attachShader(pr, sh(gl.VERTEX_SHADER, 'attribute vec2 p;varying vec2 q;void main(){q=p*0.5+0.5;gl_Position=vec4(p,0.0,1.0);}'));
+      gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, `precision highp float;varying vec2 q;uniform sampler2D t;uniform vec4 a;uniform vec4 b;uniform float g;
+        void main(){float ys=(1.0-q.y)*a.y;float xs=q.x*a.x;float k=b.x+g*ys/a.y;
+        float v=b.w*(pow(k,b.z)-pow(b.x,b.z));float sx=a.z*0.5+(xs-a.x*0.5)/k;
+        vec3 c=texture2D(t,vec2(sx/a.z,v/a.w)).rgb;
+        float f=clamp(1.0-ys/(a.y*0.42),0.0,1.0)*0.32;gl_FragColor=vec4(mix(c,vec3(0.59,0.67,0.84),f),1.0);}`));
+      gl.linkProgram(pr); if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error('link');
+      gl.useProgram(pr);
+      const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+      const lp = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(lp); gl.vertexAttribPointer(lp, 2, gl.FLOAT, false, 0, 0);
+      const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+      for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
+      canvas.parentNode.insertBefore(cv, canvas.nextSibling);
+      GL = { cv, gl, ua: gl.getUniformLocation(pr, 'a'), ub: gl.getUniformLocation(pr, 'b'), ug: gl.getUniformLocation(pr, 'g'), on: false };
+      cv.addEventListener('webglcontextlost', e => { e.preventDefault(); cv.remove(); GL = false; });   // mất ngữ cảnh: chuyển sang cách vẽ dải
+    } catch (e) { console.warn('2.5D WebGL', e); GL = false; }
+    return GL;
+  }
+  // tự chọn cách nhanh hơn trên máy này: thử WebGL 45 khung rồi chép dải 45 khung, đo thời gian, giữ cách nhẹ hơn
+  const P25B = { mode: '', n: 0, tg: 0, ts: 0 };
+  function p25Warp() {
+    const t0 = performance.now();
+    let mode = P25B.mode || (P25B.n < 45 ? 'gl' : 'strip');
+    if (mode === 'gl' && !glInit()) mode = P25B.mode = 'strip';
+    p25WarpWith(mode);
+    if (!P25B.mode) {
+      const dt = performance.now() - t0;
+      if (P25B.n++ >= 8) { if (mode === 'gl') P25B.tg += dt; else P25B.ts += dt; }   // bỏ vài khung đầu (khởi tạo)
+      if (P25B.n >= 90) P25B.mode = P25B.tg <= P25B.ts * 1.15 ? 'gl' : 'strip';
+    }
+    if (mode !== 'gl' && GL && GL.on) { GL.cv.style.display = 'none'; GL.on = false; }
+  }
+  function p25WarpWith(mode) {
+    const p = P25, g = mode === 'gl' && GL;
+    if (g) {
+      const gl = g.gl;
+      if (!g.on) { g.cv.style.display = 'block'; g.on = true; }
+      if (g.cv.width !== canvas.width || g.cv.height !== canvas.height) { g.cv.width = canvas.width; g.cv.height = canvas.height; }
+      gl.viewport(0, 0, g.cv.width, g.cv.height);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, p.cv);
+      gl.uniform4f(g.ua, p.rw, p.rh, p.cv.width / p.od, p.cv.height / p.od);
+      gl.uniform4f(g.ub, p.k0, 0, p.E1, p.C);
+      gl.uniform1f(g.ug, P25_G);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      return;
+    }
+    // không có WebGL: chép từng dải ngang bằng canvas 2D
+    const d = DPR, o = p.od, step = gfx.lowFx ? 4 : 3;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.fillStyle = '#0b0810'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    for (let y = 0; y < p.rh; y += step) {
+      const y1 = Math.min(p.rh, y + step), k = p25k((y + y1) / 2), v0 = p25v(y), v1 = p25v(y1), hw = p.rw / 2 / k;
+      ctx.drawImage(p.cv, (p.ws / 2 - hw) * o, v0 * o, hw * 2 * o, Math.max(0.5, (v1 - v0) * o), 0, Math.floor(y * d), canvas.width, Math.ceil((y1 - y) * d) + 1);
+    }
+    if (!p.fog || p.fog.h !== canvas.height) { const gr = ctx.createLinearGradient(0, 0, 0, canvas.height * 0.42); gr.addColorStop(0, 'rgba(150,170,215,.32)'); gr.addColorStop(1, 'rgba(150,170,215,0)'); p.fog = { g: gr, h: canvas.height }; }
+    ctx.fillStyle = p.fog.g; ctx.fillRect(0, 0, canvas.width, canvas.height * 0.42);   // sương mờ phía xa cho có chiều sâu
+  }
+  G.p25Mode = () => P25B.mode;
+  G.set25 = on => { G.settings.view25 = !!on; G.saveSettings(); if (!on) p25Free(); G._camSnap = true; };
   function draw(now) {
+    if (!G.settings.view25 || !G.map || !G.me) { if (P25) p25Free(); return drawScene(now); }
+    const p = p25Setup(), mc = canvas, mx = ctx, rw = W, rh = H, rd = DPR;
+    canvas = p.cv; ctx = p.cx; W = p.ws; H = p.hs; DPR = p.od;
+    try { drawScene(now); } finally { canvas = mc; ctx = mx; W = rw; H = rh; DPR = rd; }
+    p25Warp();
+  }
+  function drawScene(now) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = '#0b0810';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1474,11 +1580,14 @@
     const fdt = Math.min(0.05, (now - (G._lastDraw || now)) / 1000); G._lastDraw = now;
     // camera đi theo mượt
     const foc = HoaSon.camFocus() || s;   // Hoa Sơn Luận Kiếm, chế độ Xem thi đấu: camera theo trận đang đấu
-    let tx = Math.max(0, Math.min(m.w * TILE - vw, foc.x - vw / 2)), ty = Math.max(0, Math.min(m.h * TILE - vh, foc.y - vh / 2 - 20));
-    if (m.w * TILE < vw) tx = (m.w * TILE - vw) / 2;
-    if (m.h * TILE < vh) ty = (m.h * TILE - vh) / 2;
-    if (G._camSnap) { cam.x = tx; cam.y = ty; G._camSnap = false; }
-    else { const k = Math.min(1, fdt * 9); cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k; }
+    const rvw = (P25 ? P25.rw : W) / zoom, rvh = (P25 ? P25.rh : H) / zoom;   // khung nhìn màn hình thật (2.5D: lớp phụ rộng hơn)
+    let tx = Math.max(0, Math.min(m.w * TILE - rvw, foc.x - rvw / 2)), ty = Math.max(0, Math.min(m.h * TILE - rvh, foc.y - rvh / 2 - 20));
+    if (m.w * TILE < rvw) tx = (m.w * TILE - rvw) / 2;
+    if (m.h * TILE < rvh) ty = (m.h * TILE - rvh) / 2;
+    if (G._camSnap) { cam2.x = tx; cam2.y = ty; G._camSnap = false; }
+    else { const k = Math.min(1, fdt * 9); cam2.x += (tx - cam2.x) * k; cam2.y += (ty - cam2.y) * k; }
+    if (P25) { cam.x = cam2.x + rvw / 2 - P25.ws / 2 / zoom; cam.y = cam2.y + P25.tp * rvh - P25.vp / zoom; }
+    else { cam.x = cam2.x; cam.y = cam2.y; }
     let sx = 0, sy = 0;
     if (rumbles.length) shake = Math.max(shake, rumbleAmp(performance.now()));
     if (shake > 0) { sx = (Math.random() - 0.5) * shake; sy = (Math.random() - 0.5) * shake; shake *= 0.85; if (shake < 0.5) shake = 0; }

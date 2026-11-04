@@ -1505,6 +1505,7 @@
     if (tab === 'gfx') {
       html += `<div class="card"><h4>🔭 Góc nhìn</h4>
           <div class="set-row"><span>Độ rộng góc nhìn</span><input type="range" id="set-view" min="80" max="150" step="5" value="${view}"><b id="set-view-v">${view}%</b><button class="btn small" id="set-view-reset">Mặc định</button></div>
+          <label class="set-row"><input type="checkbox" id="set-25d" ${s.view25 ? 'checked' : ''}> 🧊 Chế độ 2.5D – góc nhìn nghiêng có chiều sâu (mặc định tắt: bản 2D)</label>
           <div class="small muted">Kéo sang phải để nhìn được rộng hơn (thấy xa hơn, nhân vật nhỏ lại), sang trái để nhìn gần. Góc nhìn càng rộng máy càng phải vẽ nhiều – máy yếu nên để 100% trở xuống.</div></div>
         <div class="card"><h4>🎨 Chất lượng đồ họa</h4>
           <div class="row gfx-row" style="justify-content:flex-start;align-items:center;gap:4px">${[['auto', 'Tự động'], ['high', 'Cao'], ['medium', 'Vừa'], ['low', 'Thấp'], ['ultra', 'Siêu thấp (máy yếu)']].map(([k, n]) => `<button class="btn small ${(s.gfx || 'auto') === k ? 'primary' : ''}" data-gfx="${k}">${n}</button>`).join('')}</div>
@@ -1577,6 +1578,7 @@
     on('set-black', 'onclick', () => { UI.closePanel(); G.setBlackout(true); });
     on('set-daynight', 'onchange', e => { G.settings.daynight = e.target.checked; G.saveSettings(); });
     on('set-lowfx', 'onchange', e => { G.setLowFx(e.target.checked); UI.refreshPanel(); });
+    on('set-25d', 'onchange', e => { G.set25(e.target.checked); });
     on('set-fs', 'onclick', () => Input.toggleFullscreen());
     on('set-keys', 'onclick', () => UI.openPanel('keys'));
     on('set-auto', 'onclick', () => UI.openPanel('auto'));
