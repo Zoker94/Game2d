@@ -63,13 +63,14 @@
     src.start(t, off, dur);
     return true;
   }
+  let duckK = 1;   // hạ nhỏ nhạc nền tạm thời (đoạn intro có giọng đọc)
   function applyVol() {
     if (!ctx) return;
     sfxBus.gain.value = st.sfx ? st.sfxVol * 0.6 : 0;
-    const mv = st.music ? st.musicVol * 0.35 : 0;
+    const mv = st.music ? st.musicVol * 0.35 * duckK : 0;
     musicBus.gain.setTargetAtTime(mv, ctx.currentTime, 0.15);
-    if (fileBus) fileBus.gain.setTargetAtTime(st.music ? st.musicVol * 0.9 : 0, ctx.currentTime, 0.15);   // nhạc thu sẵn (đã cân -18 LUFS)
-    musicWet.gain.setTargetAtTime(st.music ? 1 : 0, ctx.currentTime, 0.15);
+    if (fileBus) fileBus.gain.setTargetAtTime(st.music ? st.musicVol * 0.9 * duckK : 0, ctx.currentTime, 0.4);   // nhạc thu sẵn (đã cân -18 LUFS)
+    musicWet.gain.setTargetAtTime(st.music ? duckK : 0, ctx.currentTime, 0.15);
     sfxWet.gain.setTargetAtTime(st.sfx ? st.sfxVol : 0, ctx.currentTime, 0.05);
   }
 
@@ -326,7 +327,7 @@
   }
 
   window.GameAudio = {
-    init, sfx, music, ambience, get state() { return st; }, get sprite() { return !!sprBuf; },
+    init, sfx, music, ambience, duck(k) { duckK = Math.max(0, Math.min(1, +k || 0)); applyVol(); }, get state() { return st; }, get sprite() { return !!sprBuf; },
     set(k, v) { st[k] = v; save(); applyVol(); if (k === 'music') { const m = mood; mood = null; if (v && m) music(m); else { fileMusic(null); synthMusic(null); mood = m; } } },
     get mood() { return mood; },
     get musicInfo() { return { track: curTrack && curTrack.name, playing: !!(curTrack && !curTrack.el.paused && curTrack.ok), synth: synthMood, file: curTrack && curTrack.el.currentSrc, t: curTrack && +curTrack.el.currentTime.toFixed(1) }; }   // để kiểm tra / gỡ lỗi

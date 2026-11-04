@@ -381,7 +381,7 @@
     buf = document.createElement('canvas'); bx = buf.getContext('2d');
     root.addEventListener('pointerdown', e => { if (e.target.closest('.in-btn')) return; e.preventDefault(); skipScene(); });
     $('in-skip').onclick = e => { e.stopPropagation(); finish(); };
-    $('in-voice').onclick = e => { e.stopPropagation(); voiceOn = !voiceOn; store('vl_introVoice', voiceOn ? '1' : '0'); voiceBtn(); if (!voiceOn) { stopVoice(); voiceDone = true; } else startScene(si); };
+    $('in-voice').onclick = e => { e.stopPropagation(); voiceOn = !voiceOn; store('vl_introVoice', voiceOn ? '1' : '0'); voiceBtn(); if (window.GameAudio) GameAudio.duck(voiceOn ? 0.18 : 0.8); if (!voiceOn) { stopVoice(); voiceDone = true; } else startScene(si); };
     window.addEventListener('resize', resize);
   }
   function voiceBtn() { $('in-voice').textContent = voiceOn ? '🔊 Giọng đọc' : '🔇 Giọng đọc'; }
@@ -397,7 +397,7 @@
     const sc = SCENES[i], text = fill(sc.text);
     lines = text;
     minT = Math.max(sc.min, voiceOn ? 0 : 2200 + text.length * 55);
-    if (sc.mood && window.GameAudio) GameAudio.music(sc.mood);
+    // nhạc: chỉ một bài êm của intro cho cả đoạn (không đổi bài theo cảnh), có giọng đọc thì vặn nhỏ để nghe rõ lời
     $('in-dots').innerHTML = SCENES.map((_, k) => `<i class="${k < i ? 'd' : k === i ? 'on' : ''}"></i>`).join('');
     speak(i, text, () => { voiceDone = true; });
   }
@@ -449,6 +449,7 @@
     build(); warmVoices(); resize(); voiceBtn();
     onDone = done || null; open = true;
     prevMood = window.GameAudio ? GameAudio.mood : null;
+    if (window.GameAudio) { GameAudio.music('town'); GameAudio.duck(voiceOn ? 0.18 : 0.8); }
     // tải sẵn hình 9 phái cho cảnh giới thiệu môn phái (máy đã từng vào màn tạo nhân vật thì có sẵn trong bộ nhớ)
     if (window.Assets) for (const c of Assets.CLASSES || []) Assets.loadClass(c);
     root.classList.add('on');
@@ -461,7 +462,7 @@
     open = false; cancelAnimationFrame(raf); stopVoice();
     document.removeEventListener('keydown', onKey, true);
     root.classList.remove('on');
-    if (window.GameAudio && prevMood) GameAudio.music(prevMood);
+    if (window.GameAudio) { GameAudio.duck(1); if (prevMood) GameAudio.music(prevMood); }
     const d = onDone; onDone = null; si = -1;
     if (d) d();
   }
