@@ -18,7 +18,7 @@ const DEF = { pickup: true, pickGold: true, pickMin: 'common', pickPots: true, p
 // Vé Treo Máy: còn hạn thì máy chủ treo hộ khi rời trang / tắt game. Không có vé vẫn bật Tự động được nhưng chỉ khi đang mở game,
 // và cứ mỗi lượt 5–30 phút bị hỏi mã xác nhận ngẫu nhiên: 15 giây không bấm đúng thì bị đưa ra khỏi game (chống treo bỏ mặc).
 const FAST = !!process.env.CAP_FAST;   // chỉ để kiểm thử: hỏi mã sau 5–10 giây
-const CAP_MIN = FAST ? 5000 : 5 * 60000, CAP_MAX = FAST ? 10000 : 30 * 60000, CAP_TIME = 15000;
+const CAP_MIN = FAST ? 5000 : 5 * 60000, CAP_MAX = FAST ? 10000 : 30 * 60000, CAP_TIME = 15000, CAP_TIME_AWAY = 60000;   // đang ẩn tab: 60 giây để quay lại nhập mã
 const hasTicket = c => (c.autoTicket || 0) > Date.now();
 const clamp = (v, a, b) => Math.max(a, Math.min(b, Number.isFinite(+v) ? +v : a));
 
@@ -133,13 +133,13 @@ class AutoSrv {
 
   // ---------- mã xác nhận khi treo không có vé ----------
   captchaTick(p, a, now) {
-    if (p.offline || !a.on || hasTicket(p.c) || this.w.isGm(p)) { if (p.cap) { p.cap = null; p.socket.emit('captcha', { close: 1 }); } return; }
+    if (p.offline || !a.on || hasTicket(p.c)) { if (p.cap) { p.cap = null; p.socket.emit('captcha', { close: 1 }); } return; }
     if (p.cap) { if (now > p.cap.until) { this.captchaFail(p); return true; } return; }
     if (now >= (p.capAt || Infinity)) this.captchaAsk(p, now);
   }
   captchaAsk(p, now, keepUntil) {
     const { code, img } = require('./capimg').make();   // máy chủ vẽ ảnh, không gửi mã dạng chữ xuống máy khách
-    p.cap = { code, until: keepUntil || now + CAP_TIME, tries: p.cap ? p.cap.tries : 0 };
+    p.cap = { code, until: keepUntil || now + (p.away ? CAP_TIME_AWAY : CAP_TIME), tries: p.cap ? p.cap.tries : 0 };
     p.socket.emit('captcha', { img, left: p.cap.until - now });
   }
   captchaAnswer(p, d) {
@@ -157,7 +157,7 @@ class AutoSrv {
   captchaFail(p) {
     p.cap = null; p.capAt = 0;
     if (p.autoSrv) p.autoSrv.on = false;
-    p.socket.emit('kicked', { reason: '⏰ Bạn không xác nhận mã treo máy trong 15 giây nên đã bị đưa ra khỏi game.\n\nMua "Vé Treo Máy" ở Kỳ Trân Các để treo máy 6–8 giờ không bị hỏi mã và được máy chủ treo hộ khi tắt game.' });
+    p.socket.emit('kicked', { reason: '⏰ Bạn không xác nhận mã treo máy kịp thời nên đã bị đưa ra khỏi game.\n\nMua "Vé Treo Máy" ở Kỳ Trân Các để treo máy 6–8 giờ không bị hỏi mã và được máy chủ treo hộ khi tắt game.' });
     this.w.db.log('auto', `${p.c.name} bị đưa ra khỏi game vì không xác nhận mã treo máy`);
     this.w.removePlayer(p);
     try { p.socket.disconnect(true); } catch (e) { }

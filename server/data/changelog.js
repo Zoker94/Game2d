@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🤖 Mã xác nhận treo máy: tài khoản quản trị / GM cũng bị hỏi khi bật Tự động mà không có Vé Treo Máy. Đang ẩn tab mà bị hỏi mã thì có 60 giây để quay lại (tiêu đề tab nháy, chuông kêu, có thông báo nếu cho phép); quay lại sau khi ẩn tab lâu sẽ nhắc: không có vé thì ẩn tab nhân vật đứng yên.',
       '💠 Đá cường hoá rơi ít lại khoảng một nửa: quái thường (Huyền Tinh ~1/400 con, Thiên Tinh ít hơn), quái tinh anh, quái đêm, boss (còn 2-4 Huyền Tinh)',
       '🔨 Cường hoá từ +11 trở lên cần nhiều Huyền Tinh Thạch hơn (7 / 9 / 11 / 13 / 15 viên) cùng với Thiên Tinh Thạch (1-5 viên)',
       '🐺 Quái thường chỉ đuổi một đoạn gần (khoảng 5 ô quanh chỗ của nó, người chạy xa hơn ~6,5 ô thì thôi) rồi quay về; boss vẫn đuổi xa như cũ',

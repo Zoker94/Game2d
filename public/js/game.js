@@ -1016,6 +1016,8 @@
     if (on && G.map && G.map.safe && !G._duelWith) UI.toast('Hãy ra bãi luyện công để dùng tự động đánh', 'error');
     G.autoHome = on ? { x: G.self.x, y: G.self.y } : null;
     sendAutoSrv();
+    // không có vé: xin quyền thông báo để khi ẩn tab mà bị hỏi mã thì còn biết quay lại
+    if (on && !hasTicket()) try { if (window.Notification && Notification.permission === 'default') Notification.requestPermission(); } catch (e) { }
   }
   G.setAuto = setAuto;
   $('btn-auto').onclick = () => setAuto(!G.auto);
@@ -2359,9 +2361,12 @@
   }
   G.sendAutoSrv = sendAutoSrv;
   function setAway(v) { if (!G.socket || !G.inGame) return; if (v) sendAutoSrv(); G.socket.emit('away', { v: v ? 1 : 0 }); }
+  let hidAt = 0;
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { setAway(true); return; }
+    if (document.hidden) { hidAt = Date.now(); setAway(true); return; }
     if (!G.blackout) setAway(false);
+    if (G.auto && !hasTicket() && hidAt && Date.now() - hidAt > 60000) UI.toast('⚠️ Không có Vé Treo Máy: ẩn tab / thu nhỏ trình duyệt thì nhân vật đứng yên, không tự đánh. Mua Vé Treo Máy ở Kỳ Trân Các để máy chủ treo hộ.', 'error');
+    hidAt = 0;
     last = performance.now(); gfx.win = []; G.lastInput = last;
   });
   // Màn đen tiết kiệm pin: phủ đen cả màn hình (màn OLED tắt hẳn điểm ảnh), dừng vẽ và dừng vòng lặp,

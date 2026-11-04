@@ -2,6 +2,7 @@
 // máy chủ hỏi 1 lần. Mã 4 số vẽ méo trên canvas, bấm bàn phím số rồi Xác nhận trong 15 giây, không thì bị đưa ra khỏi game.
 (function () {
   let box = null, timer = 0, until = 0, val = '', total = 15000;
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && flash) { clearInterval(flash); flash = 0; document.title = oldTitle || document.title; oldTitle = ''; } });
   function draw(cv, code) {
     const x = cv.getContext('2d'), W = cv.width, H = cv.height;
     x.fillStyle = '#1a1420'; x.fillRect(0, 0, W, H);
@@ -14,7 +15,15 @@
       x.strokeText(ch, 0, 0); x.fillText(ch, 0, 0); x.restore();
     });
   }
-  function close() { clearInterval(timer); if (box) box.remove(); box = null; }
+  let oldTitle = '', flash = 0;
+  function close() { clearInterval(timer); clearInterval(flash); flash = 0; if (oldTitle) { document.title = oldTitle; oldTitle = ''; } if (box) box.remove(); box = null; }
+  // đang ẩn tab: nháy tiêu đề tab + kêu chuông + thông báo hệ thống để người chơi quay lại nhập mã
+  function alertAway() {
+    if (!document.hidden) return;
+    oldTitle = document.title; let on = 0;
+    flash = setInterval(() => { document.title = (on = !on) ? '⚠️ NHẬP MÃ XÁC NHẬN!' : oldTitle; }, 800);
+    try { if (window.Notification && Notification.permission === 'granted') new Notification('Võ Lâm 2D – Xác nhận treo máy', { body: 'Quay lại game nhập mã 4 số, không sẽ bị đưa ra khỏi game.', icon: '/icons/icon-192.png', tag: 'vl-cap' }); } catch (e) { }
+  }
   function open(d) {
     close(); val = ''; until = Date.now() + d.left; total = d.left;
     box = document.createElement('div'); box.id = 'captcha';
@@ -24,7 +33,7 @@
       <canvas width="200" height="64"></canvas>
       <div class="cp-val"></div>
       <div class="cp-time"><i></i><span></span></div>
-      <p class="small muted">${fish ? 'Sai 3 lần hoặc quá giờ sẽ bị cấm câu cá 30 phút.' : 'Quá 15 giây sẽ bị đưa ra khỏi game. Mua Vé Treo Máy ở Kỳ Trân Các để không bị hỏi.'}</p></div>
+      <p class="small muted">${fish ? 'Sai 3 lần hoặc quá giờ sẽ bị cấm câu cá 30 phút.' : 'Hết giờ sẽ bị đưa ra khỏi game. Mua Vé Treo Máy ở Kỳ Trân Các để không bị hỏi.'}</p></div>
       <div class="cp-keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9, '⌫', 0, '✓'].map(k => `<button type="button" data-k="${k}">${k}</button>`).join('')}</div></div>`;
     document.body.appendChild(box);
     const cv = box.querySelector('canvas');
@@ -49,6 +58,7 @@
     tick(); timer = setInterval(tick, 200);
     try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch (e) { }
     if (window.GameAudio) try { GameAudio.sfx('error', 0); } catch (e) { }
+    alertAway();
   }
   function bind(s) {
     s.on('captcha', d => { if (d.close) return close(); if (d.ok) { close(); UI.toast(d.kind === 'fish' ? '✅ Đã xác nhận – câu cá tiếp nhé' : '✅ Đã xác nhận – tiếp tục treo máy', 'reward'); return; } open(d); });
