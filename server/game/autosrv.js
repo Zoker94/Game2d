@@ -133,7 +133,7 @@ class AutoSrv {
 
   // ---------- mã xác nhận khi treo không có vé ----------
   captchaTick(p, a, now) {
-    if (p.offline || !a.on || hasTicket(p.c)) { if (p.cap) { p.cap = null; p.socket.emit('captcha', { close: 1 }); } return; }
+    if (p.offline || !a.on || hasTicket(p.c) || this.w.isGm(p)) { if (p.cap) { p.cap = null; p.socket.emit('captcha', { close: 1 }); } return; }
     if (p.cap) { if (now > p.cap.until) { this.captchaFail(p); return true; } return; }
     if (now >= (p.capAt || Infinity)) this.captchaAsk(p, now);
   }
