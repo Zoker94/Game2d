@@ -57,6 +57,8 @@ const BOSS_CHESTS = 4;
 const PVE_SKILL_K = 0.85;   // hệ số sát thương võ công lên quái / boss
 const AGGRO_R = 200;
 const LEASH_R = 650;
+const CHASE_R = 340;    // quái thường chỉ đuổi trong bán kính này quanh chỗ của nó (boss vẫn theo LEASH_R)
+const GIVEUP_R = 420;   // mục tiêu chạy xa hơn chừng này thì thôi đuổi
 const MERGED_TUTORIAL = true;   // hướng dẫn tân thủ nằm trong chương 1 cốt truyện
 const BOSS_REGEN_DELAY = 30000;   // boss hồi máu sau 30 giây không bị người chơi gây sát thương
 
@@ -2542,9 +2544,11 @@ class World {
     const slowed = mon.st && (mon.st.slow || 0) > now;
     const tpl = mon.tpl;
     let target = mon.target ? this.players.get(mon.target) : null;
-    if (target && (target.dead || target.mapId !== mon.mapId || this.gmOn(target, 'hide') || Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > LEASH_R || (mon.tkSide && !this.tongkim.monCanTarget(mon, target)) || (mon.onlyGid && target.c.guildId !== mon.onlyGid))) {
+    const chaseR = mon.boss || tpl.pbBoss || mon.tkSide ? LEASH_R : CHASE_R;   // quái thường: đuổi một đoạn gần rồi quay về
+    if (target && !target.dead && !mon.boss && !tpl.pbBoss && !mon.tkSide && U.dist(target, mon) > GIVEUP_R) { target = null; mon.target = null; mon.wander = { x: mon.hx, y: mon.hy }; }
+    if (target && (target.dead || target.mapId !== mon.mapId || this.gmOn(target, 'hide') || Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > chaseR || (mon.tkSide && !this.tongkim.monCanTarget(mon, target)) || (mon.onlyGid && target.c.guildId !== mon.onlyGid))) {
       target = null; mon.target = null;
-      if (Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > LEASH_R) {
+      if (Math.hypot(mon.x - mon.hx, mon.y - mon.hy) > chaseR) {
         mon.wander = { x: mon.hx, y: mon.hy };
         if (!mon.boss) { mon.hp = mon.maxHp; mon.dmgBy.clear(); }   // boss: quay về chỗ cũ nhưng giữ nguyên máu
       }
@@ -2558,7 +2562,7 @@ class World {
         const d = U.dist(p, mon);
         if (d < bd) { bd = d; best = p; }
       }
-      if (best && Math.hypot(best.x - mon.hx, best.y - mon.hy) < LEASH_R * 0.8) { target = best; mon.target = best.userId; }
+      if (best && Math.hypot(best.x - mon.hx, best.y - mon.hy) < chaseR * 0.8) { target = best; mon.target = best.userId; }
     }
     const spd = (tpl.speed || 90) * (dt / 1000) * (slowed ? 0.45 : 1);
     mon.moving = false;

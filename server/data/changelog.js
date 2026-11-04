@@ -4,6 +4,8 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🐺 Quái thường chỉ đuổi một đoạn gần (khoảng 5 ô quanh chỗ của nó, người chạy xa hơn ~6,5 ô thì thôi) rồi quay về; boss vẫn đuổi xa như cũ',
+      '🤖 Tự động đánh thông minh hơn: đang bật tự động mà tự đi (cần điều khiển, phím, bấm chuột) tới đâu dừng lại thì luyện công tiếp ngay tại đó, không chạy về chỗ cũ (máy chủ treo hộ cũng dùng chỗ mới)',
       '🎬 Đoạn phim mở đầu: chỉ phát một bản nhạc êm riêng cho cả đoạn (không đổi bài theo từng cảnh, không lẫn nhạc bản đồ), nhạc tự vặn nhỏ khi có giọng đọc để nghe rõ lời; tắt giọng đọc thì nhạc to lại',
       '🏯 Trang chủ mới volam2d.com phong cách cổ trang: Chơi ngay, tải app Android (1 app – 3 tài khoản chạy song song), app máy tính Windows, hướng dẫn cài cho iPhone, nhóm Zalo, Nạp ngay, giới thiệu Cửu Đại Môn Phái. Game chuyển sang địa chỉ volam2d.com/play',
       '🏯 Chế độ đồ hoạ 2.5D kiểu Võ Lâm (Cài đặt → Đồ họa → Góc nhìn): góc nhìn chéo, mặt đất thành ô thoi; người, quái, NPC, cây, nhà đứng thẳng và che nhau đúng trước sau; kéo cần / bấm phím lên là đi lên trên màn hình, nhân vật quay 8 hướng theo màn hình; chiêu thức, số sát thương, mũi tên chỉ đường đều đúng chỗ. Nền chéo vẽ sẵn vào bộ đệm nên vẫn nhẹ như bản 2D. Mặc định vẫn là 2D',

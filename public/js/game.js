@@ -1179,7 +1179,7 @@
       if (hostile) { if (!Input.isTouch || e.detail >= 1) G.chase = { id: best.id, skill: 0 }; }
       return;
     }
-    if (!Input.isTouch) { G.moveTo = { x: w.x, y: w.y }; G.chase = null; G.npcGoal = null; G.clickMark = { x: w.x, y: w.y, t0: performance.now() }; }
+    if (!Input.isTouch) { G.moveTo = { x: w.x, y: w.y }; G.chase = null; G.npcGoal = null; G.clickMark = { x: w.x, y: w.y, t0: performance.now() }; if (G.auto) G.userMove = true; }   // đang tự động: đi tới đó rồi luyện tiếp ở đó
   });
 
   // ================== Vòng lặp chính ==================
@@ -1284,7 +1284,11 @@
       else G.moveTo = null;
     }
     autoPotion(now);
-    if (G.auto && !manual && !dead && !cc) autoPlay(now);
+    // tự động: người chơi tự đi (cần điều khiển / phím / bấm chuột) thì chỗ dừng lại thành điểm luyện công mới, không chạy về chỗ cũ
+    if (G.auto && manual) { G.autoHome = { x: s.x, y: s.y }; G._homeDirty = now; G.userMove = false; }
+    if (G.auto && G.userMove && !G.moveTo) { G.userMove = false; G.autoHome = { x: s.x, y: s.y }; G._homeDirty = now; }
+    if (G._homeDirty && now - G._homeDirty > 1000) { G._homeDirty = 0; sendAutoSrv(); }   // báo máy chủ (treo hộ) điểm luyện mới
+    if (G.auto && !manual && !dead && !cc && !G.userMove) autoPlay(now);
     if ((Input.attackHeld || Input.padAttack) && !dead && !cc) useSkill(0);
 
     if (!manual && G.moveTo && !cc) {
