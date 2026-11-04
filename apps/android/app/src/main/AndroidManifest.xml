@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Võ Lâm Pixel: 1 app, 3 tài khoản. Mỗi tài khoản là một Activity chạy trong tiến trình riêng với thư mục dữ liệu
+     WebView riêng (cookie, localStorage tách biệt) và một task riêng trong danh sách đa nhiệm -> chạy song song. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <application
+        android:label="Võ Lâm Pixel"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="false"
+        android:hardwareAccelerated="true"
+        android:largeHeap="true">
+
+        <activity android:name=".MainActivity" android:exported="true" android:theme="@style/AppTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".Game1" android:process=":acc1" android:taskAffinity="com.volam2d.app.acc1"
+            android:launchMode="singleTask" android:label="Võ Lâm · TK 1" android:exported="false"
+            android:screenOrientation="sensorLandscape" android:theme="@style/GameTheme"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode|density" />
+        <activity android:name=".Game2" android:process=":acc2" android:taskAffinity="com.volam2d.app.acc2"
+            android:launchMode="singleTask" android:label="Võ Lâm · TK 2" android:exported="false"
+            android:screenOrientation="sensorLandscape" android:theme="@style/GameTheme"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode|density" />
+        <activity android:name=".Game3" android:process=":acc3" android:taskAffinity="com.volam2d.app.acc3"
+            android:launchMode="singleTask" android:label="Võ Lâm · TK 3" android:exported="false"
+            android:screenOrientation="sensorLandscape" android:theme="@style/GameTheme"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode|density" />
+    </application>
+</manifest>

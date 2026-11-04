@@ -340,7 +340,8 @@ function sendHtml(res, file) {
   }
   res.set('Cache-Control', 'no-cache').type('html').send(html);
 }
-app.get(['/', '/index.html'], (req, res) => sendHtml(res, 'index.html'));
+app.get('/', (req, res) => sendHtml(res, 'home.html'));   // trang chủ (giới thiệu, tải app, nút Chơi ngay)
+app.get(['/play', '/play/', '/index.html'], (req, res) => sendHtml(res, 'index.html'));   // game
 app.get(['/admin', '/admin/', '/admin/index.html'], (req, res) => sendHtml(res, 'admin/index.html'));
 // nén gzip file mã (js / css / json) – nén một lần, giữ trong bộ nhớ theo thời điểm sửa file
 const gzCache = new Map();

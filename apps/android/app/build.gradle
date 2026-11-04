@@ -1,0 +1,33 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.volam2d.app'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'com.volam2d.app'
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+    // khoá ký lấy từ biến môi trường (GitHub Secrets) – không để khoá / mật khẩu trong mã nguồn.
+    // Bản cập nhật sau phải cùng khoá thì máy mới cho cài đè.
+    signingConfigs {
+        release {
+            storeFile file(System.getenv('APK_KEYSTORE') ?: 'missing.jks')
+            storePassword System.getenv('APK_KEYSTORE_PASS') ?: ''
+            keyAlias System.getenv('APK_KEY_ALIAS') ?: 'volam'
+            keyPassword System.getenv('APK_KEYSTORE_PASS') ?: ''
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}

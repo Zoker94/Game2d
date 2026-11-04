@@ -14,6 +14,8 @@
     autoCfg: (() => { try { return JSON.parse(localStorage.getItem('vl_auto') || '{}'); } catch (e) { return {}; } })()
   };
   G.saveSettings = () => localStorage.setItem('vl_settings', JSON.stringify(G.settings));
+  // từ trang chủ bấm "Nạp ngay" (/play?nap=1): vào game xong mở bảng nạp
+  try { const q = new URLSearchParams(location.search); if (q.get('nap') === '1') { G._openTopup = true; q.delete('nap'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '')); } } catch (e) { }
   // link mời bạn (…/?ref=MÃ): nhớ mã 7 ngày, gửi kèm khi tạo tài khoản; mã thiết bị để máy chủ chặn tự mời chính mình
   const authExtra = (() => {
     const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } };
@@ -290,6 +292,7 @@
     if (!G.socket) return location.reload();   // mất kết nối (VD máy chủ đang bảo trì): tải lại để hiện thông báo
     Pregame.Scene.stop();   // tắt nền cảnh động của các màn trước khi vào game
     G.inGame = true;
+    if (G._openTopup) { G._openTopup = false; setTimeout(() => { try { UI.openPanel('topup'); } catch (e) { } }, 1800); }   // từ trang chủ bấm Nạp ngay
     Input.inGame = true;
     show('screen-game');
     Input.applyLayout();

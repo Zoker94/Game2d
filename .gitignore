@@ -4,3 +4,12 @@ node_modules/
 *.log
 __pycache__/
 *.pyc
+
+# file tải app (build bằng GitHub Actions, chép thẳng lên VPS)
+public/downloads/
+apps/pc/node_modules/
+apps/pc/dist/
+apps/android/.gradle/
+apps/android/app/build/
+apps/android/build/
+apps/android/*.jks
