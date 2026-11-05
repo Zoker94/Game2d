@@ -57,13 +57,13 @@ const CHECKIN_MILESTONES = [
 const CHECKIN_FIX_KNB = 10;   // bù điểm danh (lỡ đúng 1 ngày)
 
 const LANTERN_EXCHANGE = [
-  { cost: 10, name: 'Rương Bí Ẩn', r: { items: [['lucky_chest', 1]] } },
-  { cost: 25, name: '15 Nguyên Bảo', r: { knb: 15 } },
-  { cost: 40, name: 'Song Bội KN x2', r: { items: [['exp_x2', 2]] } },
-  { cost: 60, name: 'Thiên Tinh Thạch x2', r: { items: [['stone2', 2]] } },
-  { cost: 80, name: 'Bảo Hiểm Phù', r: { items: [['insure', 1]] } },
-  { cost: 100, name: 'Rương Thủ Lĩnh', r: { items: [['boss_chest', 1]] } },
-  { cost: 300, name: 'Bí Kíp Long Ấn (ngẫu nhiên)', r: { dragonBook: 1 } }
+  // mỗi món chỉ đổi được 1 lần / ngày / nhân vật (theo id); đã bỏ đổi Nguyên Bảo
+  { id: 'chest', cost: 10, name: 'Rương Bí Ẩn', r: { items: [['lucky_chest', 1]] } },
+  { id: 'x2', cost: 40, name: 'Song Bội KN x2', r: { items: [['exp_x2', 2]] } },
+  { id: 'stone2', cost: 60, name: 'Thiên Tinh Thạch x2', r: { items: [['stone2', 2]] } },
+  { id: 'insure', cost: 80, name: 'Bảo Hiểm Phù', r: { items: [['insure', 1]] } },
+  { id: 'boss', cost: 100, name: 'Rương Thủ Lĩnh', r: { items: [['boss_chest', 1]] } },
+  { id: 'book', cost: 5000, name: 'Bí Kíp Long Ấn (ngẫu nhiên)', r: { dragonBook: 1 } }
 ];
 
 const GUILD_LEVELS = [0, 50000, 200000, 600000, 1500000, 4000000];
@@ -499,13 +499,21 @@ class Features {
   exchangeLantern(p, idx) {
     const ex = LANTERN_EXCHANGE[idx | 0];
     if (!ex) return;
+    const ld = this.lanternDone(p.c);
+    if (ld.done[ex.id]) return this.w.toast(p, `Hôm nay bạn đã đổi ${ex.name} rồi, mai quay lại nhé`, 'error');
     if (!U.removeItemById(p.c, 'event_token', ex.cost)) return this.w.toast(p, `Cần ${ex.cost} Hoa Đăng`, 'error');
+    ld.done[ex.id] = 1; p.dirtyMe = true;
     const r = ex.r.dragonBook ? { items: [[DRAGON_BOOKS[U.randInt(0, DRAGON_BOOKS.length - 1)], 1]] } : ex.r;
     this.w.giveReward(p, r, 'Đổi Hoa Đăng');
     p.socket.emit('eventPanel', this.eventPanel(p));
   }
+  lanternDone(c) {   // món Hoa Đăng đã đổi hôm nay (giờ Việt Nam)
+    const today = U.vnDay();
+    if (!c.lanternEx || c.lanternEx.date !== today) c.lanternEx = { date: today, done: {} };
+    return c.lanternEx;
+  }
   eventPanel(p) {
-    return { wheel: this.wheelState(p), checkin: this.checkinState(p), lantern: LANTERN_EXCHANGE, tokens: U.countItem(p.c, 'event_token'), ...this.eventsView() };
+    return { wheel: this.wheelState(p), checkin: this.checkinState(p), lantern: LANTERN_EXCHANGE.map(x => Object.assign({}, x, { done: !!this.lanternDone(p.c).done[x.id] })), tokens: U.countItem(p.c, 'event_token'), ...this.eventsView() };
   }
 
   // ---------------- Trò chuyện ----------------

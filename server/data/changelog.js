@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🏮 Đổi Hoa Đăng: bỏ đổi Nguyên Bảo; mỗi món chỉ đổi được 1 lần / ngày; Bí Kíp Long Ấn cần 5.000 Hoa Đăng.',
       '🔓 Mở cửa thoải mái: tạm bỏ giới hạn số tài khoản theo IP / thiết bị và nới giới hạn đăng nhập, ai cũng vào được.',
       '🛠 Sửa lỗi nhiều người chơi bị chặn nhầm "IP đã có đủ 3 tài khoản": đọc đúng IP thật của người chơi và bỏ giới hạn tài khoản theo IP (người dùng 4G / quán net / ký túc xá dùng chung IP).',
       '🏯 Lập bang hội: phí đổi thành 50 Nguyên Bảo (không còn lập bằng ngân lượng).',
