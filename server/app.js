@@ -102,8 +102,12 @@ function cleanupSessions() {
   for (const [t, s] of Object.entries(db.data.sessions)) if (s.exp < now) delete db.data.sessions[t];
   for (const [t, s] of Object.entries(db.data.adminSessions)) if (s.exp < now) delete db.data.adminSessions[t];
 }
+// Mở cửa thoải mái (giai đoạn open server): tắt giới hạn tài khoản theo IP / thiết bị, nới giới hạn đăng nhập.
+// Vẫn chặn tài khoản / thiết bị bị quản trị viên khoá. Đổi thành false để bật lại các giới hạn.
+const OPEN_FREE = true;
 const loginHits = new Map();
 function rateLimited(ip, max = 20) {
+  if (OPEN_FREE) max *= 5;   // nhiều người chung mạng (4G, quán net) đăng nhập cùng lúc
   const now = Date.now();
   const rec = loginHits.get(ip) || { n: 0, reset: now + 60000 };
   if (now > rec.reset) { rec.n = 0; rec.reset = now + 60000; }
@@ -170,7 +174,8 @@ function devBanned(b) {
   return (dev && ban.includes(dev)) || (fp && ban.includes(fp)) ? 'Thiết bị này đã bị khoá do vi phạm. Liên hệ quản trị viên qua nhóm Zalo.' : null;
 }
 function devCreateBlocked(b, ip) {
-  const bn = devBanned(b); if (bn) return bn;
+  const bn = devBanned(b); if (bn) return bn;   // chỉ chặn thiết bị bị quản trị viên khoá
+  if (OPEN_FREE) return null;   // mở cửa thoải mái: không giới hạn số tài khoản / thiết bị
   const lim = db.data.config.devLimit == null ? 3 : db.data.config.devLimit | 0;
   if (lim <= 0 || !(b && (b.dev || b.fp))) return null;
   const n = devAccounts(b.dev, b.fp, ip).length;
@@ -381,7 +386,7 @@ io.use((socket, next) => {
   // giới hạn số tài khoản đăng nhập cùng lúc trên 1 địa chỉ IP (cấu hình ipLimit, mặc định 3; 0 = tắt). Quản trị viên không tính.
   socket.ip = realIp(socket.handshake.headers, socket.handshake.address);
   const lim = db.data.config.ipLimit | 0;   // mặc định tắt: nhiều người 4G / quán net / ký túc xá dùng chung 1 IP
-  if (lim > 0 && !privateIp(socket.ip) && !user.isAdmin && !isOwner(user)) {   // IP nội bộ = proxy không gửi IP thật: không chặn
+  if (!OPEN_FREE && lim > 0 && !privateIp(socket.ip) && !user.isAdmin && !isOwner(user)) {   // IP nội bộ = proxy không gửi IP thật: không chặn
     const ids = new Set();
     for (const s of io.sockets.sockets.values()) if (s.ip === socket.ip && s.user && s.user.id !== user.id && !s.user.isAdmin) ids.add(s.user.id);
     if (ids.size >= lim) return next(Object.assign(new Error('iplimit'), { data: { lim } }));
