@@ -13,7 +13,7 @@ const EVENT_INFO = {
   doubleExp: { name: 'Nhân Đôi Kinh Nghiệm', desc: 'Toàn server nhận x2 kinh nghiệm khi đánh quái. Tự động 12:00-13:00 và 20:00-21:00.', icon: '📈' },
   huntRace:  { name: 'Đua Top Săn Quái', desc: 'Ai tiêu diệt nhiều quái nhất trong 30 phút sẽ nhận thưởng lớn. Tự động 19:00 và 21:30.', icon: '🏆' },
   treasure:  { name: 'Truy Tìm Bảo Rương', desc: 'Bảo Rương xuất hiện rải rác khắp các bản đồ luyện công. Đánh vỡ rương để nhận quà! Mỗi 2 giờ (giờ chẵn, phút 40).', icon: '💰' },
-  quiz:      { name: 'Đố Vui Võ Lâm', desc: 'Câu hỏi xuất hiện ở kênh Thế Giới, người trả lời đúng đầu tiên nhận Nguyên Bảo. Mỗi 15 phút.', icon: '❓' },
+  quiz:      { name: 'Đố Vui Võ Lâm', desc: 'Câu hỏi xuất hiện ở kênh Thế Giới, người trả lời đúng đầu tiên nhận Nguyên Bảo (tối đa 5 câu / ngày mỗi người). Mỗi 15 phút.', icon: '❓' },
   daiHoi:    { name: 'Đại Hội Võ Lâm', desc: 'Hỗn chiến tranh ngôi Võ Lâm Minh Chủ tại lôi đài Đại Hội (cấp 20+, gặp Sứ Giả Đại Hội ở Tương Dương). Hạ người chơi, Hộ Pháp và Thiên Hạ Đệ Nhất Cao Thủ để ghi điểm. 20:30 Chủ Nhật hằng tuần (1 tuần 1 lần). Minh Chủ giữ danh hiệu 7 ngày.', icon: '⚔️' },
   hoaSon:    { name: 'Hoa Sơn Luận Kiếm', desc: 'Giải đấu loại trực tiếp 1 chọi 1 trên đỉnh Hoa Sơn (cấp 30+, ghi danh với Sứ Giả Hoa Sơn ở Tương Dương). Vô địch nhận danh hiệu Hoa Sơn Kiếm Thánh 7 ngày, Á quân và hạng Ba có thưởng. Ai cũng lên núi xem được. 20:00 Thứ 7 hằng tuần.', icon: '⛰️' },
   tongKim:   { name: 'Chiến Trường Tống Kim', desc: 'Phe Tống đối đầu phe Kim (cấp 30+, báo danh với Mộ Binh Quan ở Tương Dương từ 21:30). Máy chia phe cân bằng theo lực chiến. Hạ người phe địch, lính và Đại Tướng để ghi điểm; phe nhiều điểm hơn thắng. Thưởng kinh nghiệm + Công Trạng đổi rương, ngân lượng, đá cường hoá, đá khảm cấp 4-5. 22:00 mỗi tối.', icon: '🏯' },
@@ -24,6 +24,7 @@ const EVENT_INFO = {
 
 const { QUIZ } = require('../data/quiz');
 // so đáp án Đố Vui: bỏ dấu, chữ thường, chỉ giữ chữ / số; đáp án phải khớp trọn từ (gõ "190" không ăn đáp án "19")
+const QUIZ_DAILY = 5;   // mỗi nhân vật chỉ được thưởng tối đa 5 câu Đố Vui / ngày (giờ Việt Nam)
 const quizNorm = t => ' ' + String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
 const quizHit = (text, answers) => { const t = quizNorm(text); return answers.some(a => t.includes(quizNorm(a))); };
 
@@ -672,10 +673,17 @@ class Features {
       this.io.emit('chat', msg);
       this.questProgress(p, 'chat', 1);
       const q = this.events.quiz;
-      if (q && q.active && quizHit(text, q.answers)) {
+      const c = p.c, today = U.vnDay();
+      if (c.quizDay !== today) { c.quizDay = today; c.quizN = 0; }
+      if (q && q.active && quizHit(text, q.answers) && c.quizN >= QUIZ_DAILY) {   // mỗi ngày chỉ được thưởng 5 câu: câu đúng không tính, người khác vẫn trả lời được
+        p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: `Hôm nay bạn đã nhận thưởng đủ ${QUIZ_DAILY} câu Đố Vui Võ Lâm, mai quay lại nhé!` });
+      } else if (q && q.active && quizHit(text, q.answers)) {
         this.stopEvent('quiz');
+        c.quizN++;
+        const left = QUIZ_DAILY - c.quizN;
         setTimeout(() => {
           this.announce(`🎉 ${p.c.name} đã trả lời đúng "${q.answers[0]}" và nhận 5 Nguyên Bảo + 500 lượng!`);
+          if (this.w.players.has(p.userId)) p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: left > 0 ? `Đố Vui hôm nay bạn còn ${left} lượt nhận thưởng.` : `Bạn đã dùng hết ${QUIZ_DAILY} lượt nhận thưởng Đố Vui hôm nay.` });
           if (this.w.players.has(p.userId)) this.w.giveReward(p, { knb: 5, gold: 500 }, 'Đố Vui Võ Lâm');
         }, 300);
       }
