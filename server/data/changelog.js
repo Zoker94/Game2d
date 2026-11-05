@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🏯 Lập bang hội: phí đổi thành 50 Nguyên Bảo (không còn lập bằng ngân lượng).',
       '⏳ Trang chủ và trang chơi game có đồng hồ đếm ngược tới giờ khai mở máy chủ; tới giờ trang chơi game tự tải lại để vào.',
       '❓ Đố Vui Võ Lâm: mỗi nhân vật chỉ được nhận thưởng tối đa 5 câu / ngày (hết lượt thì trả lời đúng không tính, nhường người khác).',
       '⏰ Quản trị: hẹn giờ tự tắt bảo trì (mở cửa máy chủ) ở trang Cấu hình. Lịch Open server: 19:00 ngày 05/11.',

@@ -1341,7 +1341,7 @@
     const d = guildData;
     if (!d) { body.innerHTML = '<p class="muted">Đang tải...</p>'; return; }
     if (!d.mine) {
-      body.innerHTML = `<div class="card"><h4>Thành lập bang hội</h4><div class="small muted">Yêu cầu cấp 10 và ${fmt(d.cost)} lượng. Bang hội tăng chỉ số cho thành viên theo cấp bang.</div>
+      body.innerHTML = `<div class="card"><h4>Thành lập bang hội</h4><div class="small muted">Yêu cầu cấp 10 và <b>${fmt(d.cost)} Nguyên Bảo</b> 💎. Bang hội tăng chỉ số cho thành viên theo cấp bang.</div>
         <div class="row" style="justify-content:flex-start;margin-top:6px"><input id="g-name" placeholder="Tên bang (3-16 ký tự)" maxlength="16"><button class="btn primary" id="g-create">Lập bang</button></div></div>
         <h4 style="color:#ffd76a">Danh sách bang hội</h4>
         <div class="list">${(d.list || []).map(g => `<div class="li"><div class="grow"><b>${esc(g.name)}</b> <span class="small">Cấp ${g.level}</span><div class="sub">Bang chủ: ${esc(g.leader)} · ${g.count}/${g.max} thành viên · Quỹ ${fmt(g.fund)}</div></div><button class="btn small" data-apply="${g.id}">Xin gia nhập</button></div>`).join('') || '<p class="muted">Chưa có bang hội nào. Hãy là người đầu tiên!</p>'}</div>`;

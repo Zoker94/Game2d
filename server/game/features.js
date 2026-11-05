@@ -67,7 +67,7 @@ const LANTERN_EXCHANGE = [
 ];
 
 const GUILD_LEVELS = [0, 50000, 200000, 600000, 1500000, 4000000];
-const GUILD_CREATE_COST = 10000;
+const GUILD_CREATE_KNB = 50;   // lập bang: 50 Nguyên Bảo (không dùng ngân lượng)
 
 const GM_CMDS = new Set(['help', 'lenh', 'an', 'hide', 'tanghinh', 'mienpk', 'safe', 'gmlist', 'tp', 'goto', 'keo', 'heal', 'kick', 'online', 'ghim', 'boghim', 'dsghim', 'refcheck', 'ipcheck']);
 const PIN_EVERY = 5 * 60000, PIN_MAX = 5;   // thông báo ghim của admin: chạy lại mỗi 5 phút tới khi admin tắt
@@ -712,7 +712,7 @@ class Features {
     const gs = this.db.data.guilds;
     const mine = p.c.guildId && gs[p.c.guildId];
     if (p.c.guildId && !mine) p.c.guildId = null;
-    const out = { mine: mine ? this.guildView(mine, true) : null, myRole: mine ? mine.members[p.userId] : null, myId: p.userId, cost: GUILD_CREATE_COST };
+    const out = { mine: mine ? this.guildView(mine, true) : null, myRole: mine ? mine.members[p.userId] : null, myId: p.userId, cost: GUILD_CREATE_KNB };
     if (!mine) out.list = Object.values(gs).map(g => this.guildView(g)).sort((a, b) => b.level - a.level || b.fund - a.fund).slice(0, 50);
     p.socket.emit('guild', out);
   }
@@ -730,8 +730,8 @@ class Features {
         if (!/^[\p{L}\p{N} ]{3,16}$/u.test(name)) return err('Tên bang 3-16 ký tự, không ký tự đặc biệt');
         if (Object.values(gs).some(x => x.name.toLowerCase() === name.toLowerCase())) return err('Tên bang đã tồn tại');
         if (c.level < 10) return err('Cần đạt cấp 10');
-        if (c.gold < GUILD_CREATE_COST) return err(`Cần ${GUILD_CREATE_COST} lượng`);
-        c.gold -= GUILD_CREATE_COST;
+        if ((c.knb | 0) < GUILD_CREATE_KNB) return err(`Lập bang cần ${GUILD_CREATE_KNB} Nguyên Bảo`);
+        c.knb -= GUILD_CREATE_KNB; p.dirtyMe = true;
         const id = this.db.newId();
         gs[id] = { id, name, leader: p.userId, members: { [p.userId]: 'leader' }, level: 1, fund: 0, notice: 'Chào mừng huynh đệ!', created: Date.now(), requests: [], contrib: {} };
         c.guildId = id;

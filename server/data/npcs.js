@@ -53,7 +53,7 @@ const NPCS = {
   xa_phu: { name: 'Xa Phu', sprite: 'driver', color: '#696969', action: 'teleport',
     talk: 'Khách quan muốn đi đâu? Xe ngựa đưa đón khắp giang hồ.' },
   bang_hoi: { name: 'Bang Hội Sứ Giả', sprite: 'guard', color: '#4682b4', action: 'guild',
-    talk: 'Lập bang hội cần đạt cấp 10 và 10.000 lượng bạc.' },
+    talk: 'Lập bang hội cần đạt cấp 10 và 50 Nguyên Bảo.' },
   dh_su_gia: { name: 'Sứ Giả Đại Hội Võ Lâm', sprite: 'guard', color: '#c8a020', action: 'daihoi',
     talk: 'Đại Hội Võ Lâm mở vào 20:30 Chủ Nhật hằng tuần. Anh hùng thiên hạ tề tựu tranh ngôi Võ Lâm Minh Chủ!' },
   dh_chu_tri: { name: 'Chủ Trì Đại Hội', sprite: 'elder', color: '#ffd040', action: 'daihoi',
