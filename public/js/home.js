@@ -140,6 +140,32 @@
       for (const id of [a, b]) { const el = document.getElementById(id); if (!el) continue; el.classList.add('off'); const sm = el.querySelector('small'); if (sm) sm.textContent = 'Sắp có'; else el.textContent = 'Sắp có'; }
     }).catch(() => { });
   });
+  // đếm ngược tới giờ mở máy chủ (quản trị viên hẹn giờ tắt bảo trì)
+  (async function countdown() {
+    let c; try { c = await (await fetch('/api/config', { cache: 'no-store' })).json(); } catch (e) { return; }
+    const st = document.getElementById('srv-state');
+    if (!c.maintenance) { if (st) st.textContent = 'đang mở cửa đón đại hiệp'; return; }
+    if (st) { st.textContent = c.maintEta ? 'bảo trì – dự kiến mở ' + c.maintEta : 'đang bảo trì'; st.style.color = '#a3221a'; }
+    if (!(c.maintOpenAt > 0)) return;
+    const skew = (c.now || Date.now()) - Date.now(), at = c.maintOpenAt, box = document.getElementById('cd');
+    const d = new Date(at), p2 = n => String(n).padStart(2, '0');
+    document.getElementById('cd-when').textContent = `${p2(d.getHours())}:${p2(d.getMinutes())} · ${p2(d.getDate())}/${p2(d.getMonth() + 1)}`;
+    box.hidden = false;
+    const el = k => document.getElementById('cd-' + k);
+    const tick = () => {
+      const left = Math.max(0, at - (Date.now() + skew)), s = Math.floor(left / 1000);
+      const dd = Math.floor(s / 86400);
+      el('du').style.display = dd ? '' : 'none'; el('d').textContent = dd;
+      el('h').textContent = p2(Math.floor(s / 3600) % 24); el('m').textContent = p2(Math.floor(s / 60) % 60); el('s').textContent = p2(s % 60);
+      if (left <= 0) {
+        clearInterval(iv); box.classList.add('open');
+        box.querySelector('.cd-t').innerHTML = '🎉 Máy chủ đã khai mở – <b>vào chơi ngay!</b>';
+        if (st) { st.textContent = 'đang mở cửa đón đại hiệp'; st.style.color = ''; }
+      }
+    };
+    const iv = setInterval(tick, 250); tick();
+  })();
+
   // iPhone: hướng dẫn thêm vào màn hình chính
   const md = document.getElementById('ios-modal');
   document.querySelectorAll('a[href="#ios"]').forEach(a => a.onclick = e => { e.preventDefault(); md.hidden = false; });

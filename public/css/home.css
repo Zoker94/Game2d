@@ -125,3 +125,17 @@ footer a { color: var(--gold2); }
 }
 @media (prefers-reduced-motion: reduce) { .btn-play .glow, .scroll-hint { animation: none; } }
 @media (max-width: 560px) { .seal { display: none; } .sec-title span { padding: 0 8px; } .sec-title span::before, .sec-title span::after { display: none; } }
+
+/* đếm ngược mở máy chủ */
+.cd { margin-top: 18px; padding: 12px 18px 10px; border: 1px solid #b08a50; border-radius: 10px; background: linear-gradient(180deg, rgba(42,18,10,.88), rgba(18,10,6,.88)); box-shadow: 0 0 0 3px rgba(232,184,96,.12), 0 10px 30px rgba(0,0,0,.45); }
+.cd-t { font-family: var(--serif); color: var(--gold2); font-size: 15px; letter-spacing: 1px; }
+.cd-t b { color: var(--red2); }
+.cd-row { display: flex; align-items: flex-start; justify-content: center; gap: 6px; margin: 8px 0 4px; }
+.cd-row i { font-style: normal; color: var(--gold); font-size: 30px; font-weight: 800; line-height: 52px; animation: cdblink 1s steps(1) infinite; }
+.cd-u { min-width: 62px; padding: 4px 6px; border-radius: 8px; background: linear-gradient(180deg, #3a1a0e, #1d0d06); border: 1px solid rgba(232,184,96,.45); }
+.cd-u b { display: block; font-family: var(--serif); font-size: 34px; line-height: 44px; color: var(--gold2); text-shadow: 0 0 12px rgba(255,180,60,.55); font-variant-numeric: tabular-nums; }
+.cd-u small { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.cd-sub { font-size: 12px; color: var(--muted); }
+.cd.open .cd-row, .cd.open .cd-sub { display: none; }
+@keyframes cdblink { 50% { opacity: .25; } }
+@media (max-width: 420px) { .cd-u { min-width: 50px; } .cd-u b { font-size: 26px; line-height: 36px; } .cd-row i { font-size: 22px; line-height: 40px; } }

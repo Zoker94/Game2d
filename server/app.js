@@ -111,7 +111,7 @@ const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : nul
 
 // ---------------- API công khai ----------------
 app.get('/api/config', (req, res) => {
-  res.json({ googleClientId: GOOGLE_CLIENT_ID, devLogin: ALLOW_DEV_LOGIN, motd: db.data.config.motd, maintenance: db.data.config.maintenance, maintMsg: db.data.config.maintenance ? db.data.config.maintMsg || '' : '', maintEta: db.data.config.maintenance ? db.data.config.maintEta || '' : '', online: world.players.size });
+  res.json({ googleClientId: GOOGLE_CLIENT_ID, devLogin: ALLOW_DEV_LOGIN, motd: db.data.config.motd, maintenance: db.data.config.maintenance, maintMsg: db.data.config.maintenance ? db.data.config.maintMsg || '' : '', maintEta: db.data.config.maintenance ? db.data.config.maintEta || '' : '', maintOpenAt: db.data.config.maintenance ? db.data.config.maintOpenAt || 0 : 0, now: Date.now(), online: world.players.size });
 });
 
 app.post('/api/auth/google', async (req, res) => {

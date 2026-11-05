@@ -79,6 +79,21 @@
     const text = '🛠 Máy chủ đang bảo trì' + (msg ? '\n\nLý do: ' + msg : '') + (eta ? '\nDự kiến xong: ' + eta : '') + '\n\nVào nhóm Zalo để nhận tin mở lại máy chủ nhé!';
     G.modal(text, [{ t: '💬 Vào nhóm Zalo', cls: 'zalo', fn: () => { window.open(ZALO_URL, '_blank', 'noopener'); setTimeout(() => G.maintModal(msg, eta), 300); } }, { t: 'Thử lại', fn: () => location.reload() }]);
   };
+  // đang bảo trì có hẹn giờ mở: thanh đếm ngược trên cùng, tới giờ tự tải lại để vào game
+  function openCountdown() {
+    const c = G.config; if (!c.maintenance || !(c.maintOpenAt > 0)) return;
+    const skew = (c.now || Date.now()) - Date.now(), el = document.createElement('div');
+    el.id = 'open-cd'; el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;text-align:center;padding:6px 10px;font:700 14px "Be Vietnam Pro",sans-serif;color:#ffe3a0;background:linear-gradient(90deg,#3a0d06,#7a1a0c,#3a0d06);border-bottom:1px solid #e8b860;box-shadow:0 2px 12px rgba(0,0,0,.5);pointer-events:none';
+    document.body.appendChild(el);
+    const p2 = n => String(n).padStart(2, '0'), d = new Date(c.maintOpenAt);
+    const tick = () => {
+      const s = Math.max(0, Math.floor((c.maintOpenAt - Date.now() - skew) / 1000));
+      if (s <= 0) { clearInterval(iv); el.textContent = '🎉 Máy chủ đã khai mở! Đang vào game...'; setTimeout(() => location.reload(), 3000 + Math.random() * 4000); return; }
+      const dd = Math.floor(s / 86400);
+      el.textContent = `⏳ Khai mở máy chủ lúc ${p2(d.getHours())}:${p2(d.getMinutes())} ${p2(d.getDate())}/${p2(d.getMonth() + 1)} — còn ${dd ? dd + ' ngày ' : ''}${p2(Math.floor(s / 3600) % 24)}:${p2(Math.floor(s / 60) % 60)}:${p2(s % 60)}`;
+    };
+    const iv = setInterval(tick, 500); tick();
+  }
   async function maintInfo() { try { const c = await (await fetch('/api/config')).json(); return [c.maintMsg || '', c.maintEta || '']; } catch (e) { return ['', '']; } }
 
   async function api(path, opts = {}) {
@@ -143,6 +158,7 @@
       G.data = await api('/api/gamedata');
     } catch (e) { G.modal('Không thể kết nối máy chủ. Vui lòng thử lại.', [{ t: 'Tải lại', fn: () => location.reload() }]); return; }
     $('online-count').textContent = G.config.online;
+    openCountdown();
     // phông chữ: đợi tối đa 1,5 giây để chữ vẽ trên canvas (tên, số sát thương) dùng đúng phông ngay từ đầu
     if (document.fonts && document.fonts.load) {
       await Promise.race([Promise.all(['500 12px "Be Vietnam Pro"', '600 12px "Be Vietnam Pro"', '700 12px "Be Vietnam Pro"', '800 12px "Be Vietnam Pro"', '700 20px "Playfair Display"'].map(f => document.fonts.load(f, 'Võ Lâm').catch(() => {}))), new Promise(r => setTimeout(r, 1500))]);
