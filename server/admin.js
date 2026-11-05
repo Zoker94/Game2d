@@ -294,6 +294,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     if (b.motd != null) c.motd = String(b.motd).slice(0, 300);
     if (b.maintMsg != null) c.maintMsg = String(b.maintMsg).slice(0, 500);    // lý do bảo trì (hiện cho người chơi)
     if (b.maintEta != null) c.maintEta = String(b.maintEta).slice(0, 80);     // dự kiến xong (chữ tự do, VD "15:30 hôm nay")
+    if (b.maintOpenAt != null) c.maintOpenAt = Math.max(0, +b.maintOpenAt || 0);   // hẹn giờ tự tắt bảo trì (0 = không hẹn)
     if (b.maintenance != null) {
       const was = c.maintenance;
       c.maintenance = !!b.maintenance;

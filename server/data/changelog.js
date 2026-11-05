@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '⏰ Quản trị: hẹn giờ tự tắt bảo trì (mở cửa máy chủ) ở trang Cấu hình. Lịch Open server: 19:00 ngày 05/11.',
       '🎁 Rương Thủ Lĩnh: tỉ lệ ra trang bị Truyền Kỳ tăng lại 8% (trước 1,5%), Sử Thi 32%, Hiếm 60%.',
       '🐯 Sửa lỗi quái đang bị đánh lại bỏ chạy về chỗ cũ và hồi đầy máu (đánh mãi không chết): quái bị đánh trong 6 giây gần nhất sẽ đánh trả tới cùng, không hồi máu, không đặt lại máu.',
       '🧪 Bình máu / bình nội lực: hồi chiêu giảm từ 3 giây xuống 1 giây (đánh người PK vẫn giữ 10 giây).',

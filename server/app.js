@@ -573,6 +573,25 @@ setInterval(() => {
   db.save();
 }, 15000);
 setInterval(cleanupSessions, 3600e3);
+// Hẹn giờ mở cửa: tới config.maintOpenAt (ms) thì tự tắt bảo trì, người chơi vào được (đặt ở trang quản trị > Cấu hình)
+const OPEN_SEED = Date.UTC(2026, 10, 5, 12, 0);   // lịch Open server: 19:00 ngày 05/11/2026 giờ Việt Nam
+if (!db.data.config.openSeeded) {
+  db.data.config.openSeeded = 1;
+  if (Date.now() < OPEN_SEED) { db.data.config.maintOpenAt = OPEN_SEED; if (db.data.config.maintenance) db.data.config.maintEta = '19:00 tối nay (05/11)'; }
+  db.markDirty();
+}
+setInterval(() => {
+  const c = db.data.config;
+  if (!c.maintOpenAt || Date.now() < c.maintOpenAt) return;
+  c.maintOpenAt = 0;
+  if (c.maintenance) {
+    c.maintenance = false; c.maintEta = '';
+    console.log('[open] Hết giờ hẹn: tắt bảo trì, mở cửa cho người chơi');
+    try { db.log('admin', 'Tự động tắt bảo trì theo giờ hẹn – máy chủ mở cửa'); } catch (e) { }
+    io.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: '🎉 Máy chủ đã mở cửa! Chào mừng các đại hiệp vào giang hồ Võ Lâm 2D.' });
+  }
+  db.markDirty(); db.save();
+}, 5000);
 
 // Giữ máy chủ miễn phí (Render) không bị ngủ: tự gọi địa chỉ công khai mỗi 10 phút
 const KEEP_AWAKE_URL = process.env.KEEP_AWAKE_URL || process.env.RENDER_EXTERNAL_URL;
