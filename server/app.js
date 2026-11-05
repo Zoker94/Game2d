@@ -35,6 +35,14 @@ if (!db.data.admins[ADMIN_USER]) {
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1); // chạy sau proxy (Render, Nginx...) để lấy đúng IP người chơi
+// IP thật của người chơi: Cloudflare (cf-connecting-ip) > Nginx (x-real-ip) > x-forwarded-for > kết nối trực tiếp
+function realIp(h, addr) {
+  const cf = String(h['cf-connecting-ip'] || '').trim(), xr = String(h['x-real-ip'] || '').trim();
+  const xff = String(h['x-forwarded-for'] || '').split(',').map(s => s.trim()).filter(Boolean);
+  return (cf || xr || xff[xff.length - 1] || addr || '').replace(/^::ffff:/, '');
+}
+const privateIp = ip => !ip || /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1$|fc|fd|fe80)/i.test(ip);
+app.use((req, res, next) => { Object.defineProperty(req, 'ip', { value: realIp(req.headers, req.socket.remoteAddress), configurable: true }); next(); });
 app.use(express.json({ limit: '200kb' }));
 const server = http.createServer(app);
 // nén gói tin lớn (trạng thái bản đồ đông người, dữ liệu túi đồ...): gói nhỏ hơn 1KB gửi thẳng để đỡ tốn CPU máy chủ
@@ -371,10 +379,9 @@ io.use((socket, next) => {
   if (user.banned) return next(new Error('banned'));
   if (db.data.config.maintenance && !user.isAdmin && !user.tester) return next(new Error('maintenance'));   // Tester do quản trị viên chọn được vào cả khi bảo trì
   // giới hạn số tài khoản đăng nhập cùng lúc trên 1 địa chỉ IP (cấu hình ipLimit, mặc định 3; 0 = tắt). Quản trị viên không tính.
-  const xff = String(socket.handshake.headers['x-forwarded-for'] || '').split(',').map(s => s.trim()).filter(Boolean);
-  socket.ip = xff.length ? xff[xff.length - 1] : socket.handshake.address;
-  const lim = db.data.config.ipLimit == null ? 3 : db.data.config.ipLimit | 0;
-  if (lim > 0 && !user.isAdmin && !isOwner(user)) {
+  socket.ip = realIp(socket.handshake.headers, socket.handshake.address);
+  const lim = db.data.config.ipLimit | 0;   // mặc định tắt: nhiều người 4G / quán net / ký túc xá dùng chung 1 IP
+  if (lim > 0 && !privateIp(socket.ip) && !user.isAdmin && !isOwner(user)) {   // IP nội bộ = proxy không gửi IP thật: không chặn
     const ids = new Set();
     for (const s of io.sockets.sockets.values()) if (s.ip === socket.ip && s.user && s.user.id !== user.id && !s.user.isAdmin) ids.add(s.user.id);
     if (ids.size >= lim) return next(Object.assign(new Error('iplimit'), { data: { lim } }));
@@ -402,8 +409,7 @@ io.on('connection', socket => {
   let player = null;
 
   { // nhớ IP / thiết bị cả khi vào bằng phiên cũ (không qua trang đăng nhập): link mời bạn chặn tự mời chính mình
-    const xff = String(socket.handshake.headers['x-forwarded-for'] || '').split(',').map(s => s.trim()).filter(Boolean);
-    world.referral.touch(user, xff.length ? xff[xff.length - 1] : socket.handshake.address, socket.handshake.auth && socket.handshake.auth.dev);
+    world.referral.touch(user, socket.ip, socket.handshake.auth && socket.handshake.auth.dev);
   }
   const hello = () => socket.emit('hello', { user: publicUser(user), motd: db.data.config.motd, build: BUILD, news: CHANGELOG[0] || null });
   hello();
@@ -573,6 +579,7 @@ setInterval(() => {
   db.save();
 }, 15000);
 setInterval(cleanupSessions, 3600e3);
+if (!db.data.config.ipLimFix) { db.data.config.ipLimFix = 1; if (db.data.config.ipLimit == null || db.data.config.ipLimit === 3) db.data.config.ipLimit = 0; db.markDirty(); }   // bỏ giới hạn 3 tài khoản / IP (chặn nhầm người chơi dùng chung mạng)
 // Hẹn giờ mở cửa: tới config.maintOpenAt (ms) thì tự tắt bảo trì, người chơi vào được (đặt ở trang quản trị > Cấu hình)
 const OPEN_SEED = Date.UTC(2026, 10, 5, 12, 0);   // lịch Open server: 19:00 ngày 05/11/2026 giờ Việt Nam
 if (!db.data.config.openSeeded) {

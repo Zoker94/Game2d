@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🛠 Sửa lỗi nhiều người chơi bị chặn nhầm "IP đã có đủ 3 tài khoản": đọc đúng IP thật của người chơi và bỏ giới hạn tài khoản theo IP (người dùng 4G / quán net / ký túc xá dùng chung IP).',
       '🏯 Lập bang hội: phí đổi thành 50 Nguyên Bảo (không còn lập bằng ngân lượng).',
       '⏳ Trang chủ và trang chơi game có đồng hồ đếm ngược tới giờ khai mở máy chủ; tới giờ trang chơi game tự tải lại để vào.',
       '❓ Đố Vui Võ Lâm: mỗi nhân vật chỉ được nhận thưởng tối đa 5 câu / ngày (hết lượt thì trả lời đúng không tính, nhường người khác).',
