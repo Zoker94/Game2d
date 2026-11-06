@@ -73,7 +73,7 @@
     body.querySelectorAll('[data-tac]').forEach(b => b.onclick = () => { tac = b.dataset.tac; UI.refreshPanel(); });
     body.querySelectorAll('[data-cfo]').forEach(b => b.onclick = () => {
       const op = b.dataset.cfo, id = b.dataset.id;
-      if (op === 'rename') { const n = prompt('Đặt tên cho gà (tối đa 16 ký tự):'); if (n) emit({ op, id, name: n }); return; }
+      if (op === 'rename') { UI.prompt('🐓 Đặt tên cho gà', 'Tối đa 16 ký tự', '', n => { if (n) emit({ op, id, name: n }); }); return; }
       if (op === 'release') return G.modal('Phóng sinh con gà này? Không lấy lại được (được ít ngân lượng theo cấp).', [{ t: 'Phóng sinh', cls: 'red', fn: () => emit({ op, id }) }, { t: 'Thôi' }]);
       emit({ op, id });
     });

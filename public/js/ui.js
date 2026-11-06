@@ -872,6 +872,23 @@
     $('up-ok').onclick = () => done(true); $('up-no').onclick = () => done(false);
     inp.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') done(true); if (e.key === 'Escape') done(false); };
   };
+  // hỏi số lượng bằng hộp của game (prompt() của trình duyệt không hiện trong app Android / chế độ toàn màn hình)
+  UI.askQty = function (name, max, cb) {
+    let box = $('ui-prompt'); if (box) box.remove();
+    box = document.createElement('div'); box.id = 'ui-prompt';
+    box.innerHTML = `<div class="up-card"><h3>${esc(name)}</h3><p class="small">Nhập số lượng (tối đa ${max.toLocaleString('vi-VN')})</p>
+      <div class="row" style="gap:6px;align-items:center"><button class="btn small" data-q="-">−</button><input id="up-in" type="number" inputmode="numeric" min="1" max="${max}" style="flex:1;text-align:center"><button class="btn small" data-q="+">+</button></div>
+      <div class="row" style="gap:6px;margin-top:6px"><button class="btn small" data-q="1">1</button><button class="btn small" data-q="h">Một nửa</button><button class="btn small" data-q="a">Tất cả</button></div>
+      <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn small" id="up-no">Hủy</button><button class="btn small primary" id="up-ok">Đồng ý</button></div></div>`;
+    $('screen-game').appendChild(box);
+    const inp = $('up-in'); inp.value = max;
+    const val = () => Math.max(1, Math.min(max, Math.floor(+inp.value || 0)));
+    box.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { const q = b.dataset.q, v = val(); inp.value = q === '-' ? Math.max(1, v - 1) : q === '+' ? Math.min(max, v + 1) : q === '1' ? 1 : q === 'h' ? Math.max(1, Math.floor(max / 2)) : max; });
+    const done = ok => { const v = val(); box.remove(); if (ok && v > 0) cb(v); };
+    $('up-ok').onclick = () => done(true); $('up-no').onclick = () => done(false);
+    inp.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') done(true); if (e.key === 'Escape') done(false); };
+    setTimeout(() => { inp.focus(); inp.select(); }, 30);
+  };
   UI.registerPanel = (name, title, render, onOpen) => { UI.extraPanels[name] = { title, render, onOpen }; };
 
   // ---------- Đổi môn phái (dùng Chuyển Phái Lệnh) ----------

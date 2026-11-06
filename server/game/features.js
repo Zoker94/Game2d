@@ -301,7 +301,7 @@ class Features {
     const info = EVENT_INFO[k];
     if (k === 'huntRace') {
       const top = Object.entries(e.scores || {}).sort((a, b) => b[1].n - a[1].n).slice(0, 10);
-      const rewards = [{ knb: 10, items: [['boss_chest', 2]] }, { knb: 8, items: [['boss_chest', 1]] }, { knb: 6, items: [['boss_chest', 1]] }];
+      const rewards = [{ knb: 50, items: [['boss_chest', 2]] }, { knb: 30, items: [['boss_chest', 1]] }, { knb: 15, items: [['boss_chest', 1]] }];
       top.slice(0, 3).forEach(([uid, s], i) => {
         const user = this.db.data.users[uid];
         if (!user || !user.character) return;

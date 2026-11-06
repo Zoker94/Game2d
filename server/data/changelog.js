@@ -4,7 +4,7 @@ const CHANGELOG = [
   {
     date: '06/11/2026',
     items: [
-      '💎 Nguyên Bảo từ hoạt động chỉ 5–10 mỗi lần (áp tiêu 10, Vòng Quay, điểm danh, top sự kiện…), tối đa 50 / ngày từ hoạt động hằng ngày. Boss, phó bản, Bảo Rương, thưởng đạt cấp 10 và chương cuối cốt truyện không còn Nguyên Bảo.',
+      '💎 Nguyên Bảo từ hoạt động chỉ 5–10 mỗi lần (áp tiêu 10, Vòng Quay, điểm danh…; quà top sự kiện giữ nguyên), tối đa 50 / ngày từ hoạt động hằng ngày. Boss, phó bản, Bảo Rương, thưởng đạt cấp 10 và chương cuối cốt truyện không còn Nguyên Bảo.',
       '💠 Đá cường hoá và ngọc khảm cấp 4–5 hiếm hơn; ghép ngọc lên cấp 4 / 5 còn 50% / 30%.',
       '🔨 Phí ngân lượng cường hoá, khảm / tháo / nâng cấp ngọc tăng khoảng 30%.',
       '🎁 Rương Thủ Lĩnh: Truyền Kỳ 3%.',

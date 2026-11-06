@@ -142,9 +142,8 @@
       let items = curItems();
       if (items.some(x => x.uid === uid)) items = items.filter(x => x.uid !== uid);
       else {
-        let qty = 1;
-        if (s.qty > 1) { qty = Math.floor(+prompt(`Số lượng ${G.data.items[s.id].name} (tối đa ${s.qty}):`, s.qty) || 0); if (qty <= 0) return; qty = Math.min(qty, s.qty); }
-        items.push({ uid, qty });
+        if (s.qty > 1) return UI.askQty(G.data.items[s.id].name, s.qty, qty => { items.push({ uid, qty }); sendOffer(items, me.gold); });
+        items.push({ uid, qty: 1 });
       }
       sendOffer(items, me.gold);
     });
