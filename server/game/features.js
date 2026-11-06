@@ -652,15 +652,21 @@ class Features {
     this.db.markDirty();
   }
 
-  chat(p, { ch, text, to }) {
+  chat(p, { ch, text, to, show }) {
     text = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 140);
     if (!text) return;
+    // khoe đồ: gắn bản chụp món đồ (lấy từ túi / đồ đang mặc của chính người gửi, máy chủ tự đọc chỉ số – không giả mạo được)
+    let item = null;
+    if (show && typeof show === 'string') {
+      const c = p.c, s = (c.inv || []).find(x => x.uid === show) || Object.values(c.equip || {}).find(x => x && x.uid === show);
+      if (s && ITEMS[s.id]) item = { id: s.id, plus: s.plus || 0, el: s.el, fx: s.fx, gems: s.gems, br: s.br, bd: s.bd, qty: s.qty > 1 ? s.qty : undefined };
+    }
     if (text.startsWith('/')) return this.adminCommand(p, text);
     const now = Date.now();
     if (p.user.muted && (p.user.muted === true || p.user.muted > now)) return this.w.toast(p, 'Bạn đang bị cấm chat', 'error');
     if (now - p.lastChat < 1200) return this.w.toast(p, 'Bạn chat quá nhanh', 'error');
     p.lastChat = now;
-    const base = { from: p.c.name, pid: p.id, cls: p.c.cls, lv: p.c.level, t: now, admin: !!p.user.isAdmin };
+    const base = { from: p.c.name, pid: p.id, cls: p.c.cls, lv: p.c.level, t: now, admin: !!p.user.isAdmin, item: item || undefined };
     let msg;
     if (ch === 'map') {
       msg = { ...base, ch: 'map', text };

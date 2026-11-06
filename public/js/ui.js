@@ -315,7 +315,9 @@
       let ch = $('chat-ch').value, to = $('chat-to').value.trim(), t = text;
       const m = text.match(/^\/(w|m|pm)\s+(\S+)\s+(.+)/i);
       if (m) { ch = 'pm'; to = m[2]; t = m[3]; }
-      emit('chat', { ch, text: t, to });
+      const sh = UI._show && t.includes(UI._show.tag) ? UI._show.uid : undefined;   // khoe đồ: còn giữ thẻ [tên đồ] thì gửi kèm
+      emit('chat', { ch, text: t, to, show: sh });
+      UI._show = null;
       $('chat-input').value = '';
       if (Input.isTouch) $('chat-input').blur();
     };
@@ -348,6 +350,8 @@
     $('chat-toggle').onclick = e => { e.stopPropagation(); $('chat').classList.toggle('collapsed'); $('chat-toggle').textContent = $('chat').classList.contains('collapsed') ? '▴' : '▾'; };
     if (Input.isTouch) $('chat').classList.add('collapsed'), $('chat-toggle').textContent = '▴';
     $('chat-log').addEventListener('click', e => {
+      const il = e.target.closest && e.target.closest('.ilink');
+      if (il) { const inst = chatItems[+il.dataset.ci]; if (inst) UI.showItemPop(inst); return; }
       const n = e.target.dataset && e.target.dataset.name;
       if (n) { $('chat-ch').value = 'pm'; $('chat-to').value = n; $('chat-to').classList.remove('hidden'); $('chat-input').focus(); }
     });
@@ -790,13 +794,31 @@
     if (chatFilter === 'all' || chatFilter === m.ch) appendChat(m);   // tin hệ thống chỉ hiện ở tab Tất cả, không làm trôi tab Thế giới
     if (m.ch === 'pm' && m.from !== (G.me && G.me.name)) UI.toast(`💌 ${m.from}: ${m.text}`, 'info');
   };
+  const chatItems = [];
+  // bảng xem món đồ người khác khoe (bấm ra ngoài để đóng)
+  UI.showItemPop = function (inst) {
+    let pop = $('item-pop');
+    if (!pop) {
+      pop = document.createElement('div'); pop.id = 'item-pop'; $('screen-game').appendChild(pop);
+      document.addEventListener('pointerdown', e => { if (!e.target.closest('#item-pop') && !e.target.closest('.ilink')) pop.classList.add('hidden'); }, true);
+    }
+    pop.innerHTML = `<button class="ip-x" aria-label="Đóng">✕</button><div class="item-detail">${itemDesc(inst.id, inst.plus, inst)}${inst.qty > 1 ? `<div class="small">Số lượng: ${inst.qty}</div>` : ''}</div>`;
+    pop.querySelector('.ip-x').onclick = () => pop.classList.add('hidden');
+    pop.classList.remove('hidden');
+  };
   function appendChat(m) {
     const log = $('chat-log');
     const atBottom = log.scrollTop + log.clientHeight >= log.scrollHeight - 20;
     const d = document.createElement('div');
     d.className = 'm ' + m.ch;
     const who = m.ch === 'sys' ? '' : m.boss ? `<span class="from" style="color:#ff7a5a">${esc(m.from)}:</span> ` : `<span class="from ${m.admin ? 'gm' : ''}" data-name="${esc(m.from)}">${m.admin ? '[GM] ' : ''}${esc(m.from)}${m.ch === 'pm' && m.to ? ' → ' + esc(m.to) : ''}:</span> `;
-    d.innerHTML = `<span class="ch">[${CH_NAME[m.ch] || m.ch}]</span>${who}${esc(m.text)}`;
+    let body = esc(m.text);
+    if (m.item && G.data.items[m.item.id]) {   // khoe đồ: thẻ [tên đồ] thành liên kết màu theo độ hiếm, bấm để xem chi tiết
+      const k = chatItems.push(m.item) - 1; if (chatItems.length > 300) chatItems[k - 300] = null;
+      const link = `<span class="ilink" data-ci="${k}">[${itemName(m.item.id, m.item.plus)}]</span>`;
+      body = /\[[^\]]{1,60}\]/.test(body) ? body.replace(/\[[^\]]{1,60}\]/, link) : link + ' ' + body;
+    }
+    d.innerHTML = `<span class="ch">[${CH_NAME[m.ch] || m.ch}]</span>${who}${body}`;
     log.appendChild(d);
     while (log.children.length > 150) log.firstChild.remove();
     if (atBottom || $('chat').classList.contains('collapsed')) log.scrollTop = log.scrollHeight;
@@ -1059,6 +1081,7 @@
       btns += `<button class="btn small" data-act="flipbr" title="Đổi hệ trang bị">🔄 Đổi sang ${BR_INFO[to].name} (${fmt(fc)} 💰)</button>`;
     }
     if (!s.equipped) btns += `<button class="btn small" data-act="discard">Vứt bỏ</button>`;
+    btns += `<button class="btn small" data-act="showchat" title="Gửi món đồ lên khung chat để khoe hoặc rao bán">💬 Khoe lên chat</button>`;
     return `<div class="item-detail">${itemDesc(s.id, s.plus, s)}${compareMini(s)}${s.qty > 1 ? `<div class="small">Số lượng: ${s.qty}</div>` : ''}<div class="row" style="justify-content:flex-start;margin-top:6px">${btns}</div>${extra}</div>`;
   }
   let lastTap = { id: null, t: 0 };
@@ -1162,6 +1185,15 @@
       if (a === 'quick') emit('setQuick', { kind: s.id.startsWith('mp') ? 'mp' : 'hp', id: s.id });
       if (a === 'sell') emit('sell', { uid: s.uid, qty: s.qty });
       if (a === 'enhance') { emit('enhance', { uid: s.uid, npc: npcData && npcData.id, insure: !!panelState.insure }); return; }
+      if (a === 'showchat') {   // chèn thẻ [tên đồ] vào ô chat; người khác bấm vào thẻ để xem chi tiết món đồ
+        const it = G.data.items[s.id], tag = `[${it.name}${s.plus ? ' +' + s.plus : ''}]`, inp = $('chat-input');
+        if (UI._show && inp.value.includes(UI._show.tag)) inp.value = inp.value.replace(UI._show.tag, '').trim();
+        UI._show = { uid: s.uid, tag };
+        inp.value = (tag + ' ' + inp.value).trim() + ' ';
+        if (Input.isTouch) UI.closePanel && UI.closePanel();
+        UI.focusChat(); UI.toast('Đã chèn món đồ vào ô chat – viết thêm lời rao (VD: bán 5 vạn) rồi Gửi', 'info');
+        return;
+      }
       if (a === 'discard') { G.modal(`Vứt bỏ ${G.data.items[s.id].name}?`, [{ t: 'Vứt', cls: 'primary', fn: () => emit('discard', { uid: s.uid }) }, { t: 'Hủy' }]); return; }
       if (a !== 'enhance') panelState.sel = null;
     });

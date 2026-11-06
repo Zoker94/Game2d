@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '💬 Khoe đồ lên chat: chọn món đồ trong túi / đồ đang mặc → bấm "💬 Khoe lên chat", viết thêm lời rao rồi Gửi. Người khác bấm vào tên đồ (màu theo độ hiếm) để xem đầy đủ chỉ số, cường hoá, ngọc khảm.',
       '⚔️ Tống Kim: giảm điểm đánh quái (lính 3 con = 1 điểm, hiệu úy 2, đại tướng 20) và tối đa 80 điểm từ quái mỗi trận – hạ người chơi phe địch (khoảng 10 điểm) mới là cách kiếm điểm chính. 🎁 Rương Thủ Lĩnh: Truyền Kỳ 3%.',
       '📦 Phó bản và Bảo Rương không còn phát Nguyên Bảo.',
       '👑 Boss không còn phát Nguyên Bảo (kể cả top sát thương boss thế giới); vẫn giữ trang bị, rương, đá như cũ.',
