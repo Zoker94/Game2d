@@ -1788,7 +1788,7 @@ class World {
     const slot = DROP_SLOTS[U.randInt(0, DROP_SLOTS.length - 1)];
     const r = Math.random();
     let rar;
-    if (kind === 2) rar = r < 0.08 ? 'legendary' : r < 0.4 ? 'epic' : 'rare';   // Rương Thủ Lĩnh: Truyền Kỳ 8% · Sử Thi 32% · Hiếm 60%
+    if (kind === 2) rar = r < 0.03 ? 'legendary' : r < 0.35 ? 'epic' : 'rare';   // Rương Thủ Lĩnh: Truyền Kỳ 3% · Sử Thi 32% · Hiếm 65%
     else rar = r < 0.002 ? 'legendary' : r < 0.05 ? 'epic' : r < 0.3 ? 'rare' : 'common';
     const id = equipId(slot, tier, rar);
     const reward = { items: [[id, 1]], gold: U.randInt(100, 500) * (tier + 1) * kind };

@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '⚔️ Tống Kim: giảm điểm đánh quái (lính 3 con = 1 điểm, hiệu úy 2, đại tướng 20) và tối đa 80 điểm từ quái mỗi trận – hạ người chơi phe địch (khoảng 10 điểm) mới là cách kiếm điểm chính. 🎁 Rương Thủ Lĩnh: Truyền Kỳ 3%.',
       '📦 Phó bản và Bảo Rương không còn phát Nguyên Bảo.',
       '👑 Boss không còn phát Nguyên Bảo (kể cả top sát thương boss thế giới); vẫn giữ trang bị, rương, đá như cũ.',
       '💎 Hạn chế Nguyên Bảo: Nguyên Bảo từ hoạt động hằng ngày (Đố Vui, nhiệm vụ ngày, tham gia boss thế giới, phó bản, áp tiêu, Bảo Rương, Vòng Quay) tối đa 50 / ngày; giảm Nguyên Bảo ở cốt truyện, vòng quay, Bảo Rương, boss thế giới (ngoài top 3). Thưởng xếp hạng top giữ nguyên.',

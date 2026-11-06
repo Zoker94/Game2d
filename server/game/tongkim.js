@@ -17,14 +17,15 @@ const MIN_LV = 30, HOUR = 22, MIN = 0, DUR = 35, REG_BEFORE = 30, GENERAL_AT = 1
 const BASE_W = 9;                       // bề rộng hậu doanh (ô)
 const RESPAWN = 6000, AFK_MS = 180000, MIN_PTS = 20;
 const SIDES = { song: { name: 'Tống', color: '#e8443a' }, jin: { name: 'Kim', color: '#3a8ae8' } };
+const MON_PTS_MAX = 80;   // điểm tối đa từ đánh quái mỗi trận (hạ người chơi không giới hạn)
 const RANKS = [[0, 'Binh Sĩ'], [50, 'Hiệu Úy'], [150, 'Thống Lĩnh'], [300, 'Phó Tướng'], [500, 'Đại Tướng'], [800, 'Nguyên Soái']];
 // quái của hai phe (mượn hình có sẵn): Tống = Nhạc Gia Quân, Kim = thiết kỵ; Đại Tướng: Nhạc Vũ Mục / Kim Luân
 const TK_MONS = {
-  tk_song_linh: { name: 'Tống Quân Binh Sĩ', lv: 45, sprite: 'bandit', color: '#c83a2a', art: 'nhac_gia_quan', side: 'song', pts: 1 },
-  tk_song_hieu: { name: 'Tống Quân Hiệu Úy', lv: 55, sprite: 'bandit', color: '#e8443a', art: 'nhac_gia_quan', side: 'song', pts: 5, elite: true },
+  tk_song_linh: { name: 'Tống Quân Binh Sĩ', lv: 45, sprite: 'bandit', color: '#c83a2a', art: 'nhac_gia_quan', side: 'song', pts: 0.34 },
+  tk_song_hieu: { name: 'Tống Quân Hiệu Úy', lv: 55, sprite: 'bandit', color: '#e8443a', art: 'nhac_gia_quan', side: 'song', pts: 2, elite: true },
   tk_song_tuong: { name: 'Tống Đại Tướng', lv: 70, sprite: 'bandit', color: '#ff5a3a', art: 'boss_vumuc', side: 'song', general: true, boss: true },
-  tk_jin_linh: { name: 'Kim Quân Binh Sĩ', lv: 45, sprite: 'bandit', color: '#2a5ac8', art: 'mong_co_ky', side: 'jin', pts: 1 },
-  tk_jin_hieu: { name: 'Kim Quân Hiệu Úy', lv: 55, sprite: 'bandit', color: '#3a8ae8', art: 'mong_co_ky', side: 'jin', pts: 5, elite: true },
+  tk_jin_linh: { name: 'Kim Quân Binh Sĩ', lv: 45, sprite: 'bandit', color: '#2a5ac8', art: 'mong_co_ky', side: 'jin', pts: 0.34 },
+  tk_jin_hieu: { name: 'Kim Quân Hiệu Úy', lv: 55, sprite: 'bandit', color: '#3a8ae8', art: 'mong_co_ky', side: 'jin', pts: 2, elite: true },
   tk_jin_tuong: { name: 'Kim Đại Tướng', lv: 70, sprite: 'bandit', color: '#5aa0ff', art: 'boss_kimluan', side: 'jin', general: true, boss: true }
 };
 // cửa hàng Công Trạng: id vật phẩm (hoặc 'gold') – số lượng – giá
@@ -97,13 +98,13 @@ class TongKim {
     if (d.general) {
       if (!this.active) return;
       this.ev.bonus[killer.tk] += 100;
-      this.add(killer, 30);
+      this.monPts(killer, 20);
       this.f.announce(`⚔️ ${killer.c.name} hạ gục ${d.name}! Phe ${SIDES[killer.tk].name} +100 điểm!`);
       this.ev.general[d.side] = null;
       this.lastSync = 0;
       return;
     }
-    if (this.active) this.add(killer, d.pts);
+    if (this.active) this.monPts(killer, d.pts);
     const side = d.side, id = mon.tpl.id;
     if (this.active) setTimeout(() => this.active && this.spawnUnit(side, id === `tk_${side}_hieu` ? 'hieu' : 'linh'), 20000);
   }
@@ -209,6 +210,16 @@ class TongKim {
   }
 
   // ---------------- diễn biến ----------------
+  // điểm đánh quái: thấp hơn hạ người chơi (lính 3 con = 1 điểm, hiệu úy 2, đại tướng 20), tối đa MON_PTS_MAX điểm / trận
+  monPts(p, n) {
+    const s = this.score(p);
+    const before = s.monPts || 0, room = Math.max(0, MON_PTS_MAX - Math.floor(before));
+    if (!room) return;
+    s.monPts = before + n;
+    const gain = Math.min(room, Math.floor(s.monPts) - Math.floor(before));
+    if (gain > 0) this.add(p, gain);
+    if (Math.floor(s.monPts) >= MON_PTS_MAX && Math.floor(before) < MON_PTS_MAX) this.toast(p, `Đã đạt tối đa ${MON_PTS_MAX} điểm từ đánh quái trận này – hạ người chơi phe địch để kiếm thêm điểm`, 'info');
+  }
   score(p) {
     const s = this.ev.scores;
     return s[p.userId] || (s[p.userId] = { name: p.c.name, pts: 0, kills: 0, deaths: 0, streak: 0, best: 0, side: p.tk });
