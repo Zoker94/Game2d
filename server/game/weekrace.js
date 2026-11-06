@@ -15,11 +15,11 @@ const BOARDS = [
 ];
 const { TITLES } = require('../data/titles');
 const REWARD = [
-  { knb: 500, items: [['boss_chest', 2], ['stone2', 3]] },
-  { knb: 300, items: [['boss_chest', 1], ['stone2', 2]] },
-  { knb: 200, items: [['boss_chest', 1], ['stone2', 1]] }
+  { knb: 10, items: [['boss_chest', 2], ['stone2', 3]] },
+  { knb: 8, items: [['boss_chest', 1], ['stone2', 2]] },
+  { knb: 6, items: [['boss_chest', 1], ['stone2', 1]] }
 ];
-const REWARD_TOP10 = { knb: 50, items: [['lucky_chest', 2]] };
+const REWARD_TOP10 = { knb: 5, items: [['lucky_chest', 2]] };
 const DAY = 86400000, VN = 7 * 3600000;
 // số thứ tự tuần: tuần bắt đầu 00:00 Thứ 6 (01/01/1970 là Thứ 5 nên ngày Thứ 6 đầu tiên là ngày số 1)
 const rawWeek = t => Math.floor((Math.floor((t + VN) / DAY) - 1) / 7);

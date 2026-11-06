@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '💎 Mọi phần thưởng Nguyên Bảo giờ chỉ 5–10 mỗi lần: áp tiêu vàng 10, Vòng Quay tối đa 10, điểm danh ngày 7 và các mốc cộng dồn 10, Công Thành 10 (bang chủ +10), Sư đồ 10, mời bạn 10 mỗi mốc, top Đại Hội / Hoa Sơn / Đua top tuần / Săn Quái 10 / 8 / 6 (hạng 4–10: 5), chương cuối cốt truyện 10. Quà tân thủ và thưởng đạt cấp 10 giữ nguyên.',
       '💠 Đá hiếm hơn: Huyền / Thiên Tinh Thạch rơi ít hơn (quái, tinh anh, boss dã ngoại, Rương Bí Ẩn, Khoáng Động). Ngọc khảm cấp 4–5: Khoáng Động ra ít hơn, ghép lên cấp 4 còn 50% / cấp 5 còn 30%, Tống Kim đổi 1.000 / 3.500 Công Trạng, Thương Nhân Bí Ẩn bán ngọc cấp 4 giá 100 Nguyên Bảo.',
       '🥋 Nhiệm vụ ngày PK: thắng 1 trận Tỷ Võ (thách đấu 1-1 với bất kỳ ai) cũng hoàn thành – làm được mọi ngày, không phải chờ cuối tuần có người PK.',
       '🔨 Tăng nhẹ phí ngân lượng: cường hoá (đập đồ) +30%, khảm / tháo ngọc +33%, nâng cấp ngọc +30%.',

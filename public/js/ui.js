@@ -842,7 +842,7 @@
       if (busy) { if (++tries < 30) setTimeout(remind, 2000); return; }
       if (G.me.level < 3) return;
       try { localStorage.setItem('vl_ci_remind', today); } catch (e) { }
-      G.modal(`🗓️ Hôm nay bạn chưa điểm danh! Chuỗi hiện tại: ${ciState.streak} ngày${ciState.canFix ? ' (hôm qua bị lỡ – có thể bù)' : ''}. Ngày 7 nhận Vé Treo Máy + Rương Thủ Lĩnh + 30 Nguyên Bảo.`, [
+      G.modal(`🗓️ Hôm nay bạn chưa điểm danh! Chuỗi hiện tại: ${ciState.streak} ngày${ciState.canFix ? ' (hôm qua bị lỡ – có thể bù)' : ''}. Ngày 7 nhận Vé Treo Máy + Rương Thủ Lĩnh + 10 Nguyên Bảo.`, [
         { t: '🗓️ Điểm danh ngay', cls: 'primary', fn: () => UI.openPanel('events', { tab: 'checkin' }) }, { t: 'Để sau' }]);
     };
     setTimeout(remind, 5000);

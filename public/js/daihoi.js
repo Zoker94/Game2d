@@ -25,9 +25,9 @@
       <div class="small">• Hạ <b>Đại Hội Hộ Pháp</b>: +1 điểm. Giữa trận, <b>Thiên Hạ Đệ Nhất Cao Thủ</b> xuất hiện giữa lôi đài: kẻ hạ hắn +20 điểm.</div>
       <div class="small">• Tử trận không mất kinh nghiệm, có thể hồi sinh tại chỗ hoặc về thành rồi vào lại.</div></div>
       <div class="card"><h4>🎁 Phần thưởng</h4>
-      <div class="small">🥇 Hạng 1: <b>Danh hiệu Võ Lâm Minh Chủ 7 ngày</b> + 200 💎 + 50.000 💰 + 3 Rương Thủ Lĩnh</div>
-      <div class="small">🥈 Hạng 2: 120 💎 + 30.000 💰 + 2 Rương Thủ Lĩnh · 🥉 Hạng 3: 80 💎 + 20.000 💰 + 1 Rương Thủ Lĩnh</div>
-      <div class="small">Hạng 4-10: 30 💎 + 10.000 💰 + 2 Rương Bí Ẩn · Có điểm: 3.000 💰 + 1 Rương Bí Ẩn</div></div>`;
+      <div class="small">🥇 Hạng 1: <b>Danh hiệu Võ Lâm Minh Chủ 7 ngày</b> + 10 💎 + 50.000 💰 + 3 Rương Thủ Lĩnh</div>
+      <div class="small">🥈 Hạng 2: 8 💎 + 30.000 💰 + 2 Rương Thủ Lĩnh · 🥉 Hạng 3: 6 💎 + 20.000 💰 + 1 Rương Thủ Lĩnh</div>
+      <div class="small">Hạng 4-10: 5 💎 + 10.000 💰 + 2 Rương Bí Ẩn · Có điểm: 3.000 💰 + 1 Rương Bí Ẩn</div></div>`;
     body.innerHTML = html;
     const en = $('dh-enter'); if (en) en.onclick = () => { emit('daihoi', { op: 'enter' }); UI.closePanel(); };
     const lv = $('dh-leave'); if (lv) lv.onclick = () => { emit('daihoi', { op: 'leave' }); UI.closePanel(); };

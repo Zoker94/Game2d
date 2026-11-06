@@ -16,8 +16,8 @@ const SEAL_HP = process.env.SIEGE_TEST ? 30000 : 2000000, SEAL_CAP = process.env
 const KEEP = { x0: 18, y0: 12, x1: 38, y1: 32 };   // nội thành (ô), khớp với bố cục trong data/maps.js
 const SIEGE_MONS = { ct_long_an: { name: 'Long Ấn Thành Trì', lv: 80, sprite: 'chest', color: '#ffd040', art: null } };
 const REWARD = {
-  win: { gold: 100000, knb: 20, items: [['boss_chest', 2], ['stone2', 2]] },
-  winLeader: { knb: 100 },
+  win: { gold: 100000, knb: 10, items: [['boss_chest', 2], ['stone2', 2]] },
+  winLeader: { knb: 10 },
   join: { gold: 20000, items: [['lucky_chest', 1], ['stone', 5]] }
 };
 const WIN_FUND = 300000;

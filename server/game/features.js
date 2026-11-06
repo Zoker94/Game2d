@@ -32,7 +32,7 @@ const WHEEL = [
   { name: '500 lượng', w: 22, r: { gold: 500 } },
   { name: '3000 lượng', w: 10, r: { gold: 3000 } },
   { name: '3 Nguyên Bảo', w: 8, r: { knb: 3 } },
-  { name: '20 Nguyên Bảo', w: 0.5, r: { knb: 20 } },
+  { name: '10 Nguyên Bảo', w: 0.5, r: { knb: 10 } },
   { name: 'Huyền Tinh Thạch x2', w: 16, r: { items: [['stone', 2]] } },
   { name: 'Rương Bí Ẩn', w: 8, r: { items: [['lucky_chest', 1]] } },
   { name: 'Song Bội KN', w: 10, r: { items: [['exp_x2', 1]] } },
@@ -47,12 +47,12 @@ const WHEEL = [
 // Điểm danh 7 ngày liên tiếp (lỡ 1 ngày thì bù bằng Nguyên Bảo để giữ chuỗi), ngày 7 quà lớn; cộng dồn tổng số ngày để mở mốc thưởng
 const CHECKIN = [
   { gold: 2000, items: [['hp1', 20], ['mp1', 20]] }, { gold: 5000, items: [['stone', 3]] }, { knb: 5, items: [['mount_food', 10]] }, { gold: 10000, items: [['exp_x2', 1]] },
-  { knb: 10, items: [['stone', 5], ['lucky_chest', 1]] }, { gold: 20000, items: [['stone2', 1], ['exp_x2', 1]] }, { knb: 30, items: [['auto_ticket', 1], ['boss_chest', 1], ['insure', 1]] }
+  { knb: 10, items: [['stone', 5], ['lucky_chest', 1]] }, { gold: 20000, items: [['stone2', 1], ['exp_x2', 1]] }, { knb: 10, items: [['auto_ticket', 1], ['boss_chest', 1], ['insure', 1]] }
 ];
 const CHECKIN_MILESTONES = [
-  { n: 7, r: { items: [['lucky_chest', 2]] } }, { n: 15, r: { knb: 20, items: [['stone2', 3], ['exp_x2', 2]] } },
-  { n: 30, r: { knb: 50, items: [['boss_chest', 2], ['auto_ticket', 2]] } }, { n: 60, r: { knb: 100, items: [['boss_chest', 3], ['insure', 3]] } },
-  { n: 100, r: { knb: 200, items: [['boss_chest', 5], ['auto_ticket', 5]] } }
+  { n: 7, r: { items: [['lucky_chest', 2]] } }, { n: 15, r: { knb: 10, items: [['stone2', 3], ['exp_x2', 2]] } },
+  { n: 30, r: { knb: 10, items: [['boss_chest', 2], ['auto_ticket', 2]] } }, { n: 60, r: { knb: 10, items: [['boss_chest', 3], ['insure', 3]] } },
+  { n: 100, r: { knb: 10, items: [['boss_chest', 5], ['auto_ticket', 5]] } }
 ];
 const CHECKIN_FIX_KNB = 10;   // bù điểm danh (lỡ đúng 1 ngày)
 
@@ -301,7 +301,7 @@ class Features {
     const info = EVENT_INFO[k];
     if (k === 'huntRace') {
       const top = Object.entries(e.scores || {}).sort((a, b) => b[1].n - a[1].n).slice(0, 10);
-      const rewards = [{ knb: 50, items: [['boss_chest', 2]] }, { knb: 30, items: [['boss_chest', 1]] }, { knb: 15, items: [['boss_chest', 1]] }];
+      const rewards = [{ knb: 10, items: [['boss_chest', 2]] }, { knb: 8, items: [['boss_chest', 1]] }, { knb: 6, items: [['boss_chest', 1]] }];
       top.slice(0, 3).forEach(([uid, s], i) => {
         const user = this.db.data.users[uid];
         if (!user || !user.character) return;

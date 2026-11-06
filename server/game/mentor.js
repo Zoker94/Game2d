@@ -7,7 +7,7 @@ const U = require('./util');
 
 const MASTER_LV = 60, MIN_LV = 5, GRAD_LV = 30, MAX_DISC = 3, REQ_TTL = 60000, COOLDOWN = 86400e3;
 const GRAD = {
-  master: { knb: 50, items: [['boss_chest', 1], ['stone2', 2]] },
+  master: { knb: 10, items: [['boss_chest', 1], ['stone2', 2]] },
   disciple: { gold: 50000, items: [['exp_x2', 2], ['stone', 10], ['mount_food', 20]] }
 };
 const SHOP = [

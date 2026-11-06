@@ -15,9 +15,9 @@ const DOW = 6, HOUR = 20;                 // Thứ 7, 20:00 (giờ Việt Nam)
 const PREP = process.env.HS_FAST ? 3000 : 45000, BREAK = 12000;        // chờ người chơi vào sân trước trận đầu; nghỉ giữa các vòng
 const CONFIRM_MS = 10000;                 // tới lượt đấu: 10 giây bấm xác nhận (người treo máy / vắng mặt không bấm = xử thua)
 const REWARDS = [
-  { knb: 300, gold: 80000, items: [['boss_chest', 3], ['stone', 30]] },
-  { knb: 180, gold: 50000, items: [['boss_chest', 2], ['stone', 20]] },
-  { knb: 100, gold: 30000, items: [['boss_chest', 1], ['stone', 10]] }
+  { knb: 10, gold: 80000, items: [['boss_chest', 3], ['stone', 30]] },
+  { knb: 8, gold: 50000, items: [['boss_chest', 2], ['stone', 20]] },
+  { knb: 6, gold: 30000, items: [['boss_chest', 1], ['stone', 10]] }
 ];
 const REWARD_JOIN = { gold: 5000 };
 const JOIN_CHEST = 0.3;   // người tham gia (ngoài top 3): 30% nhận 1 Rương Thủ Lĩnh

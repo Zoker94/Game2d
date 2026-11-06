@@ -10,14 +10,14 @@
 const U = require('./util');
 
 const LV_REWARDS = {   // người mời nhận khi một người được mời đạt cấp (chống clone: mốc đầu tiên là cấp 30 – gộp quà mốc 10 cũ vào)
-  30: { items: [['boss_chest', 1], ['lucky_chest', 1], ['exp_x2', 3]], knb: 30, gold: 20000 },
-  50: { items: [['boss_chest', 2], ['stone2', 2]], knb: 60 }
+  30: { items: [['boss_chest', 1], ['lucky_chest', 1], ['exp_x2', 3]], knb: 10, gold: 20000 },
+  50: { items: [['boss_chest', 2], ['stone2', 2]], knb: 10 }
 };
 const TIER_REWARDS = {   // tổng số người được mời đã đạt cấp 30
-  3: { items: [['boss_chest', 3]], knb: 50 },
-  5: { items: [['boss_chest', 3], ['mount_stone', 2]], knb: 100, title: 'ref_5' },   // title: chỉ để hiển thị – danh hiệu tự mở theo thành tích 'refs' (titles.js)
-  10: { items: [['mount_bach_ho', 1], ['boss_chest', 5]], knb: 200 },
-  20: { items: [['boss_chest', 10], ['stone2', 10]], knb: 500, title: 'ref_20' }
+  3: { items: [['boss_chest', 3]], knb: 10 },
+  5: { items: [['boss_chest', 3], ['mount_stone', 2]], knb: 10, title: 'ref_5' },   // title: chỉ để hiển thị – danh hiệu tự mở theo thành tích 'refs' (titles.js)
+  10: { items: [['mount_bach_ho', 1], ['boss_chest', 5]], knb: 10 },
+  20: { items: [['boss_chest', 10], ['stone2', 10]], knb: 10, title: 'ref_20' }
 };
 const NEWBIE_GIFT = { items: [['exp_x2', 2], ['lucky_chest', 1], ['hp1', 30], ['mp1', 30]], gold: 5000 };   // người được mời: quà tân thủ
 const DAY_CAP = 10, IP_BURST = 3, IP_KEEP = 12, DEV_KEEP = 8;

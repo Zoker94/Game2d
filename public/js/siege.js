@@ -34,7 +34,7 @@
       <div class="small">• Giữa nội thành có <b style="color:#ffd040">Long Ấn</b>: bang nào phá được thì chiếm Long Ấn (Long Ấn hồi đầy máu, có khiên 8 giây). Long Ấn bắn sét kẻ địch đứng gần.</div>
       <div class="small">• Bang giữ Long Ấn hồi sinh trong nội thành, bang khác hồi sinh ở ngoại thành. Tử trận không mất kinh nghiệm.</div>
       <div class="small">• Hết giờ, bang đang giữ Long Ấn làm <b>chủ thành 7 ngày</b>: +10% kinh nghiệm cho cả bang, 30% thuế chợ & giao dịch toàn máy chủ vào quỹ bang, huy hiệu 🏯 cạnh tên bang.</div></div>
-      <div class="card"><h4>🎁 Phần thưởng</h4><div class="small">Bang chiếm thành: mỗi người 100.000 lượng, 20 Nguyên Bảo, 2 Rương Thủ Lĩnh, 2 Thiên Tinh Thạch (Bang chủ thêm 100 Nguyên Bảo), quỹ bang +300.000.<br>Bang khác tham chiến: 20.000 lượng, Rương Bí Ẩn, 5 Huyền Tinh Thạch.</div></div>`;
+      <div class="card"><h4>🎁 Phần thưởng</h4><div class="small">Bang chiếm thành: mỗi người 100.000 lượng, 10 Nguyên Bảo, 2 Rương Thủ Lĩnh, 2 Thiên Tinh Thạch (Bang chủ thêm 10 Nguyên Bảo), quỹ bang +300.000.<br>Bang khác tham chiến: 20.000 lượng, Rương Bí Ẩn, 5 Huyền Tinh Thạch.</div></div>`;
     if (d.last) html += `<div class="card"><h4>🏆 Trận gần nhất</h4><div class="small">${d.last.win ? `Bang <b>${UI.esc(d.last.win)}</b> chiếm thành` : 'Không bang nào giữ được thành'}${(d.last.top || []).length ? ' · ' + d.last.top.map(t => `${UI.esc(t.name)} (giữ ${Math.round(t.hold / 60)}′, ${t.kills} hạ)`).join(' · ') : ''}</div></div>`;
     body.innerHTML = html;
     body.querySelectorAll('[data-ct]').forEach(b => b.onclick = () => { emit({ op: b.dataset.ct }); if (b.dataset.ct === 'join') UI.closePanel(); });

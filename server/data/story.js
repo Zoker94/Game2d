@@ -270,7 +270,7 @@ const CHAPTERS = [
                 ['npc:truong_lao', 'Sáu tàn quyển đã ghép lại. Còn quyển thứ bảy… Quách đại hiệp nói: "Tinh hoa binh pháp không nằm trên giấy, mà ở lòng dân." Có lẽ Nhạc Vũ Mục chưa từng viết nó ra.'],
                 ['me', 'Vì nước vì dân, mới là hiệp chi đại giả. Vãn bối đã hiểu.'],
                 ['n', 'Từ đó, giang hồ truyền tụng danh hiệu "Tương Dương Đại Hiệp – {name}". Nhưng giang hồ chưa bao giờ yên bình… Hành trình vẫn còn tiếp diễn.']],
-        reward: { expPct: 2.0, gold: 50000, knb: 20, items: [['weapon_6_legendary', 1], ['boss_chest', 2]] } }
+        reward: { expPct: 2.0, gold: 50000, knb: 10, items: [['weapon_6_legendary', 1], ['boss_chest', 2]] } }
     ]
   }
 ];

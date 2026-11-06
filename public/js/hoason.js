@@ -37,9 +37,9 @@
       <div class="small">• Mỗi trận tối đa 2 phút 30: cạn máu (không chết, không mất gì) hoặc bước ra khỏi vòng là thua; hết giờ ai còn nhiều % máu hơn thắng. Có thể xin thua.</div>
       <div class="small">• Người ngoài lên núi xem: chọn <b>👁 Xem thi đấu</b> (camera theo trận) hoặc <b>🕹 Tự do</b> (tự đi lại quanh các đài).</div></div>
       <div class="card"><h4>🎁 Phần thưởng</h4>
-      <div class="small">🥇 Vô địch: <b>Danh hiệu Hoa Sơn Kiếm Thánh 7 ngày</b> + 300 💎 + 80.000 💰 + 3 Rương Thủ Lĩnh + 30 Huyền Tinh Thạch</div>
-      <div class="small">🥈 Á quân: 180 💎 + 50.000 💰 + 2 Rương Thủ Lĩnh + 20 Huyền Tinh Thạch</div>
-      <div class="small">🥉 Hạng Ba: 100 💎 + 30.000 💰 + 1 Rương Thủ Lĩnh + 10 Huyền Tinh Thạch · Tham gia: 5.000 💰 + 1 Rương Bí Ẩn</div></div>`;
+      <div class="small">🥇 Vô địch: <b>Danh hiệu Hoa Sơn Kiếm Thánh 7 ngày</b> + 10 💎 + 80.000 💰 + 3 Rương Thủ Lĩnh + 30 Huyền Tinh Thạch</div>
+      <div class="small">🥈 Á quân: 8 💎 + 50.000 💰 + 2 Rương Thủ Lĩnh + 20 Huyền Tinh Thạch</div>
+      <div class="small">🥉 Hạng Ba: 6 💎 + 30.000 💰 + 1 Rương Thủ Lĩnh + 10 Huyền Tinh Thạch · Tham gia: 5.000 💰 + 1 Rương Bí Ẩn</div></div>`;
     if (d.last && d.last.top) html += `<div class="card"><h4>🏆 Giải gần nhất (${d.last.total} đấu thủ)</h4><div class="small">${d.last.top.map((n, i) => n ? `${MEDAL[i]} ${UI.esc(n)}` : '').filter(Boolean).join(' · ')}</div></div>`;
     html += `<div class="card"><h4>📋 Đã ghi danh (${d.nReg || 0}/${d.maxReg || 64})</h4><div class="small hs-reglist">${(d.regList || []).map(([n, lv, c]) => `<span>${UI.esc(n)} <i>Lv${lv} ${UI.esc(c)}</i></span>`).join('') || '<span class="muted">Chưa có ai</span>'}</div></div>`;
     body.innerHTML = html;
