@@ -2386,7 +2386,24 @@ class World {
   // ---------- Vòng lặp ----------
   start() {
     // lỗi trong một nhịp chỉ ghi log, không làm sập cả máy chủ
-    this.timer = setInterval(() => { try { this.tick(); } catch (e) { console.error('[tick]', e); } }, TICK);
+    // đo hiệu năng: thời gian mỗi tick + độ trễ vòng sự kiện (xem ở trang quản trị / log mỗi 60 giây)
+    const { monitorEventLoopDelay } = require('perf_hooks');
+    const eld = monitorEventLoopDelay({ resolution: 10 }); eld.enable();
+    this.perf = { n: 0, sum: 0, max: 0, last: null };
+    this.timer = setInterval(() => {
+      const t0 = process.hrtime.bigint();
+      try { this.tick(); } catch (e) { console.error('[tick]', e); }
+      const ms = Number(process.hrtime.bigint() - t0) / 1e6, P = this.perf;
+      P.n++; P.sum += ms; if (ms > P.max) P.max = ms;
+    }, TICK);
+    setInterval(() => {
+      const P = this.perf, mem = process.memoryUsage();
+      P.last = { at: Date.now(), players: this.players.size, tickAvg: +(P.sum / Math.max(1, P.n)).toFixed(2), tickMax: +P.max.toFixed(1),
+        loopP50: +(eld.percentile(50) / 1e6).toFixed(1), loopP99: +(eld.percentile(99) / 1e6).toFixed(1), loopMax: +(eld.max / 1e6).toFixed(1),
+        heapMB: Math.round(mem.heapUsed / 1048576), rssMB: Math.round(mem.rss / 1048576) };
+      P.n = P.sum = P.max = 0; eld.reset();
+      console.log('[perf]', JSON.stringify(P.last));
+    }, 60000);
   }
 
   // ---------- thời tiết theo bản đồ ----------

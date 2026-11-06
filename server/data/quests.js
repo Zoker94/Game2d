@@ -39,7 +39,7 @@ function makeDaily(lv, rand = Math.random) {
     { id: 'd_chat', type: 'chat', n: 1, text: 'Gửi 1 tin nhắn ở kênh Thế Giới', reward: { gold: 100 } },
     { id: 'd_potion', type: 'potion', n: 5, text: 'Sử dụng 5 bình thuốc', reward: { items: [['hp1', 10]] } }
   ];
-  if (lv >= 10) extras.push({ id: 'd_pvp', type: 'pvp', n: 1, text: 'Hạ gục 1 đối thủ tại Lôi Đài', reward: { knb: 5, gold: Math.round(500 * scale) } });
+  if (lv >= 10) extras.push({ id: 'd_pvp', type: 'pvp', n: 1, text: 'Thắng 1 trận Tỷ Võ (thách đấu) hoặc hạ 1 đối thủ PK', reward: { knb: 5, gold: Math.round(500 * scale) } });
   list.push(pick(extras));
   return list.map(q => Object.assign(q, { progress: 0, done: false, claimed: false }));
 }

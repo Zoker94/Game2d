@@ -103,7 +103,7 @@ class Duel {
       if (!p.dead) p.c.hp = Math.max(p.c.hp, Math.round(p.stats.maxHp * 0.5));   // đấu xong hồi lại nửa máu
       p.dirtyMe = true;
       const res = !winner ? 'draw' : p === winner ? 'win' : 'lose';
-      if (res === 'win') p.c.duelWin = (p.c.duelWin || 0) + 1;
+      if (res === 'win') { p.c.duelWin = (p.c.duelWin || 0) + 1; if (this.w.features) this.w.features.questProgress(p, 'pvp', 1); }   // thắng tỷ võ cũng tính nhiệm vụ ngày PK
       if (res === 'lose') p.c.duelLose = (p.c.duelLose || 0) + 1;
       if (p.socket) p.socket.emit('duel', { st: 'end', res, reason, name: this.other(d, p).c.name, win: p.c.duelWin || 0, lose: p.c.duelLose || 0 });
     }

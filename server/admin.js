@@ -69,7 +69,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     for (const p of world.players.values()) byMap[p.mapId] = (byMap[p.mapId] || 0) + 1;
     const dayAgo = Date.now() - 86400e3;
     res.json({
-      online: world.players.size, peakOnline: db.data.stats.peakOnline || 0,
+      online: world.players.size, peakOnline: db.data.stats.peakOnline || 0, perf: world.perf && world.perf.last,
       users: users.length, characters: chars.length, banned: users.filter(u => u.banned).length,
       newToday: users.filter(u => u.createdAt > dayAgo).length, activeToday: users.filter(u => (u.lastLogin || 0) > dayAgo).length,
       guilds: Object.keys(db.data.guilds).length,

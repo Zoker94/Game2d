@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🥋 Nhiệm vụ ngày PK: thắng 1 trận Tỷ Võ (thách đấu 1-1 với bất kỳ ai) cũng hoàn thành – làm được mọi ngày, không phải chờ cuối tuần có người PK.',
       '🔨 Tăng nhẹ phí ngân lượng: cường hoá (đập đồ) +30%, khảm / tháo ngọc +33%, nâng cấp ngọc +30%.',
       '💬 Khoe đồ lên chat: chọn món đồ trong túi / đồ đang mặc → bấm "💬 Khoe lên chat", viết thêm lời rao rồi Gửi. Người khác bấm vào tên đồ (màu theo độ hiếm) để xem đầy đủ chỉ số, cường hoá, ngọc khảm.',
       '⚔️ Tống Kim: giảm điểm đánh quái (lính 3 con = 1 điểm, hiệu úy 2, đại tướng 20) và tối đa 80 điểm từ quái mỗi trận – hạ người chơi phe địch (khoảng 10 điểm) mới là cách kiếm điểm chính. 🎁 Rương Thủ Lĩnh: Truyền Kỳ 3%.',
