@@ -152,7 +152,7 @@ class Escort {
     const gold = Math.round(r.gold * (0.7 + 0.3 * hpBonus));
     const exp = Math.round(U.expNext(c.level) * r.exp);
     c.gold += gold + r.deposit;
-    if (r.knb) c.knb += r.knb;
+    if (r.knb) c.knb += w.farmKnb(c, r.knb);
     w.giveItem(p, 'stone', cart.tier === 'vang' ? 5 : cart.tier === 'bac' ? 3 : 1);
     w.gainExp(p, exp, true);
     w.toast(p, `Giao tiêu thành công! +${gold.toLocaleString('vi-VN')} lượng (hoàn cọc ${r.deposit.toLocaleString('vi-VN')}), +${exp.toLocaleString('vi-VN')} kinh nghiệm${r.knb ? ', +' + r.knb + ' nguyên bảo' : ''}`, 'reward');

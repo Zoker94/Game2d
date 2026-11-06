@@ -477,9 +477,24 @@ class World {
 
   // ---------- Phần thưởng / kinh nghiệm ----------
   // opts.bind: đồ thưởng là đồ khoá (thưởng nhiệm vụ)
+  // Nguyên Bảo kiếm từ hoạt động lặp lại hằng ngày (đố vui, nhiệm vụ ngày, boss, phó bản, áp tiêu, Bảo Rương, vòng quay):
+  // tổng tối đa FARM_KNB_DAY / ngày / nhân vật. Trả về số được nhận thật.
+  farmKnb(c, n) {
+    n = Math.max(0, n | 0); if (!n) return 0;
+    const today = U.vnDay();
+    if (!c.knbFarm || c.knbFarm.d !== today) c.knbFarm = { d: today, n: 0 };
+    const got = Math.min(n, Math.max(0, FARM_KNB_DAY - c.knbFarm.n));
+    c.knbFarm.n += got;
+    return got;
+  }
   giveReward(p, r, source, opts) {
     const bind = !!(opts && opts.bind);
     if (!r) return;
+    if (opts && opts.farm && r.knb) {
+      const got = this.farmKnb(p.c, r.knb);
+      if (got < r.knb) setTimeout(() => this.toast(p, got ? `💎 Chỉ nhận thêm ${got} Nguyên Bảo – đã chạm giới hạn ${FARM_KNB_DAY} Nguyên Bảo / ngày từ hoạt động` : `💎 Hôm nay đã nhận đủ ${FARM_KNB_DAY} Nguyên Bảo từ hoạt động, phần Nguyên Bảo không được cộng thêm`, 'info'), 600);
+      r = Object.assign({}, r, { knb: got });
+    }
     const B = p._batch;
     if (B) {   // đang dùng hàng loạt: cộng dồn, báo một lần ở cuối
       if (r.exp) { this.gainExp(p, r.exp, true); B.exp += r.exp; }
@@ -1359,7 +1374,7 @@ class World {
           if (!off && Math.random() < chance * dr) legend(p);
           const items = !off && i === 0 && tpl.id === 'boss_vumuc' ? [['vm_tamphap', 1]] : [];   // chỉ top 1 sát thương: anh linh Nhạc Vũ Mục truyền Tâm Pháp (cách học Di Thư)
           if (!off && i < 3) items.push(['boss_chest', 3 - i]);   // hạng 1-3: 3 / 2 / 1 Rương Thủ Lĩnh
-          this.giveReward(p, { items, knb: i < 3 ? [200, 120, 80][i] : i < 10 ? 40 : 15 }, `Hạng ${i + 1} đánh ${tpl.name}`);
+          this.giveReward(p, { items, knb: i < 3 ? [200, 120, 80][i] : i < 10 ? 20 : 5 }, `Hạng ${i + 1} đánh ${tpl.name}`, i < 3 ? null : { farm: true });   // top 3 giữ nguyên; còn lại tính vào trần / ngày
         });
       } else if (!BOSSCFG.noDefault(tpl.id)) {
         // Boss dã ngoại (theo giờ) chỉ rơi: trang bị, đá cường hóa và 10 rương văng khắp nơi (ai nhanh tay thì được).
@@ -2807,6 +2822,7 @@ const STUN_IMMUNE = 3000;
 // PvP: sát thương người chơi lên người chơi, hồi máu khi đang giao tranh, bình máu (hồi chiêu, tối đa % máu mỗi bình)
 const PARDON_PTS = 5;   // mỗi Lệnh Bài Xoá Tội trừ 5 điểm sát khí
 const PK_OUTLAW = 3;   // sát khí từ 3 (tên đỏ) là kẻ đồ sát
+const FARM_KNB_DAY = 50;   // trần Nguyên Bảo / ngày từ các hoạt động lặp lại
 const VIP_MON_DMG = 0.5;   // khu VIP (người có Vé Treo Máy): quái chỉ gây 50% sát thương
 const POT_CD = 1000;   // hồi chiêu bình máu / bình nội lực (mỗi loại riêng)
 const PVP_DMG = 0.0285, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;

@@ -31,8 +31,8 @@ const quizHit = (text, answers) => { const t = quizNorm(text); return answers.so
 const WHEEL = [
   { name: '500 lượng', w: 22, r: { gold: 500 } },
   { name: '3000 lượng', w: 10, r: { gold: 3000 } },
-  { name: '5 Nguyên Bảo', w: 12, r: { knb: 5 } },
-  { name: '30 Nguyên Bảo', w: 2, r: { knb: 30 } },
+  { name: '3 Nguyên Bảo', w: 8, r: { knb: 3 } },
+  { name: '20 Nguyên Bảo', w: 0.5, r: { knb: 20 } },
   { name: 'Huyền Tinh Thạch x2', w: 16, r: { items: [['stone', 2]] } },
   { name: 'Rương Bí Ẩn', w: 8, r: { items: [['lucky_chest', 1]] } },
   { name: 'Song Bội KN', w: 10, r: { items: [['exp_x2', 1]] } },
@@ -324,7 +324,7 @@ class Features {
 
   giveOffline(c, r) {
     if (r.gold) c.gold += r.gold;
-    if (r.knb) c.knb += r.knb;
+    if (r.knb) c.knb += this.w.farmKnb(c, r.knb);
     for (const [id, q] of r.items || []) if (!U.addItem(c, id, q)) this.w.stash(c, id, q);   // túi đầy: vào Hòm Đồ
     this.db.markDirty();
   }
@@ -343,10 +343,10 @@ class Features {
       const r = Math.random();
       const lv = killer.c.level;
       const reward = r < 0.05 ? { items: [[equipId(['weapon', 'armor', 'ring'][U.randInt(0, 2)], tierOfLv(lv), 'epic'), 1]] }
-        : r < 0.25 ? { knb: U.randInt(3, 10) }
+        : r < 0.18 ? { knb: U.randInt(2, 5) }
         : r < 0.33 ? { items: [['boss_chest', 1]] }   // Bảo Rương: 8% Rương Thủ Lĩnh (trước 25% Rương Bí Ẩn)
         : { gold: U.randInt(200, 800) * (1 + Math.floor(lv / 10)), items: [['stone', 1]] };
-      this.w.giveReward(killer, reward, 'Bảo Rương');
+      this.w.giveReward(killer, reward, 'Bảo Rương', { farm: true });
       const e = this.events.treasure;
       if (e) e.chests--;
       if (reward.items && ITEMS[reward.items[0][0]].rarity === 'legendary') this.brag(`💰 ${killer.c.name} mở Bảo Rương nhận được [${ITEMS[reward.items[0][0]].name}]!`);
@@ -394,12 +394,12 @@ class Features {
     if (id === 'bonus') {
       if (d.bonusClaimed || !d.list.every(q => q.claimed)) return this.w.toast(p, 'Hãy hoàn thành tất cả nhiệm vụ', 'error');
       d.bonusClaimed = true;
-      this.w.giveReward(p, DAILY_ALL_BONUS, 'Hoàn thành tất cả NV ngày', { bind: true });
+      this.w.giveReward(p, DAILY_ALL_BONUS, 'Hoàn thành tất cả NV ngày', { bind: true, farm: true });
     } else {
       const q = d.list.find(x => x.id === id);
       if (!q || !q.done || q.claimed) return;
       q.claimed = true;
-      this.w.giveReward(p, q.reward, 'Nhiệm vụ ngày', { bind: true });
+      this.w.giveReward(p, q.reward, 'Nhiệm vụ ngày', { bind: true, farm: true });
       this.w.progressTutorial(p, 'daily');
       this.w.story.on(p, 'daily');
     }
@@ -428,7 +428,7 @@ class Features {
         const id = equipId(DROP_SLOTS[U.randInt(0, DROP_SLOTS.length - 1)], tierOfLv(p.c.level), 'epic');
         this.w.giveReward(p, { items: [[id, 1]] }, 'Vòng Quay');
         this.brag(`🎡 ${p.c.name} quay trúng [${ITEMS[id].name}] tại Vòng Quay May Mắn!`);
-      } else this.w.giveReward(p, prize.r, 'Vòng Quay');
+      } else this.w.giveReward(p, prize.r, 'Vòng Quay', { farm: true });
     }, 4200);
     this.questProgress(p, 'wheel', 1);
     this.db.markDirty();
@@ -692,7 +692,7 @@ class Features {
         setTimeout(() => {
           this.announce(`🎉 ${p.c.name} đã trả lời đúng "${q.answers[0]}" và nhận 5 Nguyên Bảo + 500 lượng!`);
           if (this.w.players.has(p.userId)) p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: left > 0 ? `Đố Vui hôm nay bạn còn ${left} lượt nhận thưởng.` : `Bạn đã dùng hết ${QUIZ_DAILY} lượt nhận thưởng Đố Vui hôm nay.` });
-          if (this.w.players.has(p.userId)) this.w.giveReward(p, { knb: 5, gold: 500 }, 'Đố Vui Võ Lâm');
+          if (this.w.players.has(p.userId)) this.w.giveReward(p, { knb: 5, gold: 500 }, 'Đố Vui Võ Lâm', { farm: true });
         }, 300);
       }
     }

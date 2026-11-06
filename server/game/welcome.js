@@ -30,9 +30,13 @@ class Welcome {
   get cfg() { return Object.assign({}, DEF, this.db.data.config.welcome || {}); }
   ensureGift() {
     const g = this.db.data.giftcodes;
+    const wc = this.db.data.config.welcome || {};
+    if (g && g[GIFT] && !wc.knbCut && g[GIFT].reward && g[GIFT].reward.knb > 20) {   // giảm Nguyên Bảo quà tân thủ (chống nuôi clone): 100 -> 20
+      g[GIFT].reward.knb = 20; this.db.data.config.welcome = Object.assign({}, wc, { knbCut: true }); this.db.markDirty();
+    }
     if (!g || g[GIFT] || (this.db.data.config.welcome || {}).giftMade) return;
     g[GIFT] = {
-      reward: { knb: 100, gold: 50000, exp: 0, items: [['hp2', 50], ['mp2', 50], ['stone', 10], ['exp_x2', 2], ['lucky_chest', 2], ['mount_food', 10], ['insure', 1]] },
+      reward: { knb: 20, gold: 50000, exp: 0, items: [['hp2', 50], ['mp2', 50], ['stone', 10], ['exp_x2', 2], ['lucky_chest', 2], ['mount_food', 10], ['insure', 1]] },
       maxUses: 0, exp: 0, usedBy: [], created: Date.now(), pub: true, note: 'Quà tân thủ khai mở máy chủ', minLv: 0
     };
     this.db.data.config.welcome = Object.assign({}, this.db.data.config.welcome || {}, { giftMade: true });   // xoá code rồi thì không tự tạo lại

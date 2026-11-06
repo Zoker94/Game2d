@@ -91,7 +91,7 @@ const CHAPTERS = [
         lines: [['npc:truong_lao', 'Giỏi lắm! Đường tiếp tế đã thông. Từ nay ngươi đã đủ bản lĩnh tự mình hành tẩu giang hồ – coi như xuất sư rồi!'],
                 ['npc:truong_lao', 'Nhưng chuyện này không đơn giản… Hắc Phong Trại vốn chỉ là bọn thủy tặc. Kẻ đứng sau chúng ắt đang tìm thứ gì đó quanh Tương Dương.'],
                 ['npc:truong_lao', 'Ngươi từng nghe tới "Võ Mục Di Thư" chưa? Binh thư của Nhạc Vũ Mục… Lão phu e rằng có kẻ đang săn lùng nó.']],
-        reward: { expPct: 1.0, gold: 2000, knb: 50, items: [['weapon_1_rare', 1], ['lucky_chest', 1]] } }
+        reward: { expPct: 1.0, gold: 2000, knb: 10, items: [['weapon_1_rare', 1], ['lucky_chest', 1]] } }
     ]
   },
   {
@@ -186,7 +186,7 @@ const CHAPTERS = [
       { type: 'talk', npc: 'tang_kinh', text: 'Mang tàn quyển thứ ba về Tàng Kinh Các',
         lines: [['npc:tang_kinh', 'Ba tàn quyển… Ngươi xem, ghép lại thì hiện ra một tấm bản đồ: con đường tơ lụa tới Lâu Lan cổ thành.'],
                 ['npc:tang_kinh', 'Tây Vực là đất của Ma Giáo năm xưa. Đi đường cẩn thận, hài tử.']],
-        reward: { expPct: 1.0, gold: 8000, knb: 20, items: [['weapon_3_epic', 1], ['boss_chest', 1]] } }
+        reward: { expPct: 1.0, gold: 8000, knb: 5, items: [['weapon_3_epic', 1], ['boss_chest', 1]] } }
     ]
   },
   {
@@ -213,7 +213,7 @@ const CHAPTERS = [
       { type: 'talk', npc: 'truong_lao', text: 'Báo tin với Trưởng Lão Tân Thủ',
         lines: [['npc:truong_lao', 'Băng Cung quy phục Ma Giáo? Không thể nào! Cung Chủ Băng Cung là người chính trực, lão phu từng gặp…'],
                 ['npc:truong_lao', 'Trừ phi… bà ta trúng "Nhiếp Hồn Đại Pháp" của Thiên Ma. Hài tử, ngươi phải lên Thiên Sơn!']],
-        reward: { expPct: 1.0, gold: 12000, knb: 30, items: [['armor_4_epic', 1], ['boss_chest', 1]] } }
+        reward: { expPct: 1.0, gold: 12000, knb: 5, items: [['armor_4_epic', 1], ['boss_chest', 1]] } }
     ]
   },
   {
@@ -239,7 +239,7 @@ const CHAPTERS = [
       { type: 'talk', npc: 'tang_kinh', text: 'Mang Tàn quyển thứ năm về Tàng Kinh Các',
         lines: [['npc:tang_kinh', 'Năm tàn quyển… Thiên Ma giữ quyển sáu, còn quyển bảy – quyển ghi tinh hoa binh pháp – chưa ai biết ở đâu.'],
                 ['npc:tang_kinh', 'Có lẽ chính Thiên Ma cũng đang tìm nó. Trận chiến cuối cùng sẽ diễn ra ở Ma Giáo Cấm Địa.']],
-        reward: { expPct: 1.0, gold: 18000, knb: 40, items: [['weapon_5_epic', 1], ['boss_chest', 1]] } }
+        reward: { expPct: 1.0, gold: 18000, knb: 10, items: [['weapon_5_epic', 1], ['boss_chest', 1]] } }
     ]
   },
   {
@@ -270,7 +270,7 @@ const CHAPTERS = [
                 ['npc:truong_lao', 'Sáu tàn quyển đã ghép lại. Còn quyển thứ bảy… Quách đại hiệp nói: "Tinh hoa binh pháp không nằm trên giấy, mà ở lòng dân." Có lẽ Nhạc Vũ Mục chưa từng viết nó ra.'],
                 ['me', 'Vì nước vì dân, mới là hiệp chi đại giả. Vãn bối đã hiểu.'],
                 ['n', 'Từ đó, giang hồ truyền tụng danh hiệu "Tương Dương Đại Hiệp – {name}". Nhưng giang hồ chưa bao giờ yên bình… Hành trình vẫn còn tiếp diễn.']],
-        reward: { expPct: 2.0, gold: 50000, knb: 100, items: [['weapon_6_legendary', 1], ['boss_chest', 2]] } }
+        reward: { expPct: 2.0, gold: 50000, knb: 20, items: [['weapon_6_legendary', 1], ['boss_chest', 2]] } }
     ]
   }
 ];
