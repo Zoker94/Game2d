@@ -36,8 +36,8 @@ const SHOP = [
   { k: 'stone', id: 'stone', qty: 10, cost: 80 },
   { k: 'stone2', id: 'stone2', qty: 1, cost: 250 },
   ...['ruby', 'emerald', 'sapphire', 'topaz', 'amethyst'].flatMap(g => [
-    { k: g + '4', id: `gem_${g}_4`, qty: 1, cost: 600 },
-    { k: g + '5', id: `gem_${g}_5`, qty: 1, cost: 1800 }
+    { k: g + '4', id: `gem_${g}_4`, qty: 1, cost: 1000 },
+    { k: g + '5', id: `gem_${g}_5`, qty: 1, cost: 3500 }
   ])
 ];
 

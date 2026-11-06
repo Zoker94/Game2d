@@ -14,8 +14,8 @@ const CAVES = { bao_thach_dong: { minLv: 25, tier: 1 }, huyen_tinh_canh: { minLv
 // misc: [id, ít nhất, nhiều nhất, trọng số]
 // lượt chỉ 10 phút nên mỗi nhát đào được thưởng dày hơn: nhiều ngân lượng, đá cường hoá (Huyền Tinh / Thiên Tinh) và Long Huyết Thạch đột phá thú cưỡi
 const LOOT = {
-  1: { none: 0.28, gem: 0.35, gemLv: [[1, 0.85], [2, 1]], misc: [['stone', 1, 3, 34], ['gold', 500, 2000, 28], ['hp3', 2, 4, 8], ['mp3', 2, 4, 8], ['mount_food', 1, 2, 8], ['stone2', 1, 1, 7], ['mount_stone', 1, 1, 7], ['scroll_town', 1, 1, 2]] },
-  2: { none: 0.25, gem: 0.37, gemLv: [[1, 0.35], [2, 0.75], [3, 0.96], [4, 1]], misc: [['stone', 2, 5, 30], ['gold', 2000, 7000, 26], ['hp5', 1, 3, 7], ['mount_food', 2, 4, 7], ['stone2', 1, 2, 15], ['mount_stone', 1, 2, 13], ['lucky_chest', 1, 1, 5]] }
+  1: { none: 0.28, gem: 0.35, gemLv: [[1, 0.85], [2, 1]], misc: [['stone', 1, 2, 30], ['gold', 500, 2000, 28], ['hp3', 2, 4, 8], ['mp3', 2, 4, 8], ['mount_food', 1, 2, 8], ['stone2', 1, 1, 4], ['mount_stone', 1, 1, 7], ['scroll_town', 1, 1, 2]] },
+  2: { none: 0.25, gem: 0.37, gemLv: [[1, 0.35], [2, 0.78], [3, 0.985], [4, 1]], misc: [['stone', 1, 3, 26], ['gold', 2000, 7000, 26], ['hp5', 1, 3, 7], ['mount_food', 2, 4, 7], ['stone2', 1, 1, 8], ['mount_stone', 1, 2, 13], ['lucky_chest', 1, 1, 5]] }
 };
 
 class Mining {

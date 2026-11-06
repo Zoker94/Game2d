@@ -13,7 +13,7 @@ const LV_NAME = ['Sơ', 'Trung', 'Thượng', 'Cực', 'Thần'];
 // số lỗ khảm theo độ hiếm
 const SOCKETS = { common: 1, rare: 1, epic: 2, legendary: 3, divine: 3 };
 // luyện đá: 3 viên cấp L -> 1 viên cấp L+1 (thất bại mất 1 viên)
-const UPGRADE = { need: 5, rate: [1, 0.85, 0.65, 0.45], gold: [2600, 13000, 52000, 195000] };   // nâng cấp ngọc +30%
+const UPGRADE = { need: 5, rate: [1, 0.85, 0.5, 0.3], gold: [2600, 13000, 52000, 195000] };   // nâng cấp ngọc +30%   // ghép lên cấp 4 / 5: 50% / 30% (trước 65% / 45%)
 // phí khảm / tháo đá theo cấp đá
 const socketCost = L => 400 * L * L;      // khảm ngọc (+33%, trước 300)
 const unsocketCost = L => 2000 * L * L;   // tháo ngọc (+33%, trước 1500)
@@ -48,7 +48,7 @@ function rollGemDrop(mine, monLv, rnd = Math.random) {
   const chance = mine === 2 ? 0.03 : mine === 1 ? 0.025 : (monLv >= 15 ? 0.002 : 0);   // đã giảm: bãi quái không ngập ngọc
   if (rnd() >= chance) return null;
   const x = rnd();
-  const L = mine === 2 ? (x < 0.01 ? 4 : x < 0.15 ? 3 : x < 0.65 ? 2 : 1) : mine === 1 ? (x < 0.15 ? 2 : 1) : 1;
+  const L = mine === 2 ? (x < 0.003 ? 4 : x < 0.12 ? 3 : x < 0.65 ? 2 : 1) : mine === 1 ? (x < 0.15 ? 2 : 1) : 1;
   return gemId(GEM_KEYS[Math.floor(rnd() * GEM_KEYS.length)], L);
 }
 

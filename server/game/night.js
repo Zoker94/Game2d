@@ -16,7 +16,7 @@ const GEMS = ['ruby', 'emerald', 'sapphire', 'topaz', 'amethyst'];
 const POOL = [
   { id: 'boss_chest', qty: 1, knb: 40 }, { id: 'auto_ticket', qty: 1, knb: 35 }, { id: 'insure', qty: 1, knb: 30 }, { id: 'stone2', qty: 3, knb: 25 },
   { id: 'lucky_chest', qty: 3, gold: 80000 }, { id: 'exp_x2', qty: 3, gold: 60000 }, { id: 'mount_food', qty: 50, gold: 50000 }, { id: 'stone', qty: 20, gold: 70000 },
-  ...GEMS.map(g => ({ id: `gem_${g}_3`, qty: 1, gold: 150000 })), ...GEMS.map(g => ({ id: `gem_${g}_4`, qty: 1, knb: 60 }))
+  ...GEMS.map(g => ({ id: `gem_${g}_3`, qty: 1, gold: 150000 })), ...GEMS.map(g => ({ id: `gem_${g}_4`, qty: 1, knb: 100 }))
 ];
 const NIGHT_K = { hp: 1.8, atk: 1.4, def: 1.2, exp: 2.2, gold: 2 };
 const nightCache = new Map();

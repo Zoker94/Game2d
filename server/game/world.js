@@ -1386,9 +1386,9 @@ class World {
           else drops.push(equipId(rslot(), tier, rar));
         }
         // đá cường hóa: 2-4 Huyền Tinh Thạch, boss cấp cao có thể thêm Thiên Tinh Thạch (đã giảm một nửa)
-        for (let k = 0, n = U.randInt(2, 4); k < n; k++) drops.push('stone');
-        if (tpl.lv >= 40 && Math.random() < 0.3 * dr) drops.push('stone2');
-        if (tpl.lv >= 80 && Math.random() < 0.3 * dr) drops.push('stone2');
+        for (let k = 0, n = U.randInt(1, 3); k < n; k++) drops.push('stone');   // giảm: trước 2-4
+        if (tpl.lv >= 40 && Math.random() < 0.18 * dr) drops.push('stone2');
+        if (tpl.lv >= 80 && Math.random() < 0.18 * dr) drops.push('stone2');
         // 4 Rương Thủ Lĩnh rải quanh boss, không thuộc về ai (trước: 2 Thủ Lĩnh + 8 Bí Ẩn)
         for (let k = 0; k < BOSS_CHESTS; k++) {
           const a = Math.random() * Math.PI * 2, rr = 60 + Math.random() * 140;
@@ -1406,8 +1406,8 @@ class World {
       if (tpl.elite) {   // tinh anh: chắc chắn 1 trang bị (hiếm trở lên) + đá cường hóa
         const x = r();
         drops.push(equipId(rslot(), tier, x < 0.002 * dr ? 'legendary' : x < 0.12 * dr ? 'epic' : 'rare'));
-        if (r() < 0.18 * dr) drops.push('stone');   // đá cường hoá ở bãi quái: hiếm
-        if (r() < 0.015 * dr) drops.push('stone2');
+        if (r() < 0.1 * dr) drops.push('stone');   // đá cường hoá ở bãi quái: hiếm (trước 18%)
+        if (r() < 0.008 * dr) drops.push('stone2');
         if (r() < 0.12) drops.push('mount_food');
         if (r() < 0.04 * dr) drops.push('lucky_chest');
         if (r() < CHEST_DROP.elite * dr) drops.push('boss_chest');
@@ -1417,7 +1417,7 @@ class World {
       if (tpl.night && this.night) this.night.extraDrops(drops, dr);   // quái đêm: đá, đá khảm, rương
       // quái thường (đã giảm để bãi quái không ngập đồ; Truyền Kỳ ~1/20.000 con)
       if (r() < 0.04) drops.push(tier >= 7 ? (r() < 0.5 ? 'hp5' : 'mp5') : tier >= 5 ? (r() < 0.5 ? 'hp4' : 'mp4') : tier >= 4 ? (r() < 0.5 ? 'hp3' : 'mp3') : tier >= 2 ? (r() < 0.5 ? 'hp2' : 'mp2') : (r() < 0.5 ? 'hp1' : 'mp1'));
-      if (r() < 0.0025 * dr) drops.push('stone');   // Huyền Tinh Thạch ~1/400 con
+      if (r() < 0.0015 * dr) drops.push('stone');   // Huyền Tinh Thạch ~1/670 con
       if (r() < 0.015 * dr) drops.push(equipId(rslot(), tier, 'common'));
       if (r() < 0.005 * dr) drops.push(equipId(rslot(), tier, 'rare'));
       if (r() < (cfg.vipDropBase || 0.004) * 0.5 * dr) drops.push(equipId(rslot(), tier, 'epic'));   // sử thi: một nửa mức cấu hình
@@ -1425,7 +1425,7 @@ class World {
       if (r() < 0.0015 * dr) drops.push('lucky_chest');
       if (r() < CHEST_DROP.mob * dr) drops.push('boss_chest');   // Rương Thủ Lĩnh: rất hiếm ở quái thường
       if (r() < 0.01 * dr) drops.push('mount_food');
-      if (tpl.lv >= 25 && r() < 0.00015 * dr * (1 + tier)) drops.push('stone2');   // Thiên Tinh Thạch: cấp 90 ~1/660 con
+      if (tpl.lv >= 25 && r() < 0.00009 * dr * (1 + tier)) drops.push('stone2');   // Thiên Tinh Thạch: cấp 90 ~1/1100 con
       const gem = rollGemDrop(map.def.gemMine | 0, tpl.lv, r);   // đá khảm: nhiều ở khoáng động
       if (gem) drops.push(gem);
       if (tpl.lv >= 30 && r() < 0.0008 * dr) drops.push('insure');
@@ -1792,7 +1792,7 @@ class World {
     else rar = r < 0.002 ? 'legendary' : r < 0.05 ? 'epic' : r < 0.3 ? 'rare' : 'common';
     const id = equipId(slot, tier, rar);
     const reward = { items: [[id, 1]], gold: U.randInt(100, 500) * (tier + 1) * kind };
-    if (Math.random() < 0.3) reward.items.push(['stone', U.randInt(1, 3)]);
+    if (Math.random() < 0.2) reward.items.push(['stone', U.randInt(1, 2)]);
     this.giveReward(p, reward, kind === 2 ? 'Rương Thủ Lĩnh' : 'Rương Bí Ẩn');
     if (rar === 'legendary') this.features.brag(`🎁 ${p.c.name} mở rương nhận được [${ITEMS[id].name}]!`);
   }

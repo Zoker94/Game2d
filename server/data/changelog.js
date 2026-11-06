@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '💠 Đá hiếm hơn: Huyền / Thiên Tinh Thạch rơi ít hơn (quái, tinh anh, boss dã ngoại, Rương Bí Ẩn, Khoáng Động). Ngọc khảm cấp 4–5: Khoáng Động ra ít hơn, ghép lên cấp 4 còn 50% / cấp 5 còn 30%, Tống Kim đổi 1.000 / 3.500 Công Trạng, Thương Nhân Bí Ẩn bán ngọc cấp 4 giá 100 Nguyên Bảo.',
       '🥋 Nhiệm vụ ngày PK: thắng 1 trận Tỷ Võ (thách đấu 1-1 với bất kỳ ai) cũng hoàn thành – làm được mọi ngày, không phải chờ cuối tuần có người PK.',
       '🔨 Tăng nhẹ phí ngân lượng: cường hoá (đập đồ) +30%, khảm / tháo ngọc +33%, nâng cấp ngọc +30%.',
       '💬 Khoe đồ lên chat: chọn món đồ trong túi / đồ đang mặc → bấm "💬 Khoe lên chat", viết thêm lời rao rồi Gửi. Người khác bấm vào tên đồ (màu theo độ hiếm) để xem đầy đủ chỉ số, cường hoá, ngọc khảm.',
