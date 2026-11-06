@@ -172,10 +172,10 @@ class Dungeon {
     const fast = Date.now() - I.startAt < def.time * 0.5;   // vượt nhanh hơn nửa thời gian: thưởng thêm
     for (const q of players) {
       const r = Math.random(), rar = r < 0.02 ? 'legendary' : r < 0.35 ? 'epic' : 'rare';
-      const items = [[equipId(DROP_SLOTS[U.randInt(0, DROP_SLOTS.length - 1)], tier, rar), 1], ['boss_chest', 1], ['stone', 3 + (fast ? 2 : 0)]];
+      const items = [[equipId(DROP_SLOTS[U.randInt(0, DROP_SLOTS.length - 1)], tier, rar), 1], ['boss_chest_' + tier, 1], ['stone', 3 + (fast ? 2 : 0)]];
       if (Math.random() < 0.35) items.push(['stone2', 1]);
       if (Math.random() < 0.2) items.push(['mount_stone', 1]);
-      if (fast) items.push(['boss_chest', 1]);   // vượt thần tốc: thêm 1 Rương Thủ Lĩnh
+      if (fast) items.push(['boss_chest_' + tier, 1]);   // vượt thần tốc: thêm 1 Rương Thủ Lĩnh
       // Boss phó bản: có tỉ lệ rơi 1 Võ Mục Tàn Quyển ngẫu nhiên 1-7 (phó bản càng cao tỉ lệ càng cao: 12% → 28%, thần tốc +5%);
       // quyển Thất (Truyền Kỳ) hiếm gấp 3 lần quyển khác
       if (Math.random() < VM_RATE[def.id] + (fast ? 0.05 : 0)) {

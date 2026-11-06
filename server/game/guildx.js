@@ -13,6 +13,8 @@ const GQ_DAILY = 5;
 const BOSS_MAP = 'lanh_dia', BOSS_COST = 100000, BOSS_MIN_GLV = 2, BOSS_TIME = 20 * 60000, BOSS_FUND = 200000;
 const BOSS_ART = 'boss_kimluan';   // mượn hình Kim Luân Pháp Vương
 
+const gbChest = mon => 'boss_chest_' + Math.max(0, Math.min(9, Math.floor(((mon.tpl && mon.tpl.lv) || mon.lv || 60) / 10)));   // Rương Thủ Lĩnh đúng bậc boss bang
+
 class GuildX {
   constructor(world, features, db) {
     this.w = world; this.f = features; this.db = db;
@@ -92,7 +94,7 @@ class GuildX {
     g.fund = (g.fund || 0) + BOSS_FUND;
     const rank = [...mon.dmgBy.entries()].filter(([uid]) => g.members[uid] && okSet.has(uid) && !this.w.isGmUid(uid)).sort((a, b) => b[1] - a[1]);
     rank.forEach(([uid, dmg], i) => {
-      const r = { gold: 20000 + g.level * 8000, items: i === 0 ? [['boss_chest', 2], ['stone2', 2]] : i < 3 ? [['boss_chest', 1], ['stone2', 1]] : [['lucky_chest', 1], ['stone', 5]] };
+      const r = { gold: 20000 + g.level * 8000, items: i === 0 ? [[gbChest(mon), 2], ['stone2', 2]] : i < 3 ? [[gbChest(mon), 1], ['stone2', 1]] : [['lucky_chest', 1], ['stone', 5]] };
       if (Math.random() < 0.15) r.items.push(['insure', 1]);
       if (this.w.treasure && this.w.treasure.bossDrop()) r.items.push(['tb_frag', 1]);   // 5% Mảnh Tàng Bảo Đồ
       const o = this.w.players.get(uid);

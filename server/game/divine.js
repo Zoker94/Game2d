@@ -59,7 +59,7 @@ class Divine {
     let piece = null;
     if (BOSSCFG.noDefault(tpl.id)) { w.features.announce(`👑 ${killer && killer.c ? killer.c.name : 'Ai đó'} đã ra đòn kết liễu Boss ${tpl.name}!`); return; }
     if (Math.random() < PIECE_CHANCE() * (w.db.data.config.dropRate || 1)) { piece = `dv_${tpl.set}_${DV_SLOTS[Math.floor(Math.random() * DV_SLOTS.length)]}`; drops.push(piece); }
-    for (let k = 0; k < 3; k++) drops.push('boss_chest');
+    for (let k = 0; k < 3; k++) drops.push('boss_chest_' + Math.max(0, Math.min(9, Math.floor((tpl.lv || 60) / 10))));
     for (let k = 0, n = U.randInt(3, 5); k < n; k++) drops.push('stone2');
     for (let k = 0; k < 2; k++) drops.push(gemId(GEM_KEYS[Math.floor(Math.random() * GEM_KEYS.length)], Math.random() < 0.25 ? 4 : 3));
     for (let k = 0, n = U.randInt(5, 10); k < n; k++) drops.push(this.randFrag());

@@ -243,7 +243,9 @@ const CONSUMABLES = [
   { id: 'nguyen_bao_100', name: 'Hộp Nguyên Bảo (100)', desc: 'Sử dụng để nhận 100 Nguyên Bảo 💎. Không thể giao dịch.', effect: { addKnb: 100 }, price: 0, noSell: true, noTrade: true, stack: true, icon: 'nb_m', rarity: 'epic' },
   { id: 'nguyen_bao_1000', name: 'Rương Nguyên Bảo (1.000)', desc: 'Sử dụng để nhận 1.000 Nguyên Bảo 💎. Không thể giao dịch.', effect: { addKnb: 1000 }, price: 0, noSell: true, noTrade: true, stack: true, icon: 'nb_l', rarity: 'legendary' },
   { id: 'lucky_chest', name: 'Rương Bí Ẩn', desc: 'Mở ra nhận vật phẩm ngẫu nhiên, có thể ra đồ VIP!', effect: { chest: 1 }, price: 5000, icon: 'chest' },
-  { id: 'boss_chest', name: 'Rương Thủ Lĩnh', desc: 'Rương từ Boss, chắc chắn có đồ Hiếm trở lên', effect: { chest: 2 }, price: 20000, icon: 'chest_gold' },
+  { id: 'boss_chest', name: 'Rương Thủ Lĩnh', desc: 'Rương quà sự kiện: chắc chắn có trang bị Hiếm trở lên theo cấp nhân vật', effect: { chest: 2 }, price: 20000, icon: 'chest_gold' },
+  // Rương Thủ Lĩnh theo cấp Boss: boss rơi rương đúng bậc của nó, mở ra trang bị đúng bậc đó (rương thấp ra đồ cấp thấp)
+  ...TIERS.map((lv, t) => ({ id: 'boss_chest_' + t, name: `Rương Thủ Lĩnh ${TIER_PREFIX[t]}`, desc: `Rương rơi từ Boss cấp ${lv === 1 ? 1 : lv}–${lv === 1 ? 9 : lv + 9}. Mở ra chắc chắn có trang bị bậc ${TIER_PREFIX[t]} (yêu cầu cấp ${lv}) loại Hiếm trở lên, có cơ hội nhỏ ra Truyền Kỳ.`, effect: { chest: 2, tier: t }, price: 10000 * (t + 1), icon: 'chest_gold' })),
   { id: 'tieu_chest_dong', name: 'Rương Tiêu Đồng', desc: 'Rương hàng văng ra khi xe Tiêu Đồng bị cướp. Mở nhận ngân lượng, Huyền Tinh.', effect: { tieuChest: 'dong' }, price: 600, icon: 'chest' },
   { id: 'tieu_chest_bac', name: 'Rương Tiêu Bạc', desc: 'Rương hàng văng ra khi xe Tiêu Bạc bị cướp. Mở nhận nhiều ngân lượng, Huyền Tinh, có thể ra trang bị.', effect: { tieuChest: 'bac' }, price: 2500, icon: 'chest', rarity: 'rare' },
   { id: 'tieu_chest_vang', name: 'Rương Tiêu Vàng', desc: 'Rương hàng quý văng ra khi xe Tiêu Vàng bị cướp. Mở nhận rất nhiều ngân lượng, có thể ra đồ VIP, Nguyên Bảo.', effect: { tieuChest: 'vang' }, price: 6000, icon: 'chest_gold', rarity: 'epic' },

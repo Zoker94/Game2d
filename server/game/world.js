@@ -53,7 +53,7 @@ const GOLD_DROP_CHANCE = 0.25, GOLD_DROP_K = 1.5;   // quái thường rơi ngâ
 const CLOAK_ODDS = { legendary: 0.005, epic: 0.06, rare: 0.3 };   // chế tạo áo choàng: còn lại là Thường
 // Rương Thủ Lĩnh: quái thường ~1/2.500 con, tinh anh 1,5%; boss dã ngoại rải BOSS_CHESTS rương
 const CHEST_DROP = { mob: 0.0004, elite: 0.015 };
-const BOSS_CHESTS = 4;
+const bossChests = lv => lv < 30 ? 1 : lv < 60 ? 2 : lv < 90 ? 3 : 4;   // Rương Thủ Lĩnh boss dã ngoại rơi theo cấp boss
 const PVE_SKILL_K = 0.85;   // hệ số sát thương võ công lên quái / boss
 const AGGRO_R = 200;
 const LEASH_R = 650;
@@ -1374,7 +1374,7 @@ class World {
           const chance = i === 0 ? 1 : i < 3 ? 0.35 : i < 10 ? 0.1 : 0.02, off = BOSSCFG.noDefault(tpl.id);   // off: quản trị viên tắt đồ rơi mặc định
           if (!off && Math.random() < chance * dr) legend(p);
           const items = !off && i === 0 && tpl.id === 'boss_vumuc' ? [['vm_tamphap', 1]] : [];   // chỉ top 1 sát thương: anh linh Nhạc Vũ Mục truyền Tâm Pháp (cách học Di Thư)
-          if (!off && i < 3) items.push(['boss_chest', 3 - i]);   // hạng 1-3: 3 / 2 / 1 Rương Thủ Lĩnh
+          if (!off && i < 3) items.push(['boss_chest_' + tier, 3 - i]);   // hạng 1-3: 3 / 2 / 1 Rương Thủ Lĩnh đúng bậc boss
           if (items.length) this.giveReward(p, { items }, `Hạng ${i + 1} đánh ${tpl.name}`);   // boss không phát Nguyên Bảo
         });
       } else if (!BOSSCFG.noDefault(tpl.id)) {
@@ -1391,9 +1391,9 @@ class World {
         if (tpl.lv >= 40 && Math.random() < 0.18 * dr) drops.push('stone2');
         if (tpl.lv >= 80 && Math.random() < 0.18 * dr) drops.push('stone2');
         // 4 Rương Thủ Lĩnh rải quanh boss, không thuộc về ai (trước: 2 Thủ Lĩnh + 8 Bí Ẩn)
-        for (let k = 0; k < BOSS_CHESTS; k++) {
+        for (let k = 0, nC = bossChests(tpl.lv); k < nC; k++) {   // boss cấp càng cao rơi càng nhiều rương
           const a = Math.random() * Math.PI * 2, rr = 60 + Math.random() * 140;
-          this.createDrop(mon.mapId, mon.x + Math.cos(a) * rr, mon.y + Math.sin(a) * rr * 0.7, 'boss_chest', 1, null, 0, 0);
+          this.createDrop(mon.mapId, mon.x + Math.cos(a) * rr, mon.y + Math.sin(a) * rr * 0.7, 'boss_chest_' + tier, 1, null, 0, 0);
         }
       }
       if (this.divine && !BOSSCFG.noDefault(tpl.id)) this.divine.bossFrags(mon, ranking);   // mảnh lệnh triệu hồi Thần Binh
@@ -1406,12 +1406,11 @@ class World {
       const r = Math.random;
       if (tpl.elite) {   // tinh anh: chắc chắn 1 trang bị (hiếm trở lên) + đá cường hóa
         const x = r();
-        drops.push(equipId(rslot(), tier, x < 0.002 * dr ? 'legendary' : x < 0.12 * dr ? 'epic' : 'rare'));
+        drops.push(equipId(rslot(), tier, x < 0.12 * dr ? 'epic' : 'rare'));   // tinh anh: không rơi Truyền Kỳ
         if (r() < 0.1 * dr) drops.push('stone');   // đá cường hoá ở bãi quái: hiếm (trước 18%)
         if (r() < 0.008 * dr) drops.push('stone2');
         if (r() < 0.12) drops.push('mount_food');
         if (r() < 0.04 * dr) drops.push('lucky_chest');
-        if (r() < CHEST_DROP.elite * dr) drops.push('boss_chest');
         if (r() < 0.15 * dr) drops.push('thien_tam_ti');
         if (killer && killer.c) this.toast(killer, `⭐ Hạ quái tinh anh ${tpl.name}!`, 'reward');
       }
@@ -1422,9 +1421,7 @@ class World {
       if (r() < 0.015 * dr) drops.push(equipId(rslot(), tier, 'common'));
       if (r() < 0.005 * dr) drops.push(equipId(rslot(), tier, 'rare'));
       if (r() < (cfg.vipDropBase || 0.004) * 0.5 * dr) drops.push(equipId(rslot(), tier, 'epic'));   // sử thi: một nửa mức cấu hình
-      if (r() < 0.00005 * dr) drops.push(equipId(rslot(), tier, 'legendary'));
       if (r() < 0.0015 * dr) drops.push('lucky_chest');
-      if (r() < CHEST_DROP.mob * dr) drops.push('boss_chest');   // Rương Thủ Lĩnh: rất hiếm ở quái thường
       if (r() < 0.01 * dr) drops.push('mount_food');
       if (tpl.lv >= 25 && r() < 0.00009 * dr * (1 + tier)) drops.push('stone2');   // Thiên Tinh Thạch: cấp 90 ~1/1100 con
       const gem = rollGemDrop(map.def.gemMine | 0, tpl.lv, r);   // đá khảm: nhiều ở khoáng động
@@ -1775,7 +1772,7 @@ class World {
     if (e.chest) {
       if (U.freeSlots(c) < 2) return this.toast(p, 'Cần ít nhất 2 ô trống trong túi', 'error');
       U.removeByUid(c, uid, 1);
-      this.openChest(p, e.chest);
+      this.openChest(p, e.chest, e.tier);
       p.dirtyMe = true;
       return;
     }
@@ -1784,17 +1781,17 @@ class World {
     p.dirtyMe = true;
   }
 
-  openChest(p, kind) {
-    const tier = tierOfLv(p.c.level);
+  openChest(p, kind, chestTier) {
+    const tier = Number.isInteger(chestTier) ? chestTier : tierOfLv(p.c.level);   // Rương Thủ Lĩnh theo cấp boss: ra đồ đúng bậc rương
     const slot = DROP_SLOTS[U.randInt(0, DROP_SLOTS.length - 1)];
     const r = Math.random();
     let rar;
     if (kind === 2) rar = r < 0.03 ? 'legendary' : r < 0.35 ? 'epic' : 'rare';   // Rương Thủ Lĩnh: Truyền Kỳ 3% · Sử Thi 32% · Hiếm 65%
-    else rar = r < 0.002 ? 'legendary' : r < 0.05 ? 'epic' : r < 0.3 ? 'rare' : 'common';
+    else rar = r < 0.05 ? 'epic' : r < 0.3 ? 'rare' : 'common';   // Rương Bí Ẩn: không ra Truyền Kỳ (Truyền Kỳ chỉ từ Boss)
     const id = equipId(slot, tier, rar);
     const reward = { items: [[id, 1]], gold: U.randInt(100, 500) * (tier + 1) * kind };
     if (Math.random() < 0.2) reward.items.push(['stone', U.randInt(1, 2)]);
-    this.giveReward(p, reward, kind === 2 ? 'Rương Thủ Lĩnh' : 'Rương Bí Ẩn');
+    this.giveReward(p, reward, kind === 2 ? (Number.isInteger(chestTier) ? ITEMS['boss_chest_' + chestTier].name : 'Rương Thủ Lĩnh') : 'Rương Bí Ẩn');
     if (rar === 'legendary') this.features.brag(`🎁 ${p.c.name} mở rương nhận được [${ITEMS[id].name}]!`);
   }
 
