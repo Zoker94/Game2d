@@ -237,7 +237,7 @@
         <label>Số lượt tối đa (0 = vô hạn)<input id="gc-max" type="number" value="0" style="width:110px"></label><label>Hạn (ngày, 0 = vĩnh viễn)<input id="gc-days" type="number" value="0" style="width:90px"></label>
         <label>Cấp tối thiểu<input id="gc-minlv" type="number" value="0" style="width:80px"></label></div>
         <div class="row" style="margin-top:8px"><label style="flex:1">Ghi chú (hiện trong game)<input id="gc-note" maxlength="80" placeholder="VD: Quà ra mắt máy chủ"></label>
-        <label style="flex-direction:row;align-items:center;gap:6px"><input id="gc-pub" type="checkbox"> Công khai trong game (người chơi thấy và bấm nhận)</label></div>
+        <label style="flex-direction:row;align-items:center;gap:6px"><input id="gc-pub" type="checkbox"> Công khai trong game (người chơi thấy và bấm nhận)</label><label style="flex-direction:row;align-items:center;gap:6px"><input id="gc-bind" type="checkbox" checked> 🔒 Đồ khoá (không giao dịch / bán chợ được)</label></div>
         <div class="row" style="margin-top:8px"><label style="flex:1">Vật phẩm${itemSearchHtml('gc-item')}<select id="gc-item">${itemOptions(items)}</select></label><label>SL<input id="gc-qty" type="number" value="1" style="width:70px"></label><button class="btn" id="gc-add">+ Thêm</button></div>
         <div class="items" id="gc-items" style="margin:8px 0"></div><button class="btn primary" id="gc-create">Tạo gift code</button></div>
         <div class="card"><h3>Danh sách</h3><table><tr><th>Mã</th><th>Phần thưởng</th><th>Đã dùng</th><th>Hết hạn</th><th></th></tr>
@@ -247,7 +247,7 @@
       bindItemSearch('gc-item', items);
       $('gc-add').onclick = () => { if (!$('gc-item').value) return; sel.push([$('gc-item').value, +$('gc-qty').value || 1]); draw(); };
       $('gc-create').onclick = async () => {
-        const r = await run(() => api('/giftcodes', { code: $('gc-code').value, gold: +$('gc-gold').value, knb: +$('gc-knb').value, exp: +$('gc-exp').value, maxUses: +$('gc-max').value, days: +$('gc-days').value, minLv: +$('gc-minlv').value, note: $('gc-note').value, pub: $('gc-pub').checked, items: sel }));
+        const r = await run(() => api('/giftcodes', { code: $('gc-code').value, gold: +$('gc-gold').value, knb: +$('gc-knb').value, exp: +$('gc-exp').value, maxUses: +$('gc-max').value, days: +$('gc-days').value, minLv: +$('gc-minlv').value, note: $('gc-note').value, pub: $('gc-pub').checked, bind: $('gc-bind').checked, items: sel }));
         if (r) { toast('Đã tạo mã ' + r.code); show('giftcodes'); }
       };
       el.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await run(() => api('/giftcodes/' + encodeURIComponent(b.dataset.del), null, 'DELETE'), 'Đã xóa'); show('giftcodes'); });

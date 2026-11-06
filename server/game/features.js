@@ -475,7 +475,7 @@ class Features {
     if (g.usedBy.includes(p.userId)) return fail('Bạn đã dùng gift code này rồi');
     if (g.minLv && p.c.level < g.minLv) return fail(`Gift code yêu cầu cấp ${g.minLv}`);
     g.usedBy.push(p.userId);
-    this.w.giveReward(p, g.reward, `Gift code ${code}`);
+    this.w.giveReward(p, g.reward, `Gift code ${code}`, { bind: !!g.bind || code === 'TANTHU2026' });   // quà tân thủ / code đánh dấu khoá: đồ khoá, không giao dịch được
     const log = p.c.giftLog || (p.c.giftLog = []);
     log.unshift({ code, t: now, reward: g.reward });
     if (log.length > 30) log.length = 30;

@@ -115,7 +115,7 @@ class Referral {
     const by = this.users[r.by], name = by && by.character ? by.character.name : 'bằng hữu';
     setTimeout(() => {
       if (this.w.players.get(p.userId) !== p) { r.gift = 0; return; }
-      this.grant(p, NEWBIE_GIFT);
+      this.grant(p, NEWBIE_GIFT, true);   // quà nhập môn (người mới): đồ khoá
       this.w.toast(p, `🎁 Quà nhập môn từ lời mời của ${name}: ${this.describe(NEWBIE_GIFT)}`, 'reward');
     }, 1500);
   }
@@ -135,8 +135,8 @@ class Referral {
     }
   }
 
-  grant(p, rw) {
-    for (const [id, n] of rw.items || []) if (require('../data/items').ITEMS[id]) this.w.giveItem(p, id, n);
+  grant(p, rw, bind) {
+    for (const [id, n] of rw.items || []) if (require('../data/items').ITEMS[id]) this.w.giveItem(p, id, n, 0, !!bind);
     if (rw.gold) p.c.gold += rw.gold;
     if (rw.knb) p.c.knb = (p.c.knb || 0) + rw.knb;
     p.dirtyMe = true; this.w.db.markDirty();

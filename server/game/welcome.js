@@ -33,12 +33,13 @@ class Welcome {
     const wc = this.db.data.config.welcome || {};
     if (g && !wc.knbZero) {   // gift code tân thủ (và mọi gift code đang kèm 100 Nguyên Bảo) không còn Nguyên Bảo – chạy 1 lần
       for (const [k, x] of Object.entries(g)) if (x && x.reward && (k === GIFT || x.reward.knb === 100)) delete x.reward.knb;
+      if (g[GIFT]) g[GIFT].bind = true;   // quà tân thủ: đồ khoá
       this.db.data.config.welcome = Object.assign({}, wc, { knbZero: true }); this.db.markDirty();
     }
     if (!g || g[GIFT] || (this.db.data.config.welcome || {}).giftMade) return;
     g[GIFT] = {
       reward: { gold: 50000, exp: 0, items: [['hp2', 50], ['mp2', 50], ['stone', 10], ['exp_x2', 2], ['lucky_chest', 2], ['mount_food', 10], ['insure', 1]] },
-      maxUses: 0, exp: 0, usedBy: [], created: Date.now(), pub: true, note: 'Quà tân thủ khai mở máy chủ', minLv: 0
+      maxUses: 0, exp: 0, usedBy: [], created: Date.now(), pub: true, bind: true, note: 'Quà tân thủ khai mở máy chủ', minLv: 0
     };
     this.db.data.config.welcome = Object.assign({}, this.db.data.config.welcome || {}, { giftMade: true });   // xoá code rồi thì không tự tạo lại
     this.db.markDirty();
