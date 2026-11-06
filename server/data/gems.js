@@ -13,10 +13,10 @@ const LV_NAME = ['Sơ', 'Trung', 'Thượng', 'Cực', 'Thần'];
 // số lỗ khảm theo độ hiếm
 const SOCKETS = { common: 1, rare: 1, epic: 2, legendary: 3, divine: 3 };
 // luyện đá: 3 viên cấp L -> 1 viên cấp L+1 (thất bại mất 1 viên)
-const UPGRADE = { need: 5, rate: [1, 0.85, 0.65, 0.45], gold: [2000, 10000, 40000, 150000] };
+const UPGRADE = { need: 5, rate: [1, 0.85, 0.65, 0.45], gold: [2600, 13000, 52000, 195000] };   // nâng cấp ngọc +30%
 // phí khảm / tháo đá theo cấp đá
-const socketCost = L => 300 * L * L;
-const unsocketCost = L => 1500 * L * L;
+const socketCost = L => 400 * L * L;      // khảm ngọc (+33%, trước 300)
+const unsocketCost = L => 2000 * L * L;   // tháo ngọc (+33%, trước 1500)
 
 const gemId = (type, L) => `gem_${type}_${L}`;
 function parseGem(id) {

@@ -16,7 +16,7 @@ function enhanceCost(plus, tier) {
   return {
     stone: next <= 10 ? Math.ceil(next / 2) : 5 + (next - 10) * 2,   // từ +11: Thiên Tinh Thạch + nhiều Huyền Tinh Thạch (7, 9, 11, 13, 15)
     stone2: next <= 10 ? 0 : next - 10,
-    gold: Math.round(next * next * 250 * (1 + tier) * (next > 10 ? 3 : 1))
+    gold: Math.round(next * next * 325 * (1 + tier) * (next > 10 ? 3 : 1))   // +30% (trước 250)
   };
 }
 module.exports = { ENHANCE_MAX, ENHANCE_SAFE, ENHANCE_RATE, DEFAULT_RATE, applyRates, enhanceCost };
