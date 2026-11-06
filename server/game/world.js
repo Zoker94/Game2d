@@ -515,7 +515,7 @@ class World {
     p.dirtyMe = true;
   }
   // Chống nuôi clone: tài khoản dưới cấp này chưa được giao dịch, mở sạp / mua ở chợ, nhận thưởng mời bạn (cấu hình tradeLv, mặc định 30)
-  tradeLv() { const v = this.db.data.config.tradeLv; return v == null ? 30 : v | 0; }
+  tradeLv() { const v = this.db.data.config.tradeLv; return Math.max(30, v == null ? 30 : v | 0); }   // giao dịch giữa người chơi: tối thiểu cấp 30
   lowLv(p, what) {
     const L = this.tradeLv();
     if (this.isGm(p) || p.c.level >= L) return false;
@@ -2582,7 +2582,7 @@ class World {
         if (tpl.summon) { crit = Math.random() < 0.15; dmg = U.randInt(tpl.dmgMin || 10000, tpl.dmgMax || 20000); }   // boss triệu hồi Thần Binh: mỗi đòn 10.000–20.000
         else if (mon.boss || tpl.pbBoss) { crit = Math.random() < 0.1; dmg = this.bossPctDmg(mon, target, crit ? 1.5 : 1, false); }
         else ({ dmg, crit } = this.calcDamage(tpl.atk, 3, target.stats.def, 1, 0.5));
-        const [mem, mek] = elemMult(tpl.el, target.stats.del); dmg = Math.max(1, Math.round(dmg * mem));
+        const [mem, mek] = elemMult(tpl.el, target.stats.del); dmg = Math.max(1, Math.round(dmg * mem * (m.def.vip ? VIP_MON_DMG : 1)));   // khu VIP: quái đánh nhẹ hơn
         if (tpl.ranged || mon.boss) this.fx(mon.mapId, { t: 'bolt', from: mon.id, x: mon.x, y: mon.y, tx: target.x, ty: target.y, color: mon.boss ? '#ff3030' : '#c080ff' });
         else this.fx(mon.mapId, { t: 'bite', from: mon.id, x: target.x, y: target.y });
         this.applyDamage(target, dmg, mon, crit ? 'crit' : 'hurt', mek);
@@ -2594,7 +2594,7 @@ class World {
         this.fx(mon.mapId, { t: 'ring', x: mon.x, y: mon.y, tx: mon.x, ty: mon.y, r: 120, color: '#ffb020' });
         for (const p of m.players) if (!p.dead && !this.gmOn(p, 'hide') && U.dist(p, mon) < 120) {
           const { dmg } = this.calcDamage(tpl.atk, 0, p.stats.def, 1.1, 0.4);
-          this.applyDamage(p, dmg, mon, 'hurt');
+          this.applyDamage(p, Math.max(1, Math.round(dmg * (m.def.vip ? VIP_MON_DMG : 1))), mon, 'hurt');
         }
       }
       const dx = target.x - mon.x;
@@ -2807,6 +2807,7 @@ const STUN_IMMUNE = 3000;
 // PvP: sát thương người chơi lên người chơi, hồi máu khi đang giao tranh, bình máu (hồi chiêu, tối đa % máu mỗi bình)
 const PARDON_PTS = 5;   // mỗi Lệnh Bài Xoá Tội trừ 5 điểm sát khí
 const PK_OUTLAW = 3;   // sát khí từ 3 (tên đỏ) là kẻ đồ sát
+const VIP_MON_DMG = 0.5;   // khu VIP (người có Vé Treo Máy): quái chỉ gây 50% sát thương
 const POT_CD = 1000;   // hồi chiêu bình máu / bình nội lực (mỗi loại riêng)
 const PVP_DMG = 0.0285, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;
 const MED_AFTER = 30000;                        // đứng yên trong thành bao lâu thì ngồi thiền (ms)

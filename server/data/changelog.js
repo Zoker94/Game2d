@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '🛡️ Chống clone: mỗi thiết bị tạo tối đa 5 tài khoản. Giao dịch giữa người chơi (trao đổi, Chợ Phiên) cần cấp 30 trở lên. Khu VIP: quái chỉ gây 50% sát thương, treo máy bằng Vé an toàn hơn.',
       '🏮 Đổi Hoa Đăng: bỏ đổi Nguyên Bảo; mỗi món chỉ đổi được 1 lần / ngày; Bí Kíp Long Ấn cần 5.000 Hoa Đăng.',
       '🔓 Mở cửa thoải mái: tạm bỏ giới hạn số tài khoản theo IP / thiết bị và nới giới hạn đăng nhập, ai cũng vào được.',
       '🛠 Sửa lỗi nhiều người chơi bị chặn nhầm "IP đã có đủ 3 tài khoản": đọc đúng IP thật của người chơi và bỏ giới hạn tài khoản theo IP (người dùng 4G / quán net / ký túc xá dùng chung IP).',

@@ -102,9 +102,10 @@ function cleanupSessions() {
   for (const [t, s] of Object.entries(db.data.sessions)) if (s.exp < now) delete db.data.sessions[t];
   for (const [t, s] of Object.entries(db.data.adminSessions)) if (s.exp < now) delete db.data.adminSessions[t];
 }
-// Mở cửa thoải mái (giai đoạn open server): tắt giới hạn tài khoản theo IP / thiết bị, nới giới hạn đăng nhập.
+// Mở cửa thoải mái (giai đoạn open server): tắt giới hạn tài khoản online theo IP, nới giới hạn đăng nhập (giới hạn clone theo thiết bị vẫn bật: 5).
 // Vẫn chặn tài khoản / thiết bị bị quản trị viên khoá. Đổi thành false để bật lại các giới hạn.
 const OPEN_FREE = true;
+const CLONE_LIM = 5;   // số tài khoản tối đa được tạo trên 1 thiết bị (chống nuôi clone)
 const loginHits = new Map();
 function rateLimited(ip, max = 20) {
   if (OPEN_FREE) max *= 5;   // nhiều người chung mạng (4G, quán net) đăng nhập cùng lúc
@@ -175,8 +176,7 @@ function devBanned(b) {
 }
 function devCreateBlocked(b, ip) {
   const bn = devBanned(b); if (bn) return bn;   // chỉ chặn thiết bị bị quản trị viên khoá
-  if (OPEN_FREE) return null;   // mở cửa thoải mái: không giới hạn số tài khoản / thiết bị
-  const lim = db.data.config.devLimit == null ? 3 : db.data.config.devLimit | 0;
+  const lim = db.data.config.devLimit == null ? CLONE_LIM : db.data.config.devLimit | 0;   // chống clone: tối đa 5 tài khoản / thiết bị
   if (lim <= 0 || !(b && (b.dev || b.fp))) return null;
   const n = devAccounts(b.dev, b.fp, ip).length;
   return n >= lim ? `Mỗi thiết bị chỉ được tạo tối đa ${lim} tài khoản – máy này đã có ${n} tài khoản. Hãy đăng nhập tài khoản cũ.` : null;
@@ -584,6 +584,7 @@ setInterval(() => {
   db.save();
 }, 15000);
 setInterval(cleanupSessions, 3600e3);
+if (!db.data.config.cloneFix5) { db.data.config.cloneFix5 = 1; db.data.config.devLimit = CLONE_LIM; if ((db.data.config.tradeLv | 0) < 30) db.data.config.tradeLv = 30; db.markDirty(); }   // clone tối đa 5 / thiết bị, giao dịch từ cấp 30
 if (!db.data.config.ipLimFix) { db.data.config.ipLimFix = 1; if (db.data.config.ipLimit == null || db.data.config.ipLimit === 3) db.data.config.ipLimit = 0; db.markDirty(); }   // bỏ giới hạn 3 tài khoản / IP (chặn nhầm người chơi dùng chung mạng)
 // Hẹn giờ mở cửa: tới config.maintOpenAt (ms) thì tự tắt bảo trì, người chơi vào được (đặt ở trang quản trị > Cấu hình)
 const OPEN_SEED = Date.UTC(2026, 10, 5, 12, 0);   // lịch Open server: 19:00 ngày 05/11/2026 giờ Việt Nam
