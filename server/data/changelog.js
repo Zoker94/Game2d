@@ -4,7 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
-      '💎 Hạn chế Nguyên Bảo: Nguyên Bảo từ hoạt động hằng ngày (Đố Vui, nhiệm vụ ngày, tham gia boss thế giới, phó bản, áp tiêu, Bảo Rương, Vòng Quay) tối đa 50 / ngày; giảm Nguyên Bảo ở quà tân thủ, cốt truyện, đạt cấp 10, vòng quay, Bảo Rương, boss thế giới (ngoài top 3). Thưởng xếp hạng top giữ nguyên.',
+      '💎 Hạn chế Nguyên Bảo: Nguyên Bảo từ hoạt động hằng ngày (Đố Vui, nhiệm vụ ngày, tham gia boss thế giới, phó bản, áp tiêu, Bảo Rương, Vòng Quay) tối đa 50 / ngày; giảm Nguyên Bảo ở cốt truyện, vòng quay, Bảo Rương, boss thế giới (ngoài top 3). Thưởng xếp hạng top giữ nguyên.',
       '🛡️ Chống clone: mỗi thiết bị tạo tối đa 5 tài khoản. Giao dịch giữa người chơi (trao đổi, Chợ Phiên) cần cấp 30 trở lên. Khu VIP: quái chỉ gây 50% sát thương, treo máy bằng Vé an toàn hơn.',
       '🏮 Đổi Hoa Đăng: bỏ đổi Nguyên Bảo; mỗi món chỉ đổi được 1 lần / ngày; Bí Kíp Long Ấn cần 5.000 Hoa Đăng.',
       '🔓 Mở cửa thoải mái: tạm bỏ giới hạn số tài khoản theo IP / thiết bị và nới giới hạn đăng nhập, ai cũng vào được.',

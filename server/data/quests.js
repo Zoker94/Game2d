@@ -11,7 +11,7 @@ const TUTORIAL = [
   { type: 'buy', text: 'Mua 1 vật phẩm bất kỳ tại NPC cửa hàng', reward: { gold: 500 } },
   { type: 'kill', mon: 'soi_xam', n: 10, text: 'Tiêu diệt 10 Sói Xám', reward: { exp: 800, items: [['boots_0_rare', 1]] } },
   { type: 'daily', text: 'Hoàn thành 1 nhiệm vụ hàng ngày (gặp Sứ Giả Nhiệm Vụ)', reward: { gold: 1000, items: [['stone', 3]] } },
-  { type: 'level', n: 10, text: 'Đạt cấp 10 - Xuất sư!', reward: { knb: 10, items: [['weapon_1_rare', 1], ['lucky_chest', 1]] } }
+  { type: 'level', n: 10, text: 'Đạt cấp 10 - Xuất sư!', reward: { knb: 50, items: [['weapon_1_rare', 1], ['lucky_chest', 1]] } }
 ];
 
 // Mẫu nhiệm vụ hàng ngày
