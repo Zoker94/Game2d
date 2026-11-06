@@ -82,6 +82,7 @@ class AutoSrv {
     const NOSOCK = { id: 'offline', emit() { }, join() { }, leave() { }, disconnect() { }, connected: false };
     let n = 0;
     for (const r of list || []) {
+      if (r.homeMap && !MAPS[r.homeMap] && MAPS[String(r.homeMap).split('~')[0]]) r.homeMap = String(r.homeMap).split('~')[0];   // khu đã đóng: treo tiếp ở khu 1
       const user = this.w.db.data.users[r.uid];
       if (!user || !user.character || user.banned || this.w.players.has(r.uid) || !MAPS[r.homeMap]) continue;
       if (r.offline && Date.now() - r.offline > OFFLINE_MAX) continue;

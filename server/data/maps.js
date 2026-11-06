@@ -787,9 +787,9 @@ function isSolidAt(map, px, py) {
 
 // Khu: mỗi bản đồ luyện công có CHANNELS bản sao chạy độc lập (quái, đồ rơi, người chơi riêng), dùng chung địa hình.
 // Khu 1 giữ id gốc (dữ liệu cũ không đổi), khu n là "<id>~n". Thành, môn phái, lôi đài, chiến trường, Đại Hội chỉ có 1 khu.
-const CHANNELS = 20, CH_CAP = 10;
-// Khu VIP (khu 21): cấm đồ sát, chỉ người còn hạn Vé Treo Máy được vào; tối đa VIP_CAP người
-const VIP_CH = CHANNELS + 1, VIP_CAP = 20;
+const CHANNELS = 3, CH_CAP = 10;   // 3 khu thường mỗi bản đồ (trước 20)
+// Khu VIP (luôn là khu 21): cấm đồ sát, chỉ người còn hạn Vé Treo Máy được vào; tối đa VIP_CAP người
+const VIP_CH = 21, VIP_CAP = 20;   // giữ số 21 cố định: id khu VIP ("<id>~21") không đổi khi bớt khu thường
 const hasChannels = m => !m.town && !m.safe && !m.pvp && !m.sect && !m.duelArena && !m.instance && !m.tourney && m.id !== 'dai_hoi' && !m.siege && ((m.spawns || []).length > 0 || !!m.gemMine);   // khoáng động: không quái nhưng vẫn chia khu
 // Bia Chuyển Khu: đặt cạnh mỗi cổng của bản đồ có khu (ô trống gần nhất, lùi vào trong 2 ô, lệch sang 2 ô)
 function placeKhuBia(m) {

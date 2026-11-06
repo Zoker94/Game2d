@@ -229,6 +229,7 @@ class World {
     c.spSpent = c.spSpent || 0;
     U.migrateItems(c);
     this.recalc(p);
+    if (!MAPS[c.map] && MAPS[String(c.map).split('~')[0]]) c.map = String(c.map).split('~')[0];   // khu đã đóng (bớt khu): về khu 1 cùng bản đồ, giữ vị trí
     if (!MAPS[c.map]) c.map = (c.pbReturn && MAPS[c.pbReturn]) ? c.pbReturn : 'tuong_duong';   // phó bản cũ đã đóng
     if (MAPS[c.map].duelArena) { c.map = 'tuong_duong'; c.x = c.y = 0; }   // lôi đài tỷ võ chỉ vào khi đang thách đấu
     const map = MAPS[c.map];

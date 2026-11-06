@@ -25,7 +25,7 @@ function build() {
       'Bản đồ lớn: bấm vào bản đồ nhỏ góc phải để xem toàn cảnh và chạm vào chỗ muốn tới.',
       '<b>Thú cưỡi</b>: mua ở <b>Mã Phu</b>, cho ăn Thức Ăn Thú Cưỡi để lên cấp; cấp 10/20/30/40 cần <b>Long Huyết Thạch</b> để đột phá.',
       '<b>Khinh công</b> (nút lướt): né đòn, tích tối đa 3 lượt.',
-      'Bản đồ luyện công có <b>20 khu</b> – bấm "Khu ▾" cạnh tên bản đồ để đổi khu vắng người.']) },
+      'Bản đồ luyện công có <b>3 khu</b> (và Khu VIP cho người có Vé Treo Máy) – bấm "Khu ▾" cạnh tên bản đồ để đổi khu vắng người.']) },
     { k: 'level', icon: '📈', title: 'Luyện cấp – đánh quái ở đâu', html: '<p>Chọn bãi đúng cấp (quái cao hơn nhiều sẽ đánh rất đau, thấp hơn nhiều thì ít kinh nghiệm):</p>' +
       li(fields.map(m => `<b>${esc(m.name)}</b> – cấp ${esc(m.lv)}`)) +
       '<p>Quái <b>tinh anh</b> (to hơn, có hào quang) trâu hơn nhưng rơi đồ xịn. Từ cấp 90 quái đánh rất đau – chuẩn bị đồ và bình máu.</p>' },

@@ -460,7 +460,7 @@
     s.on('toast', d => UI.toast(d.text, d.type));
     // boss Thần Binh (triệu hồi / rơi Thần Binh): chữ chạy ngang trên cùng màn hình, không bật hộp thoại chắn màn
     s.on('notice', d => d.type === 'boss' ? UI.pin({ id: 'boss' + Date.now() + Math.random(), text: d.text, kind: 'boss', loops: 1 }) : G.modal((d.type === 'admin' ? '📢 Thông báo từ quản trị viên:\n' : '') + d.text));
-    // chọn khu: mỗi bản đồ luyện công có 20 khu, mỗi khu tối đa 10 người
+    // chọn khu: mỗi bản đồ luyện công có 3 khu (+ Khu VIP), mỗi khu tối đa 10 người
     s.on('channels', d => showChannels(d));
     function showChannels(d) {
       if (!d || !d.list.length) return UI.toast('Bản đồ này không chia khu', 'info');

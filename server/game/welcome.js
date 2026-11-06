@@ -31,12 +31,13 @@ class Welcome {
   ensureGift() {
     const g = this.db.data.giftcodes;
     const wc = this.db.data.config.welcome || {};
-    if (g && g[GIFT] && wc.knbCut && !wc.knbBack && g[GIFT].reward && g[GIFT].reward.knb === 20) {   // trả lại 100 Nguyên Bảo quà tân thủ (bản trước đã giảm còn 20)
-      g[GIFT].reward.knb = 100; this.db.data.config.welcome = Object.assign({}, wc, { knbBack: true }); this.db.markDirty();
+    if (g && !wc.knbZero) {   // gift code tân thủ (và mọi gift code đang kèm 100 Nguyên Bảo) không còn Nguyên Bảo – chạy 1 lần
+      for (const [k, x] of Object.entries(g)) if (x && x.reward && (k === GIFT || x.reward.knb === 100)) delete x.reward.knb;
+      this.db.data.config.welcome = Object.assign({}, wc, { knbZero: true }); this.db.markDirty();
     }
     if (!g || g[GIFT] || (this.db.data.config.welcome || {}).giftMade) return;
     g[GIFT] = {
-      reward: { knb: 100, gold: 50000, exp: 0, items: [['hp2', 50], ['mp2', 50], ['stone', 10], ['exp_x2', 2], ['lucky_chest', 2], ['mount_food', 10], ['insure', 1]] },
+      reward: { gold: 50000, exp: 0, items: [['hp2', 50], ['mp2', 50], ['stone', 10], ['exp_x2', 2], ['lucky_chest', 2], ['mount_food', 10], ['insure', 1]] },
       maxUses: 0, exp: 0, usedBy: [], created: Date.now(), pub: true, note: 'Quà tân thủ khai mở máy chủ', minLv: 0
     };
     this.db.data.config.welcome = Object.assign({}, this.db.data.config.welcome || {}, { giftMade: true });   // xoá code rồi thì không tự tạo lại
