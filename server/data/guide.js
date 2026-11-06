@@ -84,7 +84,7 @@ function build() {
       '<b>Chợ Phiên</b> (đi Xa Phu): mở sạp bằng Lệnh Bài Bán Hàng để bán đồ cho người chơi khác, bán được cả khi offline.',
       'Thuế: Chợ Phiên 5%, giao dịch ngân lượng giữa người chơi 3% (30% tiền thuế vào quỹ bang đang giữ Lâm An Thành).',
       '🔒 Chống tài khoản clone: phải đạt <b>cấp 30</b> mới được giao dịch với người chơi khác, mở sạp / mua đồ ở Chợ Phiên và nhận thưởng mời bạn.',
-      'Nguyên Bảo: boss thế giới, áp tiêu vàng, Tống Kim, gift code, sự kiện. Tiêu ở <b>Kỳ Trân Các</b>.']) },
+      'Nguyên Bảo: áp tiêu vàng, nhiệm vụ ngày, Đố Vui, gift code, sự kiện xếp hạng. Tiêu ở <b>Kỳ Trân Các</b>.']) },
     { k: 'sect', icon: '⛩️', title: 'Môn phái & bang hội', html: li([
       'Về bản đồ môn phái của mình (Xa Phu, miễn phí): nhận <b>nhiệm vụ môn phái</b> lấy cống hiến, lên cấp bậc (+công / thủ / máu).',
       'Bản đồ môn phái cấm PK (chỉ thách đấu).',

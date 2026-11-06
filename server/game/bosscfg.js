@@ -2,7 +2,7 @@
 // Lưu ở db.data.config.bosses = { bossId: { hp, def, pct, dmgMin, dmgMax, every, noDefault, drops: [{ id, chance, min, max, to }] } }
 //   0 hoặc bỏ trống = giữ mặc định. pct: % sinh lực tối đa người trúng mỗi đòn thường (boss đánh theo % máu);
 //   dmgMin / dmgMax: sát thương cố định boss triệu hồi; every: phút giữa 2 lần xuất hiện (boss theo giờ).
-//   noDefault: tắt đồ rơi mặc định của boss (trang bị, đá, rương...; boss thế giới vẫn phát Nguyên Bảo theo hạng).
+//   noDefault: tắt đồ rơi mặc định của boss (trang bị, đá, rương...; boss không phát Nguyên Bảo).
 //   drops: đồ rơi thêm – chance 0–1 (không nhân hệ số rơi đồ), số lượng min–max,
 //     to: 'ground' rơi quanh xác ai nhặt cũng được | 'top' vào túi người sát thương cao nhất | 'all' mỗi người góp ≥0,5% sát thương tự quay riêng.
 const U = require('./util');

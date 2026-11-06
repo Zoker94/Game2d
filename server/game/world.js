@@ -1370,11 +1370,11 @@ class World {
           const p = this.players.get(uid);
           if (!p || d / total < 0.005) return;
           this.achieve(p, 'wbJoin'); if (i === 0) this.achieve(p, 'wbTop1');
-          const chance = i === 0 ? 1 : i < 3 ? 0.35 : i < 10 ? 0.1 : 0.02, off = BOSSCFG.noDefault(tpl.id);   // off: quản trị viên tắt đồ rơi mặc định (vẫn phát Nguyên Bảo)
+          const chance = i === 0 ? 1 : i < 3 ? 0.35 : i < 10 ? 0.1 : 0.02, off = BOSSCFG.noDefault(tpl.id);   // off: quản trị viên tắt đồ rơi mặc định
           if (!off && Math.random() < chance * dr) legend(p);
           const items = !off && i === 0 && tpl.id === 'boss_vumuc' ? [['vm_tamphap', 1]] : [];   // chỉ top 1 sát thương: anh linh Nhạc Vũ Mục truyền Tâm Pháp (cách học Di Thư)
           if (!off && i < 3) items.push(['boss_chest', 3 - i]);   // hạng 1-3: 3 / 2 / 1 Rương Thủ Lĩnh
-          this.giveReward(p, { items, knb: i < 3 ? [200, 120, 80][i] : i < 10 ? 20 : 5 }, `Hạng ${i + 1} đánh ${tpl.name}`, i < 3 ? null : { farm: true });   // top 3 giữ nguyên; còn lại tính vào trần / ngày
+          if (items.length) this.giveReward(p, { items }, `Hạng ${i + 1} đánh ${tpl.name}`);   // boss không phát Nguyên Bảo
         });
       } else if (!BOSSCFG.noDefault(tpl.id)) {
         // Boss dã ngoại (theo giờ) chỉ rơi: trang bị, đá cường hóa và 10 rương văng khắp nơi (ai nhanh tay thì được).
