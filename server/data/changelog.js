@@ -4,6 +4,7 @@ const CHANGELOG = [
   {
     date: '02/11/2026',
     items: [
+      '📦 Phó bản và Bảo Rương không còn phát Nguyên Bảo.',
       '👑 Boss không còn phát Nguyên Bảo (kể cả top sát thương boss thế giới); vẫn giữ trang bị, rương, đá như cũ.',
       '💎 Hạn chế Nguyên Bảo: Nguyên Bảo từ hoạt động hằng ngày (Đố Vui, nhiệm vụ ngày, tham gia boss thế giới, phó bản, áp tiêu, Bảo Rương, Vòng Quay) tối đa 50 / ngày; giảm Nguyên Bảo ở cốt truyện, vòng quay, Bảo Rương, boss thế giới (ngoài top 3). Thưởng xếp hạng top giữ nguyên.',
       '🛡️ Chống clone: mỗi thiết bị tạo tối đa 5 tài khoản. Giao dịch giữa người chơi (trao đổi, Chợ Phiên) cần cấp 30 trở lên. Khu VIP: quái chỉ gây 50% sát thương, treo máy bằng Vé an toàn hơn.',

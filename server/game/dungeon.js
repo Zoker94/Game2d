@@ -65,7 +65,7 @@ class Dungeon {
     const pt = this.w.party && this.w.party.of(p);
     return {
       list: Object.values(DUNGEONS).map(d => ({ id: d.id, name: d.name, minLv: d.minLv, maxLv: d.maxLv, lv: d.lv, party: d.party, desc: d.desc, left: this.entries(p, d.id), daily: d.daily,
-        min: Math.round(d.time / 60000), exp: d.exp, gold: d.gold, knb: d.knb })),
+        min: Math.round(d.time / 60000), exp: d.exp, gold: d.gold })),
       party: pt ? { n: pt.members.length, leader: pt.leader === p.userId } : null
     };
   }
@@ -186,7 +186,7 @@ class Dungeon {
       }
       if (this.w.sect) this.w.sect.onDungeon(q);
       this.w.achieve(q, 'pbClears'); if (fast) this.w.achieve(q, 'pbFast');
-      this.w.giveReward(q, { exp: Math.round(def.exp * mult), gold: Math.round(def.gold * mult), knb: def.knb, items }, `🏆 Vượt ${def.name}${fast ? ' (thần tốc)' : ''}`, { farm: true });
+      this.w.giveReward(q, { exp: Math.round(def.exp * mult), gold: Math.round(def.gold * mult), items }, `🏆 Vượt ${def.name}${fast ? ' (thần tốc)' : ''}`);   // phó bản không phát Nguyên Bảo
     }
     this.w.features.announce(`🏆 ${players.map(q => q.c.name).join(', ')} đã vượt phó bản ${def.name}!`);
     this.sync(I);
