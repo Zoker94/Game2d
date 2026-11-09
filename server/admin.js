@@ -413,10 +413,26 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     for (const t of list) if (+t.amount > 0) world.topup.autoMatch({ tx: 'casso:' + (t.id || t.tid), amount: t.amount, content: t.description, src: 'Casso' });
     res.json({ error: 0 });
   });
-  app.get('/api/admin/topuphook', auth, (req, res) => {
-    if (!req.isOwner) return res.status(403).json({ error: 'Chỉ chủ server' });
+  app.get('/api/admin/topuphook', auth, (req, res) => {   // mọi quản trị viên xem được tiền về không khớp đơn; khoá bí mật chỉ chủ server thấy
     const h = world.topup.hook;
-    res.json({ on: !!h.on, key: h.key || '', miss: (db.data.topupMiss || []).slice(0, 30) });
+    res.json({ on: !!h.on, key: req.isOwner ? h.key || '' : '', owner: req.isOwner, miss: (db.data.topupMiss || []).slice(0, 50).map((m, i) => Object.assign({ i }, m)) });
+  });
+  // tiền về không có mã đơn / sai nội dung: chủ server cộng tay cho đúng nhân vật (tạo đơn đã duyệt, có quà nạp đầu, đua top nạp...)
+  app.post('/api/admin/topupmiss/:i/credit', auth, (req, res) => {
+    if (!req.isOwner) return res.status(403).json({ error: 'Chỉ chủ server được cộng tiền' });
+    const m = (db.data.topupMiss || [])[+req.params.i | 0];
+    if (!m) return res.status(404).json({ error: 'Không tìm thấy giao dịch' });
+    if (m.done) return res.status(400).json({ error: `Giao dịch này đã cộng cho ${m.done.name}` });
+    const name = String((req.body || {}).name || '').trim().toLowerCase();
+    const u = Object.values(db.data.users).find(x => x.character && x.character.name.toLowerCase() === name);
+    if (!u) return res.status(400).json({ error: 'Không tìm thấy nhân vật tên này' });
+    const T = world.topup, code = T.newCode();
+    T.orders[code] = { code, uid: u.id, name: u.character.name, amount: m.amount, knb: T.knbOf(m.amount), at: Date.now(), status: 'pending', note: 'Cộng tay: ' + String(m.content || '').slice(0, 60) };
+    const r = T.approve(code, req.admin);
+    if (r.error) return res.status(400).json(r);
+    m.done = { name: u.character.name, code, by: req.admin, at: Date.now() };
+    db.markDirty(); act(req, `Cộng tay giao dịch ${m.amount}đ "${m.content}" cho ${u.character.name} (đơn ${code})`);
+    res.json({ ok: true, code });
   });
   app.post('/api/admin/topuphook', auth, (req, res) => {
     if (!req.isOwner) return res.status(403).json({ error: 'Chỉ chủ server' });
