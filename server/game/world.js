@@ -441,7 +441,7 @@ class World {
     const c = p.c;
     const g = c.guildId && this.db.data.guilds[c.guildId];
     return {
-      streamer: p.user.streamer ? 1 : 0, firstTop: c.firstTopGift ? 1 : 0,
+      streamer: p.user.streamer ? 1 : 0, firstTop: c.firstTopGift || (c.topupTotal | 0) > 0 ? 1 : 0,   // đã nhận quà nạp đầu / đã từng nạp: không hiện thanh quà nạp đầu
       name: c.name, cls: c.cls, level: c.level, exp: c.exp, expNext: U.expNext(c.level),
       gold: c.gold, knb: c.knb, hp: c.hp, mp: c.mp, stats: p.stats,
       inv: c.inv, invMax: U.invSize(c), vmb: Math.min(5, c.vmb | 0), equip: c.equip, kills: c.kills, pvpKills: c.pvpKills, bossKills: c.bossKills,
