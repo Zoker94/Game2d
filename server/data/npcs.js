@@ -44,6 +44,8 @@ const NPCS = {
   tang_kinh: { name: 'Tàng Kinh Các', sprite: 'elder', color: '#2a6a4a', action: 'shop', bookShop: true,
     talk: 'Võ học vô biên. Mỗi môn phái có bí truyền riêng – hãy mua sách để lĩnh ngộ, rồi rèn luyện trong bảng Võ Công (phím K).',
     shop: ['tay_tuy_kinh', 'tay_tiem_nang', ...Object.keys(require('./skillbooks').BOOKS)] },
+  thach_lao: { name: 'Thạch Lão Nhân', sprite: 'elder', color: '#8a8490', action: 'rebirth',
+    talk: 'Hòn đá năm xưa làm ta quên sạch võ công… rồi ta lại luyện lên từ đầu. Đại hiệp đạt cấp 120 muốn Chết Đi Sống Lại thì tìm ta.' },
   thu_kho: { name: 'Thủ Kho Tiền Trang', sprite: 'rich', color: '#b8860b', action: 'bank',
     talk: 'Vàng bạc châu báu, binh khí y phục, cứ gửi ở Tiền Trang ta – mất một đền mười!' },
   tieu_cuc: { name: 'Tổng Tiêu Đầu Long Môn', sprite: 'guard', color: '#8b1a1a', action: 'escort',

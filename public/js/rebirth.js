@@ -22,10 +22,13 @@
         <div class="rb-req ${ok ? 'ok' : 'no'}">${ok ? '✅' : '❌'} Đạt cấp ${st.lv} <span class="muted">(hiện cấp ${me.level})</span></div>
         <div class="rb-req ${st.equipped ? 'no' : 'ok'}">${st.equipped ? '❌' : '✅'} Cởi hết trang bị đang mặc <span class="muted">(${st.equipped ? `còn ${st.equipped} món – tránh mất đồ` : 'đã cởi'})</span>
           ${st.equipped ? '<button class="btn small" id="rb-unequip">🎒 Cởi toàn bộ & cất đồ</button>' : ''}</div>
+        <div class="rb-req ${st.near ? 'ok' : 'no'}">${st.near ? '✅ Đang đứng cạnh <b>Thạch Lão Nhân</b>' : '❌ Đến gặp <b>Thạch Lão Nhân</b> ở <b>Lan Châu Thành</b>'}
+          ${st.near ? '' : '<button class="btn small" id="rb-go">🧭 Tự đi tới</button>'}</div>
         <div class="rb-req ${!needStone || haveStone ? 'ok' : 'no'}">${!needStone ? '🎁 Lần đầu MIỄN PHÍ – không cần Đá Hồi Sinh' : `${haveStone ? '✅' : '❌'} 1 Đá Hồi Sinh <span class="muted">(có ${st.stones} – rơi rất hiếm từ quái, ~1/5000 con)</span>`}</div>
         <p class="small muted" style="margin-top:6px">Đồ cởi ra vào túi đồ; túi đầy thì tự cất vào Tiền Trang. Không mất món nào.</p>
-        <button class="btn primary rb-go" id="rb-do" ${ok && !st.equipped && (!needStone || haveStone) ? '' : 'disabled'}>🔥 Chết Đi Sống Lại</button></div></div>`;
+        <button class="btn primary rb-go" id="rb-do" ${ok && st.near && !st.equipped && (!needStone || haveStone) ? '' : 'disabled'}>🔥 Chết Đi Sống Lại</button></div></div>`;
     const u = body.querySelector('#rb-unequip'); if (u) u.onclick = () => emit({ op: 'unequip' });
+    const g = body.querySelector('#rb-go'); if (g) g.onclick = () => { UI.closePanel(); if (window.QuestNav) QuestNav.go({ map: st.npcMap, npc: st.npc }); UI.toast('🧭 Đang tìm đường tới Thạch Lão Nhân (Lan Châu Thành)…', 'info'); };
     body.querySelector('#rb-do').onclick = () => G.modal(`Chết đi sống lại lần ${(st.count || 0) + 1}?\n\nNhân vật sẽ về CẤP 1, giữ 1/2 điểm tiềm năng và toàn bộ võ công.${needStone ? '\nTiêu hao 1 Đá Hồi Sinh.' : '\nLần đầu miễn phí.'}`,
       [{ t: '🔥 Chết đi sống lại', cls: 'primary', fn: () => emit({ op: 'do' }) }, { t: 'Để sau' }]);
   });
@@ -35,7 +38,7 @@
     s.on('rebirth', d => {
       st = d;
       if (d.ask) {   // vừa đạt cấp 120
-        G.modal(`🔥 Chúc mừng đại hiệp đạt cấp ${d.lv}!\n\nĐại hiệp có muốn "Chết Đi Sống Lại" (trùng sinh) không?\nVề cấp 1, giữ 1/2 điểm tiềm năng và toàn bộ võ công, bảng xếp hạng vẫn tính.${d.free ? '\nLần đầu MIỄN PHÍ.' : ''}\n\nĐể sau thì vào bảng Nhân vật → 🔥 Chết Đi Sống Lại bất cứ lúc nào.`,
+        G.modal(`🔥 Chúc mừng đại hiệp đạt cấp ${d.lv}!\n\nĐại hiệp có muốn "Chết Đi Sống Lại" (trùng sinh) không?\nVề cấp 1, giữ 1/2 điểm tiềm năng và toàn bộ võ công, bảng xếp hạng vẫn tính.${d.free ? '\nLần đầu MIỄN PHÍ.' : ''}\n\nTrùng sinh tại Thạch Lão Nhân ở Lan Châu Thành. Để sau thì vào bảng Nhân vật → 🔥 Chết Đi Sống Lại để xem đường đi.`,
           [{ t: '🔥 Đồng ý', cls: 'primary', fn: () => open() }, { t: 'Để sau' }]);
         return;
       }

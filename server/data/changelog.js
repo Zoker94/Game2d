@@ -8,7 +8,7 @@ const CHANGELOG = [
       '🎥 Danh hiệu 【Streamer】 có hiệu ứng riêng (màn hình máy tính + bàn phím, chấm LIVE) do quản trị viên cấp; Streamer không vào bảng xếp hạng.',
       '🎁 Rương Thủ Lĩnh: Truyền Kỳ 7%.',
       '🌟 Quái thường và quái tinh anh lại có cơ hội nhỏ rơi Truyền Kỳ.',
-      '🔥 CHẾT ĐI SỐNG LẠI (trùng sinh): đạt cấp 120 được hỏi trùng sinh (để sau thì vào bảng Nhân vật). Phải cởi hết trang bị (có nút cởi & cất đồ tự động), lần đầu miễn phí, từ lần 2 cần 1 Đá Hồi Sinh (quái rơi ~1/5000). Về cấp 1, giữ 1/2 điểm tiềm năng và toàn bộ võ công; bảng xếp hạng cấp độ xếp người trùng sinh lên trên, có dòng "Trùng sinh N". Kèm phim hài hơn 1 phút: đại hiệp dẹp loạn Tương Dương rồi… vấp đá mất trí nhớ.',
+      '🔥 CHẾT ĐI SỐNG LẠI (trùng sinh) tại NPC Thạch Lão Nhân ở Lan Châu Thành: đạt cấp 120 được hỏi trùng sinh (để sau thì vào bảng Nhân vật, có nút tự đi tới NPC). Phải cởi hết trang bị (có nút cởi & cất đồ tự động), lần đầu miễn phí, từ lần 2 cần 1 Đá Hồi Sinh (quái rơi ~1/5000). Về cấp 1, giữ 1/2 điểm tiềm năng và toàn bộ võ công; bảng xếp hạng cấp độ xếp người trùng sinh lên trên, có dòng "Trùng sinh N". Kèm phim hài hơn 1 phút: đại hiệp dẹp loạn Tương Dương rồi… vấp đá mất trí nhớ.',
       '🐉 Thanh Long vẽ lại theo bộ hình mới: rồng xanh cánh đỏ có yên, đủ 4 hướng; đứng yên thì đáp đất, khép cánh và thở, di chuyển thì vỗ cánh bay.',
       '🎓 Sư đồ: người chơi dùng chung mạng / wifi (cùng nhà, quán net) giờ bái sư được với nhau – chỉ còn chặn 2 tài khoản trên cùng một thiết bị.',
       '🤖 Tự động đánh giờ dùng cả Tuyệt Kỹ Giang Hồ (cùng Long Ấn) khi hồi chiêu xong.'

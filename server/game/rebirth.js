@@ -6,14 +6,14 @@
 const U = require('./util');
 const { MAPS, TILE } = require('../data/maps');
 
-const REBIRTH_LV = 120, STONE = 'rebirth_stone';
+const REBIRTH_LV = 120, STONE = 'rebirth_stone', NPC = 'thach_lao', NPC_MAP = 'lan_chau';   // Thạch Lão Nhân ở Lan Châu Thành
 
 class Rebirth {
   constructor(world) { this.w = world; world.rebirth = this; }
   equippedCount(c) { return Object.values(c.equip || {}).filter(Boolean).length; }
   view(p) {
     const c = p.c, n = c.rebirth | 0;
-    return { lv: REBIRTH_LV, count: n, free: n === 0, stones: U.countItem(c, STONE), equipped: this.equippedCount(c), level: c.level };
+    return { lv: REBIRTH_LV, count: n, free: n === 0, stones: U.countItem(c, STONE), equipped: this.equippedCount(c), level: c.level, near: !!this.w.nearNpc(p, NPC), npcMap: NPC_MAP, npc: NPC };
   }
   // vừa lên cấp: đạt 120 lần đầu (mỗi vòng trùng sinh) thì hỏi
   onLevel(p) {
@@ -49,6 +49,7 @@ class Rebirth {
     const c = p.c, w = this.w, err = t => w.toast(p, t, 'error');
     if (c.level < REBIRTH_LV) return err(`Cần đạt cấp ${REBIRTH_LV} mới có thể Chết Đi Sống Lại`);
     if (p.dead) return err('Đang trọng thương, hãy hồi sinh trước');
+    if (!this.w.nearNpc(p, NPC)) return err('Hãy đến gặp Thạch Lão Nhân ở Lan Châu Thành để Chết Đi Sống Lại');
     const def = MAPS[p.mapId];
     if (def && (def.instance || def.tongkim || def.hoason || def.siege || def.duelArena || def.id === 'dai_hoi')) return err('Không thể trùng sinh khi đang ở phó bản / sự kiện');
     if (p.trade || p.duel) return err('Đang giao dịch / tỷ võ');

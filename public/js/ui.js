@@ -1242,7 +1242,7 @@
       </div>
       ${titlePanel(me)}
       ${gemSummary(me.equip)}
-      ${me.level >= 120 || me.rebirth > 0 ? `<div class="card rb-card"><h4>🔥 Chết Đi Sống Lại ${me.rebirth > 0 ? `<span class="rb-n">Trùng sinh ${me.rebirth}</span>` : ''}</h4><div class="small muted">Đạt cấp 120 có thể trùng sinh về cấp 1: giữ 1/2 điểm tiềm năng, giữ nguyên võ công, bảng xếp hạng vẫn tính${me.level >= 120 ? '' : ' (đạt lại cấp 120 để trùng sinh tiếp)'}.</div>${me.level >= 120 ? '<button class="btn primary" id="rb-open" style="margin-top:6px">🔥 Chết Đi Sống Lại…</button>' : ''}</div>` : ''}
+      ${me.level >= 120 || me.rebirth > 0 ? `<div class="card rb-card"><h4>🔥 Chết Đi Sống Lại ${me.rebirth > 0 ? `<span class="rb-n">Trùng sinh ${me.rebirth}</span>` : ''}</h4><div class="small muted">Đạt cấp 120 có thể trùng sinh về cấp 1 tại <b>Thạch Lão Nhân (Lan Châu Thành)</b>: giữ 1/2 điểm tiềm năng, giữ nguyên võ công, bảng xếp hạng vẫn tính${me.level >= 120 ? '' : ' (đạt lại cấp 120 để trùng sinh tiếp)'}.</div>${me.level >= 120 ? '<button class="btn primary" id="rb-open" style="margin-top:6px">🔥 Chết Đi Sống Lại…</button>' : ''}</div>` : ''}
       ${attrPanel(me)}
       ${elemPanel(st)}
       <h4 style="color:#ffd76a">Võ công</h4>
@@ -1828,6 +1828,7 @@
     if (d.action === 'event') { UI.openPanel('events', { tab: 'checkin' }); UI.toast(d.talk); return; }
     if (d.action === 'quest') { UI.openPanel('quests', { tab: 'daily' }); return; }
     if (d.action === 'bank') { UI.openPanel('bank'); UI.toast(d.talk); return; }
+    if (d.action === 'rebirth') { if (window.Rebirth) Rebirth.open(); return; }
     if (d.action === 'escort') { Escort.open(d); return; }
     if (d.action === 'daihoi') { DaiHoi.open(d); return; }
     if (d.action === 'hoason') { HoaSon.open(d); return; }

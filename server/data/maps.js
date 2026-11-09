@@ -213,6 +213,7 @@ const MAP_DEFS = {
     name: 'Lan Châu Thành', theme: 'town', w: 36, h: 28, seed: 113, safe: true, lv: '30+', town: true, music: 'town',
     portals: [{ side: 'S', to: 'sa_mac' }],
     npcs: [
+      { id: 'thach_lao', x: 22, y: 13 },   // Thạch Lão Nhân – trùng sinh (Chết Đi Sống Lại)
       { id: 'thanh_chu_lan_chau', x: 17, y: 8 }, { id: 'chi_dan', x: 17, y: 13 },
       { id: 'tho_ren',    x: 12, y: 13 },
       { id: 'hieu_may',   x: 12, y: 16 },
