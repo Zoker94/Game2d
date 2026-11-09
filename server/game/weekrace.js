@@ -37,7 +37,7 @@ class WeekRace {
   wk(c) { const w = weekId(); if (!c.wk || c.wk.w !== w || c.wk.v !== 2) c.wk = { w, boss: 0, knb: 0, v: 2 }; return c.wk; }
   add(c, key, n) { if (c) { this.wk(c)[key] = (this.wk(c)[key] || 0) + n; } }
   score(c, k, w) {
-    if (k === 'level') return c.level * 1e10 + (c.exp || 0);
+    if (k === 'level') return (c.rebirth | 0) * 1e13 + c.level * 1e10 + (c.exp || 0);   // trùng sinh xếp trên
     if (k === 'power') return c.power || 0;
     const wk = c.wk && c.wk.w === w ? c.wk : null;
     return wk ? (k === 'boss' ? wk.boss || 0 : wk.knb || 0) : 0;

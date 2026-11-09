@@ -1242,6 +1242,7 @@
       </div>
       ${titlePanel(me)}
       ${gemSummary(me.equip)}
+      ${me.level >= 120 || me.rebirth > 0 ? `<div class="card rb-card"><h4>🔥 Chết Đi Sống Lại ${me.rebirth > 0 ? `<span class="rb-n">Trùng sinh ${me.rebirth}</span>` : ''}</h4><div class="small muted">Đạt cấp 120 có thể trùng sinh về cấp 1: giữ 1/2 điểm tiềm năng, giữ nguyên võ công, bảng xếp hạng vẫn tính${me.level >= 120 ? '' : ' (đạt lại cấp 120 để trùng sinh tiếp)'}.</div>${me.level >= 120 ? '<button class="btn primary" id="rb-open" style="margin-top:6px">🔥 Chết Đi Sống Lại…</button>' : ''}</div>` : ''}
       ${attrPanel(me)}
       ${elemPanel(st)}
       <h4 style="color:#ffd76a">Võ công</h4>
@@ -1256,6 +1257,7 @@
     body.querySelectorAll('[data-title]').forEach(b => b.onclick = () => { ttlOpen = true; emit('title', { id: b.dataset.title }); });
     { const d = body.querySelector('.ttl-box'); if (d) d.ontoggle = () => { ttlOpen = d.open; }; }
     bindAttr(body);
+    { const rb = body.querySelector('#rb-open'); if (rb) rb.onclick = () => window.Rebirth && Rebirth.open(); }
     const c = $('char-cv').getContext('2d'); c.imageSmoothingEnabled = false;
     if (Assets.has(me.cls)) { c.imageSmoothingEnabled = true; c.drawImage(Assets.charFrame(me.cls, 0, 'idle', 0, me.ap), 0, 0, 96, 96); setTimeout(() => { if ($('char-cv')) { c.clearRect(0, 0, 96, 96); c.drawImage(Assets.charFrame(me.cls, 0, 'idle', 0, me.ap), 0, 0, 96, 96); } }, 600); }
     else c.drawImage(Sprites.playerSprite(me.cls, cl.colors, 0, 0), 0, 0);
@@ -1535,7 +1537,7 @@
       html += `<table class="tbl"><tr><th>#</th><th>Bang hội</th><th>Cấp</th><th>Bang chủ</th><th>Thành viên</th><th>Quỹ</th></tr>${lbData.guild.map((g, i) => `<tr><td class="rank-${i + 1}">${i + 1}</td><td>${esc(g.name)}</td><td>${g.level}</td><td>${esc(g.leader)}</td><td>${g.count}</td><td>${fmt(g.fund)}</td></tr>`).join('')}</table>`;
     } else {
       const col = { level: 'Cấp', power: 'Lực chiến', gold: 'Ngân lượng', kills: 'Quái', pvp: 'Hạ gục', boss: 'Boss' }[tab];
-      html += `<table class="tbl"><tr><th>#</th><th>Nhân vật</th><th>Môn phái</th><th>Bang</th><th>${col}</th></tr>${(lbData[tab] || []).map((r, i) => `<tr class="lb-row ${G.me && r.name === G.me.name ? 'me' : ''}" data-lbname="${esc(r.name)}" title="Bấm để xem lực chiến, trang bị"><td class="rank-${i + 1}">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</td><td>${esc(r.name)} <span class="muted small">Lv${r.level}</span></td><td>${G.data.classes[r.cls].name}</td><td>${esc(r.guild)}</td><td>${fmt(r.v)}</td></tr>`).join('')}</table>`;
+      html += `<table class="tbl"><tr><th>#</th><th>Nhân vật</th><th>Môn phái</th><th>Bang</th><th>${col}</th></tr>${(lbData[tab] || []).map((r, i) => `<tr class="lb-row ${G.me && r.name === G.me.name ? 'me' : ''}" data-lbname="${esc(r.name)}" title="Bấm để xem lực chiến, trang bị"><td class="rank-${i + 1}">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</td><td>${esc(r.name)} <span class="muted small">Lv${r.level}</span>${r.rb ? ` <span class="rb-tag">🔥 Trùng sinh ${r.rb}</span>` : ''}</td><td>${G.data.classes[r.cls].name}</td><td>${esc(r.guild)}</td><td>${tab === 'level' && r.rb ? `Cấp ${fmt(r.v)} <span class="rb-tag">TS${r.rb}</span>` : fmt(r.v)}</td></tr>`).join('')}</table>`;
     }
     html += '<p class="small muted">Cập nhật mỗi 30 giây. Bấm vào một người để xem lực chiến, chỉ số và trang bị.</p>';
     body.innerHTML = html;

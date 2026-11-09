@@ -37,8 +37,8 @@ const { isOwner } = require('../owner');
 const SOLID_SET = new Set(require('../data/maps').SOLID);
 const { SOCKETS: GEM_SOCKETS, parseGem } = require('../data/gems');
 // tổng điểm tiềm năng / võ học: theo cấp + điểm quản trị viên tặng thêm (c.attrBonus, c.spBonus)
-const attrTotalOf = c => attrTotal(c.level) + Math.max(0, c.attrBonus | 0);
-const spTotalOf = c => skillPointsTotal(c.level) + Math.max(0, c.spBonus | 0);
+const attrTotalOf = c => attrTotal(c.level) + Math.max(0, c.attrBonus | 0) + Math.max(0, c.rbAttr | 0);   // rbAttr: điểm giữ lại qua trùng sinh
+const spTotalOf = c => skillPointsTotal(c.level) + Math.max(0, c.spBonus | 0) + Math.max(0, c.rbSp | 0);   // rbSp: võ công giữ lại qua trùng sinh
 const { ATTRS, attrTotal, attrUsed, attrResetCost } = require('../data/attrs');
 const { SECT_MAP } = require('../data/sect');
 
@@ -273,6 +273,7 @@ class World {
     if (c.hp <= 0) { c.hp = Math.round(p.stats.maxHp * 0.3); c.map = 'tuong_duong'; const t = MAPS.tuong_duong; x = (t.center.x + 0.5) * TILE; y = (t.center.y + 2.5) * TILE; }
     this.enterMap(p, c.map, x, y);
     if (user.streamer && !c.streamerGift) setTimeout(() => { if (this.players.get(user.id) === p) this.grantStreamer(p); }, 1500);   // gói Streamer lần đầu
+    if (c.level >= 120 && this.rebirth) setTimeout(() => { if (this.players.get(user.id) === p) this.rebirth.onLevel(p); }, 6000);   // đã cấp 120 từ trước: hỏi trùng sinh 1 lần
     // bản thử nghiệm thú cưng rồng: gửi thẳng vào túi chủ server một lần
     if (require('../owner').isOwner(user) && !c.petGift) {
       c.petGift = 1;
@@ -441,6 +442,7 @@ class World {
     const c = p.c;
     const g = c.guildId && this.db.data.guilds[c.guildId];
     return {
+      rebirth: c.rebirth | 0,
       streamer: p.user.streamer ? 1 : 0, firstTop: c.firstTopGift || (c.topupTotal | 0) > 0 ? 1 : 0,   // đã nhận quà nạp đầu / đã từng nạp: không hiện thanh quà nạp đầu
       name: c.name, cls: c.cls, level: c.level, exp: c.exp, expNext: U.expNext(c.level),
       gold: c.gold, knb: c.knb, hp: c.hp, mp: c.mp, stats: p.stats,
@@ -643,6 +645,7 @@ class World {
       c.hp = p.stats.maxHp; c.mp = p.stats.maxMp;
       this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y });
       this.toast(p, `Thăng cấp ${c.level}!`, 'level');
+      if (this.rebirth) this.rebirth.onLevel(p);   // đạt cấp 120: hỏi Chết Đi Sống Lại
       this.toast(p, `⭐ Có ${attrTotalOf(c) - attrUsed(c.attr)} điểm tiềm năng chưa cộng (bảng Nhân vật – phím C)`, 'reward');
       const unlocked = CLASSES[c.cls].skills.filter(s => s.lv === c.level);
       for (const s of unlocked) this.toast(p, `Lĩnh ngộ võ công mới: ${s.name}`, 'reward');
@@ -1448,6 +1451,7 @@ class World {
         if (r() < 0.008 * dr) drops.push('stone2');
         if (r() < 0.12) drops.push('mount_food');
         if (r() < 0.04 * dr) drops.push('lucky_chest');
+        if (r() < 0.0002) drops.push('rebirth_stone');   // Đá Hồi Sinh: ~1/5000
         if (r() < 0.15 * dr) drops.push('thien_tam_ti');
         if (killer && killer.c) this.toast(killer, `⭐ Hạ quái tinh anh ${tpl.name}!`, 'reward');
       }
@@ -1460,6 +1464,7 @@ class World {
       if (r() < 0.005 * dr) drops.push(equipId(rslot(), tier, 'rare'));
       if (r() < (cfg.vipDropBase || 0.004) * 0.5 * dr) drops.push(equipId(rslot(), tier, 'epic'));   // sử thi: một nửa mức cấu hình
       if (r() < 0.0015 * dr) drops.push('lucky_chest');
+      if (r() < 0.0002) drops.push('rebirth_stone');   // Đá Hồi Sinh (trùng sinh): ~1/5000 con
       if (r() < 0.01 * dr) drops.push('mount_food');
       if (tpl.lv >= 25 && r() < 0.00009 * dr * (1 + tier)) drops.push('stone2');   // Thiên Tinh Thạch: cấp 90 ~1/1100 con
       const gem = rollGemDrop(map.def.gemMine | 0, tpl.lv, r);   // đá khảm: nhiều ở khoáng động

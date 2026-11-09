@@ -1938,3 +1938,13 @@ body.calm .slot.r-divine::after { animation: none; }
 #ftop-bar .fb-x { background: none; border: 0; color: #e8c890; cursor: pointer; font-size: 13px; padding: 2px 4px; }
 @keyframes ftopBob { 50% { transform: translateY(-2px) rotate(-6deg); } }
 @media (max-width: 700px) { #ftop-bar { top: 30px; font-size: 10px; } #ftop-bar .fb-t span { white-space: normal; } }
+/* trùng sinh – Chết Đi Sống Lại */
+.rb-card { border-color: #e86a3a !important; background: linear-gradient(180deg, rgba(90,24,10,.55), rgba(30,14,10,.55)) !important; }
+.rb-n, .rb-tag { display: inline-block; padding: 0 6px; border-radius: 6px; background: #7a1e0e; color: #ffd0a0; font-size: 10px; font-weight: 800; vertical-align: middle; }
+.rb-panel .rb-hero { display: flex; gap: 10px; align-items: center; }
+.rb-panel .rb-big { font-size: 34px; animation: rbFire 1.2s ease-in-out infinite; }
+.rb-panel .rb-list { margin: 4px 0 0 0; padding-left: 4px; list-style: none; line-height: 1.6; }
+.rb-panel .rb-req { padding: 4px 0; font-size: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.rb-panel .rb-req.no { color: #ffb0a0; } .rb-panel .rb-req.ok { color: #b8f0c0; }
+.rb-panel .rb-go { margin-top: 8px; width: 100%; font-size: 14px; }
+@keyframes rbFire { 50% { transform: scale(1.12) rotate(-4deg); filter: drop-shadow(0 0 6px #ff7a2a); } }

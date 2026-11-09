@@ -857,10 +857,10 @@ class Features {
     this.powerRank = new Map(users.filter(u => u.character.power > 0).sort((a, b) => b.character.power - a.character.power).slice(0, 10).map((u, i) => [u.id, i + 1]));
     for (const p of this.w.players.values()) { p.c.x = p.x; p.c.y = p.y; }
     const gs = this.db.data.guilds;
-    const row = (u, v) => ({ name: u.character.name, cls: u.character.cls, level: u.character.level, guild: u.character.guildId && gs[u.character.guildId] ? gs[u.character.guildId].name : '', v });
+    const row = (u, v) => ({ name: u.character.name, cls: u.character.cls, level: u.character.level, rb: u.character.rebirth | 0, guild: u.character.guildId && gs[u.character.guildId] ? gs[u.character.guildId].name : '', v });
     const top = (key, fn) => users.map(u => ({ u, s: fn(u.character) })).sort((a, b) => b.s - a.s).slice(0, 50).map(x => row(x.u, key === 'level' ? x.u.character.level : x.s));
     this.lb = {
-      level: top('level', c => c.level * 1e10 + c.exp),
+      level: top('level', c => (c.rebirth | 0) * 1e13 + c.level * 1e10 + c.exp),   // trùng sinh xếp trên: người trùng sinh cấp 1 vẫn trên người chưa trùng sinh
       power: top('power', c => c.power || 0),
       gold: top('gold', c => c.gold),
       kills: top('kills', c => c.kills || 0),

@@ -60,7 +60,8 @@ new (require('./game/siege').Siege)(world, features, db);   // gắn world.siege
 new (require('./game/mentor').Mentor)(world, db);   // gắn world.mentor (sư đồ)
 new (require('./game/night').Night)(world, features, db);   // gắn world.night (quái đêm, rương ẩn, Thương Nhân Bí Ẩn)
 new (require('./game/fishing').Fishing)(world, features, db);   // gắn world.fishing (câu cá, nấu ăn)
-new (require('./game/topup').Topup)(world, db);   // gắn world.topup (nạp Nguyên Bảo qua chuyển khoản)
+new (require('./game/topup').Topup)(world, db);
+new (require('./game/rebirth').Rebirth)(world);   // trùng sinh – Chết Đi Sống Lại   // gắn world.topup (nạp Nguyên Bảo qua chuyển khoản)
 new (require('./game/guildx').GuildX)(world, features, db);   // gắn world.guildx (nhiệm vụ bang, boss bang)
 new (require('./game/presence').Presence)(world);
 new (require('./game/treasure').Treasure)(world);
@@ -530,6 +531,7 @@ io.on('connection', socket => {
   on('flipBranch', inGame(d => world.flipBranch(player, d || {})));
   on('changeClass', inGame(d => world.changeClass(player, d || {})));
   on('mount', inGame(d => d && world.mountAction(player, d)));
+  on('rebirth', inGame(d => world.rebirth.action(player, d)));
   on('dragon', inGame(d => d && world.selectDragon(player, d.el)));
   on('jianghu', inGame(d => d && world.selectJh(player, String(d.k || ''))));
   on('skillOp', inGame(d => d && world.skillAction(player, d)));

@@ -496,6 +496,7 @@
     Social.bind(s);
     Mentor.bind(s);
     Fishing.bind(s);
+    if (window.Rebirth) Rebirth.bind(s);
     Topup.bind(s);
     Party.bind(s);
     Mining.bind(s);

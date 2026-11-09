@@ -103,6 +103,7 @@
   // ---------- các cảnh ----------
   // text: lời dẫn (đọc + phụ đề); mood: nhạc nền; min: thời gian tối thiểu (ms); draw(c, t, L): t = giây từ đầu cảnh,
   // L: chữ sắc nét vẽ trên khung lớn [chữ, x, y, màu, cỡ (theo khung nhỏ), căn]
+  let ACT = null;   // danh sách cảnh đang chiếu (mở đầu hoặc phim khác, vd. trùng sinh)
   const SCENES = [
     { mood: 'town', min: 6000,
       text: 'Giang hồ vốn chẳng có ngày yên. Nhưng chưa bao giờ, thiên hạ lại nghiêng ngả như những năm tháng ấy.',
@@ -359,7 +360,7 @@
       next();
     };
     // file thu âm sẵn: chỉ dùng cảnh có trong /assets/voice/intro/list.json (vd. [0,1,2,...])
-    if (!recorded.has(i)) return viaTTS();
+    if (ACT !== SCENES || !recorded.has(i)) return viaTTS();   // file thu sẵn chỉ có cho đoạn mở đầu
     const a = new Audio(`/assets/voice/intro/${i}.mp3`);
     audioEl = a;
     let started = false;
@@ -394,23 +395,23 @@
   }
   function startScene(i) {
     si = i; t0 = performance.now(); voiceDone = false; typed = 0; hold = 0;
-    const sc = SCENES[i], text = fill(sc.text);
+    const sc = ACT[i], text = fill(sc.text);
     lines = text;
     minT = Math.max(sc.min, voiceOn ? 0 : 2200 + text.length * 55);
     // nhạc: chỉ một bài êm của intro cho cả đoạn (không đổi bài theo cảnh), có giọng đọc thì vặn nhỏ để nghe rõ lời
-    $('in-dots').innerHTML = SCENES.map((_, k) => `<i class="${k < i ? 'd' : k === i ? 'on' : ''}"></i>`).join('');
+    $('in-dots').innerHTML = ACT.map((_, k) => `<i class="${k < i ? 'd' : k === i ? 'on' : ''}"></i>`).join('');
     speak(i, text, () => { voiceDone = true; });
   }
   function skipScene() {
     if (si < 0) return;
     if (typed < lines.length) { typed = lines.length; return; }   // đang chạy chữ: hiện hết câu trước
-    if (si >= SCENES.length - 1) return finish();
+    if (si >= ACT.length - 1) return finish();
     stopVoice(); startScene(si + 1);
   }
   function frame(now) {
     if (!open) return;
     raf = requestAnimationFrame(frame);
-    const t = (now - t0) / 1000, sc = SCENES[si];
+    const t = (now - t0) / 1000, sc = ACT[si];
     // phụ đề chạy chữ theo nhịp đọc
     typed = Math.min(lines.length, Math.max(typed, Math.floor(t * 17)));
     $('in-sub').textContent = lines.slice(0, typed);
@@ -435,7 +436,7 @@
       cx.fillStyle = col; cx.fillText(txt, ox + x * k, oy + y * k);
     }
     if (fade > 0) { cx.fillStyle = `rgba(0,0,0,${fade})`; cx.fillRect(0, 0, W, H); }
-    if (hold && now - hold > 1100) { if (si >= SCENES.length - 1) { if (now - hold > 4000) finish(); } else startScene(si + 1); }
+    if (hold && now - hold > 1100) { if (si >= ACT.length - 1) { if (now - hold > 4000) finish(); } else startScene(si + 1); }
   }
   function onKey(e) {
     if (!open) return;
@@ -443,13 +444,14 @@
     else if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyF') { e.preventDefault(); e.stopImmediatePropagation(); skipScene(); }
     else e.stopImmediatePropagation();
   }
-  function play(done) {
+  function play(done, opts) {
     if (open) return;
+    ACT = (opts && opts.scenes) || SCENES;
     voiceOn = store('vl_introVoice') !== '0';   // có thể đã đổi ở Cài đặt → Âm thanh
     build(); warmVoices(); resize(); voiceBtn();
     onDone = done || null; open = true;
     prevMood = window.GameAudio ? GameAudio.mood : null;
-    if (window.GameAudio) { GameAudio.music('town'); GameAudio.duck(voiceOn ? 0.18 : 0.8); }
+    if (window.GameAudio) { GameAudio.music((opts && opts.mood) || 'town'); GameAudio.duck(voiceOn ? 0.18 : 0.8); }
     // tải sẵn hình 9 phái cho cảnh giới thiệu môn phái (máy đã từng vào màn tạo nhân vật thì có sẵn trong bộ nhớ)
     if (window.Assets) for (const c of Assets.CLASSES || []) Assets.loadClass(c);
     root.classList.add('on');
@@ -466,5 +468,7 @@
     const d = onDone; onDone = null; si = -1;
     if (d) d();
   }
-  window.Intro = { play, finish, get open() { return open; } };
+  // bộ nét vẽ dùng chung cho phim khác (public/js/rebirth.js)
+  const kit = { sky, stars, ridge, moon, embers, wall, torch, figure, vignette, hero, rnd, lerp, clamp01, ease, fill, get W() { return LW; }, get H() { return LH; } };
+  window.Intro = { play, finish, kit, get open() { return open; } };
 })();
