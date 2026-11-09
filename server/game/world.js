@@ -37,8 +37,8 @@ const { isOwner } = require('../owner');
 const SOLID_SET = new Set(require('../data/maps').SOLID);
 const { SOCKETS: GEM_SOCKETS, parseGem } = require('../data/gems');
 // tổng điểm tiềm năng / võ học: theo cấp + điểm quản trị viên tặng thêm (c.attrBonus, c.spBonus)
-const attrTotalOf = c => attrTotal(c.level) + Math.max(0, c.attrBonus | 0) + Math.max(0, c.rbAttr | 0);   // rbAttr: điểm giữ lại qua trùng sinh
-const spTotalOf = c => skillPointsTotal(c.level) + Math.max(0, c.spBonus | 0) + Math.max(0, c.rbSp | 0);   // rbSp: võ công giữ lại qua trùng sinh
+const attrTotalOf = c => attrTotal(c.level) + Math.max(0, c.attrBonus | 0) + (c.rbAttr | 0);   // rbAttr: điểm giữ lại qua trùng sinh (trừ phần điểm tặng – có thể âm)
+const spTotalOf = c => skillPointsTotal(c.level) + Math.max(0, c.spBonus | 0) + (c.rbSp | 0);   // rbSp: võ công giữ lại qua trùng sinh (có thể âm)
 const { ATTRS, attrTotal, attrUsed, attrResetCost } = require('../data/attrs');
 const { SECT_MAP } = require('../data/sect');
 
@@ -240,6 +240,13 @@ class World {
   addPlayer(user, socket) {
     const c = user.character;
     this.syncTester(user); this.syncStreamer(user);
+    if ((c.rebirth | 0) > 0 && !c.rbFix1) {   // trùng sinh bằng công thức cũ (điểm tặng bị tính dư thành điểm trống): bớt phần dư
+      c.rbFix1 = 1;
+      const fa = attrTotalOf(c) - attrUsed(c.attr), ca = attrTotal(c.level);
+      if (fa > ca) c.rbAttr = (c.rbAttr | 0) - (fa - ca);
+      const fs = spTotalOf(c) - (c.spSpent | 0), cs = skillPointsTotal(c.level);
+      if (fs > cs) c.rbSp = (c.rbSp | 0) - (fs - cs);
+    }
     if (c.ftopNote) { delete c.ftopNote; setTimeout(() => { const q = this.players.get(user.id); if (q) this.toast(q, '🎁 Cảm ơn bạn đã ủng hộ! Quà nạp đầu (100 Rương Thủ Lĩnh + 10 Ngọc khảm cấp 5) đã gửi vào Hòm Đồ – mở Túi đồ để nhận.', 'reward'); }, 5000); }
     this.dropHacLong(c);
     if (c.mailbox && c.mailbox.length) setTimeout(() => { if (this.players.get(user.id) && c.mailbox && c.mailbox.length) this.toast(this.players.get(user.id), `📦 Hòm Đồ có ${c.mailbox.reduce((a, e) => a + e.qty, 0)} vật phẩm đang chờ (phần thưởng lúc túi đầy) – mở Túi đồ để nhận.`, 'reward'); }, 4000);

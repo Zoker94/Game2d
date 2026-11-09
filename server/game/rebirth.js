@@ -63,9 +63,10 @@ class Rebirth {
     const attr = c.attr || {}; let used = 0;
     for (const k of Object.keys(attr)) { attr[k] = Math.floor((attr[k] | 0) / 2); used += attr[k]; }
     c.attr = attr;
-    c.rbAttr = Math.max(0, used - Math.max(0, c.attrBonus | 0));
+    // có thể âm: điểm quản trị viên tặng (attrBonus) cũng chỉ giữ 1/2 như mọi điểm đã cộng -> cấp 1 không dư điểm trống
+    c.rbAttr = used - Math.max(0, c.attrBonus | 0);
     // võ công giữ nguyên: điểm võ học đã dùng tính thêm vào tổng
-    c.rbSp = Math.max(0, (c.spSpent | 0) - Math.max(0, c.spBonus | 0));
+    c.rbSp = (c.spSpent | 0) - Math.max(0, c.spBonus | 0);
     const from = c.level;
     c.level = 1; c.exp = 0; c.rebirth = n + 1; c.rebirthAt = Date.now();
     w.recalc(p); c.hp = p.stats.maxHp; c.mp = p.stats.maxMp;
