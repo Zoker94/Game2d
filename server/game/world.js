@@ -240,6 +240,7 @@ class World {
   addPlayer(user, socket) {
     const c = user.character;
     this.syncTester(user); this.syncStreamer(user);
+    if (c.ftopNote) { delete c.ftopNote; setTimeout(() => { const q = this.players.get(user.id); if (q) this.toast(q, '🎁 Cảm ơn bạn đã ủng hộ! Quà nạp đầu (100 Rương Thủ Lĩnh + 10 Ngọc khảm cấp 5) đã gửi vào Hòm Đồ – mở Túi đồ để nhận.', 'reward'); }, 5000); }
     this.dropHacLong(c);
     if (c.mailbox && c.mailbox.length) setTimeout(() => { if (this.players.get(user.id) && c.mailbox && c.mailbox.length) this.toast(this.players.get(user.id), `📦 Hòm Đồ có ${c.mailbox.reduce((a, e) => a + e.qty, 0)} vật phẩm đang chờ (phần thưởng lúc túi đầy) – mở Túi đồ để nhận.`, 'reward'); }, 4000);
     const old = this.players.get(user.id);

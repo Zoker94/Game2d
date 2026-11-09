@@ -4,7 +4,7 @@ const CHANGELOG = [
   {
     date: '09/11/2026',
     items: [
-      '🎁 Quà nạp đầu: lần nạp đầu tiên (bất kỳ mệnh giá) tặng 100 Rương Thủ Lĩnh + 10 Ngọc khảm cấp 5 (đồ khoá).',
+      '🎁 Quà nạp đầu: lần nạp đầu tiên (bất kỳ mệnh giá) tặng 100 Rương Thủ Lĩnh + 10 Ngọc khảm cấp 5 (đồ khoá). Ai đã nạp trước đó cũng được gửi bù vào Hòm Đồ.',
       '🎥 Danh hiệu 【Streamer】 có hiệu ứng riêng (màn hình máy tính + bàn phím, chấm LIVE) do quản trị viên cấp; Streamer không vào bảng xếp hạng.',
       '🎁 Rương Thủ Lĩnh: Truyền Kỳ 7%.',
       '🌟 Quái thường và quái tinh anh lại có cơ hội nhỏ rơi Truyền Kỳ.'

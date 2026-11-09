@@ -16,6 +16,24 @@ class Topup {
   constructor(world, db) {
     this.w = world; this.db = db;
     world.topup = this;
+    this.backfillFirstGift();
+  }
+  // quà nạp đầu cho người ĐÃ nạp trước khi có quà (chạy mỗi lần khởi động, ai nhận rồi thì bỏ qua)
+  backfillFirstGift() {
+    const paid = new Set(Object.values(this.orders).filter(o => o.status === 'done').map(o => o.uid));
+    let n = 0;
+    for (const [uid, u] of Object.entries(this.db.data.users)) {
+      const c = u.character;
+      if (!c || c.firstTopGift || !(paid.has(uid) || (c.topupTotal | 0) > 0)) continue;
+      c.firstTopGift = Date.now(); c.ftopNote = 1;
+      for (const [id, q] of this.firstGiftItems()) this.w.stash(c, id, q, 0, true);   // vào Hòm Đồ, đăng nhập sẽ được nhắc nhận
+      n++;
+    }
+    if (n) { this.db.markDirty(); console.log(`[topup] Đã gửi quà nạp đầu cho ${n} nhân vật đã nạp trước đó`); this.db.log('topup', `Gửi bù quà nạp đầu cho ${n} nhân vật đã nạp`); }
+  }
+  firstGiftItems() {
+    const { GEM_KEYS } = require('../data/gems');
+    return [['boss_chest', FIRST_TOP.chests], ...GEM_KEYS.map((k, i) => [`gem_${k}_5`, Math.floor(FIRST_TOP.gems / GEM_KEYS.length) + (i < FIRST_TOP.gems % GEM_KEYS.length ? 1 : 0)])].filter(x => x[1] > 0);
   }
   get bank() { return Object.assign({}, DEF_BANK, this.db.data.config.bank || {}); }
   get orders() { return this.db.data.topups || (this.db.data.topups = {}); }
@@ -115,8 +133,7 @@ class Topup {
     const ch = p ? p.c : u.character;
     if (!ch.firstTopGift) {
       ch.firstTopGift = Date.now();
-      const { GEM_KEYS } = require('../data/gems');
-      const gift = [['boss_chest', FIRST_TOP.chests], ...GEM_KEYS.map((k, i) => [`gem_${k}_5`, Math.floor(FIRST_TOP.gems / GEM_KEYS.length) + (i < FIRST_TOP.gems % GEM_KEYS.length ? 1 : 0)])].filter(x => x[1] > 0);
+      const gift = this.firstGiftItems();
       if (p) this.w.giveReward(p, { items: gift }, '🎁 Quà nạp đầu', { bind: true });
       else for (const [id, q] of gift) if (!U.addItem(ch, id, q, 0, null, true)) this.w.stash(ch, id, q, 0, true);
       o.firstGift = 1;
