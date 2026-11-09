@@ -1432,13 +1432,13 @@
   // ra chiêu vào mục tiêu: buff -> kỹ năng mạnh -> đánh thường; ngoài tầm thì đuổi theo
   function autoAttack(t, cfg) {
     const me = G.me, s = G.self, st = me.stats, skills = mySkills();
-    const order = cfg.skills ? [7, 6, 5, 3, 4, 2, 1, 0] : [0];
+    const order = cfg.skills ? [9, 7, 6, 5, 3, 4, 2, 1, 0] : [0];   // 9 = Tuyệt Kỹ Giang Hồ, 6 = Long Ấn
     for (const i of order) {
       const sk = skills[i];
       if (!sk || !sk.learned || me.level < sk.lv || !skillReady(i) || me.mp < sk.mp) continue;
       if (sk.type === 'buff') { if (!me.buffs.some(b => b.name === sk.name)) { useSkill(i); return; } continue; }
       if (sk.type === 'heal') { if (me.hp < st.maxHp * 0.6) { useSkill(i); return; } continue; }
-      const range = (sk.type === 'aoe' && !sk.range ? sk.radius : (sk.range || G.myRange())) * 0.85;
+      const range = (sk.area ? sk.area.hh : sk.type === 'aoe' && !sk.range ? sk.radius : (sk.range || G.myRange())) * 0.85;   // tuyệt kỹ giang hồ: vùng chữ nhật trước mặt
       const d = Math.hypot(t.x - s.x, t.y - s.y);
       if (d > range) { if (i === 0) G.moveTo = { x: t.x, y: t.y }; continue; }
       G.moveTo = null;

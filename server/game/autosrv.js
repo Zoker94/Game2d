@@ -246,7 +246,7 @@ class AutoSrv {
   // giống tự động trên máy khách: buff → chiêu mạnh → đánh thường; ngoài tầm thì đi tới
   attack(p, a, t, now) {
     const w = this.w, c = p.c, d = Math.hypot(t.x - p.x, t.y - p.y);
-    for (const idx of a.cfg.skills ? [7, 6, 5, 3, 4, 2, 1, 0] : [0]) {
+    for (const idx of a.cfg.skills ? [9, 7, 6, 5, 3, 4, 2, 1, 0] : [0]) {   // 9 = Tuyệt Kỹ Giang Hồ
       const sk = this.skillAt(p, idx);
       if (!sk || sk.type === 'passive' || c.level < sk.lv || (p.cds[sk.id] || 0) > now || c.mp < (sk.mp || 0)) continue;
       if (sk.type === 'buff') { if (!p.buffs.some(b => b.id === sk.id)) { w.useSkill(p, idx, t.id); return; } continue; }

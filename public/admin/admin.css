@@ -88,3 +88,18 @@ tr:hover td { background: #1a1524; }
 .tag.red { background: #5a1a1a; color: #fca5a5; } .tag.gold { background: #5a420a; color: #fcd34d; } .tag:not(.on):not(.off):not(.ban):not(.mute):not(.gm):not(.red):not(.gold) { background: #2a2338; color: var(--muted); }
 .en-guide ol { margin: 6px 0 6px 18px; padding: 0; line-height: 1.6; } .en-guide li { margin-bottom: 3px; }
 .tag.tester { background: #063a30; color: #3affc8; }
+/* bảng đơn nạp: điện thoại hiện dạng thẻ, không tràn ngang */
+.card { overflow-x: auto; }
+.tp-act { white-space: nowrap; }
+.card code { word-break: break-all; }
+@media (max-width: 760px) {
+  table.tp-orders, table.tp-orders tbody { display: block; width: 100%; }
+  table.tp-orders tr:first-child { display: none; }
+  table.tp-orders tr { display: block; margin: 0 0 10px; padding: 8px 10px; border: 1px solid rgba(255,255,255,.12); border-radius: 10px; background: rgba(255,255,255,.03); }
+  table.tp-orders td { display: block; padding: 4px 0; border: 0; text-align: right; overflow-wrap: anywhere; }
+  table.tp-orders td::before { content: attr(data-l); float: left; margin-right: 10px; text-align: left; color: #9aa3b2; font-size: 12px; font-weight: 600; }
+  table.tp-orders td::after { content: ''; display: block; clear: both; }
+  table.tp-orders td[colspan] { text-align: center; } table.tp-orders td[colspan]::before { content: none; }
+  table.tp-orders td.tp-act { padding-top: 8px; } table.tp-orders td.tp-act::before { content: none; }
+  table.tp-orders td.tp-act:empty { display: none; }
+}
