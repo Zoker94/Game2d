@@ -2,7 +2,7 @@
 // - Đồ đệ: +20% kinh nghiệm khi sư phụ đang online cùng bản đồ (+30% nếu chung tổ đội).
 // - Sư phụ: mỗi lần đồ đệ lên cấp nhận Sư Đức (= cấp mới) + ngân lượng; đồ đệ cấp 20 tặng sư phụ Rương Bí Ẩn.
 // - Đồ đệ đạt cấp 30: XUẤT SƯ – cả hai nhận quà lớn, sư phụ +100 Sư Đức, quan hệ kết thúc (sư phụ có chỗ nhận đồ đệ mới).
-// - Sư Đức đổi quà ở bảng Sư đồ. Chống gian lận: không bái sư nick cùng mạng / cùng thiết bị; giải tán xong 24 giờ mới bái / nhận mới.
+// - Sư Đức đổi quà ở bảng Sư đồ. Chống gian lận: không bái sư nick cùng thiết bị (cùng mạng / wifi thì được); giải tán xong 24 giờ mới bái / nhận mới.
 const U = require('./util');
 
 const MASTER_LV = 60, MIN_LV = 5, GRAD_LV = 30, MAX_DISC = 3, REQ_TTL = 60000, COOLDOWN = 86400e3;
@@ -89,7 +89,6 @@ class Mentor {
     if (o.c.level < MASTER_LV) return this.toast(p, `Sư phụ phải đạt cấp ${MASTER_LV}`, 'error');
     if (Object.keys(this.discOf(o.c)).length >= MAX_DISC) return this.toast(p, `${o.c.name} đã đủ ${MAX_DISC} đồ đệ`, 'error');
     if ((o.c.mentorCd || 0) > Date.now()) return this.toast(p, `${o.c.name} vừa giải tán sư môn, chưa nhận đồ đệ mới được`, 'error');
-    if (!process.env.MENTOR_TEST && p.socket.ip && p.socket.ip === o.socket.ip) return this.toast(p, 'Không thể bái sư tài khoản cùng mạng / cùng thiết bị', 'error');
     const od = new Set(o.user.devs || []);
     if (!process.env.MENTOR_TEST && (p.user.devs || []).some(d => od.has(d))) return this.toast(p, 'Không thể bái sư tài khoản cùng thiết bị', 'error');
     const bl = this.w.invBlock(o, 'mentor'); if (bl) return this.toast(p, '🚫 ' + bl, 'error');
