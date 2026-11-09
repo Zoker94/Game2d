@@ -416,7 +416,7 @@
     s.on('duelRing', d => Duel.onRing(d));
     s.on('giftResult', d => Gift.onResult(d));
     s.on('me', d => { if (d._k) { if (!G.me) return s.emit('meFull'); for (const k of d._k) d[k] = G.me[k]; delete d._k; }   // phần không đổi: giữ bản cũ
-      if (G.me && d.riding !== G.me.riding) GameAudio.sfx('mount'); G.me = d; if (d.pvp) G.pvpUntil = performance.now() + 8000; UI.updateHud(); if (window.GM) GM.sync(); $('dead-overlay').classList.toggle('hidden', !d.dead); });
+      if (G.me && d.riding !== G.me.riding) GameAudio.sfx('mount'); G.me = d; if (window.Promo) Promo.sync(d); if (d.pvp) G.pvpUntil = performance.now() + 8000; UI.updateHud(); if (window.GM) GM.sync(); $('dead-overlay').classList.toggle('hidden', !d.dead); });
     s.on('pos', d => { const far = Math.hypot(d.x - G.self.x, d.y - G.self.y) > 64; G.self.x = d.x; G.self.y = d.y; if (far || d.dash) G.moveTo = null; });   // lệch ít: giữ đích đang đi tới
     s.on('weather', w => Weather.set(w));
     s.on('pickClass', d => UI.pickClass(d));

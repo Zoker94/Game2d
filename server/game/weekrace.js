@@ -44,7 +44,7 @@ class WeekRace {
   }
   shown(c, k, w) { return k === 'level' ? c.level : this.score(c, k, w); }
   rank(k, w = weekId(), n = 10) {
-    const users = Object.values(this.db.data.users).filter(u => u.character && !u.banned && !u.isAdmin && !isOwner(u));
+    const users = Object.values(this.db.data.users).filter(u => u.character && !u.banned && !u.isAdmin && !isOwner(u) && !u.streamer);
     return users.map(u => ({ u, s: this.score(u.character, k, w) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, n);
   }
   rewardOf(i) { return i < 3 ? REWARD[i] : REWARD_TOP10; }

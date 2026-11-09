@@ -2,6 +2,15 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '09/11/2026',
+    items: [
+      '🎁 Quà nạp đầu: lần nạp đầu tiên (bất kỳ mệnh giá) tặng 100 Rương Thủ Lĩnh + 10 Ngọc khảm cấp 5 (đồ khoá).',
+      '🎥 Danh hiệu 【Streamer】 có hiệu ứng riêng (màn hình máy tính + bàn phím, chấm LIVE) do quản trị viên cấp; Streamer không vào bảng xếp hạng.',
+      '🎁 Rương Thủ Lĩnh: Truyền Kỳ 7%.',
+      '🌟 Quái thường và quái tinh anh lại có cơ hội nhỏ rơi Truyền Kỳ.'
+    ]
+  },
+  {
     date: '06/11/2026',
     items: [
       '💎 Nguyên Bảo từ hoạt động chỉ 5–10 mỗi lần (áp tiêu 10, Vòng Quay, điểm danh…; quà top sự kiện giữ nguyên), tối đa 50 / ngày từ hoạt động hằng ngày. Boss, phó bản, Bảo Rương, thưởng đạt cấp 10 và chương cuối cốt truyện không còn Nguyên Bảo.',

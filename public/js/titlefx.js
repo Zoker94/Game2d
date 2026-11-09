@@ -76,6 +76,36 @@
       ctx.restore();
       text(ctx, p.txt, x, y, (t / 1600 | 0) % 2 ? '#b8fff0' : T.color, '#00261e');
     },
+    streamer(ctx, T, x, y, t, lite) {
+      const p = box(T, x, y), k = 0.5 + Math.sin(t / 300) * 0.5, hue = (t / 20) % 360;
+      ctx.save();
+      ctx.shadowColor = '#ff4fd8'; ctx.shadowBlur = lite ? 0 : 6 + k * 8;
+      frame(ctx, p, 'rgba(30,6,34,.85)', `hsl(${hue},95%,${62 + k * 12}%)`);
+      ctx.shadowBlur = 0;
+      // màn hình máy tính bên trái
+      const mx = p.l - 21, my = p.top - 4;
+      ctx.fillStyle = '#1b1f2a'; ctx.fillRect(mx, my, 18, 13);
+      ctx.strokeStyle = '#cfd6e6'; ctx.lineWidth = 1; ctx.strokeRect(mx + 0.5, my + 0.5, 17, 12);
+      const sg = ctx.createLinearGradient(mx, my, mx + 18, my + 13); sg.addColorStop(0, `hsl(${hue},90%,55%)`); sg.addColorStop(1, `hsl(${(hue + 120) % 360},90%,45%)`);
+      ctx.fillStyle = sg; ctx.fillRect(mx + 2, my + 2, 14, 9);
+      ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.beginPath(); ctx.moveTo(mx + 7, my + 4); ctx.lineTo(mx + 11.5, my + 6.5); ctx.lineTo(mx + 7, my + 9); ctx.fill();   // nút play
+      ctx.fillStyle = '#cfd6e6'; ctx.fillRect(mx + 7, my + 13, 4, 2); ctx.fillRect(mx + 4, my + 15, 10, 1.5);   // chân màn hình
+      // bàn phím bên phải
+      const kx = p.l + p.w + 3, ky = p.top + 3;
+      ctx.fillStyle = '#20232e'; ctx.fillRect(kx, ky, 20, 9); ctx.strokeStyle = '#cfd6e6'; ctx.strokeRect(kx + 0.5, ky + 0.5, 19, 8);
+      for (let r = 0; r < 2; r++) for (let c = 0; c < 6; c++) {
+        const lit = !lite && ((t / 120 | 0) + c * 3 + r * 5) % 11 === 0;   // phím sáng như đang gõ
+        ctx.fillStyle = lit ? `hsl(${hue},95%,70%)` : '#8a90a6'; ctx.fillRect(kx + 2 + c * 3, ky + 2 + r * 3, 2, 2);
+      }
+      ctx.fillStyle = '#8a90a6'; ctx.fillRect(kx + 5, ky + 2 + 2 * 3 - 0.5, 10, 1.5);   // phím cách
+      if (!lite) {   // chấm LIVE đỏ nhấp nháy
+        ctx.globalAlpha = (t / 500 | 0) % 2 ? 1 : 0.35; ctx.fillStyle = '#ff2b2b';
+        ctx.beginPath(); ctx.arc(p.l + 5, p.top + p.h / 2, 2.2, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+        ctx.fillStyle = '#ff6b6b'; ctx.font = '800 6px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('LIVE', x, p.top - 3);
+      }
+      ctx.restore();
+      text(ctx, p.txt, x, y, `hsl(${hue},100%,80%)`, '#2a0026');
+    },
     pulse(ctx, T, x, y, t, lite) {
       const p = box(T, x, y), k = 0.5 + Math.sin(t / 700) * 0.5;
       frame(ctx, p, rgba(T.color, 0.14 + k * 0.12), rgba(T.color, 0.5 + k * 0.4));

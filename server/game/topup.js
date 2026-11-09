@@ -11,6 +11,7 @@ const PRESETS = [20000, 50000, 100000, 200000, 500000, 1000000];
 const MAX_PENDING = 3, EXPIRE_MS = 48 * 3600e3;
 const ALPH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // bỏ ký tự dễ nhầm (0/O, 1/I)
 
+const FIRST_TOP = { chests: 100, gems: 10 };   // quà nạp đầu
 class Topup {
   constructor(world, db) {
     this.w = world; this.db = db;
@@ -110,6 +111,16 @@ class Topup {
     const bonus = this.w.welcome ? this.w.welcome.bonus(p ? p.c : u.character, o.knb) : 0;
     if (bonus) o.bonus = bonus;
     if (this.w.weekRace) this.w.weekRace.add(p ? p.c : u.character, 'knb', o.knb);   // đua top nạp tuần
+    // QUÀ NẠP ĐẦU (mỗi nhân vật 1 lần): 100 Rương Thủ Lĩnh + 10 ngọc khảm cấp 5 – đồ khoá
+    const ch = p ? p.c : u.character;
+    if (!ch.firstTopGift) {
+      ch.firstTopGift = Date.now();
+      const { GEM_KEYS } = require('../data/gems');
+      const gift = [['boss_chest', FIRST_TOP.chests], ...GEM_KEYS.map((k, i) => [`gem_${k}_5`, Math.floor(FIRST_TOP.gems / GEM_KEYS.length) + (i < FIRST_TOP.gems % GEM_KEYS.length ? 1 : 0)])].filter(x => x[1] > 0);
+      if (p) this.w.giveReward(p, { items: gift }, '🎁 Quà nạp đầu', { bind: true });
+      else for (const [id, q] of gift) if (!U.addItem(ch, id, q, 0, null, true)) this.w.stash(ch, id, q, 0, true);
+      o.firstGift = 1;
+    }
     if (p) {
       p.c.knb = (p.c.knb || 0) + o.knb + bonus; p.c.topupTotal = (p.c.topupTotal || 0) + o.amount; p.dirtyMe = true;
       this.w.toast(p, `💎 Nạp thành công đơn ${o.code}: +${o.knb} Nguyên Bảo${bonus ? ` + 🎉 ${bonus} thưởng x2 nạp lần đầu` : ''}. Cảm ơn bạn đã ủng hộ!`, 'reward');

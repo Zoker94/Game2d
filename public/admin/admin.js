@@ -89,7 +89,7 @@
         $('u-list').innerHTML = `<p class="muted small">${r.total} kết quả${r.total > 200 ? ' (hiện 200)' : ''}</p><div style="overflow:auto"><table><tr><th>Nhân vật</th><th>Môn phái</th><th>Cấp</th><th>Ngân lượng</th><th>KNB</th><th>Tài khoản / Email</th><th>Đăng nhập cuối</th><th>Trạng thái</th><th></th></tr>
           ${r.users.map(u => `<tr><td><b>${esc(u.character ? u.character.name : '—')}</b></td><td>${esc(u.character ? u.character.clsName : '')}</td><td>${u.character ? u.character.level : ''}</td><td>${u.character ? fmt(u.character.gold) : ''}</td><td>${u.character ? fmt(u.character.knb) : ''}</td>
           <td class="small">${esc(u.email)}</td><td class="small">${dt(u.lastLogin)}</td>
-          <td>${u.online ? '<span class="tag on">Online</span>' : '<span class="tag off">Offline</span>'} ${u.clones ? `<span class="tag ban" title="Số tài khoản khác dùng chung thiết bị / vân tay máy">🔗 ${u.clones}</span>` : ''} ${u.banned ? '<span class="tag ban">Khóa</span>' : ''} ${u.muted ? '<span class="tag mute">Cấm chat</span>' : ''} ${u.isGM ? '<span class="tag gm">GM</span>' : ''} ${u.tester ? '<span class="tag tester">🧪 Tester</span>' : ''}</td>
+          <td>${u.online ? '<span class="tag on">Online</span>' : '<span class="tag off">Offline</span>'} ${u.clones ? `<span class="tag ban" title="Số tài khoản khác dùng chung thiết bị / vân tay máy">🔗 ${u.clones}</span>` : ''} ${u.banned ? '<span class="tag ban">Khóa</span>' : ''} ${u.muted ? '<span class="tag mute">Cấm chat</span>' : ''} ${u.isGM ? '<span class="tag gm">GM</span>' : ''} ${u.tester ? '<span class="tag tester">🧪 Tester</span>' : ''} ${u.streamer ? '<span class="tag tester" style="background:#5a1450;color:#ffb0f0">🎥 Streamer</span>' : ''}</td>
           <td><button class="btn small" data-u="${u.id}">Chi tiết</button></td></tr>`).join('')}</table></div>`;
         $('u-list').querySelectorAll('[data-u]').forEach(b => b.onclick = () => userDetail(b.dataset.u, load));
       };
@@ -552,7 +552,7 @@
     const itemName = iid => { const it = items.find(x => x.id === iid); return it ? `<span class="r-${it.rarity}">${esc(it.name)}</span>` : iid; };
     openModal(`${c ? c.name : '(Chưa tạo nhân vật)'} · ${u.email}`, `
       <div class="small muted">ID: ${u.id} · Tên Google: ${esc(u.gname)} · Tạo: ${dt(u.createdAt)} · Đăng nhập: ${dt(u.lastLogin)}</div>
-      <div style="margin:6px 0">${u.online ? '<span class="tag on">Online</span>' : '<span class="tag off">Offline</span>'} ${u.banned ? `<span class="tag ban">Khóa: ${esc(u.banReason)}</span>` : ''} ${u.muted ? '<span class="tag mute">Cấm chat</span>' : ''} ${u.isGM ? '<span class="tag gm">GM</span>' : ''} ${u.tester ? '<span class="tag tester">🧪 Tester</span>' : ''}</div>
+      <div style="margin:6px 0">${u.online ? '<span class="tag on">Online</span>' : '<span class="tag off">Offline</span>'} ${u.banned ? `<span class="tag ban">Khóa: ${esc(u.banReason)}</span>` : ''} ${u.muted ? '<span class="tag mute">Cấm chat</span>' : ''} ${u.isGM ? '<span class="tag gm">GM</span>' : ''} ${u.tester ? '<span class="tag tester">🧪 Tester</span>' : ''} ${u.streamer ? '<span class="tag tester" style="background:#5a1450;color:#ffb0f0">🎥 Streamer</span>' : ''}</div>
       ${c ? `<div class="card"><h3>Chỉnh sửa nhân vật (${esc(u.character.clsName)})</h3><div class="row">
         <label>Tên<input id="e-name" value="${esc(c.name)}" style="width:130px"></label><label>Cấp<input id="e-level" type="number" value="${c.level}" style="width:80px"></label>
         <label>Ngân lượng<input id="e-gold" type="number" value="${c.gold}" style="width:120px"></label><label>Nguyên bảo<input id="e-knb" type="number" value="${c.knb}" style="width:100px"></label>
@@ -568,7 +568,8 @@
         <label>Cấm chat (phút, 0 = bỏ)<input id="e-mute" type="number" value="60" style="width:100px"></label><button class="btn" id="e-mutebtn">Áp dụng</button>
         ${u.online ? '<button class="btn" id="e-kick">Kick</button>' : ''}
         <button class="btn" id="e-gm">${u.isGM ? 'Bỏ quyền GM' : 'Cấp quyền GM'}</button>
-        <button class="btn" id="e-tester" title="Tester: vào game được cả khi máy chủ bảo trì, có danh hiệu 【Tester】 hiệu ứng riêng">${u.tester ? '🧪 Bỏ Tester' : '🧪 Cấp quyền Tester'}</button></div>
+        <button class="btn" id="e-tester" title="Tester: vào game được cả khi máy chủ bảo trì, có danh hiệu 【Tester】 hiệu ứng riêng">${u.tester ? '🧪 Bỏ Tester' : '🧪 Cấp quyền Tester'}</button>
+        <button class="btn" id="e-streamer" title="Streamer: danh hiệu 【Streamer】, chữ quảng bá volam2d.com luôn hiện trên màn hình, không vào bảng xếp hạng. Lần đầu nhận cấp 99 + full Truyền Kỳ + 1000 Huyền Tinh + 200 triệu lượng + 100.000 Nguyên Bảo">${u.streamer ? '🎥 Bỏ Streamer' : '🎥 Chọn làm Streamer'}</button></div>
         <div class="row" style="margin-top:10px">${c ? '<button class="btn danger" id="e-reset">Xóa nhân vật</button>' : ''}<button class="btn danger" id="e-del">Xóa tài khoản</button></div></div>
       <div class="card"><h3>🔗 Tài khoản liên quan (chống clone)</h3><div id="e-linked" class="small muted">Đang tải…</div></div>`);
     api('/users/' + id + '/linked').then(L => {
@@ -599,6 +600,7 @@
     on('e-mutebtn', async () => { await run(() => api(`/users/${id}/mute`, { minutes: +$('e-mute').value }), 'Đã áp dụng'); again(); });
     on('e-kick', async () => { await run(() => api(`/users/${id}/kick`, {}), 'Đã kick'); again(); });
     on('e-gm', async () => { await run(() => api(`/users/${id}/update`, { isGM: !u.isGM }), 'Đã cập nhật'); again(); });
+    on('e-streamer', async () => { if (!u.streamer && !confirm('Chọn người này làm Streamer? Lần đầu sẽ nhận cấp 99, full đồ Truyền Kỳ, 1000 Huyền Tinh Thạch, 200 triệu lượng, 100.000 Nguyên Bảo (đồ khoá).')) return; await run(() => api(`/users/${id}/update`, { streamer: !u.streamer }), u.streamer ? 'Đã bỏ Streamer' : 'Đã chọn làm Streamer'); again(); });
     on('e-tester', async () => { await run(() => api(`/users/${id}/update`, { tester: !u.tester }), u.tester ? 'Đã bỏ quyền Tester' : 'Đã cấp quyền Tester – vào được cả khi bảo trì'); again(); });
     on('e-reset', async () => { if (confirm('XÓA nhân vật? Không thể hoàn tác!')) { await run(() => api(`/users/${id}/reset-char`, {}), 'Đã xóa nhân vật'); again(); } });
     on('e-del', async () => { if (confirm('XÓA toàn bộ tài khoản? Không thể hoàn tác!')) { await run(() => api(`/users/${id}`, null, 'DELETE'), 'Đã xóa tài khoản'); closeModal(); reload && reload(); } });

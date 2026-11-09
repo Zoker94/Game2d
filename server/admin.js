@@ -88,7 +88,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   // ----- Người chơi -----
   const userRow = u => ({
     id: u.id, email: u.email || (u.username ? '(tài khoản) ' + u.username : ''), username: u.username || '', gname: u.name, createdAt: u.createdAt, lastLogin: u.lastLogin, banned: !!u.banned, banReason: u.banReason || '',
-    muted: u.muted === true || (u.muted && u.muted > Date.now()) ? u.muted : false, isGM: !!u.isAdmin, tester: !!u.tester, online: world.players.has(u.id),
+    muted: u.muted === true || (u.muted && u.muted > Date.now()) ? u.muted : false, isGM: !!u.isAdmin, tester: !!u.tester, streamer: !!u.streamer, online: world.players.has(u.id),
     character: u.character ? { name: u.character.name, cls: u.character.cls, clsName: CLASSES[u.character.cls].name, level: u.character.level, gold: u.character.gold, knb: u.character.knb, map: u.character.map, power: u.character.power, kills: u.character.kills } : null
   });
   app.get('/api/admin/users', auth, (req, res) => {
@@ -142,6 +142,11 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
       if (b.heal && p) { c.hp = p.stats.maxHp; c.mp = p.stats.maxMp; p.dead = false; }
     }
     if (b.isGM != null) u.isAdmin = !!b.isGM;
+    if (b.streamer != null) {   // Streamer: danh hiệu 【Streamer】, chữ quảng bá trên màn hình, không vào bảng xếp hạng, gói khởi đầu lần đầu
+      u.streamer = !!b.streamer;
+      if (world.syncStreamer(u) && p) { world.recalc(p); p.dirtyMe = true; world.toast(p, u.streamer ? '🎥 Bạn được chọn làm Streamer của Võ Lâm 2D!' : 'Quyền Streamer của bạn đã được gỡ.', u.streamer ? 'reward' : 'info'); }
+      if (u.streamer && p) world.grantStreamer(p);
+    }
     if (b.tester != null) {   // Tester: vào được cả khi bảo trì + danh hiệu 【Tester】
       u.tester = !!b.tester;
       if (world.syncTester(u) && p) { world.recalc(p); p.dirtyMe = true; world.toast(p, u.tester ? '🧪 Bạn được cấp quyền Tester: vào game được cả khi bảo trì, nhận danh hiệu 【Tester】.' : 'Quyền Tester của bạn đã được gỡ.', u.tester ? 'reward' : 'info'); }

@@ -852,7 +852,7 @@ class Features {
 
   // ---------------- Bảng xếp hạng ----------------
   computeLeaderboard() {
-    const users = Object.values(this.db.data.users).filter(u => u.character && !u.banned && !u.isAdmin && !isOwner(u));   // tài khoản quản trị không lên bảng xếp hạng
+    const users = Object.values(this.db.data.users).filter(u => u.character && !u.banned && !u.isAdmin && !isOwner(u) && !u.streamer);   // tài khoản quản trị không lên bảng xếp hạng
     // hạng lực chiến top 10 -> huy hiệu cạnh tên
     this.powerRank = new Map(users.filter(u => u.character.power > 0).sort((a, b) => b.character.power - a.character.power).slice(0, 10).map((u, i) => [u.id, i + 1]));
     for (const p of this.w.players.values()) { p.c.x = p.x; p.c.y = p.y; }

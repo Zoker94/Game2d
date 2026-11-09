@@ -1,7 +1,7 @@
 // Lõi thế giới game: bản đồ, người chơi, quái vật, chiến đấu, rơi đồ, NPC.
 const { CLASSES, classSkill, classRange, branchOf, PASSIVE_SLOT, ACTIVE_BUFF_SLOT } = require('../data/classes');
 const { BRANCH_BONUS, BRANCH_FREE_LV } = require('../data/branches');
-const { ITEMS, RARITY, TIERS, equipId, tierOfLv, DROP_SLOTS } = require('../data/items');
+const { ITEMS, RARITY, TIERS, equipId, tierOfLv, DROP_SLOTS, EQUIP_SLOTS } = require('../data/items');
 const { MONSTERS, BOSSES } = require('../data/monsters');
 const BOSS_LINES = require('../data/bosslines');
 const VM_IDS = ['vm_tq1', 'vm_tq2', 'vm_tq3', 'vm_tq4', 'vm_tq5', 'vm_tq6', 'vm_tq7'];
@@ -183,6 +183,40 @@ class World {
 
   // ---------- Người chơi vào / rời ----------
   // Tester (quản trị viên chọn): có danh hiệu 【Tester】; lần đầu được cấp thì đeo luôn. Bỏ Tester thì gỡ danh hiệu.
+  // Streamer (quản trị viên chọn): danh hiệu 【Streamer】, không vào bảng xếp hạng, lần đầu nhận gói khởi đầu
+  syncStreamer(user) {
+    const c = user.character; if (!c) return false;
+    const g = c.giftTitles || (c.giftTitles = []), has = g.includes('streamer');
+    if (user.streamer && !has) { g.push('streamer'); c.title = 'streamer'; return true; }
+    if (!user.streamer && has) { c.giftTitles = g.filter(x => x !== 'streamer'); if (c.title === 'streamer') c.title = ''; return true; }
+    return false;
+  }
+  // gói Streamer (1 lần / nhân vật): cấp 99, full trang bị Truyền Kỳ bậc cao nhất (mặc luôn), 1000 Huyền Tinh + 100 Thiên Tinh, ngân lượng, Nguyên Bảo – đồ khoá
+  grantStreamer(p) {
+    const c = p.c;
+    if (!p.user.streamer || c.streamerGift) return;
+    c.streamerGift = Date.now();
+    if (c.level < 99) { c.level = 99; c.exp = 0; }
+    const tier = tierOfLv(99);
+    for (const slot of EQUIP_SLOTS) {
+      const base = slot === 'ring2' ? 'ring' : slot, id = U.resolveItem(c, equipId(base, tier, 'legendary'));
+      if (!ITEMS[id]) continue;
+      // mặc thẳng vào ô (không cần chỗ trống trong túi); món đang mặc chuyển vào túi / Hòm Đồ
+      const tmp = { inv: [], cls: c.cls, branch: c.branch, fxv: c.fxv, invExtra: 99 };
+      if (!U.addItem(tmp, id, 1, 0, null, true)) continue;
+      const s = tmp.inv[0], prev = c.equip[slot];
+      c.equip[slot] = { uid: s.uid, id: s.id, plus: 0, el: s.el, fx: s.fx, gems: s.gems, br: s.br, bd: 1 };
+      if (prev) {
+        const back = { uid: prev.uid, id: prev.id, qty: 1, plus: prev.plus || 0, el: prev.el, fx: prev.fx, gems: prev.gems, br: prev.br, bd: prev.bd };
+        c.inv.push(back);   // giữ nguyên cường hoá / ngọc khảm (túi đầy thì tạm vượt số ô, dọn bớt là được)
+      }
+    }
+    for (const [id, q] of [['stone', 1000], ['stone2', 100]]) if (!U.addItem(c, id, q, 0, null, true)) this.stash(c, id, q, 0, true);
+    c.gold = (c.gold || 0) + 200000000; c.knb = (c.knb | 0) + 100000;
+    this.recalc(p); c.hp = p.stats.maxHp; c.mp = p.stats.maxMp; p.dirtyMe = true; this.db.markDirty();
+    this.toast(p, '🎥 Chào Streamer! Đã nhận gói Streamer: cấp 99, full trang bị Truyền Kỳ, 1000 Huyền Tinh Thạch + 100 Thiên Tinh Thạch, 200 triệu lượng, 100.000 Nguyên Bảo.', 'reward');
+    this.db.log('admin', `${c.name} nhận gói Streamer`);
+  }
   syncTester(user) {
     const c = user.character; if (!c) return false;
     const g = c.giftTitles || (c.giftTitles = []), has = g.includes('tester');
@@ -205,7 +239,7 @@ class World {
   }
   addPlayer(user, socket) {
     const c = user.character;
-    this.syncTester(user);
+    this.syncTester(user); this.syncStreamer(user);
     this.dropHacLong(c);
     if (c.mailbox && c.mailbox.length) setTimeout(() => { if (this.players.get(user.id) && c.mailbox && c.mailbox.length) this.toast(this.players.get(user.id), `📦 Hòm Đồ có ${c.mailbox.reduce((a, e) => a + e.qty, 0)} vật phẩm đang chờ (phần thưởng lúc túi đầy) – mở Túi đồ để nhận.`, 'reward'); }, 4000);
     const old = this.players.get(user.id);
@@ -237,6 +271,7 @@ class World {
     if (!x || !y || isSolidAt(map, x, y)) { x = (map.center.x + 0.5) * TILE; y = (map.center.y + 1.5) * TILE; }
     if (c.hp <= 0) { c.hp = Math.round(p.stats.maxHp * 0.3); c.map = 'tuong_duong'; const t = MAPS.tuong_duong; x = (t.center.x + 0.5) * TILE; y = (t.center.y + 2.5) * TILE; }
     this.enterMap(p, c.map, x, y);
+    if (user.streamer && !c.streamerGift) setTimeout(() => { if (this.players.get(user.id) === p) this.grantStreamer(p); }, 1500);   // gói Streamer lần đầu
     // bản thử nghiệm thú cưng rồng: gửi thẳng vào túi chủ server một lần
     if (require('../owner').isOwner(user) && !c.petGift) {
       c.petGift = 1;
@@ -405,6 +440,7 @@ class World {
     const c = p.c;
     const g = c.guildId && this.db.data.guilds[c.guildId];
     return {
+      streamer: p.user.streamer ? 1 : 0, firstTop: c.firstTopGift ? 1 : 0,
       name: c.name, cls: c.cls, level: c.level, exp: c.exp, expNext: U.expNext(c.level),
       gold: c.gold, knb: c.knb, hp: c.hp, mp: c.mp, stats: p.stats,
       inv: c.inv, invMax: U.invSize(c), vmb: Math.min(5, c.vmb | 0), equip: c.equip, kills: c.kills, pvpKills: c.pvpKills, bossKills: c.bossKills,
@@ -830,7 +866,7 @@ class World {
   // quản trị viên: tàng hình (người chơi không thấy, quái không đánh) / miễn PK (người chơi không đánh được)
   isGm(p) { return !!(p && p.user && (p.user.isAdmin || isOwner(p.user))); }   // quản trị viên hoặc chủ server
   // theo mã tài khoản (người chơi offline cũng được): admin / GM / chủ server không có tên trong mọi bảng xếp hạng
-  isGmUid(uid) { const u = this.db.data.users[uid]; return !!(u && (u.isAdmin || isOwner(u))); }
+  isGmUid(uid) { const u = this.db.data.users[uid]; return !!(u && (u.isAdmin || isOwner(u) || u.streamer)); }   // dùng để loại khỏi mọi bảng xếp hạng: admin / chủ server / streamer
   gmOn(p, k) { return !!(this.isGm(p) && p.c.gm && p.c.gm[k]); }
   canHarm(a, b) {
     if (!b || a === b || !b.c || b.dead || a.dead || a.mapId !== b.mapId) return false;
@@ -1406,7 +1442,7 @@ class World {
       const r = Math.random;
       if (tpl.elite) {   // tinh anh: chắc chắn 1 trang bị (hiếm trở lên) + đá cường hóa
         const x = r();
-        drops.push(equipId(rslot(), tier, x < 0.12 * dr ? 'epic' : 'rare'));   // tinh anh: không rơi Truyền Kỳ
+        drops.push(equipId(rslot(), tier, x < 0.002 * dr ? 'legendary' : x < 0.12 * dr ? 'epic' : 'rare'));   // tinh anh: Truyền Kỳ 0,2%
         if (r() < 0.1 * dr) drops.push('stone');   // đá cường hoá ở bãi quái: hiếm (trước 18%)
         if (r() < 0.008 * dr) drops.push('stone2');
         if (r() < 0.12) drops.push('mount_food');
@@ -1419,6 +1455,7 @@ class World {
       if (r() < 0.04) drops.push(tier >= 7 ? (r() < 0.5 ? 'hp5' : 'mp5') : tier >= 5 ? (r() < 0.5 ? 'hp4' : 'mp4') : tier >= 4 ? (r() < 0.5 ? 'hp3' : 'mp3') : tier >= 2 ? (r() < 0.5 ? 'hp2' : 'mp2') : (r() < 0.5 ? 'hp1' : 'mp1'));
       if (r() < 0.0015 * dr) drops.push('stone');   // Huyền Tinh Thạch ~1/670 con
       if (r() < 0.015 * dr) drops.push(equipId(rslot(), tier, 'common'));
+      if (r() < 0.00005 * dr) drops.push(equipId(rslot(), tier, 'legendary'));   // Truyền Kỳ ở quái thường: ~1/20.000 con
       if (r() < 0.005 * dr) drops.push(equipId(rslot(), tier, 'rare'));
       if (r() < (cfg.vipDropBase || 0.004) * 0.5 * dr) drops.push(equipId(rslot(), tier, 'epic'));   // sử thi: một nửa mức cấu hình
       if (r() < 0.0015 * dr) drops.push('lucky_chest');
@@ -1786,7 +1823,7 @@ class World {
     const slot = DROP_SLOTS[U.randInt(0, DROP_SLOTS.length - 1)];
     const r = Math.random();
     let rar;
-    if (kind === 2) rar = r < 0.03 ? 'legendary' : r < 0.35 ? 'epic' : 'rare';   // Rương Thủ Lĩnh: Truyền Kỳ 3% · Sử Thi 32% · Hiếm 65%
+    if (kind === 2) rar = r < 0.07 ? 'legendary' : r < 0.39 ? 'epic' : 'rare';   // Rương Thủ Lĩnh: Truyền Kỳ 7% · Sử Thi 32% · Hiếm 61%
     else rar = r < 0.05 ? 'epic' : r < 0.3 ? 'rare' : 'common';   // Rương Bí Ẩn: không ra Truyền Kỳ (Truyền Kỳ chỉ từ Boss)
     const id = equipId(slot, tier, rar);
     const reward = { items: [[id, 1]], gold: U.randInt(100, 500) * (tier + 1) * kind };

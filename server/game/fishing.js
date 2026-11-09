@@ -320,7 +320,7 @@ class Fishing {
     const now = Date.now();
     if (!this._top || now - this._top.at > 30000) {
       const { isOwner } = require('../owner'), GR = { c: 1, r: 2, e: 3, l: 4 };
-      const users = Object.values(this.db.data.users).filter(u => u.character && !u.banned && !u.isAdmin && !isOwner(u) && u.character.fishBest);
+      const users = Object.values(this.db.data.users).filter(u => u.character && !u.banned && !u.isAdmin && !isOwner(u) && !u.streamer && u.character.fishBest);
       const rec = {}, rows = [];
       for (const u of users) {
         const c = u.character; let best = null;
