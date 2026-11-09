@@ -417,6 +417,25 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     const h = world.topup.hook;
     res.json({ on: !!h.on, key: req.isOwner ? h.key || '' : '', owner: req.isOwner, miss: (db.data.topupMiss || []).slice(0, 50).map((m, i) => Object.assign({ i }, m)) });
   });
+  // Rà soát quà nạp đầu: ai đã nhận, còn giữ bao nhiêu (khoá / không khoá), và nhật ký giao dịch / chợ có dính tới đồ nạp đầu
+  app.get('/api/admin/firstgift-audit', auth, (req, res) => {
+    const isGift = id => id === 'boss_chest' || /^gem_[a-z]+_5$/.test(id);
+    const count = (c) => {
+      const r = { chestBd: 0, chestFree: 0, gemBd: 0, gemFree: 0 };
+      const add = x => { if (!x || !isGift(x.id)) return; const k = (x.id === 'boss_chest' ? 'chest' : 'gem') + (x.bd ? 'Bd' : 'Free'); r[k] += x.qty || 1; };
+      (c.inv || []).forEach(add); ((c.bank && c.bank.items) || []).forEach(add); (c.mailbox || []).forEach(add);
+      return r;
+    };
+    const rec = Object.values(db.data.users).filter(u => u.character && u.character.firstTopGift)
+      .map(u => Object.assign({ name: u.character.name, at: u.character.firstTopGift }, count(u.character)));
+    const since = Math.min(...rec.map(r => r.at), Date.now());
+    const names = new Set(rec.map(r => r.name));
+    const giftRe = /Rương Thủ Lĩnh|\(Cấp 5\)/;
+    const logs = (db.data.logs || []).filter(l => l.t >= since && (l.type === 'trade' || l.type === 'market') && giftRe.test(l.text) && [...names].some(n => l.text.includes(n)))
+      .slice(-100).reverse().map(l => ({ t: l.t, type: l.type, text: l.text }));
+    const oldest = (db.data.logs || [])[0];
+    res.json({ recipients: rec.sort((a, b) => b.at - a.at), logs, logFrom: oldest ? oldest.t : 0 });
+  });
   // tiền về không có mã đơn / sai nội dung: chủ server cộng tay cho đúng nhân vật (tạo đơn đã duyệt, có quà nạp đầu, đua top nạp...)
   app.post('/api/admin/topupmiss/:i/credit', auth, (req, res) => {
     if (!req.isOwner) return res.status(403).json({ error: 'Chỉ chủ server được cộng tiền' });
