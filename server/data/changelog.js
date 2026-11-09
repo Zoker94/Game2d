@@ -8,7 +8,7 @@ const CHANGELOG = [
       '🎥 Danh hiệu 【Streamer】 có hiệu ứng riêng (màn hình máy tính + bàn phím, chấm LIVE) do quản trị viên cấp; Streamer không vào bảng xếp hạng.',
       '🎁 Rương Thủ Lĩnh: Truyền Kỳ 7%.',
       '🌟 Quái thường và quái tinh anh lại có cơ hội nhỏ rơi Truyền Kỳ.',
-      '🐉 Thanh Long vẽ lại theo bộ hình mới: rồng xanh cánh đỏ có yên, đủ 4 hướng, vỗ cánh bay lượn mượt hơn.',
+      '🐉 Thanh Long vẽ lại theo bộ hình mới: rồng xanh cánh đỏ có yên, đủ 4 hướng; đứng yên thì đáp đất, khép cánh và thở, di chuyển thì vỗ cánh bay.',
       '🎓 Sư đồ: người chơi dùng chung mạng / wifi (cùng nhà, quán net) giờ bái sư được với nhau – chỉ còn chặn 2 tài khoản trên cùng một thiết bị.',
       '🤖 Tự động đánh giờ dùng cả Tuyệt Kỹ Giang Hồ (cùng Long Ấn) khi hồi chiêu xong.'
     ]

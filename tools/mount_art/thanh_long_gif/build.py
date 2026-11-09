@@ -2,7 +2,7 @@
 
   python3 tools/mount_art/thanh_long_gif/build.py [--preview out.png]
 
-Sheet: ô CELL x CELL, cột 0 = đứng (khung đi đầu), cột 1..8 = bay (khung bay 1..8).
+Sheet: ô CELL x CELL, cột 0..7 = đứng yên thở (8 khung), cột 8..15 = bay vỗ cánh (khung bay 1..8).
 Hàng: 0 nhìn ngang (quay phải) · 1 nhìn xuống (lớp sau) · 2 nhìn xuống (lớp đè người cưỡi: đầu + ngực)
       3 nhìn lên (lớp sau: đầu) · 4 nhìn lên (lớp đè: lưng, cánh, đuôi dưới hông người cưỡi).
 Điểm yên (hông người cưỡi) tìm theo màu da yên ngựa từng khung; nhìn xuống lấy theo đỉnh đầu.
@@ -56,9 +56,10 @@ def saddle_seat(a, fallback, side=False):
     return (float(xx.mean()), float(yy.min()) + 1.0)
 
 def build():
-    side = [place(f) for f in frames('side_walk')[:1] + frames('side_fly')[1:9]]
-    down = [place(f) for f in frames('down_walk')[:1] + frames('down_fly')[1:9]]
-    up = [place(f) for f in frames('up_walk')[:1] + frames('up_fly')[1:9]]
+    # cột 0..7: đứng yên thở (*_walk.gif là chuỗi thở 8 khung), cột 8..15: bay vỗ cánh (khung 1..8 của *_fly.gif)
+    side = [place(f) for f in frames('side_walk')[:8] + frames('side_fly')[1:9]]
+    down = [place(f) for f in frames('down_walk')[:8] + frames('down_fly')[1:9]]
+    up = [place(f) for f in frames('up_walk')[:8] + frames('up_fly')[1:9]]
     seats = {'side': [], 'down': [], 'up': []}
     last = None
     for a in side:
@@ -80,7 +81,7 @@ def build():
     for a, (sx, sy) in zip(up, seats['up']):
         f = a.copy(); f[yy < sy + 2] = 0; up_front.append(f); up_back.append(a)
     rows = [side, down_back, down_front, up_back, up_front]
-    sheet = np.zeros((CELL * len(rows), CELL * 9, 4), np.uint8)
+    sheet = np.zeros((CELL * len(rows), CELL * len(side), 4), np.uint8)
     for r, row in enumerate(rows):
         for c, a in enumerate(row): sheet[r * CELL:(r + 1) * CELL, c * CELL:(c + 1) * CELL] = a
     # chân (điểm đặt xuống đất) = đáy nội dung khung đứng, giữa ô
@@ -98,8 +99,8 @@ def main():
     game = json.load(open(mp))
     old = game['per'].get('thanh_long', {})
     # cỡ hiển thị: giữ chiều cao rồng gần bằng bản cũ (nội dung ~54px trong ô 88)
-    game['per']['thanh_long'] = {'cell': [CELL, CELL], 'foot': foot, 'footFB': footFB, 'frames': {'idle': [1, 8], 'run': [1, 8]},
-                                 'rows': {'side': [0], 'down': [1, 2], 'up': [3, 4]}, 'scale': 2.3, 'runMs': 105, 'idleMs': 150}
+    game['per']['thanh_long'] = {'cell': [CELL, CELL], 'foot': foot, 'footFB': footFB, 'frames': {'idle': [0, 8], 'run': [8, 8]},
+                                 'rows': {'side': [0], 'down': [1, 2], 'up': [3, 4]}, 'scale': 2.3, 'runMs': 105, 'idleMs': 180}
     r1 = lambda s: [round(s[0], 2), round(s[1], 2)]
     game['seats']['thanh_long'] = {k: [r1(s) for s in v] for k, v in seats.items()}
     game['seat']['thanh_long'] = game['seats']['thanh_long']['side']
