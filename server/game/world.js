@@ -1175,6 +1175,9 @@ class World {
       if (!dmg) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return 0; }
     }
     if (t.c && src && t.dodgeUntil > Date.now()) { this.io.to('map:' + t.mapId).emit('dmg', { id: t.id, v: 0, k: 'miss' }); return 0; }   // đang lướt né
+    // người đã trùng sinh: quái trâu hơn (người chơi đánh quái yếu đi) và khoẻ hơn (quái đánh người chơi đau hơn), tăng theo số lần trùng sinh
+    if (src && src.c && t && !t.c && !t.cart && (src.c.rebirth | 0) > 0) dmg = Math.max(1, Math.round(dmg / rbTank(src.c.rebirth)));
+    else if (t.c && src && src.tpl && !src.c && (t.c.rebirth | 0) > 0) dmg = Math.round(dmg * rbHit(t.c.rebirth));
     const reflected = kind === 'reflect';   // sát thương phản đòn đã tính xong ở phía người bị đánh: không giảm thêm lần nữa
     if (t.c && src && src.c && t !== src && preScaled) { t.lastPvp = src.lastPvp = Date.now(); }   // độc PK (đã tính theo % máu): vẫn tính là đang giao tranh
     if (t.c && src && src.c && t !== src && !reflected && !preScaled) {   // người chơi đánh người chơi: giảm mạnh để trận đấu kéo dài 1-2 phút
@@ -2887,6 +2890,8 @@ const STUN_IMMUNE = 3000;
 // PvP: sát thương người chơi lên người chơi, hồi máu khi đang giao tranh, bình máu (hồi chiêu, tối đa % máu mỗi bình)
 const PARDON_PTS = 5;   // mỗi Lệnh Bài Xoá Tội trừ 5 điểm sát khí
 const PK_OUTLAW = 3;   // sát khí từ 3 (tên đỏ) là kẻ đồ sát
+// trùng sinh n lần (tối đa tính 10): quái chịu đòn x(1 + 0,6n) và đánh đau x(1 + 0,35n) với người đó
+const rbTank = n => 1 + 0.6 * Math.min(10, n | 0), rbHit = n => 1 + 0.35 * Math.min(10, n | 0);
 const FARM_KNB_DAY = 50;   // trần Nguyên Bảo / ngày từ các hoạt động lặp lại
 const VIP_MON_DMG = 0.5;   // khu VIP (người có Vé Treo Máy): quái chỉ gây 50% sát thương
 const POT_CD = 1000;   // hồi chiêu bình máu / bình nội lực (mỗi loại riêng)

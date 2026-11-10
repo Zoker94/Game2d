@@ -17,6 +17,7 @@
         <li>✅ <b>1/2 điểm tiềm năng</b> đã cộng (được cộng sẵn vào nhân vật)</li>
         <li>✅ <b>Toàn bộ võ công</b> đã cộng điểm (chiêu nào yêu cầu cấp cao thì lên lại cấp đó mới dùng được)</li>
         <li>✅ Túi đồ, Tiền Trang, ngân lượng, Nguyên Bảo, thú cưỡi, danh hiệu, bang hội</li>
+        <li>⚠️ <b>Giang hồ khắc nghiệt hơn:</b> mỗi lần trùng sinh, quái trâu hơn (+60% máu) và đánh đau hơn (+35%) với riêng bạn</li>
         <li>✅ <b>Bảng xếp hạng cấp độ</b> vẫn tính – người trùng sinh đứng trên, có thêm dòng "Trùng sinh ${(st.count || 0) + 1}"</li></ul></div>
       <div class="card"><h4>Điều kiện</h4>
         <div class="rb-req ${ok ? 'ok' : 'no'}">${ok ? '✅' : '❌'} Đạt cấp ${st.lv} <span class="muted">(hiện cấp ${me.level})</span></div>
