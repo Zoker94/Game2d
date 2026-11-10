@@ -11,7 +11,7 @@ const CHANGELOG = [
       '🌐 Trang chọn server mới (volam2d.com/server): Tương Dương ở trên, Tô Châu ở dưới, nền động có các bóng võ sĩ luyện công. Nút Chơi ngay ở trang chủ dẫn vào trang này; đổi server ở màn đăng nhập.',
       '✨ Chọn server có hiệu ứng chuyển cảnh (vòng neon, máy quay lao về chân trời, các võ sĩ ôm quyền chào). Điện thoại: chạm màn hình để xoay ngang toàn màn hình.',
       '🏍️ Thú cưỡi mới: Xe Máy Phân Khối Lớn (+55% tốc độ) – đứng yên nổ máy phụt khói, chạy tung bụi, đèn pha sáng phía trước. Sắp mở bán ở Kỳ Trân Các.',
-      '🌫️ Xe máy: bụi đường tung sau bánh và để lại vệt bụi dài phía sau khi chạy, khói pô dày hơn khi rồ ga, đứng yên nổ máy phụt khói từng nhịp.',
+      '🌫️ Xe máy: vẽ lại bụi đường và khói pô ngay trong hình xe (pixel art, cuộn theo từng khung): chạy tung vệt bụi dài phía sau, đứng yên nổ máy phụt khói.',
       '👾 Server Tô Châu thử nghiệm giao diện Neon Pixel: khung vuông viền sáng, bóng đổ khối, vạch quét màn, bình Sinh lực / Nội lực vẽ bằng điểm ảnh.'
     ]
   },
