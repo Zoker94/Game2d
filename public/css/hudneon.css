@@ -48,3 +48,142 @@ body.hud-neon #exp-bar i { background: repeating-linear-gradient(90deg, var(--nx
 body.touch.hud-neon #chat.collapsed { left: var(--nx-chat-l, 50%) !important; width: var(--nx-chat-w, 280px) !important; }
 body.hud-neon #chat { border-color: rgba(25, 227, 255, .45) !important; background: rgba(8, 12, 36, .72) !important; }
 @media (prefers-reduced-motion: reduce) { .nx-orb.low svg { animation: none; } }
+
+/* =====================================================================
+   TOÀN BỘ GIAO DIỆN NEON (bảng, popup, nút, tab, ô đồ, bản đồ…)
+   ===================================================================== */
+/* đổi bảng màu chung: mọi chỗ dùng biến tự chuyển sang neon */
+body.hud-neon {
+  --u-bg: rgba(8, 12, 36, .84); --u-bg2: rgba(14, 20, 52, .9); --u-bg3: #121a44; --u-line: rgba(25, 227, 255, .32);
+  --u-text: #e6fbff; --u-muted: #8fb4d8; --u-teal: #19e3ff; --u-teal2: #ff2e9a; --u-gold: #ffe14a; --u-red: #ff3d7a;
+  --bg: #060a1e; --panel: linear-gradient(180deg, rgba(10, 16, 44, .96), rgba(6, 9, 28, .97)); --panel2: #0e1640; --line: rgba(25, 227, 255, .32);
+  --gold: #ffe14a; --gold2: #19e3ff; --text: #e6fbff; --muted: #8fb4d8; --g1: #c8fbff; --g2: #19e3ff; --g3: #0a6a8a; --gline: rgba(25, 227, 255, .4); --gdim: #142050;
+  --tile: linear-gradient(180deg, #121a44 0%, #0b1236 100%); --frame: 0 0 0 1px rgba(25, 227, 255, .35), 0 0 10px rgba(25, 227, 255, .15);
+  --nx-grid: linear-gradient(rgba(25, 227, 255, .045) 1px, transparent 1px) 0 0 / 22px 22px, linear-gradient(90deg, rgba(25, 227, 255, .045) 1px, transparent 1px) 0 0 / 22px 22px;
+}
+/* góc cắt kiểu kính ảnh ảo (hologram) */
+body.hud-neon .panel-box, body.hud-neon .modal-box, body.hud-neon .dead-box, body.hud-neon .bm-panel, body.hud-neon .wm-panel, body.hud-neon #trade-win .tr-box, body.hud-neon .wc-box {
+  background: var(--nx-grid), radial-gradient(ellipse at 50% -20%, rgba(255, 46, 154, .16), transparent 60%), linear-gradient(180deg, rgba(10, 16, 44, .97), rgba(5, 8, 26, .98)) !important;
+  border: 1px solid rgba(25, 227, 255, .7) !important; border-radius: 4px !important;
+  box-shadow: 0 0 0 1px rgba(25, 227, 255, .15), 0 0 26px rgba(25, 227, 255, .35), inset 0 0 40px rgba(25, 227, 255, .07), inset 0 1px 0 rgba(255, 255, 255, .12) !important;
+  animation: nxHolo .32s cubic-bezier(.2, .8, .3, 1); color: #e6fbff;
+}
+@keyframes nxHolo { 0% { opacity: 0; transform: scale(.96) translateY(6px); filter: brightness(2.2) saturate(.4) blur(2px); } 60% { opacity: 1; filter: brightness(1.3); } 100% { transform: none; filter: none; } }
+/* vạch quét sáng chạy dọc bảng */
+body.hud-neon .panel-box::after, body.hud-neon .modal-box::after, body.hud-neon .wc-box::after {
+  content: '' !important; display: block !important; position: absolute; left: 0; right: 0; top: 0; height: 40%; pointer-events: none; z-index: 3;
+  background: linear-gradient(180deg, transparent, rgba(25, 227, 255, .07) 70%, rgba(25, 227, 255, .22) 98%, transparent);
+  animation: nxScan 4.5s linear infinite; mix-blend-mode: screen;
+}
+@keyframes nxScan { 0% { transform: translateY(-100%); } 100% { transform: translateY(260%); } }
+/* 4 góc khung phát sáng */
+body.hud-neon .panel-box::before, body.hud-neon .modal-box::before {
+  content: '' !important; display: block !important; position: absolute; inset: 3px; pointer-events: none; z-index: 3; filter: drop-shadow(0 0 4px #19e3ff);
+  background: linear-gradient(#19e3ff, #19e3ff) top right / 22px 2px no-repeat, linear-gradient(#19e3ff, #19e3ff) top right / 2px 22px no-repeat,
+    linear-gradient(#ff2e9a, #ff2e9a) bottom left / 22px 2px no-repeat, linear-gradient(#ff2e9a, #ff2e9a) bottom left / 2px 22px no-repeat !important;
+}
+body.hud-neon .panel-head { background: linear-gradient(90deg, rgba(25, 227, 255, .16), rgba(255, 46, 154, .1) 60%, transparent) !important; border-bottom: 1px solid rgba(25, 227, 255, .55) !important; border-radius: 0 !important; }
+body.hud-neon .panel-head h3, body.hud-neon #panel-title { color: #fff !important; text-transform: uppercase; letter-spacing: 1.6px !important; text-shadow: 0 0 8px #19e3ff, 0 0 18px rgba(25, 227, 255, .6) !important; }
+body.hud-neon .panel-head h3::before { background: linear-gradient(#19e3ff, #ff2e9a) !important; box-shadow: 0 0 8px #19e3ff; }
+body.hud-neon #panel-close, body.hud-neon .x-btn, body.hud-neon .bm-x, body.hud-neon .wc-x { background: rgba(255, 46, 154, .14) !important; border: 1px solid #ff2e9a !important; color: #ffd0ea !important; border-radius: 6px !important; box-shadow: 0 0 10px rgba(255, 46, 154, .55) !important; }
+body.hud-neon #panel-close:hover, body.hud-neon .x-btn:hover { background: #ff2e9a !important; color: #fff !important; }
+body.hud-neon #panel { background: radial-gradient(ellipse at center, rgba(6, 10, 40, .45), rgba(2, 4, 16, .78)) !important; backdrop-filter: blur(2px); }
+body.hud-neon #panel-body { scrollbar-color: #19e3ff transparent; }
+body.hud-neon #panel-body::-webkit-scrollbar-thumb, body.hud-neon .wc-box::-webkit-scrollbar-thumb { background: linear-gradient(#19e3ff, #ff2e9a) !important; }
+
+/* thẻ bên trong bảng */
+body.hud-neon .card, body.hud-neon .li, body.hud-neon .item-detail, body.hud-neon .sk-head, body.hud-neon .sk-slot, body.hud-neon .stat-grid div, body.hud-neon .au-box, body.hud-neon .cmp-box, body.hud-neon .npc-head {
+  background: rgba(14, 22, 60, .72) !important; border: 1px solid rgba(25, 227, 255, .28) !important; border-radius: 6px !important; box-shadow: inset 0 0 14px rgba(25, 227, 255, .05) !important; }
+body.hud-neon .card h4, body.hud-neon .au-box h4 { color: #ffe14a !important; text-shadow: 0 0 8px rgba(255, 225, 74, .5) !important; border-bottom-color: rgba(25, 227, 255, .3) !important; letter-spacing: .6px; }
+
+/* tab */
+body.hud-neon .tabs { border-bottom: 1px solid rgba(25, 227, 255, .35) !important; }
+body.hud-neon .tabs button { background: rgba(14, 22, 60, .8) !important; color: #8fb4d8 !important; border: 1px solid rgba(25, 227, 255, .25) !important; border-radius: 4px !important; clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px); }
+body.hud-neon .tabs button:hover { color: #e6fbff !important; border-color: #19e3ff !important; }
+body.hud-neon .tabs button.on { background: linear-gradient(90deg, rgba(25, 227, 255, .9), rgba(25, 163, 255, .9)) !important; color: #031026 !important; border-color: #19e3ff !important; box-shadow: 0 0 12px rgba(25, 227, 255, .7) !important; font-weight: 800; }
+
+/* nút */
+body.hud-neon .btn { background: rgba(14, 22, 60, .85) !important; color: #c8fbff !important; border: 1px solid rgba(25, 227, 255, .6) !important; border-radius: 4px !important; clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  box-shadow: inset 0 0 10px rgba(25, 227, 255, .18) !important; text-shadow: 0 0 6px rgba(25, 227, 255, .6) !important; transition: background .15s, box-shadow .15s; }
+body.hud-neon .btn:hover { background: rgba(25, 227, 255, .2) !important; box-shadow: inset 0 0 14px rgba(25, 227, 255, .4), 0 0 12px rgba(25, 227, 255, .5) !important; filter: none; }
+body.hud-neon .btn.primary { background: linear-gradient(90deg, #19e3ff, #1a8cff) !important; color: #031026 !important; border-color: #a8faff !important; text-shadow: none !important; box-shadow: 0 0 14px rgba(25, 227, 255, .7) !important; }
+body.hud-neon .btn.green { background: linear-gradient(90deg, #3dffb0, #12c98a) !important; color: #022a1a !important; border-color: #b8ffe0 !important; text-shadow: none !important; box-shadow: 0 0 14px rgba(61, 255, 176, .6) !important; }
+body.hud-neon .btn.red { background: linear-gradient(90deg, #ff2e9a, #ff3d5a) !important; color: #fff !important; border-color: #ffb3dc !important; text-shadow: none !important; box-shadow: 0 0 14px rgba(255, 46, 154, .7) !important; }
+body.hud-neon .btn:disabled { opacity: .4; box-shadow: none !important; }
+
+/* ô vật phẩm */
+body.hud-neon .slot { background: radial-gradient(circle at 50% 40%, rgba(25, 227, 255, .1), rgba(6, 10, 32, .95)) !important; border: 1px solid rgba(25, 227, 255, .35) !important; border-radius: 4px !important; }
+body.hud-neon .slot:hover { border-color: #19e3ff !important; box-shadow: 0 0 10px rgba(25, 227, 255, .6) !important; }
+body.hud-neon .slot.r-rare { border-color: #4fa3ff !important; box-shadow: 0 0 8px rgba(79, 163, 255, .6) !important; }
+body.hud-neon .slot.r-epic { border-color: #c060ff !important; box-shadow: 0 0 10px rgba(192, 96, 255, .75) !important; }
+body.hud-neon .slot.r-legendary { border-color: #ff9b2f !important; box-shadow: 0 0 12px rgba(255, 155, 47, .85) !important; }
+body.hud-neon .slot.sel { outline: 2px solid #ff2e9a !important; }
+
+/* ô nhập */
+body.hud-neon input, body.hud-neon select, body.hud-neon textarea { background: rgba(4, 8, 26, .9) !important; color: #e6fbff !important; border: 1px solid rgba(25, 227, 255, .4) !important; border-radius: 4px !important; box-shadow: inset 0 0 8px rgba(25, 227, 255, .1) !important; }
+body.hud-neon input:focus, body.hud-neon select:focus, body.hud-neon textarea:focus { border-color: #19e3ff !important; box-shadow: 0 0 0 2px rgba(25, 227, 255, .25), inset 0 0 8px rgba(25, 227, 255, .2) !important; }
+body.hud-neon input[type=checkbox], body.hud-neon input[type=range] { accent-color: #19e3ff; box-shadow: none !important; }
+
+/* popup thông báo (modal) + thông báo nhỏ + chú thích */
+body.hud-neon #modal-msg { background: radial-gradient(ellipse at center, rgba(6, 10, 40, .5), rgba(2, 4, 16, .82)) !important; backdrop-filter: blur(3px); }
+body.hud-neon .modal-box { padding: 20px 22px 18px !important; }
+body.hud-neon #modal-text { color: #e6fbff; text-shadow: 0 0 6px rgba(25, 227, 255, .35); }
+body.hud-neon .toast { background: linear-gradient(90deg, rgba(25, 227, 255, .14), rgba(8, 12, 36, .92) 20%, rgba(8, 12, 36, .92) 80%, rgba(255, 46, 154, .14)) !important; border: 1px solid rgba(25, 227, 255, .55) !important; border-radius: 3px !important; box-shadow: 0 0 12px rgba(25, 227, 255, .4) !important; color: #e6fbff; }
+body.hud-neon .toast.error { border-color: #ff2e9a !important; box-shadow: 0 0 12px rgba(255, 46, 154, .55) !important; color: #ffb3d6; }
+body.hud-neon #tooltip { background: linear-gradient(180deg, rgba(10, 16, 44, .97), rgba(5, 8, 26, .98)) !important; border: 1px solid #19e3ff !important; border-radius: 3px !important; box-shadow: 0 0 14px rgba(25, 227, 255, .5) !important; }
+
+/* khung mục tiêu, nhiệm vụ, tên bản đồ, buff */
+body.hud-neon #target-frame, body.hud-neon #tutorial-box, body.hud-neon #daily-box, body.hud-neon #story-box, body.hud-neon #escort-hud, body.hud-neon #duel-hud, body.hud-neon #map-name, body.hud-neon #buff-line span {
+  background: rgba(8, 12, 36, .8) !important; border: 1px solid rgba(25, 227, 255, .45) !important; box-shadow: 0 0 10px rgba(25, 227, 255, .25) !important; }
+body.hud-neon #target-frame.boss { border-color: #ff2e9a !important; box-shadow: 0 0 16px rgba(255, 46, 154, .6) !important; }
+body.hud-neon #tutorial-box h4, body.hud-neon #daily-box h4, body.hud-neon #story-box h4 { color: #ffe14a !important; text-shadow: 0 0 6px rgba(255, 225, 74, .45) !important; }
+body.hud-neon .bar { background: rgba(4, 8, 26, .9) !important; box-shadow: inset 0 0 0 1px rgba(25, 227, 255, .3) !important; }
+body.hud-neon .bar.hp i { background: linear-gradient(90deg, #ff2e7a, #ff8ac8) !important; box-shadow: 0 0 8px #ff2e7a !important; }
+body.hud-neon .bar.mp i { background: linear-gradient(90deg, #1a8cff, #a8faff) !important; box-shadow: 0 0 8px #19c3ff !important; }
+
+/* popup chào mừng */
+body.hud-neon .wc { background: radial-gradient(ellipse at center, rgba(6, 10, 40, .55), rgba(2, 4, 16, .85)) !important; }
+body.hud-neon .wc-box { color: #e6fbff !important; }
+body.hud-neon .wc-box h2, body.hud-neon .wc-box h3, body.hud-neon .wc-title { color: #fff !important; text-shadow: 0 0 10px #19e3ff, 0 0 22px rgba(25, 227, 255, .6) !important; }
+
+/* bản đồ khu vực + bản đồ thế giới */
+body.hud-neon #bigmap { background: radial-gradient(ellipse at center, rgba(6, 10, 40, .5), rgba(2, 4, 16, .82)) !important; }
+body.hud-neon .bm-head b, body.hud-neon .wm-head b { color: #fff; text-shadow: 0 0 8px #19e3ff; letter-spacing: 1px; text-transform: uppercase; }
+body.hud-neon #bm-canvas, body.hud-neon .bm-panel canvas { border: 1px solid rgba(25, 227, 255, .55); box-shadow: 0 0 18px rgba(25, 227, 255, .35); }
+body.hud-neon .wm-scroll { background: var(--nx-grid), radial-gradient(ellipse at center, #0c1650, #040820) !important; }
+body.hud-neon .wm-lines line { stroke: rgba(25, 227, 255, .45) !important; filter: drop-shadow(0 0 3px #19e3ff); }
+body.hud-neon .wm-lines line.hot { stroke: #ff2e9a !important; filter: drop-shadow(0 0 6px #ff2e9a); }
+body.hud-neon .wm-node { background: rgba(10, 16, 48, .9) !important; border: 1px solid rgba(25, 227, 255, .5) !important; border-radius: 4px !important; box-shadow: 0 0 10px rgba(25, 227, 255, .25) !important; color: #e6fbff !important; }
+body.hud-neon .wm-node.path { border-color: #ff2e9a !important; box-shadow: 0 0 14px rgba(255, 46, 154, .7) !important; }
+body.hud-neon .wm-node.sel { border-color: #ffe14a !important; box-shadow: 0 0 16px rgba(255, 225, 74, .8) !important; }
+body.hud-neon .wm-node.cur { border-color: #fff !important; box-shadow: 0 0 0 2px rgba(25, 227, 255, .6), 0 0 22px #19e3ff !important; }
+body.hud-neon .wm-info { background: rgba(8, 12, 36, .85) !important; border: 1px solid rgba(25, 227, 255, .35) !important; }
+body.hud-neon #minimap { border: 1px solid #19e3ff !important; border-radius: 4px !important; box-shadow: 0 0 14px rgba(25, 227, 255, .6) !important; }
+
+/* =====================================================================
+   HIỆU ỨNG QUANH GIAO DIỆN: khung góc màn hình, vạch sáng chạy viền, hạt sáng
+   ===================================================================== */
+#nx-fx { position: absolute; inset: 0; pointer-events: none; z-index: 2; overflow: hidden; }
+#nx-fx .c { position: absolute; width: 46px; height: 46px; border: 2px solid #19e3ff; filter: drop-shadow(0 0 6px #19e3ff); opacity: .75; animation: nxCorner 3s ease-in-out infinite; }
+#nx-fx .c.tl { left: 4px; top: 4px; border-right: 0; border-bottom: 0; }
+#nx-fx .c.tr { right: 4px; top: 4px; border-left: 0; border-bottom: 0; animation-delay: .75s; }
+#nx-fx .c.bl { left: 4px; bottom: 12px; border-right: 0; border-top: 0; border-color: #ff2e9a; filter: drop-shadow(0 0 6px #ff2e9a); animation-delay: 1.5s; }
+#nx-fx .c.br { right: 4px; bottom: 12px; border-left: 0; border-top: 0; border-color: #ff2e9a; filter: drop-shadow(0 0 6px #ff2e9a); animation-delay: 2.25s; }
+@keyframes nxCorner { 50% { opacity: .3; transform: scale(.92); } }
+#nx-fx .edge { position: absolute; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(25, 227, 255, .5), transparent); }
+#nx-fx .edge.t { top: 0; } #nx-fx .edge.b { bottom: 10px; background: linear-gradient(90deg, transparent, rgba(255, 46, 154, .5), transparent); }
+#nx-fx .edge::after { content: ''; position: absolute; top: -1px; width: 120px; height: 3px; border-radius: 3px; background: #fff; box-shadow: 0 0 10px #19e3ff, 0 0 20px #19e3ff; animation: nxRun 6s linear infinite; }
+#nx-fx .edge.b::after { box-shadow: 0 0 10px #ff2e9a, 0 0 20px #ff2e9a; animation-direction: reverse; animation-duration: 7.5s; }
+@keyframes nxRun { from { left: -130px; } to { left: 100%; } }
+#nx-fx .side { position: absolute; top: 15%; bottom: 25%; width: 1px; background: linear-gradient(180deg, transparent, rgba(25, 227, 255, .4), transparent); }
+#nx-fx .side.l { left: 2px; } #nx-fx .side.r { right: 2px; background: linear-gradient(180deg, transparent, rgba(255, 46, 154, .4), transparent); }
+#nx-fx i { position: absolute; bottom: -6px; width: 3px; height: 3px; border-radius: 50%; background: #19e3ff; box-shadow: 0 0 6px #19e3ff; animation: nxMote linear infinite; opacity: 0; }
+#nx-fx i:nth-child(odd) { background: #ff2e9a; box-shadow: 0 0 6px #ff2e9a; }
+@keyframes nxMote { 0% { opacity: 0; transform: translateY(0); } 15% { opacity: .9; } 100% { opacity: 0; transform: translateY(-38vh); } }
+/* các khung HUD nhấp nháy viền nhẹ */
+body.hud-neon #hud-status, body.hud-neon #mini-wrap, body.hud-neon #skillbar { animation: nxBreath 3.6s ease-in-out infinite; }
+@keyframes nxBreath { 50% { box-shadow: 0 0 22px rgba(25, 227, 255, .75), inset 0 0 16px rgba(25, 227, 255, .2); } }
+@media (prefers-reduced-motion: reduce) {
+  #nx-fx .c, #nx-fx .edge::after, #nx-fx i, body.hud-neon #hud-status, body.hud-neon #mini-wrap, body.hud-neon #skillbar, body.hud-neon .panel-box::after, body.hud-neon .modal-box::after, body.hud-neon .wc-box::after { animation: none !important; }
+  body.hud-neon .panel-box, body.hud-neon .modal-box { animation: none; }
+}

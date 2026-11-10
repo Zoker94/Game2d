@@ -563,7 +563,16 @@
     const cv = document.createElement('canvas'); cv.width = m.w * 3; cv.height = m.h * 3;
     const ctx = cv.getContext('2d');
     const COL = { 0: '#4f8f33', 1: '#a07a45', 2: '#2d6fb5', 3: '#1f5a22', 4: '#666', 5: '#d9b876', 6: '#e8eef4', 7: '#888', 8: '#3a2c25', 9: '#3a7a2a', 10: '#5a9e3a', 11: '#3a2a35', 12: '#d13a0a', 13: '#bfe3f5', 14: '#2e8b57', 15: '#8b1a1a', 16: '#1f5e3a', 17: '#2a1a14' };
-    for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) { ctx.fillStyle = COL[m.tiles[y * m.w + x]] || '#000'; ctx.fillRect(x * 3, y * 3, 3, 3); }
+    if (window.HudNeon && HudNeon.on) {   // giao diện Neon: bản đồ kiểu hologram – nền tối, đường viền địa hình phát sáng
+      const NC = { 0: '#0b1436', 1: '#1c2a6a', 2: '#063a7a', 3: '#08203a', 4: '#24206a', 5: '#22306e', 6: '#2a3a7a', 7: '#24206a', 8: '#140c30', 9: '#0b1a3a', 10: '#0d1a40', 11: '#1a0c38', 12: '#5a0a3a', 13: '#0a4a8a', 14: '#0b2240', 15: '#4a0a30', 16: '#0a2034', 17: '#120a2a' };
+      const kind = t => t === 2 || t === 13 ? 2 : (t === 4 || t === 7 || t === 8 || t === 11 || t === 17) ? 3 : (t === 1 || t === 5 || t === 6) ? 1 : 0;   // nước / vách / đường / đất
+      for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) { ctx.fillStyle = NC[m.tiles[y * m.w + x]] || '#05081a'; ctx.fillRect(x * 3, y * 3, 3, 3); }
+      for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) {
+        const k = kind(m.tiles[y * m.w + x]), kr = x + 1 < m.w ? kind(m.tiles[y * m.w + x + 1]) : k, kd = y + 1 < m.h ? kind(m.tiles[(y + 1) * m.w + x]) : k;
+        if (k !== kr || k !== kd) { ctx.fillStyle = (k === 2 || kr === 2 || kd === 2) ? 'rgba(25,227,255,.85)' : (k === 3 || kr === 3 || kd === 3) ? 'rgba(255,46,154,.7)' : 'rgba(120,160,255,.45)'; if (k !== kr) ctx.fillRect(x * 3 + 2, y * 3, 1, 3); if (k !== kd) ctx.fillRect(x * 3, y * 3 + 2, 3, 1); }
+      }
+      ctx.fillStyle = 'rgba(25,227,255,.06)'; for (let i = 0; i < m.w * 3; i += 12) ctx.fillRect(i, 0, 1, m.h * 3); for (let i = 0; i < m.h * 3; i += 12) ctx.fillRect(0, i, m.w * 3, 1);
+    } else for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) { ctx.fillStyle = COL[m.tiles[y * m.w + x]] || '#000'; ctx.fillRect(x * 3, y * 3, 3, 3); }
     m.portals.forEach(p => { ctx.fillStyle = '#7fd4ff'; ctx.fillRect(p.x * 3 - 2, p.y * 3 - 2, 7, 7); });
     minimapBase = cv; G.mapBase = cv;
     UI.closePanel(); if (window.BigMap) BigMap.close(); if (window.WorldMap) { WorldMap.close(); WorldMap.onEnterMap(); } if (window.QuestNav) QuestNav.onEnterMap();
@@ -2356,7 +2365,7 @@
     const m = G.map;
     const mw = mini.width, mh = mini.height;
     mctx.imageSmoothingEnabled = false;
-    mctx.fillStyle = '#000'; mctx.fillRect(0, 0, mw, mh);
+    mctx.fillStyle = window.HudNeon && HudNeon.on ? '#040718' : '#000'; mctx.fillRect(0, 0, mw, mh);
     // thu nhỏ vừa khung, giữ tỉ lệ
     const sc = Math.min(mw / m.w, mh / m.h);
     const ox = (mw - m.w * sc) / 2, oy = (mh - m.h * sc) / 2;
@@ -2367,7 +2376,7 @@
     for (const e of G.players.values()) pt(e.x, e.y, Party.has(e.id) ? '#4dff7a' : e.pm === 2 ? '#ff2020' : e.pm === 1 ? '#ff9a3a' : '#4fa3ff', Party.has(e.id) ? 4 : 3);
     for (const e of G.carts.values()) pt(e.x, e.y, '#ffd23f', 5);
     pt(G.self.x, G.self.y, '#ffffff', 4);
-    mctx.strokeStyle = 'rgba(255,255,255,.5)';
+    mctx.strokeStyle = window.HudNeon && HudNeon.on ? 'rgba(25,227,255,.85)' : 'rgba(255,255,255,.5)';
     mctx.strokeRect(ox + cam.x / TILE * sc, oy + cam.y / TILE * sc, W / zoom / TILE * sc, H / zoom / TILE * sc);
   }
 

@@ -38,6 +38,11 @@
       orbs[k] = { el, w1: s.querySelector('.w1'), w2: s.querySelector('.w2'), bub: [...s.querySelectorAll('.bub circle')], gauge: s.querySelector('.gauge'), spin: s.querySelector('.spin'),
         b: el.querySelector('.nx-val b'), sm: el.querySelector('.nx-val small'), lv: 1, target: 1, cur: -1, max: -1, ph: k === 'hp' ? 0 : 2.5 };
     }
+    // hiệu ứng quanh giao diện: 4 góc khung, vạch sáng chạy theo viền trên / dưới, hạt sáng bay lên ở 2 mép
+    const fx = document.createElement('div'); fx.id = 'nx-fx'; fx.setAttribute('aria-hidden', 'true');
+    fx.innerHTML = '<div class="c tl"></div><div class="c tr"></div><div class="c bl"></div><div class="c br"></div><div class="edge t"></div><div class="edge b"></div><div class="side l"></div><div class="side r"></div>' +
+      Array.from({ length: 10 }, (_, i) => `<i style="left:${i < 5 ? 1 + i * 1.6 : 91 + (i - 5) * 1.6}%;animation-duration:${5 + (i * 7) % 5}s;animation-delay:${(i * 1.3) % 6}s"></i>`).join('');
+    hud.insertBefore(fx, hud.firstChild);
     layout(); addEventListener('resize', () => setTimeout(layout, 60)); setInterval(layout, 1500);
     requestAnimationFrame(frame);
   }
