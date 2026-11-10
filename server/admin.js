@@ -292,7 +292,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   });
 
   // ----- Cấu hình -----
-  app.get('/api/admin/config', auth, (req, res) => { const M = require('./data/maps'); res.json(Object.assign({}, db.data.config, { welcome: world.welcome.cfg, chCount: M.CHANNELS, vipCh: M.VIP_CH, closedCh: db.data.config.closedCh || [], server: { id: REALM.ID, name: REALM.NAME, main: REALM.IS_MAIN }, servers: REALM.IS_MAIN ? require('./realms').list(db, world.players.size) : null })); });
+  app.get('/api/admin/config', auth, (req, res) => { const M = require('./data/maps'); res.json(Object.assign({}, db.data.config, { welcome: world.welcome.cfg, chCount: M.CHANNELS, vipCh: M.VIP_CH, closedCh: db.data.config.closedCh || [], server: { id: REALM.ID, name: REALM.NAME, main: REALM.IS_MAIN }, servers: REALM.IS_MAIN ? require('./realms').list(db, world.players.size) : [{ id: REALM.ID, name: REALM.NAME, open: !!db.data.config.realmOpen, up: true, online: world.players.size, self: 1 }] })); });
   app.post('/api/admin/config', auth, (req, res) => {
     const c = db.data.config, b = req.body || {};
     for (const k of ['expRate', 'dropRate', 'goldRate']) if (b[k] != null) c[k] = U.clamp(+b[k] || 1, 0.1, 100);
@@ -304,6 +304,15 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
       c.closedCh = [...new Set(b.closedCh.map(x => x | 0).filter(x => x > 1))];
       const n = world.evacuateClosed();
       act(req, `Khu đang đóng: ${c.closedCh.join(', ') || 'không'} (chuyển ${n} người chơi)`);
+    }
+    // trang quản trị của chính server con (Tô Châu): báo server chính lưu trạng thái mở / đóng rồi gửi lại -> áp dụng (đá người chơi / thông báo mở cửa)
+    if (b.realmOpen && typeof b.realmOpen === 'object' && !REALM.IS_MAIN && b.realmOpen[REALM.ID] != null) {
+      const want = !!b.realmOpen[REALM.ID];
+      if (!process.send || !process.connected) return res.status(503).json({ error: 'Mất kết nối với server chính, thử lại sau' });
+      process.send({ setOpen: want });
+      act(req, `${want ? 'MỞ' : 'ĐÓNG'} server ${REALM.NAME}`);
+      let n = 0; const wait = () => (!!db.data.config.realmOpen === want || ++n > 20) ? res.json(db.data.config) : setTimeout(wait, 100);
+      return wait();
     }
     if (b.realmOpen && typeof b.realmOpen === 'object' && REALM.IS_MAIN) {   // mở / đóng server khác (Tô Châu) cho người chơi vào
       const R = require('./realms'), o = c.realmsOpen = Object.assign({}, c.realmsOpen);

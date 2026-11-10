@@ -34,6 +34,11 @@ function start(db) {
         if (!m || typeof m !== 'object') return;
         if (m.ready) { k.up = true; k.fails = 0; sendOpen(db, id); }
         if (m.online != null) k.online = m.online | 0;
+        if (m.setOpen != null) {   // bấm Mở / Đóng ở trang quản trị của chính server con
+          const o = db.data.config.realmsOpen = Object.assign({}, db.data.config.realmsOpen);
+          o[id] = !!m.setOpen; db.markDirty(); sendOpen(db, id);
+          db.log('admin', `${o[id] ? 'MỞ' : 'ĐÓNG'} server ${R.REALMS[id].name} (từ trang quản trị ${R.REALMS[id].name})`);
+        }
       });
       p.on('exit', code => {
         k.up = false; k.proc = null; k.online = 0;
