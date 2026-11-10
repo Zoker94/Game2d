@@ -26,8 +26,8 @@
     box.querySelectorAll('.srv').forEach(b => b.onclick = () => {
       const v = list.find(x => x.id === b.dataset.id); if (!v) return;
       if (!v.open && !confirm(`Server ${v.name} chưa mở cửa – hiện chỉ quản trị viên / tester vào được.\nTheo dõi nhóm Zalo để biết giờ mở.\n\nVẫn vào server ${v.name}?`)) return;
-      try { localStorage.setItem('vl_server', v.id); } catch (e) { }
-      location.href = '/play' + location.search;
+      goLand();   // cùng cú chạm: xoay ngang toàn màn hình (điện thoại)
+      enter(v, b);
     });
   }
   let first = true;
@@ -37,6 +37,42 @@
     first = false;
   }
   load(); setInterval(() => { if (!document.hidden) load(); }, 15000);
+
+  // ================= điện thoại: xoay ngang + toàn màn hình (trình duyệt chỉ cho phép sau 1 lần chạm) =================
+  const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+  const fsOn = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  async function goLand() {
+    if (!isTouch) return;
+    const tmo = pr => Promise.race([pr, new Promise(r => setTimeout(r, 1200))]);
+    try { const el = document.documentElement; if (!fsOn()) { if (el.requestFullscreen) await tmo(el.requestFullscreen({ navigationUI: 'hide' })); else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen(); } } catch (e) { }
+    try { if (screen.orientation && screen.orientation.lock) await tmo(screen.orientation.lock('landscape')); } catch (e) { }
+    hint();
+  }
+  const fsHint = document.getElementById('fs-hint');
+  function hint() { if (fsHint) fsHint.classList.toggle('hidden', !isTouch || fsOn() || !document.documentElement.requestFullscreen); }
+  hint(); document.addEventListener('fullscreenchange', hint);
+  document.addEventListener('pointerdown', e => { if (!fsOn() && !e.target.closest('.srv,.back')) goLand(); }, { passive: true });
+
+  // ================= hiệu ứng chuyển cảnh vào server =================
+  let warpAt = 0;   // thời điểm bắt đầu (giây theo đồng hồ khung hình); 0 = chưa
+  const WARP = reduceMotion() ? 0.35 : 2.1;
+  function reduceMotion() { return matchMedia('(prefers-reduced-motion: reduce)').matches; }
+  function enter(v, card) {
+    if (document.body.classList.contains('warping')) return;
+    try { localStorage.setItem('vl_server', v.id); sessionStorage.setItem('vl_warp', '1'); } catch (e) { }
+    const I = INFO[v.id] || INFO.tuongduong;
+    const l = document.createElement('link'); l.rel = 'prefetch'; l.href = '/play'; document.head.appendChild(l);
+    const ov = document.getElementById('warp');
+    ov.style.setProperty('--c1', I.c1); ov.style.setProperty('--c2', I.c2);
+    ov.querySelector('.w-ch').textContent = I.ch;
+    ov.querySelector('.w-nm').textContent = v.name;
+    ov.querySelector('.w-sub').textContent = v.open ? 'ĐANG VÀO GIANG HỒ…' : 'SERVER CHƯA MỞ · CHẾ ĐỘ QUẢN TRỊ';
+    card.classList.add('chosen'); document.body.classList.add('warping');
+    warpAt = clock || 0.001;
+    setTimeout(() => { location.href = '/play' + location.search; }, WARP * 1000);
+  }
+  // bfcache: quay lại bằng nút Back thì bỏ trạng thái chuyển cảnh
+  addEventListener('pageshow', e => { if (e.persisted) { document.body.classList.remove('warping'); document.querySelectorAll('.chosen').forEach(x => x.classList.remove('chosen')); warpAt = 0; } });
 
   // ================= nền động =================
   const cv = document.getElementById('bg'), g = cv.getContext('2d');
@@ -138,6 +174,7 @@
     gq: { t: 0, y: 0.12, sL: 100, eL: -30, sR: 70, eR: 40, hL: -35, kL: 35, hR: 35, kR: -35, ws: 90 },   // côn ngang
     gd: { t: 14, y: 0.1, sL: 140, eL: -10, sR: 120, eR: -10, hL: -45, kL: 5, hR: 55, kR: -55, ws: 100 }  // bổ côn
   };
+  P.chao = { t: 4, y: 0, sL: 35, eL: 105, sR: 35, eR: 105, hL: -4, kL: 4, hR: 4, kR: -4, ws: -20 };   // ôm quyền
   const KEYS = ['t', 'y', 'sL', 'eL', 'sR', 'eR', 'hL', 'kL', 'hR', 'kR', 'ws'];
   const KATA = [
     { w: 0, seq: ['ma', 'dam', 'ma', 'cung', 'chuong', 'ma'] },
@@ -163,7 +200,9 @@
   }
   const rad = d => d * Math.PI / 180, dir = (a, L) => [Math.sin(rad(a)) * L, Math.cos(rad(a)) * L];
   function figure(f, time, scale, col, glow) {
-    const kata = KATA[f.k], p = poseAt(kata, time + f.ph * 1.25);
+    const kata = KATA[f.k];
+    let p = poseAt(kata, time + f.ph * 1.25);
+    if (warpAt) { const u = Math.min(1, (clock - warpAt) / 0.45), o = {}; for (const k of KEYS) o[k] = (p[k] || 0) + ((P.chao[k] || 0) - (p[k] || 0)) * ease(u); p = o; }   // chuyển cảnh: mọi người ôm quyền chào
     const S = scale, T = S * 0.62;
     const hip = [0, -S * 1.02 + p.y * T];
     const neck = [hip[0] + Math.sin(rad(p.t)) * T, hip[1] - Math.cos(rad(p.t)) * T];
@@ -230,10 +269,30 @@
   }
 
   let t0 = performance.now(), lastT = t0;
+  let clock = 0;
+  // tia tốc độ toả từ chân trời khi chuyển cảnh
+  function streaks(e) {
+    const cx = W / 2, cy = HZ - H * 0.06, n = 70;
+    g.save(); g.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < n; i++) {
+      const a = i * 2.399 + i * i * 0.013, sp = ((clock * (1.6 + (i % 7) * 0.25) + i * 0.137) % 1);
+      const r0 = Math.max(W, H) * (0.05 + sp * 0.9), r1 = r0 + Math.max(W, H) * (0.05 + e * 0.35) * sp;
+      g.strokeStyle = ['rgba(18,230,255,', 'rgba(255,63,216,', 'rgba(255,210,63,'][i % 3] + (0.65 * e * sp) + ')';
+      g.lineWidth = 1 + sp * 3 * e;
+      g.beginPath(); g.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0); g.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); g.stroke();
+    }
+    g.restore();
+  }
   function frame(now) {
     const t = (now - t0) / 1000, dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
+    clock = t;
     g.clearRect(0, 0, W, H);
-    sky(t); mountains(t); floor(t); fighters(t); particles(t, dt);
+    const e = warpAt ? Math.min(1, (t - warpAt) / WARP) : 0, z = 1 + (e * e) * 2.2;   // chuyển cảnh: máy quay lao về chân trời
+    g.save();
+    if (z > 1) { const cx = W / 2, cy = HZ - H * 0.06; g.translate(cx, cy); g.scale(z, z); g.translate(-cx, -cy); }
+    sky(t); mountains(t); floor(warpAt ? t + e * e * 6 : t); fighters(t); particles(t, dt * (1 + e * 8));
+    g.restore();
+    if (e > 0) streaks(e);
     if (!reduce) requestAnimationFrame(frame);
   }
   addEventListener('resize', resize); resize(); requestAnimationFrame(frame);

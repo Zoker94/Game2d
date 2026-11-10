@@ -11,7 +11,8 @@ body {
   min-height: 100vh; min-height: 100dvh; overflow-x: hidden;
 }
 #bg { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
-.wrap { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; padding: max(18px, env(safe-area-inset-top)) 16px max(22px, env(safe-area-inset-bottom)); min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; gap: 18px; }
+.wrap { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; padding: max(18px, env(safe-area-inset-top)) 16px max(22px, env(safe-area-inset-bottom)); min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; justify-content: flex-start; gap: 18px; }
+.head { margin-top: auto; } .note { margin-bottom: auto; }   /* căn giữa mà không cắt mất phần trên khi màn hình thấp */
 
 /* ---- tiêu đề ---- */
 .head { text-align: center; position: relative; }
@@ -81,4 +82,50 @@ body {
 @media (max-width: 380px) { .srv { gap: 12px; padding: 14px 12px; } .emb { width: 54px; height: 54px; font-size: 24px; } .nm { font-size: 19px; } .go { min-width: 60px; padding: 0 10px; } }
 @media (prefers-reduced-motion: reduce) { .srv::before, .srv::after, .tag.on b { animation: none; } }
 /* điện thoại dọc: thẻ lên trên, nửa dưới để lộ bóng võ sĩ luyện công */
-@media (orientation: portrait) and (max-width: 700px) { .wrap { justify-content: flex-start; padding-top: max(16px, 3vh); gap: 14px; } .logo { margin-top: 30px; } }
+@media (orientation: portrait) and (max-width: 700px) { .wrap { padding-top: max(16px, 3vh); gap: 14px; } .head { margin-top: 0; } .logo { margin-top: 30px; } }
+
+/* màn rất thấp (điện thoại ngang còn thanh địa chỉ): thu gọn tối đa */
+@media (max-height: 330px) {
+  .wrap { gap: 6px; padding-top: 6px; padding-bottom: 6px; }
+  .back { padding: 3px 10px; font-size: 12px; }
+  .logo .l1 { font-size: 22px; letter-spacing: 3px; } .logo .l2 { font-size: 15px; padding: 1px 7px; } .sub { display: none; }
+  .srv { padding: 7px 12px; border-radius: 14px; } .emb { width: 38px; height: 38px; font-size: 17px; }
+  .nm { font-size: 15px; } .nm small { display: inline; margin-left: 6px !important; } .tags { margin-top: 3px; } .tag { font-size: 10.5px; padding: 1px 7px; }
+  .go { height: 34px; min-width: 60px; font-size: 12px; } .list { gap: 7px; } .note { font-size: 11px; }
+}
+.hidden { display: none !important; }
+.fs-hint { position: fixed; right: max(10px, env(safe-area-inset-right)); top: max(10px, env(safe-area-inset-top)); z-index: 3; padding: 7px 14px; border-radius: 99px; font-size: 11.5px; font-weight: 700; color: #0d1a3a; white-space: nowrap;
+  background: rgba(255, 255, 255, .8); border: 1px solid var(--cy); box-shadow: 0 0 14px rgba(18, 230, 255, .6); animation: bob 1.6s ease-in-out infinite; pointer-events: none; }
+@keyframes bob { 50% { transform: translateY(3px); } }
+
+/* ---- chuyển cảnh vào server ---- */
+.wrap > * { transition: opacity .35s, transform .45s cubic-bezier(.5, 0, .7, .4), filter .35s; }
+.warping .head, .warping .note { opacity: 0; transform: translateY(-24px); }
+.warping .srv:not(.chosen) { opacity: 0; transform: translateX(-60px) scale(.92); filter: blur(4px); pointer-events: none; }
+.warping .srv.chosen { animation: pick 1s cubic-bezier(.3, 0, .2, 1) forwards; pointer-events: none; }
+.warping .fs-hint { display: none; }
+@keyframes pick {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.07); box-shadow: 0 0 60px var(--c1), 0 0 120px var(--c2); }
+  100% { transform: scale(1.9); opacity: 0; filter: blur(6px) brightness(2); }
+}
+.warp { position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; pointer-events: none; visibility: hidden; }
+.warping .warp { visibility: visible; }
+.w-ring { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px; border-radius: 50%; border: 3px solid var(--c1); box-shadow: 0 0 20px var(--c1), inset 0 0 20px var(--c1); opacity: 0; }
+.warping .w-ring { animation: ring 1.3s cubic-bezier(.2, .6, .3, 1) forwards; }
+.warping .w-ring.r2 { animation-delay: .22s; border-color: var(--pk, #ff3fd8); } .warping .w-ring.r3 { animation-delay: .44s; border-color: var(--gd, #ffd23f); }
+@keyframes ring { 0% { opacity: 0; transform: scale(.2); } 15% { opacity: 1; } 100% { opacity: 0; transform: scale(40); border-width: 1px; } }
+.w-core { position: relative; text-align: center; opacity: 0; }
+.warping .w-core { animation: core 1.9s ease forwards .35s; }
+@keyframes core { 0% { opacity: 0; transform: scale(.6); letter-spacing: 30px; } 30% { opacity: 1; transform: scale(1); } 80% { opacity: 1; transform: scale(1.04); } 100% { opacity: 1; transform: scale(1.12); } }
+.w-ch { font-size: clamp(64px, 16vmin, 130px); font-weight: 800; line-height: 1; color: #fff; text-shadow: 0 0 10px #fff, 0 0 30px var(--c1), 0 0 70px var(--c2); }
+.w-nm { margin-top: 6px; font-size: clamp(30px, 8vmin, 60px); font-weight: 800; letter-spacing: 6px; color: #fff; -webkit-text-stroke: 1.5px #0d1a3a; text-shadow: 0 0 14px var(--c1), 0 0 34px var(--c1), 3px 3px 0 rgba(13, 26, 58, .4); text-transform: uppercase; }
+.w-sub { margin-top: 8px; font-size: 13px; font-weight: 800; letter-spacing: 6px; color: #0d1a3a; text-shadow: 0 0 10px #fff; }
+.w-bar { width: min(280px, 60vw); height: 4px; margin: 12px auto 0; border-radius: 4px; background: rgba(13, 26, 58, .2); overflow: hidden; }
+.w-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--c1), var(--c2)); box-shadow: 0 0 10px var(--c1); }
+.warping .w-bar i { animation: bar 1.6s ease-in forwards .4s; }
+@keyframes bar { to { width: 100%; } }
+.w-flash { position: absolute; inset: 0; background: radial-gradient(circle, #fff 30%, rgba(255, 255, 255, .85)); opacity: 0; }
+.warping .w-flash { animation: flash 2.1s forwards; }
+@keyframes flash { 0%, 80% { opacity: 0; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .warping .w-core, .warping .w-ring, .warping .srv.chosen { animation-duration: .3s; animation-delay: 0s; } .warping .w-flash { animation-duration: .35s; } }

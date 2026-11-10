@@ -17,6 +17,14 @@
     set(nid) { try { localStorage.setItem('vl_server', nid); } catch (e) { } location.reload(); }
   };
   try { document.title += ' · ' + NAMES[id]; } catch (e) { }
+  try {   // vừa chuyển cảnh từ trang chọn server: màn trắng tan dần
+    if (sessionStorage.getItem('vl_warp')) {
+      sessionStorage.removeItem('vl_warp');
+      const st = document.createElement('style'); st.textContent = '@keyframes vlWarpIn{to{opacity:0;visibility:hidden}}';
+      const d = document.createElement('div'); d.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:2147483000;pointer-events:none;animation:vlWarpIn .9s ease .1s forwards';
+      document.head.appendChild(st); (document.body || document.documentElement).appendChild(d); setTimeout(() => d.remove(), 1300);
+    }
+  } catch (e) { }
   if (!base) return;
   const f = window.fetch.bind(window);
   window.fetch = (u, o) => { if (typeof u === 'string' && u.startsWith('/api/') && !u.startsWith('/api/servers')) u = base + u; return f(u, o); };
