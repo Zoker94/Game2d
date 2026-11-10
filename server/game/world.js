@@ -1947,7 +1947,7 @@ class World {
         .filter(id => !npc.bookShop || !ITEMS[id].cls || (ITEMS[id].cls === p.c.cls && (!BOOKS[id] || !BOOKS[id].branch || BOOKS[id].branch === branchOf(p.c))))   // sách: đúng phái, đúng hệ đang tu
         .map(id => ({ id, price: SHOPS.goldPrice(npc.id, id) }));   // giá có thể do quản trị viên sửa (server/game/shops.js)
     }
-    if (npc.knbShop) out.knbShop = npc.knbShop.filter(x => this.shopAllowed(x.id));
+    if (npc.knbShop) out.knbShop = npc.knbShop.filter(x => this.shopAllowed(x.id)).map(x => ITEMS[x.id] && ITEMS[x.id].noSale ? { id: x.id, knb: x.knb, lock: 1 } : x);   // chưa mở bán: hiện khoá
     if (out.shop) out.shop = out.shop.filter(x => this.shopAllowed(x.id));
     out.freeRename = !p.c.renameFree;
     if (npc.action === 'escort' || npc.action === 'escortDest') { out.routes = this.escort.routeView(); out.escort = this.escort.meView(p); }
@@ -2092,6 +2092,7 @@ class World {
     if (knb) {
       const entry = (npc.knbShop || []).find(x => x.id === id);
       if (!entry) return;
+      if (ITEMS[id] && ITEMS[id].noSale) return this.toast(p, '🔒 Vật phẩm này chưa mở bán', 'error');
       const cost = entry.knb * qty;
       if (c.knb < cost) return this.toast(p, 'Không đủ Nguyên Bảo', 'error');
       if (!U.addItem(c, id, qty, 0, null, true)) return this.toast(p, 'Túi đồ đầy', 'error');   // đồ mua ở NPC là đồ khoá

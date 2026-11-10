@@ -157,7 +157,8 @@
     kim_quy:      { c: '#5affb8', c2: '#ffd040', trail: 'bubble', pal: 'jade' },
     hoa_ky_lan:   { c: '#ffb030', c2: '#ff4a10', trail: 'ember',  pal: 'fire' },
     phuong_hoang: { c: '#ffe070', c2: '#ff5a1a', trail: 'ember',  pal: 'fire' },
-    thanh_long:   { c: '#9ef6ff', c2: '#c49aff', trail: null,     pal: 'blue' }
+    thanh_long:   { c: '#9ef6ff', c2: '#c49aff', trail: null,     pal: 'blue' },
+    xe_may:       { c: '#ff4a3a', c2: '#ffd27a', trail: 'dust',   pal: 'blood' }
   };
   const stageOf = lv => lv >= 50 ? 4 : lv >= 40 ? 3 : lv >= 25 ? 2 : lv >= 10 ? 1 : 0;
   const rankOf = id => RANK[(G.data.mounts[id] || {}).rarity] || 0;
@@ -287,6 +288,34 @@
       groundGlow(ctx, x, y, 40, '#ffd040', 0.18 + Math.sin(now / 300 + seed) * 0.05);
     }
   }
+  // Xe máy: đứng yên nổ máy (khói pô phụt từng nhịp, xe rung trong ảnh), chạy: khói xả dày + bụi đường tung sau bánh
+  // + vệt đèn pha phía trước khi chạy. Toạ độ theo khung ảnh (tools/mount_art/xe_may): nhìn ngang pô ở đuôi xe, thấp.
+  const SMOKE = ['#d8d8de', '#b8b8c2', '#9a9aa6'], DUST = ['#c8a878', '#b08c5a', '#dcc49a'];
+  function engine(ctx, x, y, now, view, moving, key, flip) {
+    const R = Math.random, side = view === 'side', dir = flip ? -1 : 1;   // dir: hướng đầu xe khi nhìn ngang
+    // điểm pô xả / bánh sau theo hướng nhìn
+    const ex = side ? x - dir * 34 : view === 'up' ? x + 9 : x + 11, ey = side ? y - 9 : view === 'up' ? y - 10 : y - 34;
+    const back = side ? Math.PI * (dir > 0 ? 1 : 0) : view === 'up' ? Math.PI / 2 : -Math.PI / 2;   // hướng khói bay (ngược chiều chạy)
+    if (!moving) {
+      // nổ máy: mỗi nhịp phụt 1-2 cụm khói nhỏ, bay lên chậm rồi tan
+      if (every(key + 'pf', 240 + R() * 140, now)) FX.emit(1 + (R() < 0.35 ? 1 : 0), ex, ey, { angle: back - (side ? 0 : 0), spread: 0.9, speed: 16, vy: -14, life: 950, size: 3.4, color: SMOKE[Math.floor(R() * 3)], drag: 1.6 });
+      return;
+    }
+    // chạy: khói xả kéo vệt + bụi đường hai bên bánh sau
+    if (every(key + 'pm', 55, now)) FX.emit(1, ex, ey, { angle: back, spread: 0.45, speed: 70, vy: -10, life: 620, size: 3.8, color: SMOKE[Math.floor(R() * 3)], drag: 2 });
+    const wx = side ? x - dir * 26 : x + (R() - 0.5) * 12, wy = side ? y - 2 : view === 'up' ? y - 2 : y - 30;
+    if (every(key + 'pd', 45, now)) FX.emit(1, wx, wy, { angle: back + (R() - 0.5) * 0.8, spread: 0.7, speed: 55, vy: -24, life: 520, size: 3.2, color: DUST[Math.floor(R() * 3)], drag: 2.4, grav: 40 });
+    // đèn pha: quạt sáng mờ phía trước (nhìn ngang / nhìn xuống)
+    if (view !== 'up') {
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const hx = side ? x + dir * 30 : x, hy = side ? y - 26 : y - 22, len = side ? 70 : 46, a0 = side ? (dir > 0 ? 0 : Math.PI) : Math.PI / 2;
+      const g = ctx.createRadialGradient(hx, hy, 2, hx, hy, len);
+      g.addColorStop(0, 'rgba(255,246,200,.32)'); g.addColorStop(1, 'rgba(255,246,200,0)');
+      ctx.fillStyle = g; ctx.globalAlpha = 0.75 + Math.sin(now / 90) * 0.08;
+      ctx.beginPath(); ctx.moveTo(hx, hy); ctx.arc(hx, hy, len, a0 - 0.32, a0 + 0.32); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+  }
   const fireMul = lv => 0.8 + Math.min(50, lv || 1) / 50 * 0.6;   // lửa cao dần theo cấp
   function over(ctx, id, x, y, now, view, moving, seed, flip, lv) {
     const side = view === 'side', back = side ? (flip ? 1 : -1) : 0;
@@ -304,6 +333,8 @@
     } else if (id === 'phuong_hoang') {
       if ((lv || 1) >= 40) fireRing(ctx, x, y - 30, now * 1.3, side ? 30 : 22, side ? 8 : 10, 'over', 12, 0.6 + ((lv || 1) - 40) / 25, FIRE);
       if (every(key, moving ? 45 : 110, now)) FX.emit(1, x + back * (side ? 34 : 0) + (Math.random() - 0.5) * 40, y - 40 - Math.random() * 20, { speed: 20, vy: 30, life: 800, size: 3, color: ['#ffe070', '#ff9a20', '#ff4a1a'][Math.floor(Math.random() * 3)], drag: 1 });
+    } else if (id === 'xe_may') {
+      engine(ctx, x, y, now, view, moving, key, flip);
     } else if (id === 'kim_quy' || id === 'kim_nguu') {
       if (every(key, 260, now)) FX.emit(1, x + (Math.random() - 0.5) * (side ? 50 : 28), y - 20 - Math.random() * 30, { speed: 4, vy: -14, life: 900, size: 2.6, color: id === 'kim_quy' && Math.random() < 0.3 ? '#4affb0' : '#fff2a0' });
     }

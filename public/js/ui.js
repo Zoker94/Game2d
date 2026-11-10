@@ -1915,16 +1915,16 @@
       html += `<div class="outlaw-warn">☠️ Bạn đang mang tội đồ sát (sát khí ${G.me.pk}): không thể ${d.teleports ? 'đi xe Xa Phu – phải tự chạy bộ' : 'mua bán với NPC'}. ${d.teleports ? '' : 'Vẫn mua được <b>Lệnh Bài Xoá Tội</b>. '}Sát khí giảm 1 điểm mỗi 15 phút.</div>`;
     if (tab === 'knb') html += `<div class="tp-cta"><span>💎 Nguyên Bảo của bạn: <b>${fmt(G.me.knb)}</b></span><button class="btn primary small" id="tp-open">💳 Nạp Nguyên Bảo</button></div>`;
     if (tab === 'buy' || tab === 'knb') {
-      const list = tab === 'buy' ? d.shop.map(x => ({ id: x.id, price: x.price })) : d.knbShop.map(x => ({ id: x.id, knb: x.knb }));
+      const list = tab === 'buy' ? d.shop.map(x => ({ id: x.id, price: x.price })) : d.knbShop.map(x => ({ id: x.id, knb: x.knb, lock: x.lock }));
       const hasEq = list.some(x => G.data.items[x.id] && G.data.items[x.id].type === 'equip'), bbr = panelState.buyBr || G.me.branch;
       if (hasEq) html += `<div class="buy-br">Mua trang bị hệ: <button class="${bbr === 'ngoai' ? 'on' : ''}" data-bbr="ngoai">⚔️ Ngoại công (+Sức Mạnh)</button><button class="${bbr === 'noi' ? 'on' : ''}" data-bbr="noi">🔮 Nội công (+Nội Công)</button></div>`;
       html += `<div class="small muted">💰 ${fmt(G.me.gold)} · 💎 ${fmt(G.me.knb)}</div><div class="list">` + list.map(x => {
         const it = G.data.items[x.id];
         const cant = it.lv > G.me.level;
         const stats = it.stats ? Object.entries(brSt(it, bbr)).map(([k, v]) => `${STAT_NAME[k]} +${v}`).join(', ') : (it.desc || '');
-        return `<div class="li"><img src="${iconUrl(x.id)}" class="ic" width="36" height="36"><div class="grow">${itemName(x.id)} <span class="small ${cant ? 'warn' : 'muted'}">Cấp ${it.lv || 1}</span><div class="sub">${esc(stats)}</div></div>
-          ${it.type !== 'equip' ? `<input type="number" min="1" max="999" value="${it.type === 'use' && x.price < 100 ? 10 : 1}" style="width:58px" data-qty="${x.id}">` : ''}
-          <button class="btn small ${tab === 'knb' ? 'primary' : 'green'}" data-buy="${x.id}">${x.id === 'rename_card' && d.freeRename ? '🎁 Miễn phí (lần đầu)' : x.knb ? x.knb + ' 💎' : fmt(x.price) + ' 💰'}</button></div>`;
+        return `<div class="li${x.lock ? ' locked-sale' : ''}"><img src="${iconUrl(x.id)}" class="ic" width="36" height="36"><div class="grow">${x.lock ? '🔒 ' : ''}${itemName(x.id)} <span class="small ${cant ? 'warn' : 'muted'}">Cấp ${it.lv || 1}</span><div class="sub">${esc(stats)}</div></div>
+          ${it.type !== 'equip' && !x.lock ? `<input type="number" min="1" max="999" value="${it.type === 'use' && x.price < 100 ? 10 : 1}" style="width:58px" data-qty="${x.id}">` : ''}
+          ${x.lock ? '<button class="btn small" disabled title="Chưa mở bán">🔒 Sắp mở bán</button></div>' : `<button class="btn small ${tab === 'knb' ? 'primary' : 'green'}" data-buy="${x.id}">${x.id === 'rename_card' && d.freeRename ? '🎁 Miễn phí (lần đầu)' : x.knb ? x.knb + ' 💎' : fmt(x.price) + ' 💰'}</button></div>`}`;
       }).join('') + '</div>';
     } else if (tab === 'sell') {
       html += quickSellHtml() + invGrid(body, { noEquip: true, mark: sellMark }) + (sellMulti ? '' : itemActions({ shop: true }));

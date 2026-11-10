@@ -9,7 +9,8 @@ const CHANGELOG = [
       '🗺️ Quản trị viên có thể đóng / mở từng khu bản đồ luyện công; người đang ở khu bị đóng được tự động chuyển sang khu đang mở.',
       '🏯 Server hiện tại đổi tên thành server Tương Dương. Thêm server mới Tô Châu (tài khoản, nhân vật riêng) – chọn server ngay ở màn đăng nhập. Tô Châu sẽ mở cửa theo thông báo.',
       '🌐 Trang chọn server mới (volam2d.com/server): Tương Dương ở trên, Tô Châu ở dưới, nền động có các bóng võ sĩ luyện công. Nút Chơi ngay ở trang chủ dẫn vào trang này; đổi server ở màn đăng nhập.',
-      '✨ Chọn server có hiệu ứng chuyển cảnh (vòng neon, máy quay lao về chân trời, các võ sĩ ôm quyền chào). Điện thoại: chạm màn hình để xoay ngang toàn màn hình.'
+      '✨ Chọn server có hiệu ứng chuyển cảnh (vòng neon, máy quay lao về chân trời, các võ sĩ ôm quyền chào). Điện thoại: chạm màn hình để xoay ngang toàn màn hình.',
+      '🏍️ Thú cưỡi mới: Xe Máy Phân Khối Lớn (+55% tốc độ) – đứng yên nổ máy phụt khói, chạy tung bụi, đèn pha sáng phía trước. Sắp mở bán ở Kỳ Trân Các.'
     ]
   },
   {

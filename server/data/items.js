@@ -312,6 +312,7 @@ const { MOUNTS } = require('./mounts');
 for (const m of Object.values(MOUNTS)) {
   ITEMS['mount_' + m.id] = { id: 'mount_' + m.id, type: 'use', name: 'Thú cưỡi: ' + m.name, desc: `Sử dụng để thuần phục ${m.name} (+${Math.round(m.speed * 100)}% tốc độ khi cưỡi).`,
     effect: { mount: m.id }, price: m.price, lv: m.lv, rarity: m.rarity, icon: 'saddle', stack: true };
+  if (m.noSale) { ITEMS['mount_' + m.id].noSale = true; ITEMS['mount_' + m.id].desc += ' Sắp mở bán.'; }
 }
 ITEMS.event_token.type = 'material';
 
