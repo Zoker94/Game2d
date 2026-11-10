@@ -7,7 +7,8 @@ const CHANGELOG = [
       '🎫 Vé Treo Máy chỉ trừ giờ khi đang BẬT Tự động (kể cả khi máy chủ treo hộ lúc thoát game). Tắt Tự động thì vé tạm dừng (nút hiện ⏸), Khu VIP vẫn vào được.',
       '🎣 Câu cá không còn hỏi mã xác nhận.',
       '🗺️ Quản trị viên có thể đóng / mở từng khu bản đồ luyện công; người đang ở khu bị đóng được tự động chuyển sang khu đang mở.',
-      '🏯 Server hiện tại đổi tên thành server Tương Dương. Thêm server mới Tô Châu (tài khoản, nhân vật riêng) – chọn server ngay ở màn đăng nhập. Tô Châu sẽ mở cửa theo thông báo.'
+      '🏯 Server hiện tại đổi tên thành server Tương Dương. Thêm server mới Tô Châu (tài khoản, nhân vật riêng) – chọn server ngay ở màn đăng nhập. Tô Châu sẽ mở cửa theo thông báo.',
+      '🌐 Trang chọn server mới (volam2d.com/server): Tương Dương ở trên, Tô Châu ở dưới, nền động có các bóng võ sĩ luyện công. Nút Chơi ngay ở trang chủ dẫn vào trang này; đổi server ở màn đăng nhập.'
     ]
   },
   {

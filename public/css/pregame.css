@@ -206,12 +206,8 @@ body.short .pg-enter { gap: 6px; }
 .pg #splash-run { width: min(520px, 84%); }
 body.short .pg #splash-run { width: min(380px, 70%); }
 .pg #splash-start { animation: pgPulse 1.6s ease-in-out infinite; }
-/* chọn server */
-.pg-realms { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+/* server đang chọn + link sang trang chọn server */
+.pg-realms { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; padding: 8px 12px; border-radius: 10px; border: 1px solid #c9962e; background: rgba(0, 0, 0, .35); color: #e8d6b0; font-size: 13px; }
 .pg-realms:empty { display: none; }
-.pg-realms-t { grid-column: 1 / -1; font-size: 12px; color: #c8b490; letter-spacing: .5px; }
-.pg-realms button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 10px; border-radius: 10px; border: 1px solid #5a4630; background: rgba(0, 0, 0, .35); color: #e8d6b0; cursor: pointer; text-align: left; }
-.pg-realms button b { font-size: 13px; }
-.pg-realms button small { font-size: 11px; color: #a89878; }
-.pg-realms button.on { border-color: #c9962e; background: linear-gradient(180deg, #5a2a14, #3a160a); color: #ffe39a; box-shadow: 0 0 10px rgba(201, 150, 46, .35); }
-.pg-realms button.off:not(.on) { opacity: .65; }
+.pg-realms b { color: #ffe39a; }
+.pg-realms a { color: #7fe8ff; font-weight: 700; text-decoration: none; white-space: nowrap; }

@@ -5,6 +5,11 @@
   const fromPath = (location.pathname.match(/^\/s\/([a-z]+)\//) || [])[1];   // trang quản trị của server con: /s/tochau/admin/
   let id = fromPath;
   if (!id) try { id = localStorage.getItem('vl_server'); } catch (e) { }
+  // vào /play mà chưa chọn server lần nào (và chưa đăng nhập): sang trang chọn server; app cài đặt (?app=) vẫn vào thẳng
+  if (!id && /^\/play\/?$/.test(location.pathname) && !/[?&]app=/.test(location.search)) {
+    let tok = null; try { tok = localStorage.getItem('vl_token'); } catch (e) { }
+    if (!tok) { location.replace('/server' + location.search); return; }
+  }
   if (!NAMES[id]) id = 'tuongduong';
   const base = id === 'tuongduong' ? '' : '/s/' + id;
   window.REALM = {

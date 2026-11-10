@@ -225,17 +225,9 @@
       { t: '🏯 Về server Tương Dương', cls: 'primary', fn: () => REALM.set('tuongduong') },
       { t: '💬 Vào nhóm Zalo', cls: 'zalo', fn: () => { window.open(ZALO_URL, '_blank', 'noopener'); setTimeout(realmClosedModal, 300); } }]);
   }
-  async function renderRealms() {
+  function renderRealms() {
     const box = $('realm-pick'); if (!box || !window.REALM) return;
-    let list = [{ id: 'tuongduong', name: 'Tương Dương', open: true }, { id: 'tochau', name: 'Tô Châu', open: false }];
-    try { list = (await (await fetch('/api/servers', { cache: 'no-store' })).json()).list || list; } catch (e) { }
-    box.innerHTML = '<div class="pg-realms-t">Chọn server</div>' + list.map(v => `<button type="button" data-realm="${v.id}" class="${v.id === REALM.id ? 'on' : ''} ${v.open ? '' : 'off'}"><b>🏯 ${v.name}</b><small>${v.open ? (v.up === false ? 'Đang khởi động' : '🟢 ' + (v.online | 0) + ' online') : '🔒 Chưa mở'}</small></button>`).join('');
-    box.querySelectorAll('[data-realm]').forEach(b => b.onclick = () => {
-      const v = list.find(x => x.id === b.dataset.realm);
-      if (v.id === REALM.id) return;
-      if (!v.open && !confirm(`Server ${v.name} chưa mở cửa – chỉ quản trị viên / tester vào được.\nVẫn chuyển sang server ${v.name}?`)) return;
-      REALM.set(v.id);
-    });
+    box.innerHTML = `<span>🏯 Server: <b>${REALM.name}</b></span><a href="/server">Đổi server ›</a>`;
   }
   G.realmClosedModal = realmClosedModal;
 

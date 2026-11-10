@@ -9,7 +9,7 @@
     const q = new URLSearchParams(location.search), ref = q.get('ref');
     if (ref && /^[A-Za-z0-9]{4,12}$/.test(ref)) {
       localStorage.setItem('vl_ref', JSON.stringify({ c: ref.toUpperCase(), t: Date.now() }));
-      document.querySelectorAll('a[href="/play"]').forEach(a => a.href = '/play?ref=' + encodeURIComponent(ref));
+      document.querySelectorAll('a[href="/server"]').forEach(a => a.href = '/server?ref=' + encodeURIComponent(ref));
     }
   } catch (e) { }
 
