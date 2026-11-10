@@ -266,3 +266,7 @@ body.hud-px #nx-fx i { border-radius: 0; width: 4px; height: 4px; box-shadow: no
 body.hud-px #nx-fx::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .08) 0 1px, transparent 1px 3px); }
 body.hud-px .toast { background: #060a22 !important; color: #e6fbff; text-shadow: 1px 1px 0 #000; }
 @media (prefers-reduced-motion: reduce) { body.hud-px .panel-box, body.hud-px .modal-box, body.hud-px #nx-fx .c, body.hud-px #nx-fx .edge::after, body.hud-px #hud-status, body.hud-px #mini-wrap, body.hud-px #skillbar, body.hud-px .slot.r-legendary { animation: none !important; } }
+/* chữ FPS / ping luôn nằm trên cùng, không bị khung khác che */
+body.hud-neon #hud-status { z-index: 9; }
+body.hud-neon #net-pill { z-index: 12; background: rgba(8, 12, 36, .96) !important; border: 1px solid rgba(25, 227, 255, .6) !important; box-shadow: 0 0 6px rgba(25, 227, 255, .4); }
+body.hud-neon #net-pill b { color: #c8fbff; }

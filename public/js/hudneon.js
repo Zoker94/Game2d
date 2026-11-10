@@ -1,10 +1,10 @@
 // Giao diện "Neon Huyền Cơ": 2 bình tròn Máu / Nội lực (chất lỏng gợn sóng, vòng đo % phát sáng) ở hai bên phía dưới
 // + khoác lại màu neon cho khung nhân vật, bản đồ nhỏ, nút chiêu, cần điều khiển, thanh kinh nghiệm.
-// Đang thử nghiệm trên server Tô Châu: mặc định bản Neon Pixel (vl_hud = 'neonpx'); 'neon' = bản mượt; 'classic' = tắt.
+// Đang thử nghiệm trên server Tô Châu: mặc định bản Neon (vl_hud = 'neon'); 'neonpx' = bản pixel (không dùng); 'classic' = tắt.
 (function () {
   'use strict';
   let pref = null; try { pref = localStorage.getItem('vl_hud'); } catch (e) { }
-  const mode = pref === 'neon' || pref === 'neonpx' ? pref : pref !== 'classic' && window.REALM && REALM.id === 'tochau' ? 'neonpx' : null;
+  const mode = pref === 'neon' || pref === 'neonpx' ? pref : pref !== 'classic' && window.REALM && REALM.id === 'tochau' ? 'neon' : null;
   const on = !!mode, PX = mode === 'neonpx';
   const HudNeon = window.HudNeon = { on, px: PX, set() { } };
   if (!on) return;
