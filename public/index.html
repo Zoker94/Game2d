@@ -60,6 +60,7 @@
         <div class="pg-online"><i></i><span id="online-count">0</span> đại hiệp đang hành tẩu giang hồ</div>
       </div>
       <div class="pg-card">
+        <div id="realm-pick" class="pg-realms"></div>
         <div class="pg-tabs"><button data-auth="login" class="on">Đăng nhập</button><button data-auth="register">Đăng ký</button></div>
         <form id="form-login" class="pg-form" autocomplete="on">
           <label class="pg-field"><span>👤</span><input id="li-user" name="username" placeholder="Tên tài khoản" maxlength="20" autocomplete="username" autocapitalize="none" spellcheck="false"></label>
@@ -249,6 +250,7 @@
   <div id="modal-msg" class="hidden"><div class="modal-box"><p id="modal-text"></p><div class="row" id="modal-btns"></div></div></div>
 </div>
 
+<script src="/js/realm.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/perfhud.js"></script>

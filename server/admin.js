@@ -6,6 +6,7 @@ const { BOSSES } = require('./data/monsters');
 const { EVENT_INFO } = require('./game/features');
 const U = require('./game/util');
 const { isOwner } = require('./owner');
+const REALM = require('./realm');
 
 module.exports = function adminRoutes(app, { db, world, features, io, rateLimited }) {
   const SESSION_MS = 12 * 3600e3;
@@ -291,7 +292,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   });
 
   // ----- Cấu hình -----
-  app.get('/api/admin/config', auth, (req, res) => { const M = require('./data/maps'); res.json(Object.assign({}, db.data.config, { welcome: world.welcome.cfg, chCount: M.CHANNELS, vipCh: M.VIP_CH, closedCh: db.data.config.closedCh || [] })); });
+  app.get('/api/admin/config', auth, (req, res) => { const M = require('./data/maps'); res.json(Object.assign({}, db.data.config, { welcome: world.welcome.cfg, chCount: M.CHANNELS, vipCh: M.VIP_CH, closedCh: db.data.config.closedCh || [], server: { id: REALM.ID, name: REALM.NAME, main: REALM.IS_MAIN }, servers: REALM.IS_MAIN ? require('./realms').list(db, world.players.size) : null })); });
   app.post('/api/admin/config', auth, (req, res) => {
     const c = db.data.config, b = req.body || {};
     for (const k of ['expRate', 'dropRate', 'goldRate']) if (b[k] != null) c[k] = U.clamp(+b[k] || 1, 0.1, 100);
@@ -303,6 +304,13 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
       c.closedCh = [...new Set(b.closedCh.map(x => x | 0).filter(x => x > 1))];
       const n = world.evacuateClosed();
       act(req, `Khu đang đóng: ${c.closedCh.join(', ') || 'không'} (chuyển ${n} người chơi)`);
+    }
+    if (b.realmOpen && typeof b.realmOpen === 'object' && REALM.IS_MAIN) {   // mở / đóng server khác (Tô Châu) cho người chơi vào
+      const R = require('./realms'), o = c.realmsOpen = Object.assign({}, c.realmsOpen);
+      for (const id of REALM.CHILDREN) if (b.realmOpen[id] != null && !!o[id] !== !!b.realmOpen[id]) {
+        o[id] = !!b.realmOpen[id]; R.sendOpen(db, id);
+        act(req, `${o[id] ? 'MỞ' : 'ĐÓNG'} server ${REALM.REALMS[id].name}`);
+      }
     }
     if (b.maintOpenAt != null) c.maintOpenAt = Math.max(0, +b.maintOpenAt || 0);   // hẹn giờ tự tắt bảo trì (0 = không hẹn)
     if (b.maintenance != null) {
@@ -393,6 +401,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     db.data.config.bank = { bin: String(b.bin || cur.bin).replace(/\D/g, '').slice(0, 8), bankName: String(b.bankName || cur.bankName).slice(0, 40), acc: String(b.acc || cur.acc).replace(/\s/g, '').slice(0, 24),
       holder: String(b.holder || cur.holder).toUpperCase().slice(0, 60), rate: Math.max(0.1, Math.min(100, +b.rate || cur.rate)), min: Math.max(1000, +b.min || cur.min), max: Math.max(10000, +b.max || cur.max) };
     db.markDirty(); db.log('admin', `${req.admin} sửa tài khoản nhận nạp tiền`);
+    if (REALM.IS_MAIN) for (const id of REALM.CHILDREN) require('./realms').sendOpen(db, id);
     res.json({ ok: true, bank: world.topup.bank });
   });
   // ----- Tự động duyệt nạp tiền: webhook từ SePay / Casso (không cần đăng nhập quản trị, xác thực bằng khoá bí mật) -----

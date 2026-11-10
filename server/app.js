@@ -16,6 +16,8 @@ const { Features } = require('./game/features');
 const U = require('./game/util');
 const adminRoutes = require('./admin');
 const { isOwner, ADMIN_EMAILS } = require('./owner');
+const REALM = require('./realm');   // server đang chạy: Tương Dương (chính) / Tô Châu (tiến trình con)
+const realms = REALM.IS_MAIN ? require('./realms') : null;
 
 const PORT = process.env.PORT || 3000;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
@@ -43,10 +45,14 @@ function realIp(h, addr) {
 }
 const privateIp = ip => !ip || /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1$|fc|fd|fe80)/i.test(ip);
 app.use((req, res, next) => { Object.defineProperty(req, 'ip', { value: realIp(req.headers, req.socket.remoteAddress), configurable: true }); next(); });
+if (realms) app.use(realms.httpProxy);   // /s/tochau/... -> server Tô Châu (trước express.json để giữ nguyên thân yêu cầu)
 app.use(express.json({ limit: '200kb' }));
 const server = http.createServer(app);
 // nén gói tin lớn (trạng thái bản đồ đông người, dữ liệu túi đồ...): gói nhỏ hơn 1KB gửi thẳng để đỡ tốn CPU máy chủ
-const io = new Server(server, { cors: { origin: false }, pingInterval: 10000, pingTimeout: 20000, perMessageDeflate: { threshold: 1024 } });
+const io = new Server(server, { cors: { origin: false }, pingInterval: 10000, pingTimeout: 20000, perMessageDeflate: { threshold: 1024 }, destroyUpgrade: !realms });
+if (realms) server.on('upgrade', realms.upgrade);   // WebSocket của server Tô Châu đi qua server chính
+// server con chưa được mở: chỉ quản trị viên / tester vào được
+const realmClosed = () => !REALM.IS_MAIN && !db.data.config.realmOpen;
 
 const world = new World(io, db);
 const features = new Features(world, db);
@@ -125,7 +131,13 @@ const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : nul
 
 // ---------------- API công khai ----------------
 app.get('/api/config', (req, res) => {
-  res.json({ googleClientId: GOOGLE_CLIENT_ID, devLogin: ALLOW_DEV_LOGIN, motd: db.data.config.motd, maintenance: db.data.config.maintenance, maintMsg: db.data.config.maintenance ? db.data.config.maintMsg || '' : '', maintEta: db.data.config.maintenance ? db.data.config.maintEta || '' : '', maintOpenAt: db.data.config.maintenance ? db.data.config.maintOpenAt || 0 : 0, now: Date.now(), online: world.players.size });
+  res.json({ server: { id: REALM.ID, name: REALM.NAME }, closed: realmClosed(), googleClientId: GOOGLE_CLIENT_ID, devLogin: ALLOW_DEV_LOGIN, motd: db.data.config.motd, maintenance: db.data.config.maintenance, maintMsg: db.data.config.maintenance ? db.data.config.maintMsg || '' : '', maintEta: db.data.config.maintenance ? db.data.config.maintEta || '' : '', maintOpenAt: db.data.config.maintenance ? db.data.config.maintOpenAt || 0 : 0, now: Date.now(), online: world.players.size });
+});
+
+// danh sách server (màn đăng nhập chọn server). Chỉ server chính trả lời; server con không có danh sách
+app.get('/api/servers', (req, res) => {
+  if (!realms) return res.json({ list: [{ id: REALM.ID, name: REALM.NAME, open: !realmClosed(), up: true, online: world.players.size }] });
+  res.json({ list: realms.list(db, world.players.size) });
 });
 
 app.post('/api/auth/google', async (req, res) => {
@@ -383,6 +395,7 @@ io.use((socket, next) => {
   const user = userFromToken(socket.handshake.auth && socket.handshake.auth.token);
   if (!user) return next(new Error('auth'));
   if (user.banned) return next(new Error('banned'));
+  if (realmClosed() && !user.isAdmin && !user.tester && !isOwner(user)) return next(new Error('closed'));   // server Tô Châu chưa mở
   if (db.data.config.maintenance && !user.isAdmin && !user.tester) return next(new Error('maintenance'));   // Tester do quản trị viên chọn được vào cả khi bảo trì
   // giới hạn số tài khoản đăng nhập cùng lúc trên 1 địa chỉ IP (cấu hình ipLimit, mặc định 3; 0 = tắt). Quản trị viên không tính.
   socket.ip = realIp(socket.handshake.headers, socket.handshake.address);
@@ -626,9 +639,28 @@ async function shutdown() {
 }
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
+if (realms) process.on('exit', () => realms.stopAll());
+// ----- server con (Tô Châu): nhận lệnh mở / đóng + tiền nạp từ server chính qua kênh IPC -----
+if (!REALM.IS_MAIN && process.send) {
+  process.on('disconnect', shutdown);   // server chính dừng / khởi động lại: lưu dữ liệu rồi dừng theo
+  process.on('message', m => {
+    if (!m || typeof m !== 'object') return;
+    if (m.open != null) {
+      const c = db.data.config, was = !!c.realmOpen;
+      c.realmOpen = !!m.open; db.markDirty();
+      if (was && !c.realmOpen) for (const p of [...world.players.values()]) if (!p.user.isAdmin && !p.user.tester && !isOwner(p.user)) { p.socket.emit('kicked', { reason: `Server ${REALM.NAME} đã tạm đóng` }); world.removePlayer(p); p.socket.disconnect(true); }
+      if (!was && c.realmOpen) { db.log('admin', `Server ${REALM.NAME} mở cửa`); io.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: `🎉 Server ${REALM.NAME} đã chính thức mở cửa!` }); }
+    }
+    if (m.bank) { db.data.config.bank = m.bank; db.markDirty(); }   // tài khoản nhận nạp tiền theo server chính
+    if (m.topup && world.topup) world.topup.autoMatch(m.topup);
+  });
+  setInterval(() => { try { process.send({ online: world.players.size }); } catch (e) { } }, 10000);
+}
 
 server.listen(PORT, () => {
-  console.log(`Võ Lâm 2D đang chạy tại http://localhost:${PORT}`);
+  console.log(`Võ Lâm 2D – server ${REALM.NAME} đang chạy tại http://localhost:${PORT}`);
+  if (process.send) try { process.send({ ready: 1 }); } catch (e) { }
+  if (realms) realms.start(db);
   console.log(`Trang quản trị: http://localhost:${PORT}/admin/`);
   console.log('Chủ server (Google):', ADMIN_EMAILS.join(', '));
   console.log(db.usingDatabase ? 'Lưu dữ liệu: Postgres (DATABASE_URL)' : 'Lưu dữ liệu: file ' + (process.env.DATA_DIR || 'data/') + 'db.json');

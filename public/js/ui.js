@@ -300,7 +300,7 @@
     // nút quản trị riêng cho chủ server: mở tab trước (tránh bị chặn popup) rồi gắn phiên quản trị
     if (G.user && G.user.owner) {
       $('btn-admin').classList.remove('hidden');
-      $('btn-admin').onclick = () => { G._adminWin = window.open('/admin/?wait=1', '_blank'); emit('adminPanel'); };
+      $('btn-admin').onclick = () => { G._adminWin = window.open((window.REALM ? REALM.base : '') + '/admin/?wait=1', '_blank'); emit('adminPanel'); };
     }
     // chạm vào khung chat thu gọn để mở rộng
     $('chat').addEventListener('click', e => { if ($('chat').classList.contains('collapsed') && e.target.id !== 'chat-toggle') { $('chat').classList.remove('collapsed'); $('chat-toggle').textContent = '▾'; const l = $('chat-log'); l.scrollTop = l.scrollHeight; } });

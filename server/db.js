@@ -32,6 +32,7 @@ let initialized = false;
 // ---------- Cơ sở dữ liệu Postgres (tùy chọn, dùng khi có DATABASE_URL) ----------
 // Mỗi người chơi là 1 dòng 'u:<id>', các phần còn lại 's:<tên>'. Chỉ ghi các dòng thay đổi.
 const DATABASE_URL = process.env.DATABASE_URL || '';
+const TABLE = /^[a-z_][a-z0-9_]{0,40}$/.test(process.env.DB_TABLE || '') ? process.env.DB_TABLE : 'vl_store';   // mỗi server 1 bảng riêng (Tô Châu: vl_store_tochau)
 let pool = null;
 const lastSaved = new Map();
 let saving = null;
@@ -52,8 +53,8 @@ async function init(opts = {}) {
       const local = /localhost|127\.0\.0\.1/.test(DATABASE_URL);
       pool = new Pool({ connectionString: DATABASE_URL, ssl: local ? false : { rejectUnauthorized: false }, max: 4 });
     }
-    await pool.query('CREATE TABLE IF NOT EXISTS vl_store (k TEXT PRIMARY KEY, v JSONB NOT NULL, updated TIMESTAMPTZ DEFAULT now())');
-    const { rows } = await pool.query('SELECT k, v FROM vl_store');
+    await pool.query(`CREATE TABLE IF NOT EXISTS ${TABLE} (k TEXT PRIMARY KEY, v JSONB NOT NULL, updated TIMESTAMPTZ DEFAULT now())`);
+    const { rows } = await pool.query(`SELECT k, v FROM ${TABLE}`);
     const raw = { users: {} };
     for (const r of rows) {
       const v = typeof r.v === 'string' ? JSON.parse(r.v) : r.v;
@@ -90,9 +91,9 @@ async function savePg() {
       const chunk = changed.slice(i, i + 100);
       const params = [], vals = [];
       chunk.forEach(([k, v], j) => { params.push(k, v); vals.push(`($${j * 2 + 1}, $${j * 2 + 2}::jsonb, now())`); });
-      await client.query(`INSERT INTO vl_store (k, v, updated) VALUES ${vals.join(',')} ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v, updated = now()`, params);
+      await client.query(`INSERT INTO ${TABLE} (k, v, updated) VALUES ${vals.join(',')} ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v, updated = now()`, params);
     }
-    if (removed.length) await client.query('DELETE FROM vl_store WHERE k = ANY($1)', [removed]);
+    if (removed.length) await client.query(`DELETE FROM ${TABLE} WHERE k = ANY($1)`, [removed]);
     await client.query('COMMIT');
     for (const [k, v] of changed) lastSaved.set(k, v);
     for (const k of removed) lastSaved.delete(k);

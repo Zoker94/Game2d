@@ -218,8 +218,30 @@
     loading(false);
   };
 
+  // ---- chọn server (mỗi server tài khoản / nhân vật riêng) ----
+  function realmClosedModal() {
+    const nm = (window.REALM && REALM.name) || 'này';
+    G.modal(`🔒 Server ${nm} chưa mở cửa.\n\nMời đại hiệp chơi ở server Tương Dương trong lúc chờ. Theo dõi nhóm Zalo để biết giờ mở server ${nm}!`, [
+      { t: '🏯 Về server Tương Dương', cls: 'primary', fn: () => REALM.set('tuongduong') },
+      { t: '💬 Vào nhóm Zalo', cls: 'zalo', fn: () => { window.open(ZALO_URL, '_blank', 'noopener'); setTimeout(realmClosedModal, 300); } }]);
+  }
+  async function renderRealms() {
+    const box = $('realm-pick'); if (!box || !window.REALM) return;
+    let list = [{ id: 'tuongduong', name: 'Tương Dương', open: true }, { id: 'tochau', name: 'Tô Châu', open: false }];
+    try { list = (await (await fetch('/api/servers', { cache: 'no-store' })).json()).list || list; } catch (e) { }
+    box.innerHTML = '<div class="pg-realms-t">Chọn server</div>' + list.map(v => `<button type="button" data-realm="${v.id}" class="${v.id === REALM.id ? 'on' : ''} ${v.open ? '' : 'off'}"><b>🏯 ${v.name}</b><small>${v.open ? (v.up === false ? 'Đang khởi động' : '🟢 ' + (v.online | 0) + ' online') : '🔒 Chưa mở'}</small></button>`).join('');
+    box.querySelectorAll('[data-realm]').forEach(b => b.onclick = () => {
+      const v = list.find(x => x.id === b.dataset.realm);
+      if (v.id === REALM.id) return;
+      if (!v.open && !confirm(`Server ${v.name} chưa mở cửa – chỉ quản trị viên / tester vào được.\nVẫn chuyển sang server ${v.name}?`)) return;
+      REALM.set(v.id);
+    });
+  }
+  G.realmClosedModal = realmClosedModal;
+
   function showLogin() {
     show('screen-login');
+    renderRealms();
     if (G.config.maintenance) {   // không chặn màn đăng nhập: Tester / GM vẫn đăng nhập được; người thường vào sẽ thấy bảng bảo trì
       const m = $('login-msg'); m.textContent = '⚠ Máy chủ đang bảo trì.' + (G.config.maintMsg ? ' Lý do: ' + G.config.maintMsg : '') + (G.config.maintEta ? ' · Dự kiến xong: ' + G.config.maintEta : '') + ' ';
       const a = document.createElement('a'); a.href = ZALO_URL; a.target = '_blank'; a.rel = 'noopener'; a.className = 'zalo-btn'; a.textContent = '💬 Vào nhóm Zalo'; m.appendChild(a);
@@ -322,7 +344,7 @@
     if (G.socket) return;
     loading(true, 'Đang kết nối...');
     GameAudio.init();
-    const s = G.socket = io({ auth: { token: G.token, dev: authExtra().dev, fp: authExtra().fp }, transports: ['websocket', 'polling'] });
+    const s = G.socket = io({ path: (window.REALM && REALM.sockPath) || '/socket.io', auth: { token: G.token, dev: authExtra().dev, fp: authExtra().fp }, transports: ['websocket', 'polling'] });
     function showUpdateGate(news) {
       if (document.getElementById('update-gate')) return;
       s.close();   // ngắt khỏi máy chủ: bản cũ không được chơi tiếp
@@ -357,6 +379,7 @@
       if (m === 'auth') { localStorage.removeItem('vl_token'); G.token = null; s.close(); G.socket = null; showLogin(); }
       else if (m === 'banned') { s.close(); G.modal('Tài khoản của bạn đã bị khóa.', [{ t: 'Đăng xuất', fn: logout }]); }
       else if (m === 'iplimit') { s.close(); G.modal(`⚠ Địa chỉ mạng (IP) của bạn đã có đủ ${(err.data && err.data.lim) || 3} tài khoản đang đăng nhập cùng lúc.\nHãy thoát bớt 1 tài khoản rồi thử lại.`, [{ t: 'Thử lại', fn: () => location.reload() }]); }
+      else if (m === 'closed') { s.close(); realmClosedModal(); }
       else if (m === 'maintenance') { s.close(); maintInfo().then(([msg, eta]) => G.maintModal(msg, eta)); }
     });
     s.on('disconnect', reason => {
@@ -523,8 +546,8 @@
     s.on('castLock', d => { G.castLockUntil = performance.now() + (d.ms || 0); });
     s.on('gemResult', d => { UI.onGem(d); GameAudio.sfx(d.ok ? 'enhOk' : 'enhFail'); });
     s.on('online', d => UI.onOnline(d));
-    s.on('adminToken', d => (G._adminWin && !G._adminWin.closed) ? (G._adminWin.location.href = '/admin/?t=' + d.token, G._adminWin = null) : G.modal('🛡️ Trang quản trị đã sẵn sàng (phiên 12 giờ).', [
-      { t: 'Mở Admin Panel', cls: 'primary', fn: () => { const w = window.open('/admin/#t=' + d.token, '_blank'); if (!w) location.href = '/admin/#t=' + d.token; } },
+    s.on('adminToken', d => (G._adminWin && !G._adminWin.closed) ? (G._adminWin.location.href = (window.REALM ? REALM.base : '') + '/admin/?t=' + d.token, G._adminWin = null) : G.modal('🛡️ Trang quản trị đã sẵn sàng (phiên 12 giờ).', [
+      { t: 'Mở Admin Panel', cls: 'primary', fn: () => { const ap = (window.REALM ? REALM.base : '') + '/admin/#t=' + d.token, w = window.open(ap, '_blank'); if (!w) location.href = ap; } },
       { t: 'Đóng' }]));
   }
   $('respawn-btn').onclick = () => G.socket.emit('respawn', { mode: 'town' });

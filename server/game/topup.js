@@ -5,6 +5,7 @@
 //   hoặc TỪ CHỐI. Chỉ chủ server được duyệt (quản trị viên thường chỉ xem).
 // - Tỉ lệ mặc định 1.000đ = 2 Nguyên Bảo (20.000đ = 40). Thông tin tài khoản + tỉ lệ sửa ở Cấu hình server (config.bank).
 const U = require('./util');
+const REALM = require('../realm');
 
 const DEF_BANK = { bin: '970422', bankName: 'MB Bank', acc: '9191919191994', holder: 'NGUYEN QUOC DUNG', rate: 2, min: 10000, max: 10000000 };
 const PRESETS = [20000, 50000, 100000, 200000, 500000, 1000000];
@@ -39,7 +40,7 @@ class Topup {
   get orders() { return this.db.data.topups || (this.db.data.topups = {}); }
   knbOf(amount) { return Math.floor(amount / 1000 * this.bank.rate); }
   newCode() {
-    for (;;) { let s = 'VL'; for (let i = 0; i < 6; i++) s += ALPH[Math.floor(Math.random() * ALPH.length)]; if (!this.orders[s]) return s; }
+    for (;;) { let s = REALM.CODE; for (let i = 0; i < 6; i++) s += ALPH[Math.floor(Math.random() * ALPH.length)]; if (!this.orders[s]) return s; }
   }
   // đơn quá hạn chưa chuyển: tự huỷ
   expire() {
@@ -84,6 +85,13 @@ class Topup {
   get hook() { return this.db.data.config.topupHook || {}; }
   autoMatch({ tx, amount, content, src }) {
     const D = this.db.data;
+    // mã đơn của server khác (VD Tô Châu: TCxxxxxx): webhook chỉ gọi vào server chính -> chuyển sang server đó tự duyệt
+    if (REALM.IS_MAIN) {
+      const raw0 = String(content || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      for (const id of REALM.CHILDREN) if (new RegExp(REALM.REALMS[id].code + '[A-HJ-NP-Z2-9]{6}').test(raw0) && !/VL[A-HJ-NP-Z2-9]{6}/.test(raw0)) {
+        if (require('../realms').send(id, { topup: { tx, amount, content, src } })) return { ok: true, fwd: id };
+      }
+    }
     D.topupTx = D.topupTx || {};
     tx = String(tx || ''); amount = Math.round(+amount || 0);
     if (!tx || !(amount > 0)) return { ok: false, why: 'bad' };
@@ -91,7 +99,7 @@ class Topup {
     D.topupTx[tx] = Date.now();
     const keys = Object.keys(D.topupTx); if (keys.length > 5000) for (const k of keys.slice(0, keys.length - 4000)) delete D.topupTx[k];
     const raw = String(content || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const codes = raw.match(/VL[A-HJ-NP-Z2-9]{6}/g) || [];
+    const codes = raw.match(new RegExp(REALM.CODE + '[A-HJ-NP-Z2-9]{6}', 'g')) || [];
     const o = codes.map(c => this.orders[c]).find(Boolean);
     const note = (why) => {
       D.topupMiss = D.topupMiss || [];
