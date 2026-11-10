@@ -286,35 +286,71 @@
       dragonLightning(ctx, x, y, now, side, seed, lv || 1, 'under');
     } else if (id === 'kim_quy' || id === 'kim_nguu') {
       groundGlow(ctx, x, y, 40, '#ffd040', 0.18 + Math.sin(now / 300 + seed) * 0.05);
-    }
-  }
-  // Xe máy: đứng yên nổ máy (khói pô phụt từng nhịp, xe rung trong ảnh), chạy: khói xả dày + bụi đường tung sau bánh
-  // + vệt đèn pha phía trước khi chạy. Toạ độ theo khung ảnh (tools/mount_art/xe_may): nhìn ngang pô ở đuôi xe, thấp.
-  const SMOKE = ['#d8d8de', '#b8b8c2', '#9a9aa6'], DUST = ['#c8a878', '#b08c5a', '#dcc49a'];
-  function engine(ctx, x, y, now, view, moving, key, flip) {
-    const R = Math.random, side = view === 'side', dir = flip ? -1 : 1;   // dir: hướng đầu xe khi nhìn ngang
-    // điểm pô xả / bánh sau theo hướng nhìn
-    const ex = side ? x - dir * 34 : view === 'up' ? x + 9 : x + 11, ey = side ? y - 9 : view === 'up' ? y - 10 : y - 34;
-    const back = side ? Math.PI * (dir > 0 ? 1 : 0) : view === 'up' ? Math.PI / 2 : -Math.PI / 2;   // hướng khói bay (ngược chiều chạy)
-    if (!moving) {
-      // nổ máy: mỗi nhịp phụt 1-2 cụm khói nhỏ, bay lên chậm rồi tan
-      if (every(key + 'pf', 240 + R() * 140, now)) FX.emit(1 + (R() < 0.35 ? 1 : 0), ex, ey, { angle: back - (side ? 0 : 0), spread: 0.9, speed: 16, vy: -14, life: 950, size: 3.4, color: SMOKE[Math.floor(R() * 3)], drag: 1.6 });
-      return;
-    }
-    // chạy: khói xả kéo vệt + bụi đường hai bên bánh sau
-    if (every(key + 'pm', 55, now)) FX.emit(1, ex, ey, { angle: back, spread: 0.45, speed: 70, vy: -10, life: 620, size: 3.8, color: SMOKE[Math.floor(R() * 3)], drag: 2 });
-    const wx = side ? x - dir * 26 : x + (R() - 0.5) * 12, wy = side ? y - 2 : view === 'up' ? y - 2 : y - 30;
-    if (every(key + 'pd', 45, now)) FX.emit(1, wx, wy, { angle: back + (R() - 0.5) * 0.8, spread: 0.7, speed: 55, vy: -24, life: 520, size: 3.2, color: DUST[Math.floor(R() * 3)], drag: 2.4, grav: 40 });
-    // đèn pha: quạt sáng mờ phía trước (nhìn ngang / nhìn xuống)
-    if (view !== 'up') {
-      ctx.save(); ctx.globalCompositeOperation = 'lighter';
-      const hx = side ? x + dir * 30 : x, hy = side ? y - 26 : y - 22, len = side ? 70 : 46, a0 = side ? (dir > 0 ? 0 : Math.PI) : Math.PI / 2;
-      const g = ctx.createRadialGradient(hx, hy, 2, hx, hy, len);
-      g.addColorStop(0, 'rgba(255,246,200,.32)'); g.addColorStop(1, 'rgba(255,246,200,0)');
-      ctx.fillStyle = g; ctx.globalAlpha = 0.75 + Math.sin(now / 90) * 0.08;
-      ctx.beginPath(); ctx.moveTo(hx, hy); ctx.arc(hx, hy, len, a0 - 0.32, a0 + 0.32); ctx.closePath(); ctx.fill();
+    } else if (id === 'xe_may') {
+      // hạt bụi ở toạ độ thế giới: bỏ lớp thu nhỏ quanh thú (mfx) để vệt bụi đứng yên trên mặt đất khi xe chạy đi
+      const MK = (window.Assets && Assets.MOUNT_K) || 1;
+      ctx.save(); ctx.translate(x, y); ctx.scale(1 / MK, 1 / MK); ctx.translate(-x, -y);
+      motoEmit(x, y, now, view, moving, id + seed, flip, MK);
+      motoPuffs(ctx, id + seed, now);
       ctx.restore();
     }
+  }
+  // Xe máy: hạt bụi / khói riêng (toạ độ thế giới, sống lâu) -> xe chạy qua để lại vệt bụi dài phía sau.
+  // Vẽ kiểu pixel (khối vuông ghép), dưới thân xe. Đứng yên: máy nổ phụt khói từng nhịp. Chạy: khói xả kéo vệt + bụi tung sau bánh.
+  const SMOKE = ['#e2e2ea', '#c4c4ce', '#a2a2ae'], DUST = ['#d6b888', '#c2a070', '#e4cfa4', '#b08c5a'];
+  const PUFFS = new Map();   // key -> { list, last, mv }
+  function puffOf(key) { let P = PUFFS.get(key); if (!P) PUFFS.set(key, P = { list: [], last: 0, mv: 0 }); return P; }
+  function addPuff(P, x, y, o) { if (P.list.length < 170) P.list.push(Object.assign({ x, y, t0: performance.now(), vx: 0, vy: 0, r0: 2, r1: 10, a: .5, life: 1500 }, o)); }
+  function motoEmit(x, y, now, view, moving, key, flip, MK) {
+    const P = puffOf(key), R = Math.random, side = view === 'side', dir = flip ? -1 : 1;
+    // pô xả và bánh sau theo hướng nhìn (đơn vị theo ảnh thú, nhân MK ra toạ độ thế giới)
+    const ex = x + (side ? -dir * 36 : view === 'up' ? 10 : 12) * MK, ey = y - (side ? 9 : view === 'up' ? 10 : 36) * MK;
+    const bx = side ? -dir : 0, by = side ? 0 : view === 'up' ? 1 : -1;   // hướng "phía sau xe" trên màn hình
+    const wx = x + (side ? -dir * 26 : 0) * MK, wy = y - (side ? 1 : view === 'up' ? 1 : 30) * MK;
+    if (moving && !P.mv) for (let k = 0; k < 6; k++) addPuff(P, wx + (R() - .5) * 10, wy, { vx: bx * 40 + (R() - .5) * 60, vy: -20 - R() * 20, r0: 3, r1: 14, a: .6, life: 1400, c: DUST[k % 4] });   // vừa rồ ga: tung bụi
+    P.mv = moving;
+    if (moving) {
+      if (every(key + 'xd', 22, now)) addPuff(P, wx + (R() - .5) * 8, wy + (R() - .5) * 4, { vx: bx * 18 + (R() - .5) * 14, vy: by * 18 - 5 - R() * 6, r0: 5, r1: 14 + R() * 6, a: .6, life: 2400 + R() * 900, c: DUST[Math.floor(R() * 4)] });
+      if (every(key + 'xs', 60, now)) addPuff(P, ex, ey, { vx: bx * 34 + (R() - .5) * 10, vy: by * 34 - 8, r0: 2, r1: 9, a: .5, life: 1100 + R() * 300, c: SMOKE[Math.floor(R() * 3)] });
+      if (every(key + 'xk', 90, now)) FX.emit(1, wx, wy - 2, { angle: Math.atan2(by || -0.6, bx || 0), spread: 1, speed: 70, vy: -30, grav: 260, life: 420, size: 2, color: '#6a5232' });   // sỏi đá văng
+    } else if (every(key + 'xi', 260 + R() * 160, now)) {   // nổ máy: phụt khói từng nhịp
+      const n = R() < .4 ? 2 : 1;
+      for (let k = 0; k < n; k++) addPuff(P, ex + k * bx * 3, ey, { vx: bx * 12 + (R() - .5) * 8, vy: -14 - R() * 8, r0: 1.5, r1: 7 + R() * 3, a: .55, life: 1500 + R() * 400, c: SMOKE[Math.floor(R() * 3)], delay: k * 90 });
+    }
+  }
+  function motoPuffs(ctx, key, now) {
+    const P = PUFFS.get(key); if (!P) return;
+    const dt = Math.min(.1, (now - (P.last || now)) / 1000); P.last = now;
+    ctx.save();
+    const L = P.list;
+    for (let i = L.length - 1; i >= 0; i--) {
+      const q = L[i], age = now - q.t0 - (q.delay || 0);
+      if (age < 0) continue;
+      if (age > q.life) { L.splice(i, 1); continue; }
+      const k = age / q.life, damp = Math.max(0, 1 - 1.4 * dt);
+      q.vx *= damp; q.vy *= damp; q.x += q.vx * dt; q.y += q.vy * dt;
+      const r = Math.max(1, Math.round((q.r0 + (q.r1 - q.r0) * Math.sqrt(k)) / 2) * 2), a = q.a * (1 - k) * (k < .02 ? k / .02 : 1);
+      const cx = Math.round(q.x / 2) * 2, cy = Math.round(q.y / 2) * 2, h = Math.round(r * .62 / 2) * 2;
+      ctx.globalAlpha = a * .45; ctx.fillStyle = '#000';
+      ctx.fillRect(cx - r + 2, cy - h + 2, r * 2, h * 2);   // bóng khối phía dưới
+      ctx.globalAlpha = a; ctx.fillStyle = q.c;
+      ctx.fillRect(cx - r, cy - h, r * 2, h * 2); ctx.fillRect(cx - h, cy - r, h * 2, r * 2);   // khối mây ghép hình chữ thập (pixel)
+      if (r >= 6) { ctx.globalAlpha = a * .7; ctx.fillStyle = '#fff'; ctx.fillRect(cx - h, cy - r, Math.max(2, h), 2); }   // ánh sáng mép trên
+    }
+    ctx.restore();
+    if (!L.length) PUFFS.delete(key);
+  }
+  function engine(ctx, x, y, now, view, moving, key, flip) {
+    // đèn pha: quạt sáng mờ phía trước khi chạy (nhìn ngang / nhìn xuống)
+    if (!moving || view === 'up') return;
+    const side = view === 'side', dir = flip ? -1 : 1;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const hx = side ? x + dir * 30 : x, hy = side ? y - 26 : y - 22, len = side ? 70 : 46, a0 = side ? (dir > 0 ? 0 : Math.PI) : Math.PI / 2;
+    const g = ctx.createRadialGradient(hx, hy, 2, hx, hy, len);
+    g.addColorStop(0, 'rgba(255,246,200,.32)'); g.addColorStop(1, 'rgba(255,246,200,0)');
+    ctx.fillStyle = g; ctx.globalAlpha = 0.75 + Math.sin(now / 90) * 0.08;
+    ctx.beginPath(); ctx.moveTo(hx, hy); ctx.arc(hx, hy, len, a0 - 0.32, a0 + 0.32); ctx.closePath(); ctx.fill();
+    ctx.restore();
   }
   const fireMul = lv => 0.8 + Math.min(50, lv || 1) / 50 * 0.6;   // lửa cao dần theo cấp
   function over(ctx, id, x, y, now, view, moving, seed, flip, lv) {

@@ -187,3 +187,82 @@ body.hud-neon #hud-status, body.hud-neon #mini-wrap, body.hud-neon #skillbar { a
   #nx-fx .c, #nx-fx .edge::after, #nx-fx i, body.hud-neon #hud-status, body.hud-neon #mini-wrap, body.hud-neon #skillbar, body.hud-neon .panel-box::after, body.hud-neon .modal-box::after, body.hud-neon .wc-box::after { animation: none !important; }
   body.hud-neon .panel-box, body.hud-neon .modal-box { animation: none; }
 }
+
+/* =====================================================================
+   NEON PIXEL (body.hud-neon.hud-px): góc vuông, viền cứng 2px, bóng đổ khối không nhoè,
+   vạch quét màn CRT, chữ đổ bóng lệch, chuyển động giật theo khung (steps) như game 8-bit
+   ===================================================================== */
+body.hud-px { --px-cy: #19e3ff; --px-pk: #ff2e9a; --px-yl: #ffe14a; --px-ink: #05081a;
+  --px-ring: 0 0 0 2px var(--px-cy), 0 0 0 4px var(--px-ink), 0 0 0 6px rgba(25, 227, 255, .35), 6px 6px 0 4px rgba(255, 46, 154, .45);
+  --px-ring-pk: 0 0 0 2px var(--px-pk), 0 0 0 4px var(--px-ink), 0 0 0 6px rgba(255, 46, 154, .35), 5px 5px 0 4px rgba(0, 0, 0, .5);
+  --px-scan: repeating-linear-gradient(0deg, rgba(0, 0, 0, .22) 0 1px, transparent 1px 3px);
+}
+body.hud-px canvas, body.hud-px img { image-rendering: pixelated; }
+.nx-orb canvas.nx-px { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, .55)); }
+body.hud-px .nx-val b { text-shadow: 2px 2px 0 #000 !important; letter-spacing: 1px; }
+body.hud-px .nx-val small { text-shadow: 1px 1px 0 #000 !important; }
+body.hud-px .nx-val em { text-shadow: 1px 1px 0 #000; }
+body.hud-px .nx-orb.low canvas { animation: pxLow .5s steps(2) infinite; }
+@keyframes pxLow { 50% { filter: brightness(1.6) drop-shadow(0 0 0 #ff2050) drop-shadow(3px 3px 0 #ff2050); } }
+
+/* khung, bảng, popup: góc vuông + viền cứng + vạch quét */
+body.hud-px #hud-status, body.hud-px #mini-wrap, body.hud-px #skillbar, body.hud-px #chat, body.hud-px #target-frame, body.hud-px #map-name, body.hud-px #tutorial-box, body.hud-px #daily-box, body.hud-px #story-box, body.hud-px #buff-line span,
+body.hud-px .panel-box, body.hud-px .modal-box, body.hud-px .bm-panel, body.hud-px .wm-panel, body.hud-px .wc-box, body.hud-px #tooltip, body.hud-px .toast, body.hud-px .wm-node, body.hud-px .wm-info {
+  border-radius: 0 !important; border: 0 !important; box-shadow: var(--px-ring) !important; }
+body.hud-px .panel-box, body.hud-px .modal-box, body.hud-px .bm-panel, body.hud-px .wm-panel, body.hud-px .wc-box {
+  background: var(--px-scan), var(--nx-grid), linear-gradient(180deg, #0a1030, #05081a) !important; animation: pxOpen .28s steps(4) both !important; }
+@keyframes pxOpen { 0% { transform: scaleY(.04); filter: brightness(3); } 50% { transform: scaleY(.6); filter: brightness(1.6); } 100% { transform: none; filter: none; } }
+body.hud-px .panel-box::after, body.hud-px .modal-box::after, body.hud-px .wc-box::after { background: linear-gradient(180deg, transparent 0 46%, rgba(25, 227, 255, .12) 46% 50%, transparent 50%) !important; animation: pxScan 3s steps(30) infinite !important; mix-blend-mode: normal; }
+@keyframes pxScan { from { transform: translateY(-100%); } to { transform: translateY(150%); } }
+body.hud-px .panel-box::before, body.hud-px .modal-box::before { inset: 4px !important; filter: none !important;
+  background: linear-gradient(var(--px-cy), var(--px-cy)) top left / 12px 4px no-repeat, linear-gradient(var(--px-cy), var(--px-cy)) top left / 4px 12px no-repeat,
+    linear-gradient(var(--px-cy), var(--px-cy)) top right / 12px 4px no-repeat, linear-gradient(var(--px-cy), var(--px-cy)) top right / 4px 12px no-repeat,
+    linear-gradient(var(--px-pk), var(--px-pk)) bottom left / 12px 4px no-repeat, linear-gradient(var(--px-pk), var(--px-pk)) bottom left / 4px 12px no-repeat,
+    linear-gradient(var(--px-pk), var(--px-pk)) bottom right / 12px 4px no-repeat, linear-gradient(var(--px-pk), var(--px-pk)) bottom right / 4px 12px no-repeat !important; }
+body.hud-px .panel-head { background: repeating-linear-gradient(90deg, rgba(25, 227, 255, .14) 0 4px, rgba(25, 227, 255, .06) 4px 8px) !important; border-bottom: 2px solid var(--px-cy) !important; }
+body.hud-px .panel-head h3, body.hud-px #panel-title, body.hud-px .bm-head b, body.hud-px .wm-head b { letter-spacing: 2.5px !important; text-shadow: 2px 2px 0 var(--px-pk), 0 0 0 transparent !important; color: #fff !important; }
+body.hud-px #panel-close, body.hud-px .x-btn, body.hud-px .bm-x, body.hud-px .wc-x { border-radius: 0 !important; border: 0 !important; background: var(--px-pk) !important; color: #fff !important; box-shadow: 0 0 0 2px #fff, 3px 3px 0 2px #000 !important; }
+body.hud-px #panel-close:active, body.hud-px .x-btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 2px #fff, 1px 1px 0 2px #000 !important; }
+
+/* thẻ, ô, nút, tab: viền vuông, bóng khối */
+body.hud-px .card, body.hud-px .li, body.hud-px .item-detail, body.hud-px .sk-head, body.hud-px .sk-slot, body.hud-px .stat-grid div, body.hud-px .au-box, body.hud-px .cmp-box, body.hud-px .npc-head {
+  border-radius: 0 !important; border: 2px solid rgba(25, 227, 255, .35) !important; box-shadow: 3px 3px 0 rgba(0, 0, 0, .45) !important; }
+body.hud-px .btn, body.hud-px .tabs button { clip-path: none !important; border-radius: 0 !important; border: 2px solid var(--px-cy) !important; box-shadow: 3px 3px 0 #000 !important; text-shadow: 1px 1px 0 #000 !important; text-transform: uppercase; letter-spacing: .6px; }
+body.hud-px .btn:hover, body.hud-px .tabs button:hover { box-shadow: 3px 3px 0 var(--px-pk) !important; background: rgba(25, 227, 255, .22) !important; }
+body.hud-px .btn:active, body.hud-px .tabs button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #000 !important; }
+body.hud-px .btn.primary, body.hud-px .tabs button.on { background: var(--px-cy) !important; color: #031026 !important; border-color: #fff !important; text-shadow: none !important; box-shadow: 3px 3px 0 var(--px-pk) !important; }
+body.hud-px .btn.green { background: #3dffb0 !important; color: #022a1a !important; border-color: #fff !important; text-shadow: none !important; box-shadow: 3px 3px 0 #000 !important; }
+body.hud-px .btn.red { background: var(--px-pk) !important; color: #fff !important; border-color: #fff !important; box-shadow: 3px 3px 0 #000 !important; }
+body.hud-px .slot { border-radius: 0 !important; border: 2px solid rgba(25, 227, 255, .4) !important; background: linear-gradient(135deg, rgba(25, 227, 255, .12) 25%, transparent 25%) 0 0 / 4px 4px, #060a22 !important; box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .5), inset 2px 2px 0 rgba(255, 255, 255, .06) !important; }
+body.hud-px .slot.r-rare { border-color: #4fa3ff !important; box-shadow: 0 0 0 2px rgba(79, 163, 255, .35) !important; }
+body.hud-px .slot.r-epic { border-color: #c060ff !important; box-shadow: 0 0 0 2px rgba(192, 96, 255, .4) !important; }
+body.hud-px .slot.r-legendary { border-color: #ff9b2f !important; box-shadow: 0 0 0 2px rgba(255, 155, 47, .45) !important; animation: pxBlink 1s steps(2) infinite; }
+@keyframes pxBlink { 50% { box-shadow: 0 0 0 2px rgba(255, 225, 74, .8) !important; } }
+body.hud-px input, body.hud-px select, body.hud-px textarea { border-radius: 0 !important; border: 2px solid var(--px-cy) !important; box-shadow: inset 2px 2px 0 rgba(0, 0, 0, .6) !important; }
+
+/* HUD: khung nhân vật, bản đồ nhỏ, nút menu, nút chiêu */
+body.hud-px .avatar { border-radius: 0 !important; border: 0 !important; box-shadow: 0 0 0 2px var(--px-cy), 0 0 0 4px var(--px-ink), 3px 3px 0 4px var(--px-pk) !important; }
+body.hud-px .avatar canvas { border-radius: 0 !important; }
+body.hud-px #hud-level { border-radius: 0 !important; box-shadow: 2px 2px 0 #000 !important; }
+body.hud-px #menu-buttons button, body.hud-px .qb { border-radius: 0 !important; border: 2px solid rgba(25, 227, 255, .7) !important; box-shadow: 3px 3px 0 rgba(0, 0, 0, .55) !important; }
+body.hud-px #menu-buttons button:active, body.hud-px .qb:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #000 !important; }
+body.hud-px #minimap { border-radius: 0 !important; border: 0 !important; box-shadow: 0 0 0 2px var(--px-cy) !important; image-rendering: pixelated; }
+body.hud-px .skill { border-radius: 0 !important; box-shadow: 2px 2px 0 #000 !important; }
+body.hud-px #joy-base { box-shadow: 0 0 0 2px var(--px-ink), 0 0 0 4px rgba(25, 227, 255, .4) !important; border-style: dashed !important; }
+body.hud-px #exp-bar i { background: repeating-linear-gradient(90deg, var(--px-cy) 0 6px, #0aa0c0 6px 8px, transparent 8px 10px) !important; box-shadow: none !important; }
+body.hud-px #hud-status, body.hud-px #mini-wrap, body.hud-px #skillbar { animation: pxBreath 2.4s steps(3) infinite !important; }
+@keyframes pxBreath { 50% { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--px-ink), 0 0 0 6px rgba(25, 227, 255, .5), 6px 6px 0 4px rgba(255, 46, 154, .55); } }
+
+/* hiệu ứng viền màn hình kiểu pixel */
+body.hud-px #nx-fx .c { border-width: 4px; filter: none; animation: pxCorner 1.2s steps(2) infinite; width: 28px; height: 28px; }
+@keyframes pxCorner { 50% { opacity: .25; } }
+body.hud-px #nx-fx .edge { height: 2px; background: repeating-linear-gradient(90deg, rgba(25, 227, 255, .55) 0 6px, transparent 6px 12px); }
+body.hud-px #nx-fx .edge.b { background: repeating-linear-gradient(90deg, rgba(255, 46, 154, .55) 0 6px, transparent 6px 12px); }
+body.hud-px #nx-fx .edge::after { height: 4px; top: -1px; border-radius: 0; width: 48px; box-shadow: none; background: repeating-linear-gradient(90deg, #fff 0 4px, transparent 4px 6px); animation: nxRun 4s steps(60) infinite; }
+body.hud-px #nx-fx .side { width: 2px; background: repeating-linear-gradient(180deg, rgba(25, 227, 255, .45) 0 4px, transparent 4px 10px); }
+body.hud-px #nx-fx .side.r { background: repeating-linear-gradient(180deg, rgba(255, 46, 154, .45) 0 4px, transparent 4px 10px); }
+body.hud-px #nx-fx i { border-radius: 0; width: 4px; height: 4px; box-shadow: none; animation-timing-function: steps(18); }
+/* lớp vạch quét CRT phủ nhẹ toàn HUD */
+body.hud-px #nx-fx::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .08) 0 1px, transparent 1px 3px); }
+body.hud-px .toast { background: #060a22 !important; color: #e6fbff; text-shadow: 1px 1px 0 #000; }
+@media (prefers-reduced-motion: reduce) { body.hud-px .panel-box, body.hud-px .modal-box, body.hud-px #nx-fx .c, body.hud-px #nx-fx .edge::after, body.hud-px #hud-status, body.hud-px #mini-wrap, body.hud-px #skillbar, body.hud-px .slot.r-legendary { animation: none !important; } }

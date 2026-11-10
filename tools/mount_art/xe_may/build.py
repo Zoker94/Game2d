@@ -4,7 +4,8 @@
 
 Khung GIF: 0 nhìn xuống (đầu xe về phía người xem), 2 nhìn ngang quay phải, 4 nhìn lên (đuôi xe).
 Khung nhìn ngang bị cắt mất nửa phải bánh trước ở mép ảnh: vẽ bù bánh (lốp, vành, nan, trục) cho tròn.
-xe_may_chay.gif: cùng 8 hướng khi đang chạy (bụi đường + khói pô vẽ sẵn) -> dùng cho các khung chạy.
+xe_may_chay.gif: bản đang chạy có bụi/khói vẽ sẵn – KHÔNG dùng (bụi bị cắt mép ô, đứng yên một chỗ trông cụt).
+Khung chạy dùng ảnh xe sạch + nảy nhẹ; bụi đường, khói pô, vệt bụi dài phía sau do game vẽ (public/js/mountfx.js).
 Sheet: ô CW x CH; cột 0..1 = đứng yên nổ máy (rung 1px), cột 2..5 = chạy (nảy nhẹ trên ổ gà).
 Hàng: 0 ngang · 1 xuống (lớp sau) · 2 xuống (lớp đè: ghi-đông + đầu xe) · 3 lên (lớp sau) · 4 lên (lớp đè: đuôi xe dưới hông).
 """
@@ -77,8 +78,8 @@ def seat_of(a, fb):
     return (float(xs.mean()), float(ys.min()) + 1.0)
 
 def build():
-    F, R = frames(), frames('xe_may_chay')
-    src = {'side': (fix_front_wheel(F[2]), fix_front_wheel(R[2])), 'down': (F[0], R[0]), 'up': (F[4], R[4])}
+    F = frames()
+    src = {'side': (fix_front_wheel(F[2]),) * 2, 'down': (F[0],) * 2, 'up': (F[4],) * 2}
     bobs = BOB_IDLE + BOB_RUN
     cols, seats = {}, {}
     for k, (still, run) in src.items():
