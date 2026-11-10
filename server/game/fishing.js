@@ -94,8 +94,8 @@ class Fishing {
     if (Date.now() - (p.lastCombat || 0) < 3000) return this.toast(p, 'Đang giao chiến, chưa câu được', 'error');
     const now = Date.now();
     if ((c.fishBan || 0) > now) return this.toast(p, `🚫 Bị cấm câu cá do không qua kiểm tra chống tự động – còn ${Math.ceil((c.fishBan - now) / 60000)} phút`, 'error');
-    if (p.fishCap) return this.capAsk(p, true);   // còn mã xác nhận chưa trả lời
-    if (p.fishCapDue) return this.capAsk(p);
+    // câu cá không còn hỏi mã xác nhận (đã có minigame kéo cá + thể lực câu chống auto)
+    if (p.fishCap || p.fishCapDue) { p.fishCap = null; p.fishCapDue = null; }
     const sta = this.sta(c);
     if (sta.n >= STA_MAX) return this.toast(p, `😮‍💨 Hết thể lực câu hôm nay (${STA_MAX} lần). Mai câu tiếp nhé!`, 'error');
     sta.n++;
@@ -167,7 +167,7 @@ class Fishing {
     if (got) this.w.io.to('map:' + p.mapId).emit('fishLine', { id: p.id, off: 1, got });
     const c = p.c;   // mã xác nhận ngẫu nhiên mỗi 20-50 lần câu được
     if (c.fishCapIn == null) c.fishCapIn = U.randInt(20, 50);
-    if (--c.fishCapIn <= 0) p.fishCapDue = 'random';
+    if (--c.fishCapIn <= 0) c.fishCapIn = U.randInt(20, 50);   // (đã bỏ mã xác nhận câu cá)
   }
   // ---------- phản xạ & mã xác nhận ----------
   reaction(p, rt) {
@@ -177,7 +177,7 @@ class Fishing {
     if (rt < RT_MIN) p.fishFast = (p.fishFast || 0) + 1;
     let sus = (p.fishFast || 0) >= 2;
     if (a.length >= 12) { const m = a.reduce((x, y) => x + y, 0) / a.length, sd = Math.sqrt(a.reduce((x, y) => x + (y - m) * (y - m), 0) / a.length); if (sd < 40) sus = true; }
-    if (sus && !p.fishCapDue) { p.fishCapDue = 'reflex'; this.db.log('fish', `${p.c.name}: phản xạ câu cá bất thường (${a.slice(-5).join(', ')} ms)`); }
+    if (sus) { this.db.log('fish', `${p.c.name}: phản xạ câu cá bất thường (${a.slice(-5).join(', ')} ms)`); }   // phản xạ bất thường: chỉ ghi nhật ký (đã bỏ mã xác nhận câu cá)
   }
   capAsk(p, again) {
     const now = Date.now();

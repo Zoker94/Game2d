@@ -19,7 +19,7 @@ const DEF = { pickup: true, pickGold: true, pickMin: 'common', pickPots: true, p
 // và cứ mỗi lượt 5–30 phút bị hỏi mã xác nhận ngẫu nhiên: 15 giây không bấm đúng thì bị đưa ra khỏi game (chống treo bỏ mặc).
 const FAST = !!process.env.CAP_FAST;   // chỉ để kiểm thử: hỏi mã sau 5–10 giây
 const CAP_MIN = FAST ? 5000 : 5 * 60000, CAP_MAX = FAST ? 10000 : 30 * 60000, CAP_TIME = 15000, CAP_TIME_AWAY = 60000;   // đang ẩn tab: 60 giây để quay lại nhập mã
-const hasTicket = c => (c.autoTicket || 0) > Date.now();
+const hasTicket = c => U.tkLeft(c) > 0;   // còn giờ vé (đang chạy hoặc tạm dừng)
 const clamp = (v, a, b) => Math.max(a, Math.min(b, Number.isFinite(+v) ? +v : a));
 
 class AutoSrv {
@@ -111,7 +111,10 @@ class AutoSrv {
 
   tick(now) {
     for (const p of [...this.w.players.values()]) {
-      const a = p.autoSrv, tk = hasTicket(p.c);
+      const a = p.autoSrv;
+      // vé chỉ trừ giờ khi đang bật Tự động (hoặc máy chủ đang treo hộ lúc offline); tắt Tự động thì tạm dừng
+      if ((a && a.on) || p.offline) { if (U.tkResume(p.c)) p.dirtyMe = true; } else if (U.tkPause(p.c)) p.dirtyMe = true;
+      const tk = hasTicket(p.c);
       // Vé Treo Máy vừa hết hạn: dừng treo máy (offline: đưa ra khỏi game; đang mở game: tắt Tự động ở máy người chơi)
       const expired = p._tk && !tk; p._tk = tk;
       if (p.offline && (now - p.offline > OFFLINE_MAX || !tk)) { this.endOffline(p, tk ? 'time' : 'ticket'); continue; }
@@ -166,12 +169,12 @@ class AutoSrv {
   // dùng Vé Treo Máy: cộng 6–8 giờ treo (cộng dồn vào thời hạn còn lại)
   useTicket(p, uid) {
     const c = p.c, now = Date.now(), add = Math.round((6 + Math.random() * 2) * 3600e3);
-    if (hasTicket(c) && c.autoTicket - now > 16 * 3600e3) return this.w.toast(p, 'Thời hạn treo máy còn hơn 16 giờ, dùng sau nhé', 'error');
+    if (U.tkLeft(c) > 16 * 3600e3) return this.w.toast(p, 'Thời hạn treo máy còn hơn 16 giờ, dùng sau nhé', 'error');
     U.removeByUid(c, uid, 1);
-    c.autoTicket = Math.max(now, c.autoTicket || 0) + add;
+    if ((c.tkPause | 0) > 0) c.tkPause += add; else c.autoTicket = Math.max(now, c.autoTicket || 0) + add;   // cộng vào giờ còn lại (đang chạy hay tạm dừng đều được)
     if (p.cap) { p.cap = null; p.socket.emit('captcha', { close: 1 }); }
-    const h = Math.floor(add / 3600e3), m = Math.round(add % 3600e3 / 60000), left = c.autoTicket - now;
-    this.w.toast(p, `🎫 Vé Treo Máy: +${h} giờ ${m} phút (còn tổng ${Math.floor(left / 3600e3)} giờ ${Math.round(left % 3600e3 / 60000)} phút). Treo máy không bị hỏi mã, tắt game máy chủ vẫn treo hộ.`, 'reward');
+    const h = Math.floor(add / 3600e3), m = Math.round(add % 3600e3 / 60000), left = U.tkLeft(c);
+    this.w.toast(p, `🎫 Vé Treo Máy: +${h} giờ ${m} phút (còn tổng ${Math.floor(left / 3600e3)} giờ ${Math.round(left % 3600e3 / 60000)} phút). Chỉ trừ giờ khi bật Tự động – tắt Tự động thì vé tạm dừng.`, 'reward');
     p.dirtyMe = true; this.w.db.markDirty();
   }
 

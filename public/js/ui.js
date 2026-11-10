@@ -2028,7 +2028,7 @@
     const sl = (k, min, max, label) => `<div class="au-row au-sl"><span>${label}</span><input type="range" min="${min}" max="${max}" step="5" value="${c[k]}" data-r="${k}"><b data-v="${k}">${c[k]}%</b></div>`;
     const potSel = (kind, cur) => `<select data-pot="${kind}">${pots(kind).map(id => `<option value="${id}" ${cur === id ? 'selected' : ''} ${me.level < (G.data.items[id].lv || 1) ? 'disabled' : ''}>${esc(G.data.items[id].name)} (còn ${cnt(id)})</option>`).join('')}</select>`;
     const totalHp = pots('hp').reduce((a, id) => a + cnt(id), 0), totalMp = pots('mp').reduce((a, id) => a + cnt(id), 0);
-    const tk = Math.max(0, (me.autoTicket || 0) - Date.now()), tkTxt = tk ? `còn <b>${Math.floor(tk / 3600e3)} giờ ${Math.floor(tk % 3600e3 / 60000)} phút</b>` : '<b style="color:#ff8a6a">chưa có</b>';
+    const tk = G.tkLeft ? G.tkLeft() : Math.max(0, (me.autoTicket || 0) - Date.now()), tkTxt = tk ? `còn <b>${Math.floor(tk / 3600e3)} giờ ${Math.floor(tk % 3600e3 / 60000)} phút</b>${me.tkPause > 0 ? ' <span class="muted">(tạm dừng – chỉ trừ giờ khi bật Tự động)</span>' : ''}` : '<b style="color:#ff8a6a">chưa có</b>';
     body.innerHTML = `<div class="au">
       <div class="au-box au-ticket"><h4>🎫 Vé Treo Máy: ${tkTxt}</h4>
         <p class="small">${tk ? 'Bật Tự động không bị hỏi mã xác nhận. Tắt game / rời trang ở bãi luyện thì máy chủ vẫn treo hộ tới khi hết vé.' : 'Không có vé vẫn bật Tự động được khi đang mở game, nhưng cứ 5–30 phút sẽ bị hỏi mã xác nhận (15 giây không bấm đúng sẽ bị đưa ra khỏi game). Tắt game thì không được treo hộ.'}

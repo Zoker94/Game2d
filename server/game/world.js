@@ -7,7 +7,7 @@ const BOSS_LINES = require('../data/bosslines');
 const VM_IDS = ['vm_tq1', 'vm_tq2', 'vm_tq3', 'vm_tq4', 'vm_tq5', 'vm_tq6', 'vm_tq7'];
 const KNOCK_DIST = 170;   // PK hạ người: xác văng xa tối đa (px)
 const { MAPS, TILE, isSolidAt, SOLID, CHANNELS, CH_CAP, VIP_CH, VIP_CAP, baseOf, chOf, chId } = require('../data/maps');
-const vipOk = c => (c.autoTicket || 0) > Date.now();   // khu VIP: còn hạn Vé Treo Máy
+const vipOk = c => require('./util').tkLeft(c) > 0;   // khu VIP: còn giờ Vé Treo Máy (kể cả đang tạm dừng)
 const { NPCS, TELEPORTS } = require('../data/npcs');
 const { TUTORIAL } = require('../data/quests');
 const { MOUNTS, MOUNT_MAX, mountExpNext, isBreakLevel } = require('../data/mounts');
@@ -271,7 +271,8 @@ class World {
     c.spSpent = c.spSpent || 0;
     U.migrateItems(c);
     this.recalc(p);
-    if (!MAPS[c.map] && MAPS[String(c.map).split('~')[0]]) c.map = String(c.map).split('~')[0];   // khu đã đóng (bớt khu): về khu 1 cùng bản đồ, giữ vị trí
+    if (!MAPS[c.map] && MAPS[String(c.map).split('~')[0]]) c.map = String(c.map).split('~')[0];
+    if (MAPS[c.map] && MAPS[c.map].base && this.chClosed(MAPS[c.map].ch)) c.map = this.pickChannel(MAPS[c.map].base, 1, null);   // khu đã đóng: sang khu đang mở   // khu đã đóng (bớt khu): về khu 1 cùng bản đồ, giữ vị trí
     if (!MAPS[c.map]) c.map = (c.pbReturn && MAPS[c.pbReturn]) ? c.pbReturn : 'tuong_duong';   // phó bản cũ đã đóng
     if (MAPS[c.map].duelArena) { c.map = 'tuong_duong'; c.x = c.y = 0; }   // lôi đài tỷ võ chỉ vào khi đang thách đấu
     const map = MAPS[c.map];
@@ -297,6 +298,7 @@ class World {
   removePlayer(p) {
     if (!this.players.has(p.userId) || this.players.get(p.userId) !== p) return;
     const c = p.c;
+    if (!p.offline) U.tkPause(c);   // rời game (không được máy chủ treo hộ): vé tạm dừng
     c.x = p.x; c.y = p.y; c.map = p.mapId;
     if (p.duelHome) { c.map = p.duelHome.map; c.x = p.duelHome.x; c.y = p.duelHome.y; }   // thoát game lúc đang ở lôi đài tỷ võ
     if (MAPS[p.mapId] && MAPS[p.mapId].instance) { c.map = c.pbReturn || 'tuong_duong'; c.x = c.y = 0; if (this.dungeon) this.dungeon.onQuit(p); }   // thoát game trong phó bản
@@ -390,6 +392,8 @@ class World {
   // ---------- Khu ----------
   // khu để vào bản đồ base: ưu tiên khu pref nếu chưa đủ CH_CAP người, không thì khu thấp nhất còn chỗ,
   // tất cả đều đầy thì khu vắng nhất
+  // khu quản trị viên đã đóng (config.closedCh: số khu, áp dụng mọi bản đồ; khu 1 luôn mở)
+  chClosed(n) { n = n | 0; return n > 1 && (this.db.data.config.closedCh || []).includes(n); }
   pickChannel(base, pref = 1, p = null) {
     base = baseOf(base);
     const def = MAPS[base];
@@ -397,21 +401,35 @@ class World {
     const n = id => (this.maps[id] ? this.maps[id].players.size : 0);
     if (pref === VIP_CH) {   // đang ở khu VIP qua cổng: sang khu VIP bản đồ kia nếu còn vé và còn chỗ
       const v = chId(base, VIP_CH);
-      if (p && vipOk(p.c) && MAPS[v] && n(v) < VIP_CAP) return v;
+      if (p && vipOk(p.c) && MAPS[v] && n(v) < VIP_CAP && !this.chClosed(VIP_CH)) return v;
       pref = 1;
     }
+    if (this.chClosed(pref)) pref = 1;
     const want = chId(base, pref);
     if (n(want) < CH_CAP) return want;
     let best = base;
-    for (let i = 1; i <= def.chs; i++) { const id = chId(base, i); if (n(id) < CH_CAP) return id; if (n(id) < n(best)) best = id; }
+    for (let i = 1; i <= def.chs; i++) { if (this.chClosed(i)) continue; const id = chId(base, i); if (n(id) < CH_CAP) return id; if (n(id) < n(best)) best = id; }
     return best;
+  }
+  // quản trị viên đóng khu: ai đang ở khu đó (cả người được máy chủ treo hộ) chuyển sang khu đang mở cùng bản đồ, giữ vị trí
+  evacuateClosed() {
+    let moved = 0;
+    for (const p of [...this.players.values()]) {
+      const def = MAPS[p.mapId];
+      if (!def || !def.base || !this.chClosed(def.ch)) continue;
+      const to = this.pickChannel(def.base, 1, p);
+      this.enterMap(p, to, p.x, p.y);
+      if (!p.offline) this.toast(p, `🚧 ${def.ch === VIP_CH ? 'Khu VIP' : 'Khu ' + def.ch} đã được quản trị viên đóng – bạn được chuyển sang ${MAPS[to].ch > 1 ? 'Khu ' + MAPS[to].ch : 'Khu 1'}.`, 'info');
+      moved++;
+    }
+    return moved;
   }
   channelsView(p) {
     const base = baseOf(p.mapId), def = MAPS[base];
     if (!def || !def.chs) return { base, list: [] };
     const list = [];
-    for (let i = 1; i <= def.chs; i++) list.push({ ch: i, n: this.maps[chId(base, i)].players.size, cap: CH_CAP, cur: chOf(p.mapId) === i });
-    if (def.vipCh) list.push({ ch: VIP_CH, vip: true, n: this.maps[chId(base, VIP_CH)].players.size, cap: VIP_CAP, cur: chOf(p.mapId) === VIP_CH, ok: vipOk(p.c) });
+    for (let i = 1; i <= def.chs; i++) if (!this.chClosed(i)) list.push({ ch: i, n: this.maps[chId(base, i)].players.size, cap: CH_CAP, cur: chOf(p.mapId) === i });
+    if (def.vipCh && !this.chClosed(VIP_CH)) list.push({ ch: VIP_CH, vip: true, n: this.maps[chId(base, VIP_CH)].players.size, cap: VIP_CAP, cur: chOf(p.mapId) === VIP_CH, ok: vipOk(p.c) });
     return { base, name: def.name, list, xpb: this.pkZoneBonus(base) };
   }
   switchChannel(p, ch) {
@@ -420,6 +438,7 @@ class World {
     if (!def || !def.chs) return this.toast(p, 'Bản đồ này không chia khu', 'error');
     const vip = ch === VIP_CH && !!def.vipCh;
     if (ch < 1 || (ch > def.chs && !vip) || ch === chOf(p.mapId)) return;
+    if (this.chClosed(ch)) return this.toast(p, `${vip ? 'Khu VIP' : 'Khu ' + ch} đang đóng`, 'error');
     if (vip && !vipOk(p.c)) return this.toast(p, '👑 Khu VIP chỉ dành cho người đang dùng Vé Treo Máy (mua ở Kỳ Trân Các)', 'error');
     if (p.dead || p.duel || p.trade) return this.toast(p, 'Không thể đổi khu lúc này', 'error');
     if (now - (p.lastCombat || 0) < 8000) return this.toast(p, 'Đang giao chiến, đợi 8 giây rồi đổi khu', 'error');
@@ -461,7 +480,7 @@ class World {
       minhChu: this.titleFlags(p), title: this.titleOf(c, p.user.isAdmin), ach: Object.assign({ bossKills: c.bossKills | 0 }, c.ach || {}), tk: this.tongkim ? this.tongkim.tag(p) : 0, congTrang: c.congTrang || 0, ctOwner: this.siege ? this.siege.ownerName() : null, master: c.master && c.master.uid && !c.master.grad ? c.master.name : null, nDisc: Object.keys(c.disciples || {}).length,
       attr: c.attr || {}, attrFree: attrTotalOf(c) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
       branch: branchOf(c), skills: c.skills || {}, hotbar: c.hotbar, sp: spTotalOf(c) - (c.spSpent || 0),
-      blockInv: c.blockInv || {}, mailbox: (c.mailbox || []).slice(0, 60).map(e => [e.id, e.qty, e.plus || 0]), mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, autoTicket: c.autoTicket > Date.now() ? c.autoTicket : 0, pkMode: c.pkMode | 0, pkLock: !!((c.pkLock || c.pk >= PK_OUTLAW) && c.pk > 0), escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
+      blockInv: c.blockInv || {}, mailbox: (c.mailbox || []).slice(0, 60).map(e => [e.id, e.qty, e.plus || 0]), mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, autoTicket: c.autoTicket > Date.now() ? c.autoTicket : 0, tkPause: c.tkPause | 0, pkMode: c.pkMode | 0, pkLock: !!((c.pkLock || c.pk >= PK_OUTLAW) && c.pk > 0), escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
       sect: this.sect ? this.sect.meView(p) : null, giftTitles: [...(c.giftTitles || []), ...weekTitlesOf(c)], weekTitles: c.weekTitles || {}, mine: this.mining ? this.mining.view(p) : null,
       med: !!p.med, pvp: this.inPvp(p) ? 1 : 0, st: this.statusView(p), friends: Object.keys(c.friends || {}).length, friendIds: this.friendIds(c), pk: c.pk || 0,
       rank: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0

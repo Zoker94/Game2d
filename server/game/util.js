@@ -297,7 +297,13 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
   return s;
 }
 
+// Vé Treo Máy chỉ trừ giờ khi đang bật Tự động: c.autoTicket = lúc hết hạn (đang chạy), c.tkPause = số ms còn lại (đang tạm dừng)
+function tkLeft(c) { return (c.tkPause | 0) > 0 ? c.tkPause : Math.max(0, (c.autoTicket || 0) - Date.now()); }
+function tkPause(c) { const now = Date.now(); if ((c.autoTicket || 0) > now) { c.tkPause = c.autoTicket - now; c.autoTicket = 0; return true; } return false; }
+function tkResume(c) { if ((c.tkPause | 0) > 0) { c.autoTicket = Date.now() + c.tkPause; c.tkPause = 0; return true; } return false; }
+
 module.exports = {
+  tkLeft, tkPause, tkResume,
   MAX_LEVEL, INV_SIZE, INV_EXTRA_MAX, invSize, expNext, levelGapK, vnDate, vnDay, vnMinuteOfDay, rand, randInt, dist, clamp, newUid,
   plusMult, newCharacter, addItem, resolveItem, migrateItems, freeSlots, countItem, removeItemById, removeByUid, calcStats, isStack, sellUnit
 };

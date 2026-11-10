@@ -2,6 +2,14 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '10/11/2026',
+    items: [
+      '🎫 Vé Treo Máy chỉ trừ giờ khi đang BẬT Tự động (kể cả khi máy chủ treo hộ lúc thoát game). Tắt Tự động thì vé tạm dừng (nút hiện ⏸), Khu VIP vẫn vào được.',
+      '🎣 Câu cá không còn hỏi mã xác nhận.',
+      '🗺️ Quản trị viên có thể đóng / mở từng khu bản đồ luyện công; người đang ở khu bị đóng được tự động chuyển sang khu đang mở.'
+    ]
+  },
+  {
     date: '09/11/2026',
     items: [
       '🎁 Quà nạp đầu: lần nạp đầu tiên (bất kỳ mệnh giá) tặng 100 Rương Thủ Lĩnh + 10 Ngọc khảm cấp 5 (đồ khoá). Ai đã nạp trước đó cũng được gửi bù vào Hòm Đồ.',

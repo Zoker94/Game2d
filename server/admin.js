@@ -291,7 +291,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   });
 
   // ----- Cấu hình -----
-  app.get('/api/admin/config', auth, (req, res) => res.json(Object.assign({}, db.data.config, { welcome: world.welcome.cfg })));
+  app.get('/api/admin/config', auth, (req, res) => { const M = require('./data/maps'); res.json(Object.assign({}, db.data.config, { welcome: world.welcome.cfg, chCount: M.CHANNELS, vipCh: M.VIP_CH, closedCh: db.data.config.closedCh || [] })); });
   app.post('/api/admin/config', auth, (req, res) => {
     const c = db.data.config, b = req.body || {};
     for (const k of ['expRate', 'dropRate', 'goldRate']) if (b[k] != null) c[k] = U.clamp(+b[k] || 1, 0.1, 100);
@@ -299,6 +299,11 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     if (b.motd != null) c.motd = String(b.motd).slice(0, 300);
     if (b.maintMsg != null) c.maintMsg = String(b.maintMsg).slice(0, 500);    // lý do bảo trì (hiện cho người chơi)
     if (b.maintEta != null) c.maintEta = String(b.maintEta).slice(0, 80);     // dự kiến xong (chữ tự do, VD "15:30 hôm nay")
+    if (Array.isArray(b.closedCh)) {   // đóng / mở khu: số khu (2.., 21 = VIP); khu 1 luôn mở. Đóng xong chuyển người chơi sang khu đang mở
+      c.closedCh = [...new Set(b.closedCh.map(x => x | 0).filter(x => x > 1))];
+      const n = world.evacuateClosed();
+      act(req, `Khu đang đóng: ${c.closedCh.join(', ') || 'không'} (chuyển ${n} người chơi)`);
+    }
     if (b.maintOpenAt != null) c.maintOpenAt = Math.max(0, +b.maintOpenAt || 0);   // hẹn giờ tự tắt bảo trì (0 = không hẹn)
     if (b.maintenance != null) {
       const was = c.maintenance;

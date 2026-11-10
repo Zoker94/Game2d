@@ -2396,19 +2396,21 @@
     el.style.transform = `translate(${(Math.random() - 0.5) * 120 | 0}px, ${(Math.random() - 0.5) * 160 | 0}px)`;   // dịch chữ: màn OLED không lưu ảnh khi treo lâu
     el.querySelector('.bo-info').textContent = `${me.name} · Cấp ${me.level} (${ep}%)\nSinh lực ${Math.max(0, Math.round(me.hp)).toLocaleString('vi-VN')}/${me.stats.maxHp.toLocaleString('vi-VN')}${me.dead ? ' – ĐÃ BỊ HẠ' : ''}\n💰 ${me.gold.toLocaleString('vi-VN')} lượng\n🤖 Tự động: ${G.auto ? (G.map && G.map.safe ? 'bật (đang ở thành – không đánh)' : (hasTicket() ? 'bật – máy chủ đang treo hộ' : 'bật – máy đang tự chạy (không có Vé Treo Máy: vẫn bị hỏi mã xác nhận)')) : 'tắt'}`;
   }
-  const hasTicket = () => !!(G.me && G.me.autoTicket > Date.now());   // Vé Treo Máy: chỉ người có vé mới được máy chủ treo hộ
+  const tkLeftMe = () => !G.me ? 0 : G.me.tkPause > 0 ? G.me.tkPause : Math.max(0, (G.me.autoTicket || 0) - Date.now());   // giờ vé còn lại (tạm dừng khi tắt Tự động)
+  G.tkLeft = tkLeftMe;
+  const hasTicket = () => tkLeftMe() > 0;   // Vé Treo Máy: chỉ người có vé mới được máy chủ treo hộ
   // thời gian còn lại của Vé Treo Máy: nhãn trên nút Tự động + nhắc khi sắp hết (30 / 10 / 1 phút) và khi hết hạn
   const tkFmt = ms => { const m = Math.ceil(ms / 60000); return m >= 60 ? `${Math.floor(m / 60)}g${String(m % 60).padStart(2, '0')}` : m + 'p'; };
   let tkWarned = {}, tkHad = 0;
   setInterval(() => {
     const b = document.querySelector('#btn-auto .qb-tk'); if (!b || !G.me) return;
-    const left = (G.me.autoTicket || 0) - Date.now();
+    const left = tkLeftMe(), paused = G.me.tkPause > 0;
     if (left > 0) {
-      const txt = '🎫' + tkFmt(left);
+      const txt = (paused ? '⏸' : '🎫') + tkFmt(left);
       if (b._t !== txt) { b._t = txt; b.textContent = txt; }
       b.classList.remove('hidden'); b.classList.toggle('low', left < 30 * 60000); b.classList.toggle('crit', left < 5 * 60000);
-      $('btn-auto').title = `Tự động đánh (R) · Vé Treo Máy còn ${Math.floor(left / 3600e3)} giờ ${Math.floor(left % 3600e3 / 60000)} phút (hết lúc ${new Date(G.me.autoTicket).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })})`;
-      if (G.me.autoTicket !== tkHad) { tkHad = G.me.autoTicket; tkWarned = {}; }   // mua thêm vé: nhắc lại từ đầu
+      $('btn-auto').title = `Tự động đánh (R) · Vé Treo Máy còn ${Math.floor(left / 3600e3)} giờ ${Math.floor(left % 3600e3 / 60000)} phút ${paused ? ' – đang tạm dừng (chỉ trừ giờ khi bật Tự động)' : ''}${paused ? '' : ''} (hết lúc ${new Date(paused ? Date.now() + left : G.me.autoTicket).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })})`;
+      if (left > tkHad + 60000) tkWarned = {}; tkHad = left;   // mua thêm vé: nhắc lại từ đầu   // mua thêm vé: nhắc lại từ đầu
       for (const m of [30, 10, 1]) if (left <= m * 60000 && left > (m - 1) * 60000 - 1 && !tkWarned[m]) {
         tkWarned[m] = 1; UI.toast(`🎫 Vé Treo Máy còn ${m} phút – mua thêm ở Kỳ Trân Các để máy chủ tiếp tục treo hộ`, 'error');
       }
