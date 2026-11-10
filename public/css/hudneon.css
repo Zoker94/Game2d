@@ -1,0 +1,50 @@
+/* Giao diện Neon Huyền Cơ (body.hud-neon) – đang thử nghiệm trên server Tô Châu */
+body.hud-neon { --nx-cy: #19e3ff; --nx-pk: #ff2e9a; --nx-bg: rgba(8, 12, 36, .82); --nx-bg2: rgba(8, 12, 36, .92); }
+
+/* ---- 2 bình Sinh lực / Nội lực ---- */
+.nx-orb { position: absolute; z-index: 4; pointer-events: none; width: 92px; height: 92px; bottom: 14px; }
+.nx-orb svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.nx-val { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-52%); text-align: center; line-height: 1.05; font-variant-numeric: tabular-nums; color: #fff; }
+.nx-val b { display: block; font: 800 clamp(15px, 22%, 22px)/1.05 'Be Vietnam Pro', sans-serif; font-size: calc(var(--nx-s, 92px) * .2); text-shadow: 0 0 6px rgba(0, 0, 0, .9), 0 1px 1px #000; }
+.nx-val small { display: block; font-weight: 700; font-size: 9px; opacity: .9; text-shadow: 0 1px 2px #000; white-space: nowrap; }
+.nx-val em { display: block; font-style: normal; font-weight: 800; font-size: 7.5px; letter-spacing: 1.5px; margin-top: 2px; opacity: .75; }
+.nx-orb.hp .nx-val em { color: #ffb3d6; } .nx-orb.mp .nx-val em { color: #a8faff; }
+.nx-orb.low svg { animation: nxLow .7s ease-in-out infinite; }
+@keyframes nxLow { 50% { filter: drop-shadow(0 0 14px #ff2050) brightness(1.2); } }
+body:not(.touch) .nx-orb .nx-val b { font-size: 21px; } body:not(.touch) .nx-orb .nx-val small { font-size: 10px; } body:not(.touch) .nx-orb .nx-val em { font-size: 8px; }
+body.touch .nx-orb .nx-val b { font-size: 17px; } body.touch .nx-orb .nx-val small { font-size: 8px; }
+/* thanh máu / nội lực cũ: đã có bình thay thế */
+body.hud-neon #hud-status .bar.hp, body.hud-neon #hud-status .bar.mp { display: none; }
+body.hud-neon #hud-status .bars { display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+
+/* ---- khung nhân vật ---- */
+body.hud-neon #hud-status { background: var(--nx-bg) !important; border: 1px solid var(--nx-cy) !important; border-radius: 40px 14px 14px 40px !important; box-shadow: 0 0 12px rgba(25, 227, 255, .45), inset 0 0 14px rgba(25, 227, 255, .12) !important; }
+body.hud-neon .avatar { border: 2px solid var(--nx-cy) !important; background: radial-gradient(circle, #1a2a5a, #0a0f2a) !important; box-shadow: 0 0 10px var(--nx-cy), inset 0 0 8px rgba(25, 227, 255, .5) !important; }
+body.hud-neon #hud-level { background: var(--nx-pk) !important; color: #fff !important; border: 0 !important; box-shadow: 0 0 8px var(--nx-pk) !important; text-shadow: none !important; }
+body.hud-neon #hud-name { color: #e6fbff; text-shadow: 0 0 6px rgba(25, 227, 255, .8); }
+
+/* ---- bản đồ nhỏ, nút nhanh, menu ---- */
+body.hud-neon #mini-wrap { border-color: var(--nx-cy) !important; box-shadow: 0 0 14px rgba(25, 227, 255, .6), inset 0 0 10px rgba(25, 227, 255, .25) !important; background: var(--nx-bg2) !important; }
+body.hud-neon #menu-buttons button, body.hud-neon .qb { background: var(--nx-bg) !important; border: 1px solid rgba(25, 227, 255, .55) !important; box-shadow: 0 0 6px rgba(25, 227, 255, .3) !important; color: #dff9ff !important; }
+body.hud-neon #menu-buttons button:hover, body.hud-neon .qb:hover { border-color: var(--nx-pk) !important; box-shadow: 0 0 10px rgba(255, 46, 154, .6) !important; }
+body.hud-neon #map-name { text-shadow: 0 0 8px rgba(25, 227, 255, .8); }
+
+/* ---- thanh kỹ năng (máy tính) ---- */
+body.hud-neon #skillbar { background: linear-gradient(rgba(8, 12, 36, .88), rgba(8, 12, 36, .96)) !important; border: 1px solid var(--nx-cy) !important; border-radius: 12px !important; box-shadow: 0 0 16px rgba(25, 227, 255, .45), inset 0 1px 0 rgba(25, 227, 255, .3) !important; }
+body.hud-neon .skill { border-color: rgba(25, 227, 255, .7) !important; box-shadow: 0 0 6px rgba(25, 227, 255, .35); }
+body.hud-neon .skill .key { color: var(--nx-cy) !important; }
+
+/* ---- điện thoại: cần điều khiển + cụm chiêu ---- */
+body.hud-neon #joy-base { border: 2px solid rgba(25, 227, 255, .85) !important; background: radial-gradient(rgba(25, 227, 255, .12), rgba(8, 12, 36, .35)) !important; box-shadow: 0 0 14px rgba(25, 227, 255, .5), inset 0 0 16px rgba(25, 227, 255, .3) !important; }
+body.hud-neon #joy-knob { background: radial-gradient(circle at 40% 35%, #c8fbff, #19a3ff) !important; box-shadow: 0 0 16px var(--nx-cy) !important; }
+body.hud-neon .act { border-color: rgba(25, 227, 255, .85) !important; box-shadow: 0 0 9px rgba(25, 227, 255, .55) !important; }
+body.hud-neon .act.big { border-color: var(--nx-pk) !important; box-shadow: 0 0 16px var(--nx-pk), inset 0 0 14px rgba(255, 46, 154, .45) !important; }
+
+/* ---- thanh kinh nghiệm ---- */
+body.hud-neon #exp-bar { background: rgba(8, 12, 36, .9) !important; border-top: 1px solid rgba(25, 227, 255, .6) !important; }
+body.hud-neon #exp-bar i { background: repeating-linear-gradient(90deg, var(--nx-cy) 0 10px, transparent 10px 12px) !important; box-shadow: 0 0 8px var(--nx-cy); }
+
+/* ---- khung chat ---- */
+body.touch.hud-neon #chat.collapsed { left: var(--nx-chat-l, 50%) !important; width: var(--nx-chat-w, 280px) !important; }
+body.hud-neon #chat { border-color: rgba(25, 227, 255, .45) !important; background: rgba(8, 12, 36, .72) !important; }
+@media (prefers-reduced-motion: reduce) { .nx-orb.low svg { animation: none; } }

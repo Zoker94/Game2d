@@ -491,6 +491,7 @@
     const st = me.stats;
     setBar(document.querySelector('#hud-status .bar.hp'), me.hp, st.maxHp);
     setBar(document.querySelector('#hud-status .bar.mp'), me.mp, st.maxMp);
+    if (window.HudNeon && HudNeon.on) HudNeon.set(me.hp, st.maxHp, me.mp, st.maxMp);   // bình Sinh lực / Nội lực (giao diện Neon)
     setTxt($('hud-name'), me.name);
     setTxt($('hud-class'), G.data.classes[me.cls].name);
     setTxt($('hud-level'), String(me.level));
