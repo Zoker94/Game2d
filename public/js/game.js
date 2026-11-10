@@ -547,6 +547,35 @@
   $('revive-knb').onclick = () => G.socket.emit('respawn', { mode: 'here_knb' });
 
   // ================== Dữ liệu thế giới ==================
+  // ---- cánh tay người cưỡi nắm tay lái xe máy: tay áo lấy màu ở vai trên hình nhân vật, bàn tay màu da ----
+  const sleeveCache = new WeakMap();
+  function sleeveOf(rider, side) {
+    let c = sleeveCache.get(rider);
+    if (c) return c;
+    try {   // hình nhân vật ô 96, hông ở (48, 66): lấy màu áo ở bắp tay
+      const g = rider.getContext ? rider.getContext('2d', { willReadFrequently: true }) : null;
+      const K = rider.width / 96, d = g ? g.getImageData(Math.round((side ? 50 : 42) * K), Math.round(52 * K), 1, 1).data : null;   // ngực / vai áo (dáng ngồi: vai ~18px trên hông)
+      c = d && d[3] > 100 ? `rgb(${d[0]},${d[1]},${d[2]})` : '#8a3a2a';
+    } catch (e) { c = '#8a3a2a'; }
+    sleeveCache.set(rider, c);
+    return c;
+  }
+  function drawArm(ctx, rider, sx, sy, grip, x, y, fx, fy, flip, side, far, view) {
+    // vai: ngang (quay phải) ở trước ngực; nhìn trước / sau: hai vai hai bên
+    const fwd = flip ? -1 : 1;
+    const shx = view ? sx + side * 8 : sx + fwd * (far ? 1 : 3), shy = sy - (view ? 17 : 18);   // vai trong dáng ngồi cưỡi
+    const gx = x + (flip ? fx - grip[0] : grip[0] - fx) + (far ? -fwd * 1 : 0), gy = y + grip[1] - fy + (far ? -1 : 0);
+    const mx = (shx + gx) / 2, my = (shy + gy) / 2 + 3;   // khuỷu tay hơi chùng xuống
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const col = sleeveOf(rider, true);
+    ctx.strokeStyle = 'rgba(20,12,10,.9)'; ctx.lineWidth = 6.5;
+    ctx.beginPath(); ctx.moveTo(shx, shy); ctx.lineTo(mx, my); ctx.lineTo(gx, gy); ctx.stroke();
+    ctx.strokeStyle = col; ctx.lineWidth = 4.5; if (far) ctx.globalAlpha = 0.85;
+    ctx.beginPath(); ctx.moveTo(shx, shy); ctx.lineTo(mx, my); ctx.lineTo(gx, gy); ctx.stroke();
+    ctx.globalAlpha = 1; ctx.fillStyle = 'rgba(20,12,10,.9)'; ctx.fillRect(Math.round(gx) - 3, Math.round(gy) - 3, 6, 6);
+    ctx.fillStyle = '#f2c9a0'; ctx.fillRect(Math.round(gx) - 2, Math.round(gy) - 2, 4, 4);   // bàn tay nắm tay lái
+    ctx.restore();
+  }
   let minimapBase = null;
   function onInit(d) {
     if (d.enhRate && G.data && G.data.enhance) G.data.enhance.rate = d.enhRate;
@@ -2282,7 +2311,13 @@
         const rs = state === 'walk' || state === 'idle' || state === 'dead' ? 'ride' : state;
         const rdir = side ? face : dir;
         const rider = Assets.riderFrame(cls, rdir, rs, rs === 'ride' ? Math.floor(mfr.k / 2) : fi, ap);
+        const arms = mfr.grips && rs === 'ride' && !dead;   // xe máy: tay vươn ra nắm ghi-đông
+        if (arms && side) drawArm(ctx, rider, sx, sy, mfr.grips[0], x, y, fx, fy, flip, -1, 1);   // tay phía xa: vẽ trước, sau lưng người
         ctx.drawImage(rider, Math.round(sx - 48), Math.round(sy - 66), 96, 96);
+        if (arms) {
+          if (side) drawArm(ctx, rider, sx, sy, mfr.grips[0], x, y, fx, fy, flip, 1, 0);
+          else mfr.grips.forEach((g, i) => drawArm(ctx, rider, sx, sy, g, x, y, fx, fy, false, i ? 1 : -1, 0, mfr.view));
+        }
         if (mfr.fy >= 0) layer(mfr.fy);      // đầu ngựa / chân trước (hoặc mông, đuôi) đè lên người cưỡi
         if (!dead) mfx(() => MountFX.over(ctx, mountId, x, y, now, mfr.view, moving, seed, flip, ap[9] || 1));
         top = Math.round(sy - 54);

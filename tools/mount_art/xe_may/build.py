@@ -163,6 +163,9 @@ def build():
         sx, sy = seat_xy('up', placed['up'][0]); sy += bob
         f = full.copy(); yy = np.mgrid[0:CH, 0:CW][0]; f[yy < sy + 5] = 0
         fronts['up'].append(over(f, front))
+    # tay nắm ghi-đông (toạ độ khung GIF gốc, đo bằng mắt): người cưỡi đặt tay lên đây
+    GRIP = {'side': [(31, 10)], 'down': [(14, 11), (36, 11)], 'up': [(15, 7), (35, 7)]}
+    grips = {v: [[[round(float(P(v, gx, gy)[0]), 1), round(float(P(v, gx, gy)[1]) + (BOB_IDLE + BOB_RUN)[k], 1)] for gx, gy in GRIP[v]] for k in range(N_IDLE + N_RUN)] for v in still}
     seats = {}
     for v in still:
         sx, sy = seat_xy(v, placed[v][0])
@@ -172,7 +175,7 @@ def build():
     for r, row in enumerate(order):
         for c, a in enumerate(row): sheet[r * CH:(r + 1) * CH, c * CW:(c + 1) * CW] = a
     foot = [CW / 2, CH - BOTTOM - .5]
-    return sheet, seats, foot, foot
+    return sheet, seats, foot, foot, grips
 
 def leather(a):
     r, g, b, al = [a[..., i].astype(int) for i in range(4)]
@@ -184,13 +187,13 @@ def seat_xy(view, a):
     return (float(xs.mean()) - 3, float(ys.min()) + 1.0)   # hông lùi về giữa yên (màu da yên lẫn sang mép bình xăng)
 
 def main():
-    sheet, seats, foot, footFB = build()
+    sheet, seats, foot, footFB, grips = build()
     out = os.path.join(ROOT, 'public/assets/mounts/xe_may.png')
     Image.fromarray(sheet).save(out, optimize=True)
     mp = os.path.join(ROOT, 'public/assets/mounts.json')
     game = json.load(open(mp))
     game['per']['xe_may'] = {'cell': [CW, CH], 'foot': foot, 'footFB': footFB, 'frames': {'idle': [0, N_IDLE], 'run': [N_IDLE, N_RUN]},
-                             'rows': {'side': [0], 'down': [1, 2], 'up': [3, 4]}, 'scale': 2.3, 'runMs': 75, 'idleMs': 130}
+                             'rows': {'side': [0], 'down': [1, 2], 'up': [3, 4]}, 'scale': 2.3, 'runMs': 75, 'idleMs': 130, 'grips': grips}
     game['seats']['xe_may'] = {k: [list(s) for s in v] for k, v in seats.items()}
     game['seat']['xe_may'] = game['seats']['xe_may']['side']
     json.dump(game, open(mp, 'w'), separators=(',', ':'))

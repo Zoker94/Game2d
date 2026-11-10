@@ -335,7 +335,8 @@
     return {
       img: mountImgs[id], sx: col * cw, cw, ch, dw: cw * s, dh: ch * s, k, view,
       sy: rows[0] * ch, fy: rows[1] != null ? rows[1] * ch : -1,
-      foot: [foot[0] * s, foot[1] * s], seat: [seat[0] * s, seat[1] * s]
+      foot: [foot[0] * s, foot[1] * s], seat: [seat[0] * s, seat[1] * s],
+      grips: M.grips && M.grips[view] && M.grips[view][col] ? M.grips[view][col].map(g => [g[0] * s, g[1] * s]) : null   // tay nắm (xe máy): người cưỡi đặt tay lên
     };
   }
   // ----- cây cối / bụi / đá / nấm cho map cỏ (ảnh tools/nature.py): [x, y, w, h, gốc x, gốc y] -----

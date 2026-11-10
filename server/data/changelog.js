@@ -12,7 +12,9 @@ const CHANGELOG = [
       '✨ Chọn server có hiệu ứng chuyển cảnh (vòng neon, máy quay lao về chân trời, các võ sĩ ôm quyền chào). Điện thoại: chạm màn hình để xoay ngang toàn màn hình.',
       '🏍️ Thú cưỡi mới: Xe Máy Phân Khối Lớn (+55% tốc độ) – đứng yên nổ máy phụt khói, chạy tung bụi, đèn pha sáng phía trước. Sắp mở bán ở Kỳ Trân Các.',
       '🌫️ Xe máy: vẽ lại bụi đường và khói pô ngay trong hình xe (pixel art, cuộn theo từng khung): chạy tung vệt bụi dài phía sau, đứng yên nổ máy phụt khói.',
-      '💠 Giao diện mới Neon Huyền Cơ cho mọi server: bình Sinh lực / Nội lực dạng chất lỏng phát sáng, bảng – popup – nút – bản đồ phong cách neon tương lai.'
+      '💠 Giao diện mới Neon Huyền Cơ cho mọi server: bình Sinh lực / Nội lực dạng chất lỏng phát sáng, bảng – popup – nút – bản đồ phong cách neon tương lai.',
+      '⚡ Giao diện Neon nhẹ hơn: mở túi đồ / các bảng không còn tụt FPS.',
+      '🏍️ Cưỡi xe máy: nhân vật đặt tay nắm ghi-đông.'
     ]
   },
   {

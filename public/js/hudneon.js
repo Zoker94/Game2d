@@ -24,7 +24,7 @@
       <circle cx="60" cy="60" r="44" fill="url(#${id}g)"/><ellipse cx="44" cy="40" rx="12" ry="7" fill="#fff" opacity=".45" transform="rotate(-35 44 40)"/>
       <circle cx="60" cy="60" r="45.5" fill="none" stroke="${c[1]}" stroke-width="1.2"/>
       <circle cx="60" cy="60" r="53" fill="none" stroke="${c[1]}" stroke-opacity=".2" stroke-width="5"/>
-      <circle class="gauge" cx="60" cy="60" r="53" fill="none" stroke="${c[0]}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" transform="rotate(-90 60 60)" filter="url(#${id}f)"/>
+      <circle class="gauge2" cx="60" cy="60" r="53" fill="none" stroke="${c[0]}" stroke-opacity=".3" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" transform="rotate(-90 60 60)"/><circle class="gauge" cx="60" cy="60" r="53" fill="none" stroke="${c[0]}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" transform="rotate(-90 60 60)"/>
       <g class="spin"><circle cx="60" cy="60" r="58.5" fill="none" stroke="${c[0]}" stroke-width="1.2" stroke-dasharray="6 10" opacity=".8"/></g></svg>
       <div class="nx-val"><b></b><small></small><em>${kind === 'hp' ? 'SINH LỰC' : 'NỘI LỰC'}</em></div>`;
   }
@@ -43,13 +43,13 @@
       }
       hud.appendChild(el);
       const s = el.querySelector('svg');
-      orbs[k] = { el, w1: s.querySelector('.w1'), w2: s.querySelector('.w2'), bub: [...s.querySelectorAll('.bub circle')], gauge: s.querySelector('.gauge'), spin: s.querySelector('.spin'),
+      orbs[k] = { el, w1: s.querySelector('.w1'), w2: s.querySelector('.w2'), bub: [...s.querySelectorAll('.bub circle')], gauge: s.querySelector('.gauge'), gauge2: s.querySelector('.gauge2'), spin: s.querySelector('.spin'),
         b: el.querySelector('.nx-val b'), sm: el.querySelector('.nx-val small'), lv: 1, target: 1, cur: -1, max: -1, ph: k === 'hp' ? 0 : 2.5 };
     }
     // hiệu ứng quanh giao diện: 4 góc khung, vạch sáng chạy theo viền trên / dưới, hạt sáng bay lên ở 2 mép
     const fx = document.createElement('div'); fx.id = 'nx-fx'; fx.setAttribute('aria-hidden', 'true');
     fx.innerHTML = '<div class="c tl"></div><div class="c tr"></div><div class="c bl"></div><div class="c br"></div><div class="edge t"></div><div class="edge b"></div><div class="side l"></div><div class="side r"></div>' +
-      Array.from({ length: 10 }, (_, i) => `<i style="left:${i < 5 ? 1 + i * 1.6 : 91 + (i - 5) * 1.6}%;animation-duration:${5 + (i * 7) % 5}s;animation-delay:${(i * 1.3) % 6}s"></i>`).join('');
+      Array.from({ length: 4 }, (_, i) => `<i style="left:${i < 2 ? 1.5 + i * 2.5 : 93 + (i - 2) * 2.5}%;animation-duration:${6 + i}s;animation-delay:${i * 1.7}s"></i>`).join('');   // ít hạt để nhẹ máy
     hud.insertBefore(fx, hud.firstChild);
     layout(); addEventListener('resize', () => setTimeout(layout, 60)); setInterval(layout, 1500);
     requestAnimationFrame(frame);
@@ -103,7 +103,7 @@
     for (let x = 0; x <= 120; x += 8) d += ` L${x} ${(y + Math.sin(x / 120 * Math.PI * 2 * k + t * 2.2 + ph) * amp).toFixed(1)}`;
     return d + ' L120 130 L0 130 Z';
   }
-  let last = 0, acc = 0;
+  let last = 0, acc = 0; const panelEl = document.getElementById('panel');
   // ---- bình pixel: 40x40 điểm ảnh, chất lỏng sóng theo cột, mặt nước sáng, bọt khí, vòng đo % dạng đốt sáng ----
   const PXN = 40, PC = { hp: [[255, 138, 200], [255, 46, 122], [150, 10, 70], [70, 0, 40]], mp: [[168, 250, 255], [25, 195, 255], [10, 110, 200], [4, 40, 106]] };
   function drawPx(o, t) {
@@ -141,7 +141,8 @@
     requestAnimationFrame(frame);
     if (document.hidden) return;
     const dt = Math.min(.1, (now - last) / 1000); last = now; acc += dt;
-    if (acc < (PX ? 1 / 12 : 1 / 30)) return;   // 30 khung/giây đủ mượt; bản pixel 12 khung/giây cho đúng chất pixel, đỡ tốn pin
+    const covered = panelEl && !panelEl.classList.contains('hidden');
+    if (acc < (covered ? 0.5 : PX ? 1 / 12 : 1 / 15)) return;   // 15 khung/giây đủ mượt cho sóng, nhẹ máy   // 30 khung/giây đủ mượt; bản pixel 12 khung/giây cho đúng chất pixel, đỡ tốn pin
     const step = acc; acc = 0; const t = now / 1000;
     for (const k in orbs) {
       const o = orbs[k];
@@ -151,7 +152,7 @@
       o.w1.setAttribute('d', wave(y, t, slosh, o.ph, 1.5));
       o.w2.setAttribute('d', wave(y - 2, t * 1.3, slosh * 1.2, o.ph + 2, 1.1));
       o.bub.forEach((c, i) => { const p = (t * (.25 + i * .07) + i * .31) % 1; c.setAttribute('cx', (34 + i * 16 + Math.sin(t * 2 + i) * 3).toFixed(1)); c.setAttribute('cy', (104 - (104 - y) * p).toFixed(1)); c.setAttribute('opacity', p < .95 && o.lv > .06 ? .55 : 0); });
-      o.gauge.setAttribute('stroke-dashoffset', (C * (1 - o.lv)).toFixed(1));
+      const off = (C * (1 - o.lv)).toFixed(1); o.gauge.setAttribute('stroke-dashoffset', off); o.gauge2.setAttribute('stroke-dashoffset', off);
       o.spin.setAttribute('transform', `rotate(${((t * 25) % 360).toFixed(1)} 60 60)`);
     }
   }
