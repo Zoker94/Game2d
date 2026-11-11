@@ -619,6 +619,42 @@ class World {
     p.c.blockInv = b; p.dirtyMe = true; this.db.markDirty();
   }
   // Hòm Đồ: phần thưởng không vừa túi (phó bản, sự kiện, boss, thưởng gửi lúc offline...) nằm ở đây, không bao giờ mất
+  // khoá toàn bộ Hoa Đăng cũ (trước khi Hoa Đăng thành đồ khoá): túi, Tiền Trang, Hòm Đồ, gian hàng chợ. Chạy 1 lần.
+  lockOldLanterns() {
+    const D = this.db.data, cfg = D.config;
+    if (cfg.ltLock1) return null;
+    const ID = 'event_token';
+    let chars = 0, total = 0, stalls = 0;
+    const merge = arr => {   // gộp mọi chồng Hoa Đăng thành 1 chồng khoá
+      if (!Array.isArray(arr)) return 0;
+      const st = arr.filter(x => x && x.id === ID);
+      const had = st.filter(x => !x.bd).reduce((a, x) => a + (x.qty | 0), 0);
+      if (!st.length || (!had && st.length === 1)) return 0;
+      const n = st.reduce((a, x) => a + (x.qty | 0), 0);
+      const keep = st[0]; keep.qty = n; keep.bd = 1;
+      for (const x of st.slice(1)) arr.splice(arr.indexOf(x), 1);
+      return had;
+    };
+    for (const u of Object.values(D.users || {})) {
+      const c = u && u.character; if (!c) continue;
+      const n = merge(c.inv) + merge(c.bank && c.bank.items) + merge(c.mailbox);
+      if (n) { chars++; total += n; }
+    }
+    // gian hàng chợ đang treo bán Hoa Đăng: gỡ xuống, trả về Hòm Đồ người bán (đồ khoá)
+    for (const [uid, st] of Object.entries(this.market && this.market.stalls || {})) {
+      const items = st.items || [];
+      for (const it of items.slice()) {
+        if (!it.s || it.s.id !== ID) continue;
+        const u = D.users[uid], c = u && u.character;
+        if (c) this.stash(c, ID, it.s.qty | 0, 0, true);
+        items.splice(items.indexOf(it), 1); stalls++; total += it.s.qty | 0;
+      }
+    }
+    cfg.ltLock1 = 1; this.db.markDirty();
+    const msg = `Khoá Hoa Đăng cũ: ${total} Hoa Đăng của ${chars} nhân vật${stalls ? `, gỡ ${stalls} món đang bày bán ở chợ về Hòm Đồ` : ''}`;
+    this.db.log('admin', msg); console.log('[hoa đăng]', msg);
+    return msg;
+  }
   stash(c, id, qty = 1, plus = 0, bind = false) {
     if (!ITEMS[id] || qty <= 0) return;
     const box = c.mailbox || (c.mailbox = []);

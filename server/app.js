@@ -601,6 +601,7 @@ setInterval(() => {
   db.save();
 }, 15000);
 setInterval(cleanupSessions, 3600e3);
+try { world.lockOldLanterns(); } catch (e) { console.error('khoá Hoa Đăng cũ', e); }   // 1 lần: Hoa Đăng cũ trong túi / Tiền Trang / Hòm Đồ / chợ thành đồ khoá
 if (!db.data.config.cloneFix5) { db.data.config.cloneFix5 = 1; db.data.config.devLimit = CLONE_LIM; if ((db.data.config.tradeLv | 0) < 30) db.data.config.tradeLv = 30; db.markDirty(); }   // clone tối đa 5 / thiết bị, giao dịch từ cấp 30
 if (!db.data.config.ipLimFix) { db.data.config.ipLimFix = 1; if (db.data.config.ipLimit == null || db.data.config.ipLimit === 3) db.data.config.ipLimit = 0; db.markDirty(); }   // bỏ giới hạn 3 tài khoản / IP (chặn nhầm người chơi dùng chung mạng)
 // Hẹn giờ mở cửa: tới config.maintOpenAt (ms) thì tự tắt bảo trì, người chơi vào được (đặt ở trang quản trị > Cấu hình)
