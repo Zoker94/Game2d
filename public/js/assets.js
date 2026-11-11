@@ -137,8 +137,55 @@
       a: at < 2 ? 0 : at < 4 ? 1 : at < 6 ? 2 : 3, ar: ap[4] || 0,
       h: ht < 0 ? 0 : ht < 3 ? 1 : ht < 5 ? 2 : 3, hr: ap[8] || 0,
       w: wt < 3 ? 0 : wt < 5 ? 1 : 2,
-      c: ap[11] == null ? -1 : ap[11], cr: ap[12] || 0   // áo choàng: bậc (-1 = không mặc), độ hiếm
+      c: ap[11] == null ? -1 : ap[11], cr: ap[12] || 0,   // áo choàng: bậc (-1 = không mặc), độ hiếm
+      o: ap[13] || ''   // ngoại trang (server/data/outfits.js): nhuộm lại màu áo
     };
+  }
+  // ----- ngoại trang: nhuộm bộ áo của phái sang bảng màu mới, giữ nguyên nếp vải / bóng -----
+  // Bộ khung (tools/rig3.py) tô vải = màu gốc trộn về màu tối SH hoặc màu sáng LI. Với mỗi điểm ảnh: tìm màu vải gốc + mức trộn t
+  // khớp nhất, rồi áp cùng mức trộn lên màu mới. Da (skin) giữ nguyên. Màu vải gốc từng phái lấy từ LOOKS của bộ khung.
+  const CLOTH = {"vodang":{"skin":"#f3c9a4","robe":"#eef2f8","robe2":"#bccbe6","trim":"#2f4f9a","pants":"#4a5574","belt":"#2f4f9a","bootcuff":"#eef2f8"},"ngamy":{"skin":"#f7d0b2","robe":"#fbeaf0","robe2":"#f2b0c8","trim":"#d6457e","pants":"#f0b8cc","belt":"#d6457e"},"thuyyen":{"skin":"#f7d0b2","robe":"#3e70c8","robe2":"#a8d2ff","trim":"#e4f2ff","pants":"#25407a","belt":"#1d3572"},"thieulam":{"skin":"#e9b98f","robe":"#efa132","robe2":"#d27a20","trim":"#8a3a18","pants":"#f1e0b4","belt":"#8a3a18","kasaya":"#b23a1c"},"thienvuong":{"skin":"#e6b48a","robe":"#c42a22","robe2":"#7a1814","trim":"#f0bc4a","pants":"#3a2a2e","belt":"#3a2418"},"duongmon":{"skin":"#efc4a0","robe":"#2f6e3c","robe2":"#1b3a24","trim":"#121a16","pants":"#1d2a20","belt":"#5a4128"},"ngudoc":{"skin":"#e9bf98","robe":"#5c2484","robe2":"#2c1444","trim":"#9ee04e","pants":"#361852","belt":"#2c1444"},"caibang":{"skin":"#dca67a","robe":"#c9bea9","robe2":"#8a7a66","trim":"#7a5e44","pants":"#9a6436","belt":"#6a4a30"},"conlon":{"skin":"#f0c6a0","robe":"#f2c24e","robe2":"#5b2e80","trim":"#5b2e80","pants":"#4a2a5a","belt":"#5b2e80","sleevecol":"#5b2e80"}};
+  const SH = [44, 26, 72], LI = [255, 244, 214];
+  const hexRGB = h => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+  const dyeRules = {};
+  function rulesOf(cls, oid) {
+    const k = cls + ':' + oid; if (dyeRules[k]) return dyeRules[k];
+    const O = window.G && G.data && G.data.outfits && G.data.outfits[oid], C = CLOTH[cls];
+    if (!O || !C) return (dyeRules[k] = null);
+    const rules = [];
+    for (const role in C) {
+      if (role === 'skin') { rules.push({ s: hexRGB(C.skin), t: null }); continue; }
+      const tg = O.colors[role === 'kasaya' ? 'trim' : role];
+      if (tg) rules.push({ s: hexRGB(C[role]), t: hexRGB(tg) });
+    }
+    return (dyeRules[k] = rules);
+  }
+  const [dcv, dcx] = mk(SRC, SRC);
+  function dyed(im, sx, sy, cls, oid) {
+    const R = rulesOf(cls, oid);
+    if (!R) return null;
+    dcx.setTransform(1, 0, 0, 1, 0, 0); dcx.clearRect(0, 0, SRC, SRC); dcx.drawImage(im, sx, sy, SRC, SRC, 0, 0, SRC, SRC);
+    const id = dcx.getImageData(0, 0, SRC, SRC), d = id.data;
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3] < 8) continue;
+      const r = d[i], g = d[i + 1], b = d[i + 2];
+      let best = 1e9, bt = 0, br = null, bdir = null;
+      for (const ru of R) {
+        const s0 = ru.s;
+        for (const dir of [SH, LI]) {   // điểm ảnh = gốc + t·(hướng - gốc)
+          const vx = dir[0] - s0[0], vy = dir[1] - s0[1], vz = dir[2] - s0[2], L2 = vx * vx + vy * vy + vz * vz || 1;
+          let t = ((r - s0[0]) * vx + (g - s0[1]) * vy + (b - s0[2]) * vz) / L2;
+          t = t < -0.08 ? -0.08 : t > 0.8 ? 0.8 : t;
+          const ex = r - (s0[0] + vx * t), ey = g - (s0[1] + vy * t), ez = b - (s0[2] + vz * t), e = ex * ex + ey * ey + ez * ez;
+          if (e < best) { best = e; bt = t; br = ru; bdir = dir; }
+        }
+      }
+      if (!br || !br.t || best > 22 * 22) continue;   // da hoặc màu không thuộc vải: giữ nguyên
+      const T = br.t;
+      d[i] = T[0] + (bdir[0] - T[0]) * bt; d[i + 1] = T[1] + (bdir[1] - T[1]) * bt; d[i + 2] = T[2] + (bdir[2] - T[2]) * bt;
+    }
+    dcx.putImageData(id, 0, 0);
+    return dcv;
   }
   // ----- phi phong (áo choàng) vẽ bằng code, gắn theo vai của từng khung hình -----
   // màu vải theo bậc: Bố, Bì, Ngân Văn, Kim Tuyến, Huyền Vũ, Long Văn, Thiên Tàm, Tử Hà, Cửu Long, Hỗn Nguyên
@@ -275,9 +322,9 @@
     const helm = L.h ? layerOf(cls, 'h' + L.h, part) : null;
     const metal = L.a && L.ar ? layerOf(cls, 'am' + L.a, part) : null, hmetal = L.h && L.hr ? layerOf(cls, 'hm' + L.h, part) : null;
     const fxu = layerOf(cls, 'fxu', part), fxo = layerOf(cls, 'fxo', part);
-    const key = cls + ':' + dir + ':' + state + ':' + i + ':' + (body ? L.a + '.' + L.ar + (metal ? 'm' : '') : 'x') + ':' + (wpn ? L.w : 'x') + ':' + (helm ? L.h + '.' + L.hr + (hmetal ? 'm' : '') : 0) + (fxo ? 'f' : '') + (L.c >= 0 ? ':c' + L.c + '.' + L.cr : '');
+    const key = cls + ':' + dir + ':' + state + ':' + i + ':' + (body ? L.a + '.' + L.ar + (metal ? 'm' : '') : 'x') + ':' + (wpn ? L.w : 'x') + ':' + (helm ? L.h + '.' + L.hr + (hmetal ? 'm' : '') : 0) + (fxo ? 'f' : '') + (L.c >= 0 ? ':c' + L.c + '.' + L.cr : '') + (L.o ? ':o' + L.o : '');
     { const hit = hitOf(key); if (hit) return hit; }
-    if (overBudget() && (body || base)) {   // bản nhanh, không lưu: thân + vũ khí
+    if (overBudget() && (body || base) && !L.o) {   // bản nhanh, không lưu: thân + vũ khí (ngoại trang luôn vẽ đủ để không nháy màu gốc)
       qcx.setTransform(1, 0, 0, 1, 0, 0); qcx.clearRect(0, 0, SRC, SRC);
       if (!state.startsWith('ride')) { qcx.fillStyle = 'rgba(0,0,0,0.3)'; qcx.beginPath(); qcx.ellipse(72 * K, 128 * K, (state === 'dead' ? 33 : 19) * K, 6 * K, 0, 0, Math.PI * 2); qcx.fill(); }
       if (isFlip(dir)) { qcx.translate(SRC, 0); qcx.scale(-1, 1); }
@@ -294,7 +341,7 @@
     put2(fxu);
     const cape = part => { if (!cb) return; x.save(); x.scale(K, K); drawCape(x, cview, cb, state, i, L, part); x.restore(); };   // vẽ theo toạ độ ô 144
     cape('back');   // phi phong sau lưng (nhìn trước / nghiêng)
-    put2(body || base);
+    { const dy = L.o ? dyed(body || base, sx, sy, cls, L.o) : null; if (dy) x.drawImage(dy, 0, 0); else put2(body || base); }   // ngoại trang: thân áo đã nhuộm
     if (metal) x.drawImage(tinted(metal, sx, sy, METAL[L.ar]), 0, 0);
     cape('front');  // quay lưng: phi phong phủ lên thân; nhìn trước: quai cài vai
     put2(wpn);

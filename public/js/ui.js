@@ -1242,6 +1242,7 @@
         <div>Võ Mục Di Thư <b>${me.vmb | 0}/5</b>${me.vmb ? ` <span class="small muted">(+${(me.vmb | 0) * 3}% công/thủ/máu)</span>` : ''}</div><div>Quái đã diệt <b>${fmt(me.kills)}</b></div><div>Hạ người chơi <b>${fmt(me.pvpKills)}</b></div><div>Boss đã đánh <b>${fmt(me.bossKills)}</b></div>
       </div>
       ${titlePanel(me)}
+      ${outfitPanel(me)}
       ${gemSummary(me.equip)}
       ${me.level >= 120 || me.rebirth > 0 ? `<div class="card rb-card"><h4>🔥 Chết Đi Sống Lại ${me.rebirth > 0 ? `<span class="rb-n">Trùng sinh ${me.rebirth}</span>` : ''}</h4><div class="small muted">Đạt cấp 120 có thể trùng sinh về cấp 1 tại <b>Thạch Lão Nhân (Lan Châu Thành)</b>: giữ 1/2 điểm tiềm năng, giữ nguyên võ công, bảng xếp hạng vẫn tính${me.level >= 120 ? '' : ' (đạt lại cấp 120 để trùng sinh tiếp)'}.</div>${me.level >= 120 ? '<button class="btn primary" id="rb-open" style="margin-top:6px">🔥 Chết Đi Sống Lại…</button>' : ''}</div>` : ''}
       ${attrPanel(me)}
@@ -1256,6 +1257,7 @@
       }).join('')}</div>`;
     body.querySelectorAll('[data-dragon]').forEach(b => b.onclick = () => emit('dragon', { el: b.dataset.dragon }));
     body.querySelectorAll('[data-title]').forEach(b => b.onclick = () => { ttlOpen = true; emit('title', { id: b.dataset.title }); });
+    body.querySelectorAll('[data-outfit]').forEach(b => b.onclick = () => emit('outfit', { id: b.dataset.outfit }));
     { const d = body.querySelector('.ttl-box'); if (d) d.ontoggle = () => { ttlOpen = d.open; }; }
     bindAttr(body);
     { const rb = body.querySelector('#rb-open'); if (rb) rb.onclick = () => window.Rebirth && Rebirth.open(); }
@@ -1266,6 +1268,16 @@
 
   // ---------- Danh hiệu giang hồ: giành từ phó bản / Boss / sự kiện, chọn 1 để đeo ----------
   let ttlOpen = null;   // người chơi mở / đóng khung danh hiệu: giữ nguyên khi bảng Nhân vật vẽ lại mỗi giây (trước đây cứ vẽ lại là tự đóng)
+  // ngoại trang đã mở khoá: mặc / cởi (chỉ đổi màu bộ áo, không đổi chỉ số)
+  function outfitPanel(me) {
+    const own = me.outfits || [], OF = G.data.outfits || {};
+    if (!own.length) return '';
+    const RC = { rare: '#4fa3ff', epic: '#c060ff', legendary: '#ff9b2f' };
+    return `<div class="card"><h4>👘 Ngoại trang</h4><div class="row" style="flex-wrap:wrap;gap:6px;justify-content:flex-start">
+      <button class="btn small ${!me.outfit ? 'primary' : ''}" data-outfit="">Áo gốc của phái</button>
+      ${own.filter(id => OF[id]).map(id => { const o = OF[id]; return `<button class="btn small ${me.outfit === id ? 'primary' : ''}" data-outfit="${id}" title="${esc(o.name)}"><i style="display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px;background:linear-gradient(135deg,${o.colors.robe} 50%,${o.colors.trim} 50%);box-shadow:0 0 0 1px ${RC[o.rarity] || '#888'}"></i>${esc(o.name)}</button>`; }).join('')}
+      </div><div class="small muted" style="margin-top:4px">Ngoại trang đổi màu bộ áo theo kiểu áo của phái, không thay đổi chỉ số.</div></div>`;
+  }
   function titlePanel(me) {
     const T = G.data.titles; if (!T) return '';
     const gifts = me.giftTitles || [];

@@ -296,7 +296,7 @@ app.get('/api/gamedata', (req, res) => {
     const mountExp = {};
     for (let l = 1; l <= M.MOUNT_MAX; l++) mountExp[l] = M.mountExpNext(l);
     gamedataCache = { enhance: { max: E.ENHANCE_MAX, safe: E.ENHANCE_SAFE, rate: E.ENHANCE_RATE, cost: Array.from({ length: 15 }, (_, p) => Array.from({ length: require('./data/items').TIERS.length }, (_, t) => E.enhanceCost(p, t))) },
-      skillMax: require('./data/skillbooks').SKILL_MAX,
+      skillMax: require('./data/skillbooks').SKILL_MAX, outfits: require('./data/outfits').OUTFITS,
       branchFreeLv: require('./data/branches').BRANCH_FREE_LV, dragons: require('./data/dragons').DRAGONS, jianghu: require('./data/jianghu').JIANGHU, titles: require('./data/titles').TITLES, divineSets: require('./data/items').DIVINE_SETS, mounts: M.MOUNTS, mountMax: M.MOUNT_MAX, mountExp, classes: CLASSES, story: require('./data/story'), gems: require('./data/gems').clientConfig(), attrs: require('./data/attrs').ATTRS, attrSuggest: require('./data/attrs').ATTR_SUGGEST, attrPerLv: require('./data/attrs').ATTR_PER_LEVEL, items: ITEMS, rarity: RARITY, brStat: require('./data/items').BR_STAT, brOffK: require('./data/items').BR_OFF_K, brAttr: require('./data/items').BR_ATTR, gearCap: require('./data/affixes').GEAR_CAP, critMax: 5, slots: Object.assign(Object.fromEntries(Object.entries(SLOTS).map(([k, v]) => [k, v.name])), { ring2: 'Nhẫn' }), monsters: mons, maps, npcs,
       elements: require('./data/affixes').ELEMENTS, affixes: Object.fromEntries(Object.entries(require('./data/affixes').AFFIX).map(([k, a]) => [k, { name: a.name, text: a.text }])), khac: require('./data/affixes').KHAC };
   }
@@ -545,6 +545,7 @@ io.on('connection', socket => {
   on('flipBranch', inGame(d => world.flipBranch(player, d || {})));
   on('changeClass', inGame(d => world.changeClass(player, d || {})));
   on('mount', inGame(d => d && world.mountAction(player, d)));
+  on('outfit', inGame(d => world.outfitAction(player, d)));   // mặc / cởi ngoại trang
   on('rebirth', inGame(d => world.rebirth.action(player, d)));
   on('dragon', inGame(d => d && world.selectDragon(player, d.el)));
   on('jianghu', inGame(d => d && world.selectJh(player, String(d.k || ''))));

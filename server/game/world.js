@@ -11,6 +11,7 @@ const vipOk = c => require('./util').tkLeft(c) > 0;   // khu VIP: còn giờ Vé
 const { NPCS, TELEPORTS } = require('../data/npcs');
 const { TUTORIAL } = require('../data/quests');
 const { MOUNTS, MOUNT_MAX, mountExpNext, isBreakLevel } = require('../data/mounts');
+const { OUTFITS } = require('../data/outfits');
 // bản đồ sự kiện không cho cưỡi thú
 const NO_MOUNT_MAPS = { tong_kim: 'Chiến trường Tống Kim', hoa_son_ld: 'Hoa Sơn Luận Kiếm', dai_hoi: 'Đại Hội Võ Lâm', cong_thanh: 'Công Thành Chiến' };
 const { DRAGONS, DRAGON_SLOT } = require('../data/dragons');
@@ -480,7 +481,7 @@ class World {
       minhChu: this.titleFlags(p), title: this.titleOf(c, p.user.isAdmin), ach: Object.assign({ bossKills: c.bossKills | 0 }, c.ach || {}), tk: this.tongkim ? this.tongkim.tag(p) : 0, congTrang: c.congTrang || 0, ctOwner: this.siege ? this.siege.ownerName() : null, master: c.master && c.master.uid && !c.master.grad ? c.master.name : null, nDisc: Object.keys(c.disciples || {}).length,
       attr: c.attr || {}, attrFree: attrTotalOf(c) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
       branch: branchOf(c), skills: c.skills || {}, hotbar: c.hotbar, sp: spTotalOf(c) - (c.spSpent || 0),
-      blockInv: c.blockInv || {}, mailbox: (c.mailbox || []).slice(0, 60).map(e => [e.id, e.qty, e.plus || 0]), mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), bank: c.bank || { items: [], gold: 0 }, autoTicket: c.autoTicket > Date.now() ? c.autoTicket : 0, tkPause: c.tkPause | 0, pkMode: c.pkMode | 0, pkLock: !!((c.pkLock || c.pk >= PK_OUTLAW) && c.pk > 0), escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
+      blockInv: c.blockInv || {}, mailbox: (c.mailbox || []).slice(0, 60).map(e => [e.id, e.qty, e.plus || 0]), mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), outfits: c.outfits || [], outfit: c.outfit || '', bank: c.bank || { items: [], gold: 0 }, autoTicket: c.autoTicket > Date.now() ? c.autoTicket : 0, tkPause: c.tkPause | 0, pkMode: c.pkMode | 0, pkLock: !!((c.pkLock || c.pk >= PK_OUTLAW) && c.pk > 0), escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
       sect: this.sect ? this.sect.meView(p) : null, giftTitles: [...(c.giftTitles || []), ...weekTitlesOf(c)], weekTitles: c.weekTitles || {}, mine: this.mining ? this.mining.view(p) : null,
       med: !!p.med, pvp: this.inPvp(p) ? 1 : 0, st: this.statusView(p), friends: Object.keys(c.friends || {}).length, friendIds: this.friendIds(c), pk: c.pk || 0,
       rank: (this.features && this.features.powerRank && this.features.powerRank.get(p.userId)) || 0
@@ -1781,6 +1782,16 @@ class World {
       p.dirtyMe = true; this.db.markDirty();
       return;
     }
+    if (e.outfit) {   // ngoại trang: mở khoá vào tủ đồ rồi mặc luôn
+      const o = OUTFITS[e.outfit]; if (!o) return;
+      c.outfits = c.outfits || [];
+      U.removeByUid(c, uid, 1);
+      if (!c.outfits.includes(o.id)) c.outfits.push(o.id);
+      c.outfit = o.id;
+      this.toast(p, `👘 Đã mặc ngoại trang ${o.name}! Đổi / cởi ở bảng Nhân vật.`, 'reward');
+      p.dirtyMe = true; this.db.markDirty();
+      return;
+    }
     if (e.mount) {
       const mt = MOUNTS[e.mount];
       c.mounts = c.mounts || {};
@@ -2856,6 +2867,15 @@ class World {
   }
 
   // Ngoại hình: [bậc vũ khí, độ hiếm vũ khí, +vũ khí, bậc áo, độ hiếm áo, +áo, bậc nón, thú cưỡi đang cưỡi, độ hiếm nón, cấp thú, thú cưng, bậc áo choàng, độ hiếm áo choàng]
+  // mặc / cởi ngoại trang đã mở khoá (id rỗng = cởi, mặc lại bộ áo gốc)
+  outfitAction(p, d) {
+    const c = p.c, id = d && d.id ? String(d.id) : '';
+    if (id && !(c.outfits || []).includes(id)) return this.toast(p, 'Chưa sở hữu ngoại trang này', 'error');
+    if (id && !OUTFITS[id]) return;
+    c.outfit = id;
+    this.toast(p, id ? `👘 Đã mặc ngoại trang ${OUTFITS[id].name}` : '👘 Đã cởi ngoại trang', 'info');
+    p.dirtyMe = true; this.db.markDirty();
+  }
   appearance(c) {
     const e = c.equip, w = e.weapon && ITEMS[e.weapon.id], a = e.armor && ITEMS[e.armor.id], h = e.helmet && ITEMS[e.helmet.id], k = e.cloak && ITEMS[e.cloak.id];
     return [w ? w.tier : -1, w ? RARITY_IDX[w.rarity] : 0, w ? e.weapon.plus || 0 : 0,
@@ -2863,7 +2883,8 @@ class World {
       h ? h.tier : -1, c.riding && c.mount ? c.mount : '', h ? RARITY_IDX[h.rarity] : 0,
       c.riding && c.mount && c.mounts && c.mounts[c.mount] ? c.mounts[c.mount].lv || 1 : 0,   // cấp thú cưỡi: hiệu ứng mạnh dần
       c.pet && U.countItem(c, 'pet_' + c.pet) ? c.pet : '',   // thú cưng đang theo
-      k ? k.tier : -1, k ? RARITY_IDX[k.rarity] : 0];   // áo choàng: vẽ phi phong trên nhân vật
+      k ? k.tier : -1, k ? RARITY_IDX[k.rarity] : 0,   // áo choàng: vẽ phi phong trên nhân vật
+      c.outfit && OUTFITS[c.outfit] ? c.outfit : ''];   // ngoại trang: đổi màu áo
   }
 
   fx(mapId, data) { this.io.to('map:' + mapId).emit('fx', data); }

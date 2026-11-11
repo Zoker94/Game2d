@@ -15,7 +15,8 @@ const CHANGELOG = [
       '💠 Giao diện mới Neon Huyền Cơ cho mọi server: bình Sinh lực / Nội lực dạng chất lỏng phát sáng, bảng – popup – nút – bản đồ phong cách neon tương lai.',
       '⚡ Giao diện Neon nhẹ hơn: mở túi đồ / các bảng không còn tụt FPS.',
       '🏍️ Cưỡi xe máy: dáng lái riêng cho từng phái – người đổ về trước, hai tay nắm ghi-đông, tay áo đúng màu áo của phái và cấp áo (binh khí tạm cất khi lái).',
-      '🎛️ Cài đặt → Đồ họa → Kiểu giao diện: chọn Neon Huyền Cơ hoặc Cổ điển (giao diện cũ).'
+      '🎛️ Cài đặt → Đồ họa → Kiểu giao diện: chọn Neon Huyền Cơ hoặc Cổ điển (giao diện cũ).',
+      '👘 (Thử nghiệm) Ngoại trang: Bạch Y Thư Sinh, Hắc Long Bào, Hồng Liên Tiên Y, Băng Tâm Ngọc Y, Xích Hỏa Chiến Bào – đổi màu bộ áo theo kiểu áo của phái, mặc / cởi ở bảng Nhân vật.'
     ]
   },
   {

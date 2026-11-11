@@ -316,6 +316,13 @@ for (const m of Object.values(MOUNTS)) {
 }
 ITEMS.event_token.type = 'material';
 
+// Ngoại trang (đổi màu bộ áo của phái) – vật phẩm dùng để mở khoá vào tủ đồ
+const { OUTFITS } = require('./outfits');
+for (const o of Object.values(OUTFITS)) {
+  ITEMS['outfit_' + o.id] = { id: 'outfit_' + o.id, type: 'use', name: 'Ngoại trang: ' + o.name, desc: `Sử dụng để mở khoá ngoại trang ${o.name} – đổi màu bộ áo của phái, không đổi chỉ số. Mặc / cởi ở bảng Nhân vật.${o.test ? ' (Đang thử nghiệm)' : ''}`,
+    effect: { outfit: o.id }, price: 0, lv: 1, rarity: o.rarity, icon: 'armor_3', stack: true, noSale: true };
+}
+
 // Đá khảm 5 loại × 5 cấp (data/gems.js)
 for (const g of require('./gems').gemItems()) ITEMS[g.id] = g;
 
