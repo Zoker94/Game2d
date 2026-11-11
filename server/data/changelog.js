@@ -5,7 +5,8 @@ const CHANGELOG = [
     date: '11/11/2026',
     items: [
       '🏍️ Mở bán Xe Máy Phân Khối Lớn ở Kỳ Trân Các: 8.000 Nguyên Bảo (ngang Thanh Long), +55% tốc độ.',
-      '🏮 Lễ Hội Hoa Đăng: mỗi món quà đổi được tối đa 10 lần / ngày (trước 1 lần).'
+      '🏮 Lễ Hội Hoa Đăng: mỗi món quà đổi được tối đa 10 lần / ngày (trước 1 lần).',
+      '🐴 Ô Truy Hắc Mã đổi hình mới: chiến mã mặc giáp, đứng yên thở phập phồng, phi nước đại 8 khung ở cả 4 hướng.'
     ]
   },
   {
