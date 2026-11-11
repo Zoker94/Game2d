@@ -109,7 +109,7 @@ function cleanupSessions() {
   for (const [t, s] of Object.entries(db.data.sessions)) if (s.exp < now) delete db.data.sessions[t];
   for (const [t, s] of Object.entries(db.data.adminSessions)) if (s.exp < now) delete db.data.adminSessions[t];
 }
-// Mở cửa thoải mái (giai đoạn open server): tắt giới hạn tài khoản online theo IP, nới giới hạn đăng nhập (giới hạn clone theo thiết bị vẫn bật: 5).
+// Mở cửa thoải mái (giai đoạn open server): tắt giới hạn tài khoản online theo IP, nới giới hạn đăng nhập. Clone theo thiết bị chỉ cảnh báo, không chặn.
 // Vẫn chặn tài khoản / thiết bị bị quản trị viên khoá. Đổi thành false để bật lại các giới hạn.
 const OPEN_FREE = true;
 const CLONE_LIM = 5;   // số tài khoản tối đa được tạo trên 1 thiết bị (chống nuôi clone)
@@ -154,6 +154,7 @@ app.post('/api/auth/google', async (req, res) => {
       created = true;
       const id = db.newId();
       user = db.data.users[id] = { id, googleId: pl.sub, email: pl.email || '', name: pl.name || 'Hiệp khách', avatar: pl.picture || '', createdAt: Date.now(), banned: false, muted: false };
+      cloneWarn(user, req.body);
       db.log('user', `Tài khoản mới liên kết Google: ${user.email}`);
     }
     if (created) world.referral.apply(user, req.body.ref, req.ip, req.body.dev);   // tài khoản mới qua link mời
@@ -187,12 +188,19 @@ function devBanned(b) {
   const dev = cleanDev(b && b.dev), fp = cleanFp(b && b.fp), ban = db.data.config.bannedDevs || [];
   return (dev && ban.includes(dev)) || (fp && ban.includes(fp)) ? 'Thiết bị này đã bị khoá do vi phạm. Liên hệ quản trị viên qua nhóm Zalo.' : null;
 }
+// Chỉ chặn tạo tài khoản khi QUẢN TRỊ VIÊN đã khoá thiết bị. Vượt số tài khoản / thiết bị (devLimit) thì KHÔNG chặn nữa
+// (nhận diện máy hay nhầm: cùng đời máy + cùng mạng 4G / quán net) – chỉ đánh dấu cảnh báo để quản trị viên xem và tự khoá.
 function devCreateBlocked(b, ip) {
-  const bn = devBanned(b); if (bn) return bn;   // chỉ chặn thiết bị bị quản trị viên khoá
-  const lim = db.data.config.devLimit == null ? CLONE_LIM : db.data.config.devLimit | 0;   // chống clone: tối đa 5 tài khoản / thiết bị
-  if (lim <= 0 || !(b && (b.dev || b.fp))) return null;
-  const n = devAccounts(b.dev, b.fp, ip).length;
-  return n >= lim ? `Mỗi thiết bị chỉ được tạo tối đa ${lim} tài khoản – máy này đã có ${n} tài khoản. Hãy đăng nhập tài khoản cũ.` : null;
+  const bn = devBanned(b); if (bn) return bn;
+  const lim = db.data.config.devLimit == null ? CLONE_LIM : db.data.config.devLimit | 0;
+  if (b && lim > 0 && (b.dev || b.fp)) { const n = devAccounts(b.dev, b.fp, ip).length; if (n >= lim) b._cloneN = n; }
+  return null;
+}
+// tài khoản vừa tạo trên máy đã có nhiều tài khoản: ghi cảnh báo (trang quản trị › Người chơi › lọc Nghi clone)
+function cloneWarn(user, b) {
+  if (!b || !b._cloneN) return;
+  user.cloneWarn = { n: b._cloneN, at: Date.now() };
+  db.log('clone', `⚠ Nghi clone: ${user.username || user.email || user.name} tạo trên thiết bị đã có ${b._cloneN} tài khoản (chỉ cảnh báo, không chặn)`);
 }
 
 // Đăng nhập thử nghiệm (CHỈ bật khi ALLOW_DEV_LOGIN=1, dùng cho môi trường phát triển)
@@ -210,6 +218,7 @@ app.post('/api/auth/register', (req, res) => {
   const bl = devCreateBlocked(req.body, req.ip); if (bl) return res.status(403).json({ error: bl });
   const id = db.newId();
   const user = db.data.users[id] = { id, username, pass: db.hashPassword(password), email: '', name: username, avatar: '', createdAt: Date.now(), lastLogin: Date.now(), banned: false, muted: false };
+  cloneWarn(user, req.body);
   world.referral.apply(user, req.body.ref, req.ip, req.body.dev);   // tạo qua link mời (trước khi ghi IP / thiết bị của chính mình)
   world.referral.touch(user, req.ip, req.body.dev, req.body.fp);
   db.log('user', `Đăng ký tài khoản mới: ${username}`);
@@ -250,6 +259,7 @@ app.post('/api/auth/dev', (req, res) => {
     const bl = devCreateBlocked(req.body, req.ip); if (bl) return res.status(403).json({ error: bl });
     const id = db.newId();
     user = db.data.users[id] = { id, googleId: gid, email: key + '@dev.local', name: key, avatar: '', createdAt: Date.now(), banned: false, muted: false };
+    cloneWarn(user, req.body);
     world.referral.apply(user, req.body.ref, req.ip, req.body.dev);
   }
   world.referral.touch(user, req.ip, req.body.dev, req.body.fp);

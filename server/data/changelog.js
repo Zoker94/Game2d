@@ -5,6 +5,7 @@ const CHANGELOG = [
     date: '11/11/2026',
     items: [
       '🏍️ Mở bán Xe Máy Phân Khối Lớn ở Kỳ Trân Các: 8.000 Nguyên Bảo (ngang Thanh Long), +55% tốc độ.',
+      '🔓 Bỏ chặn tạo tài khoản theo thiết bị (nhận diện máy hay nhầm khi dùng chung mạng / cùng đời máy). Game chỉ cảnh báo cho quản trị viên, không tự chặn.',
       '🏮 Lễ Hội Hoa Đăng: mỗi món quà đổi được tối đa 10 lần / ngày (trước 1 lần).',
       '🔒 Quà đổi từ Hoa Đăng (Song Bội KN x2, rương, đá, bùa, bí kíp…) và Hoa Đăng nhặt được giờ là đồ khoá: dùng được nhưng không giao dịch / bán chợ. Hoa Đăng có từ trước (trong túi, Tiền Trang, Hòm Đồ) cũng đã chuyển thành đồ khoá; Hoa Đăng đang bày bán ở chợ được gỡ về Hòm Đồ của người bán.',
       '🐴 Ô Truy Hắc Mã đổi hình mới: chiến mã mặc giáp, đứng yên thở phập phồng, phi nước đại 8 khung ở cả 4 hướng.'

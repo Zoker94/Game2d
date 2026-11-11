@@ -89,7 +89,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   // ----- Người chơi -----
   const userRow = u => ({
     id: u.id, email: u.email || (u.username ? '(tài khoản) ' + u.username : ''), username: u.username || '', gname: u.name, createdAt: u.createdAt, lastLogin: u.lastLogin, banned: !!u.banned, banReason: u.banReason || '',
-    muted: u.muted === true || (u.muted && u.muted > Date.now()) ? u.muted : false, isGM: !!u.isAdmin, tester: !!u.tester, streamer: !!u.streamer, online: world.players.has(u.id),
+    muted: u.muted === true || (u.muted && u.muted > Date.now()) ? u.muted : false, isGM: !!u.isAdmin, tester: !!u.tester, streamer: !!u.streamer, online: world.players.has(u.id), cloneWarn: u.cloneWarn ? u.cloneWarn.n : 0,
     character: u.character ? { name: u.character.name, cls: u.character.cls, clsName: CLASSES[u.character.cls].name, level: u.character.level, gold: u.character.gold, knb: u.character.knb, map: u.character.map, power: u.character.power, kills: u.character.kills } : null
   });
   app.get('/api/admin/users', auth, (req, res) => {
@@ -103,7 +103,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     const idx = new Map();
     for (const x of Object.values(db.data.users)) for (const k of [...(x.devs || []).map(d => 'd' + d), ...(x.fps || []).map(f => 'f' + f)]) { let s = idx.get(k); if (!s) idx.set(k, s = new Set()); s.add(x.id); }
     const clones = u => { const s = new Set(); for (const k of [...(u.devs || []).map(d => 'd' + d), ...(u.fps || []).map(f => 'f' + f)]) for (const id of idx.get(k) || []) if (id !== u.id) s.add(id); return s.size; };
-    if (filter === 'clone') list = list.filter(u => !isOwner(u) && clones(u) >= 1);
+    if (filter === 'clone') list = list.filter(u => !isOwner(u) && (clones(u) >= 1 || u.cloneWarn));
     list.sort((a, b) => filter === 'clone' ? clones(b) - clones(a) : (b.lastLogin || 0) - (a.lastLogin || 0));
     res.json({ total: list.length, users: list.slice(0, 200).map(u => Object.assign(userRow(u), { clones: clones(u) })) });
   });
