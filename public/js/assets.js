@@ -29,7 +29,7 @@
   const K = HD ? 2 : 1, CDIR = HD ? 'chars_hd/' : 'chars/';
   const SRC = 144 * K, CELL = 96, FOOT_X = 48, FOOT_Y = 86;
   const STATE_ANIM = { idle: 'idle', walk: 'walk', run: 'run', atk: 'attack', cast: 'cast', hurt: 'hurt', dead: 'death',
-                       ride: 'ride', ride_atk: 'ride_attack', ride_cast: 'ride_cast', ride_hurt: 'ride_hurt', med: 'meditate' };
+                       ride: 'ride', ride_atk: 'ride_attack', ride_cast: 'ride_cast', ride_hurt: 'ride_hurt', med: 'meditate', moto: 'ride_moto' };   // moto: lái xe máy, 2 tay nắm ghi-đông
   // Quái / boss: thêm tên quái (id trong server/data/monsters.js) vào đây khi có ảnh
   // public/assets/monsters/<id>.png (ảnh nền trong suốt, chân nhân vật ở đáy ảnh).
   const MONSTERS = [];
@@ -266,6 +266,7 @@
     const [row, col] = cellOf(cls, dir, state, i), [part, r0] = partOf(cls, row), sx = col * SRC, sy = (row - r0) * SRC;
     const body = layerOf(cls, 'a' + L.a, part), base = need(cls + '_a0-' + part);
     if (!body && !base) {   // dải động tác này chưa tải xong: tạm dùng tư thế đứng
+      if (state === 'moto' || !META[cls].anims[STATE_ANIM[state]]) return charFrame(cls, dir, 'ride', i, ap);   // dáng lái xe chưa tải / bản cũ: ngồi như cưỡi ngựa
       if (state !== 'idle' && imgs[cls + '_a0-idle']) return charFrame(cls, dir, 'idle', 0, ap);
       qcx.setTransform(1, 0, 0, 1, 0, 0); qcx.clearRect(0, 0, SRC, SRC); return qcv;
     }
@@ -306,7 +307,7 @@
   }
   // ----- người cưỡi: sheet có sẵn động tác ngồi yên (cưỡi, đánh, ra chiêu, trúng đòn khi cưỡi); hông ở y = 66 (ô 96) -----
   function riderFrame(cls, dir, state, i, ap) {
-    const st = state === 'atk' ? 'ride_atk' : state === 'cast' ? 'ride_cast' : state === 'hurt' ? 'ride_hurt' : 'ride';
+    const st = state === 'atk' ? 'ride_atk' : state === 'cast' ? 'ride_cast' : state === 'hurt' ? 'ride_hurt' : state === 'moto' && META[cls] && META[cls].anims.ride_moto ? 'moto' : 'ride';
     return charFrame(cls, dir, st, i, ap);
   }
   // ----- thú cưỡi (ảnh tools/mounts2.py): ô 192 vẽ ra x2/3, nhìn ngang quay phải, kèm điểm yên (hông người cưỡi) từng khung -----

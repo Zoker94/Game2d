@@ -1569,6 +1569,9 @@
         <div class="card"><h4>🧍 Hình nhân vật</h4>
           <div class="row" style="justify-content:flex-start;align-items:center;gap:4px">${(() => { let o = 'auto'; try { o = localStorage.getItem('vl_hdchar') || 'auto'; } catch (e) { } return [['auto', 'Tự động'], ['on', 'Nét cao'], ['off', 'Thường (nhẹ)']].map(([k, n]) => `<button class="btn small ${o === k ? 'primary' : ''}" data-hdchar="${k}">${n}</button>`).join(''); })()}</div>
           <div class="small muted" style="margin-top:4px">Đang dùng: <b>${Assets.HD ? 'nét cao' : 'thường'}</b>. Tự động: máy tính dùng nét cao, điện thoại dùng bản thường. Nét cao rõ từng chi tiết nhưng tốn gấp ~4 lần bộ nhớ ảnh – điện thoại mạnh mới nên bật. Đổi xong tải lại trang để áp dụng.</div></div>
+        <div class="card"><h4>💠 Kiểu giao diện</h4>
+          <div class="row" style="justify-content:flex-start;align-items:center;gap:4px">${[['neon', '💠 Neon Huyền Cơ'], ['classic', '🏯 Cổ điển (giao diện cũ)']].map(([k, n]) => `<button class="btn small ${((window.HudNeon && HudNeon.on) ? 'neon' : 'classic') === k ? 'primary' : ''}" data-hudstyle="${k}">${n}</button>`).join('')}</div>
+          <div class="small muted" style="margin-top:4px">Neon: bình Sinh lực / Nội lực tròn, bảng và bản đồ phong cách neon. Cổ điển: thanh máu / nội lực và bảng như trước. Đổi xong trò chơi tự tải lại.</div></div>
         <div class="card"><h4>👁 Hiển thị</h4>
           ${ck('names', 'Hiện tên nhân vật / quái')}
           ${ck('tframe', 'Hiện khung máu cả quái thường (mặc định chỉ boss, tinh anh, người chơi)')}
@@ -1619,6 +1622,12 @@
     body.querySelectorAll('[data-uipref]').forEach(b => b.onclick = () => { if (b.dataset.uipref === Input.uiPref) return; try { localStorage.setItem('vl_ui', b.dataset.uipref); } catch (e) {} location.reload(); });
     on('set-view', 'oninput', e => { const v = +e.target.value; $('set-view-v').textContent = v + '%'; G.setView(v / 100); });
     on('set-view-reset', 'onclick', () => { G.setView(1); UI.refreshPanel(); });
+    body.querySelectorAll('[data-hudstyle]').forEach(b => b.onclick = () => {   // đổi giao diện Neon / Cổ điển (lưu trên máy này)
+      const v = b.dataset.hudstyle, cur = window.HudNeon && HudNeon.on ? 'neon' : 'classic';
+      if (v === cur) return;
+      try { localStorage.setItem('vl_hud', v); } catch (e) { }
+      G.modal(`Đổi sang giao diện ${v === 'neon' ? 'Neon Huyền Cơ' : 'Cổ điển'}? Trò chơi sẽ tải lại.`, [{ t: 'Để sau' }, { t: 'Tải lại ngay', cls: 'primary', fn: () => location.reload() }]);
+    });
     body.querySelectorAll('[data-hdchar]').forEach(b => b.onclick = () => {
       try { localStorage.setItem('vl_hdchar', b.dataset.hdchar); } catch (e) { }
       UI.refreshPanel();

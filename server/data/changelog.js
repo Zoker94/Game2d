@@ -14,7 +14,8 @@ const CHANGELOG = [
       '🌫️ Xe máy: vẽ lại bụi đường và khói pô ngay trong hình xe (pixel art, cuộn theo từng khung): chạy tung vệt bụi dài phía sau, đứng yên nổ máy phụt khói.',
       '💠 Giao diện mới Neon Huyền Cơ cho mọi server: bình Sinh lực / Nội lực dạng chất lỏng phát sáng, bảng – popup – nút – bản đồ phong cách neon tương lai.',
       '⚡ Giao diện Neon nhẹ hơn: mở túi đồ / các bảng không còn tụt FPS.',
-      '🏍️ Cưỡi xe máy: nhân vật đặt tay nắm ghi-đông.'
+      '🏍️ Cưỡi xe máy: dáng lái riêng cho từng phái – người đổ về trước, hai tay nắm ghi-đông, tay áo đúng màu áo của phái và cấp áo (binh khí tạm cất khi lái).',
+      '🎛️ Cài đặt → Đồ họa → Kiểu giao diện: chọn Neon Huyền Cơ hoặc Cổ điển (giao diện cũ).'
     ]
   },
   {
