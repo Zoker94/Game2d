@@ -72,6 +72,7 @@ const GUILD_CREATE_KNB = 50;   // lập bang: 50 Nguyên Bảo (không dùng ng�
 const GM_CMDS = new Set(['help', 'lenh', 'an', 'hide', 'tanghinh', 'mienpk', 'safe', 'gmlist', 'tp', 'goto', 'keo', 'heal', 'kick', 'online', 'ghim', 'boghim', 'dsghim', 'refcheck', 'ipcheck']);
 const PIN_EVERY = 5 * 60000, PIN_MAX = 5;   // thông báo ghim của admin: chạy lại mỗi 5 phút tới khi admin tắt
 
+const LANTERN_DAILY = 10;   // mỗi món quà Hoa Đăng đổi tối đa 10 lần / ngày (giờ Việt Nam)
 class Features {
   constructor(world, db) {
     this.w = world; this.db = db; this.io = world.io;
@@ -499,9 +500,9 @@ class Features {
     const ex = LANTERN_EXCHANGE[idx | 0];
     if (!ex) return;
     const ld = this.lanternDone(p.c);
-    if (ld.done[ex.id]) return this.w.toast(p, `Hôm nay bạn đã đổi ${ex.name} rồi, mai quay lại nhé`, 'error');
+    if ((ld.done[ex.id] | 0) >= LANTERN_DAILY) return this.w.toast(p, `Hôm nay bạn đã đổi ${ex.name} đủ ${LANTERN_DAILY} lần, mai quay lại nhé`, 'error');
     if (!U.removeItemById(p.c, 'event_token', ex.cost)) return this.w.toast(p, `Cần ${ex.cost} Hoa Đăng`, 'error');
-    ld.done[ex.id] = 1; p.dirtyMe = true;
+    ld.done[ex.id] = (ld.done[ex.id] | 0) + 1; p.dirtyMe = true;
     const r = ex.r.dragonBook ? { items: [[DRAGON_BOOKS[U.randInt(0, DRAGON_BOOKS.length - 1)], 1]] } : ex.r;
     this.w.giveReward(p, r, 'Đổi Hoa Đăng');
     p.socket.emit('eventPanel', this.eventPanel(p));
@@ -512,7 +513,7 @@ class Features {
     return c.lanternEx;
   }
   eventPanel(p) {
-    return { wheel: this.wheelState(p), checkin: this.checkinState(p), lantern: LANTERN_EXCHANGE.map(x => Object.assign({}, x, { done: !!this.lanternDone(p.c).done[x.id] })), tokens: U.countItem(p.c, 'event_token'), ...this.eventsView() };
+    return { wheel: this.wheelState(p), checkin: this.checkinState(p), lantern: LANTERN_EXCHANGE.map(x => { const n = this.lanternDone(p.c).done[x.id] | 0; return Object.assign({}, x, { used: n, max: LANTERN_DAILY, done: n >= LANTERN_DAILY }); }), tokens: U.countItem(p.c, 'event_token'), ...this.eventsView() };
   }
 
   // ---------------- Trò chuyện ----------------

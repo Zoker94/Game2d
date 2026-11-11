@@ -20,8 +20,8 @@ const MOUNTS = {
                stats: { hp: 420, def: 26 }, growth: { hp: 60, def: 4.2 } },
   phuong_hoang: { name: 'Phượng Hoàng',  rarity: 'legendary', lv: 45, speed: 0.48, sprite: 'qilin', color: '#ff5a1a', mane: '#ffd040', price: 0, fly: true,
                stats: { hp: 480, atk: 34, def: 16, crit: 4 }, growth: { hp: 56, atk: 5.6, def: 2.8, crit: 0.12 } },
-  // Xe máy phân khối lớn: nhanh nhất giang hồ. Chưa mở bán (Kỳ Trân Các chỉ hiện khoá)
-  xe_may:    { name: 'Xe Máy Phân Khối Lớn', rarity: 'legendary', lv: 40, speed: 0.55, sprite: 'horse', color: '#a01828', mane: '#c8c8d0', price: 0, noSale: true,
+  // Xe máy phân khối lớn: nhanh nhất giang hồ. Bán ở Kỳ Trân Các, giá ngang Thanh Long
+  xe_may:    { name: 'Xe Máy Phân Khối Lớn', rarity: 'legendary', lv: 40, speed: 0.55, sprite: 'horse', color: '#a01828', mane: '#c8c8d0', price: 0,
                stats: { hp: 380, atk: 30, def: 14, crit: 5 }, growth: { hp: 48, atk: 5.2, def: 2.4, crit: 0.14 } }
 };
 for (const id in MOUNTS) MOUNTS[id].id = id;

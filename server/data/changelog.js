@@ -2,6 +2,13 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '11/11/2026',
+    items: [
+      '🏍️ Mở bán Xe Máy Phân Khối Lớn ở Kỳ Trân Các: 8.000 Nguyên Bảo (ngang Thanh Long), +55% tốc độ.',
+      '🏮 Lễ Hội Hoa Đăng: mỗi món quà đổi được tối đa 10 lần / ngày (trước 1 lần).'
+    ]
+  },
+  {
     date: '10/11/2026',
     items: [
       '🎫 Vé Treo Máy chỉ trừ giờ khi đang BẬT Tự động (kể cả khi máy chủ treo hộ lúc thoát game). Tắt Tự động thì vé tạm dừng (nút hiện ⏸), Khu VIP vẫn vào được.',
