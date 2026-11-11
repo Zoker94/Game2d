@@ -1582,7 +1582,7 @@ class World {
     if (Math.hypot(dr.x - p.x, dr.y - p.y) > reach) return this.toast(p, 'Hãy lại gần vật phẩm hơn', 'error');
     if (dr.owner && dr.owner !== p.userId && dr.ownerUntil > now) return this.toast(p, `Vật phẩm của người khác, ${Math.ceil((dr.ownerUntil - now) / 1000)} giây nữa mới nhặt được`, 'error');
     if (dr.bd && dr.owner !== p.userId) return this.toast(p, 'Đồ khoá của người khác, không nhặt được', 'error');
-    if (!U.addItem(p.c, dr.itemId, dr.qty, dr.plus, null, !!dr.bd)) return this.toast(p, 'Túi đồ đã đầy!', 'error');
+    if (!U.addItem(p.c, dr.itemId, dr.qty, dr.plus, null, !!dr.bd || dr.itemId === 'event_token')) return this.toast(p, 'Túi đồ đã đầy!', 'error');   // Hoa Đăng nhặt về là đồ khoá
     m.drops.delete(dr.id);
     this.io.to('map:' + p.mapId).emit('dropDel', dr.id);
     const it = ITEMS[U.resolveItem(p.c, dr.itemId)];

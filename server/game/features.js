@@ -57,7 +57,7 @@ const CHECKIN_MILESTONES = [
 const CHECKIN_FIX_KNB = 10;   // bù điểm danh (lỡ đúng 1 ngày)
 
 const LANTERN_EXCHANGE = [
-  // mỗi món chỉ đổi được 1 lần / ngày / nhân vật (theo id); đã bỏ đổi Nguyên Bảo
+  // mỗi món đổi tối đa LANTERN_DAILY lần / ngày / nhân vật (theo id); quà nhận được là đồ khoá; đã bỏ đổi Nguyên Bảo
   { id: 'chest', cost: 10, name: 'Rương Bí Ẩn', r: { items: [['lucky_chest', 1]] } },
   { id: 'x2', cost: 40, name: 'Song Bội KN x2', r: { items: [['exp_x2', 2]] } },
   { id: 'stone2', cost: 60, name: 'Thiên Tinh Thạch x2', r: { items: [['stone2', 2]] } },
@@ -504,7 +504,7 @@ class Features {
     if (!U.removeItemById(p.c, 'event_token', ex.cost)) return this.w.toast(p, `Cần ${ex.cost} Hoa Đăng`, 'error');
     ld.done[ex.id] = (ld.done[ex.id] | 0) + 1; p.dirtyMe = true;
     const r = ex.r.dragonBook ? { items: [[DRAGON_BOOKS[U.randInt(0, DRAGON_BOOKS.length - 1)], 1]] } : ex.r;
-    this.w.giveReward(p, r, 'Đổi Hoa Đăng');
+    this.w.giveReward(p, r, 'Đổi Hoa Đăng', { bind: true });   // quà đổi Hoa Đăng là đồ khoá: không giao dịch / bán chợ
     p.socket.emit('eventPanel', this.eventPanel(p));
   }
   lanternDone(c) {   // món Hoa Đăng đã đổi hôm nay (giờ Việt Nam)

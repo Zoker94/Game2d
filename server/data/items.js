@@ -265,7 +265,7 @@ const CONSUMABLES = [
   { id: 'stall_token', name: 'Lệnh Bài Bán Hàng', desc: 'Mở gian hàng ở bất kỳ chỗ trống nào trong Chợ Phiên (đi Xa Phu) trong 6 giờ để treo bán đồ cho người chơi khác (thoát game vẫn bán, thuế chợ 5%). Dùng lệnh bài hoặc bấm nút "🏪 Sạp hàng của tôi" trong chợ.', effect: { stall: 1 }, price: 20000, icon: 'ticket', rarity: 'rare' },
   { id: 'tay_tuy_kinh', name: 'Tẩy Tủy Kinh', desc: 'Sử dụng để tẩy điểm võ học: mọi võ công đã học trở về tầng 1, hoàn lại toàn bộ điểm võ học để cộng lại. Cũng dùng để đổi hệ Nội công / Ngoại công từ cấp 20 (bảng Võ Công).', effect: { resetSkill: 1 }, price: 60000, icon: 'book_wash', rarity: 'epic' },
   { id: 'tay_tiem_nang', name: 'Tẩy Tiềm Năng Đan', desc: 'Sử dụng để tẩy toàn bộ điểm tiềm năng (Sức Mạnh, Thân Pháp, Sinh Khí, Nội Công) mà không tốn ngân lượng, rồi cộng lại theo hệ võ công.', effect: { resetAttr: 1 }, price: 40000, icon: 'book_attr', rarity: 'epic' },
-  { id: 'event_token', name: 'Hoa Đăng', desc: 'Vật phẩm sự kiện. Đổi quà tại Lễ Quan.', price: 0, icon: 'lantern', material: true }
+  { id: 'event_token', name: 'Hoa Đăng', desc: 'Vật phẩm sự kiện. Đổi quà tại Lễ Quan. Nhặt về là đồ khoá, không giao dịch được.', price: 0, icon: 'lantern', material: true }
 ];
 CONSUMABLES.forEach(c => { ITEMS[c.id] = Object.assign({ type: 'use', lv: c.lv || 1, rarity: 'common', stack: true }, c); });
 for (const id of ['stone', 'stone2', 'insure', 'mount_food', 'mount_stone', 'moi_cau', 'fish_chep', 'fish_tram', 'fish_ro', 'fish_qua', 'fish_chinh', 'fish_tam', 'fish_kimlong', 'fish_junk']) ITEMS[id].type = 'material';
