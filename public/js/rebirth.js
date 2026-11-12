@@ -25,7 +25,7 @@
           ${st.equipped ? '<button class="btn small" id="rb-unequip">🎒 Cởi toàn bộ & cất đồ</button>' : ''}</div>
         <div class="rb-req ${st.near ? 'ok' : 'no'}">${st.near ? '✅ Đang đứng cạnh <b>Thạch Lão Nhân</b>' : '❌ Đến gặp <b>Thạch Lão Nhân</b> ở <b>Lan Châu Thành</b>'}
           ${st.near ? '' : '<button class="btn small" id="rb-go">🧭 Tự đi tới</button>'}</div>
-        <div class="rb-req ${!needStone || haveStone ? 'ok' : 'no'}">${!needStone ? '🎁 Lần đầu MIỄN PHÍ – không cần Đá Hồi Sinh' : `${haveStone ? '✅' : '❌'} 1 Đá Hồi Sinh <span class="muted">(có ${st.stones} – rơi rất hiếm từ quái, ~1/5000 con)</span>`}</div>
+        <div class="rb-req ${!needStone || haveStone ? 'ok' : 'no'}">${!needStone ? '🎁 Lần đầu MIỄN PHÍ – không cần Đá Hồi Sinh' : `${haveStone ? '✅' : '❌'} 1 Đá Hồi Sinh <span class="muted">(có ${st.stones} – rơi cực hiếm từ quái, ~1/20.000 con)</span>`}</div>
         <p class="small muted" style="margin-top:6px">Đồ cởi ra vào túi đồ; túi đầy thì tự cất vào Tiền Trang. Không mất món nào.</p>
         <button class="btn primary rb-go" id="rb-do" ${ok && st.near && !st.equipped && (!needStone || haveStone) ? '' : 'disabled'}>🔥 Chết Đi Sống Lại</button></div></div>`;
     const u = body.querySelector('#rb-unequip'); if (u) u.onclick = () => emit({ op: 'unequip' });

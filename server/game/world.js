@@ -1517,7 +1517,7 @@ class World {
         if (r() < 0.008 * dr) drops.push('stone2');
         if (r() < 0.12) drops.push('mount_food');
         if (r() < 0.04 * dr) drops.push('lucky_chest');
-        if (r() < 0.0002) drops.push('rebirth_stone');   // Đá Hồi Sinh: ~1/5000
+        if (r() < 0.00005) drops.push('rebirth_stone');   // Đá Hồi Sinh: ~1/20.000
         if (r() < 0.15 * dr) drops.push('thien_tam_ti');
         if (killer && killer.c) this.toast(killer, `⭐ Hạ quái tinh anh ${tpl.name}!`, 'reward');
       }
@@ -1530,7 +1530,7 @@ class World {
       if (r() < 0.005 * dr) drops.push(equipId(rslot(), tier, 'rare'));
       if (r() < (cfg.vipDropBase || 0.004) * 0.5 * dr) drops.push(equipId(rslot(), tier, 'epic'));   // sử thi: một nửa mức cấu hình
       if (r() < 0.0015 * dr) drops.push('lucky_chest');
-      if (r() < 0.0002) drops.push('rebirth_stone');   // Đá Hồi Sinh (trùng sinh): ~1/5000 con
+      if (r() < 0.00005) drops.push('rebirth_stone');   // Đá Hồi Sinh (trùng sinh): ~1/20.000 con
       if (r() < 0.01 * dr) drops.push('mount_food');
       if (tpl.lv >= 25 && r() < 0.00009 * dr * (1 + tier)) drops.push('stone2');   // Thiên Tinh Thạch: cấp 90 ~1/1100 con
       const gem = rollGemDrop(map.def.gemMine | 0, tpl.lv, r);   // đá khảm: nhiều ở khoáng động

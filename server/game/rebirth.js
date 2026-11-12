@@ -1,6 +1,6 @@
 // Trùng sinh – "Chết Đi Sống Lại": đạt cấp 120 thì được hỏi (đồng ý / để sau; để sau thì làm ở bảng Nhân vật).
 // - Bắt buộc cởi hết trang bị trước (tránh mất đồ: đồ cởi ra vào túi, túi đầy thì vào Tiền Trang).
-// - Lần đầu miễn phí; từ lần 2 cần 1 "Đá Hồi Sinh" (quái rơi ~1/5000).
+// - Lần đầu miễn phí; từ lần 2 cần 1 "Đá Hồi Sinh" (quái rơi ~1/20.000).
 // - Về cấp 1, giữ 1/2 điểm tiềm năng đã cộng, giữ nguyên võ công đã cộng (điểm giữ lại cộng vào tổng: c.rbAttr / c.rbSp).
 // - Bảng xếp hạng cấp độ: xếp theo số lần trùng sinh trước, rồi mới tới cấp (người trùng sinh cấp 1 vẫn đứng trên).
 const U = require('./util');

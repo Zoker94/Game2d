@@ -2,6 +2,12 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '12/11/2026',
+    items: [
+      '💎 Đá Hồi Sinh (trùng sinh) hiếm hơn: quái rơi ~1/20.000 con (trước ~1/5.000).'
+    ]
+  },
+  {
     date: '11/11/2026',
     items: [
       '🏍️ Mở bán Xe Máy Phân Khối Lớn ở Kỳ Trân Các: 8.000 Nguyên Bảo (ngang Thanh Long), +55% tốc độ.',
