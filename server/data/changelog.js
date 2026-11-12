@@ -4,7 +4,8 @@ const CHANGELOG = [
   {
     date: '12/11/2026',
     items: [
-      '💎 Đá Hồi Sinh (trùng sinh) hiếm hơn: quái rơi ~1/20.000 con (trước ~1/5.000).'
+      '💎 Đá Hồi Sinh (trùng sinh) hiếm hơn: quái rơi ~1/20.000 con (trước ~1/5.000).',
+      '🏆 Đua Top Tuần công bằng hơn: từ tuần bắt đầu 13/11, Top Cấp Độ và Top Lực Chiến xếp theo phần TĂNG THÊM trong tuần (so với mốc đầu tuần) – người mới, người cày chăm vẫn có cơ hội thắng.'
     ]
   },
   {

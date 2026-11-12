@@ -27,7 +27,7 @@
       <div class="wc-boards">${r.boards.map(b => `<div class="wc-bd"><div class="wc-bt">${b.icon} ${esc(b.name)}</div>${b.title && G.data.titles && G.data.titles[b.title] ? `<div class="wc-ttl" style="--c:${G.data.titles[b.title].color}">🏅 【${esc(G.data.titles[b.title].name)}】</div>` : ''}
         ${[0, 1, 2].map(i => b.top[i] ? `<div class="wc-row r${i}"><span>${MEDAL[i]} ${esc(b.top[i][0])}</span><b>${short(b.top[i][1])}</b></div>` : `<div class="wc-row empty"><span>${MEDAL[i]} Đang chờ anh hùng…</span></div>`).join('')}
         <div class="wc-me">${b.me ? `Bạn: hạng <b>${b.me}</b>` : 'Bạn chưa lọt bảng'} · ${short(b.mine)} ${esc(b.unit)}</div></div>`).join('')}</div>
-      <div class="small wc-note">Hạng 1 mỗi bảng nhận <b>danh hiệu riêng lấp lánh</b> đeo 7 ngày. Mỗi bảng thưởng top 10. Cấp độ & Lực chiến tính theo hiện tại, Săn Boss & Nạp tuần tính trong tuần.</div></div>`;
+      <div class="small wc-note">Hạng 1 mỗi bảng nhận <b>danh hiệu riêng lấp lánh</b> đeo 7 ngày. Mỗi bảng thưởng top 10. ${r.gain ? 'Cấp độ & Lực chiến tính phần TĂNG THÊM trong tuần (người mới vẫn có cơ hội), Săn Boss & Nạp tính trong tuần.' : 'Tuần đầu: Cấp độ & Lực chiến tính theo hiện tại. Từ tuần sau tính phần tăng thêm trong tuần. Săn Boss & Nạp tính trong tuần.'}</div></div>`;
   }
   function tickCd(end) {
     const e = el && el.querySelector('#wc-cd'); if (!e) return;
