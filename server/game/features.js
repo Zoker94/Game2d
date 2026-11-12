@@ -816,6 +816,7 @@ class Features {
         if (!g) return;
         const amt = Math.floor(+a.amount || 0);
         if (amt < 100) return err('Tối thiểu 100 lượng');
+        if (this.w.tradeLocked(p)) return err('🔒 Tài khoản đang bị tạm khoá giao dịch');
         if (c.gold < amt) return err('Không đủ ngân lượng');
         c.gold -= amt; g.fund += amt;
         g.contrib = g.contrib || {};

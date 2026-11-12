@@ -619,6 +619,37 @@ class World {
     p.c.blockInv = b; p.dirtyMe = true; this.db.markDirty();
   }
   // Hòm Đồ: phần thưởng không vừa túi (phó bản, sự kiện, boss, thưởng gửi lúc offline...) nằm ở đây, không bao giờ mất
+  // tài khoản bị quản trị viên tạm khoá giao dịch (u.tradeLock): không giao dịch, không mua bán chợ, không góp quỹ bang
+  tradeLocked(p) { return !!(p && p.user && p.user.tradeLock); }
+  // quà quản trị 1 lần cho 1 tài khoản (theo tên đăng nhập): full Truyền Kỳ cấp 90 +15 khảm full đá cấp 5 (đồ khoá),
+  // danh hiệu Thiên Hạ Đệ Nhất, Nguyên Bảo, ngân lượng; xong thì khoá giao dịch tài khoản. Chạy lúc máy chủ khởi động.
+  adminPackOnce(username, key, { knb = 0, gold = 0, title = 'g_supreme' } = {}) {
+    const D = this.db.data, cfg = D.config;
+    cfg.adminPacks = cfg.adminPacks || {};
+    if (cfg.adminPacks[key]) return null;
+    const l = String(username).toLowerCase();
+    const u = Object.values(D.users).find(x => x.username && x.username.toLowerCase() === l);
+    if (!u || !u.character) { console.log(`[quà admin] chưa thấy tài khoản ${username} – thử lại lần khởi động sau`); return null; }
+    const c = u.character, tier = tierOfLv(90);
+    const OFF = ['ruby', 'amethyst', 'ruby'], DEF = ['emerald', 'topaz', 'sapphire'];
+    for (const slot of EQUIP_SLOTS) {
+      const base = slot === 'ring2' ? 'ring' : slot, id = U.resolveItem(c, equipId(base, tier, 'legendary'));
+      if (!ITEMS[id]) continue;
+      const tmp = { inv: [], cls: c.cls, branch: c.branch, fxv: c.fxv, invExtra: 99 };
+      if (!U.addItem(tmp, id, 1, 15, null, true)) continue;
+      const s = tmp.inv[0], prev = c.equip[slot];
+      const gems = (['weapon', 'ring', 'ring2', 'amulet', 'gloves'].includes(slot) ? OFF : DEF).map(t => `gem_${t}_5`);
+      c.equip[slot] = { uid: s.uid, id: s.id, plus: 15, el: s.el, fx: s.fx, gems, br: s.br, bd: 1 };
+      if (prev) c.inv.push({ uid: prev.uid, id: prev.id, qty: 1, plus: prev.plus || 0, el: prev.el, fx: prev.fx, gems: prev.gems, br: prev.br, bd: prev.bd });
+    }
+    if (title) { const g = c.giftTitles || (c.giftTitles = []); if (!g.includes(title)) g.push(title); c.title = title; }
+    c.knb = (c.knb || 0) + knb; c.gold = (c.gold || 0) + gold;
+    u.tradeLock = true;
+    cfg.adminPacks[key] = { at: Date.now(), user: u.username, char: c.name };
+    this.db.log('admin', `🎁 Quà quản trị ${key}: ${u.username} / ${c.name} – full Truyền Kỳ cấp 90 +15 đá cấp 5 (khoá), danh hiệu ${title}, +${knb} Nguyên Bảo, +${gold} lượng; đã khoá giao dịch tài khoản`);
+    this.db.markDirty();
+    return cfg.adminPacks[key];
+  }
   // khoá toàn bộ Hoa Đăng cũ (trước khi Hoa Đăng thành đồ khoá): túi, Tiền Trang, Hòm Đồ, gian hàng chợ. Chạy 1 lần.
   lockOldLanterns() {
     const D = this.db.data, cfg = D.config;

@@ -43,6 +43,7 @@ class Market {
     const op = d.op;
     if (op === 'mine') return p.socket.emit('stall', this.view(p.userId, p.userId) || { mine: true, none: true, tokens: U.countItem(p.c, TOKEN) });
     if (op === 'view') { const v = this.view(String(d.uid || ''), p.userId); if (v && (v.live || v.mine)) p.socket.emit('stall', v); return; }
+    if (this.w.tradeLocked(p)) return this.toast(p, '🔒 Tài khoản của bạn đang bị quản trị viên tạm khoá giao dịch – không mua bán ở chợ được', 'error');
     if (op === 'open') return this.open(p, d.name);
     if (op === 'add') return this.add(p, d.uid, d.qty, d.price, d.cur);
     if (op === 'remove') return this.remove(p, d.k);

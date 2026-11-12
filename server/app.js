@@ -611,6 +611,7 @@ setInterval(() => {
   db.save();
 }, 15000);
 setInterval(cleanupSessions, 3600e3);
+try { if (REALM.IS_MAIN) world.adminPackOnce('thanhvan', 'thanhvan_1', { knb: 8000, gold: 5000000000 }); } catch (e) { console.error('quà admin', e); }
 try { world.lockOldLanterns(); } catch (e) { console.error('khoá Hoa Đăng cũ', e); }   // 1 lần: Hoa Đăng cũ trong túi / Tiền Trang / Hòm Đồ / chợ thành đồ khoá
 if (!db.data.config.cloneFix5) { db.data.config.cloneFix5 = 1; db.data.config.devLimit = CLONE_LIM; if ((db.data.config.tradeLv | 0) < 30) db.data.config.tradeLv = 30; db.markDirty(); }   // clone tối đa 5 / thiết bị, giao dịch từ cấp 30
 if (!db.data.config.ipLimFix) { db.data.config.ipLimFix = 1; if (db.data.config.ipLimit == null || db.data.config.ipLimit === 3) db.data.config.ipLimit = 0; db.markDirty(); }   // bỏ giới hạn 3 tài khoản / IP (chặn nhầm người chơi dùng chung mạng)
