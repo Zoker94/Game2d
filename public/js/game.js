@@ -534,6 +534,7 @@
     s.on('eventPanel', d => UI.onEventPanel(d));
     s.on('wheelResult', d => UI.onWheel(d));
     s.on('sold', () => GameAudio.sfx('coin', 0));
+    s.on('mgearRes', d => { UI.onMountGear(d); GameAudio.sfx(d.salvage || d.ok ? 'enhOk' : 'enhFail'); });
     s.on('enhanceResult', d => { UI.onEnhance(d); GameAudio.sfx(d.result === 'ok' ? 'enhOk' : 'enhFail'); });
     s.on('castLock', d => { G.castLockUntil = performance.now() + (d.ms || 0); });
     s.on('gemResult', d => { UI.onGem(d); GameAudio.sfx(d.ok ? 'enhOk' : 'enhFail'); });

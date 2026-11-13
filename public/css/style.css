@@ -1948,3 +1948,20 @@ body.calm .slot.r-divine::after { animation: none; }
 .rb-panel .rb-req.no { color: #ffb0a0; } .rb-panel .rb-req.ok { color: #b8f0c0; }
 .rb-panel .rb-go { margin-top: 8px; width: 100%; font-size: 14px; }
 @keyframes rbFire { 50% { transform: scale(1.12) rotate(-4deg); filter: drop-shadow(0 0 6px #ff7a2a); } }
+
+/* Mã Cụ thú cưỡi */
+.mgear .mg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; margin-top: 6px; }
+.mg-slot { display: flex; gap: 8px; background: #120d18; border: 1px solid #3a2a45; border-radius: 8px; padding: 6px; }
+.mg-slot.on { border-color: #b8742a; box-shadow: inset 0 0 10px rgba(255,160,60,.15); }
+.mg-slot .mg-ic { flex: 0 0 44px; height: 44px; border-radius: 8px; background: radial-gradient(circle, #3a2410, #140c06); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 20px; line-height: 1; }
+.mg-slot .mg-ic b { font-size: 11px; color: #ffd76a; margin-top: 2px; }
+.mg-slot .mg-body { flex: 1; min-width: 0; }
+.mg-slot .mg-body .btn { margin-top: 4px; }
+.mg-slot.fx-ok { animation: mgOk 1.2s ease-out; }
+.mg-slot.fx-fail { animation: mgFail .6s ease-out; }
+@keyframes mgOk { 0% { box-shadow: 0 0 0 0 rgba(255,215,106,.9); background: #4a3410; } 100% { box-shadow: 0 0 0 14px rgba(255,215,106,0); } }
+@keyframes mgFail { 0%, 100% { transform: none; } 20% { transform: translateX(-4px); background: #3a0c0c; } 40% { transform: translateX(4px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
+.mg-salv { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px; max-height: 180px; overflow-y: auto; }
+.mg-it { background: #120d18; border: 1px solid #3a2a45; border-radius: 6px; padding: 4px 6px; cursor: pointer; display: flex; flex-direction: column; font-size: 12px; }
+.mg-it small { color: #aaa; }
+.mg-it.sel { border-color: #ff6a3a; background: #2a1010; }

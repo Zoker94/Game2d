@@ -2,6 +2,13 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '13/11/2026',
+    items: [
+      '🐎 MÃ CỤ THÚ CƯỠI: mỗi thú cưỡi có 4 ô nâng cấp riêng – thú: Yên Ngựa, Dây Cương, Bàn Đạp, Giáp Thú; xe máy: Động Cơ, Bình Xăng Con, Phuộc, Ống Pô. Nâng +1 đến +15 như đập đồ (cần Mã Cụ Tinh Hoa, ngọc khảm và ngân lượng; từ +10 thất bại rớt 1 cấp, có Bảo Hiểm Phù thì giữ nguyên). Chỉ số Mã Cụ cộng thẳng vào lực chiến khi chọn thú cưỡi đó. Mở bảng Thú Cưỡi để nâng.',
+      '🔨 RÃ ĐỒ TRUYỀN KỲ: rã trang bị Truyền Kỳ trong túi thành Mã Cụ Tinh Hoa (đồ cấp 90 = 10 Tinh Hoa, cộng thêm ½ cấp cường hoá); ngọc đang khảm được trả lại.'
+    ]
+  },
+  {
     date: '12/11/2026',
     items: [
       '💎 Đá Hồi Sinh (trùng sinh) hiếm hơn: quái rơi ~1/20.000 con (trước ~1/5.000).',

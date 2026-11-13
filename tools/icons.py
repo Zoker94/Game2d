@@ -493,6 +493,20 @@ def insure(ic):
     ic.paint(ic.m_poly([(32, 12), (46, 18), (44, 34), (32, 50), (20, 34), (18, 18)]), '#fff2a8', '#c89020', edge=0.3, shine=0.2)
     ic.text('護', 32, 30, 13, '#b01818')
 
+def mount_ess(ic):   # Mã Cụ Tinh Hoa: bánh răng đồng ôm khối tinh thể Truyền Kỳ phát sáng
+    pts = []
+    for k in range(24):
+        a = k / 24 * math.tau; r = 26 if (k // 2) % 2 == 0 else 21
+        pts.append((32 + math.cos(a) * r, 40 + math.sin(a) * r * 0.42))
+    ic.paint(ic.m_poly(pts), '#e8b060', '#5a3410', ang=-70)
+    ic.paint(ic.m_ell(32, 40, 12, 5), '#3a2008', '#1a0c04', edge=0.2, shine=0)
+    ic.paint(ic.m_poly([(32, 4), (42, 18), (38, 44), (26, 44), (22, 18)]), '#fff0b0', '#e06a08', ang=-40)
+    ic.paint(ic.m_poly([(32, 4), (42, 18), (32, 24), (22, 18)]), '#fff8d8', '#ffc040', edge=0.2, shine=0, alpha=0.9)
+    ic.paint(ic.m_poly([(32, 24), (42, 18), (38, 44)]), '#ff9a20', '#a04004', edge=0.2, shine=0, alpha=0.85)
+    ic.paint(ic.m_poly([(16, 26), (21, 32), (19, 46), (13, 46), (11, 34)]), '#ffe090', '#d06010', ang=-40)
+    ic.paint(ic.m_poly([(48, 24), (53, 32), (51, 46), (45, 46), (43, 32)]), '#ffe090', '#d06010', ang=-40)
+    ic.spec([(27, 16), (31, 8)], 1.4, 0.95)
+
 def food(ic):   # Mã Linh Đan: túi cỏ + viên đan
     ic.paint(ic.m_poly([(14, 30), (50, 30), (54, 56), (10, 56)]), '#c8a060', '#6a4a20')
     for k in range(7): ic.paint(ic.m_line([(16 + k * 5, 32), (14 + k * 5 + (k % 3), 18)], 1.6), '#9ad050', '#3a7020', edge=0, shine=0)
@@ -686,14 +700,14 @@ SIMPLE = {
     'jh_book_nm': lambda ic: book(ic, ('#d870b0', '#4a1036'), '佛'), 'jh_book_ty': lambda ic: book(ic, ('#5ab0d8', '#0a2a4a'), '雪'),
     'jh_book_cb': lambda ic: book(ic, ('#c88a1a', '#3a2004'), '龍'), 'jh_book_vd': lambda ic: book(ic, ('#6a8ad0', '#101e4a'), '極'),
     'jh_book_cl': lambda ic: book(ic, ('#9a5ad8', '#24104a'), '雷'),
-    'stone': stone, 'stone2': lambda ic: stone(ic, True), 'insure': insure, 'food': food, 'blood': blood,
+    'stone': stone, 'stone2': lambda ic: stone(ic, True), 'insure': insure, 'food': food, 'blood': blood, 'mount_ess': mount_ess,
     'chest': chest, 'chest_gold': lambda ic: chest(ic, True), 'ticket': ticket, 'lantern': lantern, 'saddle': saddle, 'gold': gold_icon,
     'bag': bag, 'pickaxe': pickaxe, 'auto_dig': auto_dig,
     **{'dv_token_' + k: (lambda k: lambda ic: dv_token(ic, k))(k) for k in DV_SETS},
     **{'dv_frag_' + k: (lambda k: lambda ic: dv_frag(ic, k))(k) for k in DV_SETS},
     **{'title_' + k: (lambda k: lambda ic: title_token(ic, k))(k) for k in TITLE_TOKENS},
 }
-SIMPLE_GLOW = {**{'dv_token_' + k: '#ff3020' for k in DV_SETS}, **{'title_' + k: v[0] for k, v in TITLE_TOKENS.items()}, 'silk': '#e0c8ff', 'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'book_thunder': '#c090ff', 'book_shadow': '#ff3a6a', 'jh_book_tl': '#ffd040', 'jh_book_tv': '#ff7a2a', 'jh_book_dm': '#7affd0', 'jh_book_nd': '#8fff4a', 'jh_book_nm': '#ffb0e0', 'jh_book_ty': '#a8ecff', 'jh_book_cb': '#ffc040', 'jh_book_vd': '#b8d8ff', 'jh_book_cl': '#d8a4ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'bag': '#ffd040', 'auto_dig': '#ffd040'}
+SIMPLE_GLOW = {**{'dv_token_' + k: '#ff3020' for k in DV_SETS}, **{'title_' + k: v[0] for k, v in TITLE_TOKENS.items()}, 'silk': '#e0c8ff', 'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'book_thunder': '#c090ff', 'book_shadow': '#ff3a6a', 'jh_book_tl': '#ffd040', 'jh_book_tv': '#ff7a2a', 'jh_book_dm': '#7affd0', 'jh_book_nd': '#8fff4a', 'jh_book_nm': '#ffb0e0', 'jh_book_ty': '#a8ecff', 'jh_book_cb': '#ffc040', 'jh_book_vd': '#b8d8ff', 'jh_book_cl': '#d8a4ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'mount_ess': '#ffa020', 'bag': '#ffd040', 'auto_dig': '#ffd040'}
 
 def build():
     tiles, index = [], {}

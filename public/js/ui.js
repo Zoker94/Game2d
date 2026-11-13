@@ -1171,6 +1171,7 @@
   }
   UI.onGem = function (d) { if (!(window.Forge && d && Forge.onGem(d))) UI.refreshPanel(); };
 
+  UI.onMountGear = function (d) { panelState.mgFx = Object.assign({ t: Date.now() }, d); if (panel === 'mount') UI.refreshPanel(true); };
   UI.onEnhance = function (d) { if (window.Forge && Forge.onEnhance(d)) return; panelState.enhRes = d.result; UI.refreshPanel(); setTimeout(() => { panelState.enhRes = null; }, 2500); };
 
   function bindInv(body, ctx = {}) {
@@ -1827,6 +1828,7 @@
             ? `<button class="btn small primary" data-mop="break">⚡ Đột phá (${o.lv / 10} Long Huyết Thạch, ${fmt(o.lv * 2000)} lượng) — còn ${blood}</button>`
             : `<button class="btn small green" data-mop="feed" data-n="1">Cho ăn x1</button><button class="btn small green" data-mop="feed" data-n="10">x10</button><span class="small">Mã Linh Đan: ${food} · ${fmt(50 * o.lv)} lượng/lần</span>`}
         </div><p class="small muted">Chỉ số thú cưỡi luôn được cộng khi chọn; tốc độ chỉ tăng khi đang cưỡi. Mỗi 10 cấp cần đột phá bằng Long Huyết Thạch (rơi từ Boss, quái cấp 20+).</p></div>`;
+      html += mountGearHtml(sel, o, m);
     } else {
       html += '<div class="card"><p>Bạn chưa có thú cưỡi. Hãy đến <b>Mã Phu Lão Trương</b> ở Tương Dương để mua Ngựa Nâu, hoặc săn Boss / mở Kỳ Trân Các để có thú cưỡi hiếm như Bạch Hổ, Hỏa Kỳ Lân, Thanh Long!</p></div>';
     }
@@ -1834,6 +1836,63 @@
     body.querySelectorAll('[data-mcv]').forEach(cv => { const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; const f = Assets.mountFrame(cv.dataset.mcv, false, 0); if (f) { c.imageSmoothingEnabled = false; const k = Math.min(96 / f.cw, 72 / (f.ch * 0.75)); c.drawImage(f.img, f.sx, f.sy + f.ch * 0.25, f.cw, f.ch * 0.75, (96 - f.cw * k) / 2, (72 - f.ch * 0.75 * k) / 2, f.cw * k, f.ch * 0.75 * k); } else { c.drawImage(Sprites.mountSprite(cv.dataset.mcv, all[cv.dataset.mcv], 0), 0, 0); if ((UI._mcvTry = (UI._mcvTry || 0) + 1) < 6) setTimeout(() => panel === 'mount' && UI.refreshPanel(true), 400); } });
     body.querySelectorAll('[data-mount]').forEach(el => el.onclick = () => { if (owned[el.dataset.mount]) { panelState.sel = el.dataset.mount; UI.refreshPanel(); } });
     body.querySelectorAll('[data-mop]').forEach(b => b.onclick = () => emit('mount', { op: b.dataset.mop, id: sel, n: +b.dataset.n || 1 }));
+    body.querySelectorAll('[data-mgear]').forEach(b => b.onclick = () => {
+      if (b.classList.contains('busy')) return;
+      b.classList.add('busy'); setTimeout(() => b.classList.remove('busy'), 400);
+      emit('mount', { op: 'gear', id: sel, slot: b.dataset.mgear, insure: !!panelState.mgIns });
+    });
+    const ins = $('mg-ins'); if (ins) ins.onchange = () => { panelState.mgIns = ins.checked; };
+    body.querySelectorAll('[data-salv]').forEach(el => el.onclick = () => {
+      const S = panelState.salv || (panelState.salv = {}); S[el.dataset.salv] ? delete S[el.dataset.salv] : S[el.dataset.salv] = 1; UI.refreshPanel(true);
+    });
+    const sv = $('mg-salv');
+    if (sv) sv.onclick = () => {
+      const uids = Object.keys(panelState.salv || {}).filter(u => me.inv.some(x => x.uid === u));
+      if (!uids.length) return UI.toast('Bấm chọn trang bị Truyền Kỳ muốn rã', 'error');
+      const plus = me.inv.filter(x => uids.includes(x.uid) && x.plus > 0).length;
+      if (!confirm(`Rã ${uids.length} món Truyền Kỳ thành Mã Cụ Tinh Hoa?${plus ? `\n⚠ Có ${plus} món đã cường hoá – rã là mất hẳn.` : ''}\nNgọc đang khảm sẽ được trả lại túi.`)) return;
+      panelState.salv = {}; emit('mount', { op: 'salvage', uids });
+    };
+  }
+  // Mã Cụ: 4 ô nâng cấp riêng cho thú cưỡi đang xem + khu rã đồ Truyền Kỳ
+  function mountGearHtml(sel, o, m) {
+    const MG = G.data.mountGear;
+    if (!MG) return '';
+    const me = G.me, cnt = id => me.inv.filter(x => x.id === id).reduce((a, x) => a + x.qty, 0);
+    const defs = MG.kinds[sel === 'xe_may' ? 'moto' : 'beast'], gear = o.gear || {}, rk = MG.rmult[m.rarity] || 1;
+    const st = (d, lv) => { const k = lv * (1 + lv * 0.06) * rk, out = {}; for (const s in d.st) out[s] = Math.round(d.st[s] * k * 10) / 10; return out; };
+    const stTxt = x => Object.entries(x).map(([k, v]) => `${STAT_NAME[k] || k} +${v}${k === 'crit' ? '%' : ''}`).join(' · ') || '—';
+    const ess = cnt('mount_ess'), insN = cnt('insure');
+    const gemHave = L => Math.max(...Object.keys(G.data.gems.types).map(t => cnt(`gem_${t}_${L}`)));
+    let html = `<div class="card mgear"><h4>${sel === 'xe_may' ? '🏍️ Độ Xe' : '🐎 Mã Cụ'} – nâng cấp như đập đồ</h4>
+      <div class="small muted">Mã Cụ Tinh Hoa: <b style="color:#ffb347">${fmt(ess)}</b> · Bảo Hiểm Phù: ${insN} · Ngân lượng: ${fmt(me.gold)}</div><div class="mg-grid">`;
+    let tot = {};
+    for (const d of defs) {
+      const lv = gear[d.k] | 0, now = st(d, lv), max = lv >= MG.max;
+      for (const k in now) tot[k] = Math.round(((tot[k] || 0) + now[k]) * 10) / 10;
+      const c = max ? null : MG.cost[lv], rate = max ? 0 : Math.round(MG.rate[lv] * 100), nx = max ? null : st(d, lv + 1);
+      const okMat = c && ess >= c.ess && gemHave(c.gemLv) >= c.gems && me.gold >= c.gold;
+      const fx = panelState.mgFx && panelState.mgFx.slot === d.k && Date.now() - panelState.mgFx.t < 1500 ? (panelState.mgFx.ok ? ' fx-ok' : ' fx-fail') : '';
+      html += `<div class="mg-slot ${lv ? 'on' : ''}${fx}"><div class="mg-ic">${d.icon}<b>+${lv}</b></div><div class="mg-body"><b>${esc(d.name)}</b> <span class="small">+${lv}/${MG.max}</span>
+        <div class="small">${stTxt(now)}</div>
+        ${max ? '<div class="small" style="color:#ffd76a">Đã tối đa</div>' : `<div class="small muted">→ +${lv + 1}: ${stTxt(nx)}</div>
+        <div class="small">Cần ${c.ess} Tinh Hoa · ${c.gems} ngọc cấp ${c.gemLv} · ${fmt(c.gold)} 💰 · Tỉ lệ <b style="color:${rate >= 60 ? '#4ade80' : rate >= 20 ? '#ffd76a' : '#ff5050'}">${rate}%</b>${lv >= MG.safe ? ' · <span class="warn">thất bại −1 cấp</span>' : ''}</div>
+        <button class="btn small ${okMat ? 'primary' : ''}" data-mgear="${d.k}">⚒️ Nâng cấp</button>`}</div></div>`;
+    }
+    html += `</div><div class="small" style="margin-top:6px">Tổng Mã Cụ: <b>${stTxt(tot)}</b> (cộng vào lực chiến khi chọn thú cưỡi này)</div>
+      <label class="small"><input type="checkbox" id="mg-ins" ${panelState.mgIns ? 'checked' : ''}> Dùng Bảo Hiểm Phù khi nâng từ +${MG.safe} (thất bại giữ nguyên cấp)</label>
+      <p class="small muted">Ngọc: dùng ngọc khảm loại nào cũng được, đúng cấp yêu cầu (+1–3 cấp 1, +4–6 cấp 2 … +13–15 cấp 5).</p></div>`;
+    // rã đồ Truyền Kỳ
+    const leg = me.inv.filter(x => { const it = G.data.items[x.id]; return it && it.type === 'equip' && it.rarity === 'legendary'; });
+    const S = panelState.salv || {};
+    const yieldOf = x => (G.data.items[x.id].tier | 0) + 1 + Math.floor((x.plus | 0) / 2);
+    const pick = leg.filter(x => S[x.uid]), sum = pick.reduce((a, x) => a + yieldOf(x), 0);
+    html += `<div class="card mgear"><h4>🔨 Rã đồ Truyền Kỳ → Mã Cụ Tinh Hoa</h4>
+      ${leg.length ? `<div class="mg-salv">${leg.map(x => { const it = G.data.items[x.id]; return `<div class="mg-it ${S[x.uid] ? 'sel' : ''}" data-salv="${x.uid}" title="${esc(it.name)}"><b class="r-legendary-t">${esc(it.name)}${x.plus ? ' +' + x.plus : ''}</b><small>Cấp ${it.lv || '?'} → ${yieldOf(x)} Tinh Hoa${x.bd ? ' 🔒' : ''}</small></div>`; }).join('')}</div>
+      <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn small danger" id="mg-salv">🔨 Rã ${pick.length} món → ${sum} Tinh Hoa</button></div>`
+      : '<p class="small muted">Túi đồ chưa có trang bị Truyền Kỳ (đồ đang mặc không rã được – tháo ra trước).</p>'}
+      <p class="small muted">Mỗi món cho (bậc + 1) Tinh Hoa, cộng thêm ½ cấp cường hoá: đồ cấp 90 = 10, +10 thì 15. Đồ khoá cho Tinh Hoa khoá. Ngọc đang khảm được trả lại.</p></div>`;
+    return html;
   }
 
   function renderOnline(body) {

@@ -11,6 +11,7 @@ const vipOk = c => require('./util').tkLeft(c) > 0;   // khu VIP: còn giờ Vé
 const { NPCS, TELEPORTS } = require('../data/npcs');
 const { TUTORIAL } = require('../data/quests');
 const { MOUNTS, MOUNT_MAX, mountExpNext, isBreakLevel } = require('../data/mounts');
+const MGEAR = require('../data/mountgear');
 const { OUTFITS } = require('../data/outfits');
 // bản đồ sự kiện không cho cưỡi thú
 const NO_MOUNT_MAPS = { tong_kim: 'Chiến trường Tống Kim', hoa_son_ld: 'Hoa Sơn Luận Kiếm', dai_hoi: 'Đại Hội Võ Lâm', cong_thanh: 'Công Thành Chiến' };
@@ -2517,6 +2518,52 @@ class World {
         while (m.exp >= mountExpNext(m.lv) && m.lv < MOUNT_MAX && !isBreakLevel(m.lv)) { m.exp -= mountExpNext(m.lv); m.lv++; }
       }
       this.toast(p, `Đã cho ăn ${used} Mã Linh Đan. ${MOUNTS[a.id].name} cấp ${m.lv}`, 'reward');
+    } else if (a.op === 'gear') {   // nâng Mã Cụ: như đập đồ (Tinh Hoa + ngọc + ngân lượng, tỉ lệ theo cấp)
+      const m = c.mounts[a.id], def = m && MOUNTS[a.id] && MGEAR.slotsOf(a.id).find(d => d.k === a.slot);
+      if (!def) return;
+      if (p.trade) return err('Đang giao dịch');
+      const gear = m.gear || (m.gear = {}), lv = gear[def.k] | 0;
+      if (lv >= MGEAR.GEAR_MAX) return err(`${def.name} đã đạt cấp tối đa +${MGEAR.GEAR_MAX}`);
+      const cost = MGEAR.gearCost(lv);
+      if (U.countItem(c, 'mount_ess') < cost.ess) return err(`Cần ${cost.ess} Mã Cụ Tinh Hoa (rã đồ Truyền Kỳ để có)`);
+      // ngọc: cấp theo bậc, loại nào cũng được – lấy loại đang có nhiều nhất
+      const G = require('../data/gems'), gemIds = G.GEM_KEYS.map(t => G.gemId(t, cost.gemLv)).sort((x, y) => U.countItem(c, y) - U.countItem(c, x));
+      if (U.countItem(c, gemIds[0]) < cost.gems) return err(`Cần ${cost.gems} viên ngọc cấp ${cost.gemLv} cùng loại (loại nào cũng được)`);
+      if (c.gold < cost.gold) return err(`Cần ${cost.gold.toLocaleString('vi-VN')} lượng`);
+      const risky = lv >= MGEAR.GEAR_MAX - 5, useIns = risky && a.insure && U.countItem(c, 'insure') > 0;
+      U.removeItemById(c, 'mount_ess', cost.ess); U.removeItemById(c, gemIds[0], cost.gems); c.gold -= cost.gold;
+      if (useIns) U.removeItemById(c, 'insure', 1);
+      const ok = Math.random() < MGEAR.gearRate(lv);
+      if (ok) {
+        gear[def.k] = lv + 1;
+        this.toast(p, `✨ ${def.icon} ${def.name} của ${MOUNTS[a.id].name} lên +${lv + 1}!`, 'reward');
+        if (lv + 1 >= 12) this.features.announce(`🐎 ${c.name} nâng ${def.name} của [${MOUNTS[a.id].name}] lên +${lv + 1}!`);
+      } else if (risky && !useIns) {
+        gear[def.k] = lv - 1;
+        this.toast(p, `💥 Thất bại! ${def.name} rớt xuống +${lv - 1}`, 'error');
+      } else this.toast(p, `💥 Thất bại! ${def.name} giữ nguyên +${lv}${useIns ? ' (đã dùng Bảo Hiểm Phù)' : ''}`, 'error');
+      p.socket.emit('mgearRes', { ok, id: a.id, slot: def.k, lv: gear[def.k] });
+      p.dirtyMe = true;
+    } else if (a.op === 'salvage') {   // rã đồ Truyền Kỳ trong túi -> Mã Cụ Tinh Hoa (ngọc đang khảm trả lại túi)
+      if (p.trade) return err('Đang giao dịch');
+      const uids = Array.isArray(a.uids) ? [...new Set(a.uids.slice(0, 100))] : [];
+      let got = 0, gotBd = 0, n = 0;
+      const back = [];
+      for (const uid of uids) {
+        const s = typeof uid === 'string' && c.inv.find(x => x.uid === uid), it = s && ITEMS[s.id];
+        if (!it || it.type !== 'equip' || it.rarity !== 'legendary') continue;
+        const q = MGEAR.salvageYield(it.tier, s.plus);
+        for (const g of s.gems || []) if (g && ITEMS[g]) back.push([g, s.bd]);
+        if (!U.removeByUid(c, uid, 1)) continue;
+        if (s.bd) gotBd += q; else got += q;
+        n++;
+      }
+      if (!n) return err('Chọn trang bị Truyền Kỳ trong túi để rã');
+      for (const [id, q, bd] of [['mount_ess', got, 0], ['mount_ess', gotBd, 1]]) if (q && !U.addItem(c, id, q, 0, null, !!bd)) this.stash(c, id, q, 0, !!bd);
+      for (const [g, bd] of back) if (!U.addItem(c, g, 1, 0, null, !!bd)) this.stash(c, g, 1, 0, !!bd);
+      this.toast(p, `🔨 Đã rã ${n} món Truyền Kỳ → ${got + gotBd} Mã Cụ Tinh Hoa${back.length ? ` (trả lại ${back.length} viên ngọc đã khảm)` : ''}`, 'reward');
+      p.socket.emit('mgearRes', { salvage: n, ess: got + gotBd });
+      p.dirtyMe = true;
     } else if (a.op === 'break') {
       const m = c.mounts[a.id];
       if (!m || !isBreakLevel(m.lv) || m.exp < mountExpNext(m.lv)) return err('Chưa đủ điều kiện đột phá');

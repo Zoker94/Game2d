@@ -2,7 +2,8 @@ const { CLASSES, branchOf } = require('../data/classes');
 const { BRANCH_BONUS } = require('../data/branches');
 const { scaleSkill } = require('../data/skillbooks');
 const { ITEMS, BR_ATTR, brPoints, brStats, DIVINE_SETS } = require('../data/items');
-const { mountStats } = require('../data/mounts');
+const { mountStats, MOUNTS } = require('../data/mounts');
+const MGEAR = require('../data/mountgear');
 const { rollAffixes, elementBonus, CAP, GEAR_CAP, rescaleFx } = require('../data/affixes');
 const Power = require('../../public/js/power');
 const { ATTRS } = require('../data/attrs');
@@ -234,6 +235,8 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
   if (fx.regen) s.regen += fx.regen / 100;
   if (c.mount && c.mounts && c.mounts[c.mount]) {
     const ms = mountStats(c.mount, c.mounts[c.mount].lv);
+    const gs = MGEAR.gearStats(c.mount, c.mounts[c.mount].gear, (MOUNTS[c.mount] || {}).rarity);   // Mã Cụ (yên, dây cương… / động cơ, phuộc…)
+    for (const k in gs) ms[k] = (ms[k] || 0) + gs[k];
     for (const k in ms) {
       if (k === 'speed') { if (riding) s.spd *= 1 + ms.speed; }
       else if (k === 'hp') s.maxHp += ms.hp; else if (k === 'mp') s.maxMp += ms.mp; else s[k] += ms[k];
