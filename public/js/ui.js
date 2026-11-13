@@ -1488,7 +1488,7 @@
       }
     } else if (tab === 'lantern') {
       const l = evPanel;
-      html += `<p>Bạn có <b>${l ? l.tokens : 0}</b> 🏮 Hoa Đăng. Hoa Đăng rơi từ quái khi diễn ra Lễ Hội Hoa Đăng.</p><div class="list">${l ? l.lantern.map((x, i) => `<div class="li"><div class="grow"><b>${esc(x.name)}</b><div class="sub">Cần ${fmt(x.cost)} Hoa Đăng · đã đổi ${x.used | 0}/${x.max || 1} lần hôm nay</div></div>${x.done ? '<span class="small muted">✔ Đủ lượt hôm nay</span>' : `<button class="btn small green" data-lantern="${i}" ${l.tokens >= x.cost ? '' : 'disabled'}>Đổi</button>`}</div>`).join('') : ''}</div>`;
+      html += `<p>Bạn có <b>${l ? l.tokens : 0}</b> 🏮 Hoa Đăng. Hoa Đăng rơi từ quái khi diễn ra Lễ Hội Hoa Đăng.</p><div class="list">${l ? l.lantern.map((x, i) => `<div class="li"><div class="grow"><b>${esc(x.name)}</b><div class="sub">Cần ${fmt(x.cost)} Hoa Đăng · đã đổi ${x.used | 0}/${x.max || 1} lần ${x.per || 'hôm nay'}</div></div>${x.done ? `<span class="small muted">✔ Đủ lượt ${x.per || 'hôm nay'}</span>` : `<button class="btn small green" data-lantern="${i}" ${l.tokens >= x.cost ? '' : 'disabled'}>Đổi</button>`}</div>`).join('') : ''}</div>`;
     } else if (tab === 'code') {
       html += `<div class="card"><h4>🎁 Gift Code</h4><p class="small">Gift code đã có mục riêng: nhập mã, xem code đang phát và lịch sử nhận quà.</p><button class="btn green" id="gc-open">Mở mục Gift Code</button></div>`;
     }

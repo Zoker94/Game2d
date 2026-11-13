@@ -59,9 +59,9 @@ const CHECKIN_FIX_KNB = 10;   // bù điểm danh (lỡ đúng 1 ngày)
 const LANTERN_EXCHANGE = [
   // mỗi món đổi tối đa LANTERN_DAILY lần / ngày / nhân vật (theo id); quà nhận được là đồ khoá; đã bỏ đổi Nguyên Bảo
   { id: 'chest', cost: 10, name: 'Rương Bí Ẩn', r: { items: [['lucky_chest', 1]] } },
-  { id: 'x2', cost: 40, name: 'Song Bội KN x2', r: { items: [['exp_x2', 2]] } },
+  { id: 'x2', cost: 40, name: 'Song Bội KN x2', r: { items: [['exp_x2', 2]] }, week: 10 },   // giới hạn theo TUẦN (Thứ 2 – Chủ nhật)
   { id: 'stone2', cost: 60, name: 'Thiên Tinh Thạch x2', r: { items: [['stone2', 2]] } },
-  { id: 'insure', cost: 80, name: 'Bảo Hiểm Phù', r: { items: [['insure', 1]] } },
+  { id: 'insure', cost: 80, name: 'Bảo Hiểm Phù', r: { items: [['insure', 1]] }, week: 1 },
   { id: 'boss', cost: 100, name: 'Rương Thủ Lĩnh', r: { items: [['boss_chest', 1]] } },
   { id: 'book', cost: 5000, name: 'Bí Kíp Long Ấn (ngẫu nhiên)', r: { dragonBook: 1 } }
 ];
@@ -499,13 +499,21 @@ class Features {
   exchangeLantern(p, idx) {
     const ex = LANTERN_EXCHANGE[idx | 0];
     if (!ex) return;
-    const ld = this.lanternDone(p.c);
-    if ((ld.done[ex.id] | 0) >= LANTERN_DAILY) return this.w.toast(p, `Hôm nay bạn đã đổi ${ex.name} đủ ${LANTERN_DAILY} lần, mai quay lại nhé`, 'error');
+    const ld = ex.week ? this.lanternWeek(p.c) : this.lanternDone(p.c), max = ex.week || LANTERN_DAILY;
+    if ((ld.done[ex.id] | 0) >= max) return this.w.toast(p, ex.week ? `Tuần này bạn đã đổi ${ex.name} đủ ${max} lần – Thứ 2 tuần sau quay lại nhé` : `Hôm nay bạn đã đổi ${ex.name} đủ ${max} lần, mai quay lại nhé`, 'error');
     if (!U.removeItemById(p.c, 'event_token', ex.cost)) return this.w.toast(p, `Cần ${ex.cost} Hoa Đăng`, 'error');
     ld.done[ex.id] = (ld.done[ex.id] | 0) + 1; p.dirtyMe = true;
     const r = ex.r.dragonBook ? { items: [[DRAGON_BOOKS[U.randInt(0, DRAGON_BOOKS.length - 1)], 1]] } : ex.r;
     this.w.giveReward(p, r, 'Đổi Hoa Đăng', { bind: true });   // quà đổi Hoa Đăng là đồ khoá: không giao dịch / bán chợ
     p.socket.emit('eventPanel', this.eventPanel(p));
+  }
+  lanternWeek(c) {   // món Hoa Đăng giới hạn theo tuần: tuần bắt đầu 00:00 Thứ 2 (giờ Việt Nam)
+    const wk = Math.floor((Math.floor((Date.now() + 7 * 3600e3) / 86400e3) + 3) / 7);
+    if (!c.lanternWk || c.lanternWk.w !== wk) {
+      c.lanternWk = { w: wk, done: {} };
+      if (c.lanternEx && c.lanternEx.date === U.vnDay()) for (const x of LANTERN_EXCHANGE) if (x.week && c.lanternEx.done[x.id]) c.lanternWk.done[x.id] = c.lanternEx.done[x.id];   // tính cả lượt đã đổi hôm nay
+    }
+    return c.lanternWk;
   }
   lanternDone(c) {   // món Hoa Đăng đã đổi hôm nay (giờ Việt Nam)
     const today = U.vnDay();
@@ -513,7 +521,7 @@ class Features {
     return c.lanternEx;
   }
   eventPanel(p) {
-    return { wheel: this.wheelState(p), checkin: this.checkinState(p), lantern: LANTERN_EXCHANGE.map(x => { const n = this.lanternDone(p.c).done[x.id] | 0; return Object.assign({}, x, { used: n, max: LANTERN_DAILY, done: n >= LANTERN_DAILY }); }), tokens: U.countItem(p.c, 'event_token'), ...this.eventsView() };
+    return { wheel: this.wheelState(p), checkin: this.checkinState(p), lantern: LANTERN_EXCHANGE.map(x => { const n = (x.week ? this.lanternWeek(p.c) : this.lanternDone(p.c)).done[x.id] | 0, mx = x.week || LANTERN_DAILY; return Object.assign({}, x, { used: n, max: mx, done: n >= mx, per: x.week ? 'tuần này' : 'hôm nay' }); }), tokens: U.countItem(p.c, 'event_token'), ...this.eventsView() };
   }
 
   // ---------------- Trò chuyện ----------------
