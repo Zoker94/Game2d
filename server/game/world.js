@@ -1386,6 +1386,18 @@ class World {
     this.features.brag(`⚡ Bí kíp Tuyệt Kỹ Giang Hồ [${j.name}] rơi ra từ ${tpl.name} tại ${(MAPS[baseOf(mon.mapId)] || MAPS[mon.mapId] || { name: 'bản đồ boss' }).name}! Ai nhanh tay sẽ nhặt được!`);
   }
 
+  // Mã Cụ V2 (Thần Phẩm): siêu hiếm, rơi xuống đất thuộc người gây sát thương cao nhất (30 giây), sau đó ai cũng nhặt được
+  rollMgV2(mon, tpl) {
+    const R = MGEAR.V2_DROP, rate = tpl.world ? R.world : mon.boss ? R.field : R.dungeon;
+    if (Math.random() >= rate) return;
+    const all = Object.values(MGEAR.KINDS).flat(), d = all[U.randInt(0, all.length - 1)], id = MGEAR.v2Item(d.k);
+    const top = [...mon.dmgBy.entries()].filter(([uid]) => !this.isGmUid(uid)).sort((a, b) => b[1] - a[1])[0];
+    const a = Math.random() * Math.PI * 2;
+    const dr = this.createDrop(mon.mapId, mon.x + Math.cos(a) * 45, mon.y + Math.sin(a) * 45, id, 1, top ? top[0] : null, 0, 30000);
+    if (dr) dr.expire = Date.now() + 300000;
+    const who = top && this.players.get(top[0]);
+    this.features.brag(`🔥 Mã Cụ V2 [${d.v2}] rơi ra từ ${tpl.name}${who ? ` – ${who.c.name} gây sát thương cao nhất được ưu tiên nhặt` : ''}!`);
+  }
   // giá hồi sinh tại chỗ: theo cấp (lượng), không đủ lượng thì dùng Nguyên Bảo
   // ≈ tiền rơi của 25–85 con quái cùng cấp (vài phút luyện công); tân thủ dưới cấp 10 miễn phí
   reviveCost(p) {
@@ -1442,7 +1454,7 @@ class World {
     const tpl = mon.tpl;
     const cfg = this.db.data.config;
 
-    if ((mon.boss || tpl.pbBoss) && !mon.event) this.rollJhBook(mon, tpl);
+    if ((mon.boss || tpl.pbBoss) && !mon.event) { this.rollJhBook(mon, tpl); this.rollMgV2(mon, tpl); }
     if (mon.event === 'daihoi') { this.daihoi.onMonsterKilled(mon, killer); map.monsters.delete(mon.id); return; }
     if (mon.event === 'tongkim') { this.tongkim.onMonsterKilled(mon, killer); map.monsters.delete(mon.id); return; }
     if (mon.event === 'siege') { this.siege.onMonsterKilled(mon, killer); return; }
@@ -2522,27 +2534,39 @@ class World {
       const m = c.mounts[a.id], def = m && MOUNTS[a.id] && MGEAR.slotsOf(a.id).find(d => d.k === a.slot);
       if (!def) return;
       if (p.trade) return err('Đang giao dịch');
-      const gear = m.gear || (m.gear = {}), lv = gear[def.k] | 0;
-      if (lv >= MGEAR.GEAR_MAX) return err(`${def.name} đã đạt cấp tối đa +${MGEAR.GEAR_MAX}`);
-      const cost = MGEAR.gearCost(lv);
+      const gear = m.gear || (m.gear = {}), lv = gear[def.k] | 0, v2 = !!(m.gv2 && m.gv2[def.k]), mx = MGEAR.maxOf(v2);
+      if (lv >= mx) return err(`${def.name} đã đạt cấp tối đa +${mx}${v2 ? '' : ` – lắp ${def.v2} (Mã Cụ V2, rơi từ Boss) để nâng tiếp tới +${MGEAR.GEAR_MAX2}`}`);
+      const cost = MGEAR.gearCost(lv), nm = v2 ? def.v2 : def.name;
       if (U.countItem(c, 'mount_ess') < cost.ess) return err(`Cần ${cost.ess} Mã Cụ Tinh Hoa (rã đồ Truyền Kỳ để có)`);
       // ngọc: cấp theo bậc, loại nào cũng được – lấy loại đang có nhiều nhất
       const G = require('../data/gems'), gemIds = G.GEM_KEYS.map(t => G.gemId(t, cost.gemLv)).sort((x, y) => U.countItem(c, y) - U.countItem(c, x));
       if (U.countItem(c, gemIds[0]) < cost.gems) return err(`Cần ${cost.gems} viên ngọc cấp ${cost.gemLv} cùng loại (loại nào cũng được)`);
       if (c.gold < cost.gold) return err(`Cần ${cost.gold.toLocaleString('vi-VN')} lượng`);
-      const risky = lv >= MGEAR.GEAR_MAX - 5, useIns = risky && a.insure && U.countItem(c, 'insure') > 0;
+      const risky = lv >= 10, useIns = risky && a.insure && U.countItem(c, 'insure') > 0;
       U.removeItemById(c, 'mount_ess', cost.ess); U.removeItemById(c, gemIds[0], cost.gems); c.gold -= cost.gold;
       if (useIns) U.removeItemById(c, 'insure', 1);
       const ok = Math.random() < MGEAR.gearRate(lv);
       if (ok) {
         gear[def.k] = lv + 1;
-        this.toast(p, `✨ ${def.icon} ${def.name} của ${MOUNTS[a.id].name} lên +${lv + 1}!`, 'reward');
-        if (lv + 1 >= 12) this.features.announce(`🐎 ${c.name} nâng ${def.name} của [${MOUNTS[a.id].name}] lên +${lv + 1}!`);
+        this.toast(p, `✨ ${def.icon} ${nm} của ${MOUNTS[a.id].name} lên +${lv + 1}!`, 'reward');
+        if (lv + 1 >= (v2 ? 16 : 12)) this.features.announce(`🐎 ${c.name} nâng ${nm} của [${MOUNTS[a.id].name}] lên +${lv + 1}!`);
       } else if (risky && !useIns) {
         gear[def.k] = lv - 1;
-        this.toast(p, `💥 Thất bại! ${def.name} rớt xuống +${lv - 1}`, 'error');
-      } else this.toast(p, `💥 Thất bại! ${def.name} giữ nguyên +${lv}${useIns ? ' (đã dùng Bảo Hiểm Phù)' : ''}`, 'error');
+        this.toast(p, `💥 Thất bại! ${nm} rớt xuống +${lv - 1}`, 'error');
+      } else this.toast(p, `💥 Thất bại! ${nm} giữ nguyên +${lv}${useIns ? ' (đã dùng Bảo Hiểm Phù)' : ''}`, 'error');
       p.socket.emit('mgearRes', { ok, id: a.id, slot: def.k, lv: gear[def.k] });
+      p.dirtyMe = true;
+    } else if (a.op === 'gearV2') {   // lắp Mã Cụ V2 (rơi từ Boss) vào ô: giữ nguyên cấp, chỉ số x1,6, mở tới +20
+      const m = c.mounts[a.id], def = m && MOUNTS[a.id] && MGEAR.slotsOf(a.id).find(d => d.k === a.slot);
+      if (!def) return;
+      if (p.trade) return err('Đang giao dịch');
+      if (m.gv2 && m.gv2[def.k]) return err(`${def.name} của ${MOUNTS[a.id].name} đã là V2`);
+      const iid = MGEAR.v2Item(def.k);
+      if (!U.removeItemById(c, iid, 1)) return err(`Cần ${ITEMS[iid].name} – chỉ rơi từ Boss`);
+      (m.gv2 || (m.gv2 = {}))[def.k] = 1;
+      this.toast(p, `🔥 Đã lắp ${def.v2} cho ${MOUNTS[a.id].name}! Giữ nguyên +${(m.gear && m.gear[def.k]) | 0}, chỉ số tăng mạnh, nâng tiếp được tới +${MGEAR.GEAR_MAX2}.`, 'reward');
+      this.features.announce(`🔥 ${c.name} lắp Mã Cụ V2 [${def.v2}] cho ${MOUNTS[a.id].name}!`);
+      p.socket.emit('mgearRes', { ok: true, id: a.id, slot: def.k, v2: 1 });
       p.dirtyMe = true;
     } else if (a.op === 'salvage') {   // rã đồ Truyền Kỳ trong túi -> Mã Cụ Tinh Hoa (ngọc đang khảm trả lại túi)
       if (p.trade) return err('Đang giao dịch');

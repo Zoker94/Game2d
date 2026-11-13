@@ -326,6 +326,7 @@ for (const o of Object.values(OUTFITS)) {
 
 // Đá khảm 5 loại × 5 cấp (data/gems.js)
 for (const g of require('./gems').gemItems()) ITEMS[g.id] = g;
+for (const g of require('./mountgear').v2Items()) ITEMS[g.id] = g;   // Mã Cụ V2 (Thần Phẩm): chỉ rơi từ Boss
 
 function equipId(slot, t, rarity) { return `${slot}_${t}_${rarity}`; }
 

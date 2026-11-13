@@ -507,6 +507,50 @@ def mount_ess(ic):   # Mã Cụ Tinh Hoa: bánh răng đồng ôm khối tinh th
     ic.paint(ic.m_poly([(48, 24), (53, 32), (51, 46), (45, 46), (43, 32)]), '#ffe090', '#d06010', ang=-40)
     ic.spec([(27, 16), (31, 8)], 1.4, 0.95)
 
+RED2 = ('#ff9a7a', '#8a0808')
+def mg2(ic, k):   # Mã Cụ V2 (Thần Phẩm): đỏ thẫm viền vàng
+    if k == 'yen':
+        saddle(ic)
+        ic.paint(ic.m_poly([(18, 28), (38, 30), (36, 34), (20, 33)]), '#ffd040', '#a06008', edge=0.2, shine=0.3)
+    elif k == 'cuong':   # dây cương: vòng dây đỏ + hàm thiếc vàng + ngọc
+        ring_ = np.clip(ic.m_ell(32, 34, 22, 18) - ic.m_ell(32, 34, 18, 14), 0, 1)
+        ic.paint(ring_, *RED2, edge=0.3, shine=0.3)
+        ic.paint(ic.m_line([(12, 46), (52, 46)], 3.2), *GOLD, edge=0, shine=0.3)
+        for x in (12, 52): ic.paint(ic.m_ell(x, 46, 5, 5), *GOLD)
+        ic.gem(32, 16, 5, '#ff2030')
+    elif k == 'dap':   # bàn đạp vàng đỏ
+        ic.paint(ic.m_line([(32, 6), (32, 22)], 3), '#5a1408', None, edge=0, shine=0)
+        ring_ = np.clip(ic.m_poly([(14, 22), (50, 22), (54, 56), (10, 56)]) - ic.m_poly([(20, 28), (44, 28), (46, 48), (18, 48)]), 0, 1)
+        ic.paint(ring_, *GOLD)
+        ic.paint(ic.m_rect(14, 48, 50, 56), *RED2)
+        ic.gem(32, 24, 3.5, '#ff2030')
+    elif k == 'giap':   # giáp thú: tấm giáp vảy đỏ
+        ic.paint(ic.m_poly([(8, 16), (56, 16), (52, 44), (32, 58), (12, 44)]), *RED2, ang=-60)
+        for y in (24, 34, 44):
+            for x in range(14, 54, 8): ic.paint(ic.m_ell(x, y, 4, 3), '#ffb070', '#7a1004', edge=0.3, shine=0.2, alpha=0.8)
+        ic.paint(ic.m_line([(8, 16), (56, 16)], 3), *GOLD, edge=0, shine=0.3)
+    elif k == 'dongco':   # động cơ: khối máy + cánh tản nhiệt + turbo
+        ic.paint(ic.m_rect(10, 20, 44, 52), '#c8ccd8', '#3a3e4a', ang=-60)
+        for y in range(22, 52, 5): ic.paint(ic.m_rect(8, y, 46, y + 2), '#e8eaf0', '#5a5e6a', edge=0, shine=0)
+        ic.paint(ic.m_ell(48, 30, 10, 10), *RED2)
+        ic.paint(ic.m_ell(48, 30, 4, 4), *GOLD)
+    elif k == 'xang':   # bình xăng con: thân trụ + phễu gió đỏ
+        ic.paint(ic.m_rect(18, 24, 40, 50), '#d8dce8', '#4a4e5a', ang=-60)
+        ic.paint(ic.m_poly([(40, 28), (56, 20), (56, 52), (40, 46)]), *RED2)
+        ic.paint(ic.m_rect(22, 12, 30, 24), *GOLD)
+        ic.paint(ic.m_line([(10, 37), (18, 37)], 4), '#5a5e6a', None, edge=0, shine=0)
+    elif k == 'phuoc':   # phuộc: lò xo đỏ quanh ty vàng
+        ic.paint(ic.m_line([(32, 6), (32, 58)], 5), *GOLD, edge=0, shine=0.4)
+        for i in range(6):
+            y = 14 + i * 7
+            ic.paint(ic.m_line([(20, y), (44, y + 4)], 3.4), *RED2, edge=0, shine=0.3)
+        for y in (6, 58): ic.paint(ic.m_ell(32, y, 7, 4), '#c8ccd8', '#3a3e4a')
+    else:   # ống pô titan: ống cong ánh xanh tím + miệng đỏ
+        ic.paint(ic.m_line([(8, 18), (20, 30), (44, 40), (56, 40)], 9), '#c8b8ff', '#3a2a8a', edge=0.3, shine=0.4)
+        ic.paint(ic.m_ell(54, 40, 6, 7), *RED2)
+        ic.paint(ic.m_ell(55, 40, 3, 4), '#2a0404', None, edge=0, shine=0)
+        ic.paint(ic.m_line([(26, 30), (38, 36)], 2), *GOLD, edge=0, shine=0)
+
 def food(ic):   # Mã Linh Đan: túi cỏ + viên đan
     ic.paint(ic.m_poly([(14, 30), (50, 30), (54, 56), (10, 56)]), '#c8a060', '#6a4a20')
     for k in range(7): ic.paint(ic.m_line([(16 + k * 5, 32), (14 + k * 5 + (k % 3), 18)], 1.6), '#9ad050', '#3a7020', edge=0, shine=0)
@@ -700,14 +744,14 @@ SIMPLE = {
     'jh_book_nm': lambda ic: book(ic, ('#d870b0', '#4a1036'), '佛'), 'jh_book_ty': lambda ic: book(ic, ('#5ab0d8', '#0a2a4a'), '雪'),
     'jh_book_cb': lambda ic: book(ic, ('#c88a1a', '#3a2004'), '龍'), 'jh_book_vd': lambda ic: book(ic, ('#6a8ad0', '#101e4a'), '極'),
     'jh_book_cl': lambda ic: book(ic, ('#9a5ad8', '#24104a'), '雷'),
-    'stone': stone, 'stone2': lambda ic: stone(ic, True), 'insure': insure, 'food': food, 'blood': blood, 'mount_ess': mount_ess,
+    'stone': stone, 'stone2': lambda ic: stone(ic, True), 'insure': insure, 'food': food, 'blood': blood, 'mount_ess': mount_ess, **{'mg2_' + k: (lambda k: lambda ic: mg2(ic, k))(k) for k in ('yen', 'cuong', 'dap', 'giap', 'dongco', 'xang', 'phuoc', 'po')},
     'chest': chest, 'chest_gold': lambda ic: chest(ic, True), 'ticket': ticket, 'lantern': lantern, 'saddle': saddle, 'gold': gold_icon,
     'bag': bag, 'pickaxe': pickaxe, 'auto_dig': auto_dig,
     **{'dv_token_' + k: (lambda k: lambda ic: dv_token(ic, k))(k) for k in DV_SETS},
     **{'dv_frag_' + k: (lambda k: lambda ic: dv_frag(ic, k))(k) for k in DV_SETS},
     **{'title_' + k: (lambda k: lambda ic: title_token(ic, k))(k) for k in TITLE_TOKENS},
 }
-SIMPLE_GLOW = {**{'dv_token_' + k: '#ff3020' for k in DV_SETS}, **{'title_' + k: v[0] for k, v in TITLE_TOKENS.items()}, 'silk': '#e0c8ff', 'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'book_thunder': '#c090ff', 'book_shadow': '#ff3a6a', 'jh_book_tl': '#ffd040', 'jh_book_tv': '#ff7a2a', 'jh_book_dm': '#7affd0', 'jh_book_nd': '#8fff4a', 'jh_book_nm': '#ffb0e0', 'jh_book_ty': '#a8ecff', 'jh_book_cb': '#ffc040', 'jh_book_vd': '#b8d8ff', 'jh_book_cl': '#d8a4ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'mount_ess': '#ffa020', 'bag': '#ffd040', 'auto_dig': '#ffd040'}
+SIMPLE_GLOW = {**{'dv_token_' + k: '#ff3020' for k in DV_SETS}, **{'title_' + k: v[0] for k, v in TITLE_TOKENS.items()}, 'silk': '#e0c8ff', 'book_wash': '#c070ff', 'book_attr': '#50ffb0', 'vm_book': '#ffd040', 'vm_scroll': '#ffb040', 'stone2': '#ffc040', 'book_fire': '#ff6020', 'book_water': '#40a0ff', 'book_ice': '#a0e8ff', 'book_thunder': '#c090ff', 'book_shadow': '#ff3a6a', 'jh_book_tl': '#ffd040', 'jh_book_tv': '#ff7a2a', 'jh_book_dm': '#7affd0', 'jh_book_nd': '#8fff4a', 'jh_book_nm': '#ffb0e0', 'jh_book_ty': '#a8ecff', 'jh_book_cb': '#ffc040', 'jh_book_vd': '#b8d8ff', 'jh_book_cl': '#d8a4ff', 'chest_gold': '#ffd040', 'potion_r5': '#ffe060', 'blood': '#ff4040', 'mount_ess': '#ffa020', **{'mg2_' + k: '#ff3020' for k in ('yen', 'cuong', 'dap', 'giap', 'dongco', 'xang', 'phuoc', 'po')}, 'bag': '#ffd040', 'auto_dig': '#ffd040'}
 
 def build():
     tiles, index = [], {}

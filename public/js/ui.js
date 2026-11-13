@@ -1847,6 +1847,10 @@
       b.classList.add('busy'); setTimeout(() => b.classList.remove('busy'), 400);
       emit('mount', { op: 'gear', id: sel, slot: b.dataset.mgear, insure: !!panelState.mgIns });
     });
+    body.querySelectorAll('[data-mgv2]').forEach(b => b.onclick = () => {
+      const d = G.data.mountGear.kinds[sel === 'xe_may' ? 'moto' : 'beast'].find(x => x.k === b.dataset.mgv2);
+      G.modal(`Lắp ${d.v2} (Mã Cụ V2) vào ${d.name} của ${G.data.mounts[sel].name}?\nGiữ nguyên cấp đã nâng; Mã Cụ V2 gắn luôn với thú cưỡi này.`, [{ t: '🔥 Lắp', cls: 'primary', fn: () => emit('mount', { op: 'gearV2', id: sel, slot: d.k }) }, { t: 'Hủy' }]);
+    });
     const ins = $('mg-ins'); if (ins) ins.onchange = () => { panelState.mgIns = ins.checked; };
     body.querySelectorAll('[data-salv]').forEach(el => el.onclick = () => {
       const S = panelState.salv || (panelState.salv = {}); S[el.dataset.salv] ? delete S[el.dataset.salv] : S[el.dataset.salv] = 1; UI.refreshPanel(true);
@@ -1865,8 +1869,8 @@
     const MG = G.data.mountGear;
     if (!MG) return '';
     const me = G.me, cnt = id => me.inv.filter(x => x.id === id).reduce((a, x) => a + x.qty, 0);
-    const defs = MG.kinds[sel === 'xe_may' ? 'moto' : 'beast'], gear = o.gear || {}, rk = MG.rmult[m.rarity] || 1;
-    const st = (d, lv) => { const k = lv * (1 + lv * 0.06) * rk, out = {}; for (const s in d.st) out[s] = Math.round(d.st[s] * k * 10) / 10; return out; };
+    const defs = MG.kinds[sel === 'xe_may' ? 'moto' : 'beast'], gear = o.gear || {}, gv2 = o.gv2 || {}, rk = MG.rmult[m.rarity] || 1;
+    const st = (d, lv, v2) => { const k = (lv * (1 + lv * 0.06) + (v2 ? MG.v2base : 0)) * (v2 ? MG.v2mult : 1) * rk, out = {}; if (!lv && !v2) return out; for (const s in d.st) out[s] = Math.round(d.st[s] * k * 10) / 10; return out; };
     const stTxt = x => Object.entries(x).map(([k, v]) => `${STAT_NAME[k] || k} +${v}${k === 'crit' ? '%' : ''}`).join(' · ') || '—';
     const ess = cnt('mount_ess'), insN = cnt('insure');
     const gemHave = L => Math.max(...Object.keys(G.data.gems.types).map(t => cnt(`gem_${t}_${L}`)));
@@ -1874,20 +1878,22 @@
       <div class="small muted">Mã Cụ Tinh Hoa: <b style="color:#ffb347">${fmt(ess)}</b> · Bảo Hiểm Phù: ${insN} · Ngân lượng: ${fmt(me.gold)}</div><div class="mg-grid">`;
     let tot = {};
     for (const d of defs) {
-      const lv = gear[d.k] | 0, now = st(d, lv), max = lv >= MG.max;
+      const lv = gear[d.k] | 0, v2 = !!gv2[d.k], mx = v2 ? MG.max2 : MG.max, now = st(d, lv, v2), max = lv >= mx;
       for (const k in now) tot[k] = Math.round(((tot[k] || 0) + now[k]) * 10) / 10;
-      const c = max ? null : MG.cost[lv], rate = max ? 0 : Math.round(MG.rate[lv] * 100), nx = max ? null : st(d, lv + 1);
+      const c = max ? null : MG.cost[lv], rawRate = max ? 0 : MG.rate[lv] * 100, rate = rawRate >= 10 ? Math.round(rawRate) : +rawRate.toFixed(1), nx = max ? null : st(d, lv + 1, v2);
+      const v2Have = !v2 && cnt('mg2_' + d.k), v2Now = v2 ? null : st(d, lv, true);
       const okMat = c && ess >= c.ess && gemHave(c.gemLv) >= c.gems && me.gold >= c.gold;
       const fx = panelState.mgFx && panelState.mgFx.slot === d.k && Date.now() - panelState.mgFx.t < 1500 ? (panelState.mgFx.ok ? ' fx-ok' : ' fx-fail') : '';
-      html += `<div class="mg-slot ${lv ? 'on' : ''}${fx}"><div class="mg-ic">${d.icon}<b>+${lv}</b></div><div class="mg-body"><b>${esc(d.name)}</b> <span class="small">+${lv}/${MG.max}</span>
+      html += `<div class="mg-slot ${lv ? 'on' : ''}${v2 ? ' v2' : ''}${fx}"><div class="mg-ic">${d.icon}<b>+${lv}</b>${v2 ? '<i>V2</i>' : ''}</div><div class="mg-body"><b>${esc(v2 ? d.v2 : d.name)}</b> <span class="small">+${lv}/${mx}</span>
         <div class="small">${stTxt(now)}</div>
-        ${max ? '<div class="small" style="color:#ffd76a">Đã tối đa</div>' : `<div class="small muted">→ +${lv + 1}: ${stTxt(nx)}</div>
+        ${v2Have ? `<button class="btn small mg-v2btn" data-mgv2="${d.k}" title="Giữ nguyên +${lv}, chỉ số thành: ${stTxt(v2Now)}">🔥 Lắp ${esc(d.v2)} (V2)</button>` : ''}
+        ${max ? `<div class="small" style="color:#ffd76a">Đã tối đa${v2 ? '' : ` – cần <b style="color:#ff5a3a">${esc(d.v2)} (V2)</b> rơi từ Boss để nâng tiếp tới +${MG.max2}`}</div>` : `<div class="small muted">→ +${lv + 1}: ${stTxt(nx)}</div>
         <div class="small">Cần ${c.ess} Tinh Hoa · ${c.gems} ngọc cấp ${c.gemLv} · ${fmt(c.gold)} 💰 · Tỉ lệ <b style="color:${rate >= 60 ? '#4ade80' : rate >= 20 ? '#ffd76a' : '#ff5050'}">${rate}%</b>${lv >= MG.safe ? ' · <span class="warn">thất bại −1 cấp</span>' : ''}</div>
         <button class="btn small ${okMat ? 'primary' : ''}" data-mgear="${d.k}">⚒️ Nâng cấp</button>`}</div></div>`;
     }
     html += `</div><div class="small" style="margin-top:6px">Tổng Mã Cụ: <b>${stTxt(tot)}</b> (cộng vào lực chiến khi chọn thú cưỡi này)</div>
       <label class="small"><input type="checkbox" id="mg-ins" ${panelState.mgIns ? 'checked' : ''}> Dùng Bảo Hiểm Phù khi nâng từ +${MG.safe} (thất bại giữ nguyên cấp)</label>
-      <p class="small muted">Ngọc: dùng ngọc khảm loại nào cũng được, đúng cấp yêu cầu (+1–3 cấp 1, +4–6 cấp 2 … +13–15 cấp 5).</p></div>`;
+      <p class="small muted">Ngọc: dùng ngọc khảm loại nào cũng được, đúng cấp yêu cầu (+1–3 cấp 1, +4–6 cấp 2 … +13–15 cấp 5).<br>🔥 <b style="color:#ff6a4a">Mã Cụ V2</b> (Thần Phẩm) chỉ rơi từ Boss, cực hiếm: lắp vào ô giữ nguyên cấp, chỉ số ×${MG.v2mult} cộng thêm phần gốc, nâng tiếp tới +${MG.max2}.</p></div>`;
     return html;
   }
   function salvageHtml() {

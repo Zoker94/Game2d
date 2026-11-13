@@ -5,6 +5,7 @@ const CHANGELOG = [
     date: '13/11/2026',
     items: [
       '🐎 MÃ CỤ THÚ CƯỠI: mỗi thú cưỡi có 4 ô nâng cấp riêng – thú: Yên Ngựa, Dây Cương, Bàn Đạp, Giáp Thú; xe máy: Động Cơ, Bình Xăng Con, Phuộc, Ống Pô. Nâng +1 đến +15 như đập đồ (cần Mã Cụ Tinh Hoa, ngọc khảm và ngân lượng; từ +10 thất bại rớt 1 cấp, có Bảo Hiểm Phù thì giữ nguyên). Chỉ số Mã Cụ cộng thẳng vào lực chiến khi chọn thú cưỡi đó. Mở bảng Thú Cưỡi để nâng.',
+      '🔥 MÃ CỤ V2 (Thần Phẩm): 8 món cực hiếm chỉ rơi từ Boss (Boss Thế Giới ~1%, Boss phó bản ~0,15%, Boss dã ngoại ~0,1%) – Kim Long Bảo Yên, Huyết Ngọc Thần Cương, Phi Vân Bảo Đạp, Huyền Thiết Long Giáp; xe máy: Động Cơ Tăng Áp, Bình Xăng Con Độ Đua, Phuộc Nhún Thần Tốc, Ống Pô Titan. Lắp vào ô Mã Cụ: GIỮ NGUYÊN cấp đã nâng, chỉ số ×1,6 cộng thêm phần gốc, nâng tiếp tới +20. Rơi xuống đất, người gây sát thương cao nhất được ưu tiên nhặt 30 giây.',
       '🔨 RÃ ĐỒ TRUYỀN KỲ: rã trang bị Truyền Kỳ trong túi thành Mã Cụ Tinh Hoa (đồ cấp 90 = 10 Tinh Hoa, cộng thêm ½ cấp cường hoá); ngọc đang khảm được trả lại.'
     ]
   },

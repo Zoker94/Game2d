@@ -235,7 +235,7 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
   if (fx.regen) s.regen += fx.regen / 100;
   if (c.mount && c.mounts && c.mounts[c.mount]) {
     const ms = mountStats(c.mount, c.mounts[c.mount].lv);
-    const gs = MGEAR.gearStats(c.mount, c.mounts[c.mount].gear, (MOUNTS[c.mount] || {}).rarity);   // Mã Cụ (yên, dây cương… / động cơ, phuộc…)
+    const gs = MGEAR.gearStats(c.mount, c.mounts[c.mount].gear, (MOUNTS[c.mount] || {}).rarity, c.mounts[c.mount].gv2);   // Mã Cụ (yên, dây cương… / động cơ, phuộc…)
     for (const k in gs) ms[k] = (ms[k] || 0) + gs[k];
     for (const k in ms) {
       if (k === 'speed') { if (riding) s.spd *= 1 + ms.speed; }
