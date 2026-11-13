@@ -1046,7 +1046,7 @@
         <div class="mb-items">${me.mailbox.slice(0, 12).map(e => `<span class="mb-it" title="${esc((G.data.items[resolveId(e[0])] || {}).name || e[0])}${e[2] ? ' +' + e[2] : ''} x${e[1]}"><img src="${iconUrl(e[0])}" width="28" height="28">${e[1] > 1 ? `<i>${e[1]}</i>` : ''}</span>`).join('')}${me.mailbox.length > 12 ? '<span class="small muted">…</span>' : ''}</div>
         <button class="btn small green" id="mb-claim">Nhận</button></div>`;
     }
-    html += `<div class="inv-tools"><button class="btn small" id="inv-sort">🧹 Sắp xếp</button><button class="btn small ${sellMode ? 'green' : ''}" id="inv-sell">${sellMode ? '✕ Thoát bán nhanh' : '💰 Bán đồ rác'}</button><button class="btn small ${dropMode ? 'red' : ''}" id="inv-drop">${dropMode ? '✕ Thoát vứt nhanh' : '🗑️ Vứt nhanh'}</button></div>`;
+    html += `<div class="inv-tools"><button class="btn small" id="inv-sort">🧹 Sắp xếp</button><button class="btn small ${sellMode ? 'green' : ''}" id="inv-sell">${sellMode ? '✕ Thoát bán nhanh' : '💰 Bán đồ rác'}</button><button class="btn small ${dropMode ? 'red' : ''}" id="inv-drop">${dropMode ? '✕ Thoát vứt nhanh' : '🗑️ Vứt nhanh'}</button><button class="btn small" id="inv-salv" title="Rã trang bị Truyền Kỳ thành Mã Cụ Tinh Hoa để nâng cấp thú cưỡi">🔨 Rã đồ</button></div>`;
     if (sellMode) {
       body.innerHTML = html + quickSellHtml() + invGrid(body, { noEquip: true, mark: sellMark }) + (sellMulti ? '' : itemActions());
       bindInv(body); bindQuickSell(body); bindInvTools(); return;
@@ -1069,6 +1069,7 @@
     };
   }
   function bindInvTools() {
+    $('inv-salv').onclick = () => UI.openSalvage();
     $('inv-sort').onclick = () => { emit('sortInv'); panelState.sel = null; G.sfx('click'); };
     $('inv-sell').onclick = () => { sellMode = !sellMode; dropMode = false; sellMark.clear(); dropMark.clear(); panelState.sel = null; UI.refreshPanel(); };
     $('inv-drop').onclick = () => { dropMode = !dropMode; sellMode = false; dropMark.clear(); sellMark.clear(); panelState.sel = null; UI.refreshPanel(); };
@@ -1098,6 +1099,7 @@
       const to = s.br === 'noi' ? 'ngoai' : 'noi', fc = Math.max(500, Math.round(it.price * 0.25 / 100) * 100);   // trùng World.flipBranchCost
       btns += `<button class="btn small" data-act="flipbr" title="Đổi hệ trang bị">🔄 Đổi sang ${BR_INFO[to].name} (${fmt(fc)} 💰)</button>`;
     }
+    if (!s.equipped && it.type === 'equip' && it.rarity === 'legendary') btns += `<button class="btn small" data-act="salvage" title="Rã thành Mã Cụ Tinh Hoa (nâng cấp thú cưỡi); ngọc đang khảm được trả lại">🔨 Rã → ${(it.tier | 0) + 1 + Math.floor((s.plus | 0) / 2)} Tinh Hoa</button>`;
     if (!s.equipped) btns += `<button class="btn small" data-act="discard">Vứt bỏ</button>`;
     btns += `<button class="btn small" data-act="showchat" title="Gửi món đồ lên khung chat để khoe hoặc rao bán">💬 Khoe lên chat</button>`;
     return `<div class="item-detail">${itemDesc(s.id, s.plus, s)}${compareMini(s)}${s.qty > 1 ? `<div class="small">Số lượng: ${s.qty}</div>` : ''}<div class="row" style="justify-content:flex-start;margin-top:6px">${btns}</div>${extra}</div>`;
@@ -1171,6 +1173,7 @@
   }
   UI.onGem = function (d) { if (!(window.Forge && d && Forge.onGem(d))) UI.refreshPanel(); };
 
+  UI.openSalvage = function () { UI.openPanel('mount'); panelState.toSalv = true; UI.refreshPanel(true); };
   UI.onMountGear = function (d) { panelState.mgFx = Object.assign({ t: Date.now() }, d); if (panel === 'mount') UI.refreshPanel(true); };
   UI.onEnhance = function (d) { if (window.Forge && Forge.onEnhance(d)) return; panelState.enhRes = d.result; UI.refreshPanel(); setTimeout(() => { panelState.enhRes = null; }, 2500); };
 
@@ -1213,6 +1216,7 @@
         UI.focusChat(); UI.toast('Đã chèn món đồ vào ô chat – viết thêm lời rao (VD: bán 5 vạn) rồi Gửi', 'info');
         return;
       }
+      if (a === 'salvage') { const it = G.data.items[s.id]; G.modal(`Rã ${it.name}${s.plus ? ' +' + s.plus : ''} thành ${(it.tier | 0) + 1 + Math.floor((s.plus | 0) / 2)} Mã Cụ Tinh Hoa?${s.plus ? ' Món đã cường hoá – rã là mất hẳn.' : ''} Ngọc đang khảm được trả lại túi.`, [{ t: '🔨 Rã', cls: 'primary', fn: () => emit('mount', { op: 'salvage', uids: [s.uid] }) }, { t: 'Hủy' }]); panelState.sel = null; return; }
       if (a === 'discard') { G.modal(`Vứt bỏ ${G.data.items[s.id].name}?`, [{ t: 'Vứt', cls: 'primary', fn: () => emit('discard', { uid: s.uid }) }, { t: 'Hủy' }]); return; }
       if (a !== 'enhance') panelState.sel = null;
     });
@@ -1832,7 +1836,9 @@
     } else {
       html += '<div class="card"><p>Bạn chưa có thú cưỡi. Hãy đến <b>Mã Phu Lão Trương</b> ở Tương Dương để mua Ngựa Nâu, hoặc săn Boss / mở Kỳ Trân Các để có thú cưỡi hiếm như Bạch Hổ, Hỏa Kỳ Lân, Thanh Long!</p></div>';
     }
+    html += salvageHtml();
     body.innerHTML = html;
+    if (panelState.toSalv) { panelState.toSalv = false; const el = $('mg-salv-card'); if (el) setTimeout(() => el.scrollIntoView({ block: 'start' }), 30); }
     body.querySelectorAll('[data-mcv]').forEach(cv => { const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; const f = Assets.mountFrame(cv.dataset.mcv, false, 0); if (f) { c.imageSmoothingEnabled = false; const k = Math.min(96 / f.cw, 72 / (f.ch * 0.75)); c.drawImage(f.img, f.sx, f.sy + f.ch * 0.25, f.cw, f.ch * 0.75, (96 - f.cw * k) / 2, (72 - f.ch * 0.75 * k) / 2, f.cw * k, f.ch * 0.75 * k); } else { c.drawImage(Sprites.mountSprite(cv.dataset.mcv, all[cv.dataset.mcv], 0), 0, 0); if ((UI._mcvTry = (UI._mcvTry || 0) + 1) < 6) setTimeout(() => panel === 'mount' && UI.refreshPanel(true), 400); } });
     body.querySelectorAll('[data-mount]').forEach(el => el.onclick = () => { if (owned[el.dataset.mount]) { panelState.sel = el.dataset.mount; UI.refreshPanel(); } });
     body.querySelectorAll('[data-mop]').forEach(b => b.onclick = () => emit('mount', { op: b.dataset.mop, id: sel, n: +b.dataset.n || 1 }));
@@ -1882,12 +1888,16 @@
     html += `</div><div class="small" style="margin-top:6px">Tổng Mã Cụ: <b>${stTxt(tot)}</b> (cộng vào lực chiến khi chọn thú cưỡi này)</div>
       <label class="small"><input type="checkbox" id="mg-ins" ${panelState.mgIns ? 'checked' : ''}> Dùng Bảo Hiểm Phù khi nâng từ +${MG.safe} (thất bại giữ nguyên cấp)</label>
       <p class="small muted">Ngọc: dùng ngọc khảm loại nào cũng được, đúng cấp yêu cầu (+1–3 cấp 1, +4–6 cấp 2 … +13–15 cấp 5).</p></div>`;
-    // rã đồ Truyền Kỳ
+    return html;
+  }
+  function salvageHtml() {
+    const me = G.me;
+    let html = '';
     const leg = me.inv.filter(x => { const it = G.data.items[x.id]; return it && it.type === 'equip' && it.rarity === 'legendary'; });
     const S = panelState.salv || {};
     const yieldOf = x => (G.data.items[x.id].tier | 0) + 1 + Math.floor((x.plus | 0) / 2);
     const pick = leg.filter(x => S[x.uid]), sum = pick.reduce((a, x) => a + yieldOf(x), 0);
-    html += `<div class="card mgear"><h4>🔨 Rã đồ Truyền Kỳ → Mã Cụ Tinh Hoa</h4>
+    html += `<div class="card mgear" id="mg-salv-card"><h4>🔨 Rã đồ Truyền Kỳ → Mã Cụ Tinh Hoa</h4>
       ${leg.length ? `<div class="mg-salv">${leg.map(x => { const it = G.data.items[x.id]; return `<div class="mg-it ${S[x.uid] ? 'sel' : ''}" data-salv="${x.uid}" title="${esc(it.name)}"><b class="r-legendary-t">${esc(it.name)}${x.plus ? ' +' + x.plus : ''}</b><small>Cấp ${it.lv || '?'} → ${yieldOf(x)} Tinh Hoa${x.bd ? ' 🔒' : ''}</small></div>`; }).join('')}</div>
       <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="btn small danger" id="mg-salv">🔨 Rã ${pick.length} món → ${sum} Tinh Hoa</button></div>`
       : '<p class="small muted">Túi đồ chưa có trang bị Truyền Kỳ (đồ đang mặc không rã được – tháo ra trước).</p>'}
