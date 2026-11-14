@@ -1480,6 +1480,7 @@ class World {
       const gained = this.gainExp(p, exp);
       const gold = Math.round(tpl.gold * U.rand(0.7, 1.3) * (cfg.goldRate || 1) * (mon.boss ? share : 1));
       if (mon.boss) { p.c.gold += gold; this.features.questProgress(p, 'gold', gold); }
+      else if (tpl.comu) this.createGoldDrop(mon.mapId, mon.x + U.rand(-14, 14), mon.y + U.rand(-8, 8), Math.round(gold * 2), p.userId);   // Cổ Mộ: con nào cũng rơi, đống to
       else if (Math.random() < GOLD_DROP_CHANCE) this.createGoldDrop(mon.mapId, mon.x + U.rand(-14, 14), mon.y + U.rand(-8, 8), Math.round(gold * GOLD_DROP_K), p.userId);   // không rơi mỗi con: đỡ kín màn
       p.c.kills = (p.c.kills || 0) + (mon.boss ? 0 : 1);
       p.lastKillAt = Date.now();

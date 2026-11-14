@@ -35,7 +35,7 @@
       h.onclick = e => { if (e.target.closest('[data-cmleave]')) G.modal('Rời Cổ Mộ? Lối vào sẽ khép lại, hôm nay không vào lại được.', [{ t: 'Rời', cls: 'primary', fn: () => emit('comu', { op: 'leave' }) }, { t: 'Ở lại' }]); };
     }
     const left = Math.max(0, Math.round((st.endAt - (Date.now() + skew)) / 1000));
-    const html = `<div class="cm-hh">🪦 ${UI.esc(st.name)}<button data-cmleave>Rời</button></div><div class="cm-tm ${left < 120 ? 'warn' : ''}">⏳ Lối ra khép sau <b>${mmss(left)}</b></div><div class="cm-tip">Quái yếu · KN ×2,5 · Ngân lượng ×3</div>`;
+    const html = `<div class="cm-hh">🪦 ${UI.esc(st.name)}<button data-cmleave>Rời</button></div><div class="cm-tm ${left < 120 ? 'warn' : ''}">⏳ Lối ra khép sau <b>${mmss(left)}</b></div><div class="cm-tip">Quái yếu · KN ×2,5 · con nào cũng rơi bạc</div>`;
     if (h._h !== html) { h.innerHTML = html; h._h = html; }
   }
   setInterval(hud, 500);

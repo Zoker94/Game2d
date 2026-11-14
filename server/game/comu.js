@@ -8,7 +8,7 @@ const { MONSTERS } = require('../data/monsters');
 
 const LIFE = 30 * 60000, OFFER_MS = 60000;
 const TRAIN_MIN = process.env.COMU_TEST ? [1, 1] : [12, 60];             // phút luyện công (có hạ quái) trong ngày trước khi gặp Cổ Mộ: ngẫu nhiên trong khoảng này
-const MOD = { hp: 0.35, atk: 0.4, def: 0.6, exp: 2.5, gold: 3 };   // quái Cổ Mộ: yếu hơn, thưởng nhiều hơn
+const MOD = { hp: 0.35, atk: 0.4, def: 0.6, exp: 2.5, gold: 4 };   // ngân lượng: con nào cũng rơi, mỗi đống x2 (world.js) -> ~8 lần lượng gốc mỗi con   // quái Cổ Mộ: yếu hơn, thưởng nhiều hơn
 const NAME = 'Cổ Mộ Bí Cảnh';
 let seq = 1;
 const cache = new Map();
