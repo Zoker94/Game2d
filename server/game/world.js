@@ -304,6 +304,7 @@ class World {
     c.x = p.x; c.y = p.y; c.map = p.mapId;
     if (p.duelHome) { c.map = p.duelHome.map; c.x = p.duelHome.x; c.y = p.duelHome.y; }   // thoát game lúc đang ở lôi đài tỷ võ
     if (MAPS[p.mapId] && MAPS[p.mapId].instance) { c.map = c.pbReturn || 'tuong_duong'; c.x = c.y = 0; if (this.dungeon) this.dungeon.onQuit(p); }   // thoát game trong phó bản
+    if (MAPS[p.mapId] && MAPS[p.mapId].comu && c.comuRun && c.comuRun.ret) { const r = c.comuRun.ret; c.map = r.map; c.x = r.x; c.y = r.y; c.comuRun = null; }   // thoát game trong Cổ Mộ: về đúng chỗ đang luyện
     c.playTime = (c.playTime || 0) + Math.round((Date.now() - p.joinAt) / 1000);
     p.user.lastSeen = Date.now();
     const m = this.maps[p.mapId];
@@ -328,6 +329,7 @@ class World {
     const old = this.maps[p.mapId];
     if (old) { old.players.delete(p); p.socket.leave('map:' + p.mapId); this.io.to('map:' + p.mapId).emit('leave', p.id); }
     if (old && old.def.instance && p.mapId !== mapId && this.dungeon) this.dungeon.onExit(p, p.mapId);
+    if (old && old.def.comu && p.mapId !== mapId && this.comu) this.comu.onExit(p, p.mapId);
     if (p.recall) this.cancelRecall(p);
     if (p.c.riding && NO_MOUNT_MAPS[mapId]) {   // sự kiện (Tống Kim, Hoa Sơn Luận Kiếm, Đại Hội Võ Lâm): xuống ngựa
       p.c.riding = false; this.recalc(p); p.dirtyMe = true;
@@ -351,6 +353,7 @@ class World {
     for (const r of this.duel.ringsOn(mapId)) p.socket.emit('duelRing', r);
     this.market.onEnterMap(p);
     if (this.mining) this.mining.onEnterMap(p);
+    if (this.comu && MAPS[p.mapId] && MAPS[p.mapId].comu) this.comu.sync(p);
     if (this.hoason && mapId === 'hoa_son_ld') this.hoason.sync(p);
     if (this.tongkim && mapId === 'tong_kim') this.tongkim.onEnter(p);
     if (this.siege && mapId === 'cong_thanh') this.siege.onEnter(p);
@@ -882,7 +885,8 @@ class World {
     if (!r || p.dead) return;
     if (!U.removeItemById(p.c, 'scroll_town', 1)) return this.toast(p, 'Hồi Thành Phù đã hết', 'error');
     p.socket.emit('recall', { done: 1 });
-    if (this.dungeon && MAPS[p.mapId].instance) this.dungeon.leave(p, true);
+    if (this.comu && MAPS[p.mapId].comu) this.comu.leave(p, 'recall');
+    else if (this.dungeon && MAPS[p.mapId].instance) this.dungeon.leave(p, true);
     else this.teleport(p, r.to);
     p.dirtyMe = true;
   }
@@ -1440,6 +1444,7 @@ class World {
     p.weakUntil = now + 45000;   // trọng thương: hồi máu chậm trong 45 giây
     p.socket.emit('revived', { here: false, weak: 45000 });
     if (this.dungeon && this.dungeon.onRespawn(p)) return;   // trong phó bản: đứng dậy ở điểm vào
+    if (this.comu && this.comu.onRespawn(p)) return;          // trong Cổ Mộ: đứng dậy tại chỗ, không mất lượt
     const home = this.homeOf(p), t = MAPS[home];
     const s = this.randomSpotNear(t, t.center.x + 0.5, t.center.y + 2.5, 1);
     this.enterMap(p, home, s.x, s.y);
@@ -1477,6 +1482,7 @@ class World {
       if (mon.boss) { p.c.gold += gold; this.features.questProgress(p, 'gold', gold); }
       else if (Math.random() < GOLD_DROP_CHANCE) this.createGoldDrop(mon.mapId, mon.x + U.rand(-14, 14), mon.y + U.rand(-8, 8), Math.round(gold * GOLD_DROP_K), p.userId);   // không rơi mỗi con: đỡ kín màn
       p.c.kills = (p.c.kills || 0) + (mon.boss ? 0 : 1);
+      p.lastKillAt = Date.now();
       p.socket.emit('gain', { exp: gained, gold: mon.boss ? gold : 0, x: mon.x, y: mon.y });
       if (mon.boss) {
         p.c.bossKills = (p.c.bossKills || 0) + 1;
@@ -2711,6 +2717,7 @@ class World {
     if (this.features) this.features.tick(now);
     if (this.party) this.party.tick(now);
     if (this.dungeon && sec) this.dungeon.tick(now);
+    if (this.comu && sec) this.comu.tick(now);
     if (this.tickN % 5 === 0) for (const p of this.players.values()) if (p.c.pet) this.petTick(p, now);
   }
 

@@ -518,6 +518,7 @@
     Captcha.bind(s);
     Travel.bind(s);
     Dungeon.bind(s);
+    Comu.bind(s);
     SectUI.bind(s);
     Pet.bind(s);
     BossFX.bind(s);
