@@ -67,13 +67,11 @@ class Comu {
   open(p) {
     const w = this.w, c = p.c;
     if (p.dead || p.duel || p.trade || !this.trainingMap(p.mapId) || w.escort.carts.has(p.userId)) return w.toast(p, 'Lối vào Cổ Mộ đã khép lại (bạn đã rời bãi luyện công)', 'error');
-    const base = MAPS[baseOf(p.mapId)] || MAPS[p.mapId];
-    const mons = (base.spawns || []).map(s => s.mon).filter(id => MONSTERS[id] && !MONSTERS[id].boss);
-    if (!mons.length) return w.toast(p, 'Lối vào Cổ Mộ đã khép lại…', 'error');
-    const uniq = [...new Set(mons)];
+    const uniq = this.pickMons(c.level);   // quái theo đúng cấp nhân vật (không theo bãi đang đứng)
+    if (!uniq.length) return w.toast(p, 'Lối vào Cổ Mộ đã khép lại…', 'error');
     const mapId = `comu_${seq++}`;
     const ret = { map: p.mapId, x: p.x, y: p.y };
-    const map = generateInstance(mapId, { name: NAME, theme: 'tomb', w: 44, h: 34, seed: 900 + (seq % 50), lv: base.lv, tier: base.tier || 0, home: p.mapId,
+    const map = generateInstance(mapId, { name: NAME, theme: 'tomb', w: 44, h: 34, seed: 900 + (seq % 50), lv: (L => `${Math.min(...L)}-${Math.max(...L)}`)(uniq.map(id => MONSTERS[id].lv)), tier: Math.min(9, Math.floor(c.level / 10)), home: p.mapId,
       spawns: uniq.flatMap(id => [[id, 9], [id, 8]]).slice(0, 6) });
     map.comu = true; map.noPk = true;
     MAPS[mapId] = map;
@@ -88,6 +86,16 @@ class Comu {
     w.toast(p, `🪦 Bước vào ${NAME}! Quái ở đây yếu hơn nhưng cho nhiều kinh nghiệm và ngân lượng. Lối ra sẽ khép sau 30 phút.`, 'reward');
     this.sync(p);
     p.dirtyMe = true; w.db.markDirty();
+  }
+  // 3 loại quái bãi luyện công có cấp gần cấp nhân vật nhất (ưu tiên không cao hơn quá 2 cấp)
+  pickMons(lv) {
+    if (!this.pool) {
+      const s = new Set();
+      for (const m of Object.values(MAPS)) if (!m.town && !m.safe && !m.instance && !m.base && !m.pvp) for (const sp of m.spawns || []) s.add(sp.mon);
+      this.pool = [...s].filter(id => MONSTERS[id] && !MONSTERS[id].boss && !MONSTERS[id].event);
+    }
+    const score = id => { const d = MONSTERS[id].lv - lv; return d > 2 ? d * 3 : Math.abs(d); };
+    return [...this.pool].sort((a, b) => score(a) - score(b)).slice(0, 3);
   }
   sync(p) {
     const I = this.inst.get(p.mapId);
