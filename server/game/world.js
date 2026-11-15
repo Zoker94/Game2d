@@ -2546,11 +2546,10 @@ class World {
       const cost = MGEAR.gearCost(lv), nm = v2 ? def.v2 : def.name;
       if (U.countItem(c, 'mount_ess') < cost.ess) return err(`Cần ${cost.ess} Mã Cụ Tinh Hoa (rã đồ Truyền Kỳ để có)`);
       // ngọc: cấp theo bậc, loại nào cũng được – lấy loại đang có nhiều nhất
-      const G = require('../data/gems'), gemIds = G.GEM_KEYS.map(t => G.gemId(t, cost.gemLv)).sort((x, y) => U.countItem(c, y) - U.countItem(c, x));
-      if (U.countItem(c, gemIds[0]) < cost.gems) return err(`Cần ${cost.gems} viên ngọc cấp ${cost.gemLv} cùng loại (loại nào cũng được)`);
+      if (U.countItem(c, 'stone2') < cost.st2) return err(`Cần ${cost.st2} Thiên Tinh Thạch`);
       if (c.gold < cost.gold) return err(`Cần ${cost.gold.toLocaleString('vi-VN')} lượng`);
       const risky = lv >= 10, useIns = risky && a.insure && U.countItem(c, 'insure') > 0;
-      U.removeItemById(c, 'mount_ess', cost.ess); U.removeItemById(c, gemIds[0], cost.gems); c.gold -= cost.gold;
+      U.removeItemById(c, 'mount_ess', cost.ess); U.removeItemById(c, 'stone2', cost.st2); c.gold -= cost.gold;
       if (useIns) U.removeItemById(c, 'insure', 1);
       const ok = Math.random() < MGEAR.gearRate(lv);
       if (ok) {

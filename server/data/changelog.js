@@ -2,6 +2,13 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '15/11/2026',
+    items: [
+      '🐎 Nâng Mã Cụ thú cưỡi nay dùng Thiên Tinh Thạch (đá vàng) thay cho ngọc khảm: +1–5 cần 1 viên, +6–10 cần 2, +11–12 cần 3, +13–15 cần 4, Mã Cụ V2 +16–20 cần 6. Vẫn cần Mã Cụ Tinh Hoa và ngân lượng như cũ.',
+      '🪦 Cổ Mộ Bí Cảnh: quái nay theo đúng cấp nhân vật (trước theo bãi đang luyện).'
+    ]
+  },
+  {
     date: '14/11/2026',
     items: [
       '🪦 CỔ MỘ BÍ CẢNH: đang luyện công ở bãi quái, mỗi ngày bạn sẽ bất ngờ phát hiện lối vào Cổ Mộ đúng 1 lần – bảng hỏi hiện 60 giây, bấm Vào để bước vào Cổ Mộ riêng của mình. Quái trong Cổ Mộ là bản yếu của quái bãi đang luyện nhưng cho kinh nghiệm ×2,5, và CON NÀO CŨNG RƠI NGÂN LƯỢNG – mỗi đống bằng 5 lần mức gốc của quái. Cổ Mộ chỉ mở 30 phút, hết giờ tự đưa về đúng chỗ đang luyện. Người đang treo máy bằng Vé Treo Máy (VIP) sẽ không gặp Cổ Mộ.'
