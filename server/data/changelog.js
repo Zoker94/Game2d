@@ -5,7 +5,8 @@ const CHANGELOG = [
     date: '15/11/2026',
     items: [
       '🐎 Nâng Mã Cụ thú cưỡi nay dùng Thiên Tinh Thạch (đá vàng) thay cho ngọc khảm: +1–5 cần 1 viên, +6–10 cần 2, +11–12 cần 3, +13–15 cần 4, Mã Cụ V2 +16–20 cần 6. Vẫn cần Mã Cụ Tinh Hoa và ngân lượng như cũ.',
-      '🪦 Cổ Mộ Bí Cảnh: quái nay theo đúng cấp nhân vật (trước theo bãi đang luyện).'
+      '🪦 Cổ Mộ Bí Cảnh: quái nay theo đúng cấp nhân vật (trước theo bãi đang luyện).',
+      '♻️ Người đã trùng sinh đánh Boss như bình thường: Boss không còn trâu hơn / đánh đau hơn theo số lần trùng sinh. Chỉ quái thường và quái tinh anh mới mạnh lên với người trùng sinh.'
     ]
   },
   {
