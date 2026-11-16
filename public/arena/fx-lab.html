@@ -48,9 +48,9 @@ button.on { background: var(--accent); color: #241a00; border-color: var(--accen
 .foot { color: var(--dim); font-size: 13px; }
 .pets { display: flex; flex-direction: column; gap: 8px; }
 .pets h2 { margin: 0; font-family: var(--display); font-size: 11px; color: var(--dim); letter-spacing: 1px; }
-.petgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.petgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
 .petgrid button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 10px; }
-.petgrid canvas { width: 80px; height: 80px; max-width: 100%; image-rendering: pixelated; }
+.petgrid canvas { width: 100%; max-width: 120px; aspect-ratio: 1; image-rendering: pixelated; }
 .petgrid small { color: var(--dim); font-weight: 400; font-size: 12px; }
 .petgrid button.cur { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 @media (prefers-reduced-motion: reduce) { button { transition: none; } }
@@ -63,8 +63,8 @@ button.on { background: var(--accent); color: #241a00; border-color: var(--accen
   </header>
 
   <div class="screen">
-    <canvas id="cv" width="256" height="160"></canvas>
-    <canvas id="glow" width="256" height="160"></canvas>
+    <canvas id="cv" width="768" height="480"></canvas>
+    <canvas id="glow" width="768" height="480"></canvas>
   </div>
 
   <section class="pets">
@@ -152,16 +152,18 @@ function drawBolt(x, pts, glow, outer = '#8a5cff', mid = '#ffe95a') {
   poly(x, pts, outer, 3); poly(x, pts, mid, 2); if (!glow) poly(x, pts, '#ffffff', 1);
 }
 
-// ---------- Painter: ghép hình 3D giả + đổ bóng 5 tầng có dither + viền ngoài + viền giữa các bộ phận ----------
-function painter(w, h) {
-  const px = new Array(w * h).fill(null), zz = new Int16Array(w * h).fill(-1), noLine = new Set();
+// ---------- Painter HD: vẽ trên lưới 40x40 nhưng xuất ra S lần chi tiết (S=3 -> 120x120 điểm ảnh) ----------
+// Đổ bóng 5 tầng có dither, viền ngoài theo hướng sáng, viền giữa các bộ phận, mắt/mũi/miệng vẽ từng điểm ảnh.
+function painter(w, h, S = 1) {
+  const W2 = w * S, H2 = h * S;
+  const px = new Array(W2 * H2).fill(null), zz = new Int16Array(W2 * H2).fill(-1), noLine = new Set();
   let part = 0;
   const hex = s => [1, 3, 5].map(i => parseInt(s.slice(i, i + 2), 16));
   const mix = (a, b, t) => '#' + hex(a).map((v, i) => Math.round(v + (hex(b)[i] - v) * t).toString(16).padStart(2, '0')).join('');
-  const BAYER = [[0, 2], [3, 1]];
-  const set = (x, y, col) => { x = Math.floor(x); y = Math.floor(y); if (x >= 0 && y >= 0 && x < w && y < h) { px[y * w + x] = col; zz[y * w + x] = part; } };
-  const get = (x, y) => (x >= 0 && y >= 0 && x < w && y < h ? px[y * w + x] : null);
-  // fn trả về pháp tuyến 2D [nx, ny] (|n|<=1) nếu điểm nằm trong hình
+  const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
+  const put = (x, y, col) => { x = Math.floor(x); y = Math.floor(y); if (x >= 0 && y >= 0 && x < W2 && y < H2) { px[y * W2 + x] = col; zz[y * W2 + x] = part; } };
+  const at = (x, y) => (x >= 0 && y >= 0 && x < W2 && y < H2 ? px[y * W2 + x] : null);
+  const detail = () => { part++; noLine.add(part); };
   function fill(x0, y0, x1, y1, fn, col, o = {}) {
     part++; if (o.line === false) noLine.add(part);
     const sh = o.sh ?? 1;
@@ -171,17 +173,22 @@ function painter(w, h) {
       let c2 = col;
       if (sh) {
         const nz = Math.sqrt(Math.max(0, 1 - n[0] * n[0] - n[1] * n[1]));
-        const I = -n[0] * 0.45 - n[1] * 0.62 + nz * 0.64 + (BAYER[y & 1][x & 1] - 1.5) * 0.05;
+        const I = -n[0] * 0.45 - n[1] * 0.62 + nz * 0.64 + (BAYER[y & 3][x & 3] / 16 - 0.47) * 0.09;
         c2 = I > 0.93 ? L.hi : I > 0.72 ? L.lt : I > 0.22 ? col : I > -0.3 ? L.dk : L.dd;
       }
-      if (x >= 0 && y >= 0 && x < w && y < h) { px[y * w + x] = c2; zz[y * w + x] = part; }
+      put(x, y, c2);
     }
   }
+  const E = (cx, cy, rx, ry, col, o) => fill(cx - rx, cy - ry, cx + rx, cy + ry, (x, y) => { const a = (x - cx) / rx, b = (y - cy) / ry; return a * a + b * b <= 1 ? [a, b] : null; }, col, o);
   const api = {
     mix,
-    set(x, y, col) { part++; noLine.add(part); set(x, y, col); },
-    ell(cx, cy, rx, ry, col, o) { fill(cx - rx, cy - ry, cx + rx, cy + ry, (x, y) => { const a = (x - cx) / rx, b = (y - cy) / ry; return a * a + b * b <= 1 ? [a, b] : null; }, col, o); },
+    // 1 ô lưới (S x S điểm ảnh)
+    set(x, y, col) { detail(); for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) put(Math.floor(x) * S + i, Math.floor(y) * S + j, col); },
+    // đường mảnh 1 điểm ảnh (râu, lông, vết nứt)
+    line(x0, y0, x1, y1, col) { detail(); const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) * S) || 1; for (let i = 0; i <= n; i++) put((x0 + (x1 - x0) * i / n) * S, (y0 + (y1 - y0) * i / n) * S, col); },
+    ell(cx, cy, rx, ry, col, o) { E(cx * S, cy * S, rx * S, ry * S, col, o); },
     cap(ax, ay, bx, by, r, col, o) {
+      ax *= S; ay *= S; bx *= S; by *= S; r *= S;
       const dx = bx - ax, dy = by - ay, LL = dx * dx + dy * dy || 1;
       fill(Math.min(ax, bx) - r, Math.min(ay, by) - r, Math.max(ax, bx) + r, Math.max(ay, by) + r, (x, y) => {
         const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / LL)), a = (x - ax - dx * t) / r, b = (y - ay - dy * t) / r;
@@ -189,6 +196,7 @@ function painter(w, h) {
       }, col, o);
     },
     tri(p, col, o = {}) {
+      p = p.map(q => [q[0] * S, q[1] * S]);
       const xs = p.map(q => q[0]), ys = p.map(q => q[1]), cx = (xs[0] + xs[1] + xs[2]) / 3, cy = (ys[0] + ys[1] + ys[2]) / 3;
       const rr = Math.max(...xs) - Math.min(...xs) + Math.max(...ys) - Math.min(...ys) || 1;
       fill(Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys), (x, y) => {
@@ -196,35 +204,85 @@ function painter(w, h) {
         return s ? [(x - cx) / rr, (y - cy) / rr] : null;
       }, col, Object.assign({ sh: 1 }, o));
     },
-    // mắt to kiểu dễ thương: tròng tối, mống mắt màu, 2 điểm sáng; blink = mí khép
+    // Mắt HD: viền + mí trên dày, mống mắt chuyển 3 màu, đồng tử, lông mi đuôi mắt, đốm sáng lớn/nhỏ
     eye(x, y, ew, eh, iris, blink) {
-      if (blink) { part++; noLine.add(part); for (let i = -Math.floor(ew / 2); i <= Math.floor((ew - 1) / 2); i++) set(x + i, y + 1, '#1a1426'); return; }
-      api.ell(x, y, ew / 2, eh / 2, '#1a1426', { sh: 0, line: false });
-      api.ell(x, y + eh * 0.22, ew / 2 * 0.72, eh / 2 * 0.5, iris, { sh: 0, line: false });
-      part++; noLine.add(part);
-      set(x - ew / 4, y - eh / 4, '#ffffff'); if (ew >= 3.5) { set(x - ew / 4 + 1, y - eh / 4, '#ffffff'); set(x - ew / 4, y - eh / 4 + 1, '#ffffff'); }
-      set(x + ew / 4, y + eh / 4, mix(iris, '#ffffff', 0.6));
+      const X = x * S, Y = y * S, rx = ew * S / 2, ry = eh * S / 2, dark = '#1a1426';
+      detail();
+      if (blink) {
+        for (let i = -Math.ceil(rx); i <= Math.ceil(rx); i++) { const t = i / rx, yy = Y + ry * 0.3 - (1 - t * t) * ry * 0.45; put(X + i, yy, dark); put(X + i, yy + 1, dark); }
+        put(X + rx + 1, Y + ry * 0.3 - 1, dark); put(X + rx + 2, Y + ry * 0.3 - 2, dark);
+        return;
+      }
+      for (let j = -Math.ceil(ry); j <= Math.ceil(ry); j++) for (let i = -Math.ceil(rx); i <= Math.ceil(rx); i++) {
+        const d = (i / rx) ** 2 + (j / ry) ** 2; if (d > 1) continue;
+        const t = (j + ry) / (2 * ry);
+        let col = d > 0.7 ? dark : t < 0.38 ? mix(iris, '#0c0818', 0.5) : t < 0.7 ? iris : mix(iris, '#ffffff', 0.38);
+        if ((i / (rx * 0.42)) ** 2 + ((j - ry * 0.08) / (ry * 0.5)) ** 2 < 1) col = '#100a18';
+        put(X + i, Y + j, col);
+      }
+      for (let i = -Math.ceil(rx); i <= Math.ceil(rx); i++) { const t = Math.min(1, Math.abs(i / rx)), yy = Y - ry * Math.sqrt(1 - t * t); put(X + i, yy, dark); put(X + i, yy - 1, dark); }
+      put(X + rx, Y - ry * 0.55, dark); put(X + rx + 1, Y - ry * 0.75, dark); put(X + rx + 2, Y - ry * 0.95, dark);
+      const hx = X - rx * 0.32, hy = Y - ry * 0.32, hr = Math.max(1.2, rx * 0.3), hv = Math.max(1.2, ry * 0.26);
+      for (let j = -Math.ceil(hv); j <= hv; j++) for (let i = -Math.ceil(hr); i <= hr; i++) if ((i / hr) ** 2 + (j / hv) ** 2 <= 1) put(hx + i, hy + j, '#ffffff');
+      put(X + rx * 0.35, Y + ry * 0.38, '#ffffff'); put(X + rx * 0.35 + 1, Y + ry * 0.38, '#ffffff');
+      put(X - rx * 0.1, Y + ry * 0.55, mix(iris, '#ffffff', 0.7));
+    },
+    // Mắt mèo phát sáng: mống vàng chuyển màu, đồng tử khe dọc
+    catEye(x, y, ew, eh, blink) {
+      const X = x * S, Y = y * S, rx = ew * S / 2, ry = eh * S / 2;
+      detail();
+      if (blink) { for (let i = -Math.ceil(rx); i <= rx; i++) put(X + i, Y + Math.abs(i) * 0.3, '#ffe066'); return; }
+      for (let j = -Math.ceil(ry); j <= ry; j++) for (let i = -Math.ceil(rx); i <= rx; i++) {
+        const d = (i / rx) ** 2 + (j / ry) ** 2; if (d > 1) continue;
+        let col = d > 0.75 ? '#a86a10' : j < 0 ? '#ffd23a' : '#fff2a0';
+        if (Math.abs(i) <= Math.max(0.6, rx * 0.18) * (1 - (j / ry) ** 2 * 0.6)) col = '#120a18';
+        put(X + i, Y + j, col);
+      }
+      put(X - rx * 0.45, Y - ry * 0.45, '#ffffff'); put(X - rx * 0.45 + 1, Y - ry * 0.45, '#ffffff'); put(X - rx * 0.45, Y - ry * 0.45 + 1, '#ffffff');
+    },
+    // Mũi: khối nhỏ có bóng + đốm sáng
+    nose(x, y, nw, nh, col) {
+      E(x * S, y * S, nw * S / 2, nh * S / 2, col, { line: false });
+      detail(); put(x * S - nw * S * 0.18, y * S - nh * S * 0.2, mix(col, '#ffffff', 0.65));
+    },
+    // Miệng: 'smile' cong, 'w' kiểu mèo, 'open' há miệng có lưỡi
+    mouth(x, y, kind = 'smile', col = '#2a1a30') {
+      const X = x * S, Y = y * S; detail();
+      if (kind === 'smile') { const k = S * 1.3; for (let i = -k; i <= k; i++) put(X + i, Y + (1 - (i / k) ** 2) * S * 0.6, col); }
+      else if (kind === 'w') { const k = S * 1.1; for (let i = 0; i <= k; i++) { const yy = Y + Math.sin(i / k * Math.PI) * S * 0.55; put(X - i, yy, col); put(X + i, yy, col); } }
+      else {
+        const rx = S * 0.9, ry = S * 0.8;
+        for (let j = -Math.ceil(ry); j <= ry; j++) for (let i = -Math.ceil(rx); i <= rx; i++) { const d = (i / rx) ** 2 + (j / ry) ** 2; if (d <= 1) put(X + i, Y + j, d > 0.6 ? col : j > ry * 0.1 ? '#ff7a96' : '#4a1a2a'); }
+      }
+    },
+    // Má hồng: pha màu lên da + 3 vệt sáng chéo
+    blush(x, y, rx, ry) {
+      detail(); const X = x * S, Y = y * S, RX = rx * S, RY = ry * S;
+      for (let j = -Math.ceil(RY); j <= RY; j++) for (let i = -Math.ceil(RX); i <= RX; i++) {
+        if ((i / RX) ** 2 + (j / RY) ** 2 > 1) continue;
+        const cur = at(X + i, Y + j); if (!cur) continue;
+        const stripe = ((i - j + 64) % 4) === 0;
+        put(X + i, Y + j, stripe ? mix(cur, '#ffffff', 0.55) : mix(cur, '#ff7a9e', 0.5));
+      }
     },
     canvas(tint) {
       const out = px.slice();
-      // viền giữa các bộ phận: pixel nằm sau, giáp bộ phận nằm trước thì tối đi
-      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-        const i = y * w + x; if (!px[i]) continue;
+      for (let y = 0; y < H2; y++) for (let x = 0; x < W2; x++) {
+        const i = y * W2 + x; if (!px[i]) continue;
         for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-          const X = x + dx, Y = y + dy; if (X < 0 || Y < 0 || X >= w || Y >= h) continue;
-          const j = Y * w + X;
-          if (px[j] && zz[j] > zz[i] && !noLine.has(zz[j]) && !noLine.has(zz[i])) { out[i] = mix(px[i], '#1a0c30', 0.45); break; }
+          const X = x + dx, Y = y + dy; if (X < 0 || Y < 0 || X >= W2 || Y >= H2) continue;
+          const j = Y * W2 + X;
+          if (px[j] && zz[j] > zz[i] && !noLine.has(zz[j]) && !noLine.has(zz[i])) { out[i] = mix(px[i], '#1a0c30', 0.5); break; }
         }
       }
-      // viền ngoài: phía trên-trái nhạt hơn (đón sáng), dưới-phải đậm
-      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-        if (px[y * w + x]) continue;
-        const below = get(x, y + 1) || get(x + 1, y), above = get(x, y - 1) || get(x - 1, y);
+      for (let y = 0; y < H2; y++) for (let x = 0; x < W2; x++) {
+        if (px[y * W2 + x]) continue;
+        const below = at(x, y + 1) || at(x + 1, y), above = at(x, y - 1) || at(x - 1, y);
         const nb = below || above; if (!nb) continue;
-        out[y * w + x] = mix(nb, '#120a1e', below && !above ? 0.62 : 0.84);
+        out[y * W2 + x] = mix(nb, '#120a1e', below && !above ? 0.62 : 0.86);
       }
-      const k = document.createElement('canvas'); k.width = w; k.height = h;
-      const q = k.getContext('2d'), id = q.createImageData(w, h);
+      const k = document.createElement('canvas'); k.width = W2; k.height = H2;
+      const q = k.getContext('2d'), id = q.createImageData(W2, H2);
       out.forEach((col, i) => { if (!col) return; id.data.set([...hex(tint || col), 255], i * 4); });
       q.putImageData(id, 0, 0); return k;
     },
@@ -249,8 +307,9 @@ const PETS = [
       p.ell(23, 15.5 + hb, 9.5, 8.5, B);
       p.ell(20, 9 + hb, 1.6, 1.2, '#9ec0ff', { sh: 0, line: false });
       p.eye(27.5, 15.5 + hb, 4, 5, '#2a6ad8', a.blink); p.eye(20.5, 15.5 + hb, 3, 4.4, '#2a6ad8', a.blink);
-      p.ell(30.5, 20 + hb, 1.6, 1, '#ff9ab8', { sh: 0, line: false }); p.ell(18, 20 + hb, 1.1, 0.8, '#ff9ab8', { sh: 0, line: false });
-      p.set(24, 20.5 + hb, '#2a1a40'); p.set(25, 21.5 + hb, '#2a1a40'); p.set(26, 20.5 + hb, '#2a1a40');
+      p.blush(30.5, 20.3 + hb, 1.9, 1.1); p.blush(18, 20.3 + hb, 1.3, 0.9);
+      p.nose(29.5, 19 + hb, 1.6, 1.1, '#3a3070'); p.mouth(28, 20.6 + hb, 'w');
+      p.line(23, 8.2 + hb, 22, 6.6 + hb, '#3f5fd0'); p.line(24, 8 + hb, 24.2, 6.2 + hb, '#3f5fd0');
       p.cap(27, 25, 29.5, 27.5, 1.4, B);
     } },
   { id: 'cinder', n: 'Cinder', el: 'Lửa', col: '#f08a34', mouth: [36, 21], glow: [7, 12, '#ffb02a'],
@@ -269,7 +328,9 @@ const PETS = [
       p.set(20, 2 + hb, '#ffd23a'); p.set(32, 3 + hb, '#ffd23a');
       p.ell(27, 17 + hb, 7.5, 6.5, O);
       p.tri([[21, 18 + hb], [25, 21 + hb], [19, 24 + hb]], Cr);
-      p.ell(32.5, 20 + hb, 3.6, 2.6, Cr); p.ell(35.6, 19 + hb, 1, 0.8, '#3a1a1a', { sh: 0, line: false });
+      p.ell(32.5, 20 + hb, 3.6, 2.6, Cr); p.nose(35.5, 19 + hb, 2, 1.5, '#3a1a1a'); p.mouth(34, 21.4 + hb, 'smile');
+      p.blush(30, 20.5 + hb, 1.3, 0.8);
+      for (const [x0, y0, x1, y1] of [[20, 21, 18.5, 22.5], [21, 23, 19.5, 24.5], [27, 23.5, 26.5, 25.5], [25, 24.5, 24.5, 26.5]]) p.line(x0, y0 + hb, x1, y1 + hb, '#e8d0b0');
       p.eye(29, 16 + hb, 3, 4, '#d04a10', a.blink); p.eye(24, 16 + hb, 2.2, 3.4, '#d04a10', a.blink);
       p.set(27, 12 + hb, '#ffd23a'); p.set(27, 13 + hb, '#ffe680');
     } },
@@ -287,21 +348,27 @@ const PETS = [
       for (const [x, y] of [[18.5, 9], [21.5, 9], [20, 7.5], [20, 10.5]]) p.ell(x, y + hb, 1.5, 1.5, '#ff8fb0', { line: false });
       p.ell(20, 9 + hb, 1, 1, '#ffe066', { sh: 0, line: false });
       p.eye(26.5, 16 + hb, 3.6, 4.4, '#3a8a2a', a.blink); p.eye(20, 16 + hb, 2.6, 3.8, '#3a8a2a', a.blink);
-      p.ell(29.5, 20 + hb, 1.5, 0.9, '#ff9ab8', { sh: 0, line: false });
-      p.set(25, 20 + hb, '#2a1a20'); p.set(26, 21 + hb, '#2a1a20');
+      p.blush(29.5, 20 + hb, 1.7, 1); p.blush(18.5, 20 + hb, 1.1, 0.8);
+      p.nose(30, 18.6 + hb, 1.3, 1, '#ff8aa8'); p.mouth(29, 19.9 + hb, 'w');
+      p.line(15.5, 6 + hb, 13.5, 3 + hb, '#2e7a2a'); p.line(26, 6 + hb, 27.2, 3 + hb, '#2e7a2a');
       p.cap(26.5, 25, 29, 27, 1.3, G);
     } },
   { id: 'zap', n: 'Zapjelly', el: 'Điện', col: '#ffe25a', mouth: [23, 3], glow: [22.5, 2.5, '#fff07a'], float: true,
     f(p, a) {
       const Y = '#ffe25a', R = '#f0b830';
-      for (let i = 0; i < 6; i++) { const x0 = 12.5 + i * 3, sw = Math.sin(a.s * 2 + i) * 1.6; p.cap(x0, 24, x0 + sw, 35, 0.8, R, { sh: 0 }); p.set(x0 + sw, 36, '#fff6a0'); }
+      for (let i = 0; i < 6; i++) {
+        const x0 = 12.5 + i * 3, len = i % 2 ? 11 : 13; let px0 = x0, py0 = 24;
+        for (let k = 1; k <= 4; k++) { const y1 = 24 + len * k / 4, x1 = x0 + Math.sin(a.s * 2 + i + k * 1.1) * (0.5 + k * 0.4); p.cap(px0, py0, x1, y1, 0.75 - k * 0.1, k % 2 ? R : '#ffd84a'); px0 = x1; py0 = y1; }
+        p.ell(px0, py0 + 0.3, 0.7, 0.7, '#fff6a0', { sh: 0 });
+      }
       p.cap(20, 8, 22, 3, 0.7, R);
       p.ell(20, 24, 11, 2.8, R);
       p.ell(20, 17 - a.b * 0.3, 11, 9.5 + a.b * 0.4, Y);
       p.ell(15.5, 12.5, 3.5, 2.4, '#fffbd0', { sh: 0, line: false });
       for (const [x, y] of [[25, 9], [24, 10], [23, 11], [24, 12], [25, 12], [24, 13], [23, 14]]) p.set(x, y, '#b48cff');
       p.eye(16, 19, 3, 3.8, '#7a4ad0', a.blink); p.eye(24, 19, 3, 3.8, '#7a4ad0', a.blink);
-      p.set(20, 21.5, '#3a2040'); p.ell(13, 21.5, 1.2, 0.8, '#ffa0c0', { sh: 0, line: false }); p.ell(27, 21.5, 1.2, 0.8, '#ffa0c0', { sh: 0, line: false });
+      p.mouth(20, 22.2, 'open'); p.blush(12.6, 21.6, 1.5, 0.9); p.blush(27.4, 21.6, 1.5, 0.9);
+      for (const [x, y] of [[13, 15], [26, 14], [21, 11.5], [17, 24]]) p.line(x, y, x + 0.4, y, '#fffbd0');
       p.ell(22.5, 2.5, 1.6, 1.6, '#ffffff', { sh: 0 });
     } },
   { id: 'pebble', n: 'Pebblo', el: 'Đá', col: '#a08c72', mouth: [36, 30], glow: [20, 9, '#7fd8f8'],
@@ -316,7 +383,8 @@ const PETS = [
       p.tri([[17, 13], [20.5, 12], [19.5, 4]], '#7fd8f8'); p.tri([[20.5, 13], [23, 14], [23.5, 7.5]], '#a8ecff');
       p.ell(31, 28 + hb, 5.5, 5, Sk);
       p.eye(33, 27 + hb, 2.6, 3.4, '#5a3a20', a.blink);
-      p.ell(35, 30.5 + hb, 1.2, 0.8, '#ff9a9a', { sh: 0, line: false }); p.set(35, 31.5 + hb, '#3a2a1a');
+      p.blush(34.5, 30 + hb, 1.3, 0.8); p.nose(36, 27.8 + hb, 0.9, 0.7, '#6a5a44'); p.mouth(35, 31 + hb, 'smile');
+      for (const [x0, y0, x1, y1] of [[10, 20, 12, 23], [18, 16, 19.5, 19], [24, 20, 25.5, 22], [14, 27.5, 15.5, 29]]) p.line(x0, y0, x1, y1, '#4a3e30');
     } },
   { id: 'wisp', n: 'Wispurr', el: 'Ma', col: '#6a4ad8', mouth: [31, 18], glow: [4, 20, '#c49bff'], float: true,
     f(p, a) {
@@ -328,14 +396,10 @@ const PETS = [
       p.tri([[16, 11 + hb], [20, 9 + hb], [15, 2 + hb]], Pu); p.tri([[16.6, 10 + hb], [19, 9 + hb], [15.8, 4.5 + hb]], Li, { sh: 0, line: false });
       p.tri([[25, 9 + hb], [29, 11 + hb], [30, 2 + hb]], Pu); p.tri([[25.8, 9 + hb], [28.4, 10 + hb], [29.2, 4.5 + hb]], Li, { sh: 0, line: false });
       p.ell(23, 15 + hb, 8.5, 7, Pu);
-      if (a.blink) { p.set(20, 16 + hb, '#ffe066'); p.set(21, 16 + hb, '#ffe066'); p.set(26, 16 + hb, '#ffe066'); p.set(27, 16 + hb, '#ffe066'); p.set(28, 16 + hb, '#ffe066'); }
-      else {
-        p.ell(20.8, 15 + hb, 1.8, 2.3, '#ffe066', { sh: 0, line: false }); p.ell(27.2, 15 + hb, 2.2, 2.7, '#ffe066', { sh: 0, line: false });
-        for (let y = -1; y <= 1; y++) { p.set(20.8, 15 + y + hb, '#1a1020'); p.set(27.2, 15 + y + hb, '#1a1020'); }
-        p.set(26, 13.5 + hb, '#ffffff');
-      }
-      p.set(25, 19 + hb, '#2a1040'); p.set(26, 19.5 + hb, '#2a1040'); p.set(27, 19 + hb, '#2a1040');
-      for (const [x, y] of [[31, 17], [32, 16.5], [31, 19], [32, 19.5]]) p.set(x, y + hb, Li);
+      p.catEye(20.6, 15 + hb, 3, 4, a.blink); p.catEye(27.2, 15 + hb, 3.8, 4.8, a.blink);
+      p.nose(29.6, 18.2 + hb, 1.2, 0.9, '#ff8ac0'); p.mouth(29, 19.2 + hb, 'w', '#1a0c30');
+      p.blush(30, 17.8 + hb, 1.2, 0.7);
+      for (const [x0, y0, x1, y1] of [[30.5, 18.6, 34.5, 17.4], [30.5, 19.4, 34.5, 19.8], [17, 18.5, 13.5, 17.8], [17, 19.3, 13.5, 19.8]]) p.line(x0, y0 + hb, x1, y1 + hb, Li);
       p.ell(23, 22.2, 5.5, 1.3, '#ff5c8a', { sh: 0 }); p.ell(24, 23.8, 1.5, 1.5, '#ffd23a');
     } },
   { id: 'frost', n: 'Frostling', el: 'Băng', col: '#9ad8f0', mouth: [35, 18], glow: [24, 3, '#d8f8ff'],
@@ -352,9 +416,10 @@ const PETS = [
       p.tri([[29, 11 + hb], [31, 12 + hb], [33, 2.5 + hb]], '#bff0ff'); p.tri([[31.4, 6.5 + hb], [32.4, 7.5 + hb], [35.5, 5 + hb]], '#bff0ff');
       p.tri([[24, 14.5 + hb], [25.5, 12.5 + hb], [19.5, 11 + hb]], I); p.tri([[23.5, 13.5 + hb], [24.8, 12.8 + hb], [21, 11.8 + hb]], '#ffd6e8', { sh: 0, line: false });
       p.ell(28.5, 15 + hb, 4.8, 4.3, I);
-      p.ell(32.6, 17 + hb, 2.8, 2, Wh); p.ell(35.2, 16.5 + hb, 0.9, 0.7, '#2a4a6a', { sh: 0, line: false });
+      p.ell(32.6, 17 + hb, 2.8, 2, Wh); p.nose(35, 16.4 + hb, 1.5, 1.1, '#2a4a6a'); p.mouth(33.6, 18.3 + hb, 'smile');
+      for (const [x, y] of [[24, 4], [32, 4], [25.5, 9], [30, 8]]) p.line(x, y + hb, x + 0.35, y + hb, '#ffffff');
       p.eye(29.5, 14.5 + hb, 2.6, 3.4, '#2a7ab0', a.blink);
-      p.ell(31, 18 + hb, 1, 0.7, '#ffb0c8', { sh: 0, line: false });
+      p.blush(31, 18 + hb, 1.2, 0.7);
     } },
 ];
 
@@ -363,15 +428,15 @@ for (const pet of PETS) {
   pet.frames = []; pet.blinks = [];
   for (let k = 0; k < 8; k++) {
     const ph = k / 8 * TAU;
-    for (const blink of [false, true]) { const p = painter(40, 40); pet.f(p, { b: Math.sin(ph), s: Math.sin(ph + 0.6), blink }); (blink ? pet.blinks : pet.frames).push(p.canvas()); }
+    for (const blink of [false, true]) { const p = painter(40, 40, 3); pet.f(p, { b: Math.sin(ph), s: Math.sin(ph + 0.6), blink }); (blink ? pet.blinks : pet.frames).push(p.canvas()); }
   }
-  const pw = painter(40, 40); pet.f(pw, { b: 0, s: 0, blink: false }); pet.white = pw.canvas('#ffffff');
+  const pw = painter(40, 40, 3); pet.f(pw, { b: 0, s: 0, blink: false }); pet.white = pw.canvas('#ffffff');
 }
 let pet = PETS[0];
 
 // Hình nộm luyện tập
 function makeDummy(tint) {
-  const p = painter(22, 32), Wd = '#8a5a34', S = '#d8b060';
+  const p = painter(22, 32, 3), Wd = '#8a5a34', S = '#d8b060';
   p.cap(11.5, 22, 11.5, 30, 1.5, Wd); p.ell(11.5, 30.5, 5, 1.5, '#6a4428');
   p.cap(4, 12, 19, 12, 1.4, Wd);
   p.ell(11.5, 16, 6, 8, S);
@@ -744,7 +809,8 @@ function drawPart(k, p, glow) {
 
 function render() {
   const sx = shake ? Math.round(rnd(-shake, shake)) : 0, sy = shake ? Math.round(rnd(-shake, shake)) : 0;
-  c.setTransform(1, 0, 0, 1, sx, sy); g.setTransform(1, 0, 0, 1, sx, sy);
+  c.setTransform(3, 0, 0, 3, sx * 3, sy * 3); g.setTransform(3, 0, 0, 3, sx * 3, sy * 3);
+  c.imageSmoothingEnabled = false; g.imageSmoothingEnabled = false;
   c.clearRect(-8, -8, W + 16, H + 16); g.clearRect(-8, -8, W + 16, H + 16);
   c.drawImage(ground, 0, 0); c.drawImage(decal, 0, 0);
   // bóng đổ
@@ -752,12 +818,12 @@ function render() {
   c.beginPath(); c.ellipse(C.x + C.ox, C.gy, Math.max(4, 11 + (C.oy + petY()) * 0.25), 2.5, 0, 0, TAU); c.fill();
   c.beginPath(); c.ellipse(T.x + T.ox * 0.3, T.gy, 9 - T.lift * 0.2, 2.5, 0, 0, TAU); c.fill();
   // bóng mờ khi lao
-  for (const gh of C.ghost) { c.globalAlpha = gh.life * 2; c.drawImage(pet.white, Math.round(gh.x - 20), C.gy - 38); }
+  for (const gh of C.ghost) { c.globalAlpha = gh.life * 2; c.drawImage(pet.white, Math.round((gh.x - 20) * 3) / 3, C.gy - 38, 40, 40); }
   c.globalAlpha = 1;
   // hình nộm
   const tx = Math.round(T.x + T.ox - 11), ty = Math.round(T.gy + T.oy - T.lift - 31);
-  c.drawImage(SPR.dum, tx, ty);
-  if (T.flash > 0) { c.globalAlpha = 0.85; c.drawImage(SPR.dumW, tx, ty); c.globalAlpha = 1; }
+  c.drawImage(SPR.dum, tx, ty, 22, 32);
+  if (T.flash > 0) { c.globalAlpha = 0.85; c.drawImage(SPR.dumW, tx, ty, 22, 32); c.globalAlpha = 1; }
   if (T.ice > 0) {
     const a = Math.min(1, T.ice * 5);
     c.fillStyle = `rgba(150,230,255,${0.45 * a})`; c.fillRect(tx - 2, ty - 2, 26, 36);
@@ -768,8 +834,8 @@ function render() {
   if (T.shock > 0 && Math.random() < 0.6) { const ch = chest(); const pts = boltPts(ch.x + rnd(-10, 10), ch.y + rnd(-14, 4), ch.x + rnd(-10, 10), ch.y + rnd(-4, 14), 8, 3); drawBolt(c, pts, false); drawBolt(g, pts, true); }
   // nhân vật
   const fi = Math.floor(clock * 6) % 8, blinking = (clock % 3.2) < 0.13;
-  const px0 = Math.round(C.x + C.ox - 20), py0 = Math.round(C.gy + C.oy + petY() - 38);
-  c.drawImage((blinking ? pet.blinks : pet.frames)[fi], px0, py0);
+  const px0 = Math.round((C.x + C.ox - 20) * 3) / 3, py0 = Math.round((C.gy + C.oy + petY() - 38) * 3) / 3;
+  c.drawImage((blinking ? pet.blinks : pet.frames)[fi], px0, py0, 40, 40);
   if (pet.glow) disc(g, px0 + pet.glow[0], py0 + pet.glow[1], 2.5, pet.glow[2]);
   // hiệu ứng
   for (const e of ents) if (e.draw) { e.draw.call(e, c, false, e); e.draw.call(e, g, true, e); }
@@ -782,8 +848,8 @@ function render() {
   for (const p of pops) { c.globalAlpha = Math.min(1, p.life * 3); num(p.t, p.x, p.y, p.c); }
   c.globalAlpha = 1;
   c.setTransform(1, 0, 0, 1, 0, 0);
-  if (dim > 0) { c.fillStyle = `rgba(${dimCol},${dim})`; c.fillRect(0, 0, W, H); }
-  if (flash > 0) { c.globalAlpha = Math.min(0.7, flash); c.fillStyle = flashCol; c.fillRect(0, 0, W, H); c.globalAlpha = 1; }
+  if (dim > 0) { c.fillStyle = `rgba(${dimCol},${dim})`; c.fillRect(0, 0, cv.width, cv.height); }
+  if (flash > 0) { c.globalAlpha = Math.min(0.7, flash); c.fillStyle = flashCol; c.fillRect(0, 0, cv.width, cv.height); c.globalAlpha = 1; }
 }
 
 let last = performance.now(), clock = 0;
@@ -808,12 +874,12 @@ document.getElementById('bBloom').onclick = e => { gl.classList.toggle('off'); e
 document.getElementById('bSound').onclick = e => { soundOn = !soundOn; e.currentTarget.textContent = soundOn ? '🔊 Âm thanh' : '🔇 Âm thanh'; e.currentTarget.classList.toggle('on', soundOn); if (soundOn) sfx('hit'); };
 
 const petBox = document.getElementById('pets');
-petBox.innerHTML = PETS.map((q, i) => `<button data-i="${i}" class="${i ? '' : 'cur'}"><canvas width="40" height="40"></canvas><span>${q.n}</span><small>${q.el}</small></button>`).join('');
+petBox.innerHTML = PETS.map((q, i) => `<button data-i="${i}" class="${i ? '' : 'cur'}"><canvas width="120" height="120"></canvas><span>${q.n}</span><small>${q.el}</small></button>`).join('');
 const cards = [...petBox.querySelectorAll('canvas')].map(k => k.getContext('2d'));
 petBox.querySelectorAll('button').forEach(b => b.onclick = () => { pet = PETS[+b.dataset.i]; petBox.querySelectorAll('button').forEach(x => x.classList.toggle('cur', x === b)); });
 function drawCards() {
   const fi = Math.floor(clock * 6) % 8;
-  PETS.forEach((q, i) => { const k = cards[i], bl = ((clock + i * 0.7) % 3.2) < 0.13; k.clearRect(0, 0, 40, 40); k.drawImage((bl ? q.blinks : q.frames)[fi], 0, q.float ? Math.round(Math.sin(clock * 3 + i) * 1.5) - 1 : 0); });
+  PETS.forEach((q, i) => { const k = cards[i], bl = ((clock + i * 0.7) % 3.2) < 0.13; k.clearRect(0, 0, 120, 120); k.drawImage((bl ? q.blinks : q.frames)[fi], 0, q.float ? Math.round(Math.sin(clock * 3 + i) * 4) - 3 : 0); });
 }
 
 play(0);
