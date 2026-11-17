@@ -5,6 +5,11 @@ const CHANGELOG = [
     date: '17/11/2026',
     items: [
       '⚔️ TRANG BỊ BẬC MỚI: Thái Cổ (cấp 100), Hồng Hoang (cấp 110), Vô Thượng (cấp 120) cho mọi ô trang bị và vũ khí 9 môn phái, đủ 4 phẩm chất Thường / Hiếm / VIP / Truyền Kỳ, kèm Rương Thủ Lĩnh bậc mới và áo choàng 3 màu mới. Quái / boss cấp 100+ rơi đồ bậc mới; đồ Vô Thượng (cấp 120) rơi từ quái / boss cấp 115 trở lên.',
+      '⚔️ HUYẾT CHIẾN (nút ⚔️ Huyết Chiến trên menu): bị người khác hạ lúc đang Luyện công thì kẻ đó vào danh sách KẺ THÙ – bạn đánh được kẻ thù ở mọi bãi luyện công mà không cần bật cờ PK, hạ lại được là BÁO THÙ (không tính tội, thêm điểm). Xem được kẻ thù đang online ở đâu.',
+      '🩸 Điểm Huyết Chiến: hạ người chơi ngang tầm (từ cấp 30, lực chiến đối thủ ≥ 70% của bạn) được điểm đổi Huyền / Thiên Tinh Thạch, Mã Cụ Tinh Hoa, Rương Thủ Lĩnh, Bảo Hiểm Phù, Lệnh Bài Xoá Tội. Thêm bảng TOP ĐỒ SÁT vào Đua Top Tuần – hạng 1 nhận danh hiệu 【Huyết Sát Vô Địch】.',
+      '💰 TRUY NÃ: treo thưởng ngân lượng lên đầu bất kỳ ai (tối thiểu 100.000 lượng, phí 10%), ai hạ được người đó nhận toàn bộ. 72 giờ không ai hạ được thì hoàn tiền.',
+      '🌙 GIỜ HỖN CHIẾN 21:00–21:30 mỗi tối: mọi bãi luyện công PK tự do cho người từ cấp 30, không tính tội, Điểm Huyết Chiến x2. Khu VIP vẫn an toàn.',
+      '🔥 Boss chỉ xuất hiện ở các khu đang mở; khi quản trị viên đóng khu, boss ở khu đó tự chuyển sang khu đang mở.',
       '🔴 Thần Binh và Thần Khí được nâng chỉ số theo bậc cao nhất mới – vẫn mạnh hơn đồ Truyền Kỳ cấp 120 ở mọi chỉ số (công, thủ, sinh lực, chí mạng).'
     ]
   },

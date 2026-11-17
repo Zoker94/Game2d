@@ -330,6 +330,8 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     }
     if (b.ipLimit != null) c.ipLimit = U.clamp(+b.ipLimit | 0, 0, 50);
     if (b.devLimit != null) c.devLimit = U.clamp(+b.devLimit | 0, 0, 50);
+    if (b.hcHour != null) c.hcHour = U.clamp(+b.hcHour | 0, 0, 23);   // Giờ Hỗn Chiến (giờ VN)
+    if (b.hcOff != null) c.hcOff = !!b.hcOff;
     if (b.pkExpBonus != null) c.pkExpBonus = U.clamp(+b.pkExpBonus | 0, 0, 300);   // % kinh nghiệm cộng thêm ở khu thường (có PK) so với khu VIP
     if (b.tradeLv != null) c.tradeLv = U.clamp(+b.tradeLv | 0, 0, 200);   // cấp tối thiểu để giao dịch / chợ / nhận thưởng mời bạn (0 = không giới hạn)   // số tài khoản tối đa được TẠO trên 1 thiết bị (0 = không giới hạn)   // số tài khoản tối đa cùng lúc / 1 IP (0 = không giới hạn)
     if (b.autoEvents != null) c.autoEvents = !!b.autoEvents;

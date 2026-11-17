@@ -14,7 +14,8 @@ const BOARDS = [
   { k: 'level', name: 'Top Cấp Độ', icon: '📈', unit: 'cấp tăng trong tuần', title: 'wk_level' },
   { k: 'power', name: 'Top Lực Chiến', icon: '⚔️', unit: 'lực chiến tăng trong tuần', title: 'wk_power' },
   { k: 'boss', name: 'Top Săn Boss', icon: '👹', unit: 'boss', title: 'wk_boss' },
-  { k: 'topup', name: 'Top Nạp Tuần', icon: '💎', unit: 'Nguyên Bảo', title: 'wk_topup' }
+  { k: 'topup', name: 'Top Nạp Tuần', icon: '💎', unit: 'Nguyên Bảo', title: 'wk_topup' },
+  { k: 'pk', name: 'Top Đồ Sát', icon: '🩸', unit: 'lần hạ đối thủ ngang tầm', title: 'wk_pk' }
 ];
 const { TITLES } = require('../data/titles');
 const REWARD = [
@@ -60,7 +61,7 @@ class WeekRace {
       const g = k === 'level' ? (nxt ? nxt.lv0 : lvTotal(c)) - wk.lv0 : (nxt ? nxt.pw0 : c.power || 0) - (wk.pw0 || 0);
       return g > 0 ? g : 0;
     }
-    return wk ? (k === 'boss' ? wk.boss || 0 : wk.knb || 0) : 0;
+    return wk ? (k === 'boss' ? wk.boss || 0 : k === 'pk' ? wk.pk || 0 : wk.knb || 0) : 0;
   }
   shown(c, k, w) {
     if (k === 'level' && w < GAIN_FROM) return c.level;

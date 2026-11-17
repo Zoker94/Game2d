@@ -808,6 +808,35 @@
     },
     // Đồ Long Diệt Ma (Top Săn Boss): sừng quỷ cong hai bên khung, lửa tím cháy dưới chân, ba vết vuốt loé chém qua,
     // ngọc hồn tím bay vòng, khung đen tím viền tím sáng, chữ tím trắng
+    // Huyết Sát Vô Địch (Top Đồ Sát): khung đen huyết viền đỏ, giọt máu nhỏ xuống, hai lưỡi liềm bắt chéo, sương máu bốc lên
+    wk_pk(ctx, T, x, y, t, lite) {
+      const p = box(T, x, y);
+      for (const s of [-1, 1]) {   // lưỡi liềm chéo phía sau
+        ctx.save(); ctx.translate(x + s * (p.w / 2 + 2), y); ctx.rotate(s * -0.5);
+        ctx.strokeStyle = '#2a0006'; ctx.lineWidth = 3.4; ctx.beginPath(); ctx.arc(0, -4, 10, Math.PI * 0.15, Math.PI * 0.95); ctx.stroke();
+        ctx.strokeStyle = '#e8d0d4'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(0, -4, 10, Math.PI * 0.15, Math.PI * 0.95); ctx.stroke();
+        ctx.restore();
+      }
+      if (!lite) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';   // sương máu
+        for (let i = 0; i < 8; i++) {
+          const life = (t / 1800 + R(i + 500)) % 1, xx = p.l + R(i + 501) * p.w, yy = p.top - life * 22;
+          ctx.globalAlpha = (1 - life) * 0.45; ctx.fillStyle = '#ff1a2a'; ctx.beginPath(); ctx.arc(xx, yy, 2 + life * 4, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+        for (let i = 0; i < 6; i++) {   // giọt máu nhỏ xuống từ mép dưới
+          const life = (t / 1200 + R(i + 520)) % 1, xx = p.l + 4 + R(i + 521) * (p.w - 8), yy = p.top + p.h + life * 16;
+          ctx.globalAlpha = 1 - life; ctx.fillStyle = '#c0101e'; ctx.beginPath(); ctx.ellipse(xx, yy, 1.4, 2.2 + life, 0, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+      const g = ctx.createLinearGradient(0, p.top, 0, p.top + p.h); g.addColorStop(0, '#2a0206'); g.addColorStop(0.5, '#6a0610'); g.addColorStop(1, '#140103');
+      frame(ctx, p, g, '#ff4a5a');
+      ctx.strokeStyle = '#ff2a3a'; ctx.lineWidth = 1; ctx.strokeRect(p.l - 2.5, p.top - 2.5, p.w + 5, p.h + 5);
+      gtext(ctx, p, x, y, ['#ffffff', '#ffb0b8', '#ff3a4a', '#ffe0e4'], (t / 1000) % 1, '#1a0000');
+      sweep(ctx, p, t, 1400, '#ffd0d8');
+      ribbon(ctx, x, p.top - 6, '#d0101e', '#4a0006', t, 'TOP 1 ĐỒ SÁT');
+    },
     wk_boss(ctx, T, x, y, t, lite) {
       const p = box(T, x, y);
       for (const s of [-1, 1]) {   // sừng quỷ
@@ -884,7 +913,7 @@
   });
   // Lớp hiệu ứng chung cho mọi danh hiệu quà tặng: quầng sáng thở phía sau, viền sáng thứ hai chạy đứt quãng,
   // vòng sao bốn cánh bay quanh, hạt sáng bay lên – chồng thêm lên hiệu ứng riêng của từng danh hiệu
-  const GIFT_FX = ['wk_level', 'wk_power', 'wk_boss', 'wk_topup', 'snow', 'sakura', 'dragon', 'phoenix', 'thunder', 'shadow', 'jade', 'galaxy', 'moon', 'love', 'rich', 'yinyang', 'rainbow', 'supreme', 'master', 'novice'];
+  const GIFT_FX = ['wk_level', 'wk_power', 'wk_boss', 'wk_topup', 'wk_pk', 'snow', 'sakura', 'dragon', 'phoenix', 'thunder', 'shadow', 'jade', 'galaxy', 'moon', 'love', 'rich', 'yinyang', 'rainbow', 'supreme', 'master', 'novice'];
   for (const k of GIFT_FX) {
     const base = FX[k];
     FX[k] = (ctx, T, x, y, t, lite) => {

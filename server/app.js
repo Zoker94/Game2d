@@ -81,6 +81,7 @@ require('./data/enhance').applyRates(db.data.config.enhanceRate);   // tỉ lệ
 world.divine = new (require('./game/divine').Divine)(world);
 world.mining = new (require('./game/mining').Mining)(world);
 world.comu = new (require('./game/comu').Comu)(world);
+world.hc = new (require('./game/huyetchien').HuyetChien)(world);
 world.referral = new (require('./game/referral').Referral)(world);
 const { Social } = require('./game/social');
 const social = new Social(world, features, db);
@@ -504,6 +505,7 @@ io.on('connection', socket => {
   on('equip', inGame(d => world.equip(player, d && d.uid, d && d.side)));
   on('mine', inGame(d => world.mining.dig(player, d && d.id)));
   on('comu', inGame(d => world.comu.action(player, d)));
+  on('hc', inGame(d => world.hc.action(player, d)));
   on('ref', inGame(d => world.referral.action(player, d)));
   on('title', inGame(d => world.selectTitle(player, d && typeof d.id === 'string' ? d.id : null)));
   on('unequip', inGame(d => world.unequip(player, d && d.slot)));

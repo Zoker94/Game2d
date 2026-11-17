@@ -419,6 +419,7 @@ class World {
   // quản trị viên đóng khu: ai đang ở khu đó (cả người được máy chủ treo hộ) chuyển sang khu đang mở cùng bản đồ, giữ vị trí
   evacuateClosed() {
     let moved = 0;
+    if (this.features) this.features.relocateBosses();   // boss ở khu vừa đóng: sang khu đang mở
     for (const p of [...this.players.values()]) {
       const def = MAPS[p.mapId];
       if (!def || !def.base || !this.chClosed(def.ch)) continue;
@@ -485,6 +486,7 @@ class World {
       minhChu: this.titleFlags(p), title: this.titleOf(c, p.user.isAdmin), ach: Object.assign({ bossKills: c.bossKills | 0 }, c.ach || {}), tk: this.tongkim ? this.tongkim.tag(p) : 0, congTrang: c.congTrang || 0, ctOwner: this.siege ? this.siege.ownerName() : null, master: c.master && c.master.uid && !c.master.grad ? c.master.name : null, nDisc: Object.keys(c.disciples || {}).length,
       attr: c.attr || {}, attrFree: attrTotalOf(c) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
       branch: branchOf(c), skills: c.skills || {}, hotbar: c.hotbar, sp: spTotalOf(c) - (c.spSpent || 0),
+      hcMelee: this.hc && this.hc.meleeOn() ? this.hc.meleeEndsAt() : 0, enemyN: (c.enemies || []).length,
       blockInv: c.blockInv || {}, mailbox: (c.mailbox || []).slice(0, 60).map(e => [e.id, e.qty, e.plus || 0]), mounts: c.mounts || {}, mount: c.mount || null, riding: !!c.riding, ap: this.appearance(c), outfits: c.outfits || [], outfit: c.outfit || '', bank: c.bank || { items: [], gold: 0 }, autoTicket: c.autoTicket > Date.now() ? c.autoTicket : 0, tkPause: c.tkPause | 0, pkMode: c.pkMode | 0, pkLock: !!((c.pkLock || c.pk >= PK_OUTLAW) && c.pk > 0), escort: this.escort.meView(p), story: this.story.view(p), robUntil: c.robUntil > Date.now() ? c.robUntil : 0,
       sect: this.sect ? this.sect.meView(p) : null, giftTitles: [...(c.giftTitles || []), ...weekTitlesOf(c)], weekTitles: c.weekTitles || {}, mine: this.mining ? this.mining.view(p) : null,
       med: !!p.med, pvp: this.inPvp(p) ? 1 : 0, st: this.statusView(p), friends: Object.keys(c.friends || {}).length, friendIds: this.friendIds(c), pk: c.pk || 0,
@@ -983,6 +985,7 @@ class World {
     if (this.party && this.party.same(a, b)) return false;   // cùng tổ đội
     if (def.pvp) return true;
     if (a.c.level < 10 || b.c.level < 10) return false;
+    if (this.hc && this.hc.canHarm(a, b, def)) return true;   // Huyết Chiến: kẻ thù (báo thù / đánh trả) hoặc Giờ Hỗn Chiến
     if (b.c.robUntil > Date.now()) return true;      // kẻ cướp tiêu đang bị truy nã: ai cũng đánh được
     const ma = a.c.pkMode | 0, mb = b.c.pkMode | 0;
     return ma === 2 || mb === 2 || (ma === 1 && mb === 1);
@@ -1272,7 +1275,8 @@ class World {
     if (src && src.c && t && !t.c && !t.cart && (src.c.rebirth | 0) > 0 && !isBossMon(t)) dmg = Math.max(1, Math.round(dmg / rbTank(src.c.rebirth)));
     else if (t.c && src && src.tpl && !src.c && (t.c.rebirth | 0) > 0 && !isBossMon(src)) dmg = Math.round(dmg * rbHit(t.c.rebirth));
     const reflected = kind === 'reflect';   // sát thương phản đòn đã tính xong ở phía người bị đánh: không giảm thêm lần nữa
-    if (t.c && src && src.c && t !== src && preScaled) { t.lastPvp = src.lastPvp = Date.now(); }   // độc PK (đã tính theo % máu): vẫn tính là đang giao tranh
+    if (t.c && src && src.c && t !== src && preScaled) { t.lastPvp = src.lastPvp = Date.now(); }
+    if (t.c && src && src.c && t !== src && this.hc) this.hc.onHit(t, src);   // báo thù: kẻ bị đánh được đánh trả   // độc PK (đã tính theo % máu): vẫn tính là đang giao tranh
     if (t.c && src && src.c && t !== src && !reflected && !preScaled) {   // người chơi đánh người chơi: giảm mạnh để trận đấu kéo dài 1-2 phút
       const now = Date.now();
       // giao tranh kéo dài quá 60 giây: sát thương tăng dần (+35% mỗi 10 giây) để trận đấu không kéo dài mãi
@@ -1360,10 +1364,11 @@ class World {
     if (src && src.c) {
       src.c.pvpKills = (src.c.pvpKills || 0) + 1;
       // giết người lương thiện (đang luyện công, không mang sát khí) ngoài lôi đài mới tăng sát khí
-      if (!map.def.pvp && !(t.c.pk >= 3) && !((t.c.pkMode | 0) >= 1)) src.c.pk = Math.min(30, (src.c.pk || 0) + 1);
+      if (!map.def.pvp && !(t.c.pk >= 3) && !((t.c.pkMode | 0) >= 1) && !(this.hc && this.hc.noSin(t, src))) src.c.pk = Math.min(30, (src.c.pk || 0) + 1);   // Giờ Hỗn Chiến / báo thù: không tính tội
       if (src.c.pk >= PK_OUTLAW && !src.c.pkLock) { src.c.pkLock = true; src.c.pkMode = 2; this.toast(src, `☠️ Bạn đã thành Đồ sát đỏ (sát khí ${src.c.pk}): bị khoá ở chế độ Đồ sát tới khi xoá hết sát khí.`, 'error'); }
       src.pkDecayAt = Date.now() + 15 * 60000;
       this.features.questProgress(src, 'pvp', 1);
+      if (this.hc) this.hc.onKill(t, src);   // kẻ thù, điểm Huyết Chiến, truy nã
       this.escort.onKill(t, src);
       if (!map.def.tongkim) this.features.announce(`🗡️ ${src.c.name} đã hạ gục ${t.c.name} tại ${map.def.name}!`, 'map:' + t.mapId);
       src.dirtyMe = true;
@@ -2719,6 +2724,7 @@ class World {
     if (this.party) this.party.tick(now);
     if (this.dungeon && sec) this.dungeon.tick(now);
     if (this.comu && sec) this.comu.tick(now);
+    if (this.hc && sec) this.hc.tick(now);
     if (this.tickN % 5 === 0) for (const p of this.players.values()) if (p.c.pet) this.petTick(p, now);
   }
 

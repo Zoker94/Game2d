@@ -519,6 +519,7 @@
     Travel.bind(s);
     Dungeon.bind(s);
     Comu.bind(s);
+    HuyetChien.bind(s);
     SectUI.bind(s);
     Pet.bind(s);
     BossFX.bind(s);

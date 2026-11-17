@@ -198,14 +198,35 @@ class Features {
     if (cur && cur.mon && !cur.mon.dead) return false;
     const map = MAPS[tpl.map];
     const pos = this.w.randomSpotNear(map, map.boss.x + 0.5, map.boss.y + 0.5, 1);
-    // bản đồ chia khu: boss ra ngẫu nhiên ở 1 trong các khu thường (không bao giờ ở khu VIP – người không có vé không vào săn được)
-    const ch = map.chs ? U.randInt(1, map.chs) : 1, mid = chId(tpl.map, ch);
+    // bản đồ chia khu: boss ra ngẫu nhiên ở 1 trong các khu thường ĐANG MỞ (không ở khu quản trị viên đóng, không bao giờ ở khu VIP)
+    const ch = this.openCh(map), mid = chId(tpl.map, ch);
     const mon = this.w.spawnMonster(mid, tpl, { x: map.boss.x, y: map.boss.y, r: 3 }, { pos });
     this.bosses[id] = { mon, ch, spawnedAt: Date.now() };
     this.announce(`🔥 Boss ${tpl.name} (cấp ${tpl.lv}) đã xuất hiện tại ${map.name}${map.chs ? ` – Khu ${ch}` : ''}! Các đại hiệp mau đến tiêu diệt!`);
     this.db.log('boss', `Boss ${tpl.name} xuất hiện`);
     this.broadcastEvents();
     return true;
+  }
+  openCh(map) {
+    if (!map.chs) return 1;
+    const open = []; for (let i = 1; i <= map.chs; i++) if (!this.w.chClosed(i)) open.push(i);
+    return open.length ? open[U.randInt(0, open.length - 1)] : 1;
+  }
+  // quản trị viên vừa đóng khu: boss đang ở khu đóng chuyển sang 1 khu đang mở (giữ nguyên máu)
+  relocateBosses() {
+    let n = 0;
+    for (const id in this.bosses) {
+      const b = this.bosses[id], mon = b && b.mon, def = mon && MAPS[mon.mapId];
+      if (!mon || mon.dead || !def || !def.base || !this.w.chClosed(def.ch)) continue;
+      const ch = this.openCh(MAPS[def.base]), to = chId(def.base, ch), from = this.w.maps[mon.mapId], dest = this.w.maps[to];
+      if (!dest || to === mon.mapId) continue;
+      from.monsters.delete(mon.id);
+      mon.mapId = to; mon.target = null; mon.dmgBy = new Map(); dest.monsters.set(mon.id, mon);
+      b.ch = ch; n++;
+      this.announce(`🔥 Boss ${mon.tpl.name} đã chuyển sang ${MAPS[def.base].name} – Khu ${ch}!`);
+    }
+    if (n) this.broadcastEvents();
+    return n;
   }
   // bảng top sát thương boss thế giới: gửi cho người đang ở bản đồ boss mỗi 1,5 giây (top 10 + hạng của chính mình)
   worldBossTop() {

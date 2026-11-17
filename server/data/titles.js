@@ -47,6 +47,7 @@ const TITLES = {
   wk_level: { name: 'Vạn Cổ Đăng Phong', color: '#8ad8ff', tier: 5, fx: 'wk_level', src: 'Đua Top Tuần', gift: true, week: 'level', desc: 'Hạng 1 Top Cấp Độ tuần – giữ 7 ngày' },
   wk_power: { name: 'Chiến Lực Vô Song', color: '#ff5a3a', tier: 5, fx: 'wk_power', src: 'Đua Top Tuần', gift: true, week: 'power', desc: 'Hạng 1 Top Lực Chiến tuần – giữ 7 ngày' },
   wk_boss:  { name: 'Đồ Long Diệt Ma', color: '#c87aff', tier: 5, fx: 'wk_boss', src: 'Đua Top Tuần', gift: true, week: 'boss', desc: 'Hạng 1 Top Săn Boss tuần – giữ 7 ngày' },
+  wk_pk:    { name: 'Huyết Sát Vô Địch', color: '#ff2a3a', tier: 5, fx: 'wk_pk', src: 'Đua Top Tuần', gift: true, week: 'pk', desc: 'Hạng 1 Top Đồ Sát tuần – giữ 7 ngày' },
   wk_topup: { name: 'Phú Quý Vô Biên', color: '#ffd040', tier: 5, fx: 'wk_topup', src: 'Đua Top Tuần', gift: true, week: 'topup', desc: 'Hạng 1 Top Nạp Tuần – giữ 7 ngày' },
   dh_top3:  { name: 'Võ Lâm Hào Kiệt',     color: '#ffe060', tier: 3, fx: 'lotus', src: 'Đại Hội Võ Lâm', stat: 'dhTop3', need: 1, desc: 'Vào top 3 Đại Hội Võ Lâm' }
 };
