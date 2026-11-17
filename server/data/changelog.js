@@ -2,6 +2,13 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '17/11/2026',
+    items: [
+      '⚔️ TRANG BỊ BẬC MỚI: Thái Cổ (cấp 100), Hồng Hoang (cấp 110), Vô Thượng (cấp 120) cho mọi ô trang bị và vũ khí 9 môn phái, đủ 4 phẩm chất Thường / Hiếm / VIP / Truyền Kỳ, kèm Rương Thủ Lĩnh bậc mới và áo choàng 3 màu mới. Quái / boss cấp 100+ rơi đồ bậc mới; đồ Vô Thượng (cấp 120) rơi từ quái / boss cấp 115 trở lên.',
+      '🔴 Thần Binh và Thần Khí được nâng chỉ số theo bậc cao nhất mới – vẫn mạnh hơn đồ Truyền Kỳ cấp 120 ở mọi chỉ số (công, thủ, sinh lực, chí mạng).'
+    ]
+  },
+  {
     date: '15/11/2026',
     items: [
       '🐎 Nâng Mã Cụ thú cưỡi nay dùng Thiên Tinh Thạch (đá vàng) thay cho ngọc khảm: +1–5 cần 1 viên, +6–10 cần 2, +11–12 cần 3, +13–15 cần 4, Mã Cụ V2 +16–20 cần 6. Vẫn cần Mã Cụ Tinh Hoa và ngân lượng như cũ.',

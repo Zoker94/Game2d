@@ -1,8 +1,9 @@
 // Vật phẩm: trang bị theo bậc (tier) và độ hiếm, thuốc, vật phẩm đặc biệt.
-const TIERS = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90];
-const TIER_PREFIX = ['Sơ Cấp', 'Thanh Đồng', 'Bạch Ngân', 'Hoàng Kim', 'Huyền Thiết', 'Long Văn', 'Thần Binh', 'Tiên Phẩm', 'Thánh Phẩm', 'Chí Tôn'];
+const TIERS = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120];
+const TIER_PREFIX = ['Sơ Cấp', 'Thanh Đồng', 'Bạch Ngân', 'Hoàng Kim', 'Huyền Thiết', 'Long Văn', 'Thần Binh', 'Tiên Phẩm', 'Thánh Phẩm', 'Chí Tôn', 'Thái Cổ', 'Hồng Hoang', 'Vô Thượng'];
 const TIER_MAX = TIERS.length - 1;
-const tierOfLv = lv => Math.max(0, Math.min(TIER_MAX, Math.floor(lv / 10)));   // bậc trang bị theo cấp quái / người chơi
+// bậc trang bị theo cấp quái / người chơi. Bậc cấp 120 (Vô Thượng) rơi từ quái / boss cấp 115 trở lên (quái cao nhất cấp 119)
+const tierOfLv = lv => lv >= 115 ? TIER_MAX : Math.max(0, Math.min(TIER_MAX, Math.floor(lv / 10)));
 
 const RARITY = {
   common:    { name: 'Thường',    color: '#d0d0d0', mult: 1.0 },
@@ -12,16 +13,16 @@ const RARITY = {
 };
 
 const SLOTS = {
-  weapon: { name: 'Vũ khí',  names: ['Mộc Kiếm', 'Thiết Kiếm', 'Bách Luyện Đao', 'Hàn Băng Kiếm', 'Huyền Thiết Thương', 'Long Tuyền Kiếm', 'Ỷ Thiên Kiếm', 'Tru Tiên Kiếm', 'Hiên Viên Kiếm', 'Bàn Cổ Thần Kiếm'] },
-  helmet: { name: 'Nón',     names: ['Bố Cân', 'Thiết Khôi', 'Ngân Quan', 'Kim Quan', 'Huyền Khôi', 'Long Quan', 'Thiên Quan', 'Tử Kim Quan', 'Cửu Long Quan', 'Hỗn Nguyên Thiên Quan'] },
-  armor:  { name: 'Áo',      names: ['Bố Y', 'Bì Giáp', 'Ngân Giáp', 'Kim Lũ Y', 'Huyền Thiết Giáp', 'Long Lân Giáp', 'Thiên Tàm Bảo Y', 'Tử Hà Tiên Y', 'Cửu Long Chiến Giáp', 'Hỗn Nguyên Thánh Y'] },
-  boots:  { name: 'Giày',    names: ['Thảo Hài', 'Bì Ngoa', 'Ngân Ngoa', 'Truy Phong Ngoa', 'Đạp Tuyết Ngoa', 'Long Vân Ngoa', 'Thần Hành Ngoa', 'Lưu Vân Tiên Ngoa', 'Cửu Long Ngoa', 'Phi Thiên Thánh Ngoa'] },
-  ring:   { name: 'Nhẫn',    names: ['Đồng Giới', 'Thiết Giới', 'Ngân Giới', 'Kim Giới', 'Phỉ Thúy Giới', 'Long Châu Giới', 'Càn Khôn Giới', 'Tử Ngọc Tiên Giới', 'Cửu Long Giới', 'Hỗn Nguyên Thánh Giới'] },
-  amulet: { name: 'Dây chuyền', names: ['Mộc Bội', 'Đồng Bội', 'Ngân Bội', 'Ngọc Bội', 'Hàn Ngọc Bội', 'Long Phượng Bội', 'Thái Cực Bội', 'Tử Vi Tiên Bội', 'Cửu Long Bội', 'Hỗn Nguyên Thánh Bội'] },
-  gloves: { name: 'Găng tay', names: ['Bố Thủ Sáo', 'Bì Thủ Sáo', 'Ngân Hộ Uyển', 'Kim Hộ Uyển', 'Huyền Thiết Hộ Thủ', 'Long Lân Hộ Thủ', 'Thiên Tàm Thủ Sáo', 'Tử Hà Tiên Thủ', 'Cửu Long Hộ Thủ', 'Hỗn Nguyên Thánh Thủ'] },
-  pants:  { name: 'Quần',    names: ['Bố Khố', 'Bì Khố', 'Ngân Giáp Khố', 'Kim Lũ Khố', 'Huyền Thiết Khố', 'Long Lân Khố', 'Thiên Tàm Khố', 'Tử Hà Tiên Khố', 'Cửu Long Chiến Khố', 'Hỗn Nguyên Thánh Khố'] },
+  weapon: { name: 'Vũ khí',  names: ['Mộc Kiếm', 'Thiết Kiếm', 'Bách Luyện Đao', 'Hàn Băng Kiếm', 'Huyền Thiết Thương', 'Long Tuyền Kiếm', 'Ỷ Thiên Kiếm', 'Tru Tiên Kiếm', 'Hiên Viên Kiếm', 'Bàn Cổ Thần Kiếm', 'Thái Cổ Thần Kiếm', 'Hồng Hoang Đế Kiếm', 'Vô Thượng Thiên Kiếm'] },
+  helmet: { name: 'Nón',     names: ['Bố Cân', 'Thiết Khôi', 'Ngân Quan', 'Kim Quan', 'Huyền Khôi', 'Long Quan', 'Thiên Quan', 'Tử Kim Quan', 'Cửu Long Quan', 'Hỗn Nguyên Thiên Quan', 'Thái Cổ Đế Quan', 'Hồng Hoang Thần Quan', 'Vô Thượng Thiên Quan'] },
+  armor:  { name: 'Áo',      names: ['Bố Y', 'Bì Giáp', 'Ngân Giáp', 'Kim Lũ Y', 'Huyền Thiết Giáp', 'Long Lân Giáp', 'Thiên Tàm Bảo Y', 'Tử Hà Tiên Y', 'Cửu Long Chiến Giáp', 'Hỗn Nguyên Thánh Y', 'Thái Cổ Long Giáp', 'Hồng Hoang Đế Bào', 'Vô Thượng Thánh Giáp'] },
+  boots:  { name: 'Giày',    names: ['Thảo Hài', 'Bì Ngoa', 'Ngân Ngoa', 'Truy Phong Ngoa', 'Đạp Tuyết Ngoa', 'Long Vân Ngoa', 'Thần Hành Ngoa', 'Lưu Vân Tiên Ngoa', 'Cửu Long Ngoa', 'Phi Thiên Thánh Ngoa', 'Thái Cổ Đạp Vân Ngoa', 'Hồng Hoang Thần Ngoa', 'Vô Thượng Lăng Không Ngoa'] },
+  ring:   { name: 'Nhẫn',    names: ['Đồng Giới', 'Thiết Giới', 'Ngân Giới', 'Kim Giới', 'Phỉ Thúy Giới', 'Long Châu Giới', 'Càn Khôn Giới', 'Tử Ngọc Tiên Giới', 'Cửu Long Giới', 'Hỗn Nguyên Thánh Giới', 'Thái Cổ Thần Giới', 'Hồng Hoang Đế Giới', 'Vô Thượng Càn Khôn Giới'] },
+  amulet: { name: 'Dây chuyền', names: ['Mộc Bội', 'Đồng Bội', 'Ngân Bội', 'Ngọc Bội', 'Hàn Ngọc Bội', 'Long Phượng Bội', 'Thái Cực Bội', 'Tử Vi Tiên Bội', 'Cửu Long Bội', 'Hỗn Nguyên Thánh Bội', 'Thái Cổ Thần Bội', 'Hồng Hoang Đế Bội', 'Vô Thượng Thiên Bội'] },
+  gloves: { name: 'Găng tay', names: ['Bố Thủ Sáo', 'Bì Thủ Sáo', 'Ngân Hộ Uyển', 'Kim Hộ Uyển', 'Huyền Thiết Hộ Thủ', 'Long Lân Hộ Thủ', 'Thiên Tàm Thủ Sáo', 'Tử Hà Tiên Thủ', 'Cửu Long Hộ Thủ', 'Hỗn Nguyên Thánh Thủ', 'Thái Cổ Thần Thủ', 'Hồng Hoang Đế Thủ', 'Vô Thượng Thánh Thủ'] },
+  pants:  { name: 'Quần',    names: ['Bố Khố', 'Bì Khố', 'Ngân Giáp Khố', 'Kim Lũ Khố', 'Huyền Thiết Khố', 'Long Lân Khố', 'Thiên Tàm Khố', 'Tử Hà Tiên Khố', 'Cửu Long Chiến Khố', 'Hỗn Nguyên Thánh Khố', 'Thái Cổ Long Khố', 'Hồng Hoang Đế Khố', 'Vô Thượng Thánh Khố'] },
   // áo choàng không rơi, không bán: chế tạo ở bản đồ môn phái (NPC Chưởng Phi Phong) bằng nguyên liệu
-  cloak:  { name: 'Áo choàng', craft: true, names: ['Bố Phi Phong', 'Bì Phi Phong', 'Ngân Văn Phi Phong', 'Kim Tuyến Phi Phong', 'Huyền Vũ Phi Phong', 'Long Văn Phi Phong', 'Thiên Tàm Phi Phong', 'Tử Hà Tiên Phi Phong', 'Cửu Long Phi Phong', 'Hỗn Nguyên Thánh Bào'] }
+  cloak:  { name: 'Áo choàng', craft: true, names: ['Bố Phi Phong', 'Bì Phi Phong', 'Ngân Văn Phi Phong', 'Kim Tuyến Phi Phong', 'Huyền Vũ Phi Phong', 'Long Văn Phi Phong', 'Thiên Tàm Phi Phong', 'Tử Hà Tiên Phi Phong', 'Cửu Long Phi Phong', 'Hỗn Nguyên Thánh Bào', 'Thái Cổ Phi Phong', 'Hồng Hoang Thần Phi Phong', 'Vô Thượng Thiên Y'] }
 };
 // ô trang bị rơi từ quái / rương / phó bản (áo choàng chỉ chế tạo)
 const DROP_SLOTS = ['weapon', 'helmet', 'armor', 'boots', 'ring', 'amulet', 'gloves', 'pants'];
@@ -136,15 +137,15 @@ for (const [sk, S] of Object.entries(DIVINE_SETS)) {
 // Vũ khí riêng của từng môn phái (cùng chỉ số với binh khí chung cùng bậc/độ hiếm).
 // Binh khí chung (weapon_<bậc>_<độ hiếm>) rơi ra / mua ở tiệm sẽ tự đổi thành vũ khí môn phái của người nhận.
 const CLASS_WEAPON = {
-  thieulam:   { type: 'Côn',      icon: 'w_staff',    names: ['Mộc Côn', 'Thiết Côn', 'Tề Mi Côn', 'Hàng Ma Côn', 'Kim Cang Côn', 'La Hán Thần Côn', 'Đạt Ma Trượng', 'Bồ Đề Thiền Trượng', 'Cửu Long Kim Cang Trượng', 'Như Lai Thánh Trượng'] },
-  thienvuong: { type: 'Chùy',     icon: 'w_mace',     names: ['Mộc Chùy', 'Thiết Chùy', 'Lưu Tinh Chùy', 'Bá Vương Chùy', 'Lôi Thần Chùy', 'Thiên Vương Chùy', 'Phá Thiên Thần Chùy', 'Tử Lôi Tiên Chùy', 'Cửu Long Bá Chùy', 'Khai Thiên Thánh Chùy'] },
-  duongmon:   { type: 'Ám khí',   icon: 'w_dart',     names: ['Phi Tiêu', 'Thiết Liên Tử', 'Mai Hoa Tiêu', 'Bạo Vũ Châm', 'Truy Hồn Tiêu', 'Khổng Tước Linh', 'Thiên Cơ Nỗ', 'Tử Vân Tiên Tiêu', 'Cửu Long Thần Nỗ', 'Vạn Tiễn Thánh Cơ'] },
-  ngudoc:     { type: 'Đao độc',  icon: 'w_saber',    names: ['Đoản Đao', 'Lục Độc Đao', 'Xà Nha Đao', 'Hắc Cổ Đao', 'Bích Lân Đao', 'Vạn Độc Đao', 'Ngũ Độc Thần Đao', 'Tử Cổ Tiên Đao', 'Cửu Long Độc Đao', 'Vạn Cổ Thánh Đao'] },
-  ngamy:      { type: 'Kiếm',     icon: 'w_sword',    names: ['Trúc Kiếm', 'Thiết Kiếm', 'Thanh Phong Kiếm', 'Lăng Ba Kiếm', 'Băng Tâm Kiếm', 'Phật Quang Kiếm', 'Ỷ Thiên Kiếm', 'Tử Liên Tiên Kiếm', 'Cửu Long Phật Kiếm', 'Đại Từ Thánh Kiếm'] },
-  thuyyen:    { type: 'Song đao', icon: 'w_dual',     names: ['Song Đoản Đao', 'Song Thiết Đao', 'Uyên Ương Đao', 'Lưu Nguyệt Song Đao', 'Băng Phách Song Đao', 'Hàn Nguyệt Song Đao', 'Thúy Yên Thần Đao', 'Tử Nguyệt Tiên Đao', 'Cửu Long Song Đao', 'Nhật Nguyệt Thánh Đao'] },
-  caibang:    { type: 'Hộ thủ',   icon: 'w_glove',    names: ['Bố Hộ Thủ', 'Thiết Hộ Thủ', 'Hổ Trảo Thủ', 'Kim Ti Thủ Sáo', 'Long Lân Thủ Sáo', 'Hàng Long Thủ Sáo', 'Thiên Long Thần Thủ', 'Tử Kim Tiên Thủ', 'Cửu Long Thần Thủ', 'Đả Cẩu Thánh Thủ'] },
-  vodang:     { type: 'Kiếm',     icon: 'w_sword',    names: ['Mộc Kiếm', 'Thanh Đồng Kiếm', 'Thái Cực Kiếm', 'Chân Vũ Kiếm', 'Thất Tinh Kiếm', 'Huyền Thiên Kiếm', 'Thái Cực Thần Kiếm', 'Tử Tiêu Tiên Kiếm', 'Cửu Long Chân Vũ Kiếm', 'Vô Cực Thánh Kiếm'] },
-  conlon:     { type: 'Phù chú',  icon: 'w_talisman', names: ['Hoàng Phù', 'Lôi Phù', 'Tử Kim Phù', 'Thiên Sư Phù', 'Cửu Thiên Lôi Phù', 'Thái Thượng Phù', 'Côn Lôn Thần Phù', 'Tử Tiêu Tiên Phù', 'Cửu Long Lôi Phù', 'Ngọc Thanh Thánh Phù'] }
+  thieulam:   { type: 'Côn',      icon: 'w_staff',    names: ['Mộc Côn', 'Thiết Côn', 'Tề Mi Côn', 'Hàng Ma Côn', 'Kim Cang Côn', 'La Hán Thần Côn', 'Đạt Ma Trượng', 'Bồ Đề Thiền Trượng', 'Cửu Long Kim Cang Trượng', 'Như Lai Thánh Trượng', 'Thái Cổ Thiền Trượng', 'Hồng Hoang Thiền Trượng', 'Vô Thượng Thiền Trượng'] },
+  thienvuong: { type: 'Chùy',     icon: 'w_mace',     names: ['Mộc Chùy', 'Thiết Chùy', 'Lưu Tinh Chùy', 'Bá Vương Chùy', 'Lôi Thần Chùy', 'Thiên Vương Chùy', 'Phá Thiên Thần Chùy', 'Tử Lôi Tiên Chùy', 'Cửu Long Bá Chùy', 'Khai Thiên Thánh Chùy', 'Thái Cổ Bá Chùy', 'Hồng Hoang Bá Chùy', 'Vô Thượng Bá Chùy'] },
+  duongmon:   { type: 'Ám khí',   icon: 'w_dart',     names: ['Phi Tiêu', 'Thiết Liên Tử', 'Mai Hoa Tiêu', 'Bạo Vũ Châm', 'Truy Hồn Tiêu', 'Khổng Tước Linh', 'Thiên Cơ Nỗ', 'Tử Vân Tiên Tiêu', 'Cửu Long Thần Nỗ', 'Vạn Tiễn Thánh Cơ', 'Thái Cổ Thần Nỗ', 'Hồng Hoang Thần Nỗ', 'Vô Thượng Thần Nỗ'] },
+  ngudoc:     { type: 'Đao độc',  icon: 'w_saber',    names: ['Đoản Đao', 'Lục Độc Đao', 'Xà Nha Đao', 'Hắc Cổ Đao', 'Bích Lân Đao', 'Vạn Độc Đao', 'Ngũ Độc Thần Đao', 'Tử Cổ Tiên Đao', 'Cửu Long Độc Đao', 'Vạn Cổ Thánh Đao', 'Thái Cổ Cổ Đao', 'Hồng Hoang Cổ Đao', 'Vô Thượng Cổ Đao'] },
+  ngamy:      { type: 'Kiếm',     icon: 'w_sword',    names: ['Trúc Kiếm', 'Thiết Kiếm', 'Thanh Phong Kiếm', 'Lăng Ba Kiếm', 'Băng Tâm Kiếm', 'Phật Quang Kiếm', 'Ỷ Thiên Kiếm', 'Tử Liên Tiên Kiếm', 'Cửu Long Phật Kiếm', 'Đại Từ Thánh Kiếm', 'Thái Cổ Phật Kiếm', 'Hồng Hoang Phật Kiếm', 'Vô Thượng Phật Kiếm'] },
+  thuyyen:    { type: 'Song đao', icon: 'w_dual',     names: ['Song Đoản Đao', 'Song Thiết Đao', 'Uyên Ương Đao', 'Lưu Nguyệt Song Đao', 'Băng Phách Song Đao', 'Hàn Nguyệt Song Đao', 'Thúy Yên Thần Đao', 'Tử Nguyệt Tiên Đao', 'Cửu Long Song Đao', 'Nhật Nguyệt Thánh Đao', 'Thái Cổ Song Đao', 'Hồng Hoang Song Đao', 'Vô Thượng Song Đao'] },
+  caibang:    { type: 'Hộ thủ',   icon: 'w_glove',    names: ['Bố Hộ Thủ', 'Thiết Hộ Thủ', 'Hổ Trảo Thủ', 'Kim Ti Thủ Sáo', 'Long Lân Thủ Sáo', 'Hàng Long Thủ Sáo', 'Thiên Long Thần Thủ', 'Tử Kim Tiên Thủ', 'Cửu Long Thần Thủ', 'Đả Cẩu Thánh Thủ', 'Thái Cổ Thần Thủ', 'Hồng Hoang Thần Thủ', 'Vô Thượng Thần Thủ'] },
+  vodang:     { type: 'Kiếm',     icon: 'w_sword',    names: ['Mộc Kiếm', 'Thanh Đồng Kiếm', 'Thái Cực Kiếm', 'Chân Vũ Kiếm', 'Thất Tinh Kiếm', 'Huyền Thiên Kiếm', 'Thái Cực Thần Kiếm', 'Tử Tiêu Tiên Kiếm', 'Cửu Long Chân Vũ Kiếm', 'Vô Cực Thánh Kiếm', 'Thái Cổ Chân Kiếm', 'Hồng Hoang Chân Kiếm', 'Vô Thượng Chân Kiếm'] },
+  conlon:     { type: 'Phù chú',  icon: 'w_talisman', names: ['Hoàng Phù', 'Lôi Phù', 'Tử Kim Phù', 'Thiên Sư Phù', 'Cửu Thiên Lôi Phù', 'Thái Thượng Phù', 'Côn Lôn Thần Phù', 'Tử Tiêu Tiên Phù', 'Cửu Long Lôi Phù', 'Ngọc Thanh Thánh Phù', 'Thái Cổ Lôi Phù', 'Hồng Hoang Lôi Phù', 'Vô Thượng Lôi Phù'] }
 };
 TIERS.forEach((lv, t) => ['common', 'rare', 'epic', 'legendary'].forEach(rk => {
   const g = ITEMS[`weapon_${t}_${rk}`];

@@ -190,7 +190,8 @@
   // ----- phi phong (áo choàng) vẽ bằng code, gắn theo vai của từng khung hình -----
   // màu vải theo bậc: Bố, Bì, Ngân Văn, Kim Tuyến, Huyền Vũ, Long Văn, Thiên Tàm, Tử Hà, Cửu Long, Hỗn Nguyên
   const CAPE = [['#8a7a60', '#5e523f'], ['#7a4a2a', '#4e2c16'], ['#4e5e78', '#2e3a4e'], ['#8e1e1e', '#561010'], ['#1e2a3c', '#0e1622'],
-    ['#6e1212', '#3e0808'], ['#e6e0d0', '#a8a090'], ['#5a2a8e', '#341656'], ['#c4921c', '#7a5608'], ['#1a1622', '#08060c']];
+    ['#6e1212', '#3e0808'], ['#e6e0d0', '#a8a090'], ['#5a2a8e', '#341656'], ['#c4921c', '#7a5608'], ['#1a1622', '#08060c'],
+    ['#1e7a6a', '#0c4038'], ['#a0141e', '#4a060a'], ['#f0e6b8', '#b09a50']];   // bậc 100 / 110 / 120: ngọc bích, huyết hồng, kim bạch
   const CAPE_TRIM = ['#c8b48a', '#4fa3ff', '#c060ff', '#ffb02a'];
   // khung thân (không tính vũ khí) của ô trong sheet: đỉnh đầu, chân, tâm và bề rộng vai – đo một lần rồi nhớ
   const boxCache = {};
@@ -215,7 +216,7 @@
   // part: 'back' (vẽ dưới thân) | 'front' (vẽ đè lên thân: lưng khi quay đi, quai cài khi nhìn trước)
   function drawCape(x, view, b, state, i, L, part) {
     if (!b || L.c < 0 || state === 'dead') return;
-    const [main, dark] = CAPE[Math.max(0, Math.min(9, L.c))], trim = CAPE_TRIM[L.cr] || CAPE_TRIM[0];
+    const [main, dark] = CAPE[Math.max(0, Math.min(CAPE.length - 1, L.c))], trim = CAPE_TRIM[L.cr] || CAPE_TRIM[0];
     const move = state === 'run' ? 1 : state === 'walk' ? 0.55 : state === 'atk' || state === 'cast' ? 0.7 : 0;
     const ride = state.startsWith('ride'), sit = state === 'med' || ride;
     const len = b.h * (sit ? 0.42 : 0.6), w = b.sw, ph = i * 1.3, wv = Math.sin(ph) * (1.5 + move * 2.5);
