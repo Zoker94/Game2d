@@ -488,6 +488,7 @@
       $('modal-btns').classList.add('ch-grid');   // 20 khu: xếp lưới
     }
     s.on('ticketEnd', () => { if (G.auto) G.setAuto(false); });   // Vé Treo Máy hết hạn: tắt Tự động
+    s.on('autoOff', () => { if (G.auto) G.setAuto(false); });   // bị quái hạ khi treo máy bằng vé: máy chủ đã tắt Tự động, về thành
     s.on('autoSrvReport', r => {
       const why = r.why === 'dead' ? ' Nhân vật bị hạ gục nên đã dừng.' : r.why === 'time' ? ' Đã đủ 8 giờ nên tự dừng.' : r.why === 'ticket' ? ' Vé Treo Máy hết hạn nên đã dừng.' : '';
       const text = `🤖 Máy chủ đã treo máy hộ ${r.mins} phút${r.offline ? ' lúc bạn thoát' : ''}: hạ ${r.kills} quái, ${r.gold >= 0 ? '+' : ''}${(r.gold || 0).toLocaleString('vi-VN')} lượng${r.lv > 0 ? `, lên ${r.lv} cấp (cấp ${r.lvNow})` : ''}.${why}`;

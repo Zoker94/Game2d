@@ -100,6 +100,7 @@ class AutoSrv {
   // kết thúc treo offline (đăng nhập lại, chết, hết giờ): lưu kết quả để báo khi vào lại
   endOffline(p, why) {
     if (p.autoSrv && p.autoSrv.active) p.c._afk = Object.assign(this.report(p), { why, end: Date.now() });
+    if (U.tkPause(p.c)) this.w.db.markDirty();   // máy chủ ngừng treo hộ: vé tạm dừng, không trừ giờ tiếp
     this.w.removePlayer(p);
   }
   greet(p) {
@@ -168,6 +169,18 @@ class AutoSrv {
     this.w.db.log('auto', `${p.c.name} bị đưa ra khỏi game vì không xác nhận mã treo máy`);
     this.w.removePlayer(p);
     try { p.socket.disconnect(true); } catch (e) { }
+  }
+  // đang treo máy bằng Vé Treo Máy mà bị quái hạ gục: tắt Tự động (vé tạm dừng, không tốn giờ) và tự về thành.
+  // Treo hộ khi offline: vé tạm dừng, đưa ra khỏi game như cũ (bước step).
+  onKilledByMon(p) {
+    const a = p.autoSrv;
+    if (!a || !a.on || !hasTicket(p.c)) return;
+    if (p.offline) { if (U.tkPause(p.c)) p.dirtyMe = true; return; }
+    a.on = false; a.active = false; p.moving = false;
+    if (U.tkPause(p.c)) p.dirtyMe = true;
+    p.socket.emit('autoOff', { why: 'dead' });
+    this.w.toast(p, '💀 Bị quái hạ gục khi đang treo máy: đã tự về thành và tắt Tự động để không tốn giờ Vé Treo Máy. Bật lại Tự động khi sẵn sàng.', 'error');
+    setTimeout(() => { if (p.dead && this.w.players.get(p.userId) === p) this.w.respawn(p, 'town'); }, 2500);
   }
   // dùng Vé Treo Máy: cộng 6–8 giờ treo (cộng dồn vào thời hạn còn lại)
   useTicket(p, uid) {

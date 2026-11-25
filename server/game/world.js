@@ -1364,6 +1364,7 @@ class World {
       lost = Math.floor(t.c.exp * 0.05);
       t.c.exp -= lost;
     }
+    if (src && !src.c && this.autoSrv) this.autoSrv.onKilledByMon(t);   // đang treo máy bằng vé mà bị quái hạ: về thành, tắt Tự động (vé tạm dừng)
     t.socket.emit('dead', { by: src ? (src.c ? src.c.name : src.tpl.name) : '?', lost, cost: t.mapId === 'tong_kim' || t.mapId === 'cong_thanh' ? { gold: 0, knb: TK_REVIVE_KNB } : this.reviveCost(t), tk: t.mapId === 'tong_kim' || t.mapId === 'cong_thanh' ? 1 : 0 });
     if (src && src.c && src !== t && !t.duel) {
       // PK hạ người: nổ 1 phát rồi xác văng ra xa theo hướng đòn đánh (dừng trước tường / vật cản)
