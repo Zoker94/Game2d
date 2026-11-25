@@ -13,7 +13,12 @@ const CHANGELOG = [
       '🎁 Đố Vui thưởng 3.000 lượng (thay Nguyên Bảo). Nhiệm vụ ngày, Vòng Quay, Điểm danh (trừ ngày 7) và các mốc điểm danh không còn Nguyên Bảo – thay bằng ngân lượng / rương.',
       '🏆 Thưởng top tuần giảm Nguyên Bảo, bù thêm Rương Thủ Lĩnh và ngân lượng: Đua Top Tuần 150 / 100 / 50 (top 4–10: 15), Hoa Sơn 100 / 60 / 30, Đại Hội 60 / 40 / 20 (top 4–10: 10), Đua Top Săn Quái 15 / 10 / 5.',
       '📣 Mời bạn: mốc cấp không còn Nguyên Bảo (thêm ngân lượng); bù lại khi người được mời NẠP LẦN ĐẦU, người mời nhận 10% số Nguyên Bảo của lần nạp đó (tối thiểu 10).',
-      '🎫 Đang treo máy bằng Vé Treo Máy mà bị quái hạ gục: tự về thành và tắt Tự động, vé tạm dừng nên không tốn giờ. Treo hộ khi tắt game cũng vậy – bị hạ là vé dừng lại ngay.'
+      '🎫 Đang treo máy bằng Vé Treo Máy mà bị quái hạ gục: tự về thành và tắt Tự động, vé tạm dừng nên không tốn giờ. Treo hộ khi tắt game cũng vậy – bị hạ là vé dừng lại ngay.',
+      '👘 Kỳ Trân Các mở bán NGOẠI TRANG: Bạch Y Thư Sinh (500 💎), Hắc Long Bào, Hồng Liên Tiên Y (1.500 💎), Băng Tâm Ngọc Y, Xích Hỏa Chiến Bào (3.000 💎) – đổi màu bộ áo, mặc / cởi ở bảng Nhân vật.',
+      '♻️ Kỳ Trân Các bán Đá Hồi Sinh (2.000 💎) để Chết Đi Sống Lại từ lần thứ 2.',
+      '➕ Kỳ Trân Các có thẻ mới "Thêm lượt": mua thêm lượt Áp tiêu, Khoáng Động, Cổ Mộ Bí Cảnh, trận Chọi gà đấu tập, hồi đầy thể lực câu cá. Giá tăng gấp đôi mỗi lần mua trong ngày, dùng được Nguyên Bảo Khoá.',
+      '🍀 Đá May Mắn (50 💎): bỏ vào lò rèn khi cường hoá – tỉ lệ thành công gấp đôi (cộng thêm tối đa 15%), dùng 1 lần.',
+      '📢 Loa Thế Giới (5 💎): gõ /loa nội dung – lời nhắn chạy chữ to trên đầu màn hình mọi người chơi.'
     ]
   },
   {

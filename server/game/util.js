@@ -309,7 +309,7 @@ function tkResume(c) { if ((c.tkPause | 0) > 0) { c.autoTicket = Date.now() + c.
 // Không dùng được cho: Đổi Phái, bí kíp, thú cưỡi, trang bị (những món này cần Nguyên Bảo thường – từ nạp).
 function knbBoundOk(id) {
   const it = ITEMS[id];
-  if (!it || it.slot || it.type === 'equip') return false;
+  if (!it || it.slot || it.type === 'equip' || it.knbOnly) return false;
   if (id === 'doi_phai' || /^book_/.test(id)) return false;
   if (/^mount_/.test(id) && id !== 'mount_food' && id !== 'mount_stone') return false;
   return true;

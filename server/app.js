@@ -83,6 +83,7 @@ world.mining = new (require('./game/mining').Mining)(world);
 world.comu = new (require('./game/comu').Comu)(world);
 world.hc = new (require('./game/huyetchien').HuyetChien)(world);
 world.referral = new (require('./game/referral').Referral)(world);
+new (require('./game/extra').Extra)(world);   // gắn world.extra (mua thêm lượt bằng Nguyên Bảo)
 const { Social } = require('./game/social');
 const social = new Social(world, features, db);
 world.start();
@@ -493,6 +494,7 @@ io.on('connection', socket => {
   on('move', inGame(d => world.handleMove(player, d)));
   on('skill', inGame(d => world.useSkill(player, d && d.idx, d && d.target)));
   on('respawn', inGame(d => world.respawn(player, d && d.mode)));
+  on('extra', inGame(d => world.extra.action(player, d)));   // mua thêm lượt (Kỳ Trân Các)
   on('dodge', inGame(d => world.dodge(player, d)));
   on('story', inGame(d => world.story.action(player, d)));
   on('pickup', inGame(d => world.pickupItem(player, d && typeof d.id === 'string' ? d.id : null)));

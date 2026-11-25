@@ -95,6 +95,20 @@ class Features {
     this._brag.push(now);
     this.announce(text);
   }
+  // Loa Thế Giới: chạy chữ trên đầu màn hình mọi người + kênh Thế Giới, tốn 1 Loa (mua 5 Nguyên Bảo ở Kỳ Trân Các)
+  loudspeaker(p, text) {
+    const now = Date.now();
+    text = String(text || '').slice(0, 80).trim();
+    if (!text) return this.w.toast(p, 'Gõ: /loa nội dung (tối đa 80 ký tự)', 'info');
+    if (p.user.muted && (p.user.muted === true || p.user.muted > now)) return this.w.toast(p, 'Bạn đang bị cấm chat', 'error');
+    if (now - (p.lastLoa || 0) < 20000) return this.w.toast(p, 'Chờ 20 giây giữa 2 lần dùng loa', 'error');
+    if (U.countItem(p.c, 'loa_tg') < 1) return this.w.toast(p, 'Bạn không có Loa Thế Giới – mua ở Kỳ Trân Các (5 💎)', 'error');
+    U.removeItemById(p.c, 'loa_tg', 1); p.lastLoa = now; p.dirtyMe = true; this.db.markDirty();
+    const msg = { from: p.c.name, pid: p.id, cls: p.c.cls, lv: p.c.level, t: now, admin: !!p.user.isAdmin, ch: 'world', text: '📢 ' + text, loa: 1 };
+    this.io.emit('chat', msg);
+    this.io.emit('loa', { from: p.c.name, text });
+    this.pushChatLog(msg);
+  }
   announce(text, room) {
     const msg = { ch: 'sys', from: 'Hệ Thống', text, t: Date.now() };
     (room ? this.io.to(room) : this.io).emit('chat', msg);
@@ -692,6 +706,7 @@ class Features {
       const c = p.c, s = (c.inv || []).find(x => x.uid === show) || Object.values(c.equip || {}).find(x => x && x.uid === show);
       if (s && ITEMS[s.id]) item = { id: s.id, plus: s.plus || 0, el: s.el, fx: s.fx, gems: s.gems, br: s.br, bd: s.bd, qty: s.qty > 1 ? s.qty : undefined };
     }
+    if (/^\/loa(\s|$)/i.test(text)) return this.loudspeaker(p, text.replace(/^\/loa\s*/i, ''));
     if (text.startsWith('/')) return this.adminCommand(p, text);
     const now = Date.now();
     if (p.user.muted && (p.user.muted === true || p.user.muted > now)) return this.w.toast(p, 'Bạn đang bị cấm chat', 'error');

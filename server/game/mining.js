@@ -27,7 +27,8 @@ class Mining {
   view(p) {
     const c = p.c;
     const on = this.active(c);
-    return { left: Math.max(0, DAILY - this.usedToday(c)), daily: DAILY, until: on ? c.mineUntil : 0, map: c.mineMap || null, pick: c.pickUses | 0, auto: on && c.mineAuto === c.mineUntil ? 1 : 0 };
+    const daily = DAILY + (this.w.extra ? this.w.extra.bonus(c, 'mine') : 0);
+    return { left: Math.max(0, daily - this.usedToday(c)), daily, until: on ? c.mineUntil : 0, map: c.mineMap || null, pick: c.pickUses | 0, auto: on && c.mineAuto === c.mineUntil ? 1 : 0 };
   }
   // vào bản đồ khoáng động khi không có lượt (cổng, dịch chuyển, đăng nhập lại sau khi hết giờ): đưa về thành
   allowEnter(p, mapId) {
@@ -64,7 +65,8 @@ class Mining {
     const c = p.c, w = this.w, def = MAPS[p.mapId];
     if (c.level < CAVES.bao_thach_dong.minLv) return w.toast(p, `Cần đạt cấp ${CAVES.bao_thach_dong.minLv} mới vào được Khoáng Động`, 'error');
     if (this.active(c)) return w.toast(p, 'Bạn đang trong một lượt đào đá rồi', 'error');
-    if (this.usedToday(c) >= DAILY) return w.toast(p, `Hôm nay đã hết ${DAILY} lượt vào Khoáng Động, mai quay lại nhé`, 'error');
+    const daily = DAILY + (this.w.extra ? this.w.extra.bonus(c, 'mine') : 0);
+    if (this.usedToday(c) >= daily) return w.toast(p, `Hôm nay đã hết ${daily} lượt vào Khoáng Động (mua thêm lượt ở Kỳ Trân Các)`, 'error');
     if (p.dead || p.duel || (def && (def.instance || def.duelArena || def.tourney || def.hoason)) || p.mapId === 'tong_kim' || w.escort.carts.has(p.userId)) return w.toast(p, 'Không dùng vé được ở đây', 'error');
     const cave = c.level >= CAVES.huyen_tinh_canh.minLv ? 'huyen_tinh_canh' : 'bao_thach_dong';
     U.removeByUid(c, uid, 1);
@@ -72,7 +74,7 @@ class Mining {
     c.mine = { d: today, n: this.usedToday(c) + 1 };
     c.mineUntil = Date.now() + SESSION; c.mineMap = cave;
     w.teleport(p, cave);
-    w.toast(p, `⛏ Vào ${MAPS[cave].name}: 10 phút đào đá (lượt ${c.mine.n}/${DAILY} hôm nay). Tới gần mỏ đá rồi bấm Đào – cần Cuốc Chim.`, 'reward');
+    w.toast(p, `⛏ Vào ${MAPS[cave].name}: 10 phút đào đá (lượt ${c.mine.n}/${daily} hôm nay). Tới gần mỏ đá rồi bấm Đào – cần Cuốc Chim.`, 'reward');
     p.dirtyMe = true; w.db.markDirty();
   }
   // dùng Cuốc Chim từ túi: cộng lượt đào

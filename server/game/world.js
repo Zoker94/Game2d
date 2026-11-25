@@ -1889,6 +1889,7 @@ class World {
       p.dirtyMe = true; this.db.markDirty();
       return;
     }
+    if (e.loa) return this.toast(p, '📢 Gõ /loa nội dung vào ô chat để dùng Loa Thế Giới', 'info');
     if (e.outfit) {   // ngoại trang: mở khoá vào tủ đồ rồi mặc luôn
       const o = OUTFITS[e.outfit]; if (!o) return;
       c.outfits = c.outfits || [];
@@ -2065,6 +2066,7 @@ class World {
         .filter(id => !npc.bookShop || !ITEMS[id].cls || (ITEMS[id].cls === p.c.cls && (!BOOKS[id] || !BOOKS[id].branch || BOOKS[id].branch === branchOf(p.c))))   // sách: đúng phái, đúng hệ đang tu
         .map(id => ({ id, price: SHOPS.goldPrice(npc.id, id) }));   // giá có thể do quản trị viên sửa (server/game/shops.js)
     }
+    if (npc.knbShop && this.extra) out.extra = this.extra.view(p);   // mua thêm lượt
     if (npc.knbShop) out.knbShop = npc.knbShop.filter(x => this.shopAllowed(x.id)).map(x => Object.assign(ITEMS[x.id] && ITEMS[x.id].noSale ? { id: x.id, knb: x.knb, lock: 1 } : Object.assign({}, x), U.knbBoundOk(x.id) ? { kb: 1 } : {}));   // chưa mở bán: hiện khoá
     if (out.shop) out.shop = out.shop.filter(x => this.shopAllowed(x.id));
     out.freeRename = !p.c.renameFree;
@@ -2290,7 +2292,7 @@ class World {
     p.dirtyMe = true; this.db.markDirty();
   }
 
-  enhance(p, { uid, npc: npcId, insure }) {
+  enhance(p, { uid, npc: npcId, insure, luck }) {
     const npc = this.nearNpc(p, npcId || 'tho_ren');
     if (!npc || !npc.enhance) return this.toast(p, 'Hãy đến gặp Thợ Rèn để cường hóa', 'error');
     const c = p.c;
@@ -2307,12 +2309,16 @@ class World {
     const risky = plus >= ENHANCE_SAFE;
     const useInsure = risky && insure && U.countItem(c, 'insure') > 0;
     if (risky && insure && !useInsure) return this.toast(p, 'Không có Bảo Hiểm Phù', 'error');
+    const useLuck = !!luck && U.countItem(c, 'lucky_stone') > 0;
+    if (luck && !useLuck) return this.toast(p, 'Không có Đá May Mắn', 'error');
     U.removeItemById(c, 'stone', cost.stone);
     if (cost.stone2) U.removeItemById(c, 'stone2', cost.stone2);
     c.gold -= cost.gold;
     this.features.questProgress(p, 'enhance', 1);
+    if (useLuck) U.removeItemById(c, 'lucky_stone', 1);
+    const rate = useLuck ? Math.min(1, ENHANCE_RATE[plus] + Math.min(0.15, ENHANCE_RATE[plus])) : ENHANCE_RATE[plus];   // Đá May Mắn: gấp đôi, cộng tối đa 15%
     let result;
-    if (Math.random() < ENHANCE_RATE[plus]) {
+    if (Math.random() < rate) {
       target.plus = plus + 1;
       result = 'ok';
       this.toast(p, `Cường hóa thành công! ${it.name} +${target.plus}`, 'reward');
@@ -2330,7 +2336,7 @@ class World {
     this.recalc(p);
     p.socket.emit('enhanceResult', { uid, plus: target.plus || 0, result });
     this.fx(p.mapId, { t: result === 'ok' ? 'levelup' : 'death', id: p.id, x: p.x, y: p.y, small: true });
-    this.db.log('enhance', `${c.name} cường hóa ${it.name} +${plus}→+${target.plus} (${result})`, { user: p.userId });
+    this.db.log('enhance', `${c.name} cường hóa ${it.name} +${plus}→+${target.plus} (${result}${useLuck ? ', Đá May Mắn' : ''})`, { user: p.userId });
     this.db.markDirty();
   }
 

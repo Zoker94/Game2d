@@ -196,6 +196,8 @@ const CONSUMABLES = [
   { id: 'stone', name: 'Huyền Tinh Thạch', desc: 'Nguyên liệu cường hóa trang bị +1 đến +15. Từ +11 trở lên cần thêm Thiên Tinh Thạch (và nhiều Huyền Tinh Thạch hơn).', price: 300, icon: 'stone', material: true },
   { id: 'thien_tam_ti', name: 'Thiên Tàm Ti', desc: 'Tơ tằm trời quý hiếm. Nguyên liệu chế tạo Áo choàng ở bản đồ môn phái (NPC Chưởng Phi Phong). Rơi ít từ quái, nhiều hơn ở tinh anh và Boss; đổi được bằng điểm cống hiến môn phái.', price: 600, icon: 'silk', material: true, rarity: 'rare' },
   { id: 'stone2', name: 'Thiên Tinh Thạch', desc: 'Nguyên liệu quý để cường hóa +11 đến +15 (dùng cùng Huyền Tinh Thạch). Rơi từ Boss, quái cấp cao, sự kiện.', price: 8000, icon: 'stone2', material: true },
+  { id: 'loa_tg', name: 'Loa Thế Giới', desc: 'Gõ /loa nội dung trong ô chat: lời nhắn chạy chữ to trên đầu màn hình của mọi người chơi và hiện ở kênh Thế Giới. Mỗi lần dùng 1 cái. Mua ở Kỳ Trân Các.', effect: { loa: 1 }, price: 0, icon: 'scroll', rarity: 'rare', noSell: true },
+  { id: 'lucky_stone', name: 'Đá May Mắn', desc: 'Bỏ vào lò rèn khi cường hoá: tỉ lệ thành công gấp đôi (cộng thêm tối đa 15%). Mất đá dù thành công hay thất bại. Mua ở Kỳ Trân Các.', price: 0, icon: 'lucky', material: true, rarity: 'epic', noSell: true },
   { id: 'insure', name: 'Bảo Hiểm Phù', desc: 'Khi cường hóa từ +10 trở lên mà thất bại, giữ nguyên cấp thay vì rớt về +1.', price: 15000, icon: 'insure', material: true },
   // ---- câu cá & nấu ăn (server/game/fishing.js) ----
   { id: 'can_cau', name: 'Cần Câu Trúc', desc: 'Đứng sát mép nước (sông, hồ – kể cả trong thành) rồi Sử dụng hoặc bấm nút 🎣 để câu cá. Mỗi lần câu tốn 1 Mồi Câu. Không mất khi dùng.', effect: { fish: 1 }, price: 3000, icon: 'rod' },
@@ -322,7 +324,7 @@ ITEMS.event_token.type = 'material';
 const { OUTFITS } = require('./outfits');
 for (const o of Object.values(OUTFITS)) {
   ITEMS['outfit_' + o.id] = { id: 'outfit_' + o.id, type: 'use', name: 'Ngoại trang: ' + o.name, desc: `Sử dụng để mở khoá ngoại trang ${o.name} – đổi màu bộ áo của phái, không đổi chỉ số. Mặc / cởi ở bảng Nhân vật.${o.test ? ' (Đang thử nghiệm)' : ''}`,
-    effect: { outfit: o.id }, price: 0, lv: 1, rarity: o.rarity, icon: 'armor_3', stack: true, noSale: true };
+    effect: { outfit: o.id }, price: 0, lv: 1, rarity: o.rarity, icon: 'armor_3', stack: true, knbOnly: true };
 }
 
 // Đá khảm 5 loại × 5 cấp (data/gems.js)
@@ -331,4 +333,5 @@ for (const g of require('./mountgear').v2Items()) ITEMS[g.id] = g;   // Mã Cụ
 
 function equipId(slot, t, rarity) { return `${slot}_${t}_${rarity}`; }
 
+ITEMS.rebirth_stone.knbOnly = true;   // bán ở Kỳ Trân Các: chỉ Nguyên Bảo thường
 module.exports = { DIVINE_SETS, ITEMS, RARITY, SLOTS, TIERS, TIER_MAX, tierOfLv, DROP_SLOTS, EQUIP_SLOTS, SLOT_TYPE, equipId, CLASS_WEAPON, BR_ATTR, brPoints, BR_STAT, BR_OFF_K, brStats };

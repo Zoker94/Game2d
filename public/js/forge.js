@@ -76,10 +76,11 @@
     const E = G.data.enhance, items = allEquip(), s = items.find(x => x.uid === st.enhUid);
     if (!s) st.enhUid = null;
     const it = s ? IT(s.id) : null, plus = s ? s.plus || 0 : 0, maxed = s && plus >= E.max;
-    const cost = s && !maxed ? E.cost[plus][it.tier] : null, rate = cost ? Math.round(E.rate[plus] * 100) : 0, risky = s && plus >= E.safe;
+    const cost = s && !maxed ? E.cost[plus][it.tier] : null, rate = cost ? Math.round(Math.min(1, E.rate[plus] + (st.enhLuck ? Math.min(0.15, E.rate[plus]) : 0)) * 100) : 0, risky = s && plus >= E.safe;
     if (!cost || have('stone') < cost.stone) st.enhStone = false;
     if (!cost || !cost.stone2 || have('stone2') < cost.stone2) st.enhStone2 = false;
     if (!risky || !have('insure')) st.enhIns = false;
+    if (!have('lucky_stone')) st.enhLuck = false;
     const ready = s && !maxed && st.enhStone && (!cost.stone2 || st.enhStone2) && G.me.gold >= cost.gold && !st.enhBusy;
     const slot = (k, id, label, filled, n) => `<div class="fg-eslot ${k} ${filled ? 'full' : ''}" data-es="${k}">${filled ? `<img src="${ico(id)}">${n ? `<i>x${n}</i>` : ''}` : `<span>＋</span>`}<b>${label}</b></div>`;
     const anvil = `<div class="fg-anvil-wrap">
@@ -87,10 +88,11 @@
         <div class="fg-anvil"><div class="fg-hammer">🔨</div><div class="fg-sparks"></div>${st.enhFx === 'ok' ? `<div class="fg-plus">+${st.enhPlus || plus}</div>` : ''}</div>
         <div class="fg-mats">${slot('stone', 'stone', cost ? `Huyền Tinh ${have('stone')}/${cost.stone}` : 'Huyền Tinh Thạch', st.enhStone, cost && cost.stone)}
           ${cost && cost.stone2 ? slot('stone2', 'stone2', `Thiên Tinh ${have('stone2')}/${cost.stone2}`, st.enhStone2, cost.stone2) : ''}
-          ${slot('ins', 'insure', risky ? `Bảo Hiểm Phù (${have('insure')})` : 'Bảo Hiểm Phù (từ +' + E.safe + ')', st.enhIns)}</div></div>`;
+          ${slot('ins', 'insure', risky ? `Bảo Hiểm Phù (${have('insure')})` : 'Bảo Hiểm Phù (từ +' + E.safe + ')', st.enhIns)}
+          ${slot('luck', 'lucky_stone', `Đá May Mắn (${have('lucky_stone')})`, st.enhLuck)}</div></div>`;
     const res = { ok: '✨ CƯỜNG HOÁ THÀNH CÔNG! ✨', fail: '💢 Thất bại – trang bị giữ nguyên cấp', insured: '🛡️ Thất bại – Bảo Hiểm Phù đã giữ cấp', drop: '💥 Thất bại – rớt về +1!' }[st.enhFx];
     const bagEq = items.map(x => `<button class="fg-item ${x.uid === st.enhUid ? 'sel' : ''}" data-eu="${x.uid}" title="${esc(IT(x.id).name)}${x.plus ? ' +' + x.plus : ''}${x.equipped ? ' (đang mặc)' : ''}"><img src="${ico(x.id)}">${x.plus ? `<i>+${x.plus}</i>` : ''}${x.equipped ? '<u>mặc</u>' : ''}</button>`).join('');
-    const bagMat = ['stone', 'stone2', 'insure'].filter(id => have(id)).map(id => `<button class="fg-item" data-em="${id}" title="${esc(IT(id).name)}"><img src="${ico(id)}"><i>${have(id)}</i></button>`).join('');
+    const bagMat = ['stone', 'stone2', 'insure', 'lucky_stone'].filter(id => have(id)).map(id => `<button class="fg-item" data-em="${id}" title="${esc(IT(id).name)}"><img src="${ico(id)}"><i>${have(id)}</i></button>`).join('');
     return `<div class="forge enh-forge ${st.enhFx ? 'fx-' + st.enhFx : ''} ${st.enhBusy ? 'busy' : ''}">
       <div class="fg-stage">${anvil}</div>
       <div class="fg-info">${s ? (maxed ? `<b style="color:#ff5050">Đã đạt cường hoá tối đa +${E.max}</b>` : `<b class="r-${it.rarity}-t">${esc(it.name)}</b> +${plus} → <b style="color:#ffd76a">+${plus + 1}</b> · Tỉ lệ <b style="color:${rate >= 60 ? '#4ade80' : rate >= 20 ? '#ffd76a' : '#ff5050'}">${rate}%</b> · ${fmt(cost.gold)} 💰<br>${risky ? (st.enhIns ? '<span style="color:#4ade80">🛡️ Có Bảo Hiểm Phù: thất bại giữ nguyên cấp</span>' : '<span class="warn">⚠ Không có Bảo Hiểm Phù: thất bại sẽ rớt về +1!</span>') : `<span class="muted">Dưới +${E.safe}: thất bại không mất cấp</span>`}`) : 'Bấm một trang bị bên dưới để đặt lên đe, rồi bỏ đá (và Bảo Hiểm Phù nếu cần).'}
@@ -110,23 +112,25 @@
       if (id === 'stone') { if (have('stone') < cost.stone) return UI.toast(`Cần ${cost.stone} Huyền Tinh Thạch (đang có ${have('stone')})`, 'error'); st.enhStone = true; }
       if (id === 'stone2') { if (!cost.stone2) return UI.toast('Cấp này chưa cần Thiên Tinh Thạch', 'info'); if (have('stone2') < cost.stone2) return UI.toast(`Cần ${cost.stone2} Thiên Tinh Thạch`, 'error'); st.enhStone2 = true; }
       if (id === 'insure') { if (plus < E.safe) return UI.toast(`Bảo Hiểm Phù chỉ cần từ +${E.safe}`, 'info'); st.enhIns = true; }
+      if (id === 'lucky_stone') { if (!have('lucky_stone')) return UI.toast('Chưa có Đá May Mắn – mua ở Kỳ Trân Các', 'info'); st.enhLuck = true; }
       st.enhFx = null; G.sfx && G.sfx('click'); render();
     };
     host.querySelectorAll('[data-em]').forEach(b => b.onclick = () => { if (!st.enhBusy) put(b.dataset.em); });
     host.querySelectorAll('[data-es]').forEach(b => b.onclick = () => {
       if (st.enhBusy) return;
       const k = b.dataset.es; st.enhFx = null;
-      if (k === 'eq') { st.enhUid = null; st.enhStone = st.enhStone2 = st.enhIns = false; }
+      if (k === 'eq') { st.enhUid = null; st.enhStone = st.enhStone2 = st.enhIns = st.enhLuck = false; }
       else if (k === 'stone') st.enhStone ? (st.enhStone = false) : put('stone');
       else if (k === 'stone2') st.enhStone2 ? (st.enhStone2 = false) : put('stone2');
       else if (k === 'ins') st.enhIns ? (st.enhIns = false) : put('insure');
+      else if (k === 'luck') st.enhLuck ? (st.enhLuck = false) : put('lucky_stone');
       render();
     });
-    on('fg-eclear', () => { st.enhUid = null; st.enhStone = st.enhStone2 = st.enhIns = false; st.enhFx = null; render(); });
+    on('fg-eclear', () => { st.enhUid = null; st.enhStone = st.enhStone2 = st.enhIns = st.enhLuck = false; st.enhFx = null; render(); });
     on('fg-eflip', () => { if (!st.enhBusy && st.enhUid) emit('flipBranch', { uid: st.enhUid, npc: st.npc }); });
     on('fg-edo', () => {
       st.enhBusy = true; st.enhFx = 'swing'; render();
-      setTimeout(() => emit('enhance', { uid: st.enhUid, npc: st.npc, insure: st.enhIns }), 550);   // búa giơ lên rồi nện
+      setTimeout(() => { emit('enhance', { uid: st.enhUid, npc: st.npc, insure: st.enhIns, luck: st.enhLuck }); st.enhLuck = false; }, 550);   // Đá May Mắn dùng 1 lần: phải bỏ lại cho lần sau   // búa giơ lên rồi nện
       guard('enh');
     });
   }

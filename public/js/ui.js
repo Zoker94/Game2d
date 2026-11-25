@@ -1995,6 +1995,7 @@
     }
     return h + '</div>';
   }
+  UI.extraView = v => { if (npcData && npcData.extra) { npcData.extra = v; if (panel === 'npc') UI.refreshPanel(); } };
   UI.renameFreeUsed = () => { if (npcData) { npcData.freeRename = false; if (panel === 'npc') UI.refreshPanel(); } };
   function renderNpc(body) {
     const d = npcData;
@@ -2004,12 +2005,15 @@
     const tl = [];
     if (d.cook) tl.push(['cook', '🍲 Nấu ăn']);
     if (d.shop) tl.push(['buy', '🛒 Mua'], ['sell', '💰 Bán']);
-    if (d.knbShop) tl.push(['knb', '💎 Kỳ Trân'], ['sell', '💰 Bán']);
+    if (d.knbShop) tl.push(['knb', '💎 Kỳ Trân'], ...(d.extra ? [['extra', '➕ Thêm lượt']] : []), ['sell', '💰 Bán']);
     if (d.enhance) tl.push(['enhance', '🔨 Cường hóa'], ['inherit', '♻️ Kế thừa'], ['gem', '💎 Khảm đá'], ['gemup', '🔥 Luyện đá']);
     if (tl.length) html += tabs(tl, tab);
     if ((G.me.pk | 0) >= 3 && (d.shop || d.knbShop || d.teleports))   // đồ sát: không đi xe, không mua bán (trừ Lệnh Bài Xoá Tội)
       html += `<div class="outlaw-warn">☠️ Bạn đang mang tội đồ sát (sát khí ${G.me.pk}): không thể ${d.teleports ? 'đi xe Xa Phu – phải tự chạy bộ' : 'mua bán với NPC'}. ${d.teleports ? '' : 'Vẫn mua được <b>Lệnh Bài Xoá Tội</b>. '}Sát khí giảm 1 điểm mỗi 15 phút.</div>`;
     if (tab === 'knb') html += `<div class="tp-cta"><span>💎 Nguyên Bảo: <b>${fmt(G.me.knb)}</b> · 🔒 Khoá: <b>${fmt(G.me.knbB | 0)}</b><br><small class="muted">Nguyên Bảo Khoá (thưởng trong game) chỉ mua được món có dấu 🔒, được trừ trước</small></span><button class="btn primary small" id="tp-open">💳 Nạp Nguyên Bảo</button></div>`;
+    if (tab === 'extra' && d.extra) {
+      html += `<div class="small muted" style="margin:4px 0 6px">Mua thêm lượt chơi trong ngày. Giá tăng gấp đôi mỗi lần mua, làm mới lúc 0:00. Dùng được 🔒 Nguyên Bảo Khoá (trừ trước).<br>💎 ${fmt(G.me.knb)}${(G.me.knbB | 0) ? ' · 🔒 ' + fmt(G.me.knbB) : ''}</div><div class="list">` + d.extra.map(x => `<div class="li"><div style="font-size:24px;width:36px;text-align:center">${x.icon}</div><div class="grow"><b>${esc(x.name)}</b> <span class="small muted">đã mua ${x.n}/${x.max}</span><div class="sub">+${x.add ? x.add + ' ' : ''}${esc(x.unit)}</div></div>${x.price ? `<button class="btn small primary" data-extra="${x.k}">${x.price} 💎</button>` : '<button class="btn small" disabled>Hết lượt mua</button>'}</div>`).join('') + '</div>';
+    }
     if (tab === 'buy' || tab === 'knb') {
       const list = tab === 'buy' ? d.shop.map(x => ({ id: x.id, price: x.price })) : d.knbShop.map(x => ({ id: x.id, knb: x.knb, lock: x.lock, kb: x.kb }));
       const hasEq = list.some(x => G.data.items[x.id] && G.data.items[x.id].type === 'equip'), bbr = panelState.buyBr || G.me.branch;
@@ -2056,6 +2060,7 @@
       emit('buy', { npc: d.id, id: b.dataset.buy, qty: q ? +q.value : 1, knb: tab === 'knb', br: panelState.buyBr || G.me.branch });
     });
     body.querySelectorAll('[data-tp]').forEach(b => b.onclick = () => emit('teleport', { map: b.dataset.tp }));
+    body.querySelectorAll('[data-extra]').forEach(b => b.onclick = () => emit('extra', { k: b.dataset.extra }));
     body.querySelectorAll('[data-cloak]').forEach(b => b.onclick = () => emit('craftCloak', { t: +b.dataset.cloak, br: panelState.buyBr || G.me.branch }));
     body.querySelectorAll('[data-bbr]').forEach(b => b.onclick = () => { panelState.buyBr = b.dataset.bbr; G.sfx('click'); UI.refreshPanel(); });
     if (tab === 'sell' || tab === 'gem') bindInv(body, { shop: tab === 'sell' });

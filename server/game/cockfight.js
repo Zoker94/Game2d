@@ -116,7 +116,7 @@ class Cockfight {
       thoc: U.countItem(c, 'thoc'), eggs: Object.fromEntries(Object.keys(R.EGGS).map(k => [k, U.countItem(c, k)])),
       shop: [{ id: 'thoc', name: 'Thóc', price: 300, desc: '+40 thể lực, +15 kinh nghiệm cho gà' }, ...Object.entries(R.EGGS).map(([id, e]) => ({ id, name: e.name, price: e.price, desc: `Nở ngẫu nhiên: thường ${e.rar.common}% · hiếm ${e.rar.rare}% · quý ${e.rar.epic}% · huyền thoại ${e.rar.legendary}%` }))],
       tiers: R.TIERS.map(t => ({ name: t.name, lv: t.lv, gold: t.gold, exp: t.exp })), tactics: Object.entries(R.TACTICS).map(([k, t]) => ({ k, name: t.name })),
-      pve: PVE_DAILY - pv, cost: FIGHT_COST, gold: c.gold, near: this.near(p)
+      pve: PVE_DAILY + (this.w.extra ? this.w.extra.bonus(c, 'cf') : 0) - pv, cost: FIGHT_COST, gold: c.gold, near: this.near(p)
     });
   }
   // người chơi quanh đây có gà chọi (chạm để thách đấu, khỏi gõ tên – bàn phím điện thoại bật lên làm giật màn)
@@ -164,7 +164,7 @@ class Cockfight {
   pve(p, r, tier, tac) {
     const c = p.c, T = R.TIERS[tier]; if (!T || !r) return this.toast(p, 'Chưa có gà', 'error');
     const today = U.vnDay(); if (c.cfDay !== today) { c.cfDay = today; c.cfPve = 0; }
-    if (c.cfPve >= PVE_DAILY) return this.toast(p, `Hôm nay đã đấu tập đủ ${PVE_DAILY} trận`, 'error');
+    if (c.cfPve >= PVE_DAILY + (this.w.extra ? this.w.extra.bonus(c, 'cf') : 0)) return this.toast(p, `Hôm nay đã đấu tập đủ trận (mua thêm ở Kỳ Trân Các)`, 'error');
     if (this.energy(r) < FIGHT_COST) return this.toast(p, `${r.name} mệt rồi (thể lực ${r.en}/${ENERGY_MAX}) – cho ăn Thóc hoặc chờ hồi`, 'error');
     const list = R.RAR_GROUP[T.rar], foe = this.newRooster(list[U.randInt(0, list.length - 1)], T.stars, T.lv); foe.name = T.name;
     r.en -= FIGHT_COST; c.cfPve++;

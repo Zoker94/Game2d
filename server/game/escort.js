@@ -60,7 +60,7 @@ class Escort {
   meView(p) {
     const cart = this.carts.get(p.userId);
     const day = this.daily(p.c);
-    const base = { left: DAILY - day.n };
+    const base = { left: DAILY + (this.w.extra ? this.w.extra.bonus(p.c, 'esc') : 0) - day.n };
     if (!cart) return base;
     const r = ROUTES[cart.tier];
     return Object.assign(base, {
@@ -110,7 +110,7 @@ class Escort {
     if (this.carts.has(p.userId)) return w.toast(p, 'Bạn đang áp tiêu rồi', 'error');
     if (c.level < r.lv) return w.toast(p, `${r.name} yêu cầu cấp ${r.lv}`, 'error');
     const day = this.daily(c);
-    if (day.n >= DAILY) return w.toast(p, `Mỗi ngày chỉ áp tiêu ${DAILY} lần`, 'error');
+    if (day.n >= DAILY + (this.w.extra ? this.w.extra.bonus(c, 'esc') : 0)) return w.toast(p, `Hôm nay đã hết lượt áp tiêu (mua thêm lượt ở Kỳ Trân Các)`, 'error');
     if (c.gold < r.deposit) return w.toast(p, `Cần ${r.deposit.toLocaleString('vi-VN')} lượng tiền cọc`, 'error');
     c.gold -= r.deposit;
     day.n++;

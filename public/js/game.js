@@ -488,6 +488,8 @@
       $('modal-btns').classList.add('ch-grid');   // 20 khu: xếp lưới
     }
     s.on('ticketEnd', () => { if (G.auto) G.setAuto(false); });   // Vé Treo Máy hết hạn: tắt Tự động
+    s.on('extraView', v => UI.extraView(v));
+    s.on('loa', d => { UI.announce(`📢 ${d.from}: ${d.text}`); G.sfx && G.sfx('click'); });   // Loa Thế Giới   // mua thêm lượt: cập nhật bảng Kỳ Trân Các
     s.on('autoOff', () => { if (G.auto) G.setAuto(false); });   // bị quái hạ khi treo máy bằng vé: máy chủ đã tắt Tự động, về thành
     s.on('autoSrvReport', r => {
       const why = r.why === 'dead' ? ' Nhân vật bị hạ gục nên đã dừng.' : r.why === 'time' ? ' Đã đủ 8 giờ nên tự dừng.' : r.why === 'ticket' ? ' Vé Treo Máy hết hạn nên đã dừng.' : '';
