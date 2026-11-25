@@ -6,6 +6,7 @@
   const PETS = {
     hong_long: { fly: 1, fireX: 0.83, glow: '#ff8a30' },
     fauna:     { fly: 1, glow: '#9effa0' },
+    fauna2:    { glow: '#7cff8a' },   // Mộc Linh Hộ Vệ (tiến hoá của Tiên Mộc Linh): đi bộ cầm giáo
     gears:     { glow: '#8fd0ff' },
     arcana:    { glow: '#d29cff' },
     ember:     { glow: '#ffa040' }
@@ -58,7 +59,8 @@
     const vx = (tx - s.x) * kk, vy = (ty - s.y) * kk;
     s.x += vx; s.y += vy;
     s.speed = Math.hypot(vx, vy) / Math.max(dt, 0.001);
-    if (!fire && !act && Math.abs(vx) > 0.4) s.face = vx > 0 ? 2 : 1;
+    // hướng mặt (hình gốc quay sang phải, quay trái thì lật): đang di chuyển theo hướng đi, đứng yên quay cùng hướng chủ
+    if (!fire && !act) s.face = Math.abs(vx) > 0.4 ? (vx > 0 ? 2 : 1) : face;
     s.alt += Math.max(-70 * dt, Math.min(70 * dt, talt - s.alt));
     s.fireNow = fire; s.actNow = act;
     states.set(id, s);

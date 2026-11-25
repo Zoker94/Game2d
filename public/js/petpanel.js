@@ -39,13 +39,17 @@
           <button class="btn" data-pop="feed" data-n="1" ${d.food ? '' : 'disabled'}>🍖 Cho ăn 1</button>
           <button class="btn" data-pop="feed" data-n="10" ${d.food >= 10 ? '' : 'disabled'}>🍖 x10</button>
           ${x.star < d.starMax ? `<button class="btn green" data-pop="star" ${d.stone >= x.cost.stone && d.gold >= x.cost.gold ? '' : 'disabled'}>⭐ Lên ${x.star + 1} sao (${x.cost.stone} 💠 + ${fmt(x.cost.gold)} 💰)</button>` : '<span class="small" style="color:#ffd76a">⭐ Đã tối đa 5 sao</span>'}
+          ${x.evo ? `<button class="btn primary" data-pop="evo" ${x.lv >= x.evo.lv && x.star >= x.evo.star && d.stone >= x.evo.stone && d.gold >= x.evo.gold ? '' : 'disabled'}>🌟 Tiến hoá → ${esc(d.info[x.evo.to].name)}</button>` : ''}
           <button class="btn red small" data-pop="release">Thả</button></div>
+        ${x.evo ? `<div class="small" style="color:#9effa0">🌟 Tiến hoá thành <b>${esc(d.info[x.evo.to].name)}</b>: cần cấp ${x.evo.lv}, ${x.evo.star} sao, ${x.evo.stone} 💠 Linh Thú Thạch + ${fmt(x.evo.gold)} 💰. Giữ nguyên cấp, sao, phẩm chất; hình mới, thuộc tính và sát thương mạnh hơn.</div>` : ''}
+        ${P.base ? `<div class="small" style="color:#ffd76a">🌟 Đã tiến hoá từ ${esc(d.info[P.base].name)}</div>` : ''}
         <div class="small muted">Mỗi sao: +15% thuộc tính, +10% sát thương. Cấp thú cưng không vượt cấp nhân vật. Linh Thú Đan / Linh Thú Thạch: Kỳ Trân Các, Boss.</div></div>`;
     }
     body.innerHTML = h;
     body.querySelectorAll('[data-ps]').forEach(b => b.onclick = () => { sel = b.dataset.ps; UI.refreshPanel(); });
     body.querySelectorAll('[data-pop]').forEach(b => b.onclick = () => {
       const op = b.dataset.pop;
+      if (op === 'evo') return G.modal(`Tiến hoá ${d.info[x.id].name} thành ${d.info[x.evo.to].name}? Tốn ${x.evo.stone} Linh Thú Thạch + ${fmt(x.evo.gold)} lượng.`, [{ t: '🌟 Tiến hoá', cls: 'primary', fn: () => emit({ op, uid: sel }) }, { t: 'Huỷ' }]);
       if (op === 'release') return G.modal(`Thả ${d.info[x.id].name} (cấp ${x.lv}, ${x.star} sao)? Không lấy lại được – chỉ nhận lại một ít Linh Thú Đan / Linh Thú Thạch.`, [{ t: 'Thả', cls: 'red', fn: () => emit({ op, uid: sel }) }, { t: 'Huỷ' }]);
       emit({ op, uid: sel, n: +b.dataset.n || 1 });
     });

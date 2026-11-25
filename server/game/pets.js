@@ -51,8 +51,8 @@ class Pets {
     const c = p.c, L = this.list(c);
     return {
       on: c.petOn || null, slots: PT.PET_SLOTS, maxLv: PT.PET_MAX_LV, starMax: PT.PET_STAR_MAX, food: U.countItem(c, 'pet_food'), stone: U.countItem(c, 'pet_stone'), gold: c.gold,
-      pets: L.map(pe => ({ uid: pe.uid, id: pe.id, q: pe.q, lv: pe.lv, exp: pe.exp, need: PT.expNeed(pe.lv), star: pe.star | 0, own: PT.ownerStats(pe), dmg: Math.round(PT.atkK(pe) * 100), cost: PT.starCost(pe.star | 0) })),
-      info: Object.fromEntries(Object.values(PETS).map(P => [P.id, { name: P.name, el: P.el, color: P.color, skill: P.skill, desc: P.desc }]))
+      pets: L.map(pe => ({ uid: pe.uid, id: pe.id, q: pe.q, lv: pe.lv, exp: pe.exp, need: PT.expNeed(pe.lv), star: pe.star | 0, own: PT.ownerStats(pe), dmg: Math.round(PT.atkK(pe) * 100), cost: PT.starCost(pe.star | 0), evo: PT.evoOf(pe.id) })),
+      info: Object.fromEntries(Object.values(PETS).map(P => [P.id, { name: P.name, el: P.el, color: P.color, skill: P.skill, desc: P.desc, base: P.base || null }]))
     };
   }
   send(p) { p.socket.emit('pets', this.view(p)); }
@@ -101,6 +101,17 @@ class Pets {
       w.toast(p, `⭐ ${PETS[pe.id].name} lên ${pe.star} sao!`, 'reward');
       if (pe.star >= 4 && w.features) w.features.brag(`⭐ ${c.name} nâng thú cưng [${PETS[pe.id].name}] lên ${pe.star} sao!`);
       if (pe.uid === c.petOn) w.recalc(p);
+    } else if (d.op === 'evo') {   // tiến hoá
+      const ev = pe && PT.evoOf(pe.id);
+      if (!ev) return;
+      if (pe.lv < ev.lv || (pe.star | 0) < ev.star) return w.toast(p, `Cần thú cưng cấp ${ev.lv} và ${ev.star} sao để tiến hoá`, 'error');
+      if (U.countItem(c, 'pet_stone') < ev.stone) return w.toast(p, `Cần ${ev.stone} Linh Thú Thạch`, 'error');
+      if (c.gold < ev.gold) return w.toast(p, `Cần ${ev.gold.toLocaleString('vi-VN')} lượng`, 'error');
+      U.removeItemById(c, 'pet_stone', ev.stone); c.gold -= ev.gold;
+      const from = PETS[pe.id].name; pe.id = ev.to;
+      w.toast(p, `🌟 ${from} đã TIẾN HOÁ thành ${PETS[pe.id].name}!`, 'reward');
+      if (w.features) w.features.brag(`🌟 ${c.name} tiến hoá thú cưng [${from}] thành [${PETS[pe.id].name}]!`);
+      w.db.log('pet', `${c.name} tiến hoá ${from} -> ${PETS[pe.id].name}`);
     } else if (d.op === 'release') {
       if (!pe) return;
       c.pets = this.list(c).filter(x => x !== pe);

@@ -9,7 +9,12 @@ const RARE_K = 1.35, RARE_EGG = 0.15;
 const PETS = {
   fauna:     { name: 'Tiên Mộc Linh',  el: 'moc', price: 100, color: '#7ee07a', own: { maxHp: 22, regen: 0.15 },
                skill: { k: 'heal', name: 'Mộc Linh Hồi Xuân', cd: 10000, v: 0.06, text: 'Hồi 6% sinh lực tối đa cho chủ (+1% mỗi sao)' },
-               desc: 'Tiên rừng nhỏ có cánh, bay lượn theo chủ. Tăng sinh lực, hồi phục.' },
+               desc: 'Tiên rừng nhỏ có cánh, bay lượn theo chủ. Tăng sinh lực, hồi phục.',
+               evo: { to: 'fauna2', lv: 40, star: 3, stone: 20, gold: 500000 } },
+  // ----- tiến hoá (không bán, không nở từ trứng: chỉ tiến hoá từ loài gốc) -----
+  fauna2:    { name: 'Mộc Linh Hộ Vệ', base: 'fauna', el: 'moc', price: 0, color: '#5fd068', own: { maxHp: 34, regen: 0.22, def: 1.5 },
+               skill: { k: 'heal', name: 'Thần Mộc Hộ Thể', cd: 9000, v: 0.09, text: 'Hồi 9% sinh lực tối đa cho chủ (+1% mỗi sao)' },
+               desc: 'Tiên Mộc Linh tiến hoá: hộ vệ rừng già cầm giáo, mang khiên gỗ. Tăng mạnh sinh lực, hồi phục, phòng thủ.' },
   gears:     { name: 'Cơ Quan Khuyển', el: 'kim', price: 150, color: '#8fd0ff', own: { def: 3, maxHp: 10 },
                skill: { k: 'stun', name: 'Thiết Nha Trảm', cd: 9000, v: 2.5, stun: 1200, text: 'Cắn mạnh 250% sát thương, choáng mục tiêu 1,2 giây' },
                desc: 'Chó máy cơ quan, cắn xé không biết mệt. Tăng phòng thủ, sinh lực.' },
@@ -36,8 +41,8 @@ function ownerStats(pe) {
   for (const [s, v] of Object.entries(P.own)) out[s] = Math.round(v * k * 100) / 100;
   return out;
 }
-// hệ số sát thương của thú cưng theo công của chủ (đánh thường)
-const atkK = pe => (0.2 + 0.003 * (pe.lv | 0 || 1)) * (1 + 0.1 * (pe.star | 0)) * qK(pe.q);
+// hệ số sát thương của thú cưng theo công của chủ (đánh thường); loài tiến hoá x1,3
+const atkK = pe => (0.2 + 0.003 * (pe.lv | 0 || 1)) * (1 + 0.1 * (pe.star | 0)) * qK(pe.q) * (PETS[pe.id] && PETS[pe.id].base ? 1.3 : 1);
 // Linh Thú Thạch cần để lên sao kế tiếp + ngân lượng
 const starCost = s => ({ stone: [3, 6, 12, 24, 40][s] || 0, gold: [20000, 50000, 120000, 300000, 600000][s] || 0 });
 function rollEgg(rnd = Math.random) {
@@ -45,4 +50,6 @@ function rollEgg(rnd = Math.random) {
   for (const [id, w] of Object.entries(EGG_W)) { if ((x -= w) < 0) return id; }
   return 'fauna';
 }
-module.exports = { PETS, PET_MAX_LV, PET_STAR_MAX, PET_SLOTS, RARE_K, RARE_EGG, EGG_W, ownerStats, atkK, expNeed, starCost, rollEgg, qK, starK };
+// tiến hoá: đủ cấp + sao + Linh Thú Thạch + ngân lượng -> đổi sang loài tiến hoá (giữ cấp, sao, phẩm chất)
+const evoOf = id => (PETS[id] && PETS[id].evo) || null;
+module.exports = { evoOf, PETS, PET_MAX_LV, PET_STAR_MAX, PET_SLOTS, RARE_K, RARE_EGG, EGG_W, ownerStats, atkK, expNeed, starCost, rollEgg, qK, starK };

@@ -338,7 +338,7 @@ ITEMS.rebirth_stone.knbOnly = true;
 // ---------- Thú cưng (Linh Thú) ----------
 {
   const PT = require('./pets');
-  for (const P of Object.values(PT.PETS))
+  for (const P of Object.values(PT.PETS).filter(P => !P.base))
     ITEMS['pet_' + P.id] = { id: 'pet_' + P.id, type: 'use', name: 'Linh Thú: ' + P.name, desc: `${P.desc} Sử dụng để thu nhận vào bảng 🐾 Thú cưng. Kỹ năng: ${P.skill.name} – ${P.skill.text}.`, effect: { petAdd: P.id }, price: 0, lv: 1, icon: 'pet:' + P.id, rarity: P.price >= 300 ? 'legendary' : 'epic', stack: true, noSell: true, knbOnly: true };
   ITEMS.pet_egg = { id: 'pet_egg', type: 'use', name: 'Trứng Linh Thú', desc: `Sử dụng để ấp nở 1 thú cưng ngẫu nhiên (Tiên Mộc Linh, Cơ Quan Khuyển, Huyền Miêu, Hỏa Linh Tử, hiếm có Hồng Long Ấu Thú). ${Math.round(PT.RARE_EGG * 100)}% nở ra phẩm chất HIẾM (chỉ số x${PT.RARE_K}). Rơi từ Boss và sự kiện.`, effect: { petEgg: 1 }, price: 0, lv: 1, icon: 'egg', rarity: 'epic', stack: true, noSell: true };
   ITEMS.pet_food = { id: 'pet_food', type: 'material', name: 'Linh Thú Đan', desc: 'Cho thú cưng ăn ở bảng 🐾 Thú cưng: +300 kinh nghiệm thú cưng mỗi viên.', price: 0, icon: 'food', rarity: 'rare', stack: true, material: true, noSell: true };
