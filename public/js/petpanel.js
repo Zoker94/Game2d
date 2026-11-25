@@ -33,6 +33,8 @@
           <div>${stars(x.star)} · Cấp <b>${x.lv}</b>/${cap}</div><div class="vp-bar"><i style="width:${pct}%"></i></div><div class="small muted">Kinh nghiệm ${fmt(x.exp)}/${fmt(x.need)} – hạ quái cùng chủ hoặc cho ăn</div></div></div>
         <div class="small" style="margin-top:6px">🛡️ Thuộc tính cho chủ: <b>${statTxt(x.own) || '—'}</b></div>
         <div class="small">⚔️ Đánh thường mỗi 2 giây: <b>${x.dmg}%</b> công của chủ</div>
+        ${x.apt ? `<div class="small">🎲 Tư chất <span class="muted">(${x.src === 'egg' ? 'nở từ trứng: 90–125%' : 'mua: 85–110%'})</span>: ${Object.entries(x.apt).map(([k, v]) => `${k === 'dmg' ? 'Sát thương' : SN[k] || k} <b style="color:${v >= 1.15 ? '#ffd76a' : v >= 1 ? '#4ade80' : '#ff9a7a'}">${Math.round(v * 100)}%</b>`).join(' · ')}</div>` : ''}
+        ${x.vac ? `<div class="small">💰 <b>${esc(P.vac.name)}</b>: tự hút ngân lượng rơi quanh chủ trong tầm <b>${x.vac}</b> (+${P.vac.star} mỗi sao)</div>` : ''}
         <div class="small">✨ <b>${esc(P.skill.name)}</b> (hồi ${Math.round(P.skill.cd / 1000)} giây): ${esc(P.skill.text)}</div>
         <div class="row pt-btns">
           <button class="btn ${x.uid === d.on ? '' : 'primary'}" data-pop="on">${x.uid === d.on ? '💤 Cho nghỉ' : '🐾 Triệu hồi'}</button>

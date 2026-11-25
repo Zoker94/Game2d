@@ -26,6 +26,7 @@ const PETS = {
                desc: 'Tinh linh lửa nóng nảy. Tăng mạnh công.' },
   hong_long: { name: 'Hồng Long Ấu Thú', el: 'hoa', price: 400, color: '#ff5a2a', own: { atk: 3.5, crit: 0.03 },
                skill: { k: 'aoe', name: 'Long Viêm Thổ Tức', cd: 12000, v: 2.2, r: 130, n: 6, burn: 3000, text: 'Rồng phun lửa 220% sát thương lan quanh mục tiêu, thiêu đốt 3 giây' },
+               vac: { r: 220, star: 20, name: 'Long Châu Hút Bảo', text: 'Tự hút ngân lượng rơi quanh chủ (tầm 220, +20 mỗi sao)' },
                desc: 'Rồng lửa nhỏ bay theo chủ. Tăng công, chí mạng.' }
 };
 for (const id in PETS) PETS[id].id = id;
@@ -34,15 +35,22 @@ const EGG_W = { fauna: 30, gears: 28, arcana: 20, ember: 15, hong_long: 7 };   /
 const qK = q => (q === 'r' ? RARE_K : 1);
 const starK = s => 1 + 0.15 * (s | 0);
 const expNeed = lv => 40 + lv * lv * 4;
+// tư chất ngẫu nhiên (mỗi con khác nhau): hệ số cho từng thuộc tính + sát thương. Mua ở Kỳ Trân Các 85–110%, nở từ trứng 90–125%.
+const APT = { buy: [0.85, 1.10], egg: [0.90, 1.25] };
+function rollApt(id, src, rnd = Math.random) {
+  const [a, b] = APT[src] || APT.buy, P = PETS[id], out = {};
+  for (const s of [...Object.keys(P ? P.own : {}), 'dmg']) out[s] = Math.round((a + rnd() * (b - a)) * 100) / 100;
+  return out;
+}
 // thuộc tính cộng cho chủ
 function ownerStats(pe) {
   const P = PETS[pe && pe.id]; if (!P) return {};
-  const k = (pe.lv | 0 || 1) * starK(pe.star) * qK(pe.q), out = {};
-  for (const [s, v] of Object.entries(P.own)) out[s] = Math.round(v * k * 100) / 100;
+  const k = (pe.lv | 0 || 1) * starK(pe.star) * qK(pe.q), out = {}, ap = pe.apt || {};
+  for (const [s, v] of Object.entries(P.own)) out[s] = Math.round(v * k * (ap[s] || 1) * 100) / 100;
   return out;
 }
 // hệ số sát thương của thú cưng theo công của chủ (đánh thường); loài tiến hoá x1,3
-const atkK = pe => (0.2 + 0.003 * (pe.lv | 0 || 1)) * (1 + 0.1 * (pe.star | 0)) * qK(pe.q) * (PETS[pe.id] && PETS[pe.id].base ? 1.3 : 1);
+const atkK = pe => (0.2 + 0.003 * (pe.lv | 0 || 1)) * (1 + 0.1 * (pe.star | 0)) * qK(pe.q) * (PETS[pe.id] && PETS[pe.id].base ? 1.3 : 1) * ((pe.apt && pe.apt.dmg) || 1);
 // Linh Thú Thạch cần để lên sao kế tiếp + ngân lượng
 const starCost = s => ({ stone: [3, 6, 12, 24, 40][s] || 0, gold: [20000, 50000, 120000, 300000, 600000][s] || 0 });
 function rollEgg(rnd = Math.random) {
@@ -52,4 +60,4 @@ function rollEgg(rnd = Math.random) {
 }
 // tiến hoá: đủ cấp + sao + Linh Thú Thạch + ngân lượng -> đổi sang loài tiến hoá (giữ cấp, sao, phẩm chất)
 const evoOf = id => (PETS[id] && PETS[id].evo) || null;
-module.exports = { evoOf, PETS, PET_MAX_LV, PET_STAR_MAX, PET_SLOTS, RARE_K, RARE_EGG, EGG_W, ownerStats, atkK, expNeed, starCost, rollEgg, qK, starK };
+module.exports = { rollApt, APT, evoOf, PETS, PET_MAX_LV, PET_STAR_MAX, PET_SLOTS, RARE_K, RARE_EGG, EGG_W, ownerStats, atkK, expNeed, starCost, rollEgg, qK, starK };

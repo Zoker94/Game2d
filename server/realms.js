@@ -59,10 +59,10 @@ function sendOpen(db, id) { const k = kids[id]; if (k && k.proc && k.proc.connec
 function send(id, msg) { const k = kids[id]; if (k && k.proc && k.proc.connected) { k.proc.send(msg); return true; } return false; }
 
 // danh sách server cho màn đăng nhập / trang quản trị
-function list(db, mainOnline) {
+function list(db, mainOnline, pub) {   // pub: danh sách cho người chơi (số online hiển thị)
   const c = db.data.config;
   return [{ id: R.ID, name: R.NAME, open: !c.maintenance, up: true, online: mainOnline | 0 }]
-    .concat(R.CHILDREN.map(id => { const k = kids[id] || {}; return { id, name: R.REALMS[id].name, open: isOpen(db, id), up: !!k.up, online: k.online | 0 }; }));
+    .concat(R.CHILDREN.map(id => { const k = kids[id] || {}; return { id, name: R.REALMS[id].name, open: isOpen(db, id), up: !!k.up, online: pub ? require('./onlineshow').shown(id, k.online, isOpen(db, id) && !!k.up) : k.online | 0 }; }));
 }
 
 const PREFIX = /^\/s\/([a-z]+)(\/.*)?$/;

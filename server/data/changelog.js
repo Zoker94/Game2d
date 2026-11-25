@@ -35,7 +35,9 @@ const CHANGELOG = [
       '🌟 TIẾN HOÁ THÚ CƯNG: Tiên Mộc Linh đạt cấp 40 + 3 sao thì tiến hoá (20 Linh Thú Thạch + 500.000 lượng) thành Mộc Linh Hộ Vệ – hình mới cầm giáo, mang khiên; thuộc tính mạnh hơn (thêm phòng thủ), đánh thường x1,3, kỹ năng hồi 9% sinh lực. Giữ nguyên cấp, sao, phẩm chất.',
       '↔️ Thú cưng đứng yên giờ quay cùng hướng với chủ; khi di chuyển / tấn công quay theo hướng đi / hướng mục tiêu.',
       '🐾 Thú cưng thu nhỏ lại cho cân đối với nhân vật; sửa hình thú cưng bị khuyết / lủng chỗ (Mộc Linh Hộ Vệ, Cơ Quan Khuyển, Tiên Mộc Linh, Hỏa Linh Tử).',
-      '💎 BỎ NGUYÊN BẢO KHOÁ: chỉ còn 1 loại Nguyên Bảo. Nguyên Bảo Khoá đang có được cộng hết vào Nguyên Bảo khi vào game. Mọi thưởng Nguyên Bảo trong game là Nguyên Bảo thường, mua được mọi món ở Kỳ Trân Các (thú cưng, thú cưỡi, ngoại trang, Đá Hồi Sinh…). Tích Tiêu tính mọi Nguyên Bảo đã tiêu.'
+      '💎 BỎ NGUYÊN BẢO KHOÁ: chỉ còn 1 loại Nguyên Bảo. Nguyên Bảo Khoá đang có được cộng hết vào Nguyên Bảo khi vào game. Mọi thưởng Nguyên Bảo trong game là Nguyên Bảo thường, mua được mọi món ở Kỳ Trân Các (thú cưng, thú cưỡi, ngoại trang, Đá Hồi Sinh…). Tích Tiêu tính mọi Nguyên Bảo đã tiêu.',
+      '🎲 TƯ CHẤT THÚ CƯNG: mỗi con thú cưng có chỉ số ngẫu nhiên riêng cho từng thuộc tính và sát thương – mua ở Kỳ Trân Các 85–110%, nở từ Trứng Linh Thú 90–125% (trứng dễ ra con xịn hơn). Xem trong bảng 🐾 Thú cưng. Thú cưng đang có giữ nguyên 100%.',
+      '💰 Hồng Long Ấu Thú thêm kỹ năng bị động Long Châu Hút Bảo: tự hút ngân lượng rơi quanh chủ (tầm 220, +20 mỗi sao).'
     ]
   },
   {

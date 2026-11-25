@@ -1633,12 +1633,12 @@ class World {
   }
 
   // Đi ngang qua chỉ tự nhặt ngân lượng; vật phẩm phải bấm nhặt (hoặc bật tự động nhặt) để túi không đầy nhanh
-  tryPickup(p, m) {
+  tryPickup(p, m, r = PICKUP_R) {   // r: tầm hút (thú cưng Hồng Long hút xa hơn)
     if (p.dead) return;
     const now = Date.now();
     for (const dr of m.drops.values()) {
       if (!dr.gold) continue;
-      if (Math.abs(dr.x - p.x) > PICKUP_R || Math.abs(dr.y - p.y) > PICKUP_R) continue;
+      if (Math.abs(dr.x - p.x) > r || Math.abs(dr.y - p.y) > r) continue;
       if (dr.owner && dr.owner !== p.userId && dr.ownerUntil > now) continue;
       m.drops.delete(dr.id);
       this.io.to('map:' + p.mapId).emit('dropDel', dr.id);

@@ -19,11 +19,11 @@ class Pets {
   // mã hiển thị trên người chơi (ap[10]): loài + '*' nếu Hiếm
   appear(c) { const pe = this.active(c); return pe && PETS[pe.id] ? pe.id + (pe.q === 'r' ? '*' : '') : ''; }
 
-  add(p, id, q, why) {
+  add(p, id, q, why, src) {
     const c = p.c, L = this.list(c);
     if (!PETS[id]) return false;
     if (L.length >= PT.PET_SLOTS) { this.w.toast(p, `Chuồng thú cưng đã đầy (${PT.PET_SLOTS} con) – thả bớt ở bảng 🐾 Thú cưng`, 'error'); return false; }
-    const pe = { uid: U.newUid(), id, q: q === 'r' ? 'r' : 'n', lv: 1, exp: 0, star: 0, at: Date.now() };
+    const pe = { uid: U.newUid(), id, q: q === 'r' ? 'r' : 'n', lv: 1, exp: 0, star: 0, at: Date.now(), apt: PT.rollApt(id, src || 'buy'), src: src || 'buy' };
     L.push(pe);
     if (!c.petOn) c.petOn = pe.uid;
     this.w.toast(p, `🐾 ${why || 'Thu nhận'} ${pe.q === 'r' ? '✨ HIẾM ✨ ' : ''}${PETS[id].name}! Mở bảng 🐾 Thú cưng để triệu hồi, cho ăn, nâng sao.`, 'reward');
@@ -44,15 +44,15 @@ class Pets {
     U.removeByUid(p.c, uid, 1);
     const id = PT.rollEgg(), q = Math.random() < PT.RARE_EGG ? 'r' : 'n';
     this.w.db.log('pet', `${p.c.name} ấp trứng ra ${PETS[id].name}${q === 'r' ? ' (Hiếm)' : ''}`);
-    this.add(p, id, q, '🥚 Trứng nở ra');
+    this.add(p, id, q, '🥚 Trứng nở ra', 'egg');
   }
 
   view(p) {
     const c = p.c, L = this.list(c);
     return {
       on: c.petOn || null, slots: PT.PET_SLOTS, maxLv: PT.PET_MAX_LV, starMax: PT.PET_STAR_MAX, food: U.countItem(c, 'pet_food'), stone: U.countItem(c, 'pet_stone'), gold: c.gold,
-      pets: L.map(pe => ({ uid: pe.uid, id: pe.id, q: pe.q, lv: pe.lv, exp: pe.exp, need: PT.expNeed(pe.lv), star: pe.star | 0, own: PT.ownerStats(pe), dmg: Math.round(PT.atkK(pe) * 100), cost: PT.starCost(pe.star | 0), evo: PT.evoOf(pe.id) })),
-      info: Object.fromEntries(Object.values(PETS).map(P => [P.id, { name: P.name, el: P.el, color: P.color, skill: P.skill, desc: P.desc, base: P.base || null }]))
+      pets: L.map(pe => ({ uid: pe.uid, id: pe.id, q: pe.q, lv: pe.lv, exp: pe.exp, need: PT.expNeed(pe.lv), star: pe.star | 0, own: PT.ownerStats(pe), dmg: Math.round(PT.atkK(pe) * 100), cost: PT.starCost(pe.star | 0), evo: PT.evoOf(pe.id), apt: pe.apt || null, src: pe.src || null, vac: PETS[pe.id].vac ? PETS[pe.id].vac.r + PETS[pe.id].vac.star * (pe.star | 0) : 0 })),
+      info: Object.fromEntries(Object.values(PETS).map(P => [P.id, { name: P.name, el: P.el, color: P.color, skill: P.skill, desc: P.desc, base: P.base || null, vac: P.vac || null }]))
     };
   }
   send(p) { p.socket.emit('pets', this.view(p)); }
@@ -109,6 +109,7 @@ class Pets {
       if (c.gold < ev.gold) return w.toast(p, `Cần ${ev.gold.toLocaleString('vi-VN')} lượng`, 'error');
       U.removeItemById(c, 'pet_stone', ev.stone); c.gold -= ev.gold;
       const from = PETS[pe.id].name; pe.id = ev.to;
+      if (pe.apt) { const nw = PT.rollApt(pe.id, pe.src || 'buy'); for (const k in nw) if (pe.apt[k] == null) pe.apt[k] = nw[k]; }   // thuộc tính mới của loài tiến hoá
       w.toast(p, `🌟 ${from} đã TIẾN HOÁ thành ${PETS[pe.id].name}!`, 'reward');
       if (w.features) w.features.brag(`🌟 ${c.name} tiến hoá thú cưng [${from}] thành [${PETS[pe.id].name}]!`);
       w.db.log('pet', `${c.name} tiến hoá ${from} -> ${PETS[pe.id].name}`);
@@ -130,6 +131,9 @@ class Pets {
   // mỗi tick (gọi ~4 lần / giây): thú cưng đánh quái chủ đang đánh
   tick(p, now) {
     const c = p.c, pe = this.active(c);
+    if (pe && !p.dead && PETS[pe.id] && PETS[pe.id].vac && this.w.maps[p.mapId]) {   // Hồng Long: tự hút ngân lượng quanh chủ
+      const v = PETS[pe.id].vac; this.w.tryPickup(p, this.w.maps[p.mapId], v.r + v.star * (pe.star | 0));
+    }
     if (!pe || p.dead || now < (p.petNext || 0) || now - (p.lastHitMon || 0) > COMBAT_MS) return;
     const P = PETS[pe.id], w = this.w, m = w.maps[p.mapId];
     if (!P || !m) return;
