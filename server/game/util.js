@@ -2,7 +2,7 @@ const { CLASSES, branchOf } = require('../data/classes');
 const { BRANCH_BONUS } = require('../data/branches');
 const { scaleSkill } = require('../data/skillbooks');
 const { ITEMS, BR_ATTR, brPoints, brStats, DIVINE_SETS } = require('../data/items');
-const { mountStats, MOUNTS } = require('../data/mounts');
+const { mountStats, mountPerk, MOUNTS } = require('../data/mounts');
 const MGEAR = require('../data/mountgear');
 const { rollAffixes, elementBonus, CAP, GEAR_CAP, rescaleFx } = require('../data/affixes');
 const Power = require('../../public/js/power');
@@ -250,6 +250,15 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
   // hệ số nhân sau trang bị (bang, nội công, môn phái, di thư) – gửi máy khách để so đồ ra đúng lực chiến
   const mul = { atk: 1, def: 1, maxHp: 1, maxMp: 1 };
   const mulAll = (k, f) => { s[k] *= f; mul[k] *= f; };
+  // thuộc tính riêng của thú cưỡi đang chọn
+  if (c.mount && c.mounts && c.mounts[c.mount]) {
+    const pk = mountPerk(c.mount, c.mounts[c.mount].lv);
+    if (pk) {
+      if (pk.k === 'atk' || pk.k === 'def' || pk.k === 'maxHp') mulAll(pk.k, 1 + pk.v / 100);
+      else if (pk.k === 'cdr') s.cdr = Math.min(30, (s.cdr || 0) + pk.v);
+      else fx[pk.k] = Math.min(CAP[pk.k] || 100, (fx[pk.k] || 0) + pk.v);
+    }
+  }
   // ngoại trang đang mặc: % công / thủ / sinh lực
   { const of = c.outfit && require('../data/outfits').OUTFITS[c.outfit]; if (of && of.stats) for (const [k, v] of Object.entries(of.stats)) mulAll(k, 1 + v); }
   if (guildLevel > 0) { mulAll('atk', 1 + guildLevel * 0.02); mulAll('def', 1 + guildLevel * 0.02); mulAll('maxHp', 1 + guildLevel * 0.02); }

@@ -315,7 +315,7 @@ for (const [k, j] of Object.entries(JIANGHU)) {
 // Thú cưỡi (vật phẩm dùng để thuần phục)
 const { MOUNTS } = require('./mounts');
 for (const m of Object.values(MOUNTS)) {
-  ITEMS['mount_' + m.id] = { id: 'mount_' + m.id, type: 'use', name: 'Thú cưỡi: ' + m.name, desc: `Sử dụng để thuần phục ${m.name} (+${Math.round(m.speed * 100)}% tốc độ khi cưỡi).`,
+  ITEMS['mount_' + m.id] = { id: 'mount_' + m.id, type: 'use', name: 'Thú cưỡi: ' + m.name, desc: `Sử dụng để thuần phục ${m.name} (+${Math.round(m.speed * 100)}% tốc độ khi cưỡi).${m.perk ? ` Thuộc tính riêng – ${m.perk.name}: ${m.perk.text.replace('{v}', m.perk.v)} (mạnh dần theo cấp thú).` : ''}`,
     effect: { mount: m.id }, price: m.price, lv: m.lv, rarity: m.rarity, icon: 'saddle', stack: true };
   if (m.noSale) { ITEMS['mount_' + m.id].noSale = true; ITEMS['mount_' + m.id].desc += ' Sắp mở bán.'; }
 }

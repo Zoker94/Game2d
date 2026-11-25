@@ -1143,8 +1143,9 @@ class World {
     }
     if (sk.type === 'buff' || sk.type === 'heal') this.fx(p.mapId, { t: sk.fx, from: p.id, x: p.x, y: p.y, color: sk.color, r: sk.radius });
     p.c.mp -= sk.mp;
-    p.cds[sk.id] = now + sk.cd;
-    p.socket.emit('cd', { idx, until: sk.cd });
+    const cd = Math.round(sk.cd * (1 - ((p.stats && p.stats.cdr) || 0) / 100));   // thú cưỡi Xe Máy: giảm hồi chiêu
+    p.cds[sk.id] = now + cd;
+    p.socket.emit('cd', { idx, until: cd });
     if (idx >= 1) { this.progressTutorial(p, 'skill'); this.story.on(p, 'skill'); }
     p.dirtyMe = true;
   }

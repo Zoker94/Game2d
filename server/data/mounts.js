@@ -25,6 +25,27 @@ const MOUNTS = {
                stats: { hp: 380, atk: 30, def: 14, crit: 5 }, growth: { hp: 48, atk: 5.2, def: 2.4, crit: 0.14 } }
 };
 for (const id in MOUNTS) MOUNTS[id].id = id;
+// Thuộc tính riêng của từng thú cưỡi (có hiệu lực khi đang chọn thú đó, không cần cưỡi), mạnh dần +10% mỗi 10 cấp thú.
+// k: atk / def / maxHp (% chỉ số), cdr (% giảm hồi chiêu), hoặc hiệu ứng đặc biệt (goldup, dodge, critdmg, dmgred, lifesteal, ccres)
+const PERKS = {
+  ngua_nau:     { k: 'goldup',    v: 8,  name: 'Thồ Hàng',        text: 'Nhặt ngân lượng +{v}%' },
+  bach_ma:      { k: 'dodge',     v: 3,  name: 'Bạch Mã Phi Ảnh', text: 'Né tránh +{v}%' },
+  hac_ma:       { k: 'critdmg',   v: 10, name: 'Ô Truy Xung Trận', text: 'Sát thương bạo kích +{v}%' },
+  kim_nguu:     { k: 'def',       v: 6,  name: 'Kim Ngưu Thiết Giáp', text: 'Phòng thủ +{v}%' },
+  kim_quy:      { k: 'dmgred',    v: 5,  name: 'Quy Giáp Hộ Thân', text: 'Giảm sát thương phải nhận {v}%' },
+  bach_ho:      { k: 'lifesteal', v: 3,  name: 'Hổ Khiếu Hút Huyết', text: 'Hút máu {v}% sát thương gây ra' },
+  hoa_ky_lan:   { k: 'ccres',     v: 12, name: 'Kỳ Lân Hộ Thể',   text: 'Kháng khống chế +{v}% (choáng, đóng băng, làm chậm ngắn hơn)' },
+  thanh_long:   { k: 'atk',       v: 8,  name: 'Long Uy',          text: 'Công +{v}%' },
+  phuong_hoang: { k: 'maxHp',     v: 10, name: 'Phượng Hoàng Niết Bàn', text: 'Sinh lực +{v}%' },
+  xe_may:       { k: 'cdr',       v: 10, name: 'Tăng Tốc Phân Khối Lớn', text: 'Giảm thời gian hồi chiêu {v}%' }
+};
+for (const id in PERKS) if (MOUNTS[id]) MOUNTS[id].perk = PERKS[id];
+// giá trị thuộc tính riêng theo cấp thú (cấp 1: gốc, mỗi 10 cấp +10%)
+function mountPerk(id, lv) {
+  const P = PERKS[id]; if (!P) return null;
+  const v = Math.round(P.v * (1 + Math.floor((lv | 0) / 10) * 0.1) * 10) / 10;
+  return { k: P.k, v, name: P.name, text: P.text.replace('{v}', v) };
+}
 
 const MOUNT_MAX = 50;
 const mountExpNext = lv => Math.round(120 * lv + 8 * lv * lv);
@@ -41,4 +62,4 @@ function mountStats(id, lv) {
   return out;
 }
 
-module.exports = { MOUNTS, MOUNT_MAX, mountExpNext, isBreakLevel, mountStats };
+module.exports = { MOUNTS, MOUNT_MAX, mountExpNext, isBreakLevel, mountStats, mountPerk, PERKS };
