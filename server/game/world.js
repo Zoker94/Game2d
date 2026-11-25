@@ -569,6 +569,7 @@ class World {
     const b = boundOk ? Math.min(c.knbB | 0, n) : 0;
     if (b) c.knbB = (c.knbB | 0) - b;
     c.knb = (c.knb | 0) - (n - b);
+    if (this.vip) this.vip.onSpend(c, n - b);   // Tích Tiêu tuần: chỉ tính Nguyên Bảo thường
     return true;
   }
   giveReward(p, r, source, opts) {
@@ -1889,6 +1890,7 @@ class World {
       p.dirtyMe = true; this.db.markDirty();
       return;
     }
+    if (e.mcard) { U.removeByUid(c, uid, 1); if (this.vip) this.vip.useCard(p); return; }
     if (e.loa) return this.toast(p, '📢 Gõ /loa nội dung vào ô chat để dùng Loa Thế Giới', 'info');
     if (e.outfit) {   // ngoại trang: mở khoá vào tủ đồ rồi mặc luôn
       const o = OUTFITS[e.outfit]; if (!o) return;
@@ -2213,7 +2215,7 @@ class World {
       const entry = (npc.knbShop || []).find(x => x.id === id);
       if (!entry) return;
       if (ITEMS[id] && ITEMS[id].noSale) return this.toast(p, '🔒 Vật phẩm này chưa mở bán', 'error');
-      const cost = entry.knb * qty;
+      const cost = Math.ceil(entry.knb * qty * (1 - (this.vip ? this.vip.disc(c) : 0)));   // VIP giảm giá
       const bOk = U.knbBoundOk(id);
       if (this.knbHave(c, bOk) < cost) return this.toast(p, bOk ? 'Không đủ Nguyên Bảo' : (c.knbB | 0) ? 'Không đủ Nguyên Bảo – món này không dùng được Nguyên Bảo Khoá' : 'Không đủ Nguyên Bảo', 'error');
       if (!U.addItem(c, id, qty, 0, null, true)) return this.toast(p, 'Túi đồ đầy', 'error');   // đồ mua ở NPC là đồ khoá

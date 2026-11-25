@@ -812,7 +812,7 @@
     const atBottom = log.scrollTop + log.clientHeight >= log.scrollHeight - 20;
     const d = document.createElement('div');
     d.className = 'm ' + m.ch;
-    const who = m.ch === 'sys' ? '' : m.boss ? `<span class="from" style="color:#ff7a5a">${esc(m.from)}:</span> ` : `<span class="from ${m.admin ? 'gm' : ''}" data-name="${esc(m.from)}">${m.admin ? '[GM] ' : ''}${esc(m.from)}${m.ch === 'pm' && m.to ? ' → ' + esc(m.to) : ''}:</span> `;
+    const who = m.ch === 'sys' ? '' : m.boss ? `<span class="from" style="color:#ff7a5a">${esc(m.from)}:</span> ` : `<span class="from ${m.admin ? 'gm' : ''}" data-name="${esc(m.from)}">${m.admin ? '[GM] ' : ''}${m.vip ? `<b class="vip-tag">V${m.vip}</b> ` : ''}${esc(m.from)}${m.ch === 'pm' && m.to ? ' → ' + esc(m.to) : ''}:</span> `;
     let body = esc(m.text);
     if (m.item && G.data.items[m.item.id]) {   // khoe đồ: thẻ [tên đồ] thành liên kết màu theo độ hiếm, bấm để xem chi tiết
       const k = chatItems.push(m.item) - 1; if (chatItems.length > 300) chatItems[k - 300] = null;
@@ -2010,7 +2010,7 @@
     if (tl.length) html += tabs(tl, tab);
     if ((G.me.pk | 0) >= 3 && (d.shop || d.knbShop || d.teleports))   // đồ sát: không đi xe, không mua bán (trừ Lệnh Bài Xoá Tội)
       html += `<div class="outlaw-warn">☠️ Bạn đang mang tội đồ sát (sát khí ${G.me.pk}): không thể ${d.teleports ? 'đi xe Xa Phu – phải tự chạy bộ' : 'mua bán với NPC'}. ${d.teleports ? '' : 'Vẫn mua được <b>Lệnh Bài Xoá Tội</b>. '}Sát khí giảm 1 điểm mỗi 15 phút.</div>`;
-    if (tab === 'knb') html += `<div class="tp-cta"><span>💎 Nguyên Bảo: <b>${fmt(G.me.knb)}</b> · 🔒 Khoá: <b>${fmt(G.me.knbB | 0)}</b><br><small class="muted">Nguyên Bảo Khoá (thưởng trong game) chỉ mua được món có dấu 🔒, được trừ trước</small></span><button class="btn primary small" id="tp-open">💳 Nạp Nguyên Bảo</button></div>`;
+    if (tab === 'knb') html += `<div class="tp-cta"><span>💎 Nguyên Bảo: <b>${fmt(G.me.knb)}</b> · 🔒 Khoá: <b>${fmt(G.me.knbB | 0)}</b><br><small class="muted">Nguyên Bảo Khoá (thưởng trong game) chỉ mua được món có dấu 🔒, được trừ trước</small></span><button class="btn primary small" id="tp-open">💳 Nạp Nguyên Bảo</button><button class="btn small" id="tp-vipo">👑 Đặc Quyền</button></div>`;
     if (tab === 'extra' && d.extra) {
       html += `<div class="small muted" style="margin:4px 0 6px">Mua thêm lượt chơi trong ngày. Giá tăng gấp đôi mỗi lần mua, làm mới lúc 0:00. Dùng được 🔒 Nguyên Bảo Khoá (trừ trước).<br>💎 ${fmt(G.me.knb)}${(G.me.knbB | 0) ? ' · 🔒 ' + fmt(G.me.knbB) : ''}</div><div class="list">` + d.extra.map(x => `<div class="li"><div style="font-size:24px;width:36px;text-align:center">${x.icon}</div><div class="grow"><b>${esc(x.name)}</b> <span class="small muted">đã mua ${x.n}/${x.max}</span><div class="sub">+${x.add ? x.add + ' ' : ''}${esc(x.unit)}</div></div>${x.price ? `<button class="btn small primary" data-extra="${x.k}">${x.price} 💎</button>` : '<button class="btn small" disabled>Hết lượt mua</button>'}</div>`).join('') + '</div>';
     }
@@ -2055,6 +2055,7 @@
     const c = $('npc-cv').getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(Sprites.npcSprite(d.sprite, d.color, 0), 0, 0);
     bindTabs(body);
     { const t = $('tp-open'); if (t) t.onclick = () => Topup.open(); }
+    { const t = $('tp-vipo'); if (t) t.onclick = () => window.Vip && Vip.open(); }
     body.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => {
       const q = body.querySelector(`[data-qty="${b.dataset.buy}"]`);
       emit('buy', { npc: d.id, id: b.dataset.buy, qty: q ? +q.value : 1, knb: tab === 'knb', br: panelState.buyBr || G.me.branch });

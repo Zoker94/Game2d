@@ -83,7 +83,8 @@ world.mining = new (require('./game/mining').Mining)(world);
 world.comu = new (require('./game/comu').Comu)(world);
 world.hc = new (require('./game/huyetchien').HuyetChien)(world);
 world.referral = new (require('./game/referral').Referral)(world);
-new (require('./game/extra').Extra)(world);   // gắn world.extra (mua thêm lượt bằng Nguyên Bảo)
+new (require('./game/extra').Extra)(world);
+new (require('./game/vip').Vip)(world);   // gắn world.vip (VIP, Thẻ Tháng, Tích Nạp / Tích Tiêu)   // gắn world.extra (mua thêm lượt bằng Nguyên Bảo)
 const { Social } = require('./game/social');
 const social = new Social(world, features, db);
 world.start();
@@ -487,6 +488,7 @@ io.on('connection', socket => {
     world.story.onJoin(player);
     setTimeout(() => socket.connected && player && world.welcome.send(player), 1800);   // popup chào mừng (tắt / sửa ở Cấu hình server)
     world.autoSrv.greet(player);
+    if (world.vip) world.vip.remind(player);
     world.referral.onEnter(player);
     if (!user.character.tutorial.done) socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', text: 'Mẹo: Làm theo khung Hướng Dẫn Tân Thủ ở góc trái để nhận quà!', t: Date.now() });
   });
@@ -494,7 +496,8 @@ io.on('connection', socket => {
   on('move', inGame(d => world.handleMove(player, d)));
   on('skill', inGame(d => world.useSkill(player, d && d.idx, d && d.target)));
   on('respawn', inGame(d => world.respawn(player, d && d.mode)));
-  on('extra', inGame(d => world.extra.action(player, d)));   // mua thêm lượt (Kỳ Trân Các)
+  on('extra', inGame(d => world.extra.action(player, d)));
+  on('vip', inGame(d => world.vip.action(player, d)));   // bảng Đặc Quyền   // mua thêm lượt (Kỳ Trân Các)
   on('dodge', inGame(d => world.dodge(player, d)));
   on('story', inGame(d => world.story.action(player, d)));
   on('pickup', inGame(d => world.pickupItem(player, d && typeof d.id === 'string' ? d.id : null)));

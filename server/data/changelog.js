@@ -18,7 +18,12 @@ const CHANGELOG = [
       '♻️ Kỳ Trân Các bán Đá Hồi Sinh (2.000 💎) để Chết Đi Sống Lại từ lần thứ 2.',
       '➕ Kỳ Trân Các có thẻ mới "Thêm lượt": mua thêm lượt Áp tiêu, Khoáng Động, Cổ Mộ Bí Cảnh, trận Chọi gà đấu tập, hồi đầy thể lực câu cá. Giá tăng gấp đôi mỗi lần mua trong ngày, dùng được Nguyên Bảo Khoá.',
       '🍀 Đá May Mắn (50 💎): bỏ vào lò rèn khi cường hoá – tỉ lệ thành công gấp đôi (cộng thêm tối đa 15%), dùng 1 lần.',
-      '📢 Loa Thế Giới (5 💎): gõ /loa nội dung – lời nhắn chạy chữ to trên đầu màn hình mọi người chơi.'
+      '📢 Loa Thế Giới (5 💎): gõ /loa nội dung – lời nhắn chạy chữ to trên đầu màn hình mọi người chơi.',
+      '👑 ĐẶC QUYỀN (bấm số 💎 trên cùng → 👑 Đặc Quyền, hoặc ở Kỳ Trân Các):',
+      '👑 VIP 1–10 theo tổng tiền đã nạp: giảm giá Kỳ Trân Các 1–10%, quà VIP mỗi ngày (ngân lượng, Rương Bí Ẩn, Thiên Tinh Thạch, Bảo Hiểm Phù), huy hiệu VIP cạnh tên ở kênh chat.',
+      '🎫 Thẻ Tháng (300 💎 ở Kỳ Trân Các): 30 ngày, mỗi ngày nhận 30 Nguyên Bảo Khoá + 1 Rương Bí Ẩn – tổng 900 Nguyên Bảo Khoá.',
+      '💎 Tích Nạp tuần: nạp đủ 100 / 300 / 1.000 / 3.000 / 6.000 Nguyên Bảo trong tuần nhận quà theo mốc (rương, đá, Đá May Mắn, ngoại trang Hắc Long Bào, Băng Tâm Ngọc Y).',
+      '💸 Tích Tiêu tuần: tiêu đủ 200 / 600 / 1.500 / 4.000 / 8.000 Nguyên Bảo thường trong tuần nhận quà theo mốc (đến ngoại trang Hồng Liên Tiên Y, Xích Hỏa Chiến Bào). Tuần làm mới 0:00 Thứ 6.'
     ]
   },
   {

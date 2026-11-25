@@ -967,3 +967,14 @@ body.touch .lm-list { width: 86px; }
   background: linear-gradient(90deg, #8a0a14, #d0202a, #8a0a14); border: 1px solid #ff8a8a; box-shadow: 0 0 14px rgba(255,40,50,.7); animation: hcPulse 1.2s infinite; white-space: nowrap; }
 #hc-banner b { color: #ffe08a; }
 .wc-boards .wc-bd:nth-child(5) { grid-column: 1 / -1; }
+
+/* ===== 👑 Đặc Quyền (vip.js) ===== */
+.vip-tag { display: inline-block; padding: 0 4px; border-radius: 4px; font-size: 9px; line-height: 13px; color: #2a1a04; background: linear-gradient(180deg, #ffe58a, #e0a42a); vertical-align: 1px; }
+.vp-link { margin-bottom: 6px; }
+.vp-hero { display: flex; gap: 12px; align-items: center; }
+.vp-lv { font-size: 22px; font-weight: 900; color: #ffd76a; text-shadow: 0 0 10px rgba(255,200,60,.6); min-width: 78px; text-align: center; }
+.vp-bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden; margin: 5px 0; }
+.vp-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffd76a, #ff9a3a); }
+.vp-me { outline: 1px solid rgba(255,215,106,.7); border-radius: 6px; }
+.vp-it { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
+.vp-it img { image-rendering: pixelated; }

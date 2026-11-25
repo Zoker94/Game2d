@@ -13,7 +13,7 @@
     const d = data;
     if (!d) { body.innerHTML = '<p class="muted">Đang tải...</p>'; return; }
     const b = d.bank, knb = a => Math.floor(a / 1000 * d.rate);
-    let h = '';
+    let h = `<div class="vp-link"><button class="btn small primary" id="tp-vip">👑 Đặc Quyền: VIP · Thẻ Tháng · Tích Nạp / Tích Tiêu</button></div>`;
     const o = show && d.orders.find(x => x.code === show);
     if (o && o.status === 'pending') {
       h += `<div class="card tp-qr"><h4>📱 Quét mã để chuyển khoản</h4>
@@ -43,6 +43,7 @@
         <div class="sub">${new Date(x.at).toLocaleString('vi-VN')}${x.note ? ' · ' + esc(x.note) : ''}</div></div><span style="color:${(ST[x.status] || [])[1]}">${(ST[x.status] || [x.status])[0]}</span>
         ${x.status === 'pending' ? `<button class="btn small" data-show="${esc(x.code)}">Xem QR</button>` : ''}</div>`).join('') + '</div>' : '<p class="small muted">Chưa có đơn nạp nào.</p>'}</div>`;
     body.innerHTML = h;
+    { const v = body.querySelector('#tp-vip'); if (v) v.onclick = () => window.Vip && Vip.open(); }
     body.querySelectorAll('[data-a]').forEach(x => x.onclick = () => { amt = +x.dataset.a; UI.refreshPanel(); });
     const inp = body.querySelector('#tp-amt');
     if (inp) inp.oninput = () => { amt = Math.max(0, Math.round(+inp.value || 0)); body.querySelector('#tp-knb').textContent = `= 💎 ${fmt(knb(Math.round(amt / 1000) * 1000))}`; body.querySelector('#tp-go').textContent = `📱 Tạo mã QR nạp ${fmt(Math.round(amt / 1000) * 1000)}đ`; body.querySelectorAll('.tp-opt').forEach(e => e.classList.toggle('on', +e.dataset.a === amt)); };

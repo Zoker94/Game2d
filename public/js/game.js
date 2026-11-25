@@ -516,6 +516,7 @@
     Fishing.bind(s);
     if (window.Rebirth) Rebirth.bind(s);
     Topup.bind(s);
+    Vip.bind(s);
     Party.bind(s);
     Mining.bind(s);
     Captcha.bind(s);

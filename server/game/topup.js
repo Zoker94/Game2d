@@ -137,6 +137,7 @@ class Topup {
     const bonus = this.w.welcome ? this.w.welcome.bonus(p ? p.c : u.character, o.knb) : 0;
     if (bonus) o.bonus = bonus;
     if (this.w.weekRace) this.w.weekRace.add(p ? p.c : u.character, 'knb', o.knb);   // đua top nạp tuần
+    if (this.w.vip) this.w.vip.onTopup(p ? p.c : u.character, o.knb);   // Tích Nạp tuần
     if (this.w.referral) try { this.w.referral.onTopup(u, o.knb); } catch (e) { console.error('referral topup', e); }   // người mời nhận 10% lần nạp đầu
     // QUÀ NẠP ĐẦU (mỗi nhân vật 1 lần): 100 Rương Thủ Lĩnh + 10 ngọc khảm cấp 5 – đồ khoá
     const ch = p ? p.c : u.character;
