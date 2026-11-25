@@ -12,6 +12,7 @@ const CHANGELOG = [
       '📉 Nguyên Bảo từ hoạt động hằng ngày (áp tiêu, rương tiêu, Dạ Minh Rương, Đua Top Săn Quái) tối đa 15 / ngày và chỉ nhận từ cấp 30 (người đã trùng sinh luôn được nhận).',
       '🎁 Đố Vui thưởng 3.000 lượng (thay Nguyên Bảo). Nhiệm vụ ngày, Vòng Quay, Điểm danh (trừ ngày 7) và các mốc điểm danh không còn Nguyên Bảo – thay bằng ngân lượng / rương.',
       '🏆 Thưởng top tuần giảm Nguyên Bảo, bù thêm Rương Thủ Lĩnh và ngân lượng: Đua Top Tuần 150 / 100 / 50 (top 4–10: 15), Hoa Sơn 100 / 60 / 30, Đại Hội 60 / 40 / 20 (top 4–10: 10), Đua Top Săn Quái 15 / 10 / 5.',
+      '📅 Server Tương Dương: Đua Top Tuần của TUẦN NÀY (kết thúc 0:00 Thứ 6 27/11) vẫn trao thưởng như cũ (500 / 300 / 200 Nguyên Bảo, top 4–10: 50). Mức thưởng mới áp dụng từ tuần sau.',
       '📣 Mời bạn: mốc cấp không còn Nguyên Bảo (thêm ngân lượng); bù lại khi người được mời NẠP LẦN ĐẦU, người mời nhận 10% số Nguyên Bảo của lần nạp đó (tối thiểu 10).',
       '🎫 Đang treo máy bằng Vé Treo Máy mà bị quái hạ gục: tự về thành và tắt Tự động, vé tạm dừng nên không tốn giờ. Treo hộ khi tắt game cũng vậy – bị hạ là vé dừng lại ngay.',
       '👘 Kỳ Trân Các mở bán NGOẠI TRANG: Bạch Y Thư Sinh (500 💎), Hắc Long Bào, Hồng Liên Tiên Y (1.500 💎), Băng Tâm Ngọc Y, Xích Hỏa Chiến Bào (3.000 💎) – đổi màu bộ áo, mặc / cởi ở bảng Nhân vật.',

@@ -24,6 +24,16 @@ const REWARD = [
   { knb: 50, items: [['boss_chest', 2], ['stone2', 2]] }
 ];
 const REWARD_TOP10 = { knb: 15, items: [['lucky_chest', 2], ['boss_chest', 1]] };
+// Server Tương Dương: tuần đang chạy lúc đổi thưởng (tuần số 2968, kết thúc 0:00 Thứ 6 27/11/2026) vẫn trao mức thưởng CŨ; từ tuần sau dùng mức mới ở trên
+const OLD_WEEK = 2968;
+const OLD_REWARD = [
+  { knb: 500, items: [['boss_chest', 2], ['stone2', 3]] },
+  { knb: 300, items: [['boss_chest', 1], ['stone2', 2]] },
+  { knb: 200, items: [['boss_chest', 1], ['stone2', 1]] }
+];
+const OLD_TOP10 = { knb: 50, items: [['lucky_chest', 2]] };
+const IS_MAIN = require('../realm').IS_MAIN;
+const rewardsOf = w => (IS_MAIN && w === OLD_WEEK ? [...OLD_REWARD, OLD_TOP10] : [...REWARD, REWARD_TOP10]);
 const DAY = 86400000, VN = 7 * 3600000;
 // số thứ tự tuần: tuần bắt đầu 00:00 Thứ 6 (01/01/1970 là Thứ 5 nên ngày Thứ 6 đầu tiên là ngày số 1)
 const rawWeek = t => Math.floor((Math.floor((t + VN) / DAY) - 1) / 7);
@@ -72,7 +82,7 @@ class WeekRace {
     const users = Object.values(this.db.data.users).filter(u => u.character && !u.banned && !u.isAdmin && !isOwner(u) && !u.streamer);
     return users.map(u => ({ u, s: this.score(u.character, k, w) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, n);
   }
-  rewardOf(i) { return i < 3 ? REWARD[i] : REWARD_TOP10; }
+  rewardOf(i, w) { const R = rewardsOf(w); return i < 3 ? R[i] : R[3]; }
   // gọi mỗi phút: sang tuần mới thì trao thưởng tuần cũ
   onMinute() {
     const d = this.data, w = weekId();
@@ -89,7 +99,7 @@ class WeekRace {
       const r = this.rank(b.k, w);
       last.boards[b.k] = r.map(x => [x.u.character.name, this.shown(x.u.character, b.k, w)]);
       r.forEach((x, i) => {
-        const rw = this.rewardOf(i), p = this.w.players.get(x.u.id);
+        const rw = this.rewardOf(i, w), p = this.w.players.get(x.u.id);
         if (p) this.w.giveReward(p, rw, `🏆 ${b.name} – hạng ${i + 1}`); else this.f.giveOffline(x.u.character, rw);
         if (i === 0) this.giveTitle(x.u.character, p, b.title, weekEnd(w + 1));   // hạng 1: danh hiệu riêng tới hết tuần sau
       });
@@ -118,7 +128,7 @@ class WeekRace {
         const r = this.rank(b.k, w, 1000), i = r.findIndex(x => x.u.id === p.userId);
         return { k: b.k, name: b.name, icon: b.icon, unit: b.unit, title: b.title, top: r.slice(0, 3).map(x => [x.u.character.name, this.shown(x.u.character, b.k, w)]), me: i >= 0 ? i + 1 : 0, mine: this.shown(p.c, b.k, w) };
       }),
-      reward: [...REWARD, REWARD_TOP10], gain: w >= GAIN_FROM
+      reward: rewardsOf(w), gain: w >= GAIN_FROM
     };
   }
 }
