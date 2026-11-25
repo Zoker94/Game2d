@@ -685,7 +685,7 @@ class Features {
         const B = w.bots; if (!B) return err('Không có');
         const cfg = B.cfg;
         if (args[0] === 'on' || args[0] === 'off') cfg.on = args[0] === 'on';
-        else if (args[0] != null) { cfg.min = U.clamp(+args[0] | 0, 0, 30); cfg.max = U.clamp(+(args[1] || args[0]) | 0, cfg.min, 30); B.wantAt = 0; }
+        else if (args[0] != null) { const MX = require('./bots').MAX_BOTS; cfg.min = U.clamp(+args[0] | 0, 0, MX); cfg.max = U.clamp(+(args[1] || args[0]) | 0, cfg.min, MX); B.wantAt = 0; }
         this.db.data.config.bots = cfg; this.db.markDirty();
         ok(B.status()); break;
       }

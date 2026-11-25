@@ -3,7 +3,8 @@
 //  - Cấp bot KHÔNG vượt cấp cao nhất của người chơi thật trên server; chỉ treo ở bãi có quái cấp ≤ cấp bot và ≤ cấp cao nhất đó.
 //  - Bot thay nhau vào / ra (mỗi lượt treo 40–200 phút), số bot dao động trong khoảng cấu hình.
 //  - Bot không lọt bảng xếp hạng / đua top / thưởng sự kiện (u.bot, xem world.isGmUid và các bộ lọc xếp hạng).
-//  - Quản trị: /bot (xem), /bot on | off, /bot 3 8 (số bot tối thiểu – tối đa). Cấu hình lưu ở config.bots.
+//  - Quản trị: /bot (xem), /bot on | off, /bot 40 50 (số bot tối thiểu – tối đa, tối đa 80). Cấu hình lưu ở config.bots.
+//  - Bot chỉ treo ở khu 1 của bãi luyện.
 const U = require('./util');
 const { CLASSES } = require('../data/classes');
 const { MAPS } = require('../data/maps');
@@ -12,7 +13,8 @@ const { ATTR_SUGGEST, attrTotal } = require('../data/attrs');
 
 const DEF_CFG = { on: true, min: 3, max: 8 };
 const SESSION = [40, 200];   // phút mỗi lượt treo
-const POOL_MAX = 30;         // số tài khoản bot tối đa tạo ra (dùng lại luân phiên)
+const POOL_MAX = 100;        // số tài khoản bot tối đa tạo ra (dùng lại luân phiên)
+const MAX_BOTS = 80;         // số bot treo cùng lúc tối đa
 // tên kiểu người chơi Việt
 const NA = ['Thiên', 'Huyết', 'Phong', 'Long', 'Hắc', 'Bạch', 'Tiểu', 'Lão', 'Kiếm', 'Ma', 'Vô', 'Độc', 'Tuyết', 'Lãng', 'Cuồng', 'Ảnh', 'Hàn', 'Nguyệt', 'Dạ', 'Tử'];
 const NB = ['Ma', 'Long', 'Phong', 'Kiếm', 'Đao', 'Hổ', 'Lang', 'Vân', 'Tâm', 'Ưng', 'Hồn', 'Thần', 'Vương', 'Khách', 'Nhi', 'Tử', 'Sát', 'Ảnh', 'Băng', 'Hỏa'];
@@ -35,6 +37,7 @@ class Bots {
   mapFor(lv, top) {
     const cap = Math.min(lv, top), list = [];
     for (const [id, m] of Object.entries(MAPS)) {
+      if (id.includes('~')) continue;   // chỉ treo ở khu 1 (bản đồ gốc), không vào khu 2, 3, khu VIP
       if (!m.spawns || !m.spawns.length || m.safe || m.town || m.instance || m.pvp || m.duelArena || m.sect || m.comu || m.gemMine || m.hoason || m.tourney) continue;
       const r = /^(\d+)-(\d+)$/.exec(m.lv || '');
       if (!r) continue;
@@ -124,6 +127,7 @@ class Bots {
     const top = this.topLevel(), now = Date.now();
     for (const p of list) {
       if (now > (p.botUntil || 0) || p.dead) { this.despawn(p, true); continue; }   // hết lượt treo / bị hạ: thoát
+      if (String(p.mapId).includes('~')) { this.despawn(p); continue; }   // lỡ ở khu khác khu 1: thoát, lượt sau vào lại khu 1
       if (p.c.level > top) { p.c.level = top; p.c.exp = 0; this.w.recalc(p); p.dirtyMe = true; }   // không vượt cấp cao nhất server
       if (p.c.level >= top) p.c.exp = 0;
       p.c.autoTicket = Math.max(p.c.autoTicket || 0, now + 3600e3);
@@ -132,13 +136,14 @@ class Bots {
     // số bot mong muốn: đổi chậm (mỗi 20–60 phút chọn lại)
     if (now > this.wantAt) { this.want = U.randInt(cfg.min, Math.max(cfg.min, cfg.max)); this.wantAt = now + U.randInt(20, 60) * 60000; }
     const n = this.online().length;
-    if (n < this.want && Math.random() < 0.5) this.spawn(top);           // vào từ từ, không ồ ạt
-    else if (n > this.want) { const p = pick(this.online()); if (p) this.despawn(p, true); }
+    // vào / ra theo đợt nhỏ mỗi phút (thiếu nhiều thì vào nhanh hơn, tối đa 6 con / phút) cho giống người chơi lần lượt online
+    if (n < this.want) { const k = Math.min(this.want - n, Math.max(1, Math.min(6, Math.ceil((this.want - n) / 4)))); for (let i = 0; i < k; i++) this.spawn(top); }
+    else if (n > this.want) { for (let i = 0, k = Math.min(3, n - this.want); i < k; i++) { const p = pick(this.online()); if (p) this.despawn(p, true); } }
   }
   status() {
     const cfg = this.cfg, on = this.online();
-    return `Bot: ${cfg.on ? 'BẬT' : 'TẮT'} · ${cfg.min}–${cfg.max} con · đang treo ${on.length}: ${on.map(p => `${p.c.name} (cấp ${p.c.level}, ${MAPS[p.mapId] ? MAPS[p.mapId].name : p.mapId})`).join(', ') || '—'} · cấp cao nhất người chơi: ${this.topLevel()}`;
+    return `Bot: ${cfg.on ? 'BẬT' : 'TẮT'} · ${cfg.min}–${cfg.max} con · đang treo ${on.length}${on.length ? ': ' + on.slice(0, 8).map(p => `${p.c.name} (cấp ${p.c.level}, ${MAPS[p.mapId] ? MAPS[p.mapId].name : p.mapId})`).join(', ') + (on.length > 8 ? ` … và ${on.length - 8} con khác` : '') : ''} · cấp cao nhất người chơi: ${this.topLevel()}`;
   }
 }
 
-module.exports = { Bots };
+module.exports = { Bots, MAX_BOTS };
