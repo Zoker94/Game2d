@@ -2,6 +2,14 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '25/11/2026',
+    items: [
+      '🤖 Bỏ hẳn mã xác nhận khi treo máy: bật Tự động không còn bị hỏi mã, không còn bị đưa ra khỏi game.',
+      '♻️ Người đã trùng sinh: quái thường / tinh anh chỉ trâu hơn (máu), sát thương quái đánh vào người như bình thường – không còn đánh đau hơn theo số lần trùng sinh.',
+      '📱 Điện thoại: bảng điểm Đại Hội, Phó Bản, Cổ Mộ, Hoa Sơn chuyển sang cột trái, không còn che nút đánh / kỹ năng.'
+    ]
+  },
+  {
     date: '17/11/2026',
     items: [
       '⚔️ TRANG BỊ BẬC MỚI: Thái Cổ (cấp 100), Hồng Hoang (cấp 110), Vô Thượng (cấp 120) cho mọi ô trang bị và vũ khí 9 môn phái, đủ 4 phẩm chất Thường / Hiếm / VIP / Truyền Kỳ, kèm Rương Thủ Lĩnh bậc mới và áo choàng 3 màu mới. Quái / boss cấp 100+ rơi đồ bậc mới; đồ Vô Thượng (cấp 120) rơi từ quái / boss cấp 115 trở lên.',

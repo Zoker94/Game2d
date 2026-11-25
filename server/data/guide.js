@@ -100,8 +100,8 @@ function build() {
       '<b>Thách đấu</b>: bấm giữ 0,5 giây vào người chơi → Thách đấu – không mất gì, không tăng sát khí.']) },
     { k: 'afk', icon: '🤖', title: 'Treo máy (tự động)', html: li([
       'Bật <b>🤖 Tự động</b> để tự đánh, tự nhặt, tự bơm máu.',
-      'Không có vé: chỉ treo khi đang mở game, cứ 5–30 phút phải bấm đúng <b>mã xác nhận</b> trong 15 giây.',
-      '<b>Vé Treo Máy</b> (Kỳ Trân Các, 6–8 giờ): không bị hỏi mã, tắt game máy chủ vẫn treo hộ ở bãi luyện.']) }
+      'Không có vé: chỉ treo khi đang mở game.',
+      '<b>Vé Treo Máy</b> (Kỳ Trân Các, 6–8 giờ): tắt game máy chủ vẫn treo hộ ở bãi luyện.']) }
   ];
 }
 let CACHE = null;

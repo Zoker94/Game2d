@@ -94,7 +94,7 @@ const QUIZ = [
   ['Người chiến thắng Hoa Sơn Luận Kiếm nhận danh hiệu "Hoa Sơn Kiếm ..."?', ['Thánh']],
   ['Người đứng đầu Đại Hội Võ Lâm nhận danh hiệu "Võ Lâm ..."?', ['Minh Chủ']],
   ['Đố Vui Võ Lâm diễn ra mỗi bao nhiêu phút? (số)', ['15']],
-  ['Vật phẩm giúp treo máy không bị hỏi mã tên là "Vé ... "?', ['Treo Máy']],
+  ['Vật phẩm giúp máy chủ treo hộ khi tắt game tên là "Vé ... "?', ['Treo Máy']],
   ['Chuyển Phái Lệnh: mỗi lần đổi phái phải chờ bao nhiêu ngày mới đổi tiếp? (số)', ['3', 'ba']],
   ['Tiền nạp: 1.000đ được bao nhiêu Nguyên Bảo? (số)', ['2', 'hai']],
   ['Đá khảm vào trang bị có tối đa mấy cấp? (số)', ['5', 'năm']],

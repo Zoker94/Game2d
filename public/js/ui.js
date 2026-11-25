@@ -2128,7 +2128,7 @@
     const tk = G.tkLeft ? G.tkLeft() : Math.max(0, (me.autoTicket || 0) - Date.now()), tkTxt = tk ? `còn <b>${Math.floor(tk / 3600e3)} giờ ${Math.floor(tk % 3600e3 / 60000)} phút</b>${me.tkPause > 0 ? ' <span class="muted">(tạm dừng – chỉ trừ giờ khi bật Tự động)</span>' : ''}` : '<b style="color:#ff8a6a">chưa có</b>';
     body.innerHTML = `<div class="au">
       <div class="au-box au-ticket"><h4>🎫 Vé Treo Máy: ${tkTxt}</h4>
-        <p class="small">${tk ? 'Bật Tự động không bị hỏi mã xác nhận. Tắt game / rời trang ở bãi luyện thì máy chủ vẫn treo hộ tới khi hết vé.' : 'Không có vé vẫn bật Tự động được khi đang mở game, nhưng cứ 5–30 phút sẽ bị hỏi mã xác nhận (15 giây không bấm đúng sẽ bị đưa ra khỏi game). Tắt game thì không được treo hộ.'}
+        <p class="small">${tk ? 'Tắt game / rời trang ở bãi luyện thì máy chủ vẫn treo hộ tới khi hết vé.' : 'Không có vé vẫn bật Tự động được khi đang mở game. Tắt game thì không được treo hộ.'}
         Mua <b>Vé Treo Máy</b> (6–8 giờ, cộng dồn) ở Kỳ Trân Các.</p></div>
       <div class="au-box"><h4>🎒 Tự nhặt đồ</h4>
         ${tg('pickup', 'Tự nhặt vật phẩm rơi ra')}
