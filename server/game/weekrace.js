@@ -79,7 +79,7 @@ class WeekRace {
     return Math.round(this.score(c, k, w));
   }
   rank(k, w = weekId(), n = 10) {
-    const users = Object.values(this.db.data.users).filter(u => u.character && !u.banned && !u.isAdmin && !isOwner(u) && !u.streamer);
+    const users = Object.values(this.db.data.users).filter(u => u.character && !u.banned && !u.isAdmin && !isOwner(u) && !u.streamer && !u.bot);
     return users.map(u => ({ u, s: this.score(u.character, k, w) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, n);
   }
   rewardOf(i, w) { const R = rewardsOf(w); return i < 3 ? R[i] : R[3]; }

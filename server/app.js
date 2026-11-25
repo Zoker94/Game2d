@@ -85,7 +85,8 @@ world.hc = new (require('./game/huyetchien').HuyetChien)(world);
 world.referral = new (require('./game/referral').Referral)(world);
 new (require('./game/extra').Extra)(world);
 new (require('./game/vip').Vip)(world);
-new (require('./game/pets').Pets)(world);   // gắn world.pets (thú cưng)   // gắn world.vip (VIP, Thẻ Tháng, Tích Nạp / Tích Tiêu)   // gắn world.extra (mua thêm lượt bằng Nguyên Bảo)
+new (require('./game/pets').Pets)(world);
+new (require('./game/bots').Bots)(world);   // gắn world.bots (bot treo máy ở bãi luyện)   // gắn world.pets (thú cưng)   // gắn world.vip (VIP, Thẻ Tháng, Tích Nạp / Tích Tiêu)   // gắn world.extra (mua thêm lượt bằng Nguyên Bảo)
 const { Social } = require('./game/social');
 const social = new Social(world, features, db);
 world.start();

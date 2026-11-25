@@ -171,6 +171,7 @@ class Features {
 
   onMinute(mod) {
     if (this.w.weekRace) this.w.weekRace.onMinute();   // hết tuần: trao thưởng đua top
+    if (this.w.bots) try { this.w.bots.tick(); } catch (e) { console.error('bots', e); }   // bot treo máy
     // Boss theo giờ
     for (const id in BOSSES) {
       const b = BOSSES[id];
@@ -368,7 +369,7 @@ class Features {
 
   onKill(p, mon) {
     const e = this.events.huntRace;
-    if (e && e.active && !this.w.isGm(p)) {   // admin / GM không đua top
+    if (e && e.active && !this.w.isGm(p) && !(p.user && p.user.bot)) {   // admin / GM / bot không đua top
       const s = e.scores[p.userId] || (e.scores[p.userId] = { name: p.c.name, n: 0 });
       s.n++;
     }
@@ -679,6 +680,15 @@ class Features {
         ok(`${u.character.name}: ${d >= 0 ? '+' : ''}${d} điểm ${c === 'tiemnang' ? 'tiềm năng' : 'võ học'} (tổng tặng ${u.character[c === 'tiemnang' ? 'attrBonus' : 'spBonus'] | 0})`);
         break;
       }
+      case 'bot': {   // /bot · /bot on|off · /bot <min> <max>
+        if (!isOwner(p.user) && !p.user.isAdmin) return err('Chỉ quản trị viên');
+        const B = w.bots; if (!B) return err('Không có');
+        const cfg = B.cfg;
+        if (args[0] === 'on' || args[0] === 'off') cfg.on = args[0] === 'on';
+        else if (args[0] != null) { cfg.min = U.clamp(+args[0] | 0, 0, 30); cfg.max = U.clamp(+(args[1] || args[0]) | 0, cfg.min, 30); B.wantAt = 0; }
+        this.db.data.config.bots = cfg; this.db.markDirty();
+        ok(B.status()); break;
+      }
       case 'goto': { const o = findPlayer(args.join(' ')); if (!o) return err('Người chơi không online'); w.enterMap(p, o.mapId, o.x + 40, o.y); break; }
       case 'keo': { const o = findPlayer(args.join(' ')); if (!o) return err('Người chơi không online'); if (isOwner(o.user) && !isOwner(p.user)) return err('Không thể kéo chủ server'); w.enterMap(o, p.mapId, p.x + 40, p.y); ok('Đã kéo ' + o.c.name + ' tới chỗ bạn'); break; }
       case 'tusat': { if (!p.dead) { p.c.hp = 0; w.killPlayer(p, null); } break; }   // tự hạ gục (thử màn hình hồi sinh)
@@ -899,7 +909,7 @@ class Features {
 
   // ---------------- Bảng xếp hạng ----------------
   computeLeaderboard() {
-    const users = Object.values(this.db.data.users).filter(u => u.character && !u.banned && !u.isAdmin && !isOwner(u) && !u.streamer);   // tài khoản quản trị không lên bảng xếp hạng
+    const users = Object.values(this.db.data.users).filter(u => u.character && !u.banned && !u.isAdmin && !isOwner(u) && !u.streamer && !u.bot);   // tài khoản quản trị không lên bảng xếp hạng
     // hạng lực chiến top 10 -> huy hiệu cạnh tên
     this.powerRank = new Map(users.filter(u => u.character.power > 0).sort((a, b) => b.character.power - a.character.power).slice(0, 10).map((u, i) => [u.id, i + 1]));
     for (const p of this.w.players.values()) { p.c.x = p.x; p.c.y = p.y; }

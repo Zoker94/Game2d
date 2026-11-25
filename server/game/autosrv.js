@@ -304,4 +304,4 @@ class AutoSrv {
     return best;
   }
 }
-module.exports = { hasTicket, AutoSrv, OFFLINE_MAX };
+module.exports = { hasTicket, AutoSrv, OFFLINE_MAX, DEF };

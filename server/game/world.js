@@ -960,7 +960,7 @@ class World {
   // quản trị viên: tàng hình (người chơi không thấy, quái không đánh) / miễn PK (người chơi không đánh được)
   isGm(p) { return !!(p && p.user && (p.user.isAdmin || isOwner(p.user))); }   // quản trị viên hoặc chủ server
   // theo mã tài khoản (người chơi offline cũng được): admin / GM / chủ server không có tên trong mọi bảng xếp hạng
-  isGmUid(uid) { const u = this.db.data.users[uid]; return !!(u && (u.isAdmin || isOwner(u) || u.streamer)); }   // dùng để loại khỏi mọi bảng xếp hạng: admin / chủ server / streamer
+  isGmUid(uid) { const u = this.db.data.users[uid]; return !!(u && (u.isAdmin || isOwner(u) || u.streamer || u.bot)); }   // dùng để loại khỏi mọi bảng xếp hạng: admin / chủ server / streamer
   gmOn(p, k) { return !!(this.isGm(p) && p.c.gm && p.c.gm[k]); }
   canHarm(a, b) {
     if (!b || a === b || !b.c || b.dead || a.dead || a.mapId !== b.mapId) return false;
