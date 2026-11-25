@@ -1264,6 +1264,7 @@ class World {
     // người đã trùng sinh: quái thường / tinh anh trâu hơn (người chơi đánh yếu đi), tăng theo số lần trùng sinh.
     // Sát thương quái đánh người chơi giữ như bình thường. Boss (dã ngoại, thế giới, phó bản, triệu hồi, boss bang…) KHÔNG áp dụng.
     if (src && src.c && t && !t.c && !t.cart && (src.c.rebirth | 0) > 0 && !isBossMon(t)) dmg = Math.max(1, Math.round(dmg / rbTank(src.c.rebirth)));
+    if (t.c && t.user && t.user.bot && src && !src.c) dmg = Math.max(1, Math.round(dmg * 0.15));   // treo hộ máy chủ: quái chỉ gây 15% sát thương
     const reflected = kind === 'reflect';   // sát thương phản đòn đã tính xong ở phía người bị đánh: không giảm thêm lần nữa
     if (t.c && src && src.c && t !== src && preScaled) { t.lastPvp = src.lastPvp = Date.now(); }
     if (t.c && src && src.c && t !== src && this.hc) this.hc.onHit(t, src);   // báo thù: kẻ bị đánh được đánh trả   // độc PK (đã tính theo % máu): vẫn tính là đang giao tranh
