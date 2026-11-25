@@ -61,7 +61,6 @@ const LANTERN_EXCHANGE = [
   { id: 'chest', cost: 10, name: 'Rương Bí Ẩn', r: { items: [['lucky_chest', 1]] } },
   { id: 'x2', cost: 40, name: 'Song Bội KN x2', r: { items: [['exp_x2', 2]] }, week: 10 },   // giới hạn theo TUẦN (Thứ 2 – Chủ nhật)
   { id: 'stone2', cost: 60, name: 'Thiên Tinh Thạch x2', r: { items: [['stone2', 2]] } },
-  { id: 'insure', cost: 80, name: 'Bảo Hiểm Phù', r: { items: [['insure', 1]] }, week: 1 },
   { id: 'boss', cost: 100, name: 'Rương Thủ Lĩnh', r: { items: [['boss_chest', 1]] } },
   { id: 'book', cost: 5000, name: 'Bí Kíp Long Ấn (ngẫu nhiên)', r: { dragonBook: 1 } }
 ];

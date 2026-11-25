@@ -1606,7 +1606,6 @@ class World {
       if (tpl.lv >= 25 && r() < 0.00009 * dr * (1 + tier)) drops.push('stone2');   // Thiên Tinh Thạch: cấp 90 ~1/1100 con
       const gem = rollGemDrop(map.def.gemMine | 0, tpl.lv, r);   // đá khảm: nhiều ở khoáng động
       if (gem) drops.push(gem);
-      if (tpl.lv >= 30 && r() < 0.0008 * dr) drops.push('insure');
       if (tpl.lv >= 20 && r() < 0.0005 * dr) drops.push('mount_stone');
       if (this.features.isActive('lantern') && r() < 0.3) drops.push('event_token');
       if (tpl.lv >= 10 && r() < 0.006 * dr) drops.push('thien_tam_ti');   // nguyên liệu áo choàng

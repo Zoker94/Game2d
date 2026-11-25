@@ -23,7 +23,8 @@ const CHANGELOG = [
       '👑 VIP 1–10 theo tổng tiền đã nạp: giảm giá Kỳ Trân Các 1–10%, quà VIP mỗi ngày (ngân lượng, Rương Bí Ẩn, Thiên Tinh Thạch, Bảo Hiểm Phù), huy hiệu VIP cạnh tên ở kênh chat.',
       '🎫 Thẻ Tháng (300 💎 ở Kỳ Trân Các): 30 ngày, mỗi ngày nhận 30 Nguyên Bảo Khoá + 1 Rương Bí Ẩn – tổng 900 Nguyên Bảo Khoá.',
       '💎 Tích Nạp tuần: nạp đủ 100 / 300 / 1.000 / 3.000 / 6.000 Nguyên Bảo trong tuần nhận quà theo mốc (rương, đá, Đá May Mắn, ngoại trang Hắc Long Bào, Băng Tâm Ngọc Y).',
-      '💸 Tích Tiêu tuần: tiêu đủ 200 / 600 / 1.500 / 4.000 / 8.000 Nguyên Bảo thường trong tuần nhận quà theo mốc (đến ngoại trang Hồng Liên Tiên Y, Xích Hỏa Chiến Bào). Tuần làm mới 0:00 Thứ 6.'
+      '💸 Tích Tiêu tuần: tiêu đủ 200 / 600 / 1.500 / 4.000 / 8.000 Nguyên Bảo thường trong tuần nhận quà theo mốc (đến ngoại trang Hồng Liên Tiên Y, Xích Hỏa Chiến Bào). Tuần làm mới 0:00 Thứ 6.',
+      '🛡️ Bảo Hiểm Phù không còn rơi từ quái và không còn đổi bằng Hoa Đăng. Vẫn có ở Kỳ Trân Các, Thương Nhân Bí Ẩn, cửa hàng Sư Đức, cống hiến môn phái, Vòng Quay, điểm danh, boss bang và quà VIP / Tích Nạp / Tích Tiêu.'
     ]
   },
   {
