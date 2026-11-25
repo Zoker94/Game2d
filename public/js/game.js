@@ -452,7 +452,7 @@
       if (d.tk) {   // Chiến Trường Tống Kim: về doanh trại phe mình (miễn phí) hoặc 10 Nguyên Bảo hồi tại chỗ
         rb.innerHTML = '<b>🏕️ Về doanh trại</b><small>Hồi sinh đầy máu ở doanh trại phe mình</small><i>Miễn phí</i>';
         $('revive-gold').textContent = `${c.knb} 💎 Nguyên Bảo`;
-        $('revive-here').classList.toggle('poor', (me.knb || 0) < c.knb);
+        $('revive-here').classList.toggle('poor', (me.knb || 0) + (me.knbB | 0) < c.knb);
         $('revive-knb').classList.add('hidden');
       } else {
         rb.innerHTML = rb._def;

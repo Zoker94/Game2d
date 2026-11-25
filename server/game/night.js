@@ -103,7 +103,7 @@ class Night {
     else if (r < 0.45) reward.items.push(['exp_x2', 1]);
     else if (r < 0.47) reward.items.push(['boss_chest', 1]);
     else if (r < 0.6) reward.knb = U.randInt(2, 6);
-    this.w.giveReward(killer, reward, '🌙 Dạ Minh Rương');
+    this.w.giveReward(killer, reward, '🌙 Dạ Minh Rương', { farm: true });
     if (reward.items.some(([id]) => id === 'boss_chest')) this.f.brag(`🌙 ${killer.c.name} tìm thấy Rương Thủ Lĩnh trong Dạ Minh Rương!`);
   }
 
@@ -140,10 +140,10 @@ class Night {
       const it = this.stock().find(x => x.k === (d.k | 0)); if (!it) return;
       const got = this.bought(p.c);
       if (got[it.k]) return this.w.toast(p, 'Mỗi món chỉ mua được 1 lần mỗi đêm', 'error');
-      if (it.knb && (p.c.knb | 0) < it.knb) return this.w.toast(p, `Cần ${it.knb} Nguyên Bảo`, 'error');
+      if (it.knb && this.w.knbHave(p.c, true) < it.knb) return this.w.toast(p, `Cần ${it.knb} Nguyên Bảo`, 'error');
       if (it.gold && p.c.gold < it.gold) return this.w.toast(p, `Cần ${it.gold.toLocaleString('vi-VN')} lượng`, 'error');
       if (!U.addItem(p.c, it.id, it.qty)) return this.w.toast(p, 'Túi đồ đầy', 'error');
-      if (it.knb) p.c.knb -= it.knb; else p.c.gold -= it.gold;
+      if (it.knb) this.w.payKnb(p.c, it.knb, true); else p.c.gold -= it.gold;
       got[it.k] = 1; p.dirtyMe = true; this.db.markDirty();
       this.w.toast(p, `🌙 Mua ${(ITEMS[it.id] || {}).name} x${it.qty}`, 'reward');
       this.db.log && this.db.log('shop', `${p.c.name} mua Thương Nhân Bí Ẩn: ${it.id} x${it.qty}`);

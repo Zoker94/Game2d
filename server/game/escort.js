@@ -152,7 +152,7 @@ class Escort {
     const gold = Math.round(r.gold * (0.7 + 0.3 * hpBonus));
     const exp = Math.round(U.expNext(c.level) * r.exp);
     c.gold += gold + r.deposit;
-    if (r.knb) c.knb += w.farmKnb(c, r.knb);
+    if (r.knb) c.knbB = (c.knbB | 0) + w.farmKnb(c, r.knb);   // Nguyên Bảo Khoá, tính vào trần ngày
     w.giveItem(p, 'stone', cart.tier === 'vang' ? 5 : cart.tier === 'bac' ? 3 : 1);
     w.gainExp(p, exp, true);
     w.toast(p, `Giao tiêu thành công! +${gold.toLocaleString('vi-VN')} lượng (hoàn cọc ${r.deposit.toLocaleString('vi-VN')}), +${exp.toLocaleString('vi-VN')} kinh nghiệm${r.knb ? ', +' + r.knb + ' nguyên bảo' : ''}`, 'reward');
@@ -238,7 +238,7 @@ class Escort {
     if (tier === 'bac' && Math.random() < 0.15) rare = 'rare';
     if (tier === 'vang') { const x = Math.random(); rare = x < 0.01 ? 'legendary' : x < 0.25 ? 'epic' : 'rare'; if (Math.random() < 0.2) reward.knb = 10; }
     if (rare) reward.items.push([equipId(slot, lvTier, rare), 1]);
-    this.w.giveReward(p, reward, ITEMS['tieu_chest_' + tier].name);
+    this.w.giveReward(p, reward, ITEMS['tieu_chest_' + tier].name, { farm: true });
     if (rare === 'legendary') this.w.features.brag(`🎁 ${p.c.name} mở ${ITEMS['tieu_chest_' + tier].name} nhận được [${ITEMS[equipId(slot, lvTier, rare)].name}]!`);
   }
 

@@ -68,7 +68,7 @@ function build() {
       'Hạ boss: người ra đòn kết liễu nhặt trước 8 giây; tỉ lệ 3–5% rơi 1 món <b>Thần Binh</b>. Mặc đủ 3/5 món cùng bộ mở dòng ẩn.']) },
     { k: 'escort', icon: '🐂', title: 'Áp tiêu', html: li([
       'Gặp <b>Tổng Tiêu Đầu</b> ở Tương Dương, đặt cọc rồi hộ tống xe tiêu tới đích để nhận ngân lượng.',
-      'Mỗi ngày <b>3 lần</b>. Tiêu Đồng (cấp 15+), Tiêu Bạc (cấp 30+), Tiêu Vàng (cấp 45+, thưởng thêm Nguyên Bảo).',
+      'Mỗi ngày <b>3 lần</b>. Tiêu Đồng (cấp 15+), Tiêu Bạc (cấp 30+), Tiêu Vàng (cấp 45+, thưởng thêm Nguyên Bảo Khoá).',
       'Xe có thể bị người chơi khác (đeo cờ PK) cướp – mất cọc (mỗi người chỉ cướp được 3 lần mỗi ngày). Đi tổ đội cho an toàn.']) },
     { k: 'events', icon: '🎉', title: 'Sự kiện theo giờ', html: li([
       '<b>Chiến Trường Tống Kim</b>: 22:00 mỗi tối (35 phút), cấp 30+. Báo danh với <b>Mộ Binh Quan</b> ở Tương Dương từ 21:30 (đang đánh vẫn vào thẳng được). Kiếm Công Trạng đổi rương, đá khảm, ngân lượng.',
@@ -84,7 +84,7 @@ function build() {
       '<b>Chợ Phiên</b> (đi Xa Phu): mở sạp bằng Lệnh Bài Bán Hàng để bán đồ cho người chơi khác, bán được cả khi offline.',
       'Thuế: Chợ Phiên 5%, giao dịch ngân lượng giữa người chơi 3% (30% tiền thuế vào quỹ bang đang giữ Lâm An Thành).',
       '🔒 Chống tài khoản clone: phải đạt <b>cấp 30</b> mới được giao dịch với người chơi khác, mở sạp / mua đồ ở Chợ Phiên và nhận thưởng mời bạn.',
-      'Nguyên Bảo: áp tiêu vàng, nhiệm vụ ngày, Đố Vui, gift code, sự kiện xếp hạng. Tiêu ở <b>Kỳ Trân Các</b>.']) },
+      '💎 <b>Nguyên Bảo</b> (nạp, gift code): mua mọi món ở <b>Kỳ Trân Các</b>.', '🔒 <b>Nguyên Bảo Khoá</b> (thưởng trong game: áp tiêu vàng, rương, Đua Top Săn Quái, sự kiện xếp hạng tuần…): chỉ mua hàng tiêu hao (món có dấu 🔒), không mua được thú cưỡi, bí kíp, trang bị, Đổi Phái. Từ <b>cấp 30</b>; hoạt động hằng ngày tối đa <b>15 / ngày</b>.']) },
     { k: 'sect', icon: '⛩️', title: 'Môn phái & bang hội', html: li([
       'Về bản đồ môn phái của mình (Xa Phu, miễn phí): nhận <b>nhiệm vụ môn phái</b> lấy cống hiến, lên cấp bậc (+công / thủ / máu).',
       'Bản đồ môn phái cấm PK (chỉ thách đấu).',

@@ -6,7 +6,13 @@ const CHANGELOG = [
     items: [
       '🤖 Bỏ hẳn mã xác nhận khi treo máy: bật Tự động không còn bị hỏi mã, không còn bị đưa ra khỏi game.',
       '♻️ Người đã trùng sinh: quái thường / tinh anh chỉ trâu hơn (máu), sát thương quái đánh vào người như bình thường – không còn đánh đau hơn theo số lần trùng sinh.',
-      '📱 Điện thoại: bảng điểm Đại Hội, Phó Bản, Cổ Mộ, Hoa Sơn chuyển sang cột trái, không còn che nút đánh / kỹ năng.'
+      '📱 Điện thoại: bảng điểm Đại Hội, Phó Bản, Cổ Mộ, Hoa Sơn chuyển sang cột trái, không còn che nút đánh / kỹ năng.',
+      '🔒 NGUYÊN BẢO KHOÁ (mới): Nguyên Bảo nhận từ hoạt động trong game nay là Nguyên Bảo Khoá (hiện cạnh 💎 trên thanh trên cùng). Nguyên Bảo Khoá chỉ mua được hàng tiêu hao ở Kỳ Trân Các (món có dấu 🔒: vé treo máy, đá, Bảo Hiểm Phù, rương, Mã Linh Đan…), dùng được để hồi sinh tại chỗ, bù điểm danh, lập bang, mua ở Thương Nhân Bí Ẩn – được trừ trước Nguyên Bảo thường. Thú cưỡi, bí kíp Long Ấn, trang bị, Đổi Phái cần Nguyên Bảo thường (nạp, gift code).',
+      '💎 Nguyên Bảo mọi người đang có giữ nguyên là Nguyên Bảo thường, không bị đổi.',
+      '📉 Nguyên Bảo từ hoạt động hằng ngày (áp tiêu, rương tiêu, Dạ Minh Rương, Đua Top Săn Quái) tối đa 15 / ngày và chỉ nhận từ cấp 30 (người đã trùng sinh luôn được nhận).',
+      '🎁 Đố Vui thưởng 3.000 lượng (thay Nguyên Bảo). Nhiệm vụ ngày, Vòng Quay, Điểm danh (trừ ngày 7) và các mốc điểm danh không còn Nguyên Bảo – thay bằng ngân lượng / rương.',
+      '🏆 Thưởng top tuần giảm Nguyên Bảo, bù thêm Rương Thủ Lĩnh và ngân lượng: Đua Top Tuần 150 / 100 / 50 (top 4–10: 15), Hoa Sơn 100 / 60 / 30, Đại Hội 60 / 40 / 20 (top 4–10: 10), Đua Top Săn Quái 15 / 10 / 5.',
+      '📣 Mời bạn: mốc cấp không còn Nguyên Bảo (thêm ngân lượng); bù lại khi người được mời NẠP LẦN ĐẦU, người mời nhận 10% số Nguyên Bảo của lần nạp đó (tối thiểu 10).'
     ]
   },
   {

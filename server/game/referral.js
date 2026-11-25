@@ -10,14 +10,14 @@
 const U = require('./util');
 
 const LV_REWARDS = {   // người mời nhận khi một người được mời đạt cấp (chống clone: mốc đầu tiên là cấp 30 – gộp quà mốc 10 cũ vào)
-  30: { items: [['boss_chest', 1], ['lucky_chest', 1], ['exp_x2', 3]], knb: 10, gold: 20000 },
-  50: { items: [['boss_chest', 2], ['stone2', 2]], knb: 10 }
+  30: { items: [['boss_chest', 1], ['lucky_chest', 1], ['exp_x2', 3]], gold: 30000 },
+  50: { items: [['boss_chest', 2], ['stone2', 2]], gold: 20000 }
 };
 const TIER_REWARDS = {   // tổng số người được mời đã đạt cấp 30
-  3: { items: [['boss_chest', 3]], knb: 10 },
-  5: { items: [['boss_chest', 3], ['mount_stone', 2]], knb: 10, title: 'ref_5' },   // title: chỉ để hiển thị – danh hiệu tự mở theo thành tích 'refs' (titles.js)
-  10: { items: [['mount_bach_ho', 1], ['boss_chest', 5]], knb: 10 },
-  20: { items: [['boss_chest', 10], ['stone2', 10]], knb: 10, title: 'ref_20' }
+  3: { items: [['boss_chest', 3]] },
+  5: { items: [['boss_chest', 3], ['mount_stone', 2]], title: 'ref_5' },   // title: chỉ để hiển thị – danh hiệu tự mở theo thành tích 'refs' (titles.js)
+  10: { items: [['mount_bach_ho', 1], ['boss_chest', 5]] },
+  20: { items: [['boss_chest', 10], ['stone2', 10]], title: 'ref_20' }
 };
 const NEWBIE_GIFT = { items: [['exp_x2', 2], ['lucky_chest', 1], ['hp1', 30], ['mp1', 30]], gold: 5000 };   // người được mời: quà tân thủ
 const DAY_CAP = 10, IP_BURST = 3, IP_KEEP = 12, DEV_KEEP = 8;
@@ -135,6 +135,19 @@ class Referral {
     }
   }
 
+  // người được mời NẠP LẦN ĐẦU: người mời nhận 10% số Nguyên Bảo của đơn đó (tối thiểu 10) – Nguyên Bảo thường. 1 lần / người được mời.
+  onTopup(u, knb) {
+    const r = u && u.ref;
+    if (!r || !r.by || r.paidRef || !(knb > 0)) return;
+    const inv = this.w.db.data.users[r.by];
+    if (!inv || !inv.character) return;
+    r.paidRef = Date.now();
+    const n = Math.max(10, Math.round(knb * 0.1)), q = this.w.players.get(r.by);
+    if (q) { q.c.knb = (q.c.knb | 0) + n; q.dirtyMe = true; this.w.toast(q, `📣 ${u.character ? u.character.name : 'Bạn bạn mời'} vừa nạp lần đầu: bạn nhận ${n} 💎 Nguyên Bảo!`, 'reward'); }
+    else inv.character.knb = (inv.character.knb | 0) + n;
+    this.w.db.markDirty();
+    this.w.db.log('referral', `${inv.character.name} nhận ${n} Nguyên Bảo vì người được mời ${u.character ? u.character.name : u.id} nạp lần đầu`);
+  }
   grant(p, rw, bind) {
     for (const [id, n] of rw.items || []) if (require('../data/items').ITEMS[id]) this.w.giveItem(p, id, n, 0, !!bind);
     if (rw.gold) p.c.gold += rw.gold;

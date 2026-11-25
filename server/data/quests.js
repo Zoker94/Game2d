@@ -34,16 +34,16 @@ function makeDaily(lv, rand = Math.random) {
   list.push({ id: 'd_gold', type: 'gold', n: Math.round(500 * scale), text: `Nhặt được ${Math.round(500 * scale)} lượng từ quái`, reward: { items: [['stone', 2]], exp: xp(0.015, 200) } });
   list.push({ id: 'd_wheel', type: 'wheel', n: 1, text: 'Quay Vòng Quay May Mắn 1 lần', reward: { gold: Math.round(150 * scale) } });
   const extras = [
-    { id: 'd_boss', type: 'boss', n: 1, text: 'Tham gia tiêu diệt 1 Boss thế giới', reward: { knb: 5, items: [['lucky_chest', 1]] } },
+    { id: 'd_boss', type: 'boss', n: 1, text: 'Tham gia tiêu diệt 1 Boss thế giới', reward: { gold: 5000, items: [['lucky_chest', 1]] } },
     { id: 'd_enhance', type: 'enhance', n: 1, text: 'Cường hóa trang bị 1 lần tại Thợ Rèn', reward: { items: [['stone', 2]] } },
     { id: 'd_chat', type: 'chat', n: 1, text: 'Gửi 1 tin nhắn ở kênh Thế Giới', reward: { gold: 100 } },
     { id: 'd_potion', type: 'potion', n: 5, text: 'Sử dụng 5 bình thuốc', reward: { items: [['hp1', 10]] } }
   ];
-  if (lv >= 10) extras.push({ id: 'd_pvp', type: 'pvp', n: 1, text: 'Thắng 1 trận Tỷ Võ (thách đấu) hoặc hạ 1 đối thủ PK', reward: { knb: 5, gold: Math.round(500 * scale) } });
+  if (lv >= 10) extras.push({ id: 'd_pvp', type: 'pvp', n: 1, text: 'Thắng 1 trận Tỷ Võ (thách đấu) hoặc hạ 1 đối thủ PK', reward: { gold: Math.round(500 * scale), items: [['lucky_chest', 1]] } });
   list.push(pick(extras));
   return list.map(q => Object.assign(q, { progress: 0, done: false, claimed: false }));
 }
 
-const DAILY_ALL_BONUS = { knb: 5, items: [['lucky_chest', 1]] };
+const DAILY_ALL_BONUS = { gold: 5000, items: [['lucky_chest', 1]] };
 
 module.exports = { TUTORIAL, makeDaily, DAILY_ALL_BONUS };

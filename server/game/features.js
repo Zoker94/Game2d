@@ -13,7 +13,7 @@ const EVENT_INFO = {
   doubleExp: { name: 'Nhân Đôi Kinh Nghiệm', desc: 'Toàn server nhận x2 kinh nghiệm khi đánh quái. Tự động 12:00-13:00 và 20:00-21:00.', icon: '📈' },
   huntRace:  { name: 'Đua Top Săn Quái', desc: 'Ai tiêu diệt nhiều quái nhất trong 30 phút sẽ nhận thưởng lớn. Tự động 19:00 và 21:30.', icon: '🏆' },
   treasure:  { name: 'Truy Tìm Bảo Rương', desc: 'Bảo Rương xuất hiện rải rác khắp các bản đồ luyện công. Đánh vỡ rương để nhận quà! Mỗi 2 giờ (giờ chẵn, phút 40).', icon: '💰' },
-  quiz:      { name: 'Đố Vui Võ Lâm', desc: 'Câu hỏi xuất hiện ở kênh Thế Giới, người trả lời đúng đầu tiên nhận Nguyên Bảo (tối đa 5 câu / ngày mỗi người). Mỗi 15 phút.', icon: '❓' },
+  quiz:      { name: 'Đố Vui Võ Lâm', desc: 'Câu hỏi xuất hiện ở kênh Thế Giới, người trả lời đúng đầu tiên nhận ngân lượng (tối đa 5 câu / ngày mỗi người). Mỗi 15 phút.', icon: '❓' },
   daiHoi:    { name: 'Đại Hội Võ Lâm', desc: 'Hỗn chiến tranh ngôi Võ Lâm Minh Chủ tại lôi đài Đại Hội (cấp 20+, gặp Sứ Giả Đại Hội ở Tương Dương). Hạ người chơi, Hộ Pháp và Thiên Hạ Đệ Nhất Cao Thủ để ghi điểm. 20:30 Chủ Nhật hằng tuần (1 tuần 1 lần). Minh Chủ giữ danh hiệu 7 ngày.', icon: '⚔️' },
   hoaSon:    { name: 'Hoa Sơn Luận Kiếm', desc: 'Giải đấu loại trực tiếp 1 chọi 1 trên đỉnh Hoa Sơn (cấp 30+, ghi danh với Sứ Giả Hoa Sơn ở Tương Dương). Vô địch nhận danh hiệu Hoa Sơn Kiếm Thánh 7 ngày, Á quân và hạng Ba có thưởng. Ai cũng lên núi xem được. 20:00 Thứ 7 hằng tuần.', icon: '⛰️' },
   tongKim:   { name: 'Chiến Trường Tống Kim', desc: 'Phe Tống đối đầu phe Kim (cấp 30+, báo danh với Mộ Binh Quan ở Tương Dương từ 21:30). Máy chia phe cân bằng theo lực chiến. Hạ người phe địch, lính và Đại Tướng để ghi điểm; phe nhiều điểm hơn thắng. Thưởng kinh nghiệm + Công Trạng đổi rương, ngân lượng, đá cường hoá, đá khảm cấp 4-5. 22:00 mỗi tối.', icon: '🏯' },
@@ -31,8 +31,8 @@ const quizHit = (text, answers) => { const t = quizNorm(text); return answers.so
 const WHEEL = [
   { name: '500 lượng', w: 22, r: { gold: 500 } },
   { name: '3000 lượng', w: 10, r: { gold: 3000 } },
-  { name: '3 Nguyên Bảo', w: 8, r: { knb: 3 } },
-  { name: '10 Nguyên Bảo', w: 0.5, r: { knb: 10 } },
+  { name: '8000 lượng', w: 8, r: { gold: 8000 } },
+  { name: 'Rương Bí Ẩn x2', w: 0.5, r: { items: [['lucky_chest', 2]] } },
   { name: 'Huyền Tinh Thạch x2', w: 16, r: { items: [['stone', 2]] } },
   { name: 'Rương Bí Ẩn', w: 8, r: { items: [['lucky_chest', 1]] } },
   { name: 'Song Bội KN', w: 10, r: { items: [['exp_x2', 1]] } },
@@ -46,13 +46,13 @@ const WHEEL = [
 
 // Điểm danh 7 ngày liên tiếp (lỡ 1 ngày thì bù bằng Nguyên Bảo để giữ chuỗi), ngày 7 quà lớn; cộng dồn tổng số ngày để mở mốc thưởng
 const CHECKIN = [
-  { gold: 2000, items: [['hp1', 20], ['mp1', 20]] }, { gold: 5000, items: [['stone', 3]] }, { knb: 5, items: [['mount_food', 10]] }, { gold: 10000, items: [['exp_x2', 1]] },
-  { knb: 10, items: [['stone', 5], ['lucky_chest', 1]] }, { gold: 20000, items: [['stone2', 1], ['exp_x2', 1]] }, { knb: 10, items: [['auto_ticket', 1], ['boss_chest', 1], ['insure', 1]] }
+  { gold: 2000, items: [['hp1', 20], ['mp1', 20]] }, { gold: 5000, items: [['stone', 3]] }, { gold: 8000, items: [['mount_food', 10]] }, { gold: 10000, items: [['exp_x2', 1]] },
+  { gold: 15000, items: [['stone', 5], ['lucky_chest', 1]] }, { gold: 20000, items: [['stone2', 1], ['exp_x2', 1]] }, { knb: 10, items: [['auto_ticket', 1], ['boss_chest', 1], ['insure', 1]] }
 ];
 const CHECKIN_MILESTONES = [
-  { n: 7, r: { items: [['lucky_chest', 2]] } }, { n: 15, r: { knb: 10, items: [['stone2', 3], ['exp_x2', 2]] } },
-  { n: 30, r: { knb: 10, items: [['boss_chest', 2], ['auto_ticket', 2]] } }, { n: 60, r: { knb: 10, items: [['boss_chest', 3], ['insure', 3]] } },
-  { n: 100, r: { knb: 10, items: [['boss_chest', 5], ['auto_ticket', 5]] } }
+  { n: 7, r: { items: [['lucky_chest', 2]] } }, { n: 15, r: { items: [['stone2', 3], ['exp_x2', 2]] } },
+  { n: 30, r: { items: [['boss_chest', 2], ['auto_ticket', 2]] } }, { n: 60, r: { items: [['boss_chest', 3], ['insure', 3]] } },
+  { n: 100, r: { items: [['boss_chest', 5], ['auto_ticket', 5]] } }
 ];
 const CHECKIN_FIX_KNB = 10;   // bù điểm danh (lỡ đúng 1 ngày)
 
@@ -323,13 +323,13 @@ class Features {
     const info = EVENT_INFO[k];
     if (k === 'huntRace') {
       const top = Object.entries(e.scores || {}).sort((a, b) => b[1].n - a[1].n).slice(0, 10);
-      const rewards = [{ knb: 50, items: [['boss_chest', 2]] }, { knb: 30, items: [['boss_chest', 1]] }, { knb: 15, items: [['boss_chest', 1]] }];
+      const rewards = [{ knb: 15, items: [['boss_chest', 3]] }, { knb: 10, items: [['boss_chest', 2]] }, { knb: 5, items: [['boss_chest', 1]] }];
       top.slice(0, 3).forEach(([uid, s], i) => {
         const user = this.db.data.users[uid];
         if (!user || !user.character) return;
         const p = this.w.players.get(uid);
-        if (p) this.w.giveReward(p, rewards[i], `Top ${i + 1} Đua Top Săn Quái`);
-        else this.giveOffline(user.character, rewards[i]);
+        if (p) this.w.giveReward(p, rewards[i], `Top ${i + 1} Đua Top Săn Quái`, { farm: true });
+        else this.giveOffline(user.character, rewards[i], true);
       });
       this.announce(`🏆 Kết thúc Đua Top Săn Quái! ${top.slice(0, 3).map(([, s], i) => `Top ${i + 1}: ${s.name} (${s.n})`).join(' | ') || 'Không có người tham gia.'}`);
     } else if (k === 'daiHoi') {
@@ -344,9 +344,10 @@ class Features {
     return true;
   }
 
-  giveOffline(c, r) {
+  // farm: Nguyên Bảo tính vào trần ngày (hoạt động lặp lại); thưởng top sự kiện tuần thì không giới hạn
+  giveOffline(c, r, farm) {
     if (r.gold) c.gold += r.gold;
-    if (r.knb) c.knb += this.w.farmKnb(c, r.knb);
+    if (r.knb) c.knbB = (c.knbB | 0) + (farm ? this.w.farmKnb(c, r.knb) : r.knb);   // Nguyên Bảo Khoá
     for (const [id, q] of r.items || []) if (!U.addItem(c, id, q)) this.w.stash(c, id, q);   // túi đầy: vào Hòm Đồ
     this.db.markDirty();
   }
@@ -444,7 +445,7 @@ class Features {
     const prize = WHEEL[idx];
     p.socket.emit('wheelResult', { idx, name: prize.name, state: this.wheelState(p) });
     setTimeout(() => {
-      if (!this.w.players.has(p.userId)) { this.giveOffline(p.c, prize.r.vip ? {} : prize.r); return; }
+      if (!this.w.players.has(p.userId)) { this.giveOffline(p.c, prize.r.vip ? {} : prize.r, true); return; }
       if (prize.r.vip) {
         const id = equipId(DROP_SLOTS[U.randInt(0, DROP_SLOTS.length - 1)], tierOfLv(p.c.level), 'epic');
         this.w.giveReward(p, { items: [[id, 1]] }, 'Vòng Quay');
@@ -469,8 +470,8 @@ class Features {
     if (ci.date === today) return this.w.toast(p, 'Hôm nay đã điểm danh rồi', 'error');
     let keep = ci.date === this.dayAgo(1);
     if (fix && ci.date === this.dayAgo(2) && ci.streak > 0) {
-      if ((p.c.knb | 0) < CHECKIN_FIX_KNB) return this.w.toast(p, `Cần ${CHECKIN_FIX_KNB} Nguyên Bảo để bù điểm danh`, 'error');
-      p.c.knb -= CHECKIN_FIX_KNB; keep = true;
+      if (!this.w.payKnb(p.c, CHECKIN_FIX_KNB, true)) return this.w.toast(p, `Cần ${CHECKIN_FIX_KNB} Nguyên Bảo để bù điểm danh`, 'error');
+      keep = true;
       this.w.toast(p, `🗓️ Đã bù ngày lỡ (−${CHECKIN_FIX_KNB} Nguyên Bảo), chuỗi điểm danh được giữ!`, 'reward');
     }
     ci.streak = keep ? (ci.streak % 7) + 1 : 1;
@@ -497,7 +498,7 @@ class Features {
     if (g.usedBy.includes(p.userId)) return fail('Bạn đã dùng gift code này rồi');
     if (g.minLv && p.c.level < g.minLv) return fail(`Gift code yêu cầu cấp ${g.minLv}`);
     g.usedBy.push(p.userId);
-    this.w.giveReward(p, g.reward, `Gift code ${code}`, { bind: !!g.bind || code === 'TANTHU2026' });   // quà tân thủ / code đánh dấu khoá: đồ khoá, không giao dịch được
+    this.w.giveReward(p, g.reward, `Gift code ${code}`, { bind: !!g.bind || code === 'TANTHU2026', real: true });   // Nguyên Bảo trong gift code (quản trị viên tạo) là Nguyên Bảo thường   // quà tân thủ / code đánh dấu khoá: đồ khoá, không giao dịch được
     const log = p.c.giftLog || (p.c.giftLog = []);
     log.unshift({ code, t: now, reward: g.reward });
     if (log.length > 30) log.length = 30;
@@ -725,9 +726,9 @@ class Features {
         c.quizN++;
         const left = QUIZ_DAILY - c.quizN;
         setTimeout(() => {
-          this.announce(`🎉 ${p.c.name} đã trả lời đúng "${q.answers[0]}" và nhận 5 Nguyên Bảo + 500 lượng!`);
+          this.announce(`🎉 ${p.c.name} đã trả lời đúng "${q.answers[0]}" và nhận 3.000 lượng!`);
           if (this.w.players.has(p.userId)) p.socket.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: left > 0 ? `Đố Vui hôm nay bạn còn ${left} lượt nhận thưởng.` : `Bạn đã dùng hết ${QUIZ_DAILY} lượt nhận thưởng Đố Vui hôm nay.` });
-          if (this.w.players.has(p.userId)) this.w.giveReward(p, { knb: 5, gold: 500 }, 'Đố Vui Võ Lâm', { farm: true });
+          if (this.w.players.has(p.userId)) this.w.giveReward(p, { gold: 3000 }, 'Đố Vui Võ Lâm');
         }, 300);
       }
     }
@@ -773,8 +774,8 @@ class Features {
         if (!/^[\p{L}\p{N} ]{3,16}$/u.test(name)) return err('Tên bang 3-16 ký tự, không ký tự đặc biệt');
         if (Object.values(gs).some(x => x.name.toLowerCase() === name.toLowerCase())) return err('Tên bang đã tồn tại');
         if (c.level < 10) return err('Cần đạt cấp 10');
-        if ((c.knb | 0) < GUILD_CREATE_KNB) return err(`Lập bang cần ${GUILD_CREATE_KNB} Nguyên Bảo`);
-        c.knb -= GUILD_CREATE_KNB; p.dirtyMe = true;
+        if (!this.w.payKnb(c, GUILD_CREATE_KNB, true)) return err(`Lập bang cần ${GUILD_CREATE_KNB} Nguyên Bảo`);
+        p.dirtyMe = true;
         const id = this.db.newId();
         gs[id] = { id, name, leader: p.userId, members: { [p.userId]: 'leader' }, level: 1, fund: 0, notice: 'Chào mừng huynh đệ!', created: Date.now(), requests: [], contrib: {} };
         c.guildId = id;

@@ -15,12 +15,12 @@ const DH_MONS = {
   dh_cao_thu: { name: 'Thiên Hạ Đệ Nhất Cao Thủ', lv: 60, sprite: 'bandit', color: '#111', art: 'boss_hoason', boss: true }
 };
 const REWARDS = [
-  { knb: 200, gold: 50000, items: [['boss_chest', 3]] },
-  { knb: 120, gold: 30000, items: [['boss_chest', 2]] },
-  { knb: 80, gold: 20000, items: [['boss_chest', 1]] }
+  { knb: 60, gold: 80000, items: [['boss_chest', 4]] },
+  { knb: 40, gold: 50000, items: [['boss_chest', 3]] },
+  { knb: 20, gold: 30000, items: [['boss_chest', 2]] }
 ];
 const JOIN_CHEST = 0.3;   // người tham gia ngoài top 10: 30% nhận 1 Rương Thủ Lĩnh
-const REWARD_TOP10 = { knb: 30, gold: 10000, items: [['boss_chest', 1]] };
+const REWARD_TOP10 = { knb: 10, gold: 15000, items: [['boss_chest', 1]] };
 const REWARD_JOIN = { gold: 3000 };   // Rương Thủ Lĩnh cho người tham gia: tỉ lệ (xem end())
 
 class DaiHoi {
