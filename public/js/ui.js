@@ -812,7 +812,7 @@
     const atBottom = log.scrollTop + log.clientHeight >= log.scrollHeight - 20;
     const d = document.createElement('div');
     d.className = 'm ' + m.ch;
-    const who = m.ch === 'sys' ? '' : m.boss ? `<span class="from" style="color:#ff7a5a">${esc(m.from)}:</span> ` : `<span class="from ${m.admin ? 'gm' : ''}" data-name="${esc(m.from)}">${m.admin ? '[GM] ' : ''}${m.vip ? `<b class="vip-tag">V${m.vip}</b> ` : ''}${esc(m.from)}${m.ch === 'pm' && m.to ? ' → ' + esc(m.to) : ''}:</span> `;
+    const who = m.ch === 'sys' ? '' : m.boss ? `<span class="from" style="color:#ff7a5a">${esc(m.from)}:</span> ` : `<span class="from ${m.admin ? 'gm' : ''}" data-name="${esc(m.from)}">${m.admin ? '[GM] ' : ''}${m.vip ? `<b class="vip-tag vt${Math.min(10, m.vip)}">${m.vip >= 10 ? '👑' : m.vip >= 7 ? '💎' : ''}VIP ${m.vip}</b> ` : ''}${esc(m.from)}${m.ch === 'pm' && m.to ? ' → ' + esc(m.to) : ''}:</span> `;
     let body = esc(m.text);
     if (m.item && G.data.items[m.item.id]) {   // khoe đồ: thẻ [tên đồ] thành liên kết màu theo độ hiếm, bấm để xem chi tiết
       const k = chatItems.push(m.item) - 1; if (chatItems.length > 300) chatItems[k - 300] = null;
@@ -1281,7 +1281,7 @@
     return `<div class="card"><h4>👘 Ngoại trang</h4><div class="row" style="flex-wrap:wrap;gap:6px;justify-content:flex-start">
       <button class="btn small ${!me.outfit ? 'primary' : ''}" data-outfit="">Áo gốc của phái</button>
       ${own.filter(id => OF[id]).map(id => { const o = OF[id]; return `<button class="btn small ${me.outfit === id ? 'primary' : ''}" data-outfit="${id}" title="${esc(o.name)}"><i style="display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px;background:linear-gradient(135deg,${o.colors.robe} 50%,${o.colors.trim} 50%);box-shadow:0 0 0 1px ${RC[o.rarity] || '#888'}"></i>${esc(o.name)}</button>`; }).join('')}
-      </div><div class="small muted" style="margin-top:4px">Ngoại trang đổi màu bộ áo theo kiểu áo của phái, không thay đổi chỉ số.</div></div>`;
+      </div><div class="small muted" style="margin-top:4px">Ngoại trang đổi màu bộ áo theo kiểu áo của phái và cộng chỉ số khi đang mặc${me.outfit && OF[me.outfit] && OF[me.outfit].stats ? `: <b style="color:#4ade80">${Object.entries(OF[me.outfit].stats).map(([k, v]) => `${{ atk: 'Công', def: 'Phòng thủ', maxHp: 'Sinh lực' }[k]} +${Math.round(v * 100)}%`).join(', ')}</b>` : ''}.</div></div>`;
   }
   function titlePanel(me) {
     const T = G.data.titles; if (!T) return '';

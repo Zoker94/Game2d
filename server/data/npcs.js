@@ -33,7 +33,7 @@ const NPCS = {
     knbShop: [
       { id: 'pet_fauna', knb: 100 }, { id: 'pet_gears', knb: 150 }, { id: 'pet_arcana', knb: 250 }, { id: 'pet_ember', knb: 300 }, { id: 'pet_food', knb: 3 }, { id: 'pet_stone', knb: 15 },
       { id: 'month_card', knb: 300 }, { id: 'auto_ticket', knb: 10 }, { id: 'mine_ticket', knb: 15 }, { id: 'pickaxe', knb: 10 }, { id: 'auto_dig', knb: 10 },   // vật phẩm tiện ích hay mua: lên đầu cho dễ thấy
-      { id: 'outfit_bach_y', knb: 500 }, { id: 'outfit_hac_long', knb: 1500 }, { id: 'outfit_hong_lien', knb: 1500 }, { id: 'outfit_bang_tam', knb: 3000 }, { id: 'outfit_xich_hoa', knb: 3000 }, { id: 'rebirth_stone', knb: 2000 },
+      { id: 'outfit_bach_y', knb: 200 }, { id: 'outfit_hac_long', knb: 500 }, { id: 'outfit_hong_lien', knb: 500 }, { id: 'outfit_bang_tam', knb: 1000 }, { id: 'outfit_xich_hoa', knb: 1000 }, { id: 'rebirth_stone', knb: 2000 },
       { id: 'doi_phai', knb: 300 }, { id: 'inv_card', knb: 50 }, { id: 'rename_card', knb: 20 }, { id: 'tay_tuy_kinh', knb: 30 }, { id: 'pk_pardon', knb: 30 }, { id: 'stall_token', knb: 10 }, { id: 'tay_tiem_nang', knb: 20 }, { id: 'lucky_chest', knb: 30 }, { id: 'exp_x2', knb: 10 }, { id: 'wheel_ticket', knb: 15 }, { id: 'stone', knb: 3 },
       { id: 'stone2', knb: 40 }, { id: 'insure', knb: 60 }, { id: 'lucky_stone', knb: 50 }, { id: 'loa_tg', knb: 5 }, { id: 'mount_food', knb: 2 }, { id: 'mount_stone', knb: 30 },
       { id: 'book_fire', knb: 800 }, { id: 'book_water', knb: 800 }, { id: 'book_ice', knb: 800 }, { id: 'book_thunder', knb: 800 }, { id: 'book_shadow', knb: 800 },

@@ -735,6 +735,7 @@ class World {
     m *= 1 + this.pkZoneBonus(p.mapId) / 100;
     if (this.siege && this.siege.isOwnerMember(p)) m *= 1.1;   // bang làm chủ Lâm An Thành: +10% kinh nghiệm
     if (this.mentor) m *= this.mentor.expBonus(p);
+    if (this.vip && this.vip.mcardLeft(p.c)) m *= 1.05;   // Thẻ Tháng còn hạn: +5% kinh nghiệm
     if (this.fishing) m *= this.fishing.expMul(p.c);   // món ăn   // đồ đệ luyện công cùng bản đồ với sư phụ: +20% (+30% chung tổ đội)
     return m;
   }
@@ -1873,6 +1874,7 @@ class World {
       if (!c.outfits.includes(o.id)) c.outfits.push(o.id);
       c.outfit = o.id;
       this.toast(p, `👘 Đã mặc ngoại trang ${o.name}! Đổi / cởi ở bảng Nhân vật.`, 'reward');
+      this.recalc(p);
       p.dirtyMe = true; this.db.markDirty();
       return;
     }
@@ -3023,6 +3025,7 @@ class World {
     if (id && !OUTFITS[id]) return;
     c.outfit = id;
     this.toast(p, id ? `👘 Đã mặc ngoại trang ${OUTFITS[id].name}` : '👘 Đã cởi ngoại trang', 'info');
+    this.recalc(p);   // ngoại trang cộng chỉ số
     p.dirtyMe = true; this.db.markDirty();
   }
   appearance(c) {

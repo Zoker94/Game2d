@@ -6,6 +6,7 @@
   - Thêm dòng vào mục có `date` là ngày hôm nay (định dạng `DD/MM/YYYY`, giờ Việt Nam); chưa có thì tạo mục mới ở **đầu** mảng `CHANGELOG`.
   - Viết tiếng Việt có dấu, ngắn gọn, mở đầu bằng 1 emoji, nói rõ người chơi được / mất gì.
   - Không ghi chi tiết nội bộ (tên file, biến, quản trị) vào changelog.
+  - **Tuyệt đối không ghi về bot (server/game/bots.js) hay số người online hiển thị thêm (server/onlineshow.js)** vào changelog hay bất kỳ chữ nào người chơi đọc được.
 - Khi sửa một cơ chế, cập nhật luôn các chữ mô tả liên quan trong game (mô tả vật phẩm `server/data/items.js`, hướng dẫn `server/data/guide.js`, câu đố `server/data/quiz*.js`, bảng giao diện trong `public/js/`).
 
 ## Cấu trúc nhanh

@@ -30,7 +30,7 @@
       h += `<div class="card"><h4>Bảng đặc quyền VIP</h4><div class="list">${v.perks.slice(1).map(x => `<div class="li ${x.l === v.lv ? 'vp-me' : ''}"><b style="width:52px">VIP ${x.l}</b><div class="grow small">Tổng nạp ${fmt(v.req[x.l])}đ · giảm ${x.disc}%<div class="sub">Quà ngày: ${rw(x.gift)}</div></div></div>`).join('')}</div></div>`;
     } else if (tab === 'mcard') {
       const m = d.mcard;
-      h += `<div class="card"><h4>🎫 Thẻ Tháng – 300 💎</h4><p class="small">Kích hoạt ${m.days} ngày (mua thêm thì cộng dồn). Mỗi ngày nhận: ${rw(m.gift)}.<br>Tổng ${m.days} ngày: <b>${fmt(m.gift.knb * m.days)} Nguyên Bảo</b> + ${m.days} Rương Bí Ẩn.</p>
+      h += `<div class="card"><h4>🎫 Thẻ Tháng – 300 💎</h4><p class="small">Kích hoạt ${m.days} ngày (mua thêm thì cộng dồn). <b style="color:#4ade80">+5% kinh nghiệm</b> suốt thời hạn. Mỗi ngày nhận: ${rw(m.gift)}.<br>Tổng ${m.days} ngày: <b>${fmt(m.gift.knb * m.days)} Nguyên Bảo</b> + ${m.days} Rương Thủ Lĩnh.</p>
         ${m.left ? `<div>Còn lại: <b>${left(m.left)}</b></div><button class="btn ${m.got ? '' : 'primary'}" data-vop="mcard" ${m.got ? 'disabled' : ''}>${m.got ? '✅ Hôm nay đã nhận' : 'Nhận quà hôm nay'}</button>`
           : '<div class="small muted">Chưa kích hoạt – mua Thẻ Tháng ở Kỳ Trân Các (Tương Dương) rồi bấm Sử dụng trong túi đồ.</div>'}</div>`;
     } else {

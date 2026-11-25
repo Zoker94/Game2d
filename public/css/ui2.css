@@ -969,7 +969,27 @@ body.touch .lm-list { width: 86px; }
 .wc-boards .wc-bd:nth-child(5) { grid-column: 1 / -1; }
 
 /* ===== 👑 Đặc Quyền (vip.js) ===== */
-.vip-tag { display: inline-block; padding: 0 4px; border-radius: 4px; font-size: 9px; line-height: 13px; color: #2a1a04; background: linear-gradient(180deg, #ffe58a, #e0a42a); vertical-align: 1px; }
+.vip-tag { display: inline-block; padding: 0 5px; border-radius: 4px; font-size: 9px; line-height: 13px; font-weight: 900; letter-spacing: .3px; vertical-align: 1px; position: relative; overflow: hidden; }
+/* VIP 1–3: đồng / bạc / vàng nhạt */
+.vip-tag.vt1 { color: #3a2410; background: linear-gradient(180deg, #e9b98a, #b07040); }
+.vip-tag.vt2 { color: #202830; background: linear-gradient(180deg, #f2f6fa, #9aa8b8); }
+.vip-tag.vt3 { color: #2a1a04; background: linear-gradient(180deg, #ffe58a, #e0a42a); }
+/* VIP 4–6: vàng phát sáng, ánh kim chạy */
+.vip-tag.vt4, .vip-tag.vt5, .vip-tag.vt6 { color: #2a1a04; background: linear-gradient(180deg, #fff2b0, #f0b030 55%, #c07a10); box-shadow: 0 0 6px rgba(255,200,60,.7); }
+.vip-tag.vt5 { box-shadow: 0 0 8px rgba(255,190,40,.9); }
+.vip-tag.vt6 { color: #fff; background: linear-gradient(180deg, #ff9a5a, #e0402a 60%, #a01810); box-shadow: 0 0 8px rgba(255,90,40,.9); text-shadow: 0 1px 1px #600; }
+/* VIP 7–9: tím / xanh ngọc / đỏ thẫm, viền sáng, nhấp nháy nhẹ */
+.vip-tag.vt7 { color: #fff; background: linear-gradient(135deg, #b070ff, #6a2ad0); box-shadow: 0 0 9px rgba(170,100,255,.95); text-shadow: 0 0 4px #e0c0ff; animation: vipPulse 1.8s ease-in-out infinite; }
+.vip-tag.vt8 { color: #fff; background: linear-gradient(135deg, #40e0ff, #1060d0); box-shadow: 0 0 10px rgba(60,200,255,.95); text-shadow: 0 0 4px #c0f4ff; animation: vipPulse 1.6s ease-in-out infinite; }
+.vip-tag.vt9 { color: #fff; background: linear-gradient(135deg, #ff4a6a, #8a0a2a); box-shadow: 0 0 11px rgba(255,60,100,1); text-shadow: 0 0 5px #ffd0d8; animation: vipPulse 1.4s ease-in-out infinite; }
+/* VIP 10: cầu vồng chạy + vương miện */
+.vip-tag.vt10 { color: #fff; background: linear-gradient(90deg, #ff4040, #ffb030, #ffe040, #40e070, #40c0ff, #a060ff, #ff4040); background-size: 300% 100%; animation: vipRainbow 3s linear infinite, vipPulse 1.2s ease-in-out infinite; box-shadow: 0 0 12px rgba(255,220,120,1); text-shadow: 0 1px 2px #000; }
+/* vệt sáng lướt qua (VIP 4 trở lên) */
+.vip-tag.vt4::after, .vip-tag.vt5::after, .vip-tag.vt6::after, .vip-tag.vt7::after, .vip-tag.vt8::after, .vip-tag.vt9::after, .vip-tag.vt10::after {
+  content: ''; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.85), transparent); animation: vipShine 2.4s ease-in-out infinite; }
+@keyframes vipShine { 0% { left: -60%; } 60%, 100% { left: 130%; } }
+@keyframes vipPulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.25); } }
+@keyframes vipRainbow { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
 .vp-link { margin-bottom: 6px; }
 .vp-hero { display: flex; gap: 12px; align-items: center; }
 .vp-lv { font-size: 22px; font-weight: 900; color: #ffd76a; text-shadow: 0 0 10px rgba(255,200,60,.6); min-width: 78px; text-align: center; }

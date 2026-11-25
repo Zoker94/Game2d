@@ -250,6 +250,8 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
   // hệ số nhân sau trang bị (bang, nội công, môn phái, di thư) – gửi máy khách để so đồ ra đúng lực chiến
   const mul = { atk: 1, def: 1, maxHp: 1, maxMp: 1 };
   const mulAll = (k, f) => { s[k] *= f; mul[k] *= f; };
+  // ngoại trang đang mặc: % công / thủ / sinh lực
+  { const of = c.outfit && require('../data/outfits').OUTFITS[c.outfit]; if (of && of.stats) for (const [k, v] of Object.entries(of.stats)) mulAll(k, 1 + v); }
   if (guildLevel > 0) { mulAll('atk', 1 + guildLevel * 0.02); mulAll('def', 1 + guildLevel * 0.02); mulAll('maxHp', 1 + guildLevel * 0.02); }
   // nội công bị động (đã học thì luôn có hiệu lực, mạnh dần theo tầng)
   const ps = cl.branches ? cl.branches[branchOf(c)].passive : cl.extra && cl.extra[1];   // nội công bị động của hệ đang tu

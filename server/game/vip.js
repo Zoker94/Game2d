@@ -1,6 +1,6 @@
 // Đặc quyền nạp: VIP theo tổng tiền đã nạp, Thẻ Tháng, Tích Nạp / Tích Tiêu theo tuần (tuần bắt đầu 00:00 Thứ 6, như Đua Top Tuần).
 //  - VIP: c.topupTotal (VNĐ) -> cấp VIP 0–10. Giảm giá Kỳ Trân Các, quà VIP mỗi ngày, huy hiệu VIP ở kênh chat.
-//  - Thẻ Tháng (vật phẩm month_card): 30 ngày, mỗi ngày nhận 30 Nguyên Bảo + Rương Bí Ẩn.
+//  - Thẻ Tháng (vật phẩm month_card): 30 ngày, +5% kinh nghiệm suốt thời hạn, mỗi ngày nhận 30 Nguyên Bảo + Rương Thủ Lĩnh.
 //  - Tích Nạp tuần: Nguyên Bảo nạp trong tuần đạt mốc -> nhận quà. Tích Tiêu tuần: Nguyên Bảo đã tiêu trong tuần đạt mốc -> nhận quà.
 const U = require('./util');
 const { weekId, weekEnd } = require('./weekrace');
@@ -9,18 +9,18 @@ const DAY = 86400000;
 const VIP_REQ = [0, 50000, 200000, 500000, 1000000, 2000000, 5000000, 10000000, 20000000, 50000000, 100000000];   // VNĐ tổng nạp
 const VIP_MAX = VIP_REQ.length - 1;
 const vipDisc = lv => Math.min(10, lv) / 100;   // giảm giá Kỳ Trân Các: 1% mỗi cấp, tối đa 10%
-const vipGift = lv => ({ gold: 5000 * lv, items: [['lucky_chest', Math.ceil(lv / 2)], ...(lv >= 4 ? [['stone2', lv - 3]] : []), ...(lv >= 7 ? [['insure', lv - 6]] : [])] });
+const vipGift = lv => ({ gold: 5000 * lv, items: [['boss_chest', Math.ceil(lv / 2)], ...(lv >= 4 ? [['stone2', lv - 3]] : []), ...(lv >= 7 ? [['insure', lv - 6]] : [])] });
 const MCARD_DAYS = 30, MCARD_KNB = 30;
-const MCARD_GIFT = { knb: MCARD_KNB, items: [['lucky_chest', 1]] };
+const MCARD_GIFT = { knb: MCARD_KNB, items: [['boss_chest', 1]] };
 const ACC_TOP = [   // Tích Nạp tuần (Nguyên Bảo nạp)
-  { n: 100,  r: { items: [['lucky_chest', 3], ['stone2', 2]] } },
+  { n: 100,  r: { items: [['boss_chest', 3], ['stone2', 2]] } },
   { n: 300,  r: { items: [['boss_chest', 2], ['insure', 1], ['lucky_stone', 1]] } },
   { n: 1000, r: { items: [['boss_chest', 5], ['insure', 3], ['lucky_stone', 3], ['pet_egg', 1]] } },
   { n: 3000, r: { items: [['boss_chest', 10], ['stone2', 20], ['lucky_stone', 5], ['outfit_hac_long', 1]] } },
   { n: 6000, r: { items: [['boss_chest', 20], ['stone2', 40], ['insure', 10], ['outfit_bang_tam', 1]] } }
 ];
 const ACC_SPEND = [   // Tích Tiêu tuần (Nguyên Bảo đã tiêu)
-  { n: 200,  r: { items: [['lucky_chest', 2], ['stone', 30]] } },
+  { n: 200,  r: { items: [['boss_chest', 2], ['stone', 30]] } },
   { n: 600,  r: { items: [['boss_chest', 2], ['lucky_stone', 1]] } },
   { n: 1500, r: { items: [['boss_chest', 4], ['insure', 2], ['lucky_stone', 2]] } },
   { n: 4000, r: { items: [['boss_chest', 8], ['stone2', 15], ['lucky_stone', 4], ['outfit_hong_lien', 1]] } },
@@ -81,7 +81,7 @@ class Vip {
   useCard(p) {
     const c = p.c, now = Date.now();
     c.mcard = Math.max(now, c.mcard || 0) + MCARD_DAYS * DAY;
-    this.w.toast(p, `🎫 Kích hoạt Thẻ Tháng: còn ${Math.ceil(this.mcardLeft(c) / DAY)} ngày. Mỗi ngày nhận ${MCARD_KNB} Nguyên Bảo + Rương Bí Ẩn ở bảng 👑 Đặc Quyền.`, 'reward');
+    this.w.toast(p, `🎫 Kích hoạt Thẻ Tháng: còn ${Math.ceil(this.mcardLeft(c) / DAY)} ngày. +5% kinh nghiệm suốt thời hạn, mỗi ngày nhận ${MCARD_KNB} Nguyên Bảo + Rương Thủ Lĩnh ở bảng 👑 Đặc Quyền.`, 'reward');
     p.dirtyMe = true; this.w.db.markDirty();
   }
   // nhắc nhận quà khi vào game
