@@ -31,7 +31,7 @@ const NPCS = {
   ky_tran: { name: 'Kỳ Trân Các', sprite: 'rich', color: '#9932cc', action: 'knbshop',
     talk: 'Bảo vật hiếm có, chỉ nhận Nguyên Bảo.',
     knbShop: [
-      { id: 'pet_fauna', knb: 100 }, { id: 'pet_gears', knb: 150 }, { id: 'pet_arcana', knb: 250 }, { id: 'pet_ember', knb: 300 }, { id: 'pet_hong_long', knb: 400 }, { id: 'pet_food', knb: 3 }, { id: 'pet_stone', knb: 15 },
+      { id: 'pet_fauna', knb: 100 }, { id: 'pet_gears', knb: 150 }, { id: 'pet_arcana', knb: 250 }, { id: 'pet_ember', knb: 300 }, { id: 'pet_food', knb: 3 }, { id: 'pet_stone', knb: 15 },
       { id: 'month_card', knb: 300 }, { id: 'auto_ticket', knb: 10 }, { id: 'mine_ticket', knb: 15 }, { id: 'pickaxe', knb: 10 }, { id: 'auto_dig', knb: 10 },   // vật phẩm tiện ích hay mua: lên đầu cho dễ thấy
       { id: 'outfit_bach_y', knb: 500 }, { id: 'outfit_hac_long', knb: 1500 }, { id: 'outfit_hong_lien', knb: 1500 }, { id: 'outfit_bang_tam', knb: 3000 }, { id: 'outfit_xich_hoa', knb: 3000 }, { id: 'rebirth_stone', knb: 2000 },
       { id: 'doi_phai', knb: 300 }, { id: 'inv_card', knb: 50 }, { id: 'rename_card', knb: 20 }, { id: 'tay_tuy_kinh', knb: 30 }, { id: 'pk_pardon', knb: 30 }, { id: 'stall_token', knb: 10 }, { id: 'tay_tiem_nang', knb: 20 }, { id: 'lucky_chest', knb: 30 }, { id: 'exp_x2', knb: 10 }, { id: 'wheel_ticket', knb: 15 }, { id: 'stone', knb: 3 },

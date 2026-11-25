@@ -37,7 +37,8 @@ const CHANGELOG = [
       '🐾 Thú cưng thu nhỏ lại cho cân đối với nhân vật; sửa hình thú cưng bị khuyết / lủng chỗ (Mộc Linh Hộ Vệ, Cơ Quan Khuyển, Tiên Mộc Linh, Hỏa Linh Tử).',
       '💎 BỎ NGUYÊN BẢO KHOÁ: chỉ còn 1 loại Nguyên Bảo. Nguyên Bảo Khoá đang có được cộng hết vào Nguyên Bảo khi vào game. Mọi thưởng Nguyên Bảo trong game là Nguyên Bảo thường, mua được mọi món ở Kỳ Trân Các (thú cưng, thú cưỡi, ngoại trang, Đá Hồi Sinh…). Tích Tiêu tính mọi Nguyên Bảo đã tiêu.',
       '🎲 TƯ CHẤT THÚ CƯNG: mỗi con thú cưng có chỉ số ngẫu nhiên riêng cho từng thuộc tính và sát thương – mua ở Kỳ Trân Các 85–110%, nở từ Trứng Linh Thú 90–125% (trứng dễ ra con xịn hơn). Xem trong bảng 🐾 Thú cưng. Thú cưng đang có giữ nguyên 100%.',
-      '💰 Hồng Long Ấu Thú thêm kỹ năng bị động Long Châu Hút Bảo: tự hút ngân lượng rơi quanh chủ (tầm 220, +20 mỗi sao).'
+      '💰 Hồng Long Ấu Thú thêm kỹ năng bị động Long Châu Hút Bảo: tự hút ngân lượng rơi quanh chủ (tầm 220, +20 mỗi sao).',
+      '🐉 Hồng Long Ấu Thú là thú cưng SIÊU HIẾM: không còn bán ở Kỳ Trân Các, chỉ nở từ Trứng Linh Thú với tỉ lệ khoảng 1%. Ai đã có vẫn giữ nguyên.'
     ]
   },
   {

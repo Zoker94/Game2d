@@ -20,7 +20,7 @@
     if (!d.pets.some(x => x.uid === sel)) sel = d.on || (d.pets[0] && d.pets[0].uid) || null;
     let h = `<div class="small muted" style="margin-bottom:6px">Chuồng: <b>${d.pets.length}/${d.slots}</b> · 🍖 Linh Thú Đan: <b>${fmt(d.food)}</b> · 💠 Linh Thú Thạch: <b>${fmt(d.stone)}</b> · 💰 ${fmt(d.gold)}</div>`;
     if (!d.pets.length) {
-      h += `<div class="card"><h4>Chưa có thú cưng</h4><p class="small">Mua Linh Thú ở <b>Kỳ Trân Các</b> (100–400 💎), hoặc ấp <b>Trứng Linh Thú</b> rơi từ Boss / sự kiện (15% nở ra phẩm chất <b style="color:#ffd76a">HIẾM</b>).</p>
+      h += `<div class="card"><h4>Chưa có thú cưng</h4><p class="small">Mua Linh Thú ở <b>Kỳ Trân Các</b> (100–300 💎), hoặc ấp <b>Trứng Linh Thú</b> rơi từ Boss / sự kiện (15% nở ra phẩm chất <b style="color:#ffd76a">HIẾM</b>).</p>
         <div class="list">${Object.entries(d.info).map(([id, P]) => `<div class="li">${icon(id)}<div class="grow"><b style="color:${P.color}">${esc(P.name)}</b> <span class="small muted">Hệ ${EL[P.el] || P.el}</span><div class="sub">${esc(P.desc)}<br>✨ ${esc(P.skill.name)}: ${esc(P.skill.text)}</div></div></div>`).join('')}</div></div>`;
       body.innerHTML = h; return;
     }

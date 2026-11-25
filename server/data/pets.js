@@ -24,13 +24,13 @@ const PETS = {
   ember:     { name: 'Hỏa Linh Tử',    el: 'hoa', price: 300, color: '#ff8a3a', own: { atk: 4 },
                skill: { k: 'burn', name: 'Liệt Diễm Bạo', cd: 10000, v: 2.0, burn: 3000, text: 'Nổ lửa 200% sát thương, thiêu đốt mục tiêu 3 giây' },
                desc: 'Tinh linh lửa nóng nảy. Tăng mạnh công.' },
-  hong_long: { name: 'Hồng Long Ấu Thú', el: 'hoa', price: 400, color: '#ff5a2a', own: { atk: 3.5, crit: 0.03 },
+  hong_long: { name: 'Hồng Long Ấu Thú', el: 'hoa', price: 0, ultra: 1, color: '#ff5a2a', own: { atk: 3.5, crit: 0.03 },
                skill: { k: 'aoe', name: 'Long Viêm Thổ Tức', cd: 12000, v: 2.2, r: 130, n: 6, burn: 3000, text: 'Rồng phun lửa 220% sát thương lan quanh mục tiêu, thiêu đốt 3 giây' },
                vac: { r: 220, star: 20, name: 'Long Châu Hút Bảo', text: 'Tự hút ngân lượng rơi quanh chủ (tầm 220, +20 mỗi sao)' },
-               desc: 'Rồng lửa nhỏ bay theo chủ. Tăng công, chí mạng.' }
+               desc: 'Rồng lửa nhỏ bay theo chủ – SIÊU HIẾM, chỉ nở từ Trứng Linh Thú (~1%), không bán. Tăng công, chí mạng.' }
 };
 for (const id in PETS) PETS[id].id = id;
-const EGG_W = { fauna: 30, gears: 28, arcana: 20, ember: 15, hong_long: 7 };   // tỉ lệ loài khi nở trứng
+const EGG_W = { fauna: 32, gears: 29, arcana: 21, ember: 17, hong_long: 1 };   // tỉ lệ loài khi nở trứng (Hồng Long siêu hiếm ~1%, không bán)
 
 const qK = q => (q === 'r' ? RARE_K : 1);
 const starK = s => 1 + 0.15 * (s | 0);

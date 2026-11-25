@@ -2179,6 +2179,7 @@ class World {
   }
   // Open chính thức (mặc định): NPC không bán rương mở đồ; admin chuyển sang Open Test (config.serverMode = 'test') thì bán
   shopAllowed(id) {
+    if (id === 'pet_hong_long') return false;   // Hồng Long Ấu Thú siêu hiếm: chỉ nở từ trứng, không bán
     const it = ITEMS[id];
     return !(this.db.data.config.serverMode !== 'test' && it && it.effect && it.effect.chest);
   }

@@ -27,7 +27,8 @@ class Pets {
     L.push(pe);
     if (!c.petOn) c.petOn = pe.uid;
     this.w.toast(p, `🐾 ${why || 'Thu nhận'} ${pe.q === 'r' ? '✨ HIẾM ✨ ' : ''}${PETS[id].name}! Mở bảng 🐾 Thú cưng để triệu hồi, cho ăn, nâng sao.`, 'reward');
-    if (pe.q === 'r' && this.w.features) this.w.features.brag(`🐾 ${c.name} vừa có thú cưng HIẾM [${PETS[id].name}]!`);
+    if (PETS[id].ultra && this.w.features) this.w.features.brag(`🐉 ${c.name} vừa ấp ra thú cưng SIÊU HIẾM [${PETS[id].name}]${pe.q === 'r' ? ' phẩm chất HIẾM' : ''}!`);
+    else if (pe.q === 'r' && this.w.features) this.w.features.brag(`🐾 ${c.name} vừa có thú cưng HIẾM [${PETS[id].name}]!`);
     this.w.recalc(p); p.dirtyMe = true; this.w.db.markDirty();
     this.send(p);
     return true;
