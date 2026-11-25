@@ -32,7 +32,8 @@ const CHANGELOG = [
       '🐉 Hồng Long Ấu Thú (bản thử nghiệm) nay là thú cưng chính thức: vào túi đồ → Sử dụng để thu nhận vào bảng Thú cưng.',
       '🎞️ Tiên Mộc Linh, Cơ Quan Khuyển và Hỏa Linh Tử có bộ chuyển động mới nhiều khung hình: đứng, bay / đi, chạy, ngồi nghỉ, tấn công, kỹ năng (Hỏa Linh Tử bắn cầu lửa, kỹ năng phun trào núi lửa).',
       '🌟 TIẾN HOÁ THÚ CƯNG: Tiên Mộc Linh đạt cấp 40 + 3 sao thì tiến hoá (20 Linh Thú Thạch + 500.000 lượng) thành Mộc Linh Hộ Vệ – hình mới cầm giáo, mang khiên; thuộc tính mạnh hơn (thêm phòng thủ), đánh thường x1,3, kỹ năng hồi 9% sinh lực. Giữ nguyên cấp, sao, phẩm chất.',
-      '↔️ Thú cưng đứng yên giờ quay cùng hướng với chủ; khi di chuyển / tấn công quay theo hướng đi / hướng mục tiêu.'
+      '↔️ Thú cưng đứng yên giờ quay cùng hướng với chủ; khi di chuyển / tấn công quay theo hướng đi / hướng mục tiêu.',
+      '🐾 Thú cưng thu nhỏ lại cho cân đối với nhân vật; sửa hình thú cưng bị khuyết / lủng chỗ (Mộc Linh Hộ Vệ, Cơ Quan Khuyển, Tiên Mộc Linh, Hỏa Linh Tử).'
     ]
   },
   {

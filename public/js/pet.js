@@ -4,13 +4,15 @@
 (function () {
   const V = window.AV ? '?v=' + window.AV : '';
   const PETS = {
-    hong_long: { fly: 1, fireX: 0.83, glow: '#ff8a30' },
+    hong_long: { fly: 1, fireX: 0.83, glow: '#ff8a30', size: 0.6 },
     fauna:     { fly: 1, glow: '#9effa0' },
     fauna2:    { glow: '#7cff8a' },   // Mộc Linh Hộ Vệ (tiến hoá của Tiên Mộc Linh): đi bộ cầm giáo
     gears:     { glow: '#8fd0ff' },
     arcana:    { glow: '#d29cff' },
     ember:     { glow: '#ffa040' }
   };
+  const SIZE = 0.7;   // thu nhỏ thú cưng khi vẽ (hình gốc ~60px) – loài có size riêng thì dùng size đó
+  const sizeOf = pid => PETS[pid].size || SIZE;
   const res = {};
   for (const id in PETS) {
     const r = res[id] = { img: new Image(), meta: null };
@@ -83,9 +85,9 @@
   function aura(ctx, s, now, glow) {   // hào quang thú cưng Hiếm
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
     const a = 0.35 + Math.sin(now / 300) * 0.12;
-    FX.glowDot(ctx, s.x, s.y - s.alt - 30, 46, glow, a, true);
+    const k = sizeOf(s.pid); FX.glowDot(ctx, s.x, s.y - s.alt - 30 * k, 46 * k, glow, a, true);
     ctx.restore();
-    if (Math.random() < 0.12) FX.emit(1, s.x + (Math.random() - 0.5) * 50, s.y - s.alt - 10 - Math.random() * 50, { speed: 10, vy: -25, life: 700, size: 2.5, color: glow, drag: 1 });
+    if (Math.random() < 0.12) FX.emit(1, s.x + (Math.random() - 0.5) * 50 * k, s.y - s.alt - (10 + Math.random() * 50) * k, { speed: 10, vy: -25, life: 700, size: 2.5, color: glow, drag: 1 });
   }
 
   function drawDragon(ctx, s, r, now) {
@@ -98,6 +100,7 @@
     else { row = meta.rows.idle; idx = Math.floor(now / 170) % row.n; }
     ctx.save();
     ctx.translate(Math.round(s.x), Math.round(s.y - (s.fireNow ? 0 : s.alt)));
+    ctx.scale(sizeOf(s.pid), sizeOf(s.pid));
     if (s.face === 1) ctx.scale(-1, 1);
     ctx.drawImage(r.img, idx * CW, row.y, CW, row.h, -CW / 2, -row.h, CW, row.h);
     ctx.restore();
@@ -137,6 +140,7 @@
     }
     ctx.save();
     ctx.translate(Math.round(s.x), Math.round(s.y - s.alt - bob));
+    ctx.scale(sizeOf(s.pid), sizeOf(s.pid));
     if (s.face === 1) ctx.scale(-1, 1);
     ctx.rotate(rot); ctx.scale(sx, sy);
     ctx.drawImage(r.img, idx * CW, row.y, CW, row.h, -CW / 2, -row.h, CW, row.h);
@@ -156,7 +160,7 @@
     const s = it.s, r = res[s.pid], P = PETS[s.pid];
     if (!s.fireNow) {   // bóng dưới đất, nhỏ dần khi bay cao
       const sh = Math.max(0.35, 1 - s.alt / 60);
-      ctx.fillStyle = `rgba(0,0,0,${0.25 * sh})`; ctx.beginPath(); ctx.ellipse(s.x, s.y, 24 * sh, 6 * sh, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = `rgba(0,0,0,${0.25 * sh})`; ctx.beginPath(); ctx.ellipse(s.x, s.y, 24 * sh * sizeOf(s.pid), 6 * sh * sizeOf(s.pid), 0, 0, Math.PI * 2); ctx.fill();
     }
     if (s.rare) aura(ctx, s, now, P.glow);
     if (r.meta.simple) drawSimple(ctx, s, r, now); else drawDragon(ctx, s, r, now);
