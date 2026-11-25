@@ -29,7 +29,8 @@ const CHANGELOG = [
       '🐾 Thú cưng đi theo chủ, cộng thuộc tính cho chủ (sinh lực, phòng thủ, công, chí mạng tuỳ loài), tự đánh quái chủ đang đánh mỗi 2 giây và có kỹ năng riêng: hồi máu chủ, cắn choáng, phép đánh lan, nổ lửa thiêu đốt, rồng phun lửa.',
       '⭐ Nâng cấp thú cưng: lên cấp khi cùng chủ hạ quái hoặc cho ăn Linh Thú Đan; nâng tới 5 sao bằng Linh Thú Thạch (mỗi sao +15% thuộc tính, +10% sát thương). Chuồng chứa 12 con.',
       '🥚 Trứng Linh Thú: rơi từ Boss thế giới, Boss dã ngoại, Đua Top Săn Quái, Tích Nạp, đổi Hoa Đăng. Ấp ra loài ngẫu nhiên, 15% ra phẩm chất HIẾM (chỉ số x1,35, có hào quang). Mua ở Kỳ Trân Các là phẩm chất Thường.',
-      '🐉 Hồng Long Ấu Thú (bản thử nghiệm) nay là thú cưng chính thức: vào túi đồ → Sử dụng để thu nhận vào bảng Thú cưng.'
+      '🐉 Hồng Long Ấu Thú (bản thử nghiệm) nay là thú cưng chính thức: vào túi đồ → Sử dụng để thu nhận vào bảng Thú cưng.',
+      '🎞️ Tiên Mộc Linh và Cơ Quan Khuyển có bộ chuyển động mới nhiều khung hình: đứng, bay / đi, chạy, ngồi nghỉ, tấn công, kỹ năng.'
     ]
   },
   {

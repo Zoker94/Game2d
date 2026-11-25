@@ -123,12 +123,21 @@
     } else {
       sy = 1 + Math.sin(now / 420) * 0.025; sx = 2 - sy;
     }
+    if (key === 'move' && meta.rows.run && s.speed > 140) key = 'run';
     const row = meta.rows[key] || meta.rows.idle;
+    // nhiều khung (hình cắt từ bộ chuyển động): đòn đánh / kỹ năng chạy theo tiến độ, nghỉ chạy 1 lần rồi giữ khung cuối
+    let idx = 0;
+    if (row.n > 1) {
+      if (act) idx = Math.min(row.n - 1, Math.floor((now - act.t0) / ACT_MS * row.n * 1.2));
+      else if (key === 'rest') idx = Math.min(row.n - 1, Math.floor((now - s.still - 6000) / 400));
+      else idx = Math.floor(now / (key === 'idle' ? 200 : key === 'run' ? 90 : 120)) % row.n;
+      if (meta.multi) { sx = sy = 1; if (key !== 'move' && key !== 'run') rot = 0; bob = key === 'move' || key === 'run' ? bob * 0.4 : 0; }
+    }
     ctx.save();
     ctx.translate(Math.round(s.x), Math.round(s.y - s.alt - bob));
     if (s.face === 1) ctx.scale(-1, 1);
     ctx.rotate(rot); ctx.scale(sx, sy);
-    ctx.drawImage(r.img, 0, row.y, CW, row.h, -CW / 2, -row.h, CW, row.h);
+    ctx.drawImage(r.img, idx * CW, row.y, CW, row.h, -CW / 2, -row.h, CW, row.h);
     ctx.restore();
     if (act) {
       const g = PETS[s.pid].glow, k = (now - act.t0) / ACT_MS;
