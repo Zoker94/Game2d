@@ -3,8 +3,8 @@
 //  - Cấp bot KHÔNG vượt cấp cao nhất của người chơi thật trên server; chỉ treo ở bãi có quái cấp ≤ cấp bot và ≤ cấp cao nhất đó.
 //  - Bot thay nhau vào / ra (mỗi lượt treo 40–200 phút), số bot dao động trong khoảng cấu hình.
 //  - Bot không lọt bảng xếp hạng / đua top / thưởng sự kiện (u.bot, xem world.isGmUid và các bộ lọc xếp hạng).
-//  - Quản trị: /bot (xem), /bot on | off, /bot 40 50 (số bot tối thiểu – tối đa, tối đa 80). Cấu hình lưu ở config.bots.
-//  - Bot chỉ treo ở khu 1 của bãi luyện.
+//  - Quản trị: /bot (xem), /bot on | off, /bot 100 120 (số bot tối thiểu – tối đa, tối đa 150). Cấu hình lưu ở config.bots.
+//  - Bot chỉ treo ở khu 1 của bãi luyện, ưu tiên bãi đang ít bot. Bot chặn mọi lời mời ("đang treo máy, không nhận lời mời").
 const U = require('./util');
 const { CLASSES } = require('../data/classes');
 const { MAPS } = require('../data/maps');
@@ -13,8 +13,8 @@ const { ATTR_SUGGEST, attrTotal } = require('../data/attrs');
 
 const DEF_CFG = { on: true, min: 3, max: 8 };
 const SESSION = [40, 200];   // phút mỗi lượt treo
-const POOL_MAX = 100;        // số tài khoản bot tối đa tạo ra (dùng lại luân phiên)
-const MAX_BOTS = 80;         // số bot treo cùng lúc tối đa
+const POOL_MAX = 220;        // số tài khoản bot tối đa tạo ra (dùng lại luân phiên)
+const MAX_BOTS = 150;        // số bot treo cùng lúc tối đa
 // tên kiểu người chơi Việt
 const NA = ['Thiên', 'Huyết', 'Phong', 'Long', 'Hắc', 'Bạch', 'Tiểu', 'Lão', 'Kiếm', 'Ma', 'Vô', 'Độc', 'Tuyết', 'Lãng', 'Cuồng', 'Ảnh', 'Hàn', 'Nguyệt', 'Dạ', 'Tử'];
 const NB = ['Ma', 'Long', 'Phong', 'Kiếm', 'Đao', 'Hổ', 'Lang', 'Vân', 'Tâm', 'Ưng', 'Hồn', 'Thần', 'Vương', 'Khách', 'Nhi', 'Tử', 'Sát', 'Ảnh', 'Băng', 'Hỏa'];
@@ -34,8 +34,10 @@ class Bots {
     return m;
   }
   // bãi luyện hợp cấp: quái cấp cao nhất ≤ cấp bot (và ≤ cấp cao nhất server)
+  // chọn bãi ÍT BOT NHẤT trong các bãi hợp cấp -> rải đều khắp bản đồ
   mapFor(lv, top) {
-    const cap = Math.min(lv, top), list = [];
+    const cap = Math.min(lv, top), list = [], cnt = {};
+    for (const p of this.online()) cnt[p.mapId] = (cnt[p.mapId] || 0) + 1;
     for (const [id, m] of Object.entries(MAPS)) {
       if (id.includes('~')) continue;   // chỉ treo ở khu 1 (bản đồ gốc), không vào khu 2, 3, khu VIP
       if (!m.spawns || !m.spawns.length || m.safe || m.town || m.instance || m.pvp || m.duelArena || m.sect || m.comu || m.gemMine || m.hoason || m.tourney) continue;
@@ -44,7 +46,7 @@ class Bots {
       const a = +r[1], b = +r[2];
       if (b <= cap && b >= cap - 14) list.push(id);
     }
-    if (list.length) return pick(list);
+    if (list.length) { const mn = Math.min(...list.map(id => cnt[id] || 0)); return pick(list.filter(id => (cnt[id] || 0) === mn)); }
     return 'ngoai_o';
   }
   newName() {
@@ -98,10 +100,12 @@ class Bots {
     if (!u && this.users().length < POOL_MAX) u = this.createBot();
     if (!u) return false;
     const c = u.character;
-    // cấp: giữ cấp cũ nếu còn hợp lệ, không thì random trong khoảng 45%–100% cấp cao nhất server
-    const hi = Math.max(1, top - 1), lo = Math.min(hi, Math.max(3, Math.floor(top * 0.45)));
+    // cấp: bot mới random đều từ 5 tới cấp cao nhất server; bot cũ giữ cấp của mình (như người thật), chỉ hạ nếu vượt cấp cao nhất
+    const lo = Math.min(5, top);
     let lv = c.level | 0;
-    if (lv < lo || lv > top) lv = U.randInt(lo, hi);
+    if (!u.botLv || lv < lo) lv = U.randInt(lo, Math.max(lo, top));
+    if (lv > top) lv = top;
+    u.botLv = 1;
     this.prep(u, lv);
     const mapId = this.mapFor(lv, top), def = MAPS[mapId];
     c.map = mapId; c.x = 0; c.y = 0;
@@ -110,7 +114,7 @@ class Bots {
     if (p.mapId !== mapId) { this.w.removePlayer(p); return false; }
     p.c.hp = p.stats.maxHp; p.c.mp = p.stats.maxMp;
     const A = require('./autosrv');
-    p.autoSrv = { skip: new Map(), on: true, cfg: Object.assign({}, A.DEF || {}, { partyAuto: false, pickup: true, hp: true, hpPct: 55, mp: true, skills: true, range: 600 }), home: { x: p.x, y: p.y }, homeMap: mapId, block: new Set() };
+    p.autoSrv = { skip: new Map(), on: true, cfg: Object.assign({}, A.DEF || {}, { blockInvAuto: true, partyAuto: false, pickup: true, hp: true, hpPct: 55, mp: true, skills: true, range: 600 }), home: { x: p.x, y: p.y }, homeMap: mapId, block: new Set() };
     p.offline = Date.now(); p.away = true;
     p.botUntil = Date.now() + U.randInt(SESSION[0], SESSION[1]) * 60000;
     db.markDirty();
@@ -137,7 +141,7 @@ class Bots {
     if (now > this.wantAt) { this.want = U.randInt(cfg.min, Math.max(cfg.min, cfg.max)); this.wantAt = now + U.randInt(20, 60) * 60000; }
     const n = this.online().length;
     // vào / ra theo đợt nhỏ mỗi phút (thiếu nhiều thì vào nhanh hơn, tối đa 6 con / phút) cho giống người chơi lần lượt online
-    if (n < this.want) { const k = Math.min(this.want - n, Math.max(1, Math.min(6, Math.ceil((this.want - n) / 4)))); for (let i = 0; i < k; i++) this.spawn(top); }
+    if (n < this.want) { const k = Math.min(this.want - n, Math.max(1, Math.min(10, Math.ceil((this.want - n) / 4)))); for (let i = 0; i < k; i++) this.spawn(top); }
     else if (n > this.want) { for (let i = 0, k = Math.min(3, n - this.want); i < k; i++) { const p = pick(this.online()); if (p) this.despawn(p, true); } }
   }
   status() {

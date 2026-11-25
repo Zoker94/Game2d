@@ -185,6 +185,7 @@ class Cockfight {
     stake = U.clamp(stake, 0, 5000000);
     if (c.gold < stake) return this.toast(p, 'Không đủ ngân lượng để đặt cược', 'error');
     if (this.energy(r) < FIGHT_COST) return this.toast(p, `${r.name} mệt rồi – cho ăn Thóc hoặc chờ hồi`, 'error');
+    if (o.user && o.user.bot) return this.toast(p, `🚫 ${o.c.name} đang treo máy, không nhận lời mời`, 'error');
     if (!this.sel(o.c)) return this.toast(p, `${o.c.name} chưa có gà chọi`, 'error');
     this.invites.set(o.userId, { from: p.userId, rid: r.id, stake, tac, at: Date.now() });
     o.socket.emit('cfInvite', { from: c.name, stake, r: this.rv(r, false), ms: INVITE_MS });
