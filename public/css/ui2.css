@@ -978,3 +978,16 @@ body.touch .lm-list { width: 86px; }
 .vp-me { outline: 1px solid rgba(255,215,106,.7); border-radius: 6px; }
 .vp-it { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
 .vp-it img { image-rendering: pixelated; }
+
+/* ===== 🐾 Thú cưng (petpanel.js) ===== */
+.pt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; margin-bottom: 8px; }
+.pt-cell { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 5px 3px; border-radius: 8px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); color: inherit; cursor: pointer; font-size: 10px; }
+.pt-cell b { font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.pt-cell span { color: #a9b3c7; }
+.pt-cell i { font-style: normal; color: #4ade80; font-size: 9px; }
+.pt-cell.sel { border-color: #ffd76a; background: rgba(255,215,106,.12); }
+.pt-cell.rare { box-shadow: inset 0 0 12px rgba(255,200,80,.35); }
+.pt-ic { width: 56px; height: 56px; image-rendering: auto; display: flex; align-items: center; justify-content: center; font-size: 28px; border-radius: 8px; }
+.pt-ic.rare { box-shadow: 0 0 10px rgba(255,210,90,.8); }
+.pt-rare { color: #2a1a04; background: linear-gradient(180deg, #ffe58a, #e0a42a); padding: 0 5px; border-radius: 4px; font-size: 10px; }
+.pt-btns { gap: 6px; flex-wrap: wrap; margin: 8px 0 4px; }

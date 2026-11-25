@@ -265,7 +265,7 @@ const CONSUMABLES = [
   { id: 'doi_phai', name: 'Chuyển Phái Lệnh', desc: 'Sử dụng để đổi sang môn phái khác (từ cấp 10, mỗi 3 ngày một lần). Giữ nguyên cấp, trang bị, điểm tiềm năng; võ công đã lĩnh ngộ chuyển sang chiêu cùng ô của phái mới (điểm võ học hoàn lại), vũ khí môn phái đổi thành vũ khí phái mới cùng bậc. Cống hiến môn phái cũ không mang theo.', effect: { changeClass: 1 }, price: 0, icon: 'ticket', rarity: 'legendary', noTrade: true },
   { id: 'inv_card', name: 'Thẻ Mở Rộng Hành Trang', desc: 'Sử dụng để mở thêm 8 ô túi đồ (tối đa 96 ô).', effect: { invExpand: 8 }, price: 0, icon: 'bag', rarity: 'epic' },
   { id: 'rename_card', name: 'Thẻ Đổi Tên', desc: 'Sử dụng để đổi tên nhân vật (3-14 ký tự, không trùng tên người khác). Không thể giao dịch. Lần mua đầu tiên miễn phí.', effect: { rename: 1 }, price: 50000, icon: 'ticket', rarity: 'epic', noTrade: true },
-  { id: 'pet_hong_long', name: 'Hồng Long Ấu Thú', desc: 'Thú cưng rồng lửa (bản thử nghiệm). Sử dụng để triệu hồi / thu hồi. Rồng bay theo chủ, khi chủ giao chiến sẽ lao tới phun lửa vào mục tiêu (sát thương theo 35% công của chủ, gây bỏng).', effect: { pet: 'hong_long' }, price: 0, icon: 'pet:hong_long', rarity: 'legendary', stack: false, noSell: true },
+  // thú cưng: các vật phẩm pet_<loài> sinh tự động từ server/data/pets.js (cuối file)
   { id: 'pk_pardon', name: 'Lệnh Bài Xoá Tội', desc: 'Sử dụng để trừ 5 điểm sát khí. Hết sát khí thì hết bị truy nã và tắt được chế độ Đồ sát (đồ sát không đi được Xa Phu, không dùng được Hồi Thành Phù, không mua bán với NPC). Chỉ bán bằng Nguyên Bảo ở Kỳ Trân Các – kẻ đồ sát vẫn mua được.', effect: { pardon: 1 }, price: 30000, icon: 'ticket', rarity: 'epic' },
   { id: 'stall_token', name: 'Lệnh Bài Bán Hàng', desc: 'Mở gian hàng ở bất kỳ chỗ trống nào trong Chợ Phiên (đi Xa Phu) trong 6 giờ để treo bán đồ cho người chơi khác (thoát game vẫn bán, thuế chợ 5%). Dùng lệnh bài hoặc bấm nút "🏪 Sạp hàng của tôi" trong chợ.', effect: { stall: 1 }, price: 20000, icon: 'ticket', rarity: 'rare' },
   { id: 'tay_tuy_kinh', name: 'Tẩy Tủy Kinh', desc: 'Sử dụng để tẩy điểm võ học: mọi võ công đã học trở về tầng 1, hoàn lại toàn bộ điểm võ học để cộng lại. Cũng dùng để đổi hệ Nội công / Ngoại công từ cấp 20 (bảng Võ Công).', effect: { resetSkill: 1 }, price: 60000, icon: 'book_wash', rarity: 'epic' },
@@ -334,5 +334,14 @@ for (const g of require('./mountgear').v2Items()) ITEMS[g.id] = g;   // Mã Cụ
 
 function equipId(slot, t, rarity) { return `${slot}_${t}_${rarity}`; }
 
-ITEMS.rebirth_stone.knbOnly = true;   // bán ở Kỳ Trân Các: chỉ Nguyên Bảo thường
+ITEMS.rebirth_stone.knbOnly = true;
+// ---------- Thú cưng (Linh Thú) ----------
+{
+  const PT = require('./pets');
+  for (const P of Object.values(PT.PETS))
+    ITEMS['pet_' + P.id] = { id: 'pet_' + P.id, type: 'use', name: 'Linh Thú: ' + P.name, desc: `${P.desc} Sử dụng để thu nhận vào bảng 🐾 Thú cưng. Kỹ năng: ${P.skill.name} – ${P.skill.text}.`, effect: { petAdd: P.id }, price: 0, lv: 1, icon: 'pet:' + P.id, rarity: P.price >= 300 ? 'legendary' : 'epic', stack: true, noSell: true, knbOnly: true };
+  ITEMS.pet_egg = { id: 'pet_egg', type: 'use', name: 'Trứng Linh Thú', desc: `Sử dụng để ấp nở 1 thú cưng ngẫu nhiên (Tiên Mộc Linh, Cơ Quan Khuyển, Huyền Miêu, Hỏa Linh Tử, hiếm có Hồng Long Ấu Thú). ${Math.round(PT.RARE_EGG * 100)}% nở ra phẩm chất HIẾM (chỉ số x${PT.RARE_K}). Rơi từ Boss và sự kiện.`, effect: { petEgg: 1 }, price: 0, lv: 1, icon: 'egg', rarity: 'epic', stack: true, noSell: true };
+  ITEMS.pet_food = { id: 'pet_food', type: 'material', name: 'Linh Thú Đan', desc: 'Cho thú cưng ăn ở bảng 🐾 Thú cưng: +300 kinh nghiệm thú cưng mỗi viên.', price: 0, icon: 'food', rarity: 'rare', stack: true, material: true, noSell: true };
+  ITEMS.pet_stone = { id: 'pet_stone', type: 'material', name: 'Linh Thú Thạch', desc: 'Nâng sao thú cưng ở bảng 🐾 Thú cưng (tối đa 5 sao, mỗi sao +15% thuộc tính và +10% sát thương). Rơi từ Boss, mua ở Kỳ Trân Các.', price: 0, icon: 'mount_ess', rarity: 'epic', stack: true, material: true, noSell: true };
+}   // bán ở Kỳ Trân Các: chỉ Nguyên Bảo thường
 module.exports = { DIVINE_SETS, ITEMS, RARITY, SLOTS, TIERS, TIER_MAX, tierOfLv, DROP_SLOTS, EQUIP_SLOTS, SLOT_TYPE, equipId, CLASS_WEAPON, BR_ATTR, brPoints, BR_STAT, BR_OFF_K, brStats };

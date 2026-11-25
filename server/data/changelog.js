@@ -24,7 +24,12 @@ const CHANGELOG = [
       '🎫 Thẻ Tháng (300 💎 ở Kỳ Trân Các): 30 ngày, mỗi ngày nhận 30 Nguyên Bảo Khoá + 1 Rương Bí Ẩn – tổng 900 Nguyên Bảo Khoá.',
       '💎 Tích Nạp tuần: nạp đủ 100 / 300 / 1.000 / 3.000 / 6.000 Nguyên Bảo trong tuần nhận quà theo mốc (rương, đá, Đá May Mắn, ngoại trang Hắc Long Bào, Băng Tâm Ngọc Y).',
       '💸 Tích Tiêu tuần: tiêu đủ 200 / 600 / 1.500 / 4.000 / 8.000 Nguyên Bảo thường trong tuần nhận quà theo mốc (đến ngoại trang Hồng Liên Tiên Y, Xích Hỏa Chiến Bào). Tuần làm mới 0:00 Thứ 6.',
-      '🛡️ Bảo Hiểm Phù không còn rơi từ quái và không còn đổi bằng Hoa Đăng. Vẫn có ở Kỳ Trân Các, Thương Nhân Bí Ẩn, cửa hàng Sư Đức, cống hiến môn phái, Vòng Quay, điểm danh, boss bang và quà VIP / Tích Nạp / Tích Tiêu.'
+      '🛡️ Bảo Hiểm Phù không còn rơi từ quái và không còn đổi bằng Hoa Đăng. Vẫn có ở Kỳ Trân Các, Thương Nhân Bí Ẩn, cửa hàng Sư Đức, cống hiến môn phái, Vòng Quay, điểm danh, boss bang và quà VIP / Tích Nạp / Tích Tiêu.',
+      '🐾 THÚ CƯNG (LINH THÚ) CHÍNH THỨC – nút 🐾 Thú cưng trên menu: 5 loài Tiên Mộc Linh (100 💎), Cơ Quan Khuyển (150 💎), Huyền Miêu (250 💎), Hỏa Linh Tử (300 💎), Hồng Long Ấu Thú (400 💎) bán ở Kỳ Trân Các.',
+      '🐾 Thú cưng đi theo chủ, cộng thuộc tính cho chủ (sinh lực, phòng thủ, công, chí mạng tuỳ loài), tự đánh quái chủ đang đánh mỗi 2 giây và có kỹ năng riêng: hồi máu chủ, cắn choáng, phép đánh lan, nổ lửa thiêu đốt, rồng phun lửa.',
+      '⭐ Nâng cấp thú cưng: lên cấp khi cùng chủ hạ quái hoặc cho ăn Linh Thú Đan; nâng tới 5 sao bằng Linh Thú Thạch (mỗi sao +15% thuộc tính, +10% sát thương). Chuồng chứa 12 con.',
+      '🥚 Trứng Linh Thú: rơi từ Boss thế giới, Boss dã ngoại, Đua Top Săn Quái, Tích Nạp, đổi Hoa Đăng. Ấp ra loài ngẫu nhiên, 15% ra phẩm chất HIẾM (chỉ số x1,35, có hào quang). Mua ở Kỳ Trân Các là phẩm chất Thường.',
+      '🐉 Hồng Long Ấu Thú (bản thử nghiệm) nay là thú cưng chính thức: vào túi đồ → Sử dụng để thu nhận vào bảng Thú cưng.'
     ]
   },
   {

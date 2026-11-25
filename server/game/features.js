@@ -62,6 +62,7 @@ const LANTERN_EXCHANGE = [
   { id: 'x2', cost: 40, name: 'Song Bội KN x2', r: { items: [['exp_x2', 2]] }, week: 10 },   // giới hạn theo TUẦN (Thứ 2 – Chủ nhật)
   { id: 'stone2', cost: 60, name: 'Thiên Tinh Thạch x2', r: { items: [['stone2', 2]] } },
   { id: 'boss', cost: 100, name: 'Rương Thủ Lĩnh', r: { items: [['boss_chest', 1]] } },
+  { id: 'pet_egg', cost: 300, name: 'Trứng Linh Thú', r: { items: [['pet_egg', 1]] }, week: 2 },
   { id: 'book', cost: 5000, name: 'Bí Kíp Long Ấn (ngẫu nhiên)', r: { dragonBook: 1 } }
 ];
 
@@ -336,7 +337,7 @@ class Features {
     const info = EVENT_INFO[k];
     if (k === 'huntRace') {
       const top = Object.entries(e.scores || {}).sort((a, b) => b[1].n - a[1].n).slice(0, 10);
-      const rewards = [{ knb: 15, items: [['boss_chest', 3]] }, { knb: 10, items: [['boss_chest', 2]] }, { knb: 5, items: [['boss_chest', 1]] }];
+      const rewards = [{ knb: 15, items: [['boss_chest', 3], ['pet_egg', 1]] }, { knb: 10, items: [['boss_chest', 2], ['pet_stone', 2]] }, { knb: 5, items: [['boss_chest', 1], ['pet_stone', 1]] }];
       top.slice(0, 3).forEach(([uid, s], i) => {
         const user = this.db.data.users[uid];
         if (!user || !user.character) return;

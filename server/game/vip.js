@@ -15,7 +15,7 @@ const MCARD_GIFT = { knb: MCARD_KNB, items: [['lucky_chest', 1]] };
 const ACC_TOP = [   // Tích Nạp tuần (Nguyên Bảo nạp)
   { n: 100,  r: { items: [['lucky_chest', 3], ['stone2', 2]] } },
   { n: 300,  r: { items: [['boss_chest', 2], ['insure', 1], ['lucky_stone', 1]] } },
-  { n: 1000, r: { items: [['boss_chest', 5], ['insure', 3], ['lucky_stone', 3]] } },
+  { n: 1000, r: { items: [['boss_chest', 5], ['insure', 3], ['lucky_stone', 3], ['pet_egg', 1]] } },
   { n: 3000, r: { items: [['boss_chest', 10], ['stone2', 20], ['lucky_stone', 5], ['outfit_hac_long', 1]] } },
   { n: 6000, r: { items: [['boss_chest', 20], ['stone2', 40], ['insure', 10], ['outfit_bang_tam', 1]] } }
 ];

@@ -526,6 +526,7 @@
     HuyetChien.bind(s);
     SectUI.bind(s);
     Pet.bind(s);
+    PetPanel.bind(s);
     BossFX.bind(s);
     s.on('events', d => { G.events = d; UI.onEvents(d); });
     s.on('daily', d => { G.daily = d; UI.updateDaily(); });

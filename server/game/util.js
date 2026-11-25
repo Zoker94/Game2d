@@ -242,6 +242,11 @@ function calcStats(c, buffs = [], guildLevel = 0, riding = false) {
       else if (k === 'hp') s.maxHp += ms.hp; else if (k === 'mp') s.maxMp += ms.mp; else s[k] += ms[k];
     }
   }
+  // thú cưng đang theo: cộng thuộc tính (server/data/pets.js)
+  if (c.petOn && c.pets) {
+    const pe = c.pets.find(x => x.uid === c.petOn);
+    if (pe) { const ps = require('../data/pets').ownerStats(pe); for (const k in ps) if (k in s) s[k] += ps[k]; }
+  }
   // hệ số nhân sau trang bị (bang, nội công, môn phái, di thư) – gửi máy khách để so đồ ra đúng lực chiến
   const mul = { atk: 1, def: 1, maxHp: 1, maxMp: 1 };
   const mulAll = (k, f) => { s[k] *= f; mul[k] *= f; };

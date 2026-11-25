@@ -284,10 +284,11 @@ class World {
     this.enterMap(p, c.map, x, y);
     if (user.streamer && !c.streamerGift) setTimeout(() => { if (this.players.get(user.id) === p) this.grantStreamer(p); }, 1500);   // gói Streamer lần đầu
     if (c.level >= 120 && this.rebirth) setTimeout(() => { if (this.players.get(user.id) === p) this.rebirth.onLevel(p); }, 6000);   // đã cấp 120 từ trước: hỏi trùng sinh 1 lần
-    // bản thử nghiệm thú cưng rồng: gửi thẳng vào túi chủ server một lần
+    if (this.pets) this.pets.migrate(c);   // thú cưng bản thử nghiệm -> bản chính thức
+    // thú cưng rồng: gửi thẳng vào túi chủ server một lần
     if (require('../owner').isOwner(user) && !c.petGift) {
       c.petGift = 1;
-      setTimeout(() => { if (this.players.get(user.id) === p) { this.giveItem(p, 'pet_hong_long', 1); this.toast(p, '🐉 Đã gửi Hồng Long Ấu Thú (thú cưng thử nghiệm) vào túi đồ. Vào túi → Sử dụng để triệu hồi.', 'reward'); this.db.markDirty(); } }, 2500);
+      setTimeout(() => { if (this.players.get(user.id) === p) { this.giveItem(p, 'pet_hong_long', 1); this.toast(p, '🐉 Đã gửi Hồng Long Ấu Thú vào túi đồ. Vào túi → Sử dụng để thu nhận vào bảng 🐾 Thú cưng.', 'reward'); this.db.markDirty(); } }, 2500);
     }
     // quản trị viên: tặng đủ 9 bí kíp Tuyệt Kỹ Giang Hồ một lần (túi đầy thì lần đăng nhập sau tặng tiếp; nhận thêm bằng /tuyetky)
     if (c.hacLongNote) { const nt = c.hacLongNote; delete c.hacLongNote; setTimeout(() => { if (this.players.get(user.id) === p) this.toast(p, nt === 'swap' ? '🐉 Thú cưỡi Hắc Long đã ngừng phát hành: đã đổi sang Thanh Long, giữ nguyên cấp.' : '🐉 Thú cưỡi Hắc Long đã ngừng phát hành: đã hoàn 8000 Nguyên Bảo (giữ cấp cao hơn cho Thanh Long).', 'reward'); }, 3500); this.db.markDirty(); }
@@ -841,31 +842,6 @@ class World {
     p.dirtyMe = true;
     this.toast(p, `✨ Đổi tên thành công: ${name}`, 'reward');
     if (this.features) this.features.announce(`📜 ${old} đã đổi tên thành ${name}`);
-  }
-
-  // thú cưng rồng: khi chủ đang đánh quái (trong 3 giây gần nhất), cứ 4 giây lao tới phun lửa vào mục tiêu
-  petTick(p, now) {
-    if (p.dead || !p.c.pet || now < (p.petNext || 0) || now - (p.lastHitMon || 0) > 3000) return;
-    if (!U.countItem(p.c, 'pet_' + p.c.pet)) { p.c.pet = null; p.dirtyMe = true; return; }
-    const m = this.maps[p.mapId];
-    if (!m) return;
-    let t = p.target && m.monsters.get(p.target);
-    if (!t || t.dead || U.dist(t, p) > 320) {   // mục tiêu đã chết: chọn quái gần nhất đang đánh chủ / đang bị chủ đánh
-      t = null; let bd = 300;
-      for (const mon of m.monsters.values()) {
-        if (mon.dead || (mon.target !== p.userId && !mon.dmgBy.has(p.userId))) continue;
-        const d = U.dist(mon, p); if (d < bd) { bd = d; t = mon; }
-      }
-    }
-    if (!t) return;
-    p.petNext = now + 4000;
-    this.fx(p.mapId, { t: 'petfire', id: p.id, to: t.id, x: t.x, y: t.y });
-    setTimeout(() => {   // lửa chạm đất sau ~0,45 giây (khớp hoạt ảnh phun lửa)
-      if (t.dead || p.mapId !== t.mapId) return;
-      const { dmg, crit } = this.calcDamage(p.stats.atk * 0.35, p.stats.crit, t.tpl.def, 1, 0.3);
-      this.applyDamage(t, Math.round(dmg), p, crit ? 'crit' : 'burn');
-      if (!t.dead) this.applyStatus(t, 'burn', 3000, p);
-    }, 450);
   }
 
   // thành gần nhất mà người chơi đủ cấp vào (đi theo cổng), phó bản thì về thành nơi đã vào
@@ -1498,6 +1474,7 @@ class World {
       let exp = tpl.exp * share;
       exp *= levelGapK(p.c.level, tpl.lv);
       const gained = this.gainExp(p, exp);
+      if (this.pets && p === killer) this.pets.onKill(p, mon);   // thú cưng đang theo nhận kinh nghiệm
       const gold = Math.round(tpl.gold * U.rand(0.7, 1.3) * (cfg.goldRate || 1) * (mon.boss ? share : 1));
       if (mon.boss) { p.c.gold += gold; this.features.questProgress(p, 'gold', gold); }
       else if (tpl.comu) this.createGoldDrop(mon.mapId, mon.x + U.rand(-14, 14), mon.y + U.rand(-8, 8), Math.round(gold * 2), p.userId);   // Cổ Mộ: con nào cũng rơi, đống to
@@ -1552,6 +1529,8 @@ class World {
           if (!off && Math.random() < chance * dr) legend(p);
           const items = !off && i === 0 && tpl.id === 'boss_vumuc' ? [['vm_tamphap', 1]] : [];   // chỉ top 1 sát thương: anh linh Nhạc Vũ Mục truyền Tâm Pháp (cách học Di Thư)
           if (!off && i < 3) items.push(['boss_chest_' + tier, 3 - i]);   // hạng 1-3: 3 / 2 / 1 Rương Thủ Lĩnh đúng bậc boss
+          if (Math.random() < (i === 0 ? 0.3 : i < 3 ? 0.15 : i < 10 ? 0.05 : 0.01)) items.push(['pet_egg', 1]);   // Trứng Linh Thú
+          if (Math.random() < (i < 3 ? 0.5 : 0.15)) items.push(['pet_stone', i < 3 ? 2 : 1]);   // Linh Thú Thạch
           if (items.length) this.giveReward(p, { items }, `Hạng ${i + 1} đánh ${tpl.name}`);   // boss không phát Nguyên Bảo
         });
       } else if (!BOSSCFG.noDefault(tpl.id)) {
@@ -1565,6 +1544,8 @@ class World {
         }
         // đá cường hóa: 2-4 Huyền Tinh Thạch, boss cấp cao có thể thêm Thiên Tinh Thạch (đã giảm một nửa)
         for (let k = 0, n = U.randInt(1, 3); k < n; k++) drops.push('stone');   // giảm: trước 2-4
+        if (Math.random() < 0.12 * dr) drops.push('pet_egg');      // Trứng Linh Thú (boss dã ngoại)
+        if (Math.random() < 0.35 * dr) drops.push('pet_stone');    // Linh Thú Thạch
         if (tpl.lv >= 40 && Math.random() < 0.18 * dr) drops.push('stone2');
         if (tpl.lv >= 80 && Math.random() < 0.18 * dr) drops.push('stone2');
         // 4 Rương Thủ Lĩnh rải quanh boss, không thuộc về ai (trước: 2 Thủ Lĩnh + 8 Bí Ẩn)
@@ -1750,7 +1731,7 @@ class World {
   }
   batchable(it) {
     const e = it.effect || {};
-    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.mine || e.title || e.dvFrag || e.dvSummon || e.tbFrag || e.tbMap || e.pardon || e.rename || e.pet || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr || e.fish || e.bait || e.egg || e.thoc || e.food);
+    return it.type === 'use' && !(e.hp || e.mp || e.hpPct || e.mpPct || e.town || e.mine || e.title || e.dvFrag || e.dvSummon || e.tbFrag || e.tbMap || e.pardon || e.rename || e.petAdd || e.petEgg || e.learn || e.dragon || e.jianghu || e.resetSkill || e.resetAttr || e.fish || e.bait || e.egg || e.thoc || e.food);
   }
   useOne(p, uid) {
     const s = p.c.inv.find(x => x.uid === uid);
@@ -1819,11 +1800,8 @@ class World {
       p.dirtyMe = true; this.db.markDirty(); return;
     }
     if (e.rename) { p.socket.emit('renamePrompt', { uid }); return; }   // nhập tên mới ở máy khách
-    if (e.pet) {   // thú cưng: triệu hồi / thu hồi, không mất vật phẩm
-      c.pet = c.pet === e.pet ? null : e.pet;
-      this.toast(p, c.pet ? `🐉 Đã triệu hồi ${it.name}` : `Đã thu hồi ${it.name}`, c.pet ? 'reward' : 'info');
-      p.dirtyMe = true; return;
-    }
+    if (e.petAdd) return this.pets.useItem(p, uid, e.petAdd);   // thú cưng: thu nhận vào chuồng (bảng 🐾 Thú cưng)
+    if (e.petEgg) return this.pets.hatch(p, uid);               // ấp Trứng Linh Thú
     if (e.changeClass) { p.socket.emit('pickClass', { uid }); return; }   // máy khách mở bảng chọn phái, chọn xong gửi 'changeClass'
     if (e.invExpand) {
       if ((c.invExtra | 0) >= U.INV_EXTRA_MAX) return this.toast(p, `Túi đồ đã mở rộng tối đa ${U.INV_SIZE + U.INV_EXTRA_MAX} ô`, 'error');
@@ -2747,7 +2725,7 @@ class World {
     if (this.dungeon && sec) this.dungeon.tick(now);
     if (this.comu && sec) this.comu.tick(now);
     if (this.hc && sec) this.hc.tick(now);
-    if (this.tickN % 5 === 0) for (const p of this.players.values()) if (p.c.pet) this.petTick(p, now);
+    if (this.tickN % 5 === 0 && this.pets) for (const p of this.players.values()) if (p.c.petOn) this.pets.tick(p, now);   // thú cưng đánh quái
   }
 
   // đang giao tranh với người chơi (8 giây gần nhất): hồi máu từ chiêu / hút máu / hồi phục chỉ còn 25%
@@ -3056,7 +3034,7 @@ class World {
       a ? a.tier : -1, a ? RARITY_IDX[a.rarity] : 0, a ? e.armor.plus || 0 : 0,
       h ? h.tier : -1, c.riding && c.mount ? c.mount : '', h ? RARITY_IDX[h.rarity] : 0,
       c.riding && c.mount && c.mounts && c.mounts[c.mount] ? c.mounts[c.mount].lv || 1 : 0,   // cấp thú cưỡi: hiệu ứng mạnh dần
-      c.pet && U.countItem(c, 'pet_' + c.pet) ? c.pet : '',   // thú cưng đang theo
+      this.pets ? this.pets.appear(c) : '',   // thú cưng đang theo (loài, '*' = Hiếm)
       k ? k.tier : -1, k ? RARITY_IDX[k.rarity] : 0,   // áo choàng: vẽ phi phong trên nhân vật
       c.outfit && OUTFITS[c.outfit] ? c.outfit : ''];   // ngoại trang: đổi màu áo
   }
