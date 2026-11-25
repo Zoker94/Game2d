@@ -496,7 +496,7 @@
     setTxt($('hud-class'), G.data.classes[me.cls].name);
     setTxt($('hud-level'), String(me.level));
     setTxt($('hud-gold'), fmt(me.gold));
-    setTxt($('hud-knb'), fmt(me.knb) + ((me.knbB | 0) ? ' 🔒' + fmt(me.knbB) : ''));   // 🔒 = Nguyên Bảo Khoá
+    setTxt($('hud-knb'), fmt(me.knb));
     const ep = me.expNext ? me.exp / me.expNext : 0;
     setW($('exp-bar').querySelector('i'), (ep * 100).toFixed(2) + '%');
     setTxt($('exp-bar').querySelector('span'), `Cấp ${me.level} · KN ${fmt(me.exp)}/${fmt(me.expNext)} (${(ep * 100).toFixed(1)}%)`);
@@ -1039,7 +1039,7 @@
   function renderInventory(body) {
     const me = G.me;
     for (const u of [...dropMark]) if (!me.inv.some(s => s.uid === u)) dropMark.delete(u);
-    let html = `<div class="small muted" style="margin-bottom:6px">💰 ${fmt(me.gold)} lượng · 💎 ${fmt(me.knb)} Nguyên Bảo${(me.knbB | 0) ? ` · 🔒 ${fmt(me.knbB)} Nguyên Bảo Khoá` : ''} · Túi ${me.inv.length}/${me.invMax || 48} · Lực chiến <b style="color:#ffd76a">${fmt(me.stats.power)}</b></div>`;
+    let html = `<div class="small muted" style="margin-bottom:6px">💰 ${fmt(me.gold)} lượng · 💎 ${fmt(me.knb)} Nguyên Bảo · Túi ${me.inv.length}/${me.invMax || 48} · Lực chiến <b style="color:#ffd76a">${fmt(me.stats.power)}</b></div>`;
     if (me.mailbox && me.mailbox.length) {   // Hòm Đồ: phần thưởng lúc túi đầy
       const n = me.mailbox.reduce((a, e) => a + e[1], 0);
       html += `<div class="mailbox-bar"><div class="mb-t">📦 <b>Hòm Đồ</b> · ${n} vật phẩm đang chờ<div class="small muted">Phần thưởng nhận lúc túi đầy (phó bản, sự kiện, boss...) được giữ ở đây, không bị mất.</div></div>
@@ -2010,21 +2010,21 @@
     if (tl.length) html += tabs(tl, tab);
     if ((G.me.pk | 0) >= 3 && (d.shop || d.knbShop || d.teleports))   // đồ sát: không đi xe, không mua bán (trừ Lệnh Bài Xoá Tội)
       html += `<div class="outlaw-warn">☠️ Bạn đang mang tội đồ sát (sát khí ${G.me.pk}): không thể ${d.teleports ? 'đi xe Xa Phu – phải tự chạy bộ' : 'mua bán với NPC'}. ${d.teleports ? '' : 'Vẫn mua được <b>Lệnh Bài Xoá Tội</b>. '}Sát khí giảm 1 điểm mỗi 15 phút.</div>`;
-    if (tab === 'knb') html += `<div class="tp-cta"><span>💎 Nguyên Bảo: <b>${fmt(G.me.knb)}</b> · 🔒 Khoá: <b>${fmt(G.me.knbB | 0)}</b><br><small class="muted">Nguyên Bảo Khoá (thưởng trong game) chỉ mua được món có dấu 🔒, được trừ trước</small></span><button class="btn primary small" id="tp-open">💳 Nạp Nguyên Bảo</button><button class="btn small" id="tp-vipo">👑 Đặc Quyền</button></div>`;
+    if (tab === 'knb') html += `<div class="tp-cta"><span>💎 Nguyên Bảo của bạn: <b>${fmt(G.me.knb)}</b></span><button class="btn primary small" id="tp-open">💳 Nạp Nguyên Bảo</button><button class="btn small" id="tp-vipo">👑 Đặc Quyền</button></div>`;
     if (tab === 'extra' && d.extra) {
-      html += `<div class="small muted" style="margin:4px 0 6px">Mua thêm lượt chơi trong ngày. Giá tăng gấp đôi mỗi lần mua, làm mới lúc 0:00. Dùng được 🔒 Nguyên Bảo Khoá (trừ trước).<br>💎 ${fmt(G.me.knb)}${(G.me.knbB | 0) ? ' · 🔒 ' + fmt(G.me.knbB) : ''}</div><div class="list">` + d.extra.map(x => `<div class="li"><div style="font-size:24px;width:36px;text-align:center">${x.icon}</div><div class="grow"><b>${esc(x.name)}</b> <span class="small muted">đã mua ${x.n}/${x.max}</span><div class="sub">+${x.add ? x.add + ' ' : ''}${esc(x.unit)}</div></div>${x.price ? `<button class="btn small primary" data-extra="${x.k}">${x.price} 💎</button>` : '<button class="btn small" disabled>Hết lượt mua</button>'}</div>`).join('') + '</div>';
+      html += `<div class="small muted" style="margin:4px 0 6px">Mua thêm lượt chơi trong ngày. Giá tăng gấp đôi mỗi lần mua, làm mới lúc 0:00.<br>💎 ${fmt(G.me.knb)}</div><div class="list">` + d.extra.map(x => `<div class="li"><div style="font-size:24px;width:36px;text-align:center">${x.icon}</div><div class="grow"><b>${esc(x.name)}</b> <span class="small muted">đã mua ${x.n}/${x.max}</span><div class="sub">+${x.add ? x.add + ' ' : ''}${esc(x.unit)}</div></div>${x.price ? `<button class="btn small primary" data-extra="${x.k}">${x.price} 💎</button>` : '<button class="btn small" disabled>Hết lượt mua</button>'}</div>`).join('') + '</div>';
     }
     if (tab === 'buy' || tab === 'knb') {
-      const list = tab === 'buy' ? d.shop.map(x => ({ id: x.id, price: x.price })) : d.knbShop.map(x => ({ id: x.id, knb: x.knb, lock: x.lock, kb: x.kb }));
+      const list = tab === 'buy' ? d.shop.map(x => ({ id: x.id, price: x.price })) : d.knbShop.map(x => ({ id: x.id, knb: x.knb, lock: x.lock }));
       const hasEq = list.some(x => G.data.items[x.id] && G.data.items[x.id].type === 'equip'), bbr = panelState.buyBr || G.me.branch;
       if (hasEq) html += `<div class="buy-br">Mua trang bị hệ: <button class="${bbr === 'ngoai' ? 'on' : ''}" data-bbr="ngoai">⚔️ Ngoại công (+Sức Mạnh)</button><button class="${bbr === 'noi' ? 'on' : ''}" data-bbr="noi">🔮 Nội công (+Nội Công)</button></div>`;
-      html += `<div class="small muted">💰 ${fmt(G.me.gold)} · 💎 ${fmt(G.me.knb)}${(G.me.knbB | 0) ? ' · 🔒 ' + fmt(G.me.knbB) : ''}</div><div class="list">` + list.map(x => {
+      html += `<div class="small muted">💰 ${fmt(G.me.gold)} · 💎 ${fmt(G.me.knb)}</div><div class="list">` + list.map(x => {
         const it = G.data.items[x.id];
         const cant = it.lv > G.me.level;
         const stats = it.stats ? Object.entries(brSt(it, bbr)).map(([k, v]) => `${STAT_NAME[k]} +${v}`).join(', ') : (it.desc || '');
         return `<div class="li${x.lock ? ' locked-sale' : ''}"><img src="${iconUrl(x.id)}" class="ic" width="36" height="36"><div class="grow">${x.lock ? '🔒 ' : ''}${itemName(x.id)} <span class="small ${cant ? 'warn' : 'muted'}">Cấp ${it.lv || 1}</span><div class="sub">${esc(stats)}</div></div>
           ${it.type !== 'equip' && !x.lock ? `<input type="number" min="1" max="999" value="${it.type === 'use' && x.price < 100 ? 10 : 1}" style="width:58px" data-qty="${x.id}">` : ''}
-          ${x.lock ? '<button class="btn small" disabled title="Chưa mở bán">🔒 Sắp mở bán</button></div>' : `<button class="btn small ${tab === 'knb' ? 'primary' : 'green'}" data-buy="${x.id}">${x.id === 'rename_card' && d.freeRename ? '🎁 Miễn phí (lần đầu)' : x.knb ? x.knb + ' 💎' + (x.kb ? '🔒' : '') : fmt(x.price) + ' 💰'}</button></div>`}`;
+          ${x.lock ? '<button class="btn small" disabled title="Chưa mở bán">🔒 Sắp mở bán</button></div>' : `<button class="btn small ${tab === 'knb' ? 'primary' : 'green'}" data-buy="${x.id}">${x.id === 'rename_card' && d.freeRename ? '🎁 Miễn phí (lần đầu)' : x.knb ? x.knb + ' 💎' : fmt(x.price) + ' 💰'}</button></div>`}`;
       }).join('') + '</div>';
     } else if (tab === 'sell') {
       html += quickSellHtml() + invGrid(body, { noEquip: true, mark: sellMark }) + (sellMulti ? '' : itemActions({ shop: true }));

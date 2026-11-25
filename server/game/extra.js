@@ -1,4 +1,4 @@
-// Mua thêm lượt bằng Nguyên Bảo (dùng được Nguyên Bảo Khoá, trừ khoá trước) ở Kỳ Trân Các.
+// Mua thêm lượt bằng Nguyên Bảo ở Kỳ Trân Các.
 // Giá tăng gấp đôi theo mỗi lần mua trong ngày (giờ Việt Nam), mỗi loại có số lần mua tối đa / ngày.
 // Dữ liệu: c.extraBuy = { d: 'YYYY-MM-DD', esc, mine, comu, cf, fish } – số lần đã mua hôm nay.
 const U = require('./util');
@@ -34,7 +34,7 @@ class Extra {
     }
     if (k === 'fish') { const f = c.fishSta; if (!f || f.day !== U.vnDay() || !(f.n > 0)) return w.toast(p, 'Thể lực câu cá đang đầy', 'error'); }
     const price = this.priceOf(c, k);
-    if (!w.payKnb(c, price, true)) return w.toast(p, `Cần ${price} Nguyên Bảo (dùng được Nguyên Bảo Khoá)`, 'error');
+    if (!w.payKnb(c, price)) return w.toast(p, `Cần ${price} Nguyên Bảo`, 'error');
     s[k] = (s[k] | 0) + 1;
     if (k === 'comu') { const cs = w.comu.st(c); cs.shown = 0; cs.m = 0; cs.need = U.randInt(2, 5); }   // luyện công thêm 2–5 phút sẽ gặp lối vào
     if (k === 'fish') c.fishSta.n = 0;

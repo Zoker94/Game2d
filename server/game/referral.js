@@ -135,7 +135,7 @@ class Referral {
     }
   }
 
-  // người được mời NẠP LẦN ĐẦU: người mời nhận 10% số Nguyên Bảo của đơn đó (tối thiểu 10) – Nguyên Bảo thường. 1 lần / người được mời.
+  // người được mời NẠP LẦN ĐẦU: người mời nhận 10% số Nguyên Bảo của đơn đó (tối thiểu 10). 1 lần / người được mời.
   onTopup(u, knb) {
     const r = u && u.ref;
     if (!r || !r.by || r.paidRef || !(knb > 0)) return;

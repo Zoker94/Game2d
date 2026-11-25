@@ -196,7 +196,7 @@ const CONSUMABLES = [
   { id: 'stone', name: 'Huyền Tinh Thạch', desc: 'Nguyên liệu cường hóa trang bị +1 đến +15. Từ +11 trở lên cần thêm Thiên Tinh Thạch (và nhiều Huyền Tinh Thạch hơn).', price: 300, icon: 'stone', material: true },
   { id: 'thien_tam_ti', name: 'Thiên Tàm Ti', desc: 'Tơ tằm trời quý hiếm. Nguyên liệu chế tạo Áo choàng ở bản đồ môn phái (NPC Chưởng Phi Phong). Rơi ít từ quái, nhiều hơn ở tinh anh và Boss; đổi được bằng điểm cống hiến môn phái.', price: 600, icon: 'silk', material: true, rarity: 'rare' },
   { id: 'stone2', name: 'Thiên Tinh Thạch', desc: 'Nguyên liệu quý để cường hóa +11 đến +15 (dùng cùng Huyền Tinh Thạch). Rơi từ Boss, quái cấp cao, sự kiện.', price: 8000, icon: 'stone2', material: true },
-  { id: 'month_card', name: 'Thẻ Tháng', desc: 'Sử dụng để kích hoạt 30 ngày Thẻ Tháng (cộng dồn): mỗi ngày nhận 30 Nguyên Bảo Khoá + 1 Rương Bí Ẩn ở bảng 👑 Đặc Quyền (bấm số 💎 trên cùng). Không thể giao dịch.', effect: { mcard: 1 }, price: 0, icon: 'ticket', rarity: 'legendary', noSell: true, noTrade: true, knbOnly: true },
+  { id: 'month_card', name: 'Thẻ Tháng', desc: 'Sử dụng để kích hoạt 30 ngày Thẻ Tháng (cộng dồn): mỗi ngày nhận 30 Nguyên Bảo + 1 Rương Bí Ẩn ở bảng 👑 Đặc Quyền (bấm số 💎 trên cùng). Không thể giao dịch.', effect: { mcard: 1 }, price: 0, icon: 'ticket', rarity: 'legendary', noSell: true, noTrade: true },
   { id: 'loa_tg', name: 'Loa Thế Giới', desc: 'Gõ /loa nội dung trong ô chat: lời nhắn chạy chữ to trên đầu màn hình của mọi người chơi và hiện ở kênh Thế Giới. Mỗi lần dùng 1 cái. Mua ở Kỳ Trân Các.', effect: { loa: 1 }, price: 0, icon: 'scroll', rarity: 'rare', noSell: true },
   { id: 'lucky_stone', name: 'Đá May Mắn', desc: 'Bỏ vào lò rèn khi cường hoá: tỉ lệ thành công gấp đôi (cộng thêm tối đa 15%). Mất đá dù thành công hay thất bại. Mua ở Kỳ Trân Các.', price: 0, icon: 'lucky', material: true, rarity: 'epic', noSell: true },
   { id: 'insure', name: 'Bảo Hiểm Phù', desc: 'Khi cường hóa từ +10 trở lên mà thất bại, giữ nguyên cấp thay vì rớt về +1.', price: 15000, icon: 'insure', material: true },
@@ -325,7 +325,7 @@ ITEMS.event_token.type = 'material';
 const { OUTFITS } = require('./outfits');
 for (const o of Object.values(OUTFITS)) {
   ITEMS['outfit_' + o.id] = { id: 'outfit_' + o.id, type: 'use', name: 'Ngoại trang: ' + o.name, desc: `Sử dụng để mở khoá ngoại trang ${o.name} – đổi màu bộ áo của phái, không đổi chỉ số. Mặc / cởi ở bảng Nhân vật.${o.test ? ' (Đang thử nghiệm)' : ''}`,
-    effect: { outfit: o.id }, price: 0, lv: 1, rarity: o.rarity, icon: 'armor_3', stack: true, knbOnly: true };
+    effect: { outfit: o.id }, price: 0, lv: 1, rarity: o.rarity, icon: 'armor_3', stack: true };
 }
 
 // Đá khảm 5 loại × 5 cấp (data/gems.js)
@@ -334,14 +334,13 @@ for (const g of require('./mountgear').v2Items()) ITEMS[g.id] = g;   // Mã Cụ
 
 function equipId(slot, t, rarity) { return `${slot}_${t}_${rarity}`; }
 
-ITEMS.rebirth_stone.knbOnly = true;
 // ---------- Thú cưng (Linh Thú) ----------
 {
   const PT = require('./pets');
   for (const P of Object.values(PT.PETS).filter(P => !P.base))
-    ITEMS['pet_' + P.id] = { id: 'pet_' + P.id, type: 'use', name: 'Linh Thú: ' + P.name, desc: `${P.desc} Sử dụng để thu nhận vào bảng 🐾 Thú cưng. Kỹ năng: ${P.skill.name} – ${P.skill.text}.`, effect: { petAdd: P.id }, price: 0, lv: 1, icon: 'pet:' + P.id, rarity: P.price >= 300 ? 'legendary' : 'epic', stack: true, noSell: true, knbOnly: true };
+    ITEMS['pet_' + P.id] = { id: 'pet_' + P.id, type: 'use', name: 'Linh Thú: ' + P.name, desc: `${P.desc} Sử dụng để thu nhận vào bảng 🐾 Thú cưng. Kỹ năng: ${P.skill.name} – ${P.skill.text}.`, effect: { petAdd: P.id }, price: 0, lv: 1, icon: 'pet:' + P.id, rarity: P.price >= 300 ? 'legendary' : 'epic', stack: true, noSell: true };
   ITEMS.pet_egg = { id: 'pet_egg', type: 'use', name: 'Trứng Linh Thú', desc: `Sử dụng để ấp nở 1 thú cưng ngẫu nhiên (Tiên Mộc Linh, Cơ Quan Khuyển, Huyền Miêu, Hỏa Linh Tử, hiếm có Hồng Long Ấu Thú). ${Math.round(PT.RARE_EGG * 100)}% nở ra phẩm chất HIẾM (chỉ số x${PT.RARE_K}). Rơi từ Boss và sự kiện.`, effect: { petEgg: 1 }, price: 0, lv: 1, icon: 'egg', rarity: 'epic', stack: true, noSell: true };
   ITEMS.pet_food = { id: 'pet_food', type: 'material', name: 'Linh Thú Đan', desc: 'Cho thú cưng ăn ở bảng 🐾 Thú cưng: +300 kinh nghiệm thú cưng mỗi viên.', price: 0, icon: 'food', rarity: 'rare', stack: true, material: true, noSell: true };
   ITEMS.pet_stone = { id: 'pet_stone', type: 'material', name: 'Linh Thú Thạch', desc: 'Nâng sao thú cưng ở bảng 🐾 Thú cưng (tối đa 5 sao, mỗi sao +15% thuộc tính và +10% sát thương). Rơi từ Boss, mua ở Kỳ Trân Các.', price: 0, icon: 'mount_ess', rarity: 'epic', stack: true, material: true, noSell: true };
-}   // bán ở Kỳ Trân Các: chỉ Nguyên Bảo thường
+}
 module.exports = { DIVINE_SETS, ITEMS, RARITY, SLOTS, TIERS, TIER_MAX, tierOfLv, DROP_SLOTS, EQUIP_SLOTS, SLOT_TYPE, equipId, CLASS_WEAPON, BR_ATTR, brPoints, BR_STAT, BR_OFF_K, brStats };

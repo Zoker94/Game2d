@@ -23,7 +23,7 @@
     const rw = r.reward, itemN = (x, id) => ((x.items || []).find(i => i[0] === id) || [0, 0])[1];
     return `<div class="wc-race"><div class="wc-rh">🏆 ĐUA TOP TUẦN 🏆</div>
       <div class="wc-cd">Kết thúc sau <b id="wc-cd">…</b><span class="wc-cd2"> · trao thưởng tự động 23:59 Thứ 5</span></div>
-      <div class="wc-rwd"><span>🥇 <b>${rw[0].knb}🔒💎</b><em> + ${itemN(rw[0], 'boss_chest')} Rương Thủ Lĩnh + ${itemN(rw[0], 'stone2')} Thiên Tinh Thạch</em></span><span>🥈 <b>${rw[1].knb}🔒💎</b></span><span>🥉 <b>${rw[2].knb}🔒💎</b></span><span>Top 4–10: <b>${rw[3].knb}💎</b></span></div>
+      <div class="wc-rwd"><span>🥇 <b>${rw[0].knb}💎</b><em> + ${itemN(rw[0], 'boss_chest')} Rương Thủ Lĩnh + ${itemN(rw[0], 'stone2')} Thiên Tinh Thạch</em></span><span>🥈 <b>${rw[1].knb}💎</b></span><span>🥉 <b>${rw[2].knb}💎</b></span><span>Top 4–10: <b>${rw[3].knb}💎</b></span></div>
       <div class="wc-boards">${r.boards.map(b => `<div class="wc-bd"><div class="wc-bt">${b.icon} ${esc(b.name)}</div>${b.title && G.data.titles && G.data.titles[b.title] ? `<div class="wc-ttl" style="--c:${G.data.titles[b.title].color}">🏅 【${esc(G.data.titles[b.title].name)}】</div>` : ''}
         ${[0, 1, 2].map(i => b.top[i] ? `<div class="wc-row r${i}"><span>${MEDAL[i]} ${esc(b.top[i][0])}</span><b>${short(b.top[i][1])}</b></div>` : `<div class="wc-row empty"><span>${MEDAL[i]} Đang chờ anh hùng…</span></div>`).join('')}
         <div class="wc-me">${b.me ? `Bạn: hạng <b>${b.me}</b>` : 'Bạn chưa lọt bảng'} · ${short(b.mine)} ${esc(b.unit)}</div></div>`).join('')}</div>

@@ -310,18 +310,7 @@ function tkLeft(c) { return (c.tkPause | 0) > 0 ? c.tkPause : Math.max(0, (c.aut
 function tkPause(c) { const now = Date.now(); if ((c.autoTicket || 0) > now) { c.tkPause = c.autoTicket - now; c.autoTicket = 0; return true; } return false; }
 function tkResume(c) { if ((c.tkPause | 0) > 0) { c.autoTicket = Date.now() + c.tkPause; c.tkPause = 0; return true; } return false; }
 
-// Nguyên Bảo Khoá (thưởng trong game) chỉ mua được hàng tiêu hao ở Kỳ Trân Các.
-// Không dùng được cho: Đổi Phái, bí kíp, thú cưỡi, trang bị (những món này cần Nguyên Bảo thường – từ nạp).
-function knbBoundOk(id) {
-  const it = ITEMS[id];
-  if (!it || it.slot || it.type === 'equip' || it.knbOnly) return false;
-  if (id === 'doi_phai' || /^book_/.test(id)) return false;
-  if (/^mount_/.test(id) && id !== 'mount_food' && id !== 'mount_stone') return false;
-  return true;
-}
-
 module.exports = {
-  knbBoundOk,
   tkLeft, tkPause, tkResume,
   MAX_LEVEL, INV_SIZE, INV_EXTRA_MAX, invSize, expNext, levelGapK, vnDate, vnDay, vnMinuteOfDay, rand, randInt, dist, clamp, newUid,
   plusMult, newCharacter, addItem, resolveItem, migrateItems, freeSlots, countItem, removeItemById, removeByUid, calcStats, isStack, sellUnit

@@ -140,10 +140,10 @@ class Night {
       const it = this.stock().find(x => x.k === (d.k | 0)); if (!it) return;
       const got = this.bought(p.c);
       if (got[it.k]) return this.w.toast(p, 'Mỗi món chỉ mua được 1 lần mỗi đêm', 'error');
-      if (it.knb && this.w.knbHave(p.c, true) < it.knb) return this.w.toast(p, `Cần ${it.knb} Nguyên Bảo`, 'error');
+      if (it.knb && this.w.knbHave(p.c) < it.knb) return this.w.toast(p, `Cần ${it.knb} Nguyên Bảo`, 'error');
       if (it.gold && p.c.gold < it.gold) return this.w.toast(p, `Cần ${it.gold.toLocaleString('vi-VN')} lượng`, 'error');
       if (!U.addItem(p.c, it.id, it.qty)) return this.w.toast(p, 'Túi đồ đầy', 'error');
-      if (it.knb) this.w.payKnb(p.c, it.knb, true); else p.c.gold -= it.gold;
+      if (it.knb) this.w.payKnb(p.c, it.knb); else p.c.gold -= it.gold;
       got[it.k] = 1; p.dirtyMe = true; this.db.markDirty();
       this.w.toast(p, `🌙 Mua ${(ITEMS[it.id] || {}).name} x${it.qty}`, 'reward');
       this.db.log && this.db.log('shop', `${p.c.name} mua Thương Nhân Bí Ẩn: ${it.id} x${it.qty}`);

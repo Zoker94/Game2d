@@ -284,6 +284,7 @@ class World {
     this.enterMap(p, c.map, x, y);
     if (user.streamer && !c.streamerGift) setTimeout(() => { if (this.players.get(user.id) === p) this.grantStreamer(p); }, 1500);   // gói Streamer lần đầu
     if (c.level >= 120 && this.rebirth) setTimeout(() => { if (this.players.get(user.id) === p) this.rebirth.onLevel(p); }, 6000);   // đã cấp 120 từ trước: hỏi trùng sinh 1 lần
+    this.mergeKnb(c);   // bỏ Nguyên Bảo Khoá: gộp vào Nguyên Bảo
     if (this.pets) this.pets.migrate(c);   // thú cưng bản thử nghiệm -> bản chính thức
     // thú cưng rồng: gửi thẳng vào túi chủ server một lần
     if (require('../owner').isOwner(user) && !c.petGift) {
@@ -478,7 +479,7 @@ class World {
       rebirth: c.rebirth | 0,
       streamer: p.user.streamer ? 1 : 0, firstTop: c.firstTopGift || (c.topupTotal | 0) > 0 ? 1 : 0,   // đã nhận quà nạp đầu / đã từng nạp: không hiện thanh quà nạp đầu
       name: c.name, cls: c.cls, level: c.level, exp: c.exp, expNext: U.expNext(c.level),
-      gold: c.gold, knb: c.knb, knbB: c.knbB | 0, hp: c.hp, mp: c.mp, stats: p.stats,
+      gold: c.gold, knb: c.knb, hp: c.hp, mp: c.mp, stats: p.stats,
       inv: c.inv, invMax: U.invSize(c), vmb: Math.min(5, c.vmb | 0), equip: c.equip, kills: c.kills, pvpKills: c.pvpKills, bossKills: c.bossKills,
       tutorial: this.tutorialView(c), gemTut: c.gemTut | 0, guild: g ? { id: g.id, name: g.name, role: g.members[p.userId] } : null,
       expBuffUntil: c.expBuffUntil, food: c.food && c.food.until > Date.now() ? { id: c.food.id, until: c.food.until } : null, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
@@ -551,7 +552,7 @@ class World {
 
   // ---------- Phần thưởng / kinh nghiệm ----------
   // opts.bind: đồ thưởng là đồ khoá (thưởng nhiệm vụ)
-  // Nguyên Bảo Khoá kiếm từ hoạt động lặp lại hằng ngày (áp tiêu, rương tiêu, Dạ Minh Rương, Đua Top Săn Quái…):
+  // Nguyên Bảo kiếm từ hoạt động lặp lại hằng ngày (áp tiêu, rương tiêu, Dạ Minh Rương, Đua Top Săn Quái…):
   // tổng tối đa FARM_KNB_DAY / ngày / nhân vật, từ cấp FARM_KNB_LV. Trả về số được nhận thật.
   farmKnb(c, n) {
     n = Math.max(0, n | 0); if (!n) return 0;
@@ -562,17 +563,17 @@ class World {
     c.knbFarm.n += got;
     return got;
   }
-  // trả Nguyên Bảo: boundOk = được dùng Nguyên Bảo Khoá (trừ khoá trước, thiếu mới trừ thường). Trả về false nếu không đủ.
-  knbHave(c, boundOk) { return (c.knb | 0) + (boundOk ? c.knbB | 0 : 0); }
-  payKnb(c, n, boundOk) {
+  // trả Nguyên Bảo (một loại duy nhất). Trả về false nếu không đủ. (tham số thứ 3 giữ cho tương thích, không dùng)
+  knbHave(c) { return c.knb | 0; }
+  payKnb(c, n) {
     n = Math.max(0, n | 0);
-    if (this.knbHave(c, boundOk) < n) return false;
-    const b = boundOk ? Math.min(c.knbB | 0, n) : 0;
-    if (b) c.knbB = (c.knbB | 0) - b;
-    c.knb = (c.knb | 0) - (n - b);
-    if (this.vip) this.vip.onSpend(c, n - b);   // Tích Tiêu tuần: chỉ tính Nguyên Bảo thường
+    if ((c.knb | 0) < n) return false;
+    c.knb = (c.knb | 0) - n;
+    if (this.vip) this.vip.onSpend(c, n);   // Tích Tiêu tuần
     return true;
   }
+  // gộp Nguyên Bảo Khoá cũ vào Nguyên Bảo (đã bỏ loại Khoá)
+  mergeKnb(c) { if (c.knbB) { c.knb = (c.knb | 0) + (c.knbB | 0); delete c.knbB; } }
   giveReward(p, r, source, opts) {
     const bind = !!(opts && opts.bind);
     if (!r) return;
@@ -581,14 +582,11 @@ class World {
       if (got < r.knb && (p.c.level >= FARM_KNB_LV || (p.c.rebirth | 0))) setTimeout(() => this.toast(p, got ? `💎 Chỉ nhận thêm ${got} Nguyên Bảo – đã chạm giới hạn ${FARM_KNB_DAY} Nguyên Bảo / ngày từ hoạt động` : `💎 Hôm nay đã nhận đủ ${FARM_KNB_DAY} Nguyên Bảo từ hoạt động, phần Nguyên Bảo không được cộng thêm`, 'info'), 600);
       r = Object.assign({}, r, { knb: got });
     }
-    // Nguyên Bảo từ phần thưởng trong game là Nguyên Bảo KHOÁ (chỉ mua hàng tiêu hao ở Kỳ Trân Các).
-    // opts.real: Nguyên Bảo thường (gift code / thư quản trị viên).
-    const real = !!(opts && opts.real), kKey = real ? 'knb' : 'knbB', kName = real ? 'Nguyên Bảo' : 'Nguyên Bảo Khoá';
     const B = p._batch;
     if (B) {   // đang dùng hàng loạt: cộng dồn, báo một lần ở cuối
       if (r.exp) { this.gainExp(p, r.exp, true); B.exp += r.exp; }
       if (r.gold) { p.c.gold += r.gold; B.gold += r.gold; }
-      if (r.knb) { p.c[kKey] = (p.c[kKey] | 0) + r.knb; if (real) B.knb += r.knb; else B.knbB = (B.knbB | 0) + r.knb; }
+      if (r.knb) { p.c.knb = (p.c.knb | 0) + r.knb; B.knb += r.knb; }
       for (let [id, qty] of (r.items || [])) {
         if (id === '@book1') id = 'sk_' + classSkill(p.c.cls, 1, branchOf(p.c)).id;
         this.giveItem(p, id, qty, 0, bind);
@@ -600,7 +598,7 @@ class World {
     const parts = [];
     if (r.exp) { this.gainExp(p, r.exp, true); parts.push(`${r.exp} KN`); }
     if (r.gold) { p.c.gold += r.gold; parts.push(`${r.gold} lượng`); }
-    if (r.knb) { p.c[kKey] = (p.c[kKey] | 0) + r.knb; parts.push(`${r.knb} ${kName}`); }
+    if (r.knb) { p.c.knb = (p.c.knb | 0) + r.knb; parts.push(`${r.knb} Nguyên Bảo`); }
     for (let [id, qty] of (r.items || [])) {
       if (id === '@book1') id = 'sk_' + classSkill(p.c.cls, 1, branchOf(p.c)).id;
       this.giveItem(p, id, qty, 0, bind);
@@ -1412,7 +1410,7 @@ class World {
     const now = Date.now();
     if ((p.mapId === 'tong_kim' && this.tongkim) || (p.mapId === 'cong_thanh' && this.siege)) {   // Tống Kim / Công Thành: 10 Nguyên Bảo hồi tại chỗ, hoặc về doanh trại
       if (mode === 'here' || mode === 'here_knb') {
-        if (!this.payKnb(p.c, TK_REVIVE_KNB, true)) return this.toast(p, `Cần ${TK_REVIVE_KNB} Nguyên Bảo để hồi sinh tại chỗ`, 'error');
+        if (!this.payKnb(p.c, TK_REVIVE_KNB)) return this.toast(p, `Cần ${TK_REVIVE_KNB} Nguyên Bảo để hồi sinh tại chỗ`, 'error');
         p.dead = false; p.weakUntil = 0; p.c.hp = p.stats.maxHp; p.c.mp = p.stats.maxMp; p.dodgeUntil = now + 3000; p.lastCombat = 0;
         this.fx(p.mapId, { t: 'levelup', id: p.id, x: p.x, y: p.y, small: true });
         this.toast(p, `✨ Hồi sinh tại chỗ (−${TK_REVIVE_KNB} Nguyên Bảo)`, 'reward');
@@ -1423,8 +1421,8 @@ class World {
     if (mode === 'here' || mode === 'here_knb') {
       const cost = this.reviveCost(p), useKnb = mode === 'here_knb';
       if (!cost.gold) mode = 'here';
-      if (useKnb ? this.knbHave(p.c, true) < cost.knb : p.c.gold < cost.gold) return this.toast(p, useKnb ? `Cần ${cost.knb} Nguyên Bảo để hồi sinh tại chỗ` : `Cần ${cost.gold.toLocaleString('vi-VN')} lượng để hồi sinh tại chỗ`, 'error');
-      if (useKnb) this.payKnb(p.c, cost.knb, true); else p.c.gold -= cost.gold;
+      if (useKnb ? this.knbHave(p.c) < cost.knb : p.c.gold < cost.gold) return this.toast(p, useKnb ? `Cần ${cost.knb} Nguyên Bảo để hồi sinh tại chỗ` : `Cần ${cost.gold.toLocaleString('vi-VN')} lượng để hồi sinh tại chỗ`, 'error');
+      if (useKnb) this.payKnb(p.c, cost.knb); else p.c.gold -= cost.gold;
       p.dead = false; p.weakUntil = 0;
       p.c.hp = p.stats.maxHp; p.c.mp = p.stats.maxMp;
       p.dodgeUntil = now + 3000;   // bảo hộ ngắn để kịp đứng dậy
@@ -1722,7 +1720,6 @@ class World {
         if (B.exp) parts.push(`${B.exp} KN`);
         if (B.gold) parts.push(`${B.gold} lượng`);
         if (B.knb) parts.push(`${B.knb} Nguyên Bảo`);
-        if (B.knbB) parts.push(`${B.knbB} Nguyên Bảo Khoá`);
         for (const [id, q] of B.items) parts.push(`${ITEMS[id] ? ITEMS[id].name : id} x${q}`);
         this.toast(p, `Đã dùng ${used} ${it.name}${parts.length ? ': nhận ' + parts.join(', ') : ''}`, 'reward');
       }
@@ -2046,7 +2043,7 @@ class World {
         .map(id => ({ id, price: SHOPS.goldPrice(npc.id, id) }));   // giá có thể do quản trị viên sửa (server/game/shops.js)
     }
     if (npc.knbShop && this.extra) out.extra = this.extra.view(p);   // mua thêm lượt
-    if (npc.knbShop) out.knbShop = npc.knbShop.filter(x => this.shopAllowed(x.id)).map(x => Object.assign(ITEMS[x.id] && ITEMS[x.id].noSale ? { id: x.id, knb: x.knb, lock: 1 } : Object.assign({}, x), U.knbBoundOk(x.id) ? { kb: 1 } : {}));   // chưa mở bán: hiện khoá
+    if (npc.knbShop) out.knbShop = npc.knbShop.filter(x => this.shopAllowed(x.id)).map(x => ITEMS[x.id] && ITEMS[x.id].noSale ? { id: x.id, knb: x.knb, lock: 1 } : x);   // chưa mở bán: hiện khoá
     if (out.shop) out.shop = out.shop.filter(x => this.shopAllowed(x.id));
     out.freeRename = !p.c.renameFree;
     if (npc.action === 'escort' || npc.action === 'escortDest') { out.routes = this.escort.routeView(); out.escort = this.escort.meView(p); }
@@ -2193,10 +2190,9 @@ class World {
       if (!entry) return;
       if (ITEMS[id] && ITEMS[id].noSale) return this.toast(p, '🔒 Vật phẩm này chưa mở bán', 'error');
       const cost = Math.ceil(entry.knb * qty * (1 - (this.vip ? this.vip.disc(c) : 0)));   // VIP giảm giá
-      const bOk = U.knbBoundOk(id);
-      if (this.knbHave(c, bOk) < cost) return this.toast(p, bOk ? 'Không đủ Nguyên Bảo' : (c.knbB | 0) ? 'Không đủ Nguyên Bảo – món này không dùng được Nguyên Bảo Khoá' : 'Không đủ Nguyên Bảo', 'error');
+      if (this.knbHave(c) < cost) return this.toast(p, 'Không đủ Nguyên Bảo', 'error');
       if (!U.addItem(c, id, qty, 0, null, true)) return this.toast(p, 'Túi đồ đầy', 'error');   // đồ mua ở NPC là đồ khoá
-      this.payKnb(c, cost, bOk);
+      this.payKnb(c, cost);
     } else {
       if (!(npc.shop || []).includes(id)) return;
       if (it.cls && it.cls !== c.cls) return this.toast(p, 'Sách này không thuộc môn phái của bạn', 'error');
@@ -3086,7 +3082,7 @@ const PK_OUTLAW = 3;   // sát khí từ 3 (tên đỏ) là kẻ đồ sát
 // trùng sinh n lần (tối đa tính 10): quái chịu đòn x(1 + 0,6n) và đánh đau x(1 + 0,35n) với người đó
 const isBossMon = m => !!(m && (m.boss || (m.tpl && (m.tpl.boss || m.tpl.pbBoss || m.tpl.world)) || m.event === 'guildboss'));
 const rbTank = n => 1 + 0.6 * Math.min(10, n | 0);
-const FARM_KNB_DAY = 15, FARM_KNB_LV = 30;   // trần Nguyên Bảo Khoá / ngày từ các hoạt động lặp lại; cấp tối thiểu để nhận
+const FARM_KNB_DAY = 15, FARM_KNB_LV = 30;   // trần Nguyên Bảo / ngày từ các hoạt động lặp lại; cấp tối thiểu để nhận
 const VIP_MON_DMG = 0.5;   // khu VIP (người có Vé Treo Máy): quái chỉ gây 50% sát thương
 const POT_CD = 1000;   // hồi chiêu bình máu / bình nội lực (mỗi loại riêng)
 const PVP_DMG = 0.0285, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;

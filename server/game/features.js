@@ -361,7 +361,7 @@ class Features {
   // farm: Nguyên Bảo tính vào trần ngày (hoạt động lặp lại); thưởng top sự kiện tuần thì không giới hạn
   giveOffline(c, r, farm) {
     if (r.gold) c.gold += r.gold;
-    if (r.knb) c.knbB = (c.knbB | 0) + (farm ? this.w.farmKnb(c, r.knb) : r.knb);   // Nguyên Bảo Khoá
+    if (r.knb) c.knb = (c.knb | 0) + (farm ? this.w.farmKnb(c, r.knb) : r.knb);
     for (const [id, q] of r.items || []) if (!U.addItem(c, id, q)) this.w.stash(c, id, q);   // túi đầy: vào Hòm Đồ
     this.db.markDirty();
   }
@@ -484,7 +484,7 @@ class Features {
     if (ci.date === today) return this.w.toast(p, 'Hôm nay đã điểm danh rồi', 'error');
     let keep = ci.date === this.dayAgo(1);
     if (fix && ci.date === this.dayAgo(2) && ci.streak > 0) {
-      if (!this.w.payKnb(p.c, CHECKIN_FIX_KNB, true)) return this.w.toast(p, `Cần ${CHECKIN_FIX_KNB} Nguyên Bảo để bù điểm danh`, 'error');
+      if (!this.w.payKnb(p.c, CHECKIN_FIX_KNB)) return this.w.toast(p, `Cần ${CHECKIN_FIX_KNB} Nguyên Bảo để bù điểm danh`, 'error');
       keep = true;
       this.w.toast(p, `🗓️ Đã bù ngày lỡ (−${CHECKIN_FIX_KNB} Nguyên Bảo), chuỗi điểm danh được giữ!`, 'reward');
     }
@@ -512,7 +512,7 @@ class Features {
     if (g.usedBy.includes(p.userId)) return fail('Bạn đã dùng gift code này rồi');
     if (g.minLv && p.c.level < g.minLv) return fail(`Gift code yêu cầu cấp ${g.minLv}`);
     g.usedBy.push(p.userId);
-    this.w.giveReward(p, g.reward, `Gift code ${code}`, { bind: !!g.bind || code === 'TANTHU2026', real: true });   // Nguyên Bảo trong gift code (quản trị viên tạo) là Nguyên Bảo thường   // quà tân thủ / code đánh dấu khoá: đồ khoá, không giao dịch được
+    this.w.giveReward(p, g.reward, `Gift code ${code}`, { bind: !!g.bind || code === 'TANTHU2026' });   // quà tân thủ / code đánh dấu khoá: đồ khoá, không giao dịch được
     const log = p.c.giftLog || (p.c.giftLog = []);
     log.unshift({ code, t: now, reward: g.reward });
     if (log.length > 30) log.length = 30;
@@ -789,7 +789,7 @@ class Features {
         if (!/^[\p{L}\p{N} ]{3,16}$/u.test(name)) return err('Tên bang 3-16 ký tự, không ký tự đặc biệt');
         if (Object.values(gs).some(x => x.name.toLowerCase() === name.toLowerCase())) return err('Tên bang đã tồn tại');
         if (c.level < 10) return err('Cần đạt cấp 10');
-        if (!this.w.payKnb(c, GUILD_CREATE_KNB, true)) return err(`Lập bang cần ${GUILD_CREATE_KNB} Nguyên Bảo`);
+        if (!this.w.payKnb(c, GUILD_CREATE_KNB)) return err(`Lập bang cần ${GUILD_CREATE_KNB} Nguyên Bảo`);
         p.dirtyMe = true;
         const id = this.db.newId();
         gs[id] = { id, name, leader: p.userId, members: { [p.userId]: 'leader' }, level: 1, fund: 0, notice: 'Chào mừng huynh đệ!', created: Date.now(), requests: [], contrib: {} };

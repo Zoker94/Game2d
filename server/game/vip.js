@@ -1,7 +1,7 @@
 // Đặc quyền nạp: VIP theo tổng tiền đã nạp, Thẻ Tháng, Tích Nạp / Tích Tiêu theo tuần (tuần bắt đầu 00:00 Thứ 6, như Đua Top Tuần).
 //  - VIP: c.topupTotal (VNĐ) -> cấp VIP 0–10. Giảm giá Kỳ Trân Các, quà VIP mỗi ngày, huy hiệu VIP ở kênh chat.
-//  - Thẻ Tháng (vật phẩm month_card, chỉ Nguyên Bảo thường): 30 ngày, mỗi ngày nhận 30 Nguyên Bảo Khoá + Rương Bí Ẩn.
-//  - Tích Nạp tuần: Nguyên Bảo nạp trong tuần đạt mốc -> nhận quà. Tích Tiêu tuần: Nguyên Bảo THƯỜNG đã tiêu trong tuần đạt mốc -> nhận quà.
+//  - Thẻ Tháng (vật phẩm month_card): 30 ngày, mỗi ngày nhận 30 Nguyên Bảo + Rương Bí Ẩn.
+//  - Tích Nạp tuần: Nguyên Bảo nạp trong tuần đạt mốc -> nhận quà. Tích Tiêu tuần: Nguyên Bảo đã tiêu trong tuần đạt mốc -> nhận quà.
 const U = require('./util');
 const { weekId, weekEnd } = require('./weekrace');
 
@@ -19,7 +19,7 @@ const ACC_TOP = [   // Tích Nạp tuần (Nguyên Bảo nạp)
   { n: 3000, r: { items: [['boss_chest', 10], ['stone2', 20], ['lucky_stone', 5], ['outfit_hac_long', 1]] } },
   { n: 6000, r: { items: [['boss_chest', 20], ['stone2', 40], ['insure', 10], ['outfit_bang_tam', 1]] } }
 ];
-const ACC_SPEND = [   // Tích Tiêu tuần (Nguyên Bảo thường đã tiêu)
+const ACC_SPEND = [   // Tích Tiêu tuần (Nguyên Bảo đã tiêu)
   { n: 200,  r: { items: [['lucky_chest', 2], ['stone', 30]] } },
   { n: 600,  r: { items: [['boss_chest', 2], ['lucky_stone', 1]] } },
   { n: 1500, r: { items: [['boss_chest', 4], ['insure', 2], ['lucky_stone', 2]] } },
@@ -81,7 +81,7 @@ class Vip {
   useCard(p) {
     const c = p.c, now = Date.now();
     c.mcard = Math.max(now, c.mcard || 0) + MCARD_DAYS * DAY;
-    this.w.toast(p, `🎫 Kích hoạt Thẻ Tháng: còn ${Math.ceil(this.mcardLeft(c) / DAY)} ngày. Mỗi ngày nhận ${MCARD_KNB} Nguyên Bảo Khoá + Rương Bí Ẩn ở bảng 👑 Đặc Quyền.`, 'reward');
+    this.w.toast(p, `🎫 Kích hoạt Thẻ Tháng: còn ${Math.ceil(this.mcardLeft(c) / DAY)} ngày. Mỗi ngày nhận ${MCARD_KNB} Nguyên Bảo + Rương Bí Ẩn ở bảng 👑 Đặc Quyền.`, 'reward');
     p.dirtyMe = true; this.w.db.markDirty();
   }
   // nhắc nhận quà khi vào game

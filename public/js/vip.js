@@ -8,7 +8,7 @@
   const rw = r => {
     if (!r) return '';
     const p = [];
-    if (r.knb) p.push(`🔒 ${fmt(r.knb)} Nguyên Bảo Khoá`);
+    if (r.knb) p.push(`💎 ${fmt(r.knb)} Nguyên Bảo`);
     if (r.gold) p.push(`💰 ${fmt(r.gold)}`);
     for (const [id, n] of r.items || []) p.push(`<span class="vp-it"><img src="${UI.iconUrl(id)}" width="16" height="16">${esc(IT(id).name)} x${n}</span>`);
     return p.join(' · ');
@@ -30,13 +30,13 @@
       h += `<div class="card"><h4>Bảng đặc quyền VIP</h4><div class="list">${v.perks.slice(1).map(x => `<div class="li ${x.l === v.lv ? 'vp-me' : ''}"><b style="width:52px">VIP ${x.l}</b><div class="grow small">Tổng nạp ${fmt(v.req[x.l])}đ · giảm ${x.disc}%<div class="sub">Quà ngày: ${rw(x.gift)}</div></div></div>`).join('')}</div></div>`;
     } else if (tab === 'mcard') {
       const m = d.mcard;
-      h += `<div class="card"><h4>🎫 Thẻ Tháng – 300 💎</h4><p class="small">Kích hoạt ${m.days} ngày (mua thêm thì cộng dồn). Mỗi ngày nhận: ${rw(m.gift)}.<br>Tổng ${m.days} ngày: <b>${fmt(m.gift.knb * m.days)} Nguyên Bảo Khoá</b> + ${m.days} Rương Bí Ẩn.</p>
+      h += `<div class="card"><h4>🎫 Thẻ Tháng – 300 💎</h4><p class="small">Kích hoạt ${m.days} ngày (mua thêm thì cộng dồn). Mỗi ngày nhận: ${rw(m.gift)}.<br>Tổng ${m.days} ngày: <b>${fmt(m.gift.knb * m.days)} Nguyên Bảo</b> + ${m.days} Rương Bí Ẩn.</p>
         ${m.left ? `<div>Còn lại: <b>${left(m.left)}</b></div><button class="btn ${m.got ? '' : 'primary'}" data-vop="mcard" ${m.got ? 'disabled' : ''}>${m.got ? '✅ Hôm nay đã nhận' : 'Nhận quà hôm nay'}</button>`
           : '<div class="small muted">Chưa kích hoạt – mua Thẻ Tháng ở Kỳ Trân Các (Tương Dương) rồi bấm Sử dụng trong túi đồ.</div>'}</div>`;
     } else {
       const a = tab === 'top' ? d.top : d.spend, sp = tab === 'spend';
       const end = new Date(d.weekEnd);
-      h += `<div class="card"><h4>${sp ? '💸 Tích Tiêu tuần' : '💎 Tích Nạp tuần'}</h4><div class="small muted">${sp ? 'Tính Nguyên Bảo THƯỜNG đã tiêu (Kỳ Trân Các, thêm lượt, hồi sinh…), không tính Nguyên Bảo Khoá.' : 'Tính số Nguyên Bảo nạp được trong tuần.'} Làm mới lúc ${end.toLocaleString('vi-VN', { weekday: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' })}.</div>
+      h += `<div class="card"><h4>${sp ? '💸 Tích Tiêu tuần' : '💎 Tích Nạp tuần'}</h4><div class="small muted">${sp ? 'Tính Nguyên Bảo đã tiêu (Kỳ Trân Các, thêm lượt, hồi sinh…).' : 'Tính số Nguyên Bảo nạp được trong tuần.'} Làm mới lúc ${end.toLocaleString('vi-VN', { weekday: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' })}.</div>
         <div style="margin:6px 0">Tuần này: <b style="color:#ffd76a">${fmt(a.n)} 💎</b></div><div class="list">${a.list.map(x => `<div class="li"><b style="width:70px">${fmt(x.n)} 💎</b><div class="grow small">${rw(x.r)}</div>
           ${x.got ? '<button class="btn small" disabled>✅ Đã nhận</button>' : `<button class="btn small ${x.ok ? 'primary' : ''}" data-acc="${x.i}" ${x.ok ? '' : 'disabled'}>${x.ok ? 'Nhận' : `${fmt(Math.max(0, x.n - a.n))} nữa`}</button>`}</div>`).join('')}</div>
         ${sp ? '' : '<button class="btn primary" data-topup="1" style="margin-top:6px">💳 Nạp Nguyên Bảo</button>'}</div>`;

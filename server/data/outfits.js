@@ -1,6 +1,6 @@
 // Ngoại trang: "nhuộm" lại bộ áo của phái (giữ nguyên kiểu áo, nếp vải, bóng đổ – game đổi màu theo bảng dưới).
 // Vai màu: robe (áo chính), robe2 (lớp áo phụ / lót), trim (viền), pants (quần), belt (đai). Thiếu vai nào thì giữ màu gốc của phái.
-// bán ở Kỳ Trân Các (chỉ Nguyên Bảo thường).
+// bán ở Kỳ Trân Các.
 const OUTFITS = {
   bach_y:    { name: 'Bạch Y Thư Sinh',  rarity: 'rare',      fx: '#e8f2ff',
                colors: { robe: '#f4f6fa', robe2: '#cdd5e4', trim: '#3a3e52', pants: '#e4e7ee', belt: '#3a3e52', sleevecol: '#cdd5e4', cape: '#3a3e52' } },
