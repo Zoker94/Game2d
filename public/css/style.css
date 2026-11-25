@@ -1971,3 +1971,12 @@ body.calm .slot.r-divine::after { animation: none; }
 .mg-slot .mg-ic i { position: absolute; top: -5px; right: -6px; font-style: normal; font-size: 9px; font-weight: 700; color: #fff; background: linear-gradient(#ff5a3a, #b01010); border-radius: 6px; padding: 0 3px; }
 .mg-slot .mg-v2btn { background: linear-gradient(#ff5a3a, #a01010) !important; color: #fff !important; border-color: #ffb0a0 !important; animation: mgPulse 1.4s infinite; }
 @keyframes mgPulse { 50% { box-shadow: 0 0 10px 2px rgba(255,90,58,.7); } }
+
+/* ===== Bảng sự kiện trên điện thoại (hudslot.js): nằm trong cột trái, không đè nút đánh / kỹ năng ===== */
+body.touch #tracker > .in-slot { position: relative; left: auto; right: auto; top: auto; bottom: auto; transform: none; width: auto; margin: 0; z-index: auto; }
+body.touch .slot-free { left: 8px !important; right: auto !important; bottom: auto !important; transform: none !important; width: 200px; }
+body.touch.slot-tight #story-box, body.touch.slot-tight #tutorial-box, body.touch.slot-tight #daily-box { display: none !important; }
+#dh-hud.cmp .dh-top > div:nth-child(n+4):not(.me) { display: none; }
+#pb-hud.cmp .pb-pips, #pb-hud.cmp .pb-buff { display: none; }
+#comu-hud.cmp .cm-tip { display: none; }
+#hs-hud.cmp .hs-log, #hs-hud.cmp .hs-top { display: none; }
