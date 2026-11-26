@@ -2,6 +2,12 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '26/11/2026',
+    items: [
+      '🛠 Trang chọn máy chủ: server đang bảo trì hiện rõ "Đang bảo trì".'
+    ]
+  },
+  {
     date: '25/11/2026',
     items: [
       '🤖 Bỏ hẳn mã xác nhận khi treo máy: bật Tự động không còn bị hỏi mã, không còn bị đưa ra khỏi game.',

@@ -16,11 +16,11 @@
     list = list.slice().sort((a, b) => (ORDER.indexOf(a.id) + 1 || 99) - (ORDER.indexOf(b.id) + 1 || 99));
     box.innerHTML = list.map(v => {
       const I = INFO[v.id] || INFO.tuongduong, open = v.open && v.up !== false;
-      const st = v.open ? (v.up === false ? '<span class="tag soon">Đang khởi động…</span>' : `<span class="tag on"><b></b>Đang mở · ${v.online | 0} online</span>`) : '<span class="tag soon">🔒 Sắp ra mắt</span>';
+      const st = v.maint ? '<span class="tag soon">🛠 Đang bảo trì</span>' : v.open ? (v.up === false ? '<span class="tag soon">Đang khởi động…</span>' : `<span class="tag on"><b></b>Đang mở · ${v.online | 0} online</span>`) : '<span class="tag soon">🔒 Sắp ra mắt</span>';
       return `<button type="button" class="srv ${open ? '' : 'off'}" data-id="${esc(v.id)}" style="--c1:${I.c1};--c2:${I.c2}">
         <div class="emb">${I.ch}</div>
         <div class="info"><div class="nm">${esc(v.name)}<small>${esc(I.tag.toUpperCase())}</small></div>
-          <div class="tags">${st}${last === v.id ? '<span class="tag last">★ Vừa chơi</span>' : ''}${v.open && (v.online | 0) >= 50 ? '<span class="tag hot">🔥 Đông vui</span>' : ''}</div></div>
+          <div class="tags">${st}${last === v.id ? '<span class="tag last">★ Vừa chơi</span>' : ''}${v.open && !v.maint && (v.online | 0) >= 50 ? '<span class="tag hot">🔥 Đông vui</span>' : ''}</div></div>
         <div class="go">${open ? 'VÀO ›' : 'SẮP MỞ'}</div></button>`;
     }).join('');
     box.querySelectorAll('.srv').forEach(b => b.onclick = () => {
