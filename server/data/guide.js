@@ -64,8 +64,8 @@ function build() {
     { k: 'divine', icon: '🔴', title: 'Thần Binh & Boss Triệu Hồi', html: li([
       '<b>Mảnh Lệnh</b> rơi ở quái cấp 50+ (hiếm), quái tinh anh, top sát thương boss dã ngoại (cấp 40+) và boss thế giới.',
       'Gom đủ <b>100 Mảnh Lệnh</b> cùng loại → Sử dụng để ghép <b>Triệu Hồi Lệnh</b>.',
-      'Dùng Triệu Hồi Lệnh ở bãi luyện công → gọi 1 trong 3 boss (500 triệu máu, đánh 10.000–20.000 mỗi đòn, ở lại 60 phút).',
-      'Hạ boss: người ra đòn kết liễu nhặt trước 8 giây; tỉ lệ 3–5% rơi 1 món <b>Thần Binh</b>. Mặc đủ 3/5 món cùng bộ mở dòng ẩn.']) },
+      'Dùng Triệu Hồi Lệnh ở bãi luyện công → gọi 1 trong 3 boss (200 triệu máu, đánh 10.000–20.000 mỗi đòn, ở lại 60 phút).',
+      'Hạ boss: người ra đòn kết liễu nhặt trước 8 giây; tỉ lệ 5% rơi 1 món <b>Thần Binh</b>. Mặc đủ 3/5 món cùng bộ mở dòng ẩn.']) },
     { k: 'escort', icon: '🐂', title: 'Áp tiêu', html: li([
       'Gặp <b>Tổng Tiêu Đầu</b> ở Tương Dương, đặt cọc rồi hộ tống xe tiêu tới đích để nhận ngân lượng.',
       'Mỗi ngày <b>3 lần</b>. Tiêu Đồng (cấp 15+), Tiêu Bạc (cấp 30+), Tiêu Vàng (cấp 45+, thưởng thêm Nguyên Bảo).',

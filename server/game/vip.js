@@ -6,7 +6,7 @@ const U = require('./util');
 const { weekId, weekEnd } = require('./weekrace');
 
 const DAY = 86400000;
-const VIP_REQ = [0, 50000, 200000, 500000, 1000000, 2000000, 5000000, 10000000, 20000000, 50000000, 100000000];   // VNĐ tổng nạp
+const VIP_REQ = [0, 50000, 150000, 300000, 500000, 800000, 1200000, 2000000, 3500000, 6000000, 10000000];   // VNĐ tổng nạp
 const VIP_MAX = VIP_REQ.length - 1;
 const vipDisc = lv => Math.min(10, lv) / 100;   // giảm giá Kỳ Trân Các: 1% mỗi cấp, tối đa 10%
 const vipGift = lv => ({ gold: 5000 * lv, items: [['boss_chest', Math.ceil(lv / 2)], ...(lv >= 4 ? [['stone2', lv - 3]] : []), ...(lv >= 7 ? [['insure', lv - 6]] : [])] });

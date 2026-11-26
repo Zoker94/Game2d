@@ -7,7 +7,10 @@ const CHANGELOG = [
       '🛠 Trang chọn máy chủ: server đang bảo trì hiện rõ "Đang bảo trì".',
       '🔄 Cập nhật máy chủ không còn làm mất Boss đang đánh: Boss theo giờ, Boss thế giới, Boss triệu hồi, Boss bang giữ nguyên máu và bảng sát thương; Nhân Đôi Kinh Nghiệm, Đua Top Săn Quái (giữ điểm), Truy Tìm Bảo Rương, Lễ Hội Hoa Đăng tiếp tục chạy sau khi tải lại.',
       '❄️ Tuyết rơi dày hơn và đọng lại: tuyết rơi càng lâu, mặt cỏ càng phủ trắng (bão tuyết phủ nhanh gấp đôi); tạnh thì tuyết tan dần.',
-      '🔄 Sửa cửa sổ Giao dịch trên điện thoại: túi đồ bị che khuất, không chọn được vật phẩm.'
+      '🔄 Sửa cửa sổ Giao dịch trên điện thoại: túi đồ bị che khuất, không chọn được vật phẩm.',
+      '⚔️ Boss triệu hồi (Thần Binh) giảm còn 200 triệu sinh lực (trước 500 triệu); tỉ lệ rơi 1 món Thần Binh tăng lên 5%.',
+      '👑 Mốc VIP giảm mạnh: VIP 1 50.000đ · VIP 2 150.000đ · VIP 3 300.000đ · VIP 4 500.000đ · VIP 5 800.000đ · VIP 6 1,2 triệu · VIP 7 2 triệu · VIP 8 3,5 triệu · VIP 9 6 triệu · VIP 10 10 triệu (trước 100 triệu). Tính theo tổng đã nạp nên nhiều người lên VIP ngay.',
+      '🍀 Tăng tỉ lệ rơi đồ hiếm: Mã Cụ V2 thú cưỡi x1,5 · Long Huyết Thạch x1,6 · bí kíp Tuyệt Kỹ Giang Hồ x1,5 · Truyền Kỳ ở quái thường và Đá Hồi Sinh (~1/12.500 con, trước 1/20.000) · Thiên Tinh Thạch +33% · Trứng Linh Thú từ boss dã ngoại 15%.'
     ]
   },
   {

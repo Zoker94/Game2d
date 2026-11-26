@@ -17,7 +17,7 @@ for (const id in ALL) { const b = ALL[id]; DEF[id] = { hp: b.hp, def: b.def, eve
 const DEFAULT_TEXT = {
   field: 'Người sát thương cao nhất: 2 trang bị (Hiếm / VIP, ít khi Truyền Kỳ 3–8%). Rơi quanh xác: 4–8 Huyền Tinh Thạch, Thiên Tinh Thạch (boss cấp 40+ / 80+, 50%), 4 Rương Thủ Lĩnh. Mảnh Lệnh Thần Binh cho top sát thương (boss cấp 40+).',
   world: 'Theo hạng sát thương: Truyền Kỳ (hạng 1 chắc chắn, 2–3: 35%, 4–10: 10%, còn lại 2%), Rương Thủ Lĩnh hạng 1–3 (3/2/1), Nguyên Bảo theo hạng (luôn phát), Võ Mục Tâm Pháp cho hạng 1 (Nhạc Vũ Mục). Mảnh Lệnh Thần Binh cho top 10.',
-  summon: 'Người kết liễu nhặt trước 8 giây: 3–5% 1 món Thần Binh đúng bộ, 3 Rương Thủ Lĩnh, 3–5 Thiên Tinh Thạch, 2 đá khảm cấp 3–4, 5–10 Mảnh Lệnh, 50% Long Huyết Thạch.'
+  summon: 'Người kết liễu nhặt trước 8 giây: 5% 1 món Thần Binh đúng bộ, 3 Rương Thủ Lĩnh, 3–5 Thiên Tinh Thạch, 2 đá khảm cấp 3–4, 5–10 Mảnh Lệnh, 50% Long Huyết Thạch.'
 };
 let CFG = {};
 
@@ -25,6 +25,7 @@ function apply(db) {
   CFG = (db.data.config && db.data.config.bosses) || {};
   for (const id in ALL) {
     const b = ALL[id], d = DEF[id], o = CFG[id] || {};
+    if (b.summon && o.hp === 500000000) delete o.hp;   // máu cũ 500 triệu của boss triệu hồi (lưu từ trang quản trị) -> dùng mức mới 200 triệu
     b.hp = o.hp > 0 ? Math.round(o.hp) : d.hp;
     b.def = o.def > 0 ? Math.round(o.def) : d.def;
     b.hitPct = !b.summon && o.pct > 0 ? o.pct / 100 : 0;
