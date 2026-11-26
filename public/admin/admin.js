@@ -102,8 +102,10 @@
 
     async events(el) {
       const d = await api('/events');
+      const RISKY = { daiHoi: 1, hoaSon: 1, tongKim: 1, congThanh: 1, thuHo: 1 }, live = d.list.filter(e => e.active && RISKY[e.key]);
+      const warn = live.length ? `<div class="card" style="border-color:#e0a040"><b>⚠️ Đang diễn ra: ${live.map(e => e.icon + ' ' + esc(e.name)).join(', ')}</b><div class="small">Cập nhật / khởi động lại máy chủ lúc này sẽ làm mất trận đấu đang diễn ra. Boss, Nhân Đôi KN, Đua Top Săn Quái, Bảo Rương, Hoa Đăng thì được giữ nguyên khi cập nhật.</div></div>` : `<div class="card"><div class="small">✅ Cập nhật lúc này an toàn: boss đang sống (máu, bảng sát thương) và các sự kiện đang chạy được giữ nguyên sau khi khởi động lại.</div></div>`;
       const nz = d.noel || {};
-      el.innerHTML = `<div class="card"><h3>🎄 Lễ Hội Giáng Sinh</h3>
+      el.innerHTML = warn + `<div class="card"><h3>🎄 Lễ Hội Giáng Sinh</h3>
         <p class="small muted">Bật thì sự kiện chạy liên tục tới khi tắt (khởi động lại máy chủ vẫn giữ). Khi bật: quái rơi Kẹo Giáng Sinh, Hộp Quà xuất hiện mỗi 30 phút ở các bãi luyện, Quà Noel mỗi ngày, đổi quà (có ngoại trang Áo Giáng Sinh), tuyết rơi khắp bản đồ. Tắt thì ngừng rơi Kẹo, dọn Hộp Quà; Kẹo người chơi đang có vẫn giữ (bật lại mùa sau dùng tiếp). Mỗi lần bật lại, giới hạn đổi quà "cả sự kiện" được làm mới.</p>
         <div>${nz.on ? `<span class="tag on">Đang diễn ra</span> từ ${new Date(nz.at).toLocaleString('vi-VN')} <button class="btn small danger" id="noel-off">Tắt sự kiện</button>` : `<span class="tag off">Tắt</span> <button class="btn small ok" id="noel-on">🎄 Bật Lễ Hội Giáng Sinh</button>`}</div></div>
         <div class="card"><h3>Sự kiện</h3><table><tr><th>Sự kiện</th><th>Trạng thái</th><th>Thời lượng (phút)</th><th></th></tr>

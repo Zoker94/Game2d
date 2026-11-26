@@ -97,6 +97,11 @@ if (Array.isArray(db.data.resumeAuto)) {
   delete db.data.resumeAuto; db.markDirty();
   if (n) console.log(`Treo tiếp cho ${n} người chơi đang treo máy trước khi khởi động lại`);
 }
+// khởi động lại (cập nhật bản mới) khi đang có boss / sự kiện: dựng lại y như cũ (xem shutdown bên dưới)
+if (db.data.resumeWorld) {
+  try { const n = require('./game/resume').restore(world, db.data.resumeWorld); if (n) console.log('Giữ lại sau khởi động:', JSON.stringify(n)); } catch (e) { console.error('resume', e); }
+  delete db.data.resumeWorld; db.markDirty();
+}
 
 // ---------------- Hỗ trợ xác thực ----------------
 function createSession(userId) {
@@ -661,6 +666,7 @@ async function shutdown() {
   shuttingDown = true;
   console.log('Đang lưu dữ liệu...');
   try { db.data.resumeAuto = world.autoSrv.snapshot(); } catch (e) { console.error(e); }   // ai đang treo máy: khởi động xong treo tiếp
+  try { db.data.resumeWorld = require('./game/resume').snapshot(world); } catch (e) { console.error(e); }   // boss / sự kiện đang chạy: khởi động xong giữ nguyên
   for (const p of [...world.players.values()]) world.removePlayer(p);
   try { await db.flush(); } catch (e) { console.error(e); }
   process.exit(0);
