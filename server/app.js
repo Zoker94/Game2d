@@ -86,7 +86,8 @@ world.referral = new (require('./game/referral').Referral)(world);
 new (require('./game/extra').Extra)(world);
 new (require('./game/vip').Vip)(world);
 new (require('./game/pets').Pets)(world);
-new (require('./game/bots').Bots)(world);   // gắn world.bots (bot treo máy ở bãi luyện)   // gắn world.pets (thú cưng)   // gắn world.vip (VIP, Thẻ Tháng, Tích Nạp / Tích Tiêu)   // gắn world.extra (mua thêm lượt bằng Nguyên Bảo)
+new (require('./game/bots').Bots)(world);
+new (require('./game/noel').Noel)(world, features, db);   // gắn world.noel (Lễ Hội Giáng Sinh – bật / tắt ở trang quản trị)   // gắn world.bots (bot treo máy ở bãi luyện)   // gắn world.pets (thú cưng)   // gắn world.vip (VIP, Thẻ Tháng, Tích Nạp / Tích Tiêu)   // gắn world.extra (mua thêm lượt bằng Nguyên Bảo)
 const { Social } = require('./game/social');
 const social = new Social(world, features, db);
 world.start();
@@ -500,7 +501,8 @@ io.on('connection', socket => {
   on('respawn', inGame(d => world.respawn(player, d && d.mode)));
   on('extra', inGame(d => world.extra.action(player, d)));
   on('vip', inGame(d => world.vip.action(player, d)));
-  on('pets', inGame(d => world.pets.action(player, d)));   // bảng Thú cưng   // bảng Đặc Quyền   // mua thêm lượt (Kỳ Trân Các)
+  on('pets', inGame(d => world.pets.action(player, d)));
+  on('noel', inGame(d => world.noel.action(player, d)));   // Lễ Hội Giáng Sinh: Quà Noel, đổi quà   // bảng Thú cưng   // bảng Đặc Quyền   // mua thêm lượt (Kỳ Trân Các)
   on('dodge', inGame(d => world.dodge(player, d)));
   on('story', inGame(d => world.story.action(player, d)));
   on('pickup', inGame(d => world.pickupItem(player, d && typeof d.id === 'string' ? d.id : null)));

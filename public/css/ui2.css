@@ -1014,3 +1014,7 @@ body.touch .lm-list { width: 86px; }
 
 .mt-perk { margin: 6px 0; padding: 5px 8px; border-radius: 8px; background: linear-gradient(90deg, rgba(255,200,80,.16), rgba(255,200,80,.03)); border: 1px solid rgba(255,210,110,.45); color: #ffe6a8; font-size: 11px; }
 .mt-perk b { color: #ffd76a; }
+
+/* ===== 🎄 Lễ Hội Giáng Sinh ===== */
+.noel-hero { background: linear-gradient(135deg, rgba(200,20,30,.35), rgba(20,90,40,.35)); border: 1px solid rgba(255,255,255,.35); text-align: center; }
+.noel-t { font-size: 16px; font-weight: 900; letter-spacing: 1px; color: #fff; text-shadow: 0 0 8px rgba(255,80,80,.9), 0 0 14px rgba(80,255,120,.5); margin-bottom: 4px; }

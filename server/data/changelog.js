@@ -2,6 +2,12 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '26/11/2026',
+    items: [
+      '🎄 LỄ HỘI GIÁNG SINH (mở theo thông báo): quái mọi bãi rơi Kẹo Giáng Sinh; Hộp Quà Giáng Sinh xuất hiện mỗi 30 phút ở các bãi luyện – đánh vỡ nhận quà (hiếm có Trứng Linh Thú); Quà Noel mỗi ngày; đổi Kẹo lấy quà ở bảng Sự kiện → 🎄 Giáng Sinh (Rương Thủ Lĩnh, Thiên Tinh Thạch, Đá May Mắn, Linh Thú Đan / Thạch, Trứng Linh Thú, ngoại trang Áo Giáng Sinh – Sinh lực +6%, Công +4%); tuyết rơi khắp giang hồ.'
+    ]
+  },
+  {
     date: '25/11/2026',
     items: [
       '🤖 Bỏ hẳn mã xác nhận khi treo máy: bật Tự động không còn bị hỏi mã, không còn bị đưa ra khỏi game.',

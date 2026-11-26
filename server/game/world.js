@@ -1590,6 +1590,7 @@ class World {
       if (gem) drops.push(gem);
       if (tpl.lv >= 20 && r() < 0.0005 * dr) drops.push('mount_stone');
       if (this.features.isActive('lantern') && r() < 0.3) drops.push('event_token');
+      if (this.noel) { const nd = this.noel.drop(r); if (nd) drops.push(nd); }   // Lễ Hội Giáng Sinh: Kẹo
       if (tpl.lv >= 10 && r() < 0.006 * dr) drops.push('thien_tam_ti');   // nguyên liệu áo choàng
       if (this.divine) this.divine.mobDrops(tpl, drops, r);   // mảnh lệnh triệu hồi Thần Binh (cấp 50+)
     }
@@ -1670,7 +1671,7 @@ class World {
     if (Math.hypot(dr.x - p.x, dr.y - p.y) > reach) return this.toast(p, 'Hãy lại gần vật phẩm hơn', 'error');
     if (dr.owner && dr.owner !== p.userId && dr.ownerUntil > now) return this.toast(p, `Vật phẩm của người khác, ${Math.ceil((dr.ownerUntil - now) / 1000)} giây nữa mới nhặt được`, 'error');
     if (dr.bd && dr.owner !== p.userId) return this.toast(p, 'Đồ khoá của người khác, không nhặt được', 'error');
-    if (!U.addItem(p.c, dr.itemId, dr.qty, dr.plus, null, !!dr.bd || dr.itemId === 'event_token')) return this.toast(p, 'Túi đồ đã đầy!', 'error');   // Hoa Đăng nhặt về là đồ khoá
+    if (!U.addItem(p.c, dr.itemId, dr.qty, dr.plus, null, !!dr.bd || dr.itemId === 'event_token' || dr.itemId === 'noel_candy')) return this.toast(p, 'Túi đồ đã đầy!', 'error');   // Hoa Đăng nhặt về là đồ khoá
     m.drops.delete(dr.id);
     this.io.to('map:' + p.mapId).emit('dropDel', dr.id);
     const it = ITEMS[U.resolveItem(p.c, dr.itemId)];
@@ -1868,6 +1869,7 @@ class World {
       return;
     }
     if (e.mcard) { U.removeByUid(c, uid, 1); if (this.vip) this.vip.useCard(p); return; }
+    if (e.noelBox) return this.noel ? this.noel.useBox(p, uid) : undefined;   // Hộp Quà Giáng Sinh
     if (e.loa) return this.toast(p, '📢 Gõ /loa nội dung vào ô chat để dùng Loa Thế Giới', 'info');
     if (e.outfit) {   // ngoại trang: mở khoá vào tủ đồ rồi mặc luôn
       const o = OUTFITS[e.outfit]; if (!o) return;

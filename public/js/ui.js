@@ -1464,10 +1464,11 @@
   }
   function renderEvents(body) {
     const tab = panelState.tab || 'events';
-    let html = tabs([['events', '🎉 Sự kiện'], ['boss', '👑 Boss'], ['wheel', '🎡 Vòng quay'], ['checkin', '📆 Điểm danh'], ['lantern', '🏮 Đổi Hoa Đăng'], ['code', '🎁 Gift code']], tab);
+    const noelOn = !!(evPanel && evPanel.noel);
+    let html = tabs([['events', '🎉 Sự kiện'], ...(noelOn ? [['noel', '🎄 Giáng Sinh']] : []), ['boss', '👑 Boss'], ['wheel', '🎡 Vòng quay'], ['checkin', '📆 Điểm danh'], ['lantern', '🏮 Đổi Hoa Đăng'], ['code', '🎁 Gift code']], tab);
     const ev = G.events;
     if (tab === 'events') {
-      html += '<div class="list">' + (ev ? ev.list.map(e => `<div class="li ${e.active ? 'done' : ''}"><div style="font-size:21px">${e.icon}</div><div class="grow"><b>${esc(e.name)}</b> ${e.active ? `<span style="color:#4ade80">● Đang diễn ra · còn <span data-until="${e.until}"></span></span>` : '<span class="muted">Chưa diễn ra</span>'}
+      html += '<div class="list">' + (ev ? ev.list.map(e => `<div class="li ${e.active ? 'done' : ''}"><div style="font-size:21px">${e.icon}</div><div class="grow"><b>${esc(e.name)}</b> ${e.active ? (e.until ? `<span style="color:#4ade80">● Đang diễn ra · còn <span data-until="${e.until}"></span></span>` : '<span style="color:#4ade80">● Đang diễn ra</span>') : '<span class="muted">Chưa diễn ra</span>'}
         <div class="sub">${esc(e.desc)}</div>
         ${e.q ? `<div style="color:#ffd76a">❓ ${esc(e.q)}</div>` : ''}${e.chests != null ? `<div class="small">Còn ${e.chests} Bảo Rương</div>` : ''}
         ${e.top ? `<div class="small">${e.top.slice(0, 5).map((t, i) => `${i + 1}. ${esc(t.name)} (${t.n})`).join(' · ') || 'Chưa có ai'}</div>` : ''}</div></div>`).join('') : '') + '</div>';
@@ -1486,6 +1487,11 @@
           <div class="small muted" style="margin-top:4px">Lỡ 1 ngày: bù bằng ${c.fixKnb} Nguyên Bảo để giữ chuỗi. Lỡ từ 2 ngày: chuỗi tính lại từ ngày 1.</div></div>
           <div class="card"><h4>🏅 Mốc tổng số ngày điểm danh: <span style="color:#ffd76a">${c.total}</span></h4><div class="list">${c.miles.map(m => `<div class="li ${m.got ? 'done' : ''}"><div class="grow"><b>${m.n} ngày</b><div class="sub">${rewardText(m.r)}</div></div>${m.got ? '<span class="ok-t">✔ Đã nhận</span>' : `<span class="small muted">còn ${m.n - c.total} ngày</span>`}</div>`).join('')}</div></div>`;
       }
+    } else if (tab === 'noel' && noelOn) {
+      const n = evPanel.noel;
+      html += `<div class="card noel-hero"><div class="noel-t">🎄 LỄ HỘI GIÁNG SINH 🎅</div><div class="small">Quái mọi bãi rơi <b>🍬 Kẹo Giáng Sinh</b> · <b>🎁 Hộp Quà</b> xuất hiện mỗi 30 phút ở các bãi luyện (khu 1) · tuyết rơi khắp giang hồ</div></div>
+        <div class="card"><h4>🎁 Quà Noel hôm nay</h4><div class="small">${rewardText(n.gift)}</div><button class="btn ${n.giftGot ? '' : 'primary'}" data-noel="gift" ${n.giftGot ? 'disabled' : ''}>${n.giftGot ? '✅ Hôm nay đã nhận' : 'Nhận Quà Noel'}</button></div>
+        <p>Bạn có <b>${fmt(n.candy)}</b> 🍬 Kẹo Giáng Sinh.</p><div class="list">${n.list.map(x => `<div class="li"><div class="grow"><b>${esc(x.name)}</b><div class="sub">Cần ${fmt(x.cost)} Kẹo · đã đổi ${x.used}/${x.max} (${x.per})</div></div><button class="btn small ${x.used >= x.max || n.candy < x.cost ? '' : 'primary'}" data-noelex="${x.id}" ${x.used >= x.max || n.candy < x.cost ? 'disabled' : ''}>Đổi</button></div>`).join('')}</div>`;
     } else if (tab === 'lantern') {
       const l = evPanel;
       html += `<p>Bạn có <b>${l ? l.tokens : 0}</b> 🏮 Hoa Đăng. Hoa Đăng rơi từ quái khi diễn ra Lễ Hội Hoa Đăng.</p><div class="list">${l ? l.lantern.map((x, i) => `<div class="li"><div class="grow"><b>${esc(x.name)}</b><div class="sub">Cần ${fmt(x.cost)} Hoa Đăng · đã đổi ${x.used | 0}/${x.max || 1} lần ${x.per || 'hôm nay'}</div></div>${x.done ? `<span class="small muted">✔ Đủ lượt ${x.per || 'hôm nay'}</span>` : `<button class="btn small green" data-lantern="${i}" ${l.tokens >= x.cost ? '' : 'disabled'}>Đổi</button>`}</div>`).join('') : ''}</div>`;
@@ -1500,6 +1506,8 @@
     const cf = $('checkin-fix'); if (cf) cf.onclick = () => emit('checkin', { fix: true });
     const gc = $('gc-open'); if (gc) gc.onclick = () => UI.openPanel('giftcode');
     body.querySelectorAll('[data-lantern]').forEach(b => b.onclick = () => emit('lantern', { idx: +b.dataset.lantern }));
+    body.querySelectorAll('[data-noel]').forEach(b => b.onclick = () => emit('noel', { op: b.dataset.noel }));
+    body.querySelectorAll('[data-noelex]').forEach(b => b.onclick = () => emit('noel', { op: 'ex', id: b.dataset.noelex }));
   }
   const WHEEL_COLORS = ['#b8322a', '#d4a020', '#2a6ab8', '#7a2ab8', '#2a8a3a', '#b86a2a', '#2aa8a8', '#a82a6a', '#ff9b2f', '#555'];
   function drawWheel() {

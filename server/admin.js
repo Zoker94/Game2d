@@ -348,7 +348,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   });
 
   // ----- Boss & sự kiện -----
-  app.get('/api/admin/events', auth, (req, res) => res.json({ ...features.eventsView(), info: EVENT_INFO, bossList: Object.values(BOSSES).map(b => ({ id: b.id, name: b.name, lv: b.lv, map: MAPS[b.map].name, every: b.every, offset: b.offset })) }));
+  app.get('/api/admin/events', auth, (req, res) => res.json({ ...features.eventsView(), noel: world.noel ? world.noel.cfg : null, info: EVENT_INFO, bossList: Object.values(BOSSES).map(b => ({ id: b.id, name: b.name, lv: b.lv, map: MAPS[b.map].name, every: b.every, offset: b.offset })) }));
   app.post('/api/admin/boss/spawn', auth, (req, res) => {
     const ok = features.spawnBoss(req.body.id);
     act(req, `Triệu hồi boss ${req.body.id}`);
@@ -362,6 +362,13 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     features.broadcastEvents();
     act(req, `Xóa boss ${req.body.id}`);
     res.json({ ok: true });
+  });
+  // 🎄 Lễ Hội Giáng Sinh: bật / tắt (lưu lại, không tự hết giờ)
+  app.post('/api/admin/noel', auth, (req, res) => {
+    if (!world.noel) return res.json({ error: 'Không có' });
+    const ok = world.noel.set(!!req.body.on, req.admin);
+    act(req, `${req.body.on ? 'Bật' : 'Tắt'} Lễ Hội Giáng Sinh`);
+    res.json(ok ? { ok: true } : { error: req.body.on ? 'Sự kiện đang bật rồi' : 'Sự kiện đang tắt rồi' });
   });
   app.post('/api/admin/event/start', auth, (req, res) => {
     const ok = features.startEvent(req.body.key, U.clamp(+req.body.minutes || 30, 1, 1440));

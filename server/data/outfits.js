@@ -12,7 +12,9 @@ const OUTFITS = {
   bang_tam:  { name: 'Băng Tâm Ngọc Y',  rarity: 'legendary', stats: { def: 0.07, maxHp: 0.06 }, fx: '#9ef0ff',
                colors: { robe: '#a6e6ff', robe2: '#e8faff', trim: '#2a78b0', pants: '#cfeeff', belt: '#2a78b0', sleevecol: '#e8faff', cape: '#2a78b0' } },
   xich_hoa:  { name: 'Xích Hỏa Chiến Bào', rarity: 'legendary', stats: { atk: 0.07, maxHp: 0.05 }, fx: '#ff7a2a',
-               colors: { robe: '#cf2414', robe2: '#ff9422', trim: '#2c1a10', pants: '#3a1a12', belt: '#ffd040', sleevecol: '#ff9422', cape: '#2c1a10' } }
+               colors: { robe: '#cf2414', robe2: '#ff9422', trim: '#2c1a10', pants: '#3a1a12', belt: '#ffd040', sleevecol: '#ff9422', cape: '#2c1a10' } },
+  noel:      { name: 'Áo Giáng Sinh', rarity: 'legendary', stats: { maxHp: 0.06, atk: 0.04 }, event: 'noel', fx: '#ffffff',
+               colors: { robe: '#d01c24', robe2: '#ffffff', trim: '#ffffff', pants: '#b01418', belt: '#2a1a10', sleevecol: '#ffffff', cape: '#ffffff' } }
 };
 for (const id in OUTFITS) OUTFITS[id].id = id;
 module.exports = { OUTFITS };

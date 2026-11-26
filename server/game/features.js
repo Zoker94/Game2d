@@ -171,6 +171,7 @@ class Features {
 
   onMinute(mod) {
     if (this.w.weekRace) this.w.weekRace.onMinute();   // hết tuần: trao thưởng đua top
+    if (this.w.noel) try { this.w.noel.minute(); } catch (e) { console.error('noel', e); }   // Lễ Hội Giáng Sinh
     if (this.w.bots) try { this.w.bots.tick(); } catch (e) { console.error('bots', e); }   // bot treo máy
     // Boss theo giờ
     for (const id in BOSSES) {
@@ -377,6 +378,7 @@ class Features {
 
   onEventMonsterKilled(mon, killer) {
     if (mon.event === 'nightchest') return this.w.night && this.w.night.onChest(mon, killer);
+    if (mon.event === 'noelbox') return this.w.noel && this.w.noel.onBoxKilled(mon, killer);
     if (mon.event === 'treasure' && killer && killer.c) {
       const r = Math.random();
       const lv = killer.c.level;
@@ -400,6 +402,7 @@ class Features {
       if (k === 'treasure' && e && e.active) v.chests = e.chests;
       return v;
     });
+    if (this.w.noel && this.w.noel.on()) list.push({ key: 'noel', name: 'Lễ Hội Giáng Sinh', icon: '🎄', desc: 'Quái rơi Kẹo Giáng Sinh, Hộp Quà xuất hiện mỗi 30 phút, Quà Noel mỗi ngày, đổi quà ở bảng Sự kiện → 🎄 Giáng Sinh.', active: true, until: 0 });
     return { list, bosses: this.bossStatus(), now };
   }
   broadcastEvents() { this.io.emit('events', this.eventsView()); }
@@ -558,7 +561,7 @@ class Features {
     return c.lanternEx;
   }
   eventPanel(p) {
-    return { wheel: this.wheelState(p), checkin: this.checkinState(p), lantern: LANTERN_EXCHANGE.map(x => { const n = (x.week ? this.lanternWeek(p.c) : this.lanternDone(p.c)).done[x.id] | 0, mx = x.week || LANTERN_DAILY; return Object.assign({}, x, { used: n, max: mx, done: n >= mx, per: x.week ? 'tuần này' : 'hôm nay' }); }), tokens: U.countItem(p.c, 'event_token'), ...this.eventsView() };
+    return { wheel: this.wheelState(p), checkin: this.checkinState(p), lantern: LANTERN_EXCHANGE.map(x => { const n = (x.week ? this.lanternWeek(p.c) : this.lanternDone(p.c)).done[x.id] | 0, mx = x.week || LANTERN_DAILY; return Object.assign({}, x, { used: n, max: mx, done: n >= mx, per: x.week ? 'tuần này' : 'hôm nay' }); }), tokens: U.countItem(p.c, 'event_token'), noel: this.w.noel ? this.w.noel.view(p) : null, ...this.eventsView() };
   }
 
   // ---------------- Trò chuyện ----------------

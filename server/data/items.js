@@ -320,6 +320,9 @@ for (const m of Object.values(MOUNTS)) {
   if (m.noSale) { ITEMS['mount_' + m.id].noSale = true; ITEMS['mount_' + m.id].desc += ' Sắp mở bán.'; }
 }
 ITEMS.event_token.type = 'material';
+// ---------- Lễ Hội Giáng Sinh (server/game/noel.js) ----------
+ITEMS.noel_candy = { id: 'noel_candy', type: 'material', name: 'Kẹo Giáng Sinh', desc: 'Vật phẩm sự kiện Lễ Hội Giáng Sinh: quái rơi khi sự kiện diễn ra. Đổi quà ở bảng Sự kiện → 🎄 Giáng Sinh. Nhặt về là đồ khoá.', price: 0, icon: 'lantern', rarity: 'rare', stack: true, material: true, noSell: true };
+ITEMS.noel_box = { id: 'noel_box', type: 'use', name: 'Hộp Quà Giáng Sinh', desc: 'Mở ra nhận quà ngẫu nhiên: Kẹo Giáng Sinh, ngân lượng, Thiên Tinh Thạch, Rương Bí Ẩn, Đá May Mắn, Rương Thủ Lĩnh, hiếm có Trứng Linh Thú.', effect: { noelBox: 1 }, price: 0, icon: 'chest_gold', rarity: 'epic', stack: true, noSell: true };
 
 // Ngoại trang (đổi màu bộ áo của phái) – vật phẩm dùng để mở khoá vào tủ đồ
 const { OUTFITS } = require('./outfits');

@@ -102,7 +102,11 @@
 
     async events(el) {
       const d = await api('/events');
-      el.innerHTML = `<div class="card"><h3>Sự kiện</h3><table><tr><th>Sự kiện</th><th>Trạng thái</th><th>Thời lượng (phút)</th><th></th></tr>
+      const nz = d.noel || {};
+      el.innerHTML = `<div class="card"><h3>🎄 Lễ Hội Giáng Sinh</h3>
+        <p class="small muted">Bật thì sự kiện chạy liên tục tới khi tắt (khởi động lại máy chủ vẫn giữ). Khi bật: quái rơi Kẹo Giáng Sinh, Hộp Quà xuất hiện mỗi 30 phút ở các bãi luyện, Quà Noel mỗi ngày, đổi quà (có ngoại trang Áo Giáng Sinh), tuyết rơi khắp bản đồ. Tắt thì ngừng rơi Kẹo, dọn Hộp Quà; Kẹo người chơi đang có vẫn giữ (bật lại mùa sau dùng tiếp). Mỗi lần bật lại, giới hạn đổi quà "cả sự kiện" được làm mới.</p>
+        <div>${nz.on ? `<span class="tag on">Đang diễn ra</span> từ ${new Date(nz.at).toLocaleString('vi-VN')} <button class="btn small danger" id="noel-off">Tắt sự kiện</button>` : `<span class="tag off">Tắt</span> <button class="btn small ok" id="noel-on">🎄 Bật Lễ Hội Giáng Sinh</button>`}</div></div>
+        <div class="card"><h3>Sự kiện</h3><table><tr><th>Sự kiện</th><th>Trạng thái</th><th>Thời lượng (phút)</th><th></th></tr>
         ${d.list.map(e => `<tr><td>${e.icon} <b>${esc(e.name)}</b><div class="small muted">${esc(e.desc)}</div></td><td>${e.active ? `<span class="tag on">Đang diễn ra</span><div class="small">đến ${new Date(e.until).toLocaleTimeString('vi-VN')}</div>` : '<span class="tag off">Tắt</span>'}</td>
         <td><input type="number" value="${e.key === 'quiz' ? 1 : 30}" min="1" style="width:80px" id="dur-${e.key}"></td>
         <td>${e.active ? `<button class="btn small danger" data-stop="${e.key}">Dừng</button>` : `<button class="btn small ok" data-start="${e.key}">Bắt đầu</button>`}</td></tr>`).join('')}</table></div>
@@ -110,6 +114,8 @@
         ${d.bosses.map(b => { const info = d.bossList.find(x => x.id === b.id); return `<tr><td>👑 ${esc(b.name)}</td><td>${b.lv}</td><td>${esc(b.mapName)}</td><td class="small">Mỗi ${info.every} phút (lệch ${info.offset}p)</td>
         <td>${b.alive ? `<span class="tag ban">Đang xuất hiện ${Math.round(b.hp / b.maxHp * 100)}%</span>` : `<span class="tag off">Sau ${b.next} phút</span>`}</td>
         <td>${b.alive ? `<button class="btn small danger" data-bkill="${b.id}">Xóa</button>` : `<button class="btn small ok" data-bspawn="${b.id}">Triệu hồi ngay</button>`}</td></tr>`; }).join('')}</table></div>`;
+      { const b = $('noel-on'); if (b) b.onclick = async () => { await run(() => api('/noel', { on: true }), 'Đã bật Lễ Hội Giáng Sinh'); show('events'); }; }
+      { const b = $('noel-off'); if (b) b.onclick = async () => { if (!confirm('Tắt Lễ Hội Giáng Sinh?')) return; await run(() => api('/noel', { on: false }), 'Đã tắt Lễ Hội Giáng Sinh'); show('events'); }; }
       el.querySelectorAll('[data-start]').forEach(b => b.onclick = async () => { await run(() => api('/event/start', { key: b.dataset.start, minutes: +$('dur-' + b.dataset.start).value }), 'Đã bắt đầu sự kiện'); show('events'); });
       el.querySelectorAll('[data-stop]').forEach(b => b.onclick = async () => { await run(() => api('/event/stop', { key: b.dataset.stop }), 'Đã dừng sự kiện'); show('events'); });
       el.querySelectorAll('[data-bspawn]').forEach(b => b.onclick = async () => { await run(() => api('/boss/spawn', { id: b.dataset.bspawn }), 'Đã triệu hồi boss'); show('events'); });
