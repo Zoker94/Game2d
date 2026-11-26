@@ -34,6 +34,7 @@ function start(db) {
         if (!m || typeof m !== 'object') return;
         if (m.ready) { k.up = true; k.fails = 0; sendOpen(db, id); }
         if (m.online != null) k.online = m.online | 0;
+        if (m.maint != null) k.maint = !!m.maint;   // server con đang bảo trì
         if (m.setOpen != null) {   // bấm Mở / Đóng ở trang quản trị của chính server con
           const o = db.data.config.realmsOpen = Object.assign({}, db.data.config.realmsOpen);
           o[id] = !!m.setOpen; db.markDirty(); sendOpen(db, id);
@@ -61,8 +62,8 @@ function send(id, msg) { const k = kids[id]; if (k && k.proc && k.proc.connected
 // danh sách server cho màn đăng nhập / trang quản trị
 function list(db, mainOnline, pub) {   // pub: danh sách cho người chơi (số online hiển thị)
   const c = db.data.config;
-  return [{ id: R.ID, name: R.NAME, open: !c.maintenance, up: true, online: mainOnline | 0 }]
-    .concat(R.CHILDREN.map(id => { const k = kids[id] || {}; return { id, name: R.REALMS[id].name, open: isOpen(db, id), up: !!k.up, online: pub ? require('./onlineshow').shown(id, k.online, isOpen(db, id) && !!k.up) : k.online | 0 }; }));
+  return [{ id: R.ID, name: R.NAME, open: !c.maintenance, maint: !!c.maintenance, up: true, online: mainOnline | 0 }]
+    .concat(R.CHILDREN.map(id => { const k = kids[id] || {}; return { id, name: R.REALMS[id].name, open: isOpen(db, id), maint: !!k.maint, up: !!k.up, online: pub ? require('./onlineshow').shown(id, k.online, isOpen(db, id) && !!k.up && !k.maint) : k.online | 0 }; }));
 }
 
 const PREFIX = /^\/s\/([a-z]+)(\/.*)?$/;

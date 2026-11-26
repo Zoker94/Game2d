@@ -127,7 +127,7 @@ class Bots {
   // gọi mỗi phút
   tick() {
     const cfg = this.cfg, list = this.online();
-    if (!cfg.on) { for (const p of list) this.despawn(p); return; }
+    if (!cfg.on || this.w.db.data.config.maintenance) { for (const p of list) this.despawn(p); return; }   // tắt / server đang bảo trì: không treo
     const top = this.topLevel(), now = Date.now();
     for (const p of list) {
       if (now > (p.botUntil || 0) || p.dead) { this.despawn(p, true); continue; }   // hết lượt treo / bị hạ: thoát

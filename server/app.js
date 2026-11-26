@@ -138,7 +138,7 @@ const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : nul
 
 // ---------------- API công khai ----------------
 app.get('/api/config', (req, res) => {
-  res.json({ server: { id: REALM.ID, name: REALM.NAME }, closed: realmClosed(), googleClientId: GOOGLE_CLIENT_ID, devLogin: ALLOW_DEV_LOGIN, motd: db.data.config.motd, maintenance: db.data.config.maintenance, maintMsg: db.data.config.maintenance ? db.data.config.maintMsg || '' : '', maintEta: db.data.config.maintenance ? db.data.config.maintEta || '' : '', maintOpenAt: db.data.config.maintenance ? db.data.config.maintOpenAt || 0 : 0, now: Date.now(), online: require('./onlineshow').shown(REALM.ID, world.players.size, !realmClosed()) });
+  res.json({ server: { id: REALM.ID, name: REALM.NAME }, closed: realmClosed(), googleClientId: GOOGLE_CLIENT_ID, devLogin: ALLOW_DEV_LOGIN, motd: db.data.config.motd, maintenance: db.data.config.maintenance, maintMsg: db.data.config.maintenance ? db.data.config.maintMsg || '' : '', maintEta: db.data.config.maintenance ? db.data.config.maintEta || '' : '', maintOpenAt: db.data.config.maintenance ? db.data.config.maintOpenAt || 0 : 0, now: Date.now(), online: require('./onlineshow').shown(REALM.ID, world.players.size, !realmClosed() && !db.data.config.maintenance) });
 });
 
 // danh sách server (màn đăng nhập chọn server). Chỉ server chính trả lời; server con không có danh sách
@@ -682,7 +682,7 @@ if (!REALM.IS_MAIN && process.send) {
     if (m.bank) { db.data.config.bank = m.bank; db.markDirty(); }   // tài khoản nhận nạp tiền theo server chính
     if (m.topup && world.topup) world.topup.autoMatch(m.topup);
   });
-  setInterval(() => { try { process.send({ online: world.players.size }); } catch (e) { } }, 10000);
+  setInterval(() => { try { process.send({ online: world.players.size, maint: !!db.data.config.maintenance }); } catch (e) { } }, 10000);   // kèm trạng thái bảo trì cho trang chọn server
 }
 
 server.listen(PORT, () => {
