@@ -1,5 +1,5 @@
 // Thần Binh & boss triệu hồi: gom 100 Mảnh Lệnh (rơi ở quái cấp 50+, tinh anh, boss) ghép thành Triệu Hồi Lệnh,
-// dùng ở bãi luyện để gọi 1 trong 3 boss (500 triệu máu, toàn máy chủ được báo). Boss chết: người ra đòn kết liễu được
+// dùng ở bãi luyện để gọi 1 trong 3 boss (200 triệu máu, toàn máy chủ được báo). Boss chết: người ra đòn kết liễu được
 // nhặt đồ trước 8 giây; tỉ lệ thấp rơi 1 món Thần Binh đúng bộ của boss.
 const U = require('./util');
 const { MAPS, baseOf } = require('../data/maps');
@@ -8,7 +8,7 @@ const { SUMMON_BOSSES } = require('../data/monsters');
 const { GEM_KEYS, gemId } = require('../data/gems');
 
 const FRAG_NEED = 100, STAY = 60 * 60000, OWN_MS = 8000, MAX_ALIVE = 3;
-const PIECE_CHANCE = () => 0.03 + Math.random() * 0.02;   // tỉ lệ rơi 1 món Thần Binh mỗi lần hạ boss: 3–5%
+const PIECE_CHANCE = () => 0.05;   // tỉ lệ rơi 1 món Thần Binh mỗi lần hạ boss: 5%
 const SET_KEYS = Object.keys(DIVINE_SETS);
 const DV_SLOTS = ['helmet', 'armor', 'pants', 'boots', 'gloves'];
 const bossOfSet = sk => Object.values(SUMMON_BOSSES).find(b => b.set === sk);
@@ -42,7 +42,7 @@ class Divine {
     mon.summoner = p.c.name;
     this.alive.set(mon.id, { mon, until: Date.now() + STAY });
     const where = MAPS[baseOf(p.mapId)].name + (def.chs > 1 || /#/.test(p.mapId) ? '' : '');
-    w.features.announce(`⚔️ ${p.c.name} đã triệu hồi Boss ${tpl.name} (500 triệu sinh lực) tại ${where}! Ai ra đòn kết liễu sẽ được nhặt đồ trước – có cơ hội rơi Thần Binh!`);
+    w.features.announce(`⚔️ ${p.c.name} đã triệu hồi Boss ${tpl.name} (200 triệu sinh lực) tại ${where}! Ai ra đòn kết liễu sẽ được nhặt đồ trước – có cơ hội rơi Thần Binh!`);
     w.io.emit('notice', { text: `⚔️ ${p.c.name} triệu hồi Boss ${tpl.name} tại ${where}!`, type: 'boss' });
     w.fx(p.mapId, { t: 'levelup', id: mon.id, x: pos.x, y: pos.y });
     w.db.log('boss', `${p.c.name} triệu hồi ${tpl.name} tại ${p.mapId}`);

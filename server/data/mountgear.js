@@ -8,7 +8,7 @@ const GEAR_MAX = 15;     // Mã Cụ thường
 const GEAR_MAX2 = 20;    // Mã Cụ V2 (Thần Phẩm): nâng tiếp +16..+20
 // V2: vật phẩm siêu hiếm rơi từ boss (boss thế giới 1%, phó bản 0,15%, boss dã ngoại 0,1%) -> lắp vào đúng ô, GIỮ NGUYÊN cấp đã nâng,
 // chỉ số x1,6 cộng thêm phần gốc, mở thêm 5 cấp. Món V2 dùng cho mọi thú cưỡi cùng loại ô (thú / xe máy), lắp vào thú nào thì gắn với thú đó.
-const V2_DROP = { world: 0.01, dungeon: 0.0015, field: 0.001 };
+const V2_DROP = { world: 0.015, dungeon: 0.0025, field: 0.0016 };   // Mã Cụ V2 (tăng ~1,5 lần)
 const V2_MULT = 1.6, V2_BASE = 4;
 const KINDS = {
   beast: [

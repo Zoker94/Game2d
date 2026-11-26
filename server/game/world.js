@@ -1545,7 +1545,7 @@ class World {
         }
         // đá cường hóa: 2-4 Huyền Tinh Thạch, boss cấp cao có thể thêm Thiên Tinh Thạch (đã giảm một nửa)
         for (let k = 0, n = U.randInt(1, 3); k < n; k++) drops.push('stone');   // giảm: trước 2-4
-        if (Math.random() < 0.12 * dr) drops.push('pet_egg');      // Trứng Linh Thú (boss dã ngoại)
+        if (Math.random() < 0.15 * dr) drops.push('pet_egg');      // Trứng Linh Thú (boss dã ngoại)
         if (Math.random() < 0.35 * dr) drops.push('pet_stone');    // Linh Thú Thạch
         if (tpl.lv >= 40 && Math.random() < 0.18 * dr) drops.push('stone2');
         if (tpl.lv >= 80 && Math.random() < 0.18 * dr) drops.push('stone2');
@@ -1570,7 +1570,7 @@ class World {
         if (r() < 0.008 * dr) drops.push('stone2');
         if (r() < 0.12) drops.push('mount_food');
         if (r() < 0.04 * dr) drops.push('lucky_chest');
-        if (r() < 0.00005) drops.push('rebirth_stone');   // Đá Hồi Sinh: ~1/20.000
+        if (r() < 0.00008) drops.push('rebirth_stone');   // Đá Hồi Sinh: ~1/12.500
         if (r() < 0.15 * dr) drops.push('thien_tam_ti');
         if (killer && killer.c) this.toast(killer, `⭐ Hạ quái tinh anh ${tpl.name}!`, 'reward');
       }
@@ -1579,16 +1579,16 @@ class World {
       if (r() < 0.04) drops.push(tier >= 7 ? (r() < 0.5 ? 'hp5' : 'mp5') : tier >= 5 ? (r() < 0.5 ? 'hp4' : 'mp4') : tier >= 4 ? (r() < 0.5 ? 'hp3' : 'mp3') : tier >= 2 ? (r() < 0.5 ? 'hp2' : 'mp2') : (r() < 0.5 ? 'hp1' : 'mp1'));
       if (r() < 0.0015 * dr) drops.push('stone');   // Huyền Tinh Thạch ~1/670 con
       if (r() < 0.015 * dr) drops.push(equipId(rslot(), tier, 'common'));
-      if (r() < 0.00005 * dr) drops.push(equipId(rslot(), tier, 'legendary'));   // Truyền Kỳ ở quái thường: ~1/20.000 con
+      if (r() < 0.00008 * dr) drops.push(equipId(rslot(), tier, 'legendary'));   // Truyền Kỳ ở quái thường: ~1/12.500 con
       if (r() < 0.005 * dr) drops.push(equipId(rslot(), tier, 'rare'));
       if (r() < (cfg.vipDropBase || 0.004) * 0.5 * dr) drops.push(equipId(rslot(), tier, 'epic'));   // sử thi: một nửa mức cấu hình
       if (r() < 0.0015 * dr) drops.push('lucky_chest');
-      if (r() < 0.00005) drops.push('rebirth_stone');   // Đá Hồi Sinh (trùng sinh): ~1/20.000 con
+      if (r() < 0.00008) drops.push('rebirth_stone');   // Đá Hồi Sinh (trùng sinh): ~1/12.500 con
       if (r() < 0.01 * dr) drops.push('mount_food');
-      if (tpl.lv >= 25 && r() < 0.00009 * dr * (1 + tier)) drops.push('stone2');   // Thiên Tinh Thạch: cấp 90 ~1/1100 con
+      if (tpl.lv >= 25 && r() < 0.00012 * dr * (1 + tier)) drops.push('stone2');   // Thiên Tinh Thạch: cấp 90 ~1/1100 con
       const gem = rollGemDrop(map.def.gemMine | 0, tpl.lv, r);   // đá khảm: nhiều ở khoáng động
       if (gem) drops.push(gem);
-      if (tpl.lv >= 20 && r() < 0.0005 * dr) drops.push('mount_stone');
+      if (tpl.lv >= 20 && r() < 0.0008 * dr) drops.push('mount_stone');   // Long Huyết Thạch (thú cưỡi)
       if (this.features.isActive('lantern') && r() < 0.3) drops.push('event_token');
       if (this.noel) { const nd = this.noel.drop(r); if (nd) drops.push(nd); }   // Lễ Hội Giáng Sinh: Kẹo
       if (tpl.lv >= 10 && r() < 0.006 * dr) drops.push('thien_tam_ti');   // nguyên liệu áo choàng
