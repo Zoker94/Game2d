@@ -6,6 +6,7 @@ const CHANGELOG = [
     items: [
       '🛠 Trang chọn máy chủ: server đang bảo trì hiện rõ "Đang bảo trì".',
       '🔄 Cập nhật máy chủ không còn làm mất Boss đang đánh: Boss theo giờ, Boss thế giới, Boss triệu hồi, Boss bang giữ nguyên máu và bảng sát thương; Nhân Đôi Kinh Nghiệm, Đua Top Săn Quái (giữ điểm), Truy Tìm Bảo Rương, Lễ Hội Hoa Đăng tiếp tục chạy sau khi tải lại.',
+      '❄️ Tuyết rơi dày hơn và đọng lại: tuyết rơi càng lâu, mặt cỏ càng phủ trắng (bão tuyết phủ nhanh gấp đôi); tạnh thì tuyết tan dần.',
       '🎄 LỄ HỘI GIÁNG SINH (mở theo thông báo): quái mọi bãi rơi Kẹo Giáng Sinh; Hộp Quà Giáng Sinh xuất hiện mỗi 30 phút ở các bãi luyện – đánh vỡ nhận quà (hiếm có Trứng Linh Thú); Quà Noel mỗi ngày; đổi Kẹo lấy quà ở bảng Sự kiện → 🎄 Giáng Sinh (Rương Thủ Lĩnh, Thiên Tinh Thạch, Đá May Mắn, Linh Thú Đan / Thạch, Trứng Linh Thú, ngoại trang Áo Giáng Sinh – Sinh lực +6%, Công +4%); tuyết rơi khắp giang hồ.'
     ]
   },

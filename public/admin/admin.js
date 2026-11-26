@@ -104,8 +104,11 @@
       const d = await api('/events');
       const RISKY = { daiHoi: 1, hoaSon: 1, tongKim: 1, congThanh: 1, thuHo: 1 }, live = d.list.filter(e => e.active && RISKY[e.key]);
       const warn = live.length ? `<div class="card" style="border-color:#e0a040"><b>⚠️ Đang diễn ra: ${live.map(e => e.icon + ' ' + esc(e.name)).join(', ')}</b><div class="small">Cập nhật / khởi động lại máy chủ lúc này sẽ làm mất trận đấu đang diễn ra. Boss, Nhân Đôi KN, Đua Top Săn Quái, Bảo Rương, Hoa Đăng thì được giữ nguyên khi cập nhật.</div></div>` : `<div class="card"><div class="small">✅ Cập nhật lúc này an toàn: boss đang sống (máu, bảng sát thương) và các sự kiện đang chạy được giữ nguyên sau khi khởi động lại.</div></div>`;
+      const wf = d.weatherForce || '', wbtn = (k, t) => `<button class="btn small ${wf === k ? 'ok' : ''}" data-wx="${k}" ${wf === k ? 'disabled' : ''}>${t}</button>`;
+      const wx = `<div class="card"><h3>❄️ Thời tiết toàn server</h3><p class="small muted">Bật tuyết cho mọi bản đồ (trừ hang động, phó bản). Tuyết rơi càng lâu mặt đất càng phủ trắng (khoảng 20 phút phủ kín, Bão tuyết nhanh gấp đôi); tắt thì tuyết tan dần trong ~10 phút và thời tiết trở lại tự nhiên.</p>
+        <div class="row" style="gap:6px">${wbtn('', '☀️ Tự nhiên (tắt)')}${wbtn('snow', '🌨️ Tuyết rơi')}${wbtn('blizzard', '❄️ Bão tuyết')}</div></div>`;
       const nz = d.noel || {};
-      el.innerHTML = warn + `<div class="card"><h3>🎄 Lễ Hội Giáng Sinh</h3>
+      el.innerHTML = warn + wx + `<div class="card"><h3>🎄 Lễ Hội Giáng Sinh</h3>
         <p class="small muted">Bật thì sự kiện chạy liên tục tới khi tắt (khởi động lại máy chủ vẫn giữ). Khi bật: quái rơi Kẹo Giáng Sinh, Hộp Quà xuất hiện mỗi 30 phút ở các bãi luyện, Quà Noel mỗi ngày, đổi quà (có ngoại trang Áo Giáng Sinh), tuyết rơi khắp bản đồ. Tắt thì ngừng rơi Kẹo, dọn Hộp Quà; Kẹo người chơi đang có vẫn giữ (bật lại mùa sau dùng tiếp). Mỗi lần bật lại, giới hạn đổi quà "cả sự kiện" được làm mới.</p>
         <div>${nz.on ? `<span class="tag on">Đang diễn ra</span> từ ${new Date(nz.at).toLocaleString('vi-VN')} <button class="btn small danger" id="noel-off">Tắt sự kiện</button>` : `<span class="tag off">Tắt</span> <button class="btn small ok" id="noel-on">🎄 Bật Lễ Hội Giáng Sinh</button>`}</div></div>
         <div class="card"><h3>Sự kiện</h3><table><tr><th>Sự kiện</th><th>Trạng thái</th><th>Thời lượng (phút)</th><th></th></tr>
@@ -118,6 +121,7 @@
         <td>${b.alive ? `<button class="btn small danger" data-bkill="${b.id}">Xóa</button>` : `<button class="btn small ok" data-bspawn="${b.id}">Triệu hồi ngay</button>`}</td></tr>`; }).join('')}</table></div>`;
       { const b = $('noel-on'); if (b) b.onclick = async () => { await run(() => api('/noel', { on: true }), 'Đã bật Lễ Hội Giáng Sinh'); show('events'); }; }
       { const b = $('noel-off'); if (b) b.onclick = async () => { if (!confirm('Tắt Lễ Hội Giáng Sinh?')) return; await run(() => api('/noel', { on: false }), 'Đã tắt Lễ Hội Giáng Sinh'); show('events'); }; }
+      el.querySelectorAll('[data-wx]').forEach(b => b.onclick = async () => { await run(() => api('/weather', { k: b.dataset.wx }), 'Đã đổi thời tiết'); show('events'); });
       el.querySelectorAll('[data-start]').forEach(b => b.onclick = async () => { await run(() => api('/event/start', { key: b.dataset.start, minutes: +$('dur-' + b.dataset.start).value }), 'Đã bắt đầu sự kiện'); show('events'); });
       el.querySelectorAll('[data-stop]').forEach(b => b.onclick = async () => { await run(() => api('/event/stop', { key: b.dataset.stop }), 'Đã dừng sự kiện'); show('events'); });
       el.querySelectorAll('[data-bspawn]').forEach(b => b.onclick = async () => { await run(() => api('/boss/spawn', { id: b.dataset.bspawn }), 'Đã triệu hồi boss'); show('events'); });

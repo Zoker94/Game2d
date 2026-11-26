@@ -2643,8 +2643,8 @@ class World {
 
   // ---------- thời tiết theo bản đồ ----------
   weatherOf(mapId) {
-    const w = this.weather && this.weather[mapId];
-    return w ? { k: w.k, until: w.until } : { k: 'clear', until: 0 };
+    const w = this.weather && this.weather[mapId], acc = Math.round(((this.snowAcc && this.snowAcc[mapId]) || 0) * 1000) / 1000;
+    return w ? { k: w.k, until: w.until, acc } : { k: 'clear', until: 0, acc };   // acc: độ tuyết phủ mặt đất 0..1
   }
   setWeather(mapId, k, dur) {
     if (!WEATHER_NAME[k] || !this.maps[mapId]) return false;
@@ -2670,10 +2670,31 @@ class World {
     }
     this.db.markDirty();
   }
+  // tuyết phủ mặt đất: tuyết rơi càng lâu càng dày (~20 phút phủ kín, bão tuyết nhanh gấp đôi), tạnh thì tan dần (~10 phút)
+  snowTick() {
+    const acc = this.snowAcc || (this.snowAcc = {});
+    for (const id in this.maps) {
+      const w = this.weather && this.weather[id], k = w && w.until > Date.now() ? w.k : 'clear';
+      const v = acc[id] || 0, nv = Math.max(0, Math.min(1, v + (k === 'blizzard' ? 2 / 1200 : k === 'snow' ? 1 / 1200 : -1 / 600)));
+      if (nv) acc[id] = nv; else delete acc[id];
+    }
+  }
+  // thời tiết do quản trị viên bật cho toàn server (config.weatherForce = 'snow' | 'blizzard' | ''): mọi bản đồ (trừ hang động, phó bản)
+  forcedWeather(id) {
+    const f = this.db.data.config.weatherForce, def = this.maps[id] && this.maps[id].def;
+    if (!f || !WEATHER_NAME[f] || !def || def.instance || def.theme === 'cave') return null;
+    return f;
+  }
   rollWeather(now) {
     this.weather = this.weather || {};
+    this.snowTick();
     for (const id in this.maps) {
-      const cur = this.weather[id];
+      const cur = this.weather[id], fk = this.forcedWeather(id);
+      if (fk) {   // quản trị viên bật thời tiết
+        if (!cur || cur.k !== fk || cur.until - now < 90000) { const ch = !cur || cur.k !== fk; this.weather[id] = { k: fk, until: now + 5 * 60000, forced: 1 }; if (ch && this.maps[id].players.size) this.io.to('map:' + id).emit('weather', this.weatherOf(id)); }
+        continue;
+      }
+      if (cur && cur.forced) cur.until = 0;   // vừa tắt thời tiết quản trị: trở lại tự nhiên ngay
       if (cur && cur.until > now) continue;
       const tbl = WEATHER_TABLE[this.maps[id].def.theme] || WEATHER_TABLE.plains;
       let r = Math.random() * tbl.reduce((a, x) => a + x[1], 0), k = 'clear';

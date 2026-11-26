@@ -1571,6 +1571,7 @@
         x0 = Math.min(x0, wx); y0 = Math.min(y0, wy); x1 = Math.max(x1, wx); y1 = Math.max(y1, wy);
       }
       WorldArt.drawGround(c, { x: x0, y: y0 }, x1 - x0, y1 - y0, now);
+      Weather.drawGround(c, x0, y0, x1 - x0, y1 - y0);   // tuyết phủ mặt đất
     }
     const nx = ISO_A * ((GB.fx - ISO.fx) - (GB.fy - ISO.fy)) * zoom, ny = ISO_AQ * ((GB.fx - ISO.fx) + (GB.fy - ISO.fy)) * zoom;
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
@@ -1664,7 +1665,7 @@
 
     const x0 = Math.max(0, Math.floor(cam.x / TILE)), y0 = Math.max(0, Math.floor(cam.y / TILE));
     const x1 = Math.min(m.w - 1, Math.ceil((cam.x + vw) / TILE)), y1 = Math.min(m.h - 1, Math.ceil((cam.y + vh) / TILE));
-    if (ISO) { isoGroundDraw(now); isoGround(ctx); } else { if (GB.cv) gbFree(); WorldArt.drawGround(ctx, cam, vw, vh, now); }
+    if (ISO) { isoGroundDraw(now); isoGround(ctx); } else { if (GB.cv) gbFree(); WorldArt.drawGround(ctx, cam, vw, vh, now); Weather.drawGround(ctx, cam.x, cam.y, vw, vh); }
     WorldArt.drawPuffs(ctx, now);
     if (ISO) ctx.imageSmoothingEnabled = false;
     // Cổng

@@ -8,10 +8,12 @@
   let pending = null;
   let drops = [], splashes = [], flakes = [], streaks = [], bits = [];
   let flash = 0, bolt = null, nextBolt = 0, lastCam = null, lastT = 0;
+  let snowAcc = 0, accAt = 0, accKind = 'clear';   // tuyết phủ mặt đất (máy chủ gửi), tự tăng / tan giữa 2 lần cập nhật
   const rnd = (a, b) => a + Math.random() * (b - a);
 
   function set(w, th, fresh) {
     if (th) theme = th;
+    snowAcc = (w && +w.acc) || 0; accAt = performance.now(); accKind = (w && w.k) || 'clear';
     const k = (w && INFO[w.k]) && theme !== 'cave' ? w.k : 'clear';   // trong hang không mưa / tuyết
     if (fresh) { kind = k; pending = null; level = 0; drops = []; flakes = []; streaks = []; bits = []; splashes = []; lastCam = null; }
     else if (k !== kind) pending = k;
@@ -169,7 +171,7 @@
   function drawSnow(ctx, W, H, dt, dx, dy, area, now) {
     const bl = kind === 'blizzard';
     // sương trắng mờ, dày hơn ở phía dưới
-    const want = Math.round(area * (bl ? 110 : 60) * level);
+    const want = Math.round(area * (bl ? 230 : 130) * level);   // tuyết dày
     while (flakes.length < want) flakes.push(spawnFlake(W, H, flakes.length > 0));
     if (flakes.length > want) flakes.length = want;
     const wx = bl ? 6 : 0.4;
@@ -187,6 +189,43 @@
     }
     ctx.fill();
     ctx.globalAlpha = 1;
+  }
+
+  // ---------- tuyết phủ mặt đất (vẽ ngay sau nền bản đồ, dưới nhân vật / quái) ----------
+  function accNow() {
+    const s = (performance.now() - accAt) / 1000, r = accKind === 'blizzard' ? 2 / 1200 : accKind === 'snow' ? 1 / 1200 : -1 / 600;
+    return Math.max(0, Math.min(1, snowAcc + r * s));
+  }
+  let snowPat = null;
+  function snowPattern(ctx) {
+    if (snowPat) return snowPat;
+    const S = 192, c = document.createElement('canvas'); c.width = c.height = S;
+    const x = c.getContext('2d');
+    // các mảng tuyết loang (vẽ lặp quanh mép để ghép liền mạch)
+    for (let i = 0; i < 70; i++) {
+      const cx = Math.random() * S, cy = Math.random() * S, r = 6 + Math.random() * 26, a = 0.25 + Math.random() * 0.55;
+      for (const ox of [-S, 0, S]) for (const oy of [-S, 0, S]) {
+        const g = x.createRadialGradient(cx + ox, cy + oy, 0, cx + ox, cy + oy, r);
+        g.addColorStop(0, `rgba(255,255,255,${a})`); g.addColorStop(0.7, `rgba(240,246,255,${a * 0.6})`); g.addColorStop(1, 'rgba(235,242,255,0)');
+        x.fillStyle = g; x.beginPath(); x.arc(cx + ox, cy + oy, r, 0, Math.PI * 2); x.fill();
+      }
+    }
+    // hạt tuyết lấp lánh
+    for (let i = 0; i < 90; i++) { x.fillStyle = `rgba(255,255,255,${0.5 + Math.random() * 0.5})`; x.fillRect(Math.random() * S, Math.random() * S, 1.5, 1.5); }
+    snowPat = ctx.createPattern(c, 'repeat');
+    return snowPat;
+  }
+  // ctx đang ở toạ độ thế giới; x0,y0,w,h: vùng mặt đất đang vẽ
+  function drawGround(ctx, x0, y0, w, h) {
+    if (theme === 'cave' || theme === 'snow') return;   // hang động không có tuyết; bản đồ băng tuyết vốn đã trắng
+    const a = accNow();
+    if (a < 0.02) return;
+    ctx.save();
+    ctx.globalAlpha = Math.min(0.55, a * 0.55);       // lớp trắng mỏng phủ đều
+    ctx.fillStyle = '#eef4ff'; ctx.fillRect(x0, y0, w, h);
+    ctx.globalAlpha = Math.min(1, a * 1.25);          // mảng tuyết dày dần
+    ctx.fillStyle = snowPattern(ctx); ctx.fillRect(x0, y0, w, h);
+    ctx.restore();
   }
 
   function drawWind(ctx, W, H, dt, dx, dy, area, now) {
@@ -234,5 +273,5 @@
   // trời nắng: quầng mặt trời, tia nắng, viền nóng đều là CSS (#wx-layer.wx-sun), canvas không phải vẽ gì
   function drawSun() {}
 
-  window.Weather = { set, draw, get kind() { return pending || kind; }, INFO };
+  window.Weather = { set, draw, drawGround, get kind() { return pending || kind; }, INFO };
 })();
