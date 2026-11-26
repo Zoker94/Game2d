@@ -104,7 +104,10 @@
       const d = await api('/events');
       const RISKY = { daiHoi: 1, hoaSon: 1, tongKim: 1, congThanh: 1, thuHo: 1 }, live = d.list.filter(e => e.active && RISKY[e.key]);
       const warn = live.length ? `<div class="card" style="border-color:#e0a040"><b>⚠️ Đang diễn ra: ${live.map(e => e.icon + ' ' + esc(e.name)).join(', ')}</b><div class="small">Cập nhật / khởi động lại máy chủ lúc này sẽ làm mất trận đấu đang diễn ra. Boss, Nhân Đôi KN, Đua Top Săn Quái, Bảo Rương, Hoa Đăng thì được giữ nguyên khi cập nhật.</div></div>` : `<div class="card"><div class="small">✅ Cập nhật lúc này an toàn: boss đang sống (máu, bảng sát thương) và các sự kiện đang chạy được giữ nguyên sau khi khởi động lại.</div></div>`;
-      el.innerHTML = warn + `<div class="card"><h3>Sự kiện</h3><table><tr><th>Sự kiện</th><th>Trạng thái</th><th>Thời lượng (phút)</th><th></th></tr>
+      const wf = d.weatherForce || '', wbtn = (k, t) => `<button class="btn small ${wf === k ? 'ok' : ''}" data-wx="${k}" ${wf === k ? 'disabled' : ''}>${t}</button>`;
+      const wx = `<div class="card"><h3>❄️ Thời tiết toàn server</h3><p class="small muted">Bật tuyết cho mọi bản đồ (trừ hang động, phó bản). Tuyết rơi càng lâu mặt đất càng phủ trắng (khoảng 20 phút phủ kín, Bão tuyết nhanh gấp đôi); tắt thì tuyết tan dần trong ~10 phút và thời tiết trở lại tự nhiên.</p>
+        <div class="row" style="gap:6px">${wbtn('', '☀️ Tự nhiên (tắt)')}${wbtn('snow', '🌨️ Tuyết rơi')}${wbtn('blizzard', '❄️ Bão tuyết')}</div></div>`;
+      el.innerHTML = warn + wx + `<div class="card"><h3>Sự kiện</h3><table><tr><th>Sự kiện</th><th>Trạng thái</th><th>Thời lượng (phút)</th><th></th></tr>
         ${d.list.map(e => `<tr><td>${e.icon} <b>${esc(e.name)}</b><div class="small muted">${esc(e.desc)}</div></td><td>${e.active ? `<span class="tag on">Đang diễn ra</span><div class="small">đến ${new Date(e.until).toLocaleTimeString('vi-VN')}</div>` : '<span class="tag off">Tắt</span>'}</td>
         <td><input type="number" value="${e.key === 'quiz' ? 1 : 30}" min="1" style="width:80px" id="dur-${e.key}"></td>
         <td>${e.active ? `<button class="btn small danger" data-stop="${e.key}">Dừng</button>` : `<button class="btn small ok" data-start="${e.key}">Bắt đầu</button>`}</td></tr>`).join('')}</table></div>
@@ -112,6 +115,7 @@
         ${d.bosses.map(b => { const info = d.bossList.find(x => x.id === b.id); return `<tr><td>👑 ${esc(b.name)}</td><td>${b.lv}</td><td>${esc(b.mapName)}</td><td class="small">Mỗi ${info.every} phút (lệch ${info.offset}p)</td>
         <td>${b.alive ? `<span class="tag ban">Đang xuất hiện ${Math.round(b.hp / b.maxHp * 100)}%</span>` : `<span class="tag off">Sau ${b.next} phút</span>`}</td>
         <td>${b.alive ? `<button class="btn small danger" data-bkill="${b.id}">Xóa</button>` : `<button class="btn small ok" data-bspawn="${b.id}">Triệu hồi ngay</button>`}</td></tr>`; }).join('')}</table></div>`;
+      el.querySelectorAll('[data-wx]').forEach(b => b.onclick = async () => { await run(() => api('/weather', { k: b.dataset.wx }), 'Đã đổi thời tiết'); show('events'); });
       el.querySelectorAll('[data-start]').forEach(b => b.onclick = async () => { await run(() => api('/event/start', { key: b.dataset.start, minutes: +$('dur-' + b.dataset.start).value }), 'Đã bắt đầu sự kiện'); show('events'); });
       el.querySelectorAll('[data-stop]').forEach(b => b.onclick = async () => { await run(() => api('/event/stop', { key: b.dataset.stop }), 'Đã dừng sự kiện'); show('events'); });
       el.querySelectorAll('[data-bspawn]').forEach(b => b.onclick = async () => { await run(() => api('/boss/spawn', { id: b.dataset.bspawn }), 'Đã triệu hồi boss'); show('events'); });

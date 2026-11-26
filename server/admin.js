@@ -348,7 +348,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   });
 
   // ----- Boss & sự kiện -----
-  app.get('/api/admin/events', auth, (req, res) => res.json({ ...features.eventsView(), info: EVENT_INFO, bossList: Object.values(BOSSES).map(b => ({ id: b.id, name: b.name, lv: b.lv, map: MAPS[b.map].name, every: b.every, offset: b.offset })) }));
+  app.get('/api/admin/events', auth, (req, res) => res.json({ ...features.eventsView(), weatherForce: db.data.config.weatherForce || '', info: EVENT_INFO, bossList: Object.values(BOSSES).map(b => ({ id: b.id, name: b.name, lv: b.lv, map: MAPS[b.map].name, every: b.every, offset: b.offset })) }));
   app.post('/api/admin/boss/spawn', auth, (req, res) => {
     const ok = features.spawnBoss(req.body.id);
     act(req, `Triệu hồi boss ${req.body.id}`);
@@ -362,6 +362,14 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     features.broadcastEvents();
     act(req, `Xóa boss ${req.body.id}`);
     res.json({ ok: true });
+  });
+  // ❄️ Thời tiết toàn server: '' (tự nhiên) | 'snow' (tuyết rơi) | 'blizzard' (bão tuyết)
+  app.post('/api/admin/weather', auth, (req, res) => {
+    const k = ['snow', 'blizzard'].includes(req.body.k) ? req.body.k : '';
+    db.data.config.weatherForce = k; db.markDirty();
+    world.rollWeather(Date.now());
+    act(req, `Thời tiết toàn server: ${k || 'tự nhiên'}`);
+    res.json({ ok: true, k });
   });
   app.post('/api/admin/event/start', auth, (req, res) => {
     const ok = features.startEvent(req.body.key, U.clamp(+req.body.minutes || 30, 1, 1440));
