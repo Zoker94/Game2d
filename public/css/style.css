@@ -1980,3 +1980,12 @@ body.touch.slot-tight #story-box, body.touch.slot-tight #tutorial-box, body.touc
 #pb-hud.cmp .pb-pips, #pb-hud.cmp .pb-buff { display: none; }
 #comu-hud.cmp .cm-tip { display: none; }
 #hs-hud.cmp .hs-log, #hs-hud.cmp .hs-top { display: none; }
+
+/* giao dịch: màn thấp (điện thoại nằm ngang) – không ép lưới túi đồ còn vài px, cả khung cuộn thay vào đó */
+#trade-win .tr-body > * { flex-shrink: 0; }
+#trade-win .tr-inv { min-height: 92px; }
+body.short #trade-win .tr-box { max-height: 98%; }
+body.short #trade-win .tr-inv { max-height: 100px; min-height: 92px; }
+body.short #trade-win .tr-side { min-height: 0; padding: 4px 6px; }
+body.short #trade-win .tr-body { padding: 6px 8px; gap: 4px; }
+body.short #trade-win .tr-body > p.small { display: none; }

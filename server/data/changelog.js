@@ -6,7 +6,8 @@ const CHANGELOG = [
     items: [
       '🛠 Trang chọn máy chủ: server đang bảo trì hiện rõ "Đang bảo trì".',
       '🔄 Cập nhật máy chủ không còn làm mất Boss đang đánh: Boss theo giờ, Boss thế giới, Boss triệu hồi, Boss bang giữ nguyên máu và bảng sát thương; Nhân Đôi Kinh Nghiệm, Đua Top Săn Quái (giữ điểm), Truy Tìm Bảo Rương, Lễ Hội Hoa Đăng tiếp tục chạy sau khi tải lại.',
-      '❄️ Tuyết rơi dày hơn và đọng lại: tuyết rơi càng lâu, mặt cỏ càng phủ trắng (bão tuyết phủ nhanh gấp đôi); tạnh thì tuyết tan dần.'
+      '❄️ Tuyết rơi dày hơn và đọng lại: tuyết rơi càng lâu, mặt cỏ càng phủ trắng (bão tuyết phủ nhanh gấp đôi); tạnh thì tuyết tan dần.',
+      '🔄 Sửa cửa sổ Giao dịch trên điện thoại: túi đồ bị che khuất, không chọn được vật phẩm.'
     ]
   },
   {
