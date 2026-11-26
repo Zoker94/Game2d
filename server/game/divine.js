@@ -103,4 +103,4 @@ class Divine {
     }
   }
 }
-module.exports = { Divine, FRAG_NEED };
+module.exports = { Divine, FRAG_NEED, bossOfSet };

@@ -102,7 +102,9 @@
 
     async events(el) {
       const d = await api('/events');
-      el.innerHTML = `<div class="card"><h3>Sự kiện</h3><table><tr><th>Sự kiện</th><th>Trạng thái</th><th>Thời lượng (phút)</th><th></th></tr>
+      const RISKY = { daiHoi: 1, hoaSon: 1, tongKim: 1, congThanh: 1, thuHo: 1 }, live = d.list.filter(e => e.active && RISKY[e.key]);
+      const warn = live.length ? `<div class="card" style="border-color:#e0a040"><b>⚠️ Đang diễn ra: ${live.map(e => e.icon + ' ' + esc(e.name)).join(', ')}</b><div class="small">Cập nhật / khởi động lại máy chủ lúc này sẽ làm mất trận đấu đang diễn ra. Boss, Nhân Đôi KN, Đua Top Săn Quái, Bảo Rương, Hoa Đăng thì được giữ nguyên khi cập nhật.</div></div>` : `<div class="card"><div class="small">✅ Cập nhật lúc này an toàn: boss đang sống (máu, bảng sát thương) và các sự kiện đang chạy được giữ nguyên sau khi khởi động lại.</div></div>`;
+      el.innerHTML = warn + `<div class="card"><h3>Sự kiện</h3><table><tr><th>Sự kiện</th><th>Trạng thái</th><th>Thời lượng (phút)</th><th></th></tr>
         ${d.list.map(e => `<tr><td>${e.icon} <b>${esc(e.name)}</b><div class="small muted">${esc(e.desc)}</div></td><td>${e.active ? `<span class="tag on">Đang diễn ra</span><div class="small">đến ${new Date(e.until).toLocaleTimeString('vi-VN')}</div>` : '<span class="tag off">Tắt</span>'}</td>
         <td><input type="number" value="${e.key === 'quiz' ? 1 : 30}" min="1" style="width:80px" id="dur-${e.key}"></td>
         <td>${e.active ? `<button class="btn small danger" data-stop="${e.key}">Dừng</button>` : `<button class="btn small ok" data-start="${e.key}">Bắt đầu</button>`}</td></tr>`).join('')}</table></div>
