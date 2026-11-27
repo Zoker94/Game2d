@@ -483,7 +483,7 @@ class World {
       inv: c.inv, invMax: U.invSize(c), vmb: Math.min(5, c.vmb | 0), equip: c.equip, kills: c.kills, pvpKills: c.pvpKills, bossKills: c.bossKills,
       tutorial: this.tutorialView(c), gemTut: c.gemTut | 0, guild: g ? { id: g.id, name: g.name, role: g.members[p.userId] } : null,
       expBuffUntil: c.expBuffUntil, dropBuffUntil: c.dropBuffUntil || 0, food: c.food && c.food.until > Date.now() ? { id: c.food.id, until: c.food.until } : null, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
-      quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, gm: this.isGm(p) ? { hide: !!(c.gm && c.gm.hide), safe: !!(c.gm && c.gm.safe) } : null, owner: isOwner(p.user) ? 1 : 0, dead: p.dead,
+      quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, gm: this.isGm(p) ? { hide: !!(c.gm && c.gm.hide), safe: !!(c.gm && c.gm.safe), bots: isOwner(p.user) && this.bots ? (b => ({ on: !!b.on, pk: b.pk !== false, min: b.min | 0, max: b.max | 0, tmin: b.townMin | 0, tmax: b.townMax | 0 }))(this.bots.cfg) : null } : null, owner: isOwner(p.user) ? 1 : 0, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null, jhs: c.jhs || {}, jh: c.jh || null,
       minhChu: this.titleFlags(p), title: this.titleOf(c, p.user.isAdmin), ach: Object.assign({ bossKills: c.bossKills | 0 }, c.ach || {}), tk: this.tongkim ? this.tongkim.tag(p) : 0, congTrang: c.congTrang || 0, ctOwner: this.siege ? this.siege.ownerName() : null, master: c.master && c.master.uid && !c.master.grad ? c.master.name : null, nDisc: Object.keys(c.disciples || {}).length,
       attr: c.attr || {}, attrFree: attrTotalOf(c) - attrUsed(c.attr), attrReset: attrResetCost(c.level),
@@ -1388,6 +1388,15 @@ class World {
     this.features.brag(`⚡ Bí kíp Tuyệt Kỹ Giang Hồ [${j.name}] rơi ra từ ${tpl.name} tại ${(MAPS[baseOf(mon.mapId)] || MAPS[mon.mapId] || { name: 'bản đồ boss' }).name}! Ai nhanh tay sẽ nhặt được!`);
   }
 
+  // Mã Cụ thường: 20% mỗi Boss, 1 món ngẫu nhiên rơi xuống đất thuộc người gây sát thương cao nhất (30 giây)
+  rollMgV1(mon) {
+    if (Math.random() >= MGEAR.V1_DROP) return;
+    const all = Object.values(MGEAR.KINDS).flat(), d = all[U.randInt(0, all.length - 1)];
+    const top = [...mon.dmgBy.entries()].filter(([uid]) => !this.isGmUid(uid)).sort((a, b) => b[1] - a[1])[0];
+    const a = Math.random() * Math.PI * 2;
+    const dr = this.createDrop(mon.mapId, mon.x + Math.cos(a) * 55, mon.y + Math.sin(a) * 55, MGEAR.v1Item(d.k), 1, top ? top[0] : null, 0, 30000);
+    if (dr) dr.expire = Date.now() + 300000;
+  }
   // Mã Cụ V2 (Thần Phẩm): siêu hiếm, rơi xuống đất thuộc người gây sát thương cao nhất (30 giây), sau đó ai cũng nhặt được
   rollMgV2(mon, tpl) {
     const R = MGEAR.V2_DROP, rate = tpl.world ? R.world : mon.boss ? R.field : R.dungeon;
@@ -1456,7 +1465,7 @@ class World {
     const tpl = mon.tpl;
     const cfg = this.db.data.config;
 
-    if ((mon.boss || tpl.pbBoss) && !mon.event) { this.rollJhBook(mon, tpl); this.rollMgV2(mon, tpl); }
+    if ((mon.boss || tpl.pbBoss) && !mon.event) { this.rollJhBook(mon, tpl); this.rollMgV2(mon, tpl); this.rollMgV1(mon); }
     if (mon.event === 'daihoi') { this.daihoi.onMonsterKilled(mon, killer); map.monsters.delete(mon.id); return; }
     if (mon.event === 'tongkim') { this.tongkim.onMonsterKilled(mon, killer); map.monsters.delete(mon.id); return; }
     if (mon.event === 'siege') { this.siege.onMonsterKilled(mon, killer); return; }
@@ -2557,6 +2566,7 @@ class World {
       const m = c.mounts[a.id], def = m && MOUNTS[a.id] && MGEAR.slotsOf(a.id).find(d => d.k === a.slot);
       if (!def) return;
       if (p.trade) return err('Đang giao dịch');
+      if (!MGEAR.owned(m, def.k)) return err(`Chưa lắp ${def.name} – nhặt ${ITEMS[MGEAR.v1Item(def.k)].name} rơi từ Boss rồi bấm Lắp`);
       const gear = m.gear || (m.gear = {}), lv = gear[def.k] | 0, v2 = !!(m.gv2 && m.gv2[def.k]), mx = MGEAR.maxOf(v2);
       if (lv >= mx) return err(`${def.name} đã đạt cấp tối đa +${mx}${v2 ? '' : ` – lắp ${def.v2} (Mã Cụ V2, rơi từ Boss) để nâng tiếp tới +${MGEAR.GEAR_MAX2}`}`);
       const cost = MGEAR.gearCost(lv), nm = v2 ? def.v2 : def.name;
@@ -2577,6 +2587,17 @@ class World {
         this.toast(p, `💥 Thất bại! ${nm} rớt xuống +${lv - 1}`, 'error');
       } else this.toast(p, `💥 Thất bại! ${nm} giữ nguyên +${lv}${useIns ? ' (đã dùng Bảo Hiểm Phù)' : ''}`, 'error');
       p.socket.emit('mgearRes', { ok, id: a.id, slot: def.k, lv: gear[def.k] });
+      p.dirtyMe = true;
+    } else if (a.op === 'gearV1') {   // lắp Mã Cụ thường (rơi từ Boss) để mở ô
+      const m = c.mounts[a.id], def = m && MOUNTS[a.id] && MGEAR.slotsOf(a.id).find(d => d.k === a.slot);
+      if (!def) return;
+      if (p.trade) return err('Đang giao dịch');
+      if (MGEAR.owned(m, def.k)) return err(`${MOUNTS[a.id].name} đã có ${def.name}`);
+      const iid = MGEAR.v1Item(def.k);
+      if (!U.removeItemById(c, iid, 1)) return err(`Cần ${ITEMS[iid].name} – rơi từ Boss`);
+      (m.gown || (m.gown = {}))[def.k] = 1;
+      this.toast(p, `🔧 Đã lắp ${def.name} cho ${MOUNTS[a.id].name}! Giờ có thể nâng cấp ô này.`, 'reward');
+      p.socket.emit('mgearRes', { ok: true, id: a.id, slot: def.k });
       p.dirtyMe = true;
     } else if (a.op === 'gearV2') {   // lắp Mã Cụ V2 (rơi từ Boss) vào ô: giữ nguyên cấp, chỉ số x1,6, mở tới +20
       const m = c.mounts[a.id], def = m && MOUNTS[a.id] && MGEAR.slotsOf(a.id).find(d => d.k === a.slot);

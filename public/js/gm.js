@@ -42,8 +42,19 @@
           <button class="btn ${g.hide ? 'primary' : ''}" data-gm="/an">👻 Tàng hình: ${g.hide ? 'BẬT' : 'tắt'}</button>
           <button class="btn ${g.safe ? 'primary' : ''}" data-gm="/mienpk">🛡️ Miễn PK: ${g.safe ? 'BẬT' : 'tắt'}</button>
           <button class="btn" data-gm="/heal">❤️ Hồi đầy</button></div>
+        ${g.bots ? `<div class="gm-tg" style="margin-top:8px">
+          <button class="btn ${g.bots.on ? 'primary' : ''}" data-gm="/bot ${g.bots.on ? 'off' : 'on'}">🤖 Bot: ${g.bots.on ? 'BẬT' : 'tắt'}</button>
+          <button class="btn ${g.bots.pk ? 'primary' : ''}" data-gm="/bot pk ${g.bots.pk ? 'off' : 'on'}">☠️ Bot đồ sát: ${g.bots.pk ? 'BẬT' : 'tắt'}</button>
+          <button class="btn" data-gm="/bot">📋 Xem bot</button></div>
+          <div class="gm-tg" style="margin-top:6px;align-items:center;flex-wrap:wrap;gap:4px">
+            <span class="small">Bãi luyện</span><input class="gm-n" id="gb-min" type="number" min="0" max="150" value="${g.bots.min}" style="width:56px">–<input class="gm-n" id="gb-max" type="number" min="0" max="150" value="${g.bots.max}" style="width:56px">
+            <span class="small">Thành</span><input class="gm-n" id="gb-tmin" type="number" min="0" max="30" value="${g.bots.tmin}" style="width:48px">–<input class="gm-n" id="gb-tmax" type="number" min="0" max="30" value="${g.bots.tmax}" style="width:48px">
+            <button class="btn small primary" id="gb-save">Lưu</button></div>` : ''}
         <div class="gm-note">Tàng hình: người chơi không thấy bạn trên bản đồ / danh sách online, quái không đánh bạn (ra chiêu thì hiệu ứng vẫn hiện). Miễn PK: người chơi, kể cả đồ sát, không đánh được bạn. Tài khoản quản trị không lên bảng xếp hạng. Phím <b>\`</b> mở / đóng hộp này.</div>`;
       el.querySelectorAll('[data-gm]').forEach(x => x.onclick = () => { cmd(x.dataset.gm); click(); });
+      el.querySelectorAll('.gm-n').forEach(x => { x.onkeydown = e => e.stopPropagation(); });
+      const gs = $('gb-save');
+      if (gs) gs.onclick = () => { const v = id => Math.max(0, Math.trunc(+$(id).value) || 0); cmd(`/bot ${v('gb-min')} ${Math.max(v('gb-min'), v('gb-max'))}`); setTimeout(() => cmd(`/bot thanh ${v('gb-tmin')} ${Math.max(v('gb-tmin'), v('gb-tmax'))}`), 300); click(); };
     } else if (tab === 'pin') {
       el.innerHTML = `<div class="gm-pin"><textarea class="gm-pin-in" maxlength="200" rows="2" placeholder="Nội dung thông báo..."></textarea>
           <button class="btn primary" data-pin>📌 Ghim</button></div>
