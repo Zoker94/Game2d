@@ -4,16 +4,21 @@
 //  - Bot thay nhau vào / ra (mỗi lượt treo 40–200 phút), số bot dao động trong khoảng cấu hình.
 //  - Bot không lọt bảng xếp hạng / đua top / thưởng sự kiện (u.bot, xem world.isGmUid và các bộ lọc xếp hạng).
 //  - Quản trị: /bot (xem), /bot on | off, /bot 100 120 (số bot tối thiểu – tối đa, tối đa 150). Cấu hình lưu ở config.bots.
-//  - Bot chỉ treo ở khu 1 của bãi luyện, ưu tiên bãi đang ít bot. Bot chặn mọi lời mời ("đang treo máy, không nhận lời mời").
+//  - Bot rải khắp các khu (1, 2, 3… khu đang mở, trừ Khu VIP) của bãi luyện, ưu tiên bãi / khu đang ít bot. Bot chặn mọi lời mời ("đang treo máy, không nhận lời mời").
 //  - Bot dạo thành (thêm townMin–townMax con, mặc định 3–5, ở thành khởi đầu khu 1): một số ngồi thiền một chỗ, số còn lại
+//  - Rất hiếm (PK_CHANCE mỗi phút): một bot ở bãi cho phép PK bật Đồ sát, đuổi đánh 1 người chơi thật chênh ≤5 cấp bằng chiêu như người (autosrv.huntStep).
+//    Tắt: /bot pk off.
 //    đi từ NPC này sang NPC khác, đứng yên 5–10 phút (đôi khi tự ngồi thiền như người thật) rồi đi tiếp. /bot thanh <min> <max>.
 const U = require('./util');
-const { CLASSES } = require('../data/classes');
-const { MAPS, TILE } = require('../data/maps');
+const { CLASSES, classSkill } = require('../data/classes');
+const { MAPS, TILE, CHANNELS, VIP_CH, chId } = require('../data/maps');
 const { ITEMS, EQUIP_SLOTS, tierOfLv } = require('../data/items');
 const { ATTR_SUGGEST, attrTotal } = require('../data/attrs');
 
-const DEF_CFG = { on: true, min: 3, max: 8, townMin: 3, townMax: 5 };
+const DEF_CFG = { on: true, min: 3, max: 8, townMin: 3, townMax: 5, pk: true };
+const PK_CHANCE = 0.03;      // mỗi phút: xác suất 1 bot bật đồ sát đi săn người chơi thật ngang cấp (~2 lần / giờ khi có người hợp)
+const PK_LV = 5;             // chênh lệch cấp tối đa với người bị săn
+const PK_TIME = [2, 5];      // phút đi săn, hết giờ / hạ được thì thôi
 const TOWN_SESSION = [30, 150];   // phút mỗi lượt dạo thành
 const TOWN_IDLE = [5, 10];         // phút đứng ở mỗi NPC
 const SESSION = [40, 200];   // phút mỗi lượt treo
@@ -50,14 +55,17 @@ class Bots {
     const cap = Math.min(lv, top), list = [], cnt = {};
     for (const p of this.online()) cnt[p.mapId] = (cnt[p.mapId] || 0) + 1;
     for (const [id, m] of Object.entries(MAPS)) {
-      if (id.includes('~')) continue;   // chỉ treo ở khu 1 (bản đồ gốc), không vào khu 2, 3, khu VIP
+      if (id.includes('~')) continue;   // duyệt bản đồ gốc, khu được chọn ở dưới
       if (!m.spawns || !m.spawns.length || m.safe || m.town || m.instance || m.pvp || m.duelArena || m.sect || m.comu || m.gemMine || m.hoason || m.tourney) continue;
       const r = /^(\d+)-(\d+)$/.exec(m.lv || '');
       if (!r) continue;
       const a = +r[1], b = +r[2];
       if (b <= cap && b >= cap - 14) list.push(id);
     }
-    if (list.length) { const mn = Math.min(...list.map(id => cnt[id] || 0)); return pick(list.filter(id => (cnt[id] || 0) === mn)); }
+    // mọi khu đang mở của các bãi hợp cấp (không vào Khu VIP)
+    const all = [];
+    for (const id of list) for (let ch = 1; ch <= CHANNELS; ch++) { if (ch === VIP_CH || this.w.chClosed(ch)) continue; const mid = ch === 1 ? id : chId(id, ch); if (MAPS[mid]) all.push(mid); }
+    if (all.length) { const mn = Math.min(...all.map(id => cnt[id] || 0)); return pick(all.filter(id => (cnt[id] || 0) === mn)); }
     return 'ngoai_o';
   }
   newName() {
@@ -96,6 +104,12 @@ class Bots {
       if (!U.addItem(tmp, id, 1, 0, null, true)) continue;
       const s = tmp.inv[0];
       c.equip[slot] = { uid: s.uid, id: s.id, plus: U.randInt(0, Math.min(9, 2 + Math.floor(lv / 12))), el: s.el, fx: s.fx, gems: s.gems, br: s.br, bd: 1 };
+    }
+    // võ công: học các chiêu đủ cấp như người chơi thường (cấp chiêu theo cấp nhân vật)
+    c.skills = c.skills || {};
+    for (const idx of [0, 1, 2, 3, 4, 5, 7, 8]) {
+      const sk = classSkill(c.cls, idx, c.branch);
+      if (sk && lv >= (sk.lv || 1)) c.skills[sk.id] = Math.max(c.skills[sk.id] | 0, U.clamp(1 + Math.floor((lv - (sk.lv || 1)) / 12), 1, 10));
     }
     c.inv = c.inv.filter(x => !/^hp|^mp/.test(x.id));
     const pot = lv >= 60 ? 'hp3' : lv >= 25 ? 'hp2' : 'hp1', mpp = lv >= 60 ? 'mp3' : lv >= 25 ? 'mp2' : 'mp1';
@@ -196,7 +210,36 @@ class Bots {
       }
     }
   }
+  // ---- bot đồ sát (rất hiếm) ----
+  pkMapOk(def) { return def && !def.safe && !def.noPk && !def.pvp && !def.town && !def.instance && !def.tongkim && !def.vip && def.ch !== VIP_CH; }
+  pkTick(now) {
+    if (Math.random() >= PK_CHANCE || this.online().some(p => p.botHunt)) return;   // mỗi lúc chỉ 1 bot đi săn
+    const cand = [];
+    for (const b of this.online()) {
+      if (b.dead || (b.user.pkNext || 0) > now) continue;
+      const m = this.w.maps[b.mapId];
+      if (!m || !this.pkMapOk(m.def)) continue;
+      for (const o of m.players) {
+        if (o === b || o.dead || (o.user && o.user.bot) || this.w.isGmUid(o.userId) || o.c.level < 10 || Math.abs(o.c.level - b.c.level) > PK_LV) continue;
+        if (o.c.guildId && o.c.guildId === b.c.guildId) continue;
+        cand.push([b, o]);
+      }
+    }
+    if (!cand.length) return;
+    const [b, o] = pick(cand);
+    b.pkModeCd = 0;
+    this.w.setPkMode(b, 2);
+    if ((b.c.pkMode | 0) !== 2) return;
+    b.botHunt = { tid: o.userId, until: now + U.randInt(PK_TIME[0], PK_TIME[1]) * 60000, kills: 0 };
+    b.user.pkNext = now + U.randInt(6, 24) * 3600e3;   // mỗi bot lâu lâu mới đồ sát lại
+  }
+  // hết đi săn: quay lại luyện công; sát khí / đồ sát được xoá khi bot thoát game
+  endHunt(p) {
+    p.botHunt = null;
+    const a = p.autoSrv; if (a) { a.target = null; a.goal = null; a.chase = null; }
+  }
   despawn(p, rest) {
+    if (p.user && p.user.bot && p.c) { p.c.pk = 0; p.c.pkMode = 0; p.c.pkLock = false; p.botHunt = null; }   // bot thoát: xoá đồ sát
     if (rest) p.user.botRest = Date.now() + U.randInt(20, 180) * 60000;   // nghỉ một lúc rồi mới vào lại (giống người thật)
     this.w.removePlayer(p);
   }
@@ -206,9 +249,12 @@ class Bots {
     if (!cfg.on || this.w.db.data.config.maintenance) { for (const p of this.all()) this.despawn(p); return; }   // tắt / server đang bảo trì: không treo
     const top = this.topLevel(), now = Date.now();
     this.townTick(cfg, top, now);
+    for (const p of list) if (p.botHunt && (now > p.botHunt.until || p.dead)) { this.endHunt(p); if (!p.dead) p.botUntil = Math.min(p.botUntil, now + U.randInt(2, 15) * 60000); }   // đồ sát xong: ít lâu sau thoát game
+    if (cfg.pk) try { this.pkTick(now); } catch (e) { console.error('bots pk', e); }
     for (const p of list) {
       if (now > (p.botUntil || 0) || p.dead) { this.despawn(p, true); continue; }   // hết lượt treo / bị hạ: thoát
-      if (String(p.mapId).includes('~')) { this.despawn(p); continue; }   // lỡ ở khu khác khu 1: thoát, lượt sau vào lại khu 1
+      if (p.botHunt) continue;
+      if (/~(\d+)$/.test(p.mapId) && (+RegExp.$1 === VIP_CH || this.w.chClosed(+RegExp.$1))) { this.despawn(p); continue; }   // khu VIP / khu vừa bị đóng: thoát
       if (p.c.level > top) { p.c.level = top; p.c.exp = 0; this.w.recalc(p); p.dirtyMe = true; }   // không vượt cấp cao nhất server
       if (p.c.level >= top) p.c.exp = 0;
       p.c.autoTicket = Math.max(p.c.autoTicket || 0, now + 3600e3);

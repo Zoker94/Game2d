@@ -226,6 +226,7 @@ class AutoSrv {
 
   think(p, a, now) {
     const w = this.w, m = w.maps[p.mapId], cfg = a.cfg, home = a.home;
+    if (p.botHunt && this.huntStep(p, a, now)) return;   // bot đồ sát: đuổi đánh người chơi
     for (const [id, t] of a.skip) if (t < now) a.skip.delete(id);
     // nhặt đồ
     const dr = cfg.pickup ? this.pickable(p, a, m, now) : null;
@@ -254,6 +255,22 @@ class AutoSrv {
     if (!a.chase || a.chase.id !== t.id) a.chase = { id: t.id, t: now };
     else if (now - a.chase.t > 8000) { a.skip.set(t.id, now + 30000); a.target = null; a.goal = null; return; }   // đuổi mãi không đánh được
     this.attack(p, a, t, now);
+  }
+
+  // bot đồ sát: đuổi theo và đánh mục tiêu bằng chiêu như người (buff, chiêu mạnh, đánh thường, bơm máu đã có ở potions)
+  huntStep(p, a, now) {
+    const w = this.w, H = p.botHunt, t = w.players.get(H.tid);
+    if (!t || t.dead || t.mapId !== p.mapId || !w.canHarm(p, t)) {
+      if (t && t.dead && t.mapId === p.mapId) H.kills++;
+      // hạ xong / mục tiêu đi mất: thôi săn
+      if (w.bots) w.bots.endHunt(p);
+      return false;
+    }
+    a.target = t.id; a.drop = null;
+    if (!a.chase || a.chase.id !== t.id) a.chase = { id: t.id, t: now };
+    a.chase.t = now;   // đuổi người không bỏ cuộc như đuổi quái
+    this.attack(p, a, t, now);
+    return true;
   }
 
   skillAt(p, idx) {
