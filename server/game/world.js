@@ -482,7 +482,7 @@ class World {
       gold: c.gold, knb: c.knb, hp: c.hp, mp: c.mp, stats: p.stats,
       inv: c.inv, invMax: U.invSize(c), vmb: Math.min(5, c.vmb | 0), equip: c.equip, kills: c.kills, pvpKills: c.pvpKills, bossKills: c.bossKills,
       tutorial: this.tutorialView(c), gemTut: c.gemTut | 0, guild: g ? { id: g.id, name: g.name, role: g.members[p.userId] } : null,
-      expBuffUntil: c.expBuffUntil, food: c.food && c.food.until > Date.now() ? { id: c.food.id, until: c.food.until } : null, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
+      expBuffUntil: c.expBuffUntil, dropBuffUntil: c.dropBuffUntil || 0, food: c.food && c.food.until > Date.now() ? { id: c.food.id, until: c.food.until } : null, buffs: p.buffs.map(b => ({ name: b.name, until: b.until, aura: b.aura, color: b.color })),
       quickHp: c.quickHp, quickMp: c.quickMp, admin: !!p.user.isAdmin, gm: this.isGm(p) ? { hide: !!(c.gm && c.gm.hide), safe: !!(c.gm && c.gm.safe) } : null, owner: isOwner(p.user) ? 1 : 0, dead: p.dead,
       dragons: c.dragons || {}, dragon: c.dragon || null, jhs: c.jhs || {}, jh: c.jh || null,
       minhChu: this.titleFlags(p), title: this.titleOf(c, p.user.isAdmin), ach: Object.assign({ bossKills: c.bossKills | 0 }, c.ach || {}), tk: this.tongkim ? this.tongkim.tag(p) : 0, congTrang: c.congTrang || 0, ctOwner: this.siege ? this.siege.ownerName() : null, master: c.master && c.master.uid && !c.master.grad ? c.master.name : null, nDisc: Object.keys(c.disciples || {}).length,
@@ -1506,7 +1506,8 @@ class World {
     // Rơi đồ
     const owner = killer && killer.c ? killer.userId : null;
     const tier = tierOfLv(tpl.lv);
-    const dr = cfg.dropRate || 1;
+    // Bùa Phúc Lộc: người hạ quái thường / tinh anh đang có bùa -> x2 tỉ lệ rơi đồ (không áp dụng Boss)
+    const dr = (cfg.dropRate || 1) * (!mon.boss && killer && killer.c && killer.c.dropBuffUntil > Date.now() ? 2 : 1);
     const drops = [];
     const rslot = () => DROP_SLOTS[U.randInt(0, DROP_SLOTS.length - 1)];
     if (tpl.summon) { this.divine.onKill(mon, killer); map.monsters.delete(mon.id); return; }   // boss triệu hồi Thần Binh
@@ -1585,6 +1586,7 @@ class World {
       if (r() < 0.0015 * dr) drops.push('lucky_chest');
       if (r() < 0.00008) drops.push('rebirth_stone');   // Đá Hồi Sinh (trùng sinh): ~1/12.500 con
       if (r() < 0.01 * dr) drops.push('mount_food');
+      if (r() < 0.06 * dr) drops.push('pet_meat');   // Thịt Tươi: cho thú cưng ăn
       if (tpl.lv >= 25 && r() < 0.00012 * dr * (1 + tier)) drops.push('stone2');   // Thiên Tinh Thạch: cấp 90 ~1/1100 con
       const gem = rollGemDrop(map.def.gemMine | 0, tpl.lv, r);   // đá khảm: nhiều ở khoáng động
       if (gem) drops.push(gem);
@@ -1809,6 +1811,13 @@ class World {
       U.removeByUid(c, uid, 1);
       c.invExtra = Math.min(U.INV_EXTRA_MAX, (c.invExtra | 0) + e.invExpand);
       this.toast(p, `🎒 Túi đồ mở rộng lên ${U.invSize(c)} ô`, 'reward');
+      p.dirtyMe = true; this.db.markDirty(); return;
+    }
+    if (e.dropBuff) {   // Bùa Phúc Lộc
+      const now = Date.now(), cur = Math.max(now, c.dropBuffUntil || 0);
+      if (cur - now + e.dropBuff > 6 * 3600e3) return this.toast(p, 'Bùa Phúc Lộc cộng dồn tối đa 6 giờ', 'error');
+      U.removeByUid(c, uid, 1); c.dropBuffUntil = cur + e.dropBuff;
+      this.toast(p, `🍀 Bùa Phúc Lộc: x2 tỉ lệ rơi đồ còn ${Math.round((c.dropBuffUntil - now) / 60000)} phút`, 'reward');
       p.dirtyMe = true; this.db.markDirty(); return;
     }
     if (e.expBuff) { c.expBuffUntil = Math.max(Date.now(), c.expBuffUntil || 0) + e.expBuff; this.toast(p, 'Nhân đôi kinh nghiệm 30 phút!', 'reward'); }
