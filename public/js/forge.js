@@ -39,7 +39,7 @@
       <div class="fg-stage"><div class="fg-ring">${slots}<div class="fg-core">${center}</div></div></div>
       <div class="fg-info">${g0 ? `<b>${esc(IT(first).name)}</b> ${st.gem.length}/${need} viên${maxed ? ' · <span class="warn">đã cấp tối đa</span>' : ` → <b style="color:#ffd76a">${esc(IT(nextId).name)}</b><br>Tỉ lệ thành công <b style="color:${rate >= 80 ? '#4ade80' : rate >= 55 ? '#ffd76a' : '#ff8050'}">${rate}%</b> · ${fmt(gold)} 💰 · thất bại vỡ 1 viên`}` : `Bấm đá trong túi để bỏ vào lò – cần <b>${need} viên cùng loại, cùng cấp</b>.`}
         ${st.gemFx === 'win' ? '<div class="fg-res win">✨ LUYỆN THÀNH CÔNG! ✨</div>' : st.gemFx === 'lose' ? '<div class="fg-res lose">💥 Thất bại – vỡ 1 viên</div>' : ''}</div>
-      <div class="row fg-btns"><button class="btn small" id="fg-gfill" ${st.gemBusy ? 'disabled' : ''}>⚡ Tự bỏ đủ ${need} viên</button><button class="btn small" id="fg-gclear" ${st.gem.length && !st.gemBusy ? '' : 'disabled'}>Lấy ra hết</button><button class="btn primary" id="fg-gdo" ${ready ? '' : 'disabled'}>🔥 Luyện</button></div>
+      <div class="row fg-btns"><button class="btn small" id="fg-gfill" ${st.gemBusy ? 'disabled' : ''}>⚡ Tự bỏ đủ ${need} viên</button><button class="btn small" id="fg-gclear" ${st.gem.length && !st.gemBusy ? '' : 'disabled'}>Lấy ra hết</button><button class="btn primary" id="fg-gdo" ${ready ? '' : 'disabled'}>🔥 Luyện</button><button class="btn primary" id="fg-gfast" ${st.gemBusy ? 'disabled' : ''} title="Luyện liên tục tới khi hết đá (tối đa 50 lần)">⚡ Ghép nhanh</button></div>
       <div class="small muted">Đá trong túi (bấm để bỏ vào lò):</div><div class="fg-bag">${bag}</div></div>`;
   }
   function gemBind() {
@@ -53,6 +53,15 @@
       const id = st.gem[0] || Object.entries(stacks).filter(([, q]) => q >= need).sort((a, b) => b[1] - a[1])[0]?.[0];
       if (!id || (stacks[id] || 0) < need) return UI.toast(`Cần ${need} viên cùng loại, cùng cấp`, 'error');
       st.gem = Array(need).fill(id); render();
+    });
+    on('fg-gfast', () => {   // ghép nhanh: luyện liên tục loại đá đang chọn (chưa chọn: loại nhiều nhất), không chờ hiệu ứng
+      st.gemFx = null;
+      const C = G.data.gems, stacks = G.me.inv.filter(x => IT(x.id).gem && IT(x.id).gem.lv < C.max).reduce((m, x) => (m[x.id] = (m[x.id] || 0) + x.qty, m), {});
+      const id = st.gem[0] || Object.entries(stacks).filter(([, q]) => q >= need).sort((a, b) => b[1] - a[1])[0]?.[0];
+      if (!id || (stacks[id] || 0) < need) return UI.toast(`Cần ít nhất ${need} viên cùng loại, cùng cấp`, 'error');
+      st.gem = Array(need).fill(id); st.gemBusy = true; st.gemFx = 'charge'; st.gemOut = id.replace(/_(\d)$/, (m, l) => '_' + (+l + 1)); render();
+      emit('gem', { op: 'upgrade', gem: id, n: 50, npc: st.npc });
+      guard('gem');
     });
     on('fg-gdo', () => {
       if (st.gem.length !== need) return;
