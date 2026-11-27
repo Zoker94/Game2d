@@ -5,13 +5,17 @@
 //  - Bot không lọt bảng xếp hạng / đua top / thưởng sự kiện (u.bot, xem world.isGmUid và các bộ lọc xếp hạng).
 //  - Quản trị: /bot (xem), /bot on | off, /bot 100 120 (số bot tối thiểu – tối đa, tối đa 150). Cấu hình lưu ở config.bots.
 //  - Bot chỉ treo ở khu 1 của bãi luyện, ưu tiên bãi đang ít bot. Bot chặn mọi lời mời ("đang treo máy, không nhận lời mời").
+//  - Bot dạo thành (thêm townMin–townMax con, mặc định 3–5, ở thành khởi đầu khu 1): một số ngồi thiền một chỗ, số còn lại
+//    đi từ NPC này sang NPC khác, đứng yên 5–10 phút (đôi khi tự ngồi thiền như người thật) rồi đi tiếp. /bot thanh <min> <max>.
 const U = require('./util');
 const { CLASSES } = require('../data/classes');
-const { MAPS } = require('../data/maps');
+const { MAPS, TILE } = require('../data/maps');
 const { ITEMS, EQUIP_SLOTS, tierOfLv } = require('../data/items');
 const { ATTR_SUGGEST, attrTotal } = require('../data/attrs');
 
-const DEF_CFG = { on: true, min: 3, max: 8 };
+const DEF_CFG = { on: true, min: 3, max: 8, townMin: 3, townMax: 5 };
+const TOWN_SESSION = [30, 150];   // phút mỗi lượt dạo thành
+const TOWN_IDLE = [5, 10];         // phút đứng ở mỗi NPC
 const SESSION = [40, 200];   // phút mỗi lượt treo
 const POOL_MAX = 220;        // số tài khoản bot tối đa tạo ra (dùng lại luân phiên)
 const MAX_BOTS = 150;        // số bot treo cùng lúc tối đa
@@ -23,10 +27,17 @@ const SUF = ['', '', '', '9x', '2k', '99', '68', '86', 'VN', 'pro', 'xinh', 'zz'
 const pick = a => a[Math.floor(Math.random() * a.length)];
 
 class Bots {
-  constructor(world) { this.w = world; world.bots = this; this.want = 0; this.wantAt = 0; }
+  constructor(world) {
+    this.w = world; world.bots = this; this.want = 0; this.wantAt = 0; this.townWant = 0; this.townWantAt = 0;
+    this.timer = setInterval(() => { try { this.townStep(Date.now()); } catch (e) { console.error('bots town', e); } }, 100);   // bot dạo thành di chuyển 10 lần/giây
+    if (this.timer.unref) this.timer.unref();
+  }
   get cfg() { const c = this.w.db.data.config; return (c.bots = Object.assign({}, DEF_CFG, c.bots || {})); }
   users() { return Object.values(this.w.db.data.users).filter(u => u.bot && u.character); }
-  online() { return [...this.w.players.values()].filter(p => p.user && p.user.bot); }
+  all() { return [...this.w.players.values()].filter(p => p.user && p.user.bot); }
+  online() { return this.all().filter(p => !p.botTown); }    // bot treo bãi luyện
+  townOnline() { return this.all().filter(p => p.botTown); }  // bot dạo thành
+  townMap() { return MAPS.tuong_duong ? 'tuong_duong' : Object.keys(MAPS).find(id => MAPS[id].town && !id.includes('~')); }
   // cấp cao nhất của người chơi thật (không tính bot, quản trị, streamer)
   topLevel() {
     let m = 1;
@@ -94,7 +105,7 @@ class Bots {
     c.hp = 1e9; c.mp = 1e9;   // recalc sẽ hạ về tối đa
   }
   spawn(top) {
-    const db = this.w.db, onIds = new Set(this.online().map(p => p.userId));
+    const db = this.w.db, onIds = new Set(this.all().map(p => p.userId));
     let pool = this.users().filter(u => !onIds.has(u.id) && !this.w.players.has(u.id) && !(u.botRest > Date.now()));
     let u = pool.length ? pick(pool) : null;
     if (!u && this.users().length < POOL_MAX) u = this.createBot();
@@ -120,6 +131,71 @@ class Bots {
     db.markDirty();
     return true;
   }
+  // bot dạo thành: vào thành khởi đầu, 'med' ngồi thiền một chỗ, 'walk' đi giữa các NPC
+  spawnTown(top) {
+    const db = this.w.db, onIds = new Set(this.all().map(p => p.userId)), mapId = this.townMap();
+    if (!mapId) return false;
+    let pool = this.users().filter(u => !onIds.has(u.id) && !this.w.players.has(u.id) && !(u.botRest > Date.now()));
+    let u = pool.length ? pick(pool) : null;
+    if (!u && this.users().length < POOL_MAX) u = this.createBot();
+    if (!u) return false;
+    const c = u.character, lo = Math.min(5, top);
+    let lv = c.level | 0;
+    if (!u.botLv || lv < lo) lv = U.randInt(lo, Math.max(lo, top));
+    if (lv > top) lv = top;
+    u.botLv = 1;
+    this.prep(u, lv);
+    const def = MAPS[mapId], npcs = this.npcSpots(mapId);
+    const at = npcs.length ? pick(npcs) : { x: (def.center.x + 0.5) * TILE, y: (def.center.y + 0.5) * TILE };
+    c.map = mapId; c.x = at.x + U.randInt(-40, 40); c.y = at.y + U.randInt(-20, 30);
+    const NOSOCK = { id: 'bot', emit() { }, join() { }, leave() { }, disconnect() { }, connected: false };
+    const p = this.w.addPlayer(u, NOSOCK);
+    if (p.mapId !== mapId) { this.w.removePlayer(p); return false; }
+    p.c.hp = p.stats.maxHp; p.c.mp = p.stats.maxMp;
+    p.offline = Date.now();
+    const now = Date.now(), meds = this.townOnline().filter(q => q.botTown.mode === 'med').length;
+    // khoảng 1/3 ngồi thiền một chỗ, còn lại đi dạo giữa các NPC
+    const mode = meds < Math.ceil(this.townWant / 3) && Math.random() < 0.6 ? 'med' : 'walk';
+    p.botTown = { mode, goal: null, idleUntil: now + U.randInt(1, 4) * 60000, sitIdle: Math.random() < 0.5 };
+    if (mode === 'med') { p.med = true; p.medTick = now; p.stillSince = now - 60000; p.dirtyMe = true; }
+    p.botUntil = now + U.randInt(TOWN_SESSION[0], TOWN_SESSION[1]) * 60000;
+    db.markDirty();
+    return true;
+  }
+  // chỗ đứng trước mặt các NPC trong thành (lệch ngẫu nhiên để không chồng lên nhau)
+  npcSpots(mapId) {
+    const k = this.spots || (this.spots = {});
+    if (!k[mapId]) k[mapId] = (MAPS[mapId].npcs || []).map(n => { const [x, y] = this.w.dropSpot(mapId, (n.x + 0.5) * TILE, (n.y + 1.4) * TILE); return { x, y }; });
+    return k[mapId];
+  }
+  townStep(now) {
+    const w = this.w;
+    for (const p of this.w.players.values()) {
+      const b = p.botTown;
+      if (!b || p.dead) continue;
+      p.offline = now;
+      if (b.mode === 'med') { p.moving = false; if (!p.med) { p.med = true; p.medTick = now; p.dirtyMe = true; } continue; }
+      if (b.goal) {
+        const def = w.maps[p.mapId] && w.maps[p.mapId].def;
+        if (!def) continue;
+        if (p.med) w.wake(p, now);
+        p.moving = false;
+        const done = w.navigate(p, b.goal.x, b.goal.y, (p.stats.spd || 150) * 0.1, def, now);
+        p.stillSince = now;
+        if (done || now > b.goalUntil) { b.goal = null; p.moving = false; b.idleUntil = now + U.randInt(TOWN_IDLE[0] * 60, TOWN_IDLE[1] * 60) * 1000; b.sitIdle = Math.random() < 0.4; p.dir = 3; }
+        continue;
+      }
+      p.moving = false;
+      if (!b.sitIdle) p.stillSince = now;   // đứng yên (không tự ngồi thiền); sitIdle: để tự ngồi thiền sau 30 giây như người thật
+      if (now >= b.idleUntil) {
+        const spots = this.npcSpots(p.mapId).filter(s => Math.hypot(s.x - p.x, s.y - p.y) > 150);
+        if (!spots.length) { b.idleUntil = now + 60000; continue; }
+        const s = pick(spots);
+        b.goal = { x: s.x + U.randInt(-36, 36), y: s.y + U.randInt(-10, 24) };
+        b.goalUntil = now + 90000;   // kẹt đường quá lâu: đứng lại chỗ đó
+      }
+    }
+  }
   despawn(p, rest) {
     if (rest) p.user.botRest = Date.now() + U.randInt(20, 180) * 60000;   // nghỉ một lúc rồi mới vào lại (giống người thật)
     this.w.removePlayer(p);
@@ -127,8 +203,9 @@ class Bots {
   // gọi mỗi phút
   tick() {
     const cfg = this.cfg, list = this.online();
-    if (!cfg.on || this.w.db.data.config.maintenance) { for (const p of list) this.despawn(p); return; }   // tắt / server đang bảo trì: không treo
+    if (!cfg.on || this.w.db.data.config.maintenance) { for (const p of this.all()) this.despawn(p); return; }   // tắt / server đang bảo trì: không treo
     const top = this.topLevel(), now = Date.now();
+    this.townTick(cfg, top, now);
     for (const p of list) {
       if (now > (p.botUntil || 0) || p.dead) { this.despawn(p, true); continue; }   // hết lượt treo / bị hạ: thoát
       if (String(p.mapId).includes('~')) { this.despawn(p); continue; }   // lỡ ở khu khác khu 1: thoát, lượt sau vào lại khu 1
@@ -144,9 +221,22 @@ class Bots {
     if (n < this.want) { const k = Math.min(this.want - n, Math.max(1, Math.min(10, Math.ceil((this.want - n) / 4)))); for (let i = 0; i < k; i++) this.spawn(top); }
     else if (n > this.want) { for (let i = 0, k = Math.min(3, n - this.want); i < k; i++) { const p = pick(this.online()); if (p) this.despawn(p, true); } }
   }
+  townTick(cfg, top, now) {
+    const list = this.townOnline();
+    for (const p of list) {
+      if (now > (p.botUntil || 0) || p.dead || !MAPS[p.mapId] || !MAPS[p.mapId].safe) { this.despawn(p, true); continue; }
+      if (p.c.level > top) { p.c.level = top; p.c.exp = 0; this.w.recalc(p); }
+      if (p.c.level >= top) p.c.exp = 0;
+    }
+    if (now > this.townWantAt) { this.townWant = U.randInt(cfg.townMin | 0, Math.max(cfg.townMin | 0, cfg.townMax | 0)); this.townWantAt = now + U.randInt(20, 60) * 60000; }
+    const n = this.townOnline().length;
+    if (n < this.townWant) this.spawnTown(top);   // vào từng con một mỗi phút
+    else if (n > this.townWant) { const p = pick(this.townOnline()); if (p) this.despawn(p, true); }
+  }
   status() {
     const cfg = this.cfg, on = this.online();
-    return `Bot: ${cfg.on ? 'BẬT' : 'TẮT'} · ${cfg.min}–${cfg.max} con · đang treo ${on.length}${on.length ? ': ' + on.slice(0, 8).map(p => `${p.c.name} (cấp ${p.c.level}, ${MAPS[p.mapId] ? MAPS[p.mapId].name : p.mapId})`).join(', ') + (on.length > 8 ? ` … và ${on.length - 8} con khác` : '') : ''} · cấp cao nhất người chơi: ${this.topLevel()}`;
+    const tw = this.townOnline();
+    return `Bot: ${cfg.on ? 'BẬT' : 'TẮT'} · thành ${cfg.townMin}–${cfg.townMax} con (đang có ${tw.length}: ${tw.filter(p => p.botTown.mode === 'med').length} ngồi thiền) · bãi ${cfg.min}–${cfg.max} con · đang treo ${on.length}${on.length ? ': ' + on.slice(0, 8).map(p => `${p.c.name} (cấp ${p.c.level}, ${MAPS[p.mapId] ? MAPS[p.mapId].name : p.mapId})`).join(', ') + (on.length > 8 ? ` … và ${on.length - 8} con khác` : '') : ''} · cấp cao nhất người chơi: ${this.topLevel()}`;
   }
 }
 
