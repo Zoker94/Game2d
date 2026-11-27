@@ -285,6 +285,7 @@ class World {
     if (user.streamer && !c.streamerGift) setTimeout(() => { if (this.players.get(user.id) === p) this.grantStreamer(p); }, 1500);   // gói Streamer lần đầu
     if (c.level >= 120 && this.rebirth) setTimeout(() => { if (this.players.get(user.id) === p) this.rebirth.onLevel(p); }, 6000);   // đã cấp 120 từ trước: hỏi trùng sinh 1 lần
     this.mergeKnb(c);   // bỏ Nguyên Bảo Khoá: gộp vào Nguyên Bảo
+    this.sweepRent(c, p);   // đồ có thời hạn đã hết hạn lúc offline
     if (this.pets) this.pets.migrate(c);   // thú cưng bản thử nghiệm -> bản chính thức
     // thú cưng rồng: gửi thẳng vào túi chủ server một lần
     if (require('../owner').isOwner(user) && !c.petGift) {
@@ -705,6 +706,19 @@ class World {
     const msg = `Khoá Hoa Đăng cũ: ${total} Hoa Đăng của ${chars} nhân vật${stalls ? `, gỡ ${stalls} món đang bày bán ở chợ về Hòm Đồ` : ''}`;
     this.db.log('admin', msg); console.log('[hoa đăng]', msg);
     return msg;
+  }
+  // đồ thuê có hạn (s.rent = lúc hết hạn, vd bộ Thần Binh Top 1 Nạp Tuần): hết hạn thì xoá khỏi túi / đang mặc / kho, ngọc khảm trả lại túi
+  sweepRent(c, p) {
+    const now = Date.now(), gone = [];
+    const back = s => { for (const g of s.gems || []) if (g && ITEMS[g] && !U.addItem(c, g, 1, 0, null, !!s.bd)) this.stash(c, g, 1, 0, !!s.bd); };
+    const keep = s => { if (s && s.rent && s.rent <= now) { gone.push(s); return false; } return true; };
+    if (c.inv.some(s => s.rent)) c.inv = c.inv.filter(keep);
+    for (const [slot, s] of Object.entries(c.equip || {})) if (s && s.rent && s.rent <= now) { gone.push(s); delete c.equip[slot]; }
+    if (c.bank && c.bank.items && c.bank.items.some(s => s.rent)) c.bank.items = c.bank.items.filter(keep);
+    if (!gone.length) return;
+    gone.forEach(back);
+    if (p) { this.recalc(p); p.dirtyMe = true; this.toast(p, `⏳ Đã hết hạn: ${[...new Set(gone.map(s => (ITEMS[s.id] || { name: s.id }).name))].join(', ')}`, 'info'); }
+    this.db.markDirty();
   }
   stash(c, id, qty = 1, plus = 0, bind = false) {
     if (!ITEMS[id] || qty <= 0) return;
@@ -2238,6 +2252,7 @@ class World {
     const c = p.c;
     const s = c.inv.find(x => x.uid === uid);
     if (!s) return;
+    if (s.rent) return this.toast(p, '⏳ Đồ có thời hạn, không bán được', 'error');
     if (this.outlawBlock(p, 'mua bán với NPC')) return;
     if (!MAPS[p.mapId].npcs.some(n => NPCS[n.id].shop && this.nearNpc(p, n.id))) return this.toast(p, 'Hãy đứng gần một NPC cửa hàng để bán', 'error');
     qty = U.clamp(qty | 0 || s.qty, 1, s.qty);

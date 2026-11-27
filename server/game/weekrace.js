@@ -33,6 +33,10 @@ const OLD_REWARD = [
 ];
 const OLD_TOP10 = { knb: 50, items: [['lucky_chest', 2]] };
 const IS_MAIN = require('../realm').IS_MAIN;
+// Top 1 Nạp Tuần: thêm bộ Thần Binh (5 món, đồ khoá) dùng 7 ngày – hết hạn tự biến mất (world.sweepRent), ngọc đang khảm trả lại túi
+const RENT_SET = 'xv', RENT_DAYS = 7;
+const DV_PARTS = ['helmet', 'armor', 'pants', 'boots', 'gloves'];
+const ANNOUNCE_MIN = 30;   // phút: nhắc toàn máy chủ về Đua Top Nạp
 const rewardsOf = w => (IS_MAIN && w === OLD_WEEK ? [...OLD_REWARD, OLD_TOP10] : [...REWARD, REWARD_TOP10]);
 const DAY = 86400000, VN = 7 * 3600000;
 // số thứ tự tuần: tuần bắt đầu 00:00 Thứ 6 (01/01/1970 là Thứ 5 nên ngày Thứ 6 đầu tiên là ngày số 1)
@@ -92,6 +96,9 @@ class WeekRace {
       this.db.markDirty();
     }
     for (const p of this.w.players.values()) if (p.c && (!p.c.wk || p.c.wk.w !== w || p.c.wk.lv0 == null)) this.wk(p.c);   // ai đang online: đặt mốc đầu tuần ngay
+    for (const p of this.w.players.values()) if (p.c && !p.user.bot) this.w.sweepRent(p.c, p);   // đồ có thời hạn hết hạn
+    const mn = Math.floor(Date.now() / 60000);
+    if (mn % ANNOUNCE_MIN === 15 && this.w.players.size) try { this.remind(); } catch (e) { console.error('weekrace remind', e); }
   }
   finish(w) {
     const last = { w, at: Date.now(), boards: {} }, lines = [];
@@ -101,13 +108,37 @@ class WeekRace {
       r.forEach((x, i) => {
         const rw = this.rewardOf(i, w), p = this.w.players.get(x.u.id);
         if (p) this.w.giveReward(p, rw, `🏆 ${b.name} – hạng ${i + 1}`); else this.f.giveOffline(x.u.character, rw);
-        if (i === 0) this.giveTitle(x.u.character, p, b.title, weekEnd(w + 1));   // hạng 1: danh hiệu riêng tới hết tuần sau
+        if (i === 0) this.giveTitle(x.u.character, p, b.title, Date.now() + 7 * DAY);   // hạng 1: danh hiệu riêng đúng 7 ngày
+        if (i === 0 && b.k === 'topup') this.giveRentSet(x.u.character, p);   // hạng 1 Top Nạp: bộ Thần Binh 7 ngày
       });
       if (r[0]) lines.push(`${b.icon} ${b.name}: ${r[0].u.character.name}`);
     }
     this.data.last = last;
     this.f.announce(`🏆 ĐUA TOP TUẦN đã kết thúc! ${lines.join(' · ') || 'Chưa có ai lọt bảng.'} Top 10 mỗi bảng đã nhận thưởng – tuần mới bắt đầu!`);
     this.db.log('event', `Đua top tuần ${w}: ${lines.join(' | ')}`);
+  }
+  // bộ Thần Binh thuê 7 ngày (đồ khoá, không bán / giao dịch được); túi đầy vẫn nhận (vượt ô)
+  giveRentSet(c, p) {
+    const until = Date.now() + RENT_DAYS * DAY, { DIVINE_SETS } = require('../data/items');
+    for (const slot of DV_PARTS) {
+      const tmp = { inv: [], cls: c.cls, branch: c.branch, fxv: c.fxv, invExtra: 99 };
+      if (!U.addItem(tmp, `dv_${RENT_SET}_${slot}`, 1, 0, null, true)) continue;
+      const s = tmp.inv[0]; s.rent = until; s.bd = 1;
+      c.inv.push(s);
+    }
+    const nm = DIVINE_SETS[RENT_SET].name;
+    if (p) { p.dirtyMe = true; this.w.toast(p, `🔴 Top 1 Nạp Tuần: nhận bộ Thần Binh ${nm} (5 món) dùng ${RENT_DAYS} ngày – mở túi đồ để mặc!`, 'reward'); }
+    this.f.announce(`🔴 ${c.name} – Top 1 Nạp Tuần – nhận bộ Thần Binh ${nm} dùng ${RENT_DAYS} ngày!`);
+    this.db.log('event', `${c.name} nhận bộ Thần Binh ${nm} ${RENT_DAYS} ngày (Top 1 Nạp Tuần)`);
+    this.db.markDirty();
+  }
+  // nhắc toàn máy chủ mỗi 30 phút: còn bao lâu, ai đang dẫn đầu Top Nạp, thưởng hạng 1
+  remind() {
+    const w = weekId(), left = weekEnd(w) - Date.now(), r = this.rank('topup', w, 1)[0];
+    const d = Math.floor(left / DAY), h = Math.floor(left % DAY / 3600000), m = Math.floor(left % 3600000 / 60000);
+    const t = d ? `${d} ngày ${h} giờ` : h ? `${h} giờ ${m} phút` : `${m} phút`;
+    const { DIVINE_SETS } = require('../data/items');
+    this.f.announce(`💎 ĐUA TOP NẠP TUẦN còn ${t}! Hạng 1 nhận bộ Thần Binh ${DIVINE_SETS[RENT_SET].name} 7 ngày + danh hiệu 【${TITLES.wk_topup.name}】 7 ngày + ${rewardsOf(w)[0].knb} 💎. ${r ? `Đang dẫn đầu: ${r.u.character.name}` : 'Chưa ai lọt bảng – cơ hội cho bạn!'} (bấm 🏆 để xem)`);
   }
   // trao danh hiệu đua top: tự đeo luôn, nhớ danh hiệu cũ để trả lại khi hết hạn
   giveTitle(c, p, id, until) {
@@ -133,4 +164,4 @@ class WeekRace {
   }
 }
 
-module.exports = { WeekRace, weekId, weekEnd, BOARDS };
+module.exports = { WeekRace, weekId, weekEnd, BOARDS, RENT_SET, RENT_DAYS };

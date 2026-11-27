@@ -14,7 +14,9 @@ const CHANGELOG = [
       '🍖 Sửa lỗi Tự động không nhặt Thịt Tươi (và các vật phẩm mới ra) khi đang chơi lúc máy chủ cập nhật: giờ game tự tải lại dữ liệu, không cần F5.',
       '🏪 Server Tô Châu: hàng hoá và giá bán ở các cửa hàng NPC (Kỳ Trân Các, tiệm thuốc, thợ rèn...) giống hệt server Tương Dương.',
       '⚡ Lò luyện đá (Thợ Rèn) có nút Ghép nhanh: luyện liên tục loại đá đang chọn tới khi hết đá, không phải bấm từng lần.',
-      '🐎 Mã Cụ thú cưỡi: thú cưỡi mới không còn có sẵn 4 ô Mã Cụ. Mã Cụ (Yên Ngựa, Dây Cương, Bàn Đạp, Giáp Thú / Động Cơ, Bình Xăng Con, Phuộc, Ống Pô) rơi từ Boss với tỉ lệ 20%, nhặt về bấm Lắp ở bảng Thú Cưỡi để mở ô rồi nâng cấp. Ô đã nâng từ +1 trở lên hoặc đã lắp V2 được giữ nguyên.'
+      '🐎 Mã Cụ thú cưỡi: thú cưỡi mới không còn có sẵn 4 ô Mã Cụ. Mã Cụ (Yên Ngựa, Dây Cương, Bàn Đạp, Giáp Thú / Động Cơ, Bình Xăng Con, Phuộc, Ống Pô) rơi từ Boss với tỉ lệ 20%, nhặt về bấm Lắp ở bảng Thú Cưỡi để mở ô rồi nâng cấp. Ô đã nâng từ +1 trở lên hoặc đã lắp V2 được giữ nguyên.',
+      '🔴 Đua Top Tuần: Hạng 1 Top Nạp Tuần nhận thêm bộ Thần Binh Xích Viêm (5 món: khôi, giáp, khố, ngoa, thủ) dùng 7 ngày – hết hạn tự biến mất, ngọc đang khảm được trả lại túi. Danh hiệu hạng 1 các bảng giữ đúng 7 ngày kể từ lúc nhận.',
+      '📢 Mỗi 30 phút toàn máy chủ được nhắc: Đua Top Nạp Tuần còn bao lâu, ai đang dẫn đầu và phần thưởng hạng 1.'
     ]
   },
   {
