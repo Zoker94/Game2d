@@ -2,6 +2,13 @@
 // Mỗi lần máy chủ khởi động với mã nguồn mới, người chơi đang online sẽ thấy bảng này và phải tải lại trang.
 const CHANGELOG = [
   {
+    date: '27/11/2026',
+    items: [
+      '👘 Ngoại trang giảm giá: Bạch Y Thư Sinh 100 💎 · Hắc Long Bào, Hồng Liên Tiên Y 150 💎 · Băng Tâm Ngọc Y, Xích Hỏa Chiến Bào 200 💎 (vẫn cộng chỉ số khi mặc).',
+      '🏪 Kỳ Trân Các thôi bán trang bị Hiếm (vũ khí, áo, mũ, giày, nhẫn, dây chuyền) để danh sách gọn hơn.'
+    ]
+  },
+  {
     date: '26/11/2026',
     items: [
       '🛠 Trang chọn máy chủ: server đang bảo trì hiện rõ "Đang bảo trì".',
