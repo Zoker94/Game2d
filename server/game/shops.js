@@ -24,6 +24,12 @@ function apply(db) {
     if (!o) { n.shop = DEF[id].shop && DEF[id].shop.slice(); n.knbShop = DEF[id].knbShop && DEF[id].knbShop.map(x => ({ ...x })); continue; }
     const gold = (o.gold || []).filter(x => ITEMS[x.id]), knb = (o.knb || []).filter(x => ITEMS[x.id] && x.knb > 0);
     for (const x of knb) if (x.id === 'mount_xe_may' && x.knb === 9999) x.knb = 8000;   // giá tạm lúc chưa mở bán -> giá mở bán (ngang Thanh Long)
+    if (id === 'ky_tran') {
+      // Kỳ Trân Các không bán trang bị (quần áo, vũ khí thường) nữa, kể cả khi bảng hàng đã lưu từ trước còn
+      for (let i = knb.length - 1; i >= 0; i--) if (ITEMS[knb[i].id].type === 'equip') knb.splice(i, 1);
+      // ngoại trang: luôn theo giá mặc định mới (100–200 Nguyên Bảo)
+      for (const x of knb) { const d = /^outfit_/.test(x.id) && (DEF[id].knbShop || []).find(y => y.id === x.id); if (d) x.knb = d.knb; }
+    }
     // món mặc định mới thêm vào game sau lần quản trị viên lưu cửa hàng: tự hiện thêm (món quản trị viên đã chủ động bỏ thì không)
     const seen = new Set(o.base || LEGACY_BASE(id));
     for (const sid of DEF[id].shop || []) if (!seen.has(sid) && !gold.some(x => x.id === sid)) gold.push({ id: sid, price: ITEMS[sid] ? ITEMS[sid].price : 0 });
