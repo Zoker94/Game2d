@@ -56,7 +56,9 @@ let shutting = false;
 function stopAll() { shutting = true; for (const k of Object.values(kids)) if (k.proc) try { k.proc.kill('SIGTERM'); } catch (e) { } }
 
 const isOpen = (db, id) => !!((db.data.config.realmsOpen || {})[id]);
-function sendOpen(db, id) { const k = kids[id]; if (k && k.proc && k.proc.connected) k.proc.send({ open: isOpen(db, id), bank: db.data.config.bank || null }); }   // kèm tài khoản nhận nạp tiền (dùng chung)
+function sendOpen(db, id) { const k = kids[id]; if (k && k.proc && k.proc.connected) k.proc.send({ open: isOpen(db, id), bank: db.data.config.bank || null, shops: db.data.config.shops || {} }); }   // kèm tài khoản nhận nạp tiền và cửa hàng NPC (dùng chung với server chính)
+// cửa hàng NPC: server con (Tô Châu) luôn bán giống server chính – gửi lại mỗi khi quản trị viên lưu cửa hàng
+function syncShops(db) { for (const id of Object.keys(kids)) sendOpen(db, id); }
 function send(id, msg) { const k = kids[id]; if (k && k.proc && k.proc.connected) { k.proc.send(msg); return true; } return false; }
 
 // danh sách server cho màn đăng nhập / trang quản trị
@@ -96,4 +98,4 @@ function upgrade(req, socket, head) {
   up.on('error', end); socket.on('error', end); up.on('close', end); socket.on('close', end);
 }
 
-module.exports = { start, stopAll, list, sendOpen, send, httpProxy, upgrade, isOpen, kids };
+module.exports = { start, stopAll, list, sendOpen, syncShops, send, httpProxy, upgrade, isOpen, kids };
