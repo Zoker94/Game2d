@@ -1265,6 +1265,10 @@ class World {
     // Sát thương quái đánh người chơi giữ như bình thường. Boss (dã ngoại, thế giới, phó bản, triệu hồi, boss bang…) KHÔNG áp dụng.
     if (src && src.c && t && !t.c && !t.cart && (src.c.rebirth | 0) > 0 && !isBossMon(t)) dmg = Math.max(1, Math.round(dmg / rbTank(src.c.rebirth)));
     if (t.c && t.user && t.user.bot && src && !src.c) dmg = Math.max(1, Math.round(dmg * 0.15));   // treo hộ máy chủ: quái chỉ gây 15% sát thương
+    if (t.c && src && src.c && t !== src) {   // nhân vật đồ sát của máy chủ: đánh người mạnh hơn, chịu đòn ít hơn (bots.js PK_DMG / PK_TAKE)
+      if (src.botHunt) dmg = Math.round(dmg * BOT_PK_DMG);
+      else if (t.botHunt) dmg = Math.max(1, Math.round(dmg * BOT_PK_TAKE));
+    }
     const reflected = kind === 'reflect';   // sát thương phản đòn đã tính xong ở phía người bị đánh: không giảm thêm lần nữa
     if (t.c && src && src.c && t !== src && preScaled) { t.lastPvp = src.lastPvp = Date.now(); }
     if (t.c && src && src.c && t !== src && this.hc) this.hc.onHit(t, src);   // báo thù: kẻ bị đánh được đánh trả   // độc PK (đã tính theo % máu): vẫn tính là đang giao tranh
@@ -3145,6 +3149,7 @@ const FARM_KNB_DAY = 15, FARM_KNB_LV = 30;   // trần Nguyên Bảo / ngày t�
 const VIP_MON_DMG = 0.5;   // khu VIP (người có Vé Treo Máy): quái chỉ gây 50% sát thương
 const POT_CD = 1000;   // hồi chiêu bình máu / bình nội lực (mỗi loại riêng)
 const PVP_DMG = 0.0285, PVP_HEAL = 0.25, PVP_COMBAT = 8000, PVP_POT_CD = 10000, PVP_POT_MAX = 0.06, PVP_RAMP_AFTER = 60000;
+const BOT_PK_DMG = 2.5, BOT_PK_TAKE = 0.5;
 const MED_AFTER = 30000;                        // đứng yên trong thành bao lâu thì ngồi thiền (ms)
 const MED_EXP = 0.00001;                        // mỗi 5 giây ngồi thiền: 0,001% kinh nghiệm cấp hiện tại (≈0,7%/giờ)                       // kháng choáng sau khi hết choáng (ms)
 const FX_STATUS = { firedragon: ['burn', 4000, 1] };
