@@ -5,7 +5,8 @@ const CHANGELOG = [
     date: '27/11/2026',
     items: [
       '👘 Ngoại trang giảm giá: Bạch Y Thư Sinh 100 💎 · Hắc Long Bào, Hồng Liên Tiên Y 150 💎 · Băng Tâm Ngọc Y, Xích Hỏa Chiến Bào 200 💎 (vẫn cộng chỉ số khi mặc).',
-      '🏪 Kỳ Trân Các thôi bán trang bị Hiếm (vũ khí, áo, mũ, giày, nhẫn, dây chuyền) để danh sách gọn hơn.'
+      '🏪 Kỳ Trân Các thôi bán trang bị Hiếm (vũ khí, áo, mũ, giày, nhẫn, dây chuyền) để danh sách gọn hơn.',
+      '🎫 Kỳ Trân Các bán thêm Vé Treo Máy 2 giờ (5 💎), 4 giờ (10 💎), 6 giờ (15 💎) – cộng đúng số giờ, cộng dồn với vé đang có.'
     ]
   },
   {
