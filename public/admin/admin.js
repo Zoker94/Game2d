@@ -57,7 +57,7 @@
   function openModal(title, html) { $('m-title').textContent = title; $('m-body').innerHTML = html; $('modal').classList.remove('hidden'); }
   function closeModal() { $('modal').classList.add('hidden'); }
 
-  const TITLES = { dashboard: 'Tổng quan', users: 'Quản lý người chơi', events: 'Sự kiện & Boss', broadcast: 'Gửi thông báo', guilds: 'Bang hội', giftcodes: 'Gift code', topups: 'Nạp tiền (duyệt đơn)', shops: 'Cửa hàng NPC', enhance: 'Tỉ lệ cường hoá', bosscfg: 'Boss & đồ rơi', config: 'Cấu hình server', chat: 'Nhật ký chat', logs: 'Nhật ký hệ thống', cleanup: 'Dọn dẹp dữ liệu', launch: 'Reset dữ liệu trước khi mở máy chủ', account: 'Tài khoản quản trị' };
+  const TITLES = { dashboard: 'Tổng quan', users: 'Quản lý người chơi', events: 'Sự kiện & Boss', broadcast: 'Gửi thông báo', guilds: 'Bang hội', giftcodes: 'Gift code', topups: 'Nạp tiền (duyệt đơn)', shops: 'Cửa hàng NPC', enhance: 'Tỉ lệ cường hoá', bosscfg: 'Boss & đồ rơi', config: 'Cấu hình server', chat: 'Nhật ký chat', comu: 'Cổ Mộ Bí Cảnh', logs: 'Nhật ký hệ thống', cleanup: 'Dọn dẹp dữ liệu', launch: 'Reset dữ liệu trước khi mở máy chủ', account: 'Tài khoản quản trị' };
   async function show(v) {
     view = v;
     document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.dataset.v === v));
@@ -496,6 +496,34 @@
       $('cl-inactive').onclick = () => go({ what: 'inactive', days: +$('cl-days').value }, `Xoá ${d.inactive} tài khoản không online từ ${$('cl-days').value} ngày? Không hoàn tác được.`);
       $('cl-count').onclick = () => show('cleanup');
       $('cl-auto-save').onclick = async () => { const r = await run(() => api('/cleanup', { what: 'auto', days: +$('cl-auto').value })); if (r) { toast('Đã lưu'); show('cleanup'); } };
+    },
+
+    async comu(el) {
+      let day = '';
+      const hm = t => t ? new Date(t).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }) : '';
+      el.innerHTML = `<div class="card"><h3>🎁 Tặng lượt vào Cổ Mộ</h3>
+        <div class="row"><label style="flex:1">Tên nhân vật<input id="cm-name"></label><label>Số lượt<input id="cm-n" type="number" min="1" max="10" value="1" style="width:70px"></label><button class="btn primary" id="cm-give">Tặng</button></div>
+        <p class="small muted">Lượt tặng không tính vào lượt mỗi ngày. Người chơi (cấp 10+) đứng ở bãi luyện công sẽ gặp lối vào trong vòng 1 phút, kể cả khi đang dùng Vé Treo Máy. Đang offline thì gặp khi vào game ra bãi.</p></div>
+        <div class="card" id="cm-out"></div>`;
+      const load = async () => {
+        const d = await api('/comu' + (day ? '?day=' + day : ''));
+        day = d.day;
+        const dur = x => x.out ? Math.max(1, Math.round((x.out - x.t) / 60000)) + ' phút' : '';
+        const st = x => x.skip ? '<span class="tag off">Bỏ qua</span>' : x.out ? '<span class="tag">Đã ra</span>' : (d.day === d.today && d.now - x.t < 31 * 60000 ? '<span class="tag on">Đang trong</span>' : '<span class="tag off">Không rõ giờ ra</span>');
+        const went = d.list.filter(x => !x.skip);
+        $('cm-out').innerHTML = `<div class="row"><label>Ngày<select id="cm-day">${[...new Set([d.today, ...d.days])].map(x => `<option ${x === d.day ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
+          <div class="small" style="align-self:end">${went.length} lượt vào · ${new Set(went.map(x => x.name)).size} người · ${d.list.length - went.length} lượt bỏ qua${d.inside.length ? ` · <b>Đang trong Cổ Mộ:</b> ${d.inside.map(x => esc(x.name)).join(', ')}` : ''}</div></div>
+          ${d.gifts.length ? `<p class="small">Lượt tặng chưa dùng: ${d.gifts.map(g => `<b>${esc(g.name)}</b> (${g.n})`).join(', ')}</p>` : ''}
+          <table><tr><th>Nhân vật</th><th>Cấp</th><th>Vào lúc</th><th>Ra lúc</th><th>Thời gian</th><th>Bãi luyện</th><th>Quái hạ</th><th>Nguồn</th><th>Trạng thái</th></tr>
+          ${d.list.map(x => `<tr><td data-l="Nhân vật"><b>${esc(x.name)}</b></td><td data-l="Cấp">${x.lv}</td><td data-l="Vào">${hm(x.t)}</td><td data-l="Ra">${hm(x.out)}</td><td data-l="Thời gian">${dur(x)}</td><td data-l="Bãi">${esc(x.map || '')}</td><td data-l="Quái">${x.out && !x.skip ? x.kills | 0 : ''}</td><td data-l="Nguồn">${x.gift ? '🎁 Admin tặng' : 'Hằng ngày'}</td><td data-l="Trạng thái">${st(x)}</td></tr>`).join('') || '<tr><td colspan="9" class="muted">Chưa ai vào Cổ Mộ ngày này</td></tr>'}</table>`;
+        $('cm-day').onchange = e => { day = e.target.value; load(); };
+      };
+      $('cm-give').onclick = async () => {
+        const name = $('cm-name').value.trim(); if (!name) return;
+        await run(async () => { const r = await api('/comu/gift', { name, n: +$('cm-n').value || 1 }); toast(`Đã tặng ${r.name}: còn ${r.left} lượt tặng${r.online ? ' (đang online)' : ' (offline)'}`); });
+        load();
+      };
+      await load();
     },
 
     async logs(el) {

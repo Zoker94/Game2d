@@ -526,6 +526,27 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
     res.json({ ok: true });
   });
 
+  // ----- Cổ Mộ Bí Cảnh: ai đã vào hôm nay / ngày khác, giờ vào – ra; tặng thêm lượt -----
+  app.get('/api/admin/comu', auth, (req, res) => {
+    const day = /^\d{4}-\d{2}-\d{2}$/.test(req.query.day || '') ? req.query.day : U.vnDay();
+    const L = (db.data.comuLog || []).filter(x => x.day === day).slice().reverse();
+    const inside = [...(world.comu ? world.comu.inst.values() : [])].map(I => { const p = world.players.get(I.uid); return { name: p ? p.c.name : '?', at: I.at, endAt: I.endAt }; });
+    const gifts = Object.values(db.data.users).filter(u => u.character && (u.character.comuGift | 0) > 0).map(u => ({ name: u.character.name, n: u.character.comuGift | 0 }));
+    const days = [...new Set((db.data.comuLog || []).map(x => x.day))].sort().reverse();
+    res.json({ day, today: U.vnDay(), days, list: L, inside, gifts, now: Date.now() });
+  });
+  app.post('/api/admin/comu/gift', auth, (req, res) => {
+    const name = String((req.body || {}).name || '').trim().toLowerCase(), n = U.clamp((req.body || {}).n | 0, 1, 10);
+    const u = Object.values(db.data.users).find(x => x.character && x.character.name.toLowerCase() === name);
+    if (!u) return res.status(404).json({ error: 'Không tìm thấy nhân vật tên này' });
+    const p = world.players.get(u.id), c = p ? p.c : u.character;
+    const left = world.comu.gift(c, n, p);
+    if (p) p.dirtyMe = true;
+    db.markDirty();
+    act(req, `Tặng ${n} lượt Cổ Mộ cho ${c.name}`);
+    res.json({ ok: true, name: c.name, left, online: !!p });
+  });
+
   // ----- Nhật ký -----
   app.get('/api/admin/logs', auth, (req, res) => {
     const type = req.query.type;

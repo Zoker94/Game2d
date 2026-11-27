@@ -10,7 +10,8 @@ const CHANGELOG = [
       '🍀 Bùa Phúc Lộc (20 💎 ở Kỳ Trân Các): nhân đôi tỉ lệ rơi đồ khi bạn hạ quái thường / tinh anh trong 1 giờ, cộng dồn tối đa 6 giờ (không áp dụng Boss).',
       '🎲 Tẩy Linh Phù (50 💎): quay lại tư chất (chỉ số) của thú cưng ở bảng 🐾 Thú cưng.',
       '🍖 Quái rơi Thịt Tươi: cho thú cưng ăn để lên cấp (+60 kinh nghiệm mỗi miếng), có nút "Ăn hết thịt".',
-      '🎫 Vé Treo Máy loại thường đổi thành Vé Treo Máy 8 giờ: treo đúng 8 giờ (trước 6–8 giờ), giá 20 💎.'
+      '🎫 Vé Treo Máy loại thường đổi thành Vé Treo Máy 8 giờ: treo đúng 8 giờ (trước 6–8 giờ), giá 20 💎.',
+      '🍖 Sửa lỗi Tự động không nhặt Thịt Tươi (và các vật phẩm mới ra) khi đang chơi lúc máy chủ cập nhật: giờ game tự tải lại dữ liệu, không cần F5.'
     ]
   },
   {

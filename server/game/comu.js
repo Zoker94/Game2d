@@ -10,6 +10,7 @@ const LIFE = 30 * 60000, OFFER_MS = 60000;
 const TRAIN_MIN = process.env.COMU_TEST ? [1, 1] : [12, 60];             // phút luyện công (có hạ quái) trong ngày trước khi gặp Cổ Mộ: ngẫu nhiên trong khoảng này
 const MOD = { hp: 0.35, atk: 0.4, def: 0.6, exp: 2.5, gold: 2.5 };   // ngân lượng: con nào cũng rơi, mỗi đống x2 (world.js) -> 5 lần lượng gốc mỗi con   // quái Cổ Mộ: yếu hơn, thưởng nhiều hơn
 const NAME = 'Cổ Mộ Bí Cảnh';
+const LOG_DAYS = 14;   // nhật ký vào Cổ Mộ (trang quản trị): giữ 14 ngày
 let seq = 1;
 const cache = new Map();
 const weak = tpl => {
@@ -39,7 +40,9 @@ class Comu {
     for (const p of this.w.players.values()) {
       const c = p.c;
       if (!c || p.dead || c.level < 10 || p.comuOffer || this.isComu(p.mapId)) continue;
-      if (!this.trainingMap(p.mapId) || this.vipAfk(p)) continue;
+      if (!this.trainingMap(p.mapId)) continue;
+      if ((c.comuGift | 0) > 0) { this.offer(p, now, true); continue; }   // lượt quản trị viên tặng: đứng ở bãi luyện là gặp ngay (kể cả đang dùng Vé Treo Máy)
+      if (this.vipAfk(p)) continue;
       if (!(p.lastKillAt > now - 90000)) continue;   // phải đang hạ quái
       const s = this.st(c);
       if (s.shown) continue;
@@ -47,9 +50,10 @@ class Comu {
       if (s.m >= s.need) this.offer(p, now);
     }
   }
-  offer(p, now) {
+  offer(p, now, gift) {
     const s = this.st(p.c);
-    s.shown = 1;   // mỗi ngày chỉ gặp 1 lần, dù vào hay không
+    if (gift) { p.c.comuGift = Math.max(0, (p.c.comuGift | 0) - 1); p.comuGiftOffer = 1; }
+    else { s.shown = 1; p.comuGiftOffer = 0; }   // mỗi ngày chỉ gặp 1 lần, dù vào hay không
     p.comuOffer = now + OFFER_MS;
     p.socket.emit('comuOffer', { until: p.comuOffer, now, life: LIFE / 60000, name: NAME });
     this.w.db.markDirty();
@@ -60,6 +64,7 @@ class Comu {
     const ok = d.op === 'enter' && Date.now() <= p.comuOffer;
     p.comuOffer = 0;
     p.socket.emit('comuOffer', null);
+    if (d.op !== 'enter') this.addLog(p, { skip: 1 });
     if (d.op !== 'enter') return this.w.toast(p, 'Bạn đã bỏ qua lối vào Cổ Mộ. Ngày mai có thể gặp lại.', 'info');
     if (!ok) return this.w.toast(p, 'Lối vào Cổ Mộ đã khép lại…', 'error');
     this.open(p);
@@ -77,7 +82,7 @@ class Comu {
     MAPS[mapId] = map;
     w.maps[mapId] = { def: map, players: new Set(), monsters: new Map(), drops: new Map() };
     for (const sp of map.spawns) for (let i = 0; i < sp.count; i++) w.spawnMonster(mapId, weak(MONSTERS[sp.mon]), sp, { noElite: true });
-    const I = { id: mapId, uid: p.userId, endAt: Date.now() + LIFE, ret, at: Date.now() };
+    const I = { id: mapId, uid: p.userId, endAt: Date.now() + LIFE, ret, at: Date.now(), log: this.addLog(p, { map: MAPS[ret.map] ? MAPS[ret.map].name : ret.map }) };
     this.inst.set(mapId, I);
     c.comuRun = { map: mapId, endAt: I.endAt, ret };
     c.pbReturn = ret.map;   // thoát game giữa chừng: đăng nhập lại ở bãi luyện cũ
@@ -103,7 +108,9 @@ class Comu {
   }
   // rời Cổ Mộ bằng mọi cách (hết giờ, Hồi Thành Phù, chết về thành, dịch chuyển): huỷ lượt, map tự đóng
   onExit(p, fromMapId) {
-    if (!this.inst.has(fromMapId)) return;
+    const I = this.inst.get(fromMapId);
+    if (!I) return;
+    if (I.log && !I.log.out) { I.log.out = Date.now(); I.log.kills = (p.c.kills | 0) - (I.log.k0 | 0); this.w.db.markDirty(); }
     p.c.comuRun = null; p.c.pbReturn = null;
     p.socket.emit('comu', null);
   }
@@ -137,6 +144,22 @@ class Comu {
       if (now >= I.endAt) for (const q of [...m.players]) this.leave(q, 'time');
       if (m.players.size === 0 && now - I.at > 5000) this.destroy(I);
     }
+  }
+  // nhật ký Cổ Mộ cho trang quản trị: db.data.comuLog = [{ t (giờ vào), out (giờ ra), day, uid, name, lv, gift, skip, map }]
+  addLog(p, extra) {
+    const db = this.w.db, L = db.data.comuLog || (db.data.comuLog = []), now = Date.now();
+    const e = Object.assign({ t: now, out: 0, day: this.today(), uid: p.userId, name: p.c.name, lv: p.c.level, gift: p.comuGiftOffer ? 1 : 0, k0: p.c.kills | 0 }, extra || {});
+    L.push(e);
+    const cut = now - LOG_DAYS * 86400000;
+    while (L.length && (L[0].t < cut || L.length > 20000)) L.shift();
+    db.markDirty();
+    return e;
+  }
+  // quản trị viên tặng lượt Cổ Mộ: người đang ở bãi luyện công gặp lối vào trong vòng 1 phút, chưa ở bãi thì gặp khi ra bãi
+  gift(c, n, p) {
+    c.comuGift = Math.max(0, Math.min(20, (c.comuGift | 0) + n));
+    if (p) this.w.toast(p, `🪦 Quản trị viên tặng bạn ${n} lượt vào ${NAME}! Ra bãi luyện công (cấp 10+) là gặp lối vào.`, 'reward');
+    return c.comuGift;
   }
   destroy(I) {
     this.inst.delete(I.id);
