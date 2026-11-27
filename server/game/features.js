@@ -692,6 +692,7 @@ class Features {
         else if (args[0] === 'thanh') { cfg.townMin = U.clamp(+args[1] | 0, 0, 30); cfg.townMax = U.clamp(+(args[2] || args[1]) | 0, cfg.townMin, 30); B.townWantAt = 0; }
         else if (args[0] != null) { const MX = require('./bots').MAX_BOTS; cfg.min = U.clamp(+args[0] | 0, 0, MX); cfg.max = U.clamp(+(args[1] || args[0]) | 0, cfg.min, MX); B.wantAt = 0; }
         this.db.data.config.bots = cfg; this.db.markDirty();
+        for (const q of w.players.values()) if (q.user && isOwner(q.user)) q.dirtyMe = true;   // cập nhật nút Bot trong hộp GM
         ok(B.status()); break;
       }
       case 'goto': { const o = findPlayer(args.join(' ')); if (!o) return err('Người chơi không online'); w.enterMap(p, o.mapId, o.x + 40, o.y); break; }

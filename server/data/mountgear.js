@@ -61,6 +61,19 @@ const V2_RATE = [0.03, 0.025, 0.02, 0.015, 0.01];   // +16..+20
 const gearRate = lv => lv >= GEAR_MAX ? (V2_RATE[lv - GEAR_MAX] || 0) : ENHANCE_RATE[lv] != null ? ENHANCE_RATE[lv] : 0;
 const maxOf = v2 => v2 ? GEAR_MAX2 : GEAR_MAX;
 const v2Item = k => 'mg2_' + k;
+// Mã Cụ thường (cấp 1): thú cưỡi mới mua chưa có sẵn 4 ô – phải lắp món Mã Cụ rơi từ Boss (20% mỗi Boss) rồi mới nâng được.
+// Ô đã nâng (+1 trở lên) hoặc đã lắp V2 từ trước: coi như đã lắp, giữ nguyên.
+const V1_DROP = 0.2;
+const v1Item = k => 'mg1_' + k;
+const owned = (m, k) => !!(m && ((m.gown && m.gown[k]) || ((m.gear && m.gear[k]) | 0) > 0 || (m.gv2 && m.gv2[k])));
+function v1Items() {
+  const out = [];
+  for (const [kind, list] of Object.entries(KINDS)) for (const d of list) out.push({
+    id: v1Item(d.k), name: `${d.name} (Mã Cụ)`, rarity: 'epic', icon: v2Item(d.k), price: 0, noSell: true, stack: true, mgV1: d.k,
+    desc: `Mã Cụ rơi từ Boss (20% mỗi Boss). Lắp vào ô ${d.name} của ${kind === 'moto' ? 'xe máy' : 'thú cưỡi (ngựa, hổ, kỳ lân, rồng, phượng…)'} ở bảng Thú Cưỡi để mở ô đó, sau đó nâng cấp +1…+${GEAR_MAX}. Lắp vào thú nào thì gắn với thú đó.`
+  });
+  return out;
+}
 // vật phẩm V2 cho data/items.js
 function v2Items() {
   const out = [];
@@ -77,4 +90,4 @@ const salvageYield = (tier, plus) => (tier | 0) + 1 + Math.floor((plus | 0) / 2)
 // gửi máy khách để vẽ bảng (tỉ lệ / phí từng cấp)
 const clientConfig = () => ({ max: GEAR_MAX, max2: GEAR_MAX2, v2mult: V2_MULT, v2base: V2_BASE, safe: ENHANCE_SAFE, kinds: KINDS, rmult: RMULT, cost: Array.from({ length: GEAR_MAX2 }, (_, i) => gearCost(i)), rate: Array.from({ length: GEAR_MAX2 }, (_, i) => gearRate(i)) });
 
-module.exports = { GEAR_MAX, GEAR_MAX2, V2_DROP, maxOf, v2Item, v2Items, KINDS, kindOf, slotsOf, RMULT, lvK, slotStats, gearStats, gearCost, gearRate, salvageYield, clientConfig };
+module.exports = { GEAR_MAX, GEAR_MAX2, V2_DROP, V1_DROP, v1Item, v1Items, owned, maxOf, v2Item, v2Items, KINDS, kindOf, slotsOf, RMULT, lvK, slotStats, gearStats, gearCost, gearRate, salvageYield, clientConfig };
