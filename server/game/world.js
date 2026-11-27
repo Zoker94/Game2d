@@ -1786,7 +1786,7 @@ class World {
     }
     if (e.pick) return this.mining.usePick(p, uid);     // Cuốc Chim
     if (e.autoDig) return this.mining.useAuto(p, uid);   // Bùa Tự Đào
-    if (e.autoTicket) return this.autoSrv.useTicket(p, uid);   // Vé Treo Máy
+    if (e.autoTicket) return this.autoSrv.useTicket(p, uid, e.autoTicket);   // Vé Treo Máy (số giờ cố định nếu có)
     if (e.dvFrag) return this.divine.useFrag(p, uid, e.dvFrag);       // ghép mảnh lệnh
     if (e.dvSummon) return this.divine.summon(p, uid, e.dvSummon);    // triệu hồi boss Thần Binh
     if (e.tbFrag) return this.treasure.combine(p);   // ghép 4 Mảnh Tàng Bảo Đồ
