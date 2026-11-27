@@ -155,7 +155,7 @@
         <td><button class="btn small" data-up>▲</button><button class="btn small" data-down>▼</button><button class="btn small danger" data-del>✕</button></td></tr>`; };
       function render() {
         const n = list.find(x => x.id === cur);
-        el.innerHTML = `<div class="card"><div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><b>NPC:</b><select id="sh-npc">${list.map(x => `<option value="${x.id}" ${x.id === cur ? 'selected' : ''}>${esc(x.name)}${x.custom ? ' ✏️' : ''}</option>`).join('')}</select>
+        el.innerHTML = (/^\/s\/[a-z]+\//.test(location.pathname) && window.REALM ? `<div class="card" style="border-color:#d4a017"><b>🔗 Cửa hàng NPC của server ${esc(REALM.name)} luôn giống hệt server chính (Tương Dương).</b><div class="small muted">Muốn đổi hàng / giá: sửa ở trang quản trị server chính, ở đây tự cập nhật theo.</div></div>` : '') + `<div class="card"><div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><b>NPC:</b><select id="sh-npc">${list.map(x => `<option value="${x.id}" ${x.id === cur ? 'selected' : ''}>${esc(x.name)}${x.custom ? ' ✏️' : ''}</option>`).join('')}</select>
           <span class="small muted">${n.custom ? '✏️ Đang dùng hàng do quản trị viên sửa' : 'Đang dùng hàng mặc định'}</span><span class="spacer"></span>
           <button class="btn primary" id="sh-save">💾 Lưu cửa hàng</button><button class="btn" id="sh-reset">↺ Khôi phục mặc định</button></div>
           <p class="small muted">Sửa giá ngay trong ô, ▲▼ đổi thứ tự hiện trong cửa hàng, ✕ bỏ khỏi cửa hàng. Bấm tên đồ để xem chi tiết. Nhớ bấm Lưu – người chơi mở lại NPC là thấy hàng mới.</p></div>

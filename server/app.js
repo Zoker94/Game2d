@@ -683,7 +683,8 @@ if (!REALM.IS_MAIN && process.send) {
       if (was && !c.realmOpen) for (const p of [...world.players.values()]) if (!p.user.isAdmin && !p.user.tester && !isOwner(p.user)) { p.socket.emit('kicked', { reason: `Server ${REALM.NAME} đã tạm đóng` }); world.removePlayer(p); p.socket.disconnect(true); }
       if (!was && c.realmOpen) { db.log('admin', `Server ${REALM.NAME} mở cửa`); io.emit('chat', { ch: 'sys', from: 'Hệ Thống', t: Date.now(), text: `🎉 Server ${REALM.NAME} đã chính thức mở cửa!` }); }
     }
-    if (m.bank) { db.data.config.bank = m.bank; db.markDirty(); }   // tài khoản nhận nạp tiền theo server chính
+    if (m.bank) { db.data.config.bank = m.bank; db.markDirty(); }
+    if (m.shops && typeof m.shops === 'object') { db.data.config.shops = m.shops; require('./game/shops').apply(db); db.markDirty(); }   // cửa hàng NPC theo server chính   // tài khoản nhận nạp tiền theo server chính
     if (m.topup && world.topup) world.topup.autoMatch(m.topup);
   });
   setInterval(() => { try { process.send({ online: world.players.size, maint: !!db.data.config.maintenance }); } catch (e) { } }, 10000);   // kèm trạng thái bảo trì cho trang chọn server

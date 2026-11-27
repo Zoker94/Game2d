@@ -600,6 +600,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
   app.post('/api/admin/shops/:npc', auth, (req, res) => {
     const id = req.params.npc;
     if (!SHOPS.DEF[id]) return res.status(400).json({ error: 'NPC không bán đồ' });
+    if (!REALM.IS_MAIN) return res.status(400).json({ error: `Cửa hàng NPC của ${REALM.NAME} luôn giống server chính – hãy sửa ở trang quản trị server chính` });
     const cfg = db.data.config, shops = cfg.shops || (cfg.shops = {});
     if (req.body.reset) { delete shops[id]; act(req, `Khôi phục cửa hàng mặc định của ${id}`); }
     else {
@@ -610,6 +611,7 @@ module.exports = function adminRoutes(app, { db, world, features, io, rateLimite
       act(req, `Sửa cửa hàng ${id}: ${gold.length} món bán bằng lượng, ${knb.length} món bằng Nguyên Bảo`);
     }
     SHOPS.apply(db); db.markDirty();
+    require('./realms').syncShops(db);   // server con (Tô Châu) bán giống hệt
     res.json({ ok: true, list: SHOPS.adminList(db) });
   });
   // boss: chỉ số, giờ xuất hiện, đồ rơi thêm
