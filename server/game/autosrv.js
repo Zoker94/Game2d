@@ -182,9 +182,9 @@ class AutoSrv {
     this.w.toast(p, '💀 Bị quái hạ gục khi đang treo máy: đã tự về thành và tắt Tự động để không tốn giờ Vé Treo Máy. Bật lại Tự động khi sẵn sàng.', 'error');
     setTimeout(() => { if (p.dead && this.w.players.get(p.userId) === p) this.w.respawn(p, 'town'); }, 2500);
   }
-  // dùng Vé Treo Máy: cộng 6–8 giờ treo (cộng dồn vào thời hạn còn lại)
+  // dùng Vé Treo Máy: cộng đúng số giờ của vé (2 / 4 / 6 / 8 giờ) (cộng dồn vào thời hạn còn lại)
   useTicket(p, uid, hours) {
-    const c = p.c, now = Date.now(), add = hours > 1 ? Math.round(hours * 3600e3) : Math.round((6 + Math.random() * 2) * 3600e3);   // vé 2 / 4 / 6 giờ: đúng số giờ; vé thường: 6–8 giờ
+    const c = p.c, now = Date.now(), add = Math.round((hours > 1 ? hours : 8) * 3600e3);   // vé 2 / 4 / 6 / 8 giờ: đúng số giờ
     if (U.tkLeft(c) > 16 * 3600e3) return this.w.toast(p, 'Thời hạn treo máy còn hơn 16 giờ, dùng sau nhé', 'error');
     U.removeByUid(c, uid, 1);
     if ((c.tkPause | 0) > 0) c.tkPause += add; else c.autoTicket = Math.max(now, c.autoTicket || 0) + add;   // cộng vào giờ còn lại (đang chạy hay tạm dừng đều được)
