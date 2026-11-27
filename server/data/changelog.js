@@ -6,7 +6,10 @@ const CHANGELOG = [
     items: [
       '👘 Ngoại trang giảm giá: Bạch Y Thư Sinh 100 💎 · Hắc Long Bào, Hồng Liên Tiên Y 150 💎 · Băng Tâm Ngọc Y, Xích Hỏa Chiến Bào 200 💎 (vẫn cộng chỉ số khi mặc).',
       '🏪 Kỳ Trân Các thôi bán trang bị Hiếm (vũ khí, áo, mũ, giày, nhẫn, dây chuyền) để danh sách gọn hơn.',
-      '🎫 Kỳ Trân Các bán thêm Vé Treo Máy 2 giờ (5 💎), 4 giờ (10 💎), 6 giờ (15 💎) – cộng đúng số giờ, cộng dồn với vé đang có.'
+      '🎫 Kỳ Trân Các bán thêm Vé Treo Máy 2 giờ (5 💎), 4 giờ (10 💎), 6 giờ (15 💎) – cộng đúng số giờ, cộng dồn với vé đang có.',
+      '🍀 Bùa Phúc Lộc (20 💎 ở Kỳ Trân Các): nhân đôi tỉ lệ rơi đồ khi bạn hạ quái thường / tinh anh trong 1 giờ, cộng dồn tối đa 6 giờ (không áp dụng Boss).',
+      '🎲 Tẩy Linh Phù (50 💎): quay lại tư chất (chỉ số) của thú cưng ở bảng 🐾 Thú cưng.',
+      '🍖 Quái rơi Thịt Tươi: cho thú cưng ăn để lên cấp (+60 kinh nghiệm mỗi miếng), có nút "Ăn hết thịt".'
     ]
   },
   {

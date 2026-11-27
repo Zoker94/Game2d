@@ -727,6 +727,7 @@
         const parts = [];
         const t = Date.now();
         if (me.expBuffUntil > t) parts.push(`📗 x2 KN ${Math.ceil((me.expBuffUntil - t) / 60000)}p`);
+        if (me.dropBuffUntil > t) parts.push(`🍀 x2 rơi đồ ${Math.ceil((me.dropBuffUntil - t) / 60000)}p`);
         if (me.food && me.food.until > t) parts.push(`🍲 ${(G.data.items[me.food.id] || {}).name || 'Món ăn'} ${Math.ceil((me.food.until - t) / 60000)}p`);
         if (G.events) for (const e of G.events.list) if (e.active && e.key !== 'quiz') parts.push(`${e.icon} ${e.name}`);
         for (const b of me.buffs) if (b.until > t) parts.push(`✨ ${b.name} ${Math.ceil((b.until - t) / 1000)}s`);

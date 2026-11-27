@@ -8,7 +8,7 @@ const U = require('./util');
 const PT = require('../data/pets');
 const { PETS } = PT;
 
-const ATK_MS = 2000, RANGE = 320, COMBAT_MS = 3000, FOOD_EXP = 300;
+const ATK_MS = 2000, RANGE = 320, COMBAT_MS = 3000, FOOD_EXP = 300, MEAT_EXP = 60;
 
 class Pets {
   constructor(world) { this.w = world; world.pets = this; }
@@ -51,7 +51,7 @@ class Pets {
   view(p) {
     const c = p.c, L = this.list(c);
     return {
-      on: c.petOn || null, slots: PT.PET_SLOTS, maxLv: PT.PET_MAX_LV, starMax: PT.PET_STAR_MAX, food: U.countItem(c, 'pet_food'), stone: U.countItem(c, 'pet_stone'), gold: c.gold,
+      on: c.petOn || null, slots: PT.PET_SLOTS, maxLv: PT.PET_MAX_LV, starMax: PT.PET_STAR_MAX, food: U.countItem(c, 'pet_food'), meat: U.countItem(c, 'pet_meat'), reroll: U.countItem(c, 'pet_reroll'), stone: U.countItem(c, 'pet_stone'), gold: c.gold,
       pets: L.map(pe => ({ uid: pe.uid, id: pe.id, q: pe.q, lv: pe.lv, exp: pe.exp, need: PT.expNeed(pe.lv), star: pe.star | 0, own: PT.ownerStats(pe), dmg: Math.round(PT.atkK(pe) * 100), cost: PT.starCost(pe.star | 0), evo: PT.evoOf(pe.id), apt: pe.apt || null, src: pe.src || null, vac: PETS[pe.id].vac ? PETS[pe.id].vac.r + PETS[pe.id].vac.star * (pe.star | 0) : 0 })),
       info: Object.fromEntries(Object.values(PETS).map(P => [P.id, { name: P.name, el: P.el, color: P.color, skill: P.skill, desc: P.desc, base: P.base || null, vac: P.vac || null }]))
     };
@@ -85,11 +85,21 @@ class Pets {
       if (!pe) return;
       const cap = Math.min(PT.PET_MAX_LV, c.level);
       if (pe.lv >= cap) return w.toast(p, pe.lv >= PT.PET_MAX_LV ? 'Thú cưng đã đạt cấp tối đa' : `Thú cưng không vượt cấp chủ (${c.level}) – lên cấp nhân vật trước`, 'error');
-      const n = Math.max(1, Math.min(+d.n | 0 || 1, U.countItem(c, 'pet_food')));
-      if (U.countItem(c, 'pet_food') < 1) return w.toast(p, 'Không có Linh Thú Đan – mua ở Kỳ Trân Các', 'error');
-      U.removeItemById(c, 'pet_food', n);
-      this.gainExp(p, pe, FOOD_EXP * n);
-      w.toast(p, `🍖 ${PETS[pe.id].name} ăn ${n} Linh Thú Đan (+${FOOD_EXP * n} kinh nghiệm)`, 'reward');
+      const meat = d.item === 'meat', iid = meat ? 'pet_meat' : 'pet_food', per = meat ? MEAT_EXP : FOOD_EXP, nm = meat ? 'Thịt Tươi' : 'Linh Thú Đan';
+      const n = Math.max(1, Math.min(+d.n | 0 || 1, U.countItem(c, iid)));
+      if (U.countItem(c, iid) < 1) return w.toast(p, meat ? 'Không có Thịt Tươi – đánh quái để nhặt' : 'Không có Linh Thú Đan – mua ở Kỳ Trân Các', 'error');
+      U.removeItemById(c, iid, n);
+      this.gainExp(p, pe, per * n);
+      w.toast(p, `🍖 ${PETS[pe.id].name} ăn ${n} ${nm} (+${per * n} kinh nghiệm)`, 'reward');
+    } else if (d.op === 'reroll') {   // Tẩy Linh Phù: quay lại tư chất
+      if (!pe) return;
+      if (U.countItem(c, 'pet_reroll') < 1) return w.toast(p, 'Cần 1 Tẩy Linh Phù – mua ở Kỳ Trân Các', 'error');
+      U.removeItemById(c, 'pet_reroll', 1);
+      const old = pe.apt ? Math.round(Object.values(pe.apt).reduce((a, b) => a + b, 0) / Object.keys(pe.apt).length * 100) : 100;
+      pe.apt = PT.rollApt(pe.id, pe.src || 'buy');
+      const nw = Math.round(Object.values(pe.apt).reduce((a, b) => a + b, 0) / Object.keys(pe.apt).length * 100);
+      w.toast(p, `🎲 Tẩy tư chất ${PETS[pe.id].name}: trung bình ${old}% → ${nw}%`, nw >= old ? 'reward' : 'info');
+      w.db.log('pet', `${c.name} tẩy tư chất ${PETS[pe.id].name}: ${old}% -> ${nw}%`);
     } else if (d.op === 'star') {
       if (!pe) return;
       const s = pe.star | 0;
