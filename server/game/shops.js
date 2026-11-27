@@ -27,8 +27,8 @@ function apply(db) {
     if (id === 'ky_tran') {
       // Kỳ Trân Các không bán trang bị (quần áo, vũ khí thường) nữa, kể cả khi bảng hàng đã lưu từ trước còn
       for (let i = knb.length - 1; i >= 0; i--) if (ITEMS[knb[i].id].type === 'equip') knb.splice(i, 1);
-      // ngoại trang: luôn theo giá mặc định mới (100–200 Nguyên Bảo)
-      for (const x of knb) { const d = /^outfit_/.test(x.id) && (DEF[id].knbShop || []).find(y => y.id === x.id); if (d) x.knb = d.knb; }
+      // ngoại trang (100–200 Nguyên Bảo) và Vé Treo Máy: luôn theo giá mặc định mới
+      for (const x of knb) { const d = (/^outfit_/.test(x.id) || /^auto_ticket/.test(x.id)) && (DEF[id].knbShop || []).find(y => y.id === x.id); if (d) x.knb = d.knb; }
     }
     // món mặc định mới thêm vào game sau lần quản trị viên lưu cửa hàng: tự hiện thêm (món quản trị viên đã chủ động bỏ thì không)
     const seen = new Set(o.base || LEGACY_BASE(id));

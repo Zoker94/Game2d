@@ -101,7 +101,7 @@ function build() {
     { k: 'afk', icon: '🤖', title: 'Treo máy (tự động)', html: li([
       'Bật <b>🤖 Tự động</b> để tự đánh, tự nhặt, tự bơm máu.',
       'Không có vé: chỉ treo khi đang mở game.',
-      '<b>Vé Treo Máy</b> (Kỳ Trân Các, 6–8 giờ): tắt game máy chủ vẫn treo hộ ở bãi luyện. Bị quái hạ gục thì tự về thành, tắt Tự động và vé tạm dừng (không tốn giờ).']) }
+      '<b>Vé Treo Máy</b> (Kỳ Trân Các: 2 / 4 / 6 / 8 giờ): tắt game máy chủ vẫn treo hộ ở bãi luyện. Bị quái hạ gục thì tự về thành, tắt Tự động và vé tạm dừng (không tốn giờ).']) }
   ];
 }
 let CACHE = null;
